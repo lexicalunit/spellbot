@@ -1,0 +1,75 @@
+[tool.black]
+line-length = 90
+include = '\.pyi?$'
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 90
+ensure_newline_before_comments = true
+
+[tool.pylint]
+max-line-length = 90
+
+[tool.poetry]
+name = 'spellbot'
+version = "0.1.0"
+license = 'MIT'
+authors = [
+    'Amy <amy@lexicalunit.com>'
+]
+readme = 'README.md'
+description = 'A Discord bot for SpellTable'
+keywords=['discord', 'magic', 'bot', 'mtg', 'SpellTable']
+repository = 'https://github.com/lexicalunit/spellbot'
+homepage = 'https://github.com/lexicalunit/spellbot'
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Communications :: Chat",
+    "Topic :: Games/Entertainment :: Board Games",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+]
+packages = [
+    { include = "spellbot", from = "src" }
+]
+
+[tool.poetry.dependencies]
+alembic = "^1.4.2"
+click = "^7.1.2"
+discord-py = "^1.3.3"
+dunamai = "^1.2.0"
+hupper = "^1.10.2"
+psycopg2-binary = "^2.8.5"
+pydantic = "^1.5.1"
+python = '>=3.7,<4'
+python-dateutil = "^2.8.1"
+pytz = "^2020.1"
+pyyaml = "^5.3.1"
+sqlalchemy = "^1.3.17"
+unidecode = "^1.1.1"
+
+[tool.poetry.dev-dependencies]
+black = "^19.10b0"
+coverage = "^5.1"
+flake8 = "^3.8.3"
+ipython = "^7.15.0"
+isort = "^4.3.21"
+pytest = "^5.4.3"
+pytest-asyncio = "^0.12.0"
+pytest-freezegun = "^0.4.1"
+pytest-mock = "^3.1.1"
+pytest-snapshot = "^0.4.1"
+requests = "^2.24.0"
+tox = "^3.15.2"
+
+[tool.poetry.scripts]
+spellbot = 'spellbot:main'
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
