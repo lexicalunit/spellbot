@@ -206,6 +206,7 @@ class MockDiscordClient:
 ##############################
 
 CLIENT_TOKEN = "my-token"
+CLIENT_AUTH = "my-auth"
 CLIENT_USER = "ADMIN"
 CLIENT_USER_ID = 82226367030108160
 
@@ -303,7 +304,11 @@ def client(monkeypatch, mocker, freezer, patch_discord, tmp_path):
     db_url = spellbot.get_db_url(
         "TEST_SPELLBOT_DB_URL", f"sqlite:///{tmp_path}/spellbot.db"
     )
-    bot = spellbot.SpellBot(token=CLIENT_TOKEN, db_url=db_url)
+    bot = spellbot.SpellBot(token=CLIENT_TOKEN, auth=CLIENT_AUTH, db_url=db_url)
+
+    # Don't actually create games on SpellTable in test suite!
+    create_game_mock = mocker.Mock(return_value="http://example.com/game")
+    monkeypatch.setattr(bot, "create_game", create_game_mock)
 
     # Each test should have a clean slate. If we're using sqlite this is ensured
     # automatically as each test will create its own new spellbot.db file. With other
@@ -401,9 +406,7 @@ class TestSpellBot:
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_invalid_request(self, client, channel):
         await client.on_message(MockMessage(someone(), channel, "!xenomorph"))
-        assert channel.last_sent_response == (
-            'Sorry, there is no command named "xenomorph"'
-        )
+        assert channel.last_sent_response == 'Sorry, there is no "xenomorph" command.'
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_from_a_bot(self, client, channel):
@@ -415,8 +418,8 @@ class TestSpellBot:
     async def test_process_long_response_with_file(self, client, channel, monkeypatch):
         file = MockFile("file")
 
-        @spellbot.command
-        def mock_help(channel, author, params):
+        @spellbot.command()
+        async def mock_help(channel, author, params):
             return "What? " * 1000, file
 
         monkeypatch.setattr(client, "help", mock_help)
@@ -428,8 +431,8 @@ class TestSpellBot:
         "channel,author", [(text_channel(), GUY), (private_channel(), FRIEND)]
     )
     async def test_process_direct_embed(self, client, channel, author, monkeypatch):
-        @spellbot.command
-        def mock_help(channel, author, params):
+        @spellbot.command()
+        async def mock_help(channel, author, params):
             return spellbot.Direct(Embed()), None
 
         monkeypatch.setattr(client, "help", mock_help)
@@ -438,8 +441,8 @@ class TestSpellBot:
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_process_weird_response(self, client, channel, monkeypatch):
-        @spellbot.command
-        def mock_help(channel, author, params):
+        @spellbot.command()
+        async def mock_help(channel, author, params):
             return 42, None  # can't send int as a response
 
         monkeypatch.setattr(client, "help", mock_help)
@@ -473,6 +476,44 @@ class TestSpellBot:
             assert len(pages) == 2
             assert all(len(page) <= 2000 for page in pages)
             assert pages == [text[0:2000], f"> {text[2000:]}"]
+
+    @pytest.mark.parametrize(
+        "channel,author", [(text_channel(), GUY), (private_channel(), FRIEND)]
+    )
+    async def test_on_message_help(self, client, channel, author, snap):
+        await client.on_message(MockMessage(author, channel, "!help"))
+        for response in author.all_sent_responses:
+            snap(response)
+        assert len(author.all_sent_calls) == 1
+
+    async def test_on_message_queue_dm(self, client):
+        author = someone()
+        await client.on_message(MockMessage(author, private_channel(), "!queue"))
+        assert author.all_sent_calls == []
+
+    async def test_on_message_queue(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(GUY, channel, "!queue"))
+        assert GUY.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(GUY, channel, "!queue"))
+        assert GUY.last_sent_response == "You are already in the queue."
+
+        await client.on_message(MockMessage(FRIEND, channel, "!queue"))
+        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(BUDDY, channel, "!queue"))
+        assert BUDDY.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(DUDE, channel, "!queue"))
+        ready = "Your game is ready, go to http://example.com/game to begin playing!"
+        assert GUY.last_sent_response == ready
+        assert BUDDY.last_sent_response == ready
+        assert FRIEND.last_sent_response == ready
+        assert DUDE.last_sent_response == ready
+
+        await client.on_message(MockMessage(GUY, channel, "!queue"))
+        assert GUY.last_sent_response == "You have been entered into the play queue."
 
 
 class TestMigrations:
@@ -521,7 +562,7 @@ class TestCodebase:
         proc = run(cmd, capture_output=True)
         assert proc.returncode == 0, (
             f"sort strings issues:\n{proc.stdout.decode('utf-8')}\n\n"
-            "Please run ./scripts/sort_string.py to resolve this issue."
+            "Please run `poetry run scripts/sort_strings.py` to resolve this issue."
         )
 
     def test_snapshots_size(self):
