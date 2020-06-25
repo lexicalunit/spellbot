@@ -107,7 +107,7 @@ typed-ast = ">=1.4.0"
 d = ["aiohttp (>=3.3.2)", "aiohttp-cors"]
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Python package for providing Mozilla's CA Bundle."
 name = "certifi"
 optional = false
@@ -649,7 +649,7 @@ python-versions = "*"
 version = "2020.6.8"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Python HTTP for Humans."
 name = "requests"
 optional = false
@@ -761,7 +761,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "1.1.1"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 name = "urllib3"
 optional = false
@@ -837,7 +837,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "5b8ffcfdef4a3ae67cd0c9eb865f773ef91c2fb3687e99ac9e457f7bf902e20e"
+content-hash = "b81ab52d809fa8339713575a52bed1b190b6e5e4e77be17739ba2f0e539892e5"
 python-versions = '>=3.7,<4'
 
 [metadata.files]

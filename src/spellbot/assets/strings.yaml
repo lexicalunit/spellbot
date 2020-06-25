@@ -1,2 +1,5 @@
 did_you_mean: 'Did you mean: $possible?'
-not_a_command: Sorry, there is no command named "$request"
+not_a_command: Sorry, there is no "$request" command.
+queue: You have been entered into the play queue.
+queue_already: You are already in the queue.
+queue_ready: Your game is ready, go to $url to begin playing!
