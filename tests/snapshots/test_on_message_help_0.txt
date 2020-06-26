@@ -1,0 +1,15 @@
+__**SpellBot Usage**__
+
+**!about**
+>  Get information about SpellBot.
+
+**!hello**
+>  Says hello.
+
+**!help**
+>  Shows this help screen.
+
+**!queue**
+>  Enter the queue for a game on SpellTable.
+
+_SpellBot created by amy@lexicalunit.com_

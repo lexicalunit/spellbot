@@ -21,10 +21,7 @@ Discord via the following commands in any of the authorized channels.
 - `!about`: Get information about SpellBot
 - `!help`: Provides detailed help about all of the following commands
 - `!hello`: Says hello
-
-## WIP: MVP
-
-- Allow users to queue, when there's enough people in the queue create a game for them
+- `!queue`: Enter into a queue for an EDH game
 
 ## WIP: Commands
 
@@ -41,6 +38,11 @@ In a text channel or as a DM to the bot:
 - When matchmaking is complete:
   - Creates a SpellTable link
   - DMs everyone in the match the link
+
+Questions:
+
+- What if someone want's to queue with someone else?
+- Maybe: `!queue <format> [power level] @with_this_person @and_this_person etc... ???
 
 ### Status
 
