@@ -1,16 +1,18 @@
 import asyncio
 import inspect
 import logging
+from functools import wraps
 from os import getenv
 from pathlib import Path
 
 import click
 import discord
 import hupper
+import requests
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
-from spellbot.data import Data
+from spellbot.data import Data, Queue, User
 
 # Application Paths
 RUNTIME_ROOT = Path(".")
@@ -22,6 +24,7 @@ MIGRATIONS_DIR = SCRIPTS_DIR / "migrations"
 
 # Application Settings
 ADMIN_ROLE = "SpellBot Admin"
+CREATE_ENDPOINT = "https://us-central1-magic-night-30324.cloudfunctions.net/createGame"
 
 
 class Direct:
@@ -94,22 +97,37 @@ def ensure_application_directories_exist():
     DB_DIR.mkdir(exist_ok=True)
 
 
-def command(f):
+def command(allow_dm=True):
     """Decorator for bot command methods."""
-    f.is_command = True
-    return f
+
+    def callable(func):
+        @wraps(func)
+        def wrapped(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        wrapped.is_command = True
+        wrapped.allow_dm = allow_dm
+        return wrapped
+
+    return callable
 
 
 class SpellBot(discord.Client):
     """Discord SpellTable Bot"""
 
     def __init__(
-        self, token="", db_url=DEFAULT_DB_URL, log_level=logging.ERROR, metrics=False,
+        self,
+        token="",
+        auth="",
+        db_url=DEFAULT_DB_URL,
+        log_level=logging.ERROR,
+        metrics=False,
     ):
         logging.basicConfig(level=log_level)
         loop = asyncio.get_event_loop()
         super().__init__(loop=loop)
         self.token = token
+        self.auth = auth
 
         # During the processing of a command there will be valid SQLAlchemy session
         # object available for use, commits and rollbacks are handled automatically.
@@ -131,11 +149,18 @@ class SpellBot(discord.Client):
     def run(self):  # pragma: no cover
         super().run(self.token)
 
+    def create_game(self):
+        headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
+        r = requests.post(CREATE_ENDPOINT, headers=headers)
+        return r.json()["gameUrl"]
+
     def ensure_user_exists(self, user):
         """Ensures that the user row exists for the given discord user."""
-        pass
-        # if not self.session.query(User).get(user.id):
-        #     self.session.add(User(author=user.id))
+        db_user = self.session.query(User).get(user.id)
+        if not db_user:
+            db_user = User(id=user.id)
+            self.session.add(db_user)
+        return db_user
 
     def paginate(self, text):
         """Discord responses must be 2000 characters of less; paginate breaks them up."""
@@ -184,18 +209,26 @@ class SpellBot(discord.Client):
             await message.channel.send(s("did_you_mean", possible=possible), file=None)
         else:
             command = request if request in matching else matching[0]
-            logging.debug("%s (author=%s, params=%s)", command, message.author, params)
             method = getattr(self, command)
-            async with message.channel.typing():
-                self.session = self.data.Session()
-                try:
-                    response, attachment = method(message.channel, message.author, params)
-                    self.session.commit()
-                except:
-                    self.session.rollback()
-                    raise
-                finally:
-                    self.session.close()
+            if not method.allow_dm and message.channel.type == "private":
+                return
+            logging.debug("%s (author=%s, params=%s)", command, message.author, params)
+            # FIXME: Delete debug code.
+            # async with message.channel.typing():
+            ######################################
+            self.session = self.data.Session()
+            try:
+                rvalue = await method(message.channel, message.author, params)
+                self.session.commit()
+            except:
+                self.session.rollback()
+                raise
+            finally:
+                self.session.close()
+            ######################################
+            if not rvalue:
+                return
+            response, attachment = rvalue
             if isinstance(response, Direct):
                 send_direct = True
                 response = response.response
@@ -280,7 +313,7 @@ class SpellBot(discord.Client):
     # Any method of this class with a name that is decorated by @command is detected as a
     # bot command. These methods should have a signature like:
     #
-    #     @command
+    #     @command(allow_dm=True)
     #     def command_name(self, channel, author, params)
     #
     # - `channel` is the Discord channel where the command message was sent.
@@ -309,12 +342,12 @@ class SpellBot(discord.Client):
     #
     # A [parameter] is optional whereas a <parameter> is required.
 
-    @command
-    def help(self, channel, author, params):
+    @command(allow_dm=True)
+    async def help(self, channel, author, params):
         """
         Shows this help screen.
         """
-        usage = "__**SpellBot Help!**__\n"
+        usage = "__**SpellBot Usage**__\n"
         for command in self.commands:
             method = getattr(self, command)
             doc = method.__doc__.split("@")
@@ -331,15 +364,15 @@ class SpellBot(discord.Client):
         usage += "\n_SpellBot created by amy@lexicalunit.com_"
         return Direct(usage), None
 
-    @command
-    def hello(self, channel, author, params):
+    @command(allow_dm=True)
+    async def hello(self, channel, author, params):
         """
         Says hello.
         """
         return "Hello!", None
 
-    @command
-    def about(self, channel, author, params):
+    @command(allow_dm=True)
+    async def about(self, channel, author, params):
         """
         Get information about SpellBot.
         """
@@ -353,7 +386,7 @@ class SpellBot(discord.Client):
         embed.add_field(
             name="Package", value="[PyPI](https://pypi.org/project/spellbot/)"
         )
-        author = "[Amy](https://github.com/lexicalunit)"
+        author = "[@lexicalunit](https://github.com/lexicalunit)"
         embed.add_field(name="Author", value=author)
         embed.description = (
             "_A Discord bot for SpellTable._\n"
@@ -365,6 +398,31 @@ class SpellBot(discord.Client):
         embed.set_footer(text="MIT © amy@lexicalunit et al")
         embed.color = discord.Color(0x5A3EFD)
         return embed, None
+
+    @command(allow_dm=False)
+    async def queue(self, channel, author, params):
+        """
+        Enter the queue for a game on SpellTable.
+        """
+        user = self.ensure_user_exists(author)
+        if user.queue:
+            await author.send(s("queue_already"), file=None)
+            return
+
+        group_size = 4
+        user.enqueue(guild=channel.guild.id)
+        group = Queue.playgroup(
+            self.session, include=[user], guild=channel.guild.id, size=group_size
+        )
+        if not group:
+            await author.send(s("queue"), file=None)
+            return
+
+        game_url = self.create_game()
+        for user in group:
+            discord_user = discord_user_from_id(channel, user.id)
+            await discord_user.send(s("queue_ready", url=game_url))
+        Queue.dequeue(self.session, group)
 
 
 def get_db_url(database_env, fallback):  # pragma: no cover
@@ -417,6 +475,7 @@ def main(
 
     client = SpellBot(
         token=getenv("SPELLBOT_TOKEN", None),
+        auth=getenv("SPELLTABLE_AUTH", None),
         db_url=database_url,
         log_level="DEBUG" if verbose else log_level,
     )
