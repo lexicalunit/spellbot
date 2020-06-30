@@ -27,27 +27,6 @@ ADMIN_ROLE = "SpellBot Admin"
 CREATE_ENDPOINT = "https://us-central1-magic-night-30324.cloudfunctions.net/createGame"
 
 
-class Direct:
-    """Use this to indicate that a command should send a DM."""
-
-    def __init__(self, response):
-        self.response = response
-
-
-def discord_user_from_name(channel, name):
-    """Returns the discord user from the given channel and name."""
-    if name is None:
-        return None
-    lname = name.lower()
-    if hasattr(channel, "members"):  # channels
-        members = channel.members
-        return next(filter(lambda member: lname in str(member).lower(), members), None)
-    else:  # direct messages
-        recipient = channel.recipient
-        rvalue = recipient if name in str(recipient).lower() else None
-        return rvalue
-
-
 def discord_user_from_id(channel, user_id):
     """Returns the discord user from the given channel and user id."""
     if user_id is None:
@@ -59,26 +38,6 @@ def discord_user_from_id(channel, user_id):
     else:  # direct messages
         recipient = channel.recipient
         return recipient if recipient.id == user_id else None
-
-
-def discord_user_name(channel, name_or_id):
-    """Returns the discord user name from the given channel and name or id."""
-    if not name_or_id:
-        return None
-    user = (
-        discord_user_from_id(channel, name_or_id)
-        if isinstance(name_or_id, int) or name_or_id.isdigit()
-        else discord_user_from_name(channel, name_or_id)
-    )
-    return str(user) if user else None
-
-
-def discord_user_id(channel, name):
-    """Returns the discord user id name from the given channel and name."""
-    if not name:
-        return None
-    user = discord_user_from_name(channel, name)
-    return user.id if user else None
 
 
 def is_admin(channel, user_or_member):
@@ -102,8 +61,8 @@ def command(allow_dm=True):
 
     def callable(func):
         @wraps(func)
-        def wrapped(*args, **kwargs):
-            return func(*args, **kwargs)
+        async def wrapped(*args, **kwargs):
+            return await func(*args, **kwargs)
 
         wrapped.is_command = True
         wrapped.allow_dm = allow_dm
@@ -149,7 +108,7 @@ class SpellBot(discord.Client):
     def run(self):  # pragma: no cover
         super().run(self.token)
 
-    def create_game(self):
+    def create_game(self):  # pragma: no cover
         headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
         r = requests.post(CREATE_ENDPOINT, headers=headers)
         return r.json()["gameUrl"]
@@ -161,32 +120,6 @@ class SpellBot(discord.Client):
             db_user = User(id=user.id)
             self.session.add(db_user)
         return db_user
-
-    def paginate(self, text):
-        """Discord responses must be 2000 characters of less; paginate breaks them up."""
-        breakpoints = ["\n", ".", ",", "-"]
-        remaining = text
-        while len(remaining) > 2000:
-            breakpoint = 1999
-
-            for char in breakpoints:
-                index = remaining.rfind(char, 1800, 1999)
-                if index != -1:
-                    breakpoint = index
-                    break
-
-            message = remaining[0 : breakpoint + 1]
-            yield message
-            remaining = remaining[breakpoint + 1 :]
-            last_line_end = message.rfind("\n")
-            if last_line_end != -1 and len(message) > last_line_end + 1:
-                last_line_start = last_line_end + 1
-            else:
-                last_line_start = 0
-            if message[last_line_start] == ">":
-                remaining = f"> {remaining}"
-
-        yield remaining
 
     @property
     def commands(self):
@@ -213,58 +146,15 @@ class SpellBot(discord.Client):
             if not method.allow_dm and message.channel.type == "private":
                 return
             logging.debug("%s (author=%s, params=%s)", command, message.author, params)
-            # FIXME: Delete debug code.
-            # async with message.channel.typing():
-            ######################################
             self.session = self.data.Session()
             try:
-                rvalue = await method(message.channel, message.author, params)
+                await method(message.channel, message.author, params)
                 self.session.commit()
             except:
                 self.session.rollback()
                 raise
             finally:
                 self.session.close()
-            ######################################
-            if not rvalue:
-                return
-            response, attachment = rvalue
-            if isinstance(response, Direct):
-                send_direct = True
-                response = response.response
-            else:
-                send_direct = False
-            if not isinstance(response, list):
-                response = [response]
-            last_reply_index = len(response) - 1
-            for n, reply in enumerate(response):
-                if isinstance(reply, str):
-                    pages = list(self.paginate(reply))
-                    last_page_index = len(pages) - 1
-                    for i, page in enumerate(pages):
-                        file = (
-                            attachment
-                            if attachment is not None
-                            and i == last_page_index
-                            and n == last_reply_index
-                            else None
-                        )
-                        if send_direct:
-                            await message.author.send(page, file=file)
-                        else:
-                            await message.channel.send(page, file=file)
-                elif isinstance(reply, discord.embeds.Embed):
-                    file = (
-                        attachment
-                        if attachment is not None and n == last_reply_index
-                        else None
-                    )
-                    if send_direct:
-                        await message.author.send(embed=reply, file=file)
-                    else:
-                        await message.channel.send(embed=reply, file=file)
-                else:
-                    raise RuntimeError("non-string non-embed reply not supported")
 
     ##############################
     # Discord Client Behavior
@@ -316,31 +206,18 @@ class SpellBot(discord.Client):
     #     @command(allow_dm=True)
     #     def command_name(self, channel, author, params)
     #
+    # - `allow_dm` indicates if the command is allowed to be used in direct messages.
     # - `channel` is the Discord channel where the command message was sent.
     # - `author` is the Discord author who sent the command.
     # - `params` are any space delimitered parameters also sent with the command.
-    #
-    # The return value for a command method can be `(string, discord.File)` where the
-    # string is the response message the bot should send to the channel and the file
-    # object is an attachment to send with the message. For no attachment, use `None`.
-    #
-    # You can also return `(embed, discord.File)` to respond with an embed (plus the
-    # optional attachment as well if so desired).
-    #
-    # And finally you can also respond with a list if you want the bot to make multiple
-    # replies. This works with both embeds and strings. For example:
-    #
-    #     return ["send", "multiple", "replies"], None
-    #
-    # Would trigger the bot to send three messages to the channel with no attachment.
     #
     # The docstring used for the command method will be automatically used as the help
     # message for the command. To document commands with parameters use a @ to delimit
     # the help message from the parameter documentation. For example:
     #
-    #     """This is the help message for your command. @ [and] [these] [are] [params]"""
+    #     """This is the help message for your command. @ <and> [these] [are] [params]"""
     #
-    # A [parameter] is optional whereas a <parameter> is required.
+    # Where [foo] indicates foo is optional and <bar> indicates bar is required.
 
     @command(allow_dm=True)
     async def help(self, channel, author, params):
@@ -362,14 +239,14 @@ class SpellBot(discord.Client):
             usage += f"\n>  {use}"
             usage += "\n"
         usage += "\n_SpellBot created by amy@lexicalunit.com_"
-        return Direct(usage), None
+        await author.send(usage, file=None)
 
     @command(allow_dm=True)
     async def hello(self, channel, author, params):
         """
         Says hello.
         """
-        return "Hello!", None
+        await channel.send("Hello!")
 
     @command(allow_dm=True)
     async def about(self, channel, author, params):
@@ -397,7 +274,7 @@ class SpellBot(discord.Client):
         embed.url = "https://github.com/lexicalunit/spellbot"
         embed.set_footer(text="MIT © amy@lexicalunit et al")
         embed.color = discord.Color(0x5A3EFD)
-        return embed, None
+        await channel.send(embed=embed, file=None)
 
     @command(allow_dm=False)
     async def queue(self, channel, author, params):
@@ -406,8 +283,7 @@ class SpellBot(discord.Client):
         """
         user = self.ensure_user_exists(author)
         if user.queue:
-            await author.send(s("queue_already"), file=None)
-            return
+            return await author.send(s("queue_already"), file=None)
 
         group_size = 4
         user.enqueue(guild=channel.guild.id)
@@ -415,14 +291,25 @@ class SpellBot(discord.Client):
             self.session, include=[user], guild=channel.guild.id, size=group_size
         )
         if not group:
-            await author.send(s("queue"), file=None)
-            return
+            return await author.send(s("queue"), file=None)
 
         game_url = self.create_game()
         for user in group:
             discord_user = discord_user_from_id(channel, user.id)
             await discord_user.send(s("queue_ready", url=game_url))
         Queue.dequeue(self.session, group)
+
+    @command(allow_dm=True)
+    async def leave(self, channel, author, params):
+        """
+        Leave your place in the queue.
+        """
+        user = self.ensure_user_exists(author)
+        if not user.queue:
+            return await author.send(s("leave_already"), file=None)
+
+        user.dequeue()
+        await author.send(s("leave"), file=None)
 
 
 def get_db_url(database_env, fallback):  # pragma: no cover
@@ -472,6 +359,9 @@ def main(
     # We have to make sure that application directories exist
     # before we try to create we can run any of the migrations.
     ensure_application_directories_exist()
+
+    # TODO: Check that SPELLBOT_TOKEN and SPELLTABLE_AUTH are properly set.
+    # TODO: Add env var to set log level.
 
     client = SpellBot(
         token=getenv("SPELLBOT_TOKEN", None),

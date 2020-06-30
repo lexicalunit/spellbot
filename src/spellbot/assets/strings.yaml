@@ -1,4 +1,6 @@
 did_you_mean: 'Did you mean: $possible?'
+leave: You have been removed from the queue.
+leave_already: You were not in the queue.
 not_a_command: Sorry, there is no "$request" command.
 queue: You have been entered into the play queue.
 queue_already: You are already in the queue.

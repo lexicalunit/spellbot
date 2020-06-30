@@ -13,7 +13,6 @@ from unittest.mock import MagicMock, Mock
 import pytest
 import pytz
 import toml
-from discord import Embed
 
 import spellbot
 from spellbot.assets import load_strings
@@ -21,6 +20,11 @@ from spellbot.assets import load_strings
 ##############################
 # Discord.py Mocks
 ##############################
+
+
+class AsyncMock(MagicMock):
+    async def __call__(self, *args, **kwargs):
+        return super(AsyncMock, self).__call__(*args, **kwargs)
 
 
 class MockFile:
@@ -39,10 +43,10 @@ class MockMember:
         # sent is a spy for tracking calls to send(), it doesn't exist on the real object.
         # There are also helpers for inspecting calls to sent defined on this class of
         # the form `last_sent_XXX` and `all_sent_XXX` to make our lives easier.
-        self.sent = MagicMock()
+        self.sent = AsyncMock()
 
     async def send(self, content=None, *args, **kwargs):
-        self.sent(
+        await self.sent(
             content,
             **{param: value for param, value in kwargs.items() if value is not None},
         )
@@ -54,7 +58,7 @@ class MockMember:
 
     @property
     def last_sent_response(self):
-        return self.last_sent_call["args"][0]
+        return self.all_sent_responses[-1]
 
     @property
     def last_sent_embed(self):
@@ -115,10 +119,10 @@ class MockChannel:
         # sent is a spy for tracking calls to send(), it doesn't exist on the real object.
         # There are also helpers for inspecting calls to sent defined on this class of
         # the form `last_sent_XXX` and `all_sent_XXX` to make our lives easier.
-        self.sent = MagicMock()
+        self.sent = AsyncMock()
 
     async def send(self, content=None, *args, **kwargs):
-        self.sent(
+        await self.sent(
             content,
             **{param: value for param, value in kwargs.items() if value is not None},
         )
@@ -130,7 +134,7 @@ class MockChannel:
 
     @property
     def last_sent_response(self):
-        return self.last_sent_call["args"][0]
+        return self.all_sent_responses[-1]
 
     @property
     def last_sent_embed(self):
@@ -319,7 +323,7 @@ def client(monkeypatch, mocker, freezer, patch_discord, tmp_path):
 
     # Make sure that all users have their send calls reset between client tests.
     for user in ALL_USERS:
-        user.sent = MagicMock()
+        user.sent = AsyncMock()
 
     yield bot
 
@@ -385,6 +389,11 @@ class TestSpellBot:
         channel.sent.assert_not_called()
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
+    async def test_is_admin(self, client, channel):
+        assert spellbot.is_admin(channel, not_an_admin()) == False
+        assert spellbot.is_admin(channel, an_admin()) == True
+
+    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_no_request(self, client, channel):
         await client.on_message(MockMessage(someone(), channel, "!"))
         await client.on_message(MockMessage(someone(), channel, "!!"))
@@ -413,69 +422,6 @@ class TestSpellBot:
         author = BOT
         await client.on_message(MockMessage(author, channel, "!help"))
         assert len(channel.all_sent_calls) == 0
-
-    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
-    async def test_process_long_response_with_file(self, client, channel, monkeypatch):
-        file = MockFile("file")
-
-        @spellbot.command()
-        async def mock_help(channel, author, params):
-            return "What? " * 1000, file
-
-        monkeypatch.setattr(client, "help", mock_help)
-        await client.on_message(MockMessage(someone(), channel, "!help"))
-        assert len(channel.all_sent_responses) == 3
-        assert channel.all_sent_files == [file]
-
-    @pytest.mark.parametrize(
-        "channel,author", [(text_channel(), GUY), (private_channel(), FRIEND)]
-    )
-    async def test_process_direct_embed(self, client, channel, author, monkeypatch):
-        @spellbot.command()
-        async def mock_help(channel, author, params):
-            return spellbot.Direct(Embed()), None
-
-        monkeypatch.setattr(client, "help", mock_help)
-        await client.on_message(MockMessage(author, channel, "!help"))
-        assert json.loads(author.all_sent_embeds_json) == [{"type": "rich"}]
-
-    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
-    async def test_process_weird_response(self, client, channel, monkeypatch):
-        @spellbot.command()
-        async def mock_help(channel, author, params):
-            return 42, None  # can't send int as a response
-
-        monkeypatch.setattr(client, "help", mock_help)
-        with pytest.raises(RuntimeError):
-            await client.on_message(MockMessage(someone(), channel, "!help"))
-
-    async def test_paginate(self, client):
-        def subject(text):
-            return [page for page in client.paginate(text)]
-
-        assert subject("") == [""]
-        assert subject("four") == ["four"]
-
-        with open(Path(FIXTURES_ROOT) / "ipsum_2011.txt") as f:
-            text = f.read()
-            pages = subject(text)
-            assert len(pages) == 2
-            assert all(len(page) <= 2000 for page in pages)
-            assert pages == [text[0:1937], text[1937:]]
-
-        with open(Path(FIXTURES_ROOT) / "aaa_2001.txt") as f:
-            text = f.read()
-            pages = subject(text)
-            assert len(pages) == 2
-            assert all(len(page) <= 2000 for page in pages)
-            assert pages == [text[0:2000], text[2000:]]
-
-        with open(Path(FIXTURES_ROOT) / "quotes.txt") as f:
-            text = f.read()
-            pages = subject(text)
-            assert len(pages) == 2
-            assert all(len(page) <= 2000 for page in pages)
-            assert pages == [text[0:2000], f"> {text[2000:]}"]
 
     @pytest.mark.parametrize(
         "channel,author", [(text_channel(), GUY), (private_channel(), FRIEND)]
@@ -514,6 +460,47 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(GUY, channel, "!queue"))
         assert GUY.last_sent_response == "You have been entered into the play queue."
+
+    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
+    async def test_on_message_leave_not_queued(self, client, channel):
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        assert author.last_sent_response == "You were not in the queue."
+
+    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
+    async def test_on_message_leave(self, client, channel):
+        author = someone()
+        public_channel = text_channel()
+        await client.on_message(MockMessage(author, public_channel, "!queue"))
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        assert author.last_sent_response == "You have been removed from the queue."
+
+    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
+    async def test_on_message_about(self, client, channel):
+        await client.on_message(MockMessage(someone(), channel, "!about"))
+        assert len(channel.all_sent_calls) == 1
+
+        about = channel.last_sent_embed
+        assert about["title"] == "SpellBot"
+        assert about["url"] == "https://github.com/lexicalunit/spellbot"
+        assert about["description"] == (
+            "_A Discord bot for SpellTable._\n\n"
+            "Use the command `!help` for usage details. Having issues with SpellBot? "
+            "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
+        )
+        assert about["footer"]["text"] == "MIT \u00a9 amy@lexicalunit et al"
+        assert about["thumbnail"]["url"] == (
+            "https://raw.githubusercontent.com/lexicalunit/spellbot/master/spellbot.png"
+        )
+
+        fields = {f["name"]: f["value"] for f in about["fields"]}
+        assert fields["Package"] == "[PyPI](https://pypi.org/project/spellbot/)"
+        assert fields["Author"] == "[@lexicalunit](https://github.com/lexicalunit)"
+
+        version = spellbot.__version__
+        assert fields["Version"] == (
+            f"[{version}](https://pypi.org/project/spellbot/{version}/)"
+        )
 
 
 class TestMigrations:
