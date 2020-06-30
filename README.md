@@ -22,6 +22,7 @@ Discord via the following commands in any of the authorized channels.
 - `!help`: Provides detailed help about all of the following commands
 - `!hello`: Says hello
 - `!queue`: Enter into a queue for an EDH game
+- `!leave`: Leave the play queue that you are in
 
 ## WIP: Commands
 
@@ -54,16 +55,6 @@ As a DM to the bot:
 
 - Gives you some information on your place in the queue
 - Possibly give you some status on your history of games and win/lose
-
-### Leaving
-
-As a DM to the bot:
-
-```text
-!leave
-```
-
-- Removes you from the queue that you're in if you're in one
 
 ### Reporting
 

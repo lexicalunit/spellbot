@@ -46,6 +46,10 @@ class User(Base):
         session.commit()
         return row
 
+    def dequeue(self):
+        session = Session.object_session(self)
+        session.query(Queue).filter_by(user_id=self.id).delete(synchronize_session=False)
+
 
 class Queue(Base):
     __tablename__ = "queue"

@@ -9,6 +9,9 @@ __**SpellBot Usage**__
 **!help**
 >  Shows this help screen.
 
+**!leave**
+>  Leave your place in the queue.
+
 **!queue**
 >  Enter the queue for a game on SpellTable.
 
