@@ -10,7 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
-    and_,
+    Table,
     create_engine,
     func,
 )
@@ -29,62 +29,89 @@ Base = declarative_base()
 class AuthorizedChannel(Base):
     __tablename__ = "authorized_channels"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    guild = Column(BigInteger, primary_key=True, nullable=False)
+    guild = Column(BigInteger, nullable=False)
     name = Column(String(100), nullable=False)
+
+
+games_tags = Table(
+    "games_tags",
+    Base.metadata,
+    Column("game_id", Integer, ForeignKey("games.id")),
+    Column("tag_id", Integer, ForeignKey("tags.id")),
+)
 
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(BigInteger, primary_key=True, nullable=False)
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    xid = Column(BigInteger, nullable=False)
+    game_id = Column(Integer, ForeignKey("games.id"), nullable=True)
+    game = relationship("Game", back_populates="users")
 
-    queue = relationship("Queue", uselist=False, back_populates="user")
+    @property
+    def waiting(self):
+        return self.game is not None
 
-    def enqueue(self, guild):
+    def enqueue(self, *, size, guild_xid, include, tags):
         session = Session.object_session(self)
-        row = Queue(user_id=self.id, guild=guild)
-        session.add(row)
-        session.commit()
-        return row
+        required_tag_ids = set(tag.id for tag in tags)
+        considerations = (
+            session.query(games_tags.c.game_id, func.count(games_tags.c.game_id))
+            .filter(games_tags.c.tag_id.in_([tag.id for tag in tags]))
+            .group_by(games_tags.c.game_id)
+            .having(func.count(games_tags.c.game_id) == len(tags))
+            .all()
+        )
+        valid_game_ids = []
+        for row in considerations:
+            game = session.query(Game).get(row.game_id)
+            if set(tag.id for tag in game.tags) != required_tag_ids:
+                continue
+            if len(game.users) >= size - len(include):
+                continue
+            if game.guild_xid != guild_xid:
+                continue
+            if game.size != size:
+                continue
+            valid_game_ids.append(row.game_id)
+        existing_game = (
+            session.query(Game)
+            .filter(Game.id.in_(valid_game_ids))
+            .order_by(Game.created_at)
+            .first()
+        )
+        if existing_game:
+            self.game = existing_game
+        else:
+            self.game = Game(size=size, guild_xid=guild_xid, tags=tags)
+            session.add(self.game)
+        for user in include:
+            user.game = self.game
 
     def dequeue(self):
         session = Session.object_session(self)
-        session.query(Queue).filter_by(user_id=self.id).delete(synchronize_session=False)
+        if len(self.game.users) == 1:
+            session.delete(self.game)
+        self.game = None
+        # TODO: Look to merge this user's old game with existing games.
+        # TODO: Add bookkeeping to be able to know if we can break this game's users up.
 
 
-class Queue(Base):
-    __tablename__ = "queue"
+class Game(Base):
+    __tablename__ = "games"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    user_id = Column(
-        BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
-    guild = Column(BigInteger, primary_key=True, nullable=False)
     created_at = Column(DateTime, nullable=False, server_default=func.now())
+    size = Column(Integer, nullable=False)
+    guild_xid = Column(BigInteger, nullable=False)
+    users = relationship("User", back_populates="game")
+    tags = relationship("Tag", secondary=games_tags, back_populates="games")
 
-    user = relationship("User", back_populates="queue")
 
-    @classmethod
-    def playgroup(cls, session, include, guild, size):
-        others = (
-            session.query(Queue)
-            .filter(
-                and_(Queue.guild == guild, ~Queue.user_id.in_([x.id for x in include]))
-            )
-            .order_by(Queue.created_at)
-            .limit(size - len(include))
-            .all()
-        )
-        if len(others) + len(include) < size:
-            return None
-        return (
-            include
-            + session.query(User).filter(User.id.in_(r.user_id for r in others)).all()
-        )
-
-    @classmethod
-    def dequeue(cls, session, group):
-        session.query(Queue).filter(
-            Queue.user_id.in_([user.id for user in group])
-        ).delete(synchronize_session=False)
+class Tag(Base):
+    __tablename__ = "tags"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    name = Column(String(50), nullable=False)
+    games = relationship("Game", secondary=games_tags, back_populates="tags")
 
 
 def create_all(connection, db_url):
@@ -108,7 +135,7 @@ class Data:
 
     def __init__(self, db_url):
         self.db_url = db_url
-        self.engine = create_engine(db_url)
+        self.engine = create_engine(db_url, echo=False)
         self.conn = self.engine.connect()
         create_all(self.conn, db_url)
         self.Session = sessionmaker(bind=self.engine)

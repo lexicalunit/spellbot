@@ -12,7 +12,7 @@ __**SpellBot Usage**__
 **!leave**
 >  Leave your place in the queue.
 
-**!queue**
->  Enter the queue for a game on SpellTable.
+**!queue** _[@mention-1] [@mention-2] [...] [size:N] [tag-1] [tag-2] [...]_
+>  Enter the queue for a game on SpellTable.  You can get in the queue with a friend by including them in the command with as many @ mentions as you want. You can also choose the number of players by using `size:2` for a two player game, for example. The default number of players is 4.  You can also give a list of tags and you will only be matched against users who have the same tags as you. For example, if you want to enter into a cEDH queue you could try `!queue cEDH`. Check with your server for supported tags.
 
 _SpellBot created by amy@lexicalunit.com_
