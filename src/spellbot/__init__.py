@@ -455,17 +455,20 @@ class SpellBot(discord.Client):
 
 def get_db_env(fallback):  # pragma: no cover
     """Returns the database env var from the environment or else the given gallback."""
-    return getenv("SPELLTABLE_DB_ENV", fallback)
+    value = getenv("SPELLTABLE_DB_ENV", fallback)
+    return value or fallback
 
 
 def get_db_url(database_env, fallback):  # pragma: no cover
     """Returns the database url from the environment or else the given fallback."""
-    return getenv(database_env, fallback)
+    value = getenv(database_env, fallback)
+    return value or fallback
 
 
 def get_log_level(fallback):  # pragma: no cover
     """Returns the log level from the environment or else the given gallback."""
-    return getenv("SPELLTABLE_LOG_LEVEL", fallback)
+    value = getenv("SPELLTABLE_LOG_LEVEL", fallback)
+    return value or fallback
 
 
 @click.command()
