@@ -1,4 +1,4 @@
-from os.path import dirname, realpath
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import alembic
@@ -17,7 +17,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
 
-PACKAGE_ROOT = Path(dirname(realpath(__file__)))
+PACKAGE_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = PACKAGE_ROOT / "assets"
 ALEMBIC_INI = ASSETS_DIR / "alembic.ini"
 VERSIONS_DIR = PACKAGE_ROOT / "versions"
@@ -26,10 +26,17 @@ VERSIONS_DIR = PACKAGE_ROOT / "versions"
 Base = declarative_base()
 
 
+class BotPrefix(Base):
+    __tablename__ = "bot_prefixes"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    guild_xid = Column(BigInteger, nullable=False)
+    prefix = Column(String(10), nullable=False)
+
+
 class AuthorizedChannel(Base):
     __tablename__ = "authorized_channels"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    guild = Column(BigInteger, nullable=False)
+    guild_xid = Column(BigInteger, nullable=False)
     name = Column(String(100), nullable=False)
 
 
@@ -100,11 +107,16 @@ class User(Base):
 class Game(Base):
     __tablename__ = "games"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     size = Column(Integer, nullable=False)
     guild_xid = Column(BigInteger, nullable=False)
     users = relationship("User", back_populates="game")
     tags = relationship("Tag", secondary=games_tags, back_populates="games")
+
+    @classmethod
+    def expired(cls, session, window):
+        cutoff = datetime.utcnow() - timedelta(minutes=window)
+        return session.query(Game).filter(Game.created_at < cutoff).all()
 
 
 class Tag(Base):
