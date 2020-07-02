@@ -1,10 +1,21 @@
 did_you_mean: 'Did you mean: $possible?'
+expired: SpellBot has removed you from the queue after waiting $window minutes to
+  try and match you up with other players. Sorry, but unfortunately not enough players
+  were found in that time. Please try again when there's more players available.
 leave: You have been removed from the queue.
 leave_already: You were not in the queue.
+no_dm: That command only works in text channels.
 not_a_command: Sorry, there is no "$request" command.
+not_admin: You do not have admin permissions for this bot.
 queue: You have been entered into the play queue.
 queue_already: You are already in the queue.
 queue_mention_already: Sorry, $user is already in the play queue.
 queue_ready: Your game is ready, go to $url to begin playing!
 queue_size_bad: Game size must be between 2 and 4.
 queue_too_many: Sorry, you mentioned too many people.
+spellbot_channels: 'This bot is now authroized to respond only in: $channels'
+spellbot_channels_none: Please provide a list of channels.
+spellbot_missing_subcommand: Please provide a subcommand when using this command.
+spellbot_prefix: This bot will now use "$prefix" as its command prefix for this server.
+spellbot_prefix_none: Please provide a prefix string.
+spellbot_unknown_subcommand: The subcommand "$command" is not recognized.
