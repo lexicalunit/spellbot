@@ -18,32 +18,13 @@ A Discord bot for [SpellTable][spelltable].
 Once you've connected the bot to your server, you can interact with it over
 Discord via the following commands in any of the authorized channels.
 
-- `!about`: Get information about SpellBot
-- `!help`: Provides detailed help about all of the following commands
-- `!hello`: Says hello
-- `!queue`: Enter into a queue for an EDH game
-- `!leave`: Leave the play queue that you are in
+- `!help`: Provides detailed help about all of the following commands.
+- `!about`: Get information about SpellBot and its creators.
+- `!hello`: Gives you some good tidings.
+- `!queue`: Get in line to play some Magic: The Gathering!
+- `!leave`: Get out of line; it's the opposite of `!queue`.
 
 ## WIP: Commands
-
-### Queue
-
-In a text channel or as a DM to the bot:
-
-```text
-!queue <format> [power level]
-```
-
-- Verifies that you're not in a queue yet
-- Sends a DM to you indicating that you're in the queue
-- When matchmaking is complete:
-  - Creates a SpellTable link
-  - DMs everyone in the match the link
-
-Questions:
-
-- What if someone want's to queue with someone else?
-- Maybe: `!queue <format> [power level] @with_this_person @and_this_person etc... ???
 
 ### Status
 
