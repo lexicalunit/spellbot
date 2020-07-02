@@ -9,10 +9,12 @@ import click
 import discord
 import hupper
 import requests
+from sqlalchemy import exc
+from sqlalchemy.sql import text
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
-from spellbot.data import Data, Tag, User
+from spellbot.data import AuthorizedChannel, BotPrefix, Data, Game, Tag, User
 
 # Application Paths
 RUNTIME_ROOT = Path(".")
@@ -25,19 +27,8 @@ MIGRATIONS_DIR = SCRIPTS_DIR / "migrations"
 # Application Settings
 ADMIN_ROLE = "SpellBot Admin"
 CREATE_ENDPOINT = "https://us-central1-magic-night-30324.cloudfunctions.net/createGame"
-
-
-def discord_user_from_id(channel, user_id):
-    """Returns the discord user from the given channel and user id."""
-    if user_id is None:
-        return None
-    iid = int(user_id)
-    if hasattr(channel, "members"):  # channels
-        members = channel.members
-        return next(filter(lambda member: iid == member.id, members), None)
-    else:  # direct messages
-        recipient = channel.recipient
-        return recipient if recipient.id == user_id else None
+CHECK_INTERVAL_SEC = 30  # TODO: Configurable.
+EXPIRE_WINDOW_MIN = 30  # TODO: Configurable.
 
 
 def is_admin(channel, user_or_member):
@@ -75,12 +66,7 @@ class SpellBot(discord.Client):
     """Discord SpellTable Bot"""
 
     def __init__(
-        self,
-        token="",
-        auth="",
-        db_url=DEFAULT_DB_URL,
-        log_level=logging.ERROR,
-        metrics=False,
+        self, token="", auth="", db_url=DEFAULT_DB_URL, log_level=logging.ERROR,
     ):
         logging.basicConfig(level=log_level)
         loop = asyncio.get_event_loop()
@@ -105,6 +91,38 @@ class SpellBot(discord.Client):
             if hasattr(member[1], "is_command") and member[1].is_command
         ]
 
+        # Start up our periodic task to clean up expired games now.
+        self.cleanup_expired_games_task(loop)
+
+    def cleanup_expired_games_task(self, loop):  # pragma: no cover
+        """Starts a task that deletes old games."""
+
+        async def task():
+            while True:
+                await self.cleanup_expired_games(EXPIRE_WINDOW_MIN)
+                await asyncio.sleep(CHECK_INTERVAL_SEC)
+
+        loop.create_task(task())
+
+    async def cleanup_expired_games(self, window):
+        """Deletes games older than the given window of minutes."""
+        session = self.data.Session()
+        try:
+            expired = Game.expired(session, window)
+            for game in expired:
+                for user in game.users:
+                    discord_user = self.get_user(user.xid)
+                    if discord_user:
+                        await discord_user.send(s("expired", window=window))
+                session.delete(game)
+            session.commit()
+        except exc.SQLAlchemyError as e:
+            logging.error("error: cleanup_expired_games:", e)
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
     def run(self):  # pragma: no cover
         super().run(self.token)
 
@@ -126,10 +144,10 @@ class SpellBot(discord.Client):
         """Returns a list of commands supported by this bot."""
         return self._commands
 
-    async def process(self, message):
+    async def process(self, message, prefix):
         """Process a command message."""
         tokens = message.content.split(" ")
-        request, params = tokens[0].lstrip("!").lower(), tokens[1:]
+        request, params = tokens[0].lstrip(prefix).lower(), tokens[1:]
         params = list(filter(None, params))  # ignore any empty string parameters
         if not request:
             return
@@ -138,16 +156,17 @@ class SpellBot(discord.Client):
             await message.channel.send(s("not_a_command", request=request), file=None)
             return
         if len(matching) > 1 and request not in matching:
-            possible = ", ".join(f"!{m}" for m in matching)
+            possible = ", ".join(f"{prefix}{m}" for m in matching)
             await message.channel.send(s("did_you_mean", possible=possible), file=None)
         else:
             command = request if request in matching else matching[0]
             method = getattr(self, command)
             if not method.allow_dm and str(message.channel.type) == "private":
-                return
+                return await message.author.send(s("no_dm"))
             mentions = message.mentions if message.channel.type != "private" else []
             logging.debug(
-                "%s (channel=%s, author=%s, mentions=%s, params=%s)",
+                "%s%s (channel=%s, author=%s, mentions=%s, params=%s)",
+                prefix,
                 command,
                 message.channel,
                 message.author,
@@ -156,9 +175,10 @@ class SpellBot(discord.Client):
             )
             self.session = self.data.Session()
             try:
-                await method(message.channel, message.author, mentions, params)
+                await method(prefix, message.channel, message.author, mentions, params)
                 self.session.commit()
-            except:
+            except exc.SQLAlchemyError as e:
+                logging.error(f"error: {request}:", e)
                 self.session.rollback()
                 raise
             finally:
@@ -185,20 +205,29 @@ class SpellBot(discord.Client):
             return
 
         # only respond to command-like messages
-        if not message.content.startswith("!"):
+        if not private:
+            rows = self.data.conn.execute(
+                text("SELECT prefix FROM bot_prefixes WHERE guild_xid = :g"),
+                g=message.channel.guild.id,
+            )
+            prefixes = [row.prefix for row in rows]
+            prefix = prefixes[0] if prefixes else "!"
+        else:
+            prefix = "!"
+        if not message.content.startswith(prefix):
             return
 
         if not private:
             # check for admin authorized channels on this server
-            guild_id = message.channel.guild.id
             rows = self.data.conn.execute(
-                f"SELECT * FROM authorized_channels WHERE guild = {guild_id};"
+                text("SELECT name FROM authorized_channels WHERE guild_xid = :g"),
+                g=message.channel.guild.id,
             )
             authorized_channels = set(row["name"] for row in rows)
             if authorized_channels and message.channel.name not in authorized_channels:
                 return
 
-        await self.process(message)
+        await self.process(message, prefix)
 
     async def on_ready(self):
         """Behavior when the client has successfully connected to Discord."""
@@ -228,9 +257,9 @@ class SpellBot(discord.Client):
     # Where [foo] indicates foo is optional and <bar> indicates bar is required.
 
     @command(allow_dm=True)
-    async def help(self, channel, author, mentions, params):
+    async def help(self, prefix, channel, author, mentions, params):
         """
-        Shows this help screen.
+        Sends you this help message.
         """
         usage = "__**SpellBot Usage**__\n"
         for command in self.commands:
@@ -238,9 +267,9 @@ class SpellBot(discord.Client):
             doc = method.__doc__.split("&")
             use, params = doc[0], ", ".join([param.strip() for param in doc[1:]])
             use = inspect.cleandoc(use)
-            use = use.replace("\n", " ")
+            use = use.replace("\n", "\n> ")
 
-            title = f"**!{command}**"
+            title = f"**{prefix}{command}**"
             if params:
                 title = f"{title} _{params}_"
             usage += f"\n{title}"
@@ -250,14 +279,7 @@ class SpellBot(discord.Client):
         await author.send(usage, file=None)
 
     @command(allow_dm=True)
-    async def hello(self, channel, author, mentions, params):
-        """
-        Says hello.
-        """
-        await channel.send("Hello!")
-
-    @command(allow_dm=True)
-    async def about(self, channel, author, mentions, params):
+    async def about(self, prefix, channel, author, mentions, params):
         """
         Get information about SpellBot.
         """
@@ -276,7 +298,8 @@ class SpellBot(discord.Client):
         embed.description = (
             "_A Discord bot for SpellTable._\n"
             "\n"
-            "Use the command `!help` for usage details. Having issues with SpellBot? "
+            f"Use the command `{prefix}help` for usage details. "
+            "Having issues with SpellBot? "
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
         )
         embed.url = "https://github.com/lexicalunit/spellbot"
@@ -285,7 +308,7 @@ class SpellBot(discord.Client):
         await channel.send(embed=embed, file=None)
 
     @command(allow_dm=False)
-    async def queue(self, channel, author, mentions, params):
+    async def queue(self, prefix, channel, author, mentions, params):
         """
         Enter the queue for a game on SpellTable.
 
@@ -295,9 +318,12 @@ class SpellBot(discord.Client):
 
         You can also give a list of tags and you will only be matched against users who
         have the same tags as you. For example, if you want to enter into a cEDH queue
-        you could try `!queue cEDH`. Check with your server for supported tags.
+        you could try `queue cEDH`. Check with your server for supported tags. A valid
+        tag can not be just a number, like `10` for example, nor can it be longer than
+        50 characters.
         & [@mention-1] [@mention-2] [...] [size:N] [tag-1] [tag-2] [...]
         """
+        params = [param.lower() for param in params]
         user = self.ensure_user_exists(author)
         if user.waiting:
             return await author.send(s("queue_already"))
@@ -330,7 +356,10 @@ class SpellBot(discord.Client):
         tag_names = [
             param
             for param in params
-            if not param.startswith("size:") and not param.startswith("@")
+            if not param.startswith("size:")
+            and not param.startswith("@")
+            and not param.isdigit()
+            and not len(param) >= 50
         ]
         if not tag_names:
             tag_names = ["default"]
@@ -349,16 +378,18 @@ class SpellBot(discord.Client):
         if len(user.game.users) == size:
             game_url = self.create_game()
             for player in user.game.users:
-                discord_user = discord_user_from_id(channel, player.xid)
-                await discord_user.send(s("queue_ready", url=game_url))
+                discord_user = self.get_user(player.xid)
+                if discord_user:
+                    await discord_user.send(s("queue_ready", url=game_url))
             self.session.delete(user.game)
         else:
             for player in user.game.users:
-                discord_user = discord_user_from_id(channel, player.xid)
-                await discord_user.send(s("queue"))
+                discord_user = self.get_user(player.xid)
+                if discord_user:
+                    await discord_user.send(s("queue"))
 
     @command(allow_dm=True)
-    async def leave(self, channel, author, mentions, params):
+    async def leave(self, prefix, channel, author, mentions, params):
         """
         Leave your place in the queue.
         """
@@ -368,6 +399,58 @@ class SpellBot(discord.Client):
 
         user.dequeue()
         await author.send(s("leave"))
+
+    @command(allow_dm=False)
+    async def spellbot(self, prefix, channel, author, mentions, params):
+        """
+        Configure SpellBot for your server. Use with one of the following subcommands:
+
+        - channel <list>: Set SpellBot to only respond in the given list of channels
+        - prefix <string>: Set SpellBot prefix for commands in text channels
+        & <subcommand> [subcommand parameters]
+        """
+        if not is_admin(channel, author):
+            return await author.send(s("not_admin"))
+        if not params:
+            return await author.send(s("spellbot_missing_subcommand"))
+        command = params[0]
+        if command == "channels":
+            return await self.spellbot_channels(
+                prefix, channel, author, mentions, params[1:]
+            )
+        elif command == "prefix":
+            return await self.spellbot_prefix(
+                prefix, channel, author, mentions, params[1:]
+            )
+        else:
+            return await author.send(s("spellbot_unknown_subcommand", command=command))
+
+    async def spellbot_channels(self, prefix, channel, author, mentions, params):
+        if not params:
+            return await author.send(s("spellbot_channels_none"))
+        self.session.query(AuthorizedChannel).filter_by(
+            guild_xid=channel.guild.id
+        ).delete()
+        for param in params:
+            self.session.add(AuthorizedChannel(guild_xid=channel.guild.id, name=param))
+        return await author.send(
+            s("spellbot_channels", channels=", ".join([f"#{param}" for param in params]))
+        )
+
+    async def spellbot_prefix(self, prefix, channel, author, mentions, params):
+        if not params:
+            return await author.send(s("spellbot_prefix_none"))
+        prefix_str = params[0][0:10]
+
+        prefix = (
+            self.session.query(BotPrefix)
+            .filter(BotPrefix.guild_xid == channel.guild.id)
+            .first()
+        )
+        if not prefix:
+            prefix = BotPrefix(guild_xid=channel.guild.id, prefix=prefix_str)
+            self.session.add(prefix)
+        return await channel.send(s("spellbot_prefix", prefix=prefix_str))
 
 
 def get_db_url(database_env, fallback):  # pragma: no cover
