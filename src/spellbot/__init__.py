@@ -27,8 +27,8 @@ MIGRATIONS_DIR = SCRIPTS_DIR / "migrations"
 # Application Settings
 ADMIN_ROLE = "SpellBot Admin"
 CREATE_ENDPOINT = "https://us-central1-magic-night-30324.cloudfunctions.net/createGame"
-CHECK_INTERVAL_SEC = 30  # TODO: Configurable.
-EXPIRE_WINDOW_MIN = 30  # TODO: Configurable.
+CHECK_INTERVAL_SEC = 30
+EXPIRE_WINDOW_MIN = 30
 
 
 def is_admin(channel, user_or_member):
@@ -507,9 +507,6 @@ def main(
     # We have to make sure that application directories exist
     # before we try to create we can run any of the migrations.
     ensure_application_directories_exist()
-
-    # TODO: Check that SPELLBOT_TOKEN and SPELLTABLE_AUTH are properly set.
-    # TODO: Add env var to set log level.
 
     client = SpellBot(
         token=getenv("SPELLBOT_TOKEN", None),

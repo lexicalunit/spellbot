@@ -100,8 +100,6 @@ class User(Base):
         if len(self.game.users) == 1:
             session.delete(self.game)
         self.game = None
-        # TODO: Look to merge this user's old game with existing games.
-        # TODO: Add bookkeeping to be able to know if we can break this game's users up.
 
 
 class Game(Base):
