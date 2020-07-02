@@ -314,6 +314,7 @@ def client(monkeypatch, mocker, patch_discord, tmp_path):
     monkeypatch.setattr(spellbot.SpellBot, "cleanup_expired_games_task", MagicMock())
 
     # Fallback to using sqlite for tests, but use the environment variable if it's set.
+    (tmp_path / "spellbot.db").touch()
     db_url = spellbot.get_db_url(
         "TEST_SPELLBOT_DB_URL", f"sqlite:///{tmp_path}/spellbot.db"
     )
