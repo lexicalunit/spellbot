@@ -811,6 +811,14 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             'This bot will now use "$" as its command prefix for this server.'
         )
+        await client.on_message(MockMessage(author, channel, "$spellbot prefix !"))
+        assert channel.last_sent_response == (
+            'This bot will now use "!" as its command prefix for this server.'
+        )
+        await client.on_message(MockMessage(author, channel, "!spellbot prefix )"))
+        assert channel.last_sent_response == (
+            'This bot will now use ")" as its command prefix for this server.'
+        )
 
 
 class TestMigrations:
