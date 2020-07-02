@@ -441,28 +441,31 @@ class SpellBot(discord.Client):
         if not params:
             return await author.send(s("spellbot_prefix_none"))
         prefix_str = params[0][0:10]
-
         prefix = (
             self.session.query(BotPrefix)
             .filter(BotPrefix.guild_xid == channel.guild.id)
             .first()
         )
-        if not prefix:
-            prefix = BotPrefix(guild_xid=channel.guild.id, prefix=prefix_str)
-            self.session.add(prefix)
+        if prefix:
+            prefix.prefix = prefix_str
+        else:
+            self.session.add(BotPrefix(guild_xid=channel.guild.id, prefix=prefix_str))
         return await channel.send(s("spellbot_prefix", prefix=prefix_str))
+
+
+def get_db_env(fallback):  # pragma: no cover
+    """Returns the database env var from the environment or else the given gallback."""
+    return getenv("SPELLTABLE_DB_ENV", fallback)
 
 
 def get_db_url(database_env, fallback):  # pragma: no cover
     """Returns the database url from the environment or else the given fallback."""
-    value = getenv(database_env, fallback)
-    return value or fallback
+    return getenv(database_env, fallback)
 
 
 def get_log_level(fallback):  # pragma: no cover
     """Returns the log level from the environment or else the given gallback."""
-    value = getenv("SPELLTABLE_LOG_LEVEL", fallback)
-    return value or fallback
+    return getenv("SPELLTABLE_LOG_LEVEL", fallback)
 
 
 @click.command()
@@ -471,6 +474,7 @@ def get_log_level(fallback):  # pragma: no cover
     "--log-level",
     type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]),
     default="ERROR",
+    help="Can also be set by the environment variable SPELLTABLE_LOG_LEVEL.",
 )
 @click.option("-v", "--verbose", count=True, help="Sets log level to DEBUG.")
 @click.option(
@@ -489,6 +493,7 @@ def get_log_level(fallback):  # pragma: no cover
         "By default SpellBot look in the environment variable SPELLBOT_DB_URL for the "
         "database connection string. If you need it to look in a different variable "
         "you can set it with this option. For example Heroku uses DATABASE_URL."
+        "Can also be set by the environment variable SPELLTABLE_DB_ENV."
     ),
 )
 @click.version_option(version=__version__)
@@ -501,6 +506,7 @@ def get_log_level(fallback):  # pragma: no cover
 def main(
     log_level, verbose, database_url, database_env, dev,
 ):  # pragma: no cover
+    database_env = get_db_env(database_env)
     database_url = get_db_url(database_env, database_url)
     log_level = get_log_level(log_level)
 
