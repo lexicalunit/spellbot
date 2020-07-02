@@ -28,9 +28,9 @@ Discord via the following commands in any of the authorized channels.
 
 ### 👑 Administration
 
-- `!spellbot`: Admin commands to configure SpellBot for your server.
+- `!spellbot`: Admin subcommands to configure SpellBot for your server.
 
-#### ❗ Administration Subcommands
+**Subcommands:**
 
 - `channels`: Set the channels SpellBot is allowed to operate within.
 - `prefix`: Set the command prefix for SpellBot in text channels.
