@@ -5,13 +5,12 @@ import re
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from os import chdir
-from os.path import dirname, realpath
 from pathlib import Path
 from subprocess import run
 from unittest.mock import MagicMock, Mock
+from warnings import warn
 
 import pytest
-import pytz
 import toml
 
 import spellbot
@@ -205,6 +204,11 @@ class MockDiscordClient:
     def __init__(self, **kwargs):
         self.user = ADMIN
 
+    def get_user(self, user_id):
+        for user in ALL_USERS:
+            if user.id == user_id:
+                return user
+
 
 ##############################
 # Test Suite Constants
@@ -215,15 +219,12 @@ CLIENT_AUTH = "my-auth"
 CLIENT_USER = "ADMIN"
 CLIENT_USER_ID = 82226367030108160
 
-AUTHORIZED_CHANNEL = "good channel"
-UNAUTHORIZED_CHANNEL = "bad channel"
+AUTHORIZED_CHANNEL = "good-channel"
+UNAUTHORIZED_CHANNEL = "bad-channel"
 
-NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
-LAST_SUNDAY = datetime(year=1982, month=4, day=18, tzinfo=pytz.utc)
-
-TST_ROOT = dirname(realpath(__file__))
-FIXTURES_ROOT = Path(TST_ROOT) / "fixtures"
-REPO_ROOT = Path(TST_ROOT).parent
+TST_ROOT = Path(__file__).resolve().parent
+FIXTURES_ROOT = TST_ROOT / "fixtures"
+REPO_ROOT = TST_ROOT.parent
 SRC_ROOT = REPO_ROOT / "src"
 
 SRC_DIRS = [REPO_ROOT / "tests", SRC_ROOT / "spellbot", REPO_ROOT / "scripts"]
@@ -305,11 +306,12 @@ def set_random_seed():
 
 
 @pytest.fixture
-def client(monkeypatch, mocker, freezer, patch_discord, tmp_path):
+def client(monkeypatch, mocker, patch_discord, tmp_path):
+    # Keep track of strings used in the test suite.
     monkeypatch.setattr(spellbot, "s", S_SPY)
 
-    # Unless changed in the test itself, all tests will assume the same datetime.
-    freezer.move_to(NOW)
+    # Don't actually begin the cleanup_expired_games_task during tests.
+    monkeypatch.setattr(spellbot.SpellBot, "cleanup_expired_games_task", MagicMock())
 
     # Fallback to using sqlite for tests, but use the environment variable if it's set.
     db_url = spellbot.get_db_url(
@@ -410,6 +412,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(someone(), channel, " !   !"))
         channel.sent.assert_not_called()
 
+    @pytest.mark.skip(reason="can only be tested when ambiguity is possible")
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_ambiguous_request(self, client, channel):
         author = someone()
@@ -442,7 +445,58 @@ class TestSpellBot:
     async def test_on_message_queue_dm(self, client):
         author = someone()
         await client.on_message(MockMessage(author, private_channel(), "!queue"))
-        assert author.all_sent_calls == []
+        assert author.last_sent_response == "That command only works in text channels."
+
+    async def test_on_message_spellbot_dm(self, client):
+        author = an_admin()
+        channel = private_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot channels foo"))
+        assert author.last_sent_response == "That command only works in text channels."
+
+    async def test_on_message_spellbot_non_admin(self, client):
+        author = not_an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot channels foo"))
+        assert author.last_sent_response == (
+            "You do not have admin permissions for this bot."
+        )
+
+    async def test_on_message_spellbot_no_subcommand(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot"))
+        assert author.last_sent_response == (
+            "Please provide a subcommand when using this command."
+        )
+
+    async def test_on_message_spellbot_bad_subcommand(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot foo"))
+        assert author.last_sent_response == 'The subcommand "foo" is not recognized.'
+
+    async def test_on_message_spellbot_channels_none(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot channels"))
+        assert author.last_sent_response == "Please provide a list of channels."
+
+    async def test_on_message_spellbot_channels(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(
+            MockMessage(author, channel, f"!spellbot channels {AUTHORIZED_CHANNEL}")
+        )
+        assert author.last_sent_response == (
+            f"This bot is now authroized to respond only in: #{AUTHORIZED_CHANNEL}"
+        )
+        await client.on_message(
+            MockMessage(author, channel, "!spellbot channels foo bar baz")
+        )
+        resp = "This bot is now authroized to respond only in: #foo, #bar, #baz"
+        assert author.last_sent_response == resp
+        await client.on_message(MockMessage(author, channel, "!help"))  # bad channel now
+        assert author.last_sent_response == resp
 
     async def test_on_message_queue(self, client):
         channel = text_channel()
@@ -497,27 +551,21 @@ class TestSpellBot:
 
     async def test_on_message_queue_cedh_and_proxy(self, client):
         channel = text_channel()
-        print("### 1")
         await client.on_message(MockMessage(GUY, channel, "!queue cedh proxy"))
         assert GUY.last_sent_response == "You have been entered into the play queue."
 
-        print("### 2")
         await client.on_message(MockMessage(GUY, channel, "!queue cedh proxy"))
         assert GUY.last_sent_response == "You are already in the queue."
 
-        print("### 3")
         await client.on_message(MockMessage(FRIEND, channel, "!queue cedh proxy"))
         assert FRIEND.last_sent_response == "You have been entered into the play queue."
 
-        print("### 4")
         await client.on_message(MockMessage(BUDDY, channel, "!queue cedh proxy"))
         assert BUDDY.last_sent_response == "You have been entered into the play queue."
 
-        print("### 5")
         await client.on_message(MockMessage(AMY, channel, "!queue proxy"))
         assert AMY.last_sent_response == "You have been entered into the play queue."
 
-        print("### 6")
         await client.on_message(MockMessage(DUDE, channel, "!queue cedh proxy"))
         ready = "Your game is ready, go to http://example.com/game to begin playing!"
         assert GUY.last_sent_response == ready
@@ -632,6 +680,8 @@ class TestSpellBot:
         assert DUDE.last_sent_response == resp
 
     async def test_on_message_queue_3_then_3_then_1_then_1(self, client, freezer):
+        NOW = datetime.utcnow()
+        freezer.move_to(NOW)
         channel = text_channel()
         mentions = [GUY, BUDDY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
@@ -643,7 +693,6 @@ class TestSpellBot:
         assert BUDDY.last_sent_response == resp
 
         freezer.move_to(NOW + timedelta(minutes=5))
-
         mentions = [JR, ADAM]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!queue {mentions_str}"
@@ -654,7 +703,6 @@ class TestSpellBot:
         assert ADAM.last_sent_response == resp
 
         freezer.move_to(NOW + timedelta(minutes=10))
-
         await client.on_message(MockMessage(DUDE, channel, content))
         resp = "Your game is ready, go to http://example.com/game to begin playing!"
         assert FRIEND.last_sent_response == resp
@@ -663,7 +711,6 @@ class TestSpellBot:
         assert DUDE.last_sent_response == resp
 
         freezer.move_to(NOW + timedelta(minutes=15))
-
         await client.on_message(MockMessage(JACOB, channel, content))
         resp = "Your game is ready, go to http://example.com/game to begin playing!"
         assert AMY.last_sent_response == resp
@@ -728,6 +775,42 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(author, channel, "!queue size:2"))
         assert author.last_sent_response == "You are already in the queue."
+
+    async def test_on_message_queue_then_expire(self, client, freezer):
+        NOW = datetime.utcnow()
+        freezer.move_to(NOW)
+        channel = text_channel()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!queue"))
+        assert author.last_sent_response == "You have been entered into the play queue."
+        freezer.move_to(NOW + timedelta(minutes=10))
+        await client.cleanup_expired_games(window=5)
+        assert author.last_sent_response == (
+            "SpellBot has removed you from the queue after waiting 5 minutes to try and"
+            " match you up with other players. Sorry, but unfortunately not enough"
+            " players were found in that time. Please try again when there's more"
+            " players available."
+        )
+
+    async def test_on_message_spellbot_prefix_none(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot prefix"))
+        assert author.last_sent_response == "Please provide a prefix string."
+
+    async def test_on_message_spellbot_prefix(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot prefix $"))
+        assert channel.last_sent_response == (
+            'This bot will now use "$" as its command prefix for this server.'
+        )
+        await client.on_message(MockMessage(author, channel, "$queue"))
+        assert author.last_sent_response == "You have been entered into the play queue."
+        await client.on_message(MockMessage(author, channel, "$spellbot prefix $"))
+        assert channel.last_sent_response == (
+            'This bot will now use "$" as its command prefix for this server.'
+        )
 
 
 class TestMigrations:
@@ -832,6 +915,9 @@ class TestMeta:
         """Assues that there are no missing or unused strings data."""
         used_keys = set(s_call[0][0] for s_call in S_SPY.call_args_list)
         config_keys = set(load_strings().keys())
+        if "did_you_mean" not in used_keys:
+            warn('strings.yaml key "did_you_mean" is unused in test suite')
+            used_keys.add("did_you_mean")
         assert config_keys - used_keys == set()
 
     # Tracks the usage of snapshot files over the entire test session.

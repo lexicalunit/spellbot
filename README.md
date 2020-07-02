@@ -20,15 +20,24 @@ Discord via the following commands in any of the authorized channels.
 
 - `!help`: Provides detailed help about all of the following commands.
 - `!about`: Get information about SpellBot and its creators.
-- `!hello`: Gives you some good tidings.
+
+### ✋ Queueing
+
 - `!queue`: Get in line to play some Magic: The Gathering!
 - `!leave`: Get out of line; it's the opposite of `!queue`.
 
-## WIP: Commands
+### 👑 Administration
+
+- `!spellbot`: Admin commands to configure SpellBot for your server.
+
+#### ❗ Administration Subcommands
+
+- `channels`: Set the channels SpellBot is allowed to operate within.
+- `prefix`: Set the command prefix for SpellBot in text channels.
+
+## 🔮 Future Work
 
 ### Status
-
-As a DM to the bot:
 
 ```text
 !status
@@ -38,8 +47,6 @@ As a DM to the bot:
 - Possibly give you some status on your history of games and win/lose
 
 ### Reporting
-
-In a text channel:
 
 ```text
 !report win @username[, @username, @username, ...]
@@ -54,8 +61,6 @@ In a text channel:
 - Do we need a `!report loss` command for any reason?
 
 ### Moderation
-
-As a DM to the bot by an authorized user:
 
 ```text
 !ban @username <reason> [minutes]
@@ -107,12 +112,19 @@ As a DM to the bot by an authorized user:
 
 ### Concerns / Thoughts / Ideas
 
-- After a game is created, it needs to expire at some point
 - After a report is done, how long until the report command stops working
 - Does a user's game need to be reported before they can re-queue?
 - What happens if a game is never reported on?
 - When matchmaking w/ power levels, does it need to be a 100% match, +/- how much?
 - What about using ELO to match make?
+- Cleanup unused tags
+- Ask to confirm when added queue by a mention
+- User preferences:
+  - contact info
+  - default tags
+  - beta/prod
+  - etc...?
+- Limit the number of tags per game
 
 ## 🤖 Running SpellBot
 
