@@ -276,6 +276,11 @@ class SpellBot(discord.Client):
             usage += f"\n>  {use}"
             usage += "\n"
         usage += "\n_SpellBot created by amy@lexicalunit.com_"
+        usage += "\n"
+        usage += (
+            "\n💜 You can help keep SpellBot running by supporting me on ko-fi! "
+            "<https://ko-fi.com/Y8Y51VTHZ>"
+        )
         await author.send(usage, file=None)
 
     @command(allow_dm=True)
@@ -296,11 +301,14 @@ class SpellBot(discord.Client):
         author = "[@lexicalunit](https://github.com/lexicalunit)"
         embed.add_field(name="Author", value=author)
         embed.description = (
-            "_A Discord bot for SpellTable._\n"
+            "_A Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
             "\n"
             f"Use the command `{prefix}help` for usage details. "
             "Having issues with SpellBot? "
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
+            "\n"
+            "💜 Help keep SpellBot running and "
+            "[support me on ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
         )
         embed.url = "https://github.com/lexicalunit/spellbot"
         embed.set_footer(text="MIT © amy@lexicalunit et al")
