@@ -15,7 +15,7 @@ A Discord bot for [SpellTable][spelltable].
 
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)][ko-fi]
 
-## 📱 Using SpellBot
+## 🤖 Using SpellBot
 
 Once you've connected the bot to your server, you can interact with it over
 Discord via the following commands in any of the authorized channels.
@@ -49,7 +49,7 @@ first know that we have a documented [code of conduct](CODE_OF_CONDUCT.md) and
 then see our [documentation on how to contribute](CONTRIBUTING.md) for details
 on how to get started.
 
-## 🤖 Running SpellBot Yourself
+## 🔧 Running SpellBot Yourself
 
 First install `spellbot` using [`pip`](https://pip.pypa.io/en/stable/):
 
