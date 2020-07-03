@@ -13,6 +13,7 @@ queue_mention_already: Sorry, $user is already in the play queue.
 queue_ready: Your game is ready, go to $url to begin playing!
 queue_size_bad: Game size must be between 2 and 4.
 queue_too_many: Sorry, you mentioned too many people.
+queue_too_many_tags: Sorry, you can not use more than 5 tags.
 spellbot_channels: 'This bot is now authroized to respond only in: $channels'
 spellbot_channels_none: Please provide a list of channels.
 spellbot_missing_subcommand: Please provide a subcommand when using this command.
