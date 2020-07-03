@@ -14,9 +14,14 @@ queue_ready: Your game is ready, go to $url to begin playing!
 queue_size_bad: Game size must be between 2 and 4.
 queue_too_many: Sorry, you mentioned too many people.
 queue_too_many_tags: Sorry, you can not use more than 5 tags.
+queue_with_average: You have been entered into the play queue. The current average
+  queue wait time is $average seconds.
 spellbot_channels: 'This bot is now authroized to respond only in: $channels'
 spellbot_channels_none: Please provide a list of channels.
 spellbot_missing_subcommand: Please provide a subcommand when using this command.
 spellbot_prefix: This bot will now use "$prefix" as its command prefix for this server.
 spellbot_prefix_none: Please provide a prefix string.
 spellbot_unknown_subcommand: The subcommand "$command" is not recognized.
+status: The average queue wait time is currently $average seconds.
+status_unknown: There is not enough information to calculate the current average queue
+  wait time right now.
