@@ -371,6 +371,8 @@ class SpellBot(discord.Client):
         ]
         if not tag_names:
             tag_names = ["default"]
+        if len(tag_names) > 5:
+            return await author.send(s("queue_too_many_tags"))
         for tag_name in tag_names:
             tag = self.session.query(Tag).filter_by(name=tag_name).first()
             if not tag:
