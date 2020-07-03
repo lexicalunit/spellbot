@@ -21,6 +21,9 @@ spellbot_channels_none: Please provide a list of channels.
 spellbot_missing_subcommand: Please provide a subcommand when using this command.
 spellbot_prefix: This bot will now use "$prefix" as its command prefix for this server.
 spellbot_prefix_none: Please provide a prefix string.
+spellbot_scope: 'Matchmaking on this server is now set to: $scope.'
+spellbot_scope_bad: Sorry, scope should be either "server" or "channel".
+spellbot_scope_none: Please provide a scope string.
 spellbot_unknown_subcommand: The subcommand "$command" is not recognized.
 status: The average queue wait time is currently $average seconds.
 status_unknown: There is not enough information to calculate the current average queue

@@ -32,34 +32,37 @@ class WaitTime(Base):
     __tablename__ = "wait_times"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     guild_xid = Column(BigInteger, nullable=False)
+    channel_xid = Column(BigInteger)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     seconds = Column(Integer, nullable=False)
 
     @classmethod
-    def log(cls, session, guild_xid, seconds):
-        session.add(WaitTime(guild_xid=guild_xid, seconds=seconds))
+    def log(cls, session, *, guild_xid, channel_xid, seconds):
+        row = WaitTime(guild_xid=guild_xid, channel_xid=channel_xid, seconds=seconds)
+        session.add(row)
 
     @classmethod
-    def average(cls, session, guild_xid, window_min):
+    def average(cls, session, *, guild_xid, channel_xid, scope, window_min):
+        filters = [
+            WaitTime.guild_xid == guild_xid,
+            WaitTime.created_at > datetime.utcnow() - timedelta(minutes=window_min),
+        ]
+        if scope == "channel":
+            filters.append(WaitTime.channel_xid == channel_xid)
         row = (
             session.query(label("average", func.sum(WaitTime.seconds) / func.count()))
-            .filter(
-                and_(
-                    WaitTime.guild_xid == guild_xid,
-                    WaitTime.created_at
-                    > datetime.utcnow() - timedelta(minutes=window_min),
-                )
-            )
+            .filter(and_(*filters))
             .one_or_none()
         )
         return row.average if row else None
 
 
-class BotPrefix(Base):
-    __tablename__ = "bot_prefixes"
+class Server(Base):
+    __tablename__ = "servers"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     guild_xid = Column(BigInteger, nullable=False)
-    prefix = Column(String(10), nullable=False)
+    prefix = Column(String(10), nullable=False, default="!")
+    scope = Column(String(10), nullable=False, default="server")
 
 
 class AuthorizedChannel(Base):
@@ -89,8 +92,9 @@ class User(Base):
     def waiting(self):
         return self.game is not None
 
-    def enqueue(self, *, size, guild_xid, include, tags):
+    def enqueue(self, *, server, include, size, tags):
         session = Session.object_session(self)
+        guild_xid = server.guild_xid
         required_tag_ids = set(tag.id for tag in tags)
         considerations = (
             session.query(games_tags.c.game_id, func.count(games_tags.c.game_id))
@@ -145,7 +149,7 @@ class Game(Base):
     tags = relationship("Tag", secondary=games_tags, back_populates="games")
 
     @classmethod
-    def expired(cls, session, window):
+    def expired(cls, session, *, window):
         cutoff = datetime.utcnow() - timedelta(minutes=window)
         return session.query(Game).filter(Game.created_at < cutoff).all()
 

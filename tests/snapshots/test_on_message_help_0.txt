@@ -21,12 +21,17 @@ __**SpellBot Usage**__
 > you could try `queue cEDH`. Check with your server for supported tags. A valid
 > tag can not be just a number, like `10` for example, nor can it be longer than
 > 50 characters.
+> 
+> If the scope for your server is set to "channel" then matchmaking will only happen
+> between other players who alos enter the queue in the same channel as yourself.
+> The default scope however is server wide.
 
 **!spellbot** _<subcommand> [subcommand parameters]_
 >  Configure SpellBot for your server. Use with one of the following subcommands:
 > 
 > - channel <list>: Set SpellBot to only respond in the given list of channels
 > - prefix <string>: Set SpellBot prefix for commands in text channels
+> - scope [server|channel]: Set matchmaking scope to server-wide or channel-only
 
 **!status**
 >  Show some details about the queues on your server.

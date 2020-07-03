@@ -37,6 +37,7 @@ Discord via the following commands in any of the authorized channels.
 
 - `channels`: Set the channels SpellBot is allowed to operate within.
 - `prefix`: Set the command prefix for SpellBot in text channels.
+- `scope`: Set the matchmaking scope to server-wide or channel-specific.
 
 ## 🙌 Support Me
 

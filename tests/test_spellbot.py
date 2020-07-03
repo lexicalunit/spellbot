@@ -897,6 +897,48 @@ class TestSpellBot:
             "queue wait time right now."
         )
 
+    async def test_on_message_spellbot_scope_none(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot scope"))
+        assert author.last_sent_response == "Please provide a scope string."
+
+    async def test_on_message_spellbot_scope_bad(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot scope world"))
+        assert author.last_sent_response == (
+            'Sorry, scope should be either "server" or "channel".'
+        )
+
+    async def test_on_message_spellbot_scope(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot scope channel"))
+        assert channel.last_sent_response == (
+            "Matchmaking on this server is now set to: channel."
+        )
+        await client.on_message(MockMessage(author, channel, "!spellbot scope server"))
+        assert channel.last_sent_response == (
+            "Matchmaking on this server is now set to: server."
+        )
+
+    async def test_on_message_play_with_scope(self, client):
+        channel_a = MockTextChannel(1, "channel_a", members=CHANNEL_MEMBERS)
+        channel_b = MockTextChannel(2, "channel_b", members=CHANNEL_MEMBERS)
+        admin = an_admin()
+        await client.on_message(MockMessage(admin, channel_a, "!spellbot scope channel"))
+
+        await client.on_message(MockMessage(GUY, channel_a, "!play size:2"))
+        assert GUY.last_sent_response == "You have been entered into the play queue."
+        await client.on_message(MockMessage(DUDE, channel_b, "!play size:2"))
+        assert DUDE.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(BUDDY, channel_a, "!play size:2"))
+        resp = "Your game is ready, go to http://example.com/game to begin playing!"
+        assert BUDDY.last_sent_response == resp
+        assert GUY.last_sent_response == resp
+
 
 class TestMigrations:
     def test_alembic(self, tmp_path):
