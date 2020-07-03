@@ -15,7 +15,7 @@ from sqlalchemy.sql import text
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
-from spellbot.data import AuthorizedChannel, BotPrefix, Data, Game, Tag, User, WaitTime
+from spellbot.data import AuthorizedChannel, Data, Game, Server, Tag, User, WaitTime
 
 # Application Paths
 RUNTIME_ROOT = Path(".")
@@ -115,7 +115,7 @@ class SpellBot(discord.Client):
         """Deletes games older than the given window of minutes."""
         session = self.data.Session()
         try:
-            expired = Game.expired(session, window)
+            expired = Game.expired(session, window=window)
             for game in expired:
                 for user in game.users:
                     discord_user = self.get_user(user.xid)
@@ -169,6 +169,14 @@ class SpellBot(discord.Client):
             db_user = User(xid=user.id)
             self.session.add(db_user)
         return db_user
+
+    def ensure_server_exists(self, guild_xid):
+        """Ensures that the server row exists for the given discord guild id."""
+        server = self.session.query(Server).filter(Server.guild_xid == guild_xid).first()
+        if not server:
+            server = Server(guild_xid=guild_xid)
+            self.session.add(server)
+        return server
 
     @property
     def commands(self):
@@ -238,7 +246,7 @@ class SpellBot(discord.Client):
         # only respond to command-like messages
         if not private:
             rows = self.data.conn.execute(
-                text("SELECT prefix FROM bot_prefixes WHERE guild_xid = :g"),
+                text("SELECT prefix FROM servers WHERE guild_xid = :g"),
                 g=message.channel.guild.id,
             )
             prefixes = [row.prefix for row in rows]
@@ -360,6 +368,10 @@ class SpellBot(discord.Client):
         you could try `queue cEDH`. Check with your server for supported tags. A valid
         tag can not be just a number, like `10` for example, nor can it be longer than
         50 characters.
+
+        If the scope for your server is set to "channel" then matchmaking will only happen
+        between other players who alos enter the queue in the same channel as yourself.
+        The default scope however is server wide.
         & [@mention-1] [@mention-2] [...] [size:N] [tag-1] [tag-2] [...]
         """
         params = [param.lower() for param in params]
@@ -411,8 +423,8 @@ class SpellBot(discord.Client):
                 self.session.add(tag)
             tags.append(tag)
 
-        guild_xid = channel.guild.id
-        user.enqueue(size=size, guild_xid=guild_xid, include=mentioned_users, tags=tags)
+        server = self.ensure_server_exists(channel.guild.id)
+        user.enqueue(server=server, include=mentioned_users, size=size, tags=tags)
 
         if len(user.game.users) == size:
             self.session.commit()  # must commit before we can delete
@@ -423,10 +435,21 @@ class SpellBot(discord.Client):
                     await discord_user.send(s("play_ready", url=game_url))
                 dequeue_at = datetime.utcnow()
                 seconds = (dequeue_at - player.queued_at).total_seconds()
-                WaitTime.log(self.session, guild_xid=guild_xid, seconds=seconds)
+                WaitTime.log(
+                    self.session,
+                    guild_xid=server.guild_xid,
+                    channel_xid=channel.id,
+                    seconds=seconds,
+                )
             self.session.delete(user.game)
         else:
-            average = WaitTime.average(self.session, guild_xid, EXPIRE_WAITS_WINDOW_MIN)
+            average = WaitTime.average(
+                self.session,
+                guild_xid=server.guild_xid,
+                channel_xid=channel.id,
+                scope=server.scope,
+                window_min=EXPIRE_WAITS_WINDOW_MIN,
+            )
             for player in user.game.users:
                 discord_user = self.get_user(player.xid)
                 if discord_user:
@@ -454,10 +477,16 @@ class SpellBot(discord.Client):
         """
         Show some details about the queues on your server.
         """
-        guild_xid = channel.guild.id
-        avg = WaitTime.average(self.session, guild_xid, EXPIRE_WAITS_WINDOW_MIN)
-        if avg:
-            await channel.send(s("status", average=f"{avg:.2f}"))
+        server = self.ensure_server_exists(channel.guild.id)
+        average = WaitTime.average(
+            self.session,
+            guild_xid=server.guild_xid,
+            channel_xid=channel.id,
+            scope=server.scope,
+            window_min=EXPIRE_WAITS_WINDOW_MIN,
+        )
+        if average:
+            await channel.send(s("status", average=f"{average:.2f}"))
         else:
             await channel.send(s("status_unknown"))
 
@@ -468,6 +497,7 @@ class SpellBot(discord.Client):
 
         - channel <list>: Set SpellBot to only respond in the given list of channels
         - prefix <string>: Set SpellBot prefix for commands in text channels
+        - scope [server|channel]: Set matchmaking scope to server-wide or channel-only
         & <subcommand> [subcommand parameters]
         """
         if not is_admin(channel, author):
@@ -481,6 +511,10 @@ class SpellBot(discord.Client):
             )
         elif command == "prefix":
             return await self.spellbot_prefix(
+                prefix, channel, author, mentions, params[1:]
+            )
+        elif command == "scope":
+            return await self.spellbot_scope(
                 prefix, channel, author, mentions, params[1:]
             )
         else:
@@ -502,16 +536,33 @@ class SpellBot(discord.Client):
         if not params:
             return await author.send(s("spellbot_prefix_none"))
         prefix_str = params[0][0:10]
-        prefix = (
-            self.session.query(BotPrefix)
-            .filter(BotPrefix.guild_xid == channel.guild.id)
-            .first()
+        server = (
+            self.session.query(Server)
+            .filter(Server.guild_xid == channel.guild.id)
+            .one_or_none()
         )
-        if prefix:
-            prefix.prefix = prefix_str
+        if server:
+            server.prefix = prefix_str
         else:
-            self.session.add(BotPrefix(guild_xid=channel.guild.id, prefix=prefix_str))
+            self.session.add(Server(guild_xid=channel.guild.id, prefix=prefix_str))
         return await channel.send(s("spellbot_prefix", prefix=prefix_str))
+
+    async def spellbot_scope(self, prefix, channel, author, mentions, params):
+        if not params:
+            return await author.send(s("spellbot_scope_none"))
+        scope_str = params[0].lower()
+        if scope_str not in ("server", "channel"):
+            return await author.send(s("spellbot_scope_bad"))
+        server = (
+            self.session.query(Server)
+            .filter(Server.guild_xid == channel.guild.id)
+            .one_or_none()
+        )
+        if server:
+            server.scope = scope_str
+        else:
+            self.session.add(Server(guild_xid=channel.guild.id, scope=scope_str))
+        return await channel.send(s("spellbot_scope", scope=scope_str))
 
 
 def get_db_env(fallback):  # pragma: no cover
