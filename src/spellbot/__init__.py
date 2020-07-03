@@ -347,7 +347,7 @@ class SpellBot(discord.Client):
         await channel.send(embed=embed, file=None)
 
     @command(allow_dm=False)
-    async def queue(self, prefix, channel, author, mentions, params):
+    async def play(self, prefix, channel, author, mentions, params):
         """
         Enter the queue for a game on SpellTable.
 
@@ -365,7 +365,7 @@ class SpellBot(discord.Client):
         params = [param.lower() for param in params]
         user = self.ensure_user_exists(author)
         if user.waiting:
-            return await author.send(s("queue_already"))
+            return await author.send(s("play_already"))
 
         def to_int(s):
             try:
@@ -379,16 +379,16 @@ class SpellBot(discord.Client):
                 size = to_int(param.replace("size:", ""))
 
         if not size or not (1 < size < 5):
-            return await author.send(s("queue_size_bad"))
+            return await author.send(s("play_size_bad"))
 
         if len(mentions) >= size:
-            return await author.send(s("queue_too_many"))
+            return await author.send(s("play_too_many"))
 
         mentioned_users = []
         for mentioned in mentions:
             mentioned_user = self.ensure_user_exists(mentioned)
             if mentioned_user.waiting:
-                return await author.send(s("queue_mention_already", user=mentioned))
+                return await author.send(s("play_mention_already", user=mentioned))
             mentioned_users.append(mentioned_user)
 
         tags = []
@@ -403,7 +403,7 @@ class SpellBot(discord.Client):
         if not tag_names:
             tag_names = ["default"]
         if len(tag_names) > 5:
-            return await author.send(s("queue_too_many_tags"))
+            return await author.send(s("play_too_many_tags"))
         for tag_name in tag_names:
             tag = self.session.query(Tag).filter_by(name=tag_name).first()
             if not tag:
@@ -420,7 +420,7 @@ class SpellBot(discord.Client):
             for player in user.game.users:
                 discord_user = self.get_user(player.xid)
                 if discord_user:
-                    await discord_user.send(s("queue_ready", url=game_url))
+                    await discord_user.send(s("play_ready", url=game_url))
                 dequeue_at = datetime.utcnow()
                 seconds = (dequeue_at - player.queued_at).total_seconds()
                 WaitTime.log(self.session, guild_xid=guild_xid, seconds=seconds)
@@ -432,10 +432,10 @@ class SpellBot(discord.Client):
                 if discord_user:
                     if average:
                         await discord_user.send(
-                            s("queue_with_average", average=f"{average:.2f}")
+                            s("play_with_average", average=f"{average:.2f}")
                         )
                     else:
-                        await discord_user.send(s("queue"))
+                        await discord_user.send(s("play"))
 
     @command(allow_dm=True)
     async def leave(self, prefix, channel, author, mentions, params):

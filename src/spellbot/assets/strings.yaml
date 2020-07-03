@@ -7,14 +7,14 @@ leave_already: You were not in the queue.
 no_dm: That command only works in text channels.
 not_a_command: Sorry, there is no "$request" command.
 not_admin: You do not have admin permissions for this bot.
-queue: You have been entered into the play queue.
-queue_already: You are already in the queue.
-queue_mention_already: Sorry, $user is already in the play queue.
-queue_ready: Your game is ready, go to $url to begin playing!
-queue_size_bad: Game size must be between 2 and 4.
-queue_too_many: Sorry, you mentioned too many people.
-queue_too_many_tags: Sorry, you can not use more than 5 tags.
-queue_with_average: You have been entered into the play queue. The current average
+play: You have been entered into the play queue.
+play_already: You are already in the queue.
+play_mention_already: Sorry, $user is already in the play queue.
+play_ready: Your game is ready, go to $url to begin playing!
+play_size_bad: Game size must be between 2 and 4.
+play_too_many: Sorry, you mentioned too many people.
+play_too_many_tags: Sorry, you can not use more than 5 tags.
+play_with_average: You have been entered into the play queue. The current average
   queue wait time is $average seconds.
 spellbot_channels: 'This bot is now authroized to respond only in: $channels'
 spellbot_channels_none: Please provide a list of channels.
