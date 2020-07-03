@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import logging
+from datetime import datetime, timedelta
 from functools import wraps
 from os import getenv
 from pathlib import Path
@@ -14,7 +15,7 @@ from sqlalchemy.sql import text
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
-from spellbot.data import AuthorizedChannel, BotPrefix, Data, Game, Tag, User
+from spellbot.data import AuthorizedChannel, BotPrefix, Data, Game, Tag, User, WaitTime
 
 # Application Paths
 RUNTIME_ROOT = Path(".")
@@ -27,8 +28,10 @@ MIGRATIONS_DIR = SCRIPTS_DIR / "migrations"
 # Application Settings
 ADMIN_ROLE = "SpellBot Admin"
 CREATE_ENDPOINT = "https://us-central1-magic-night-30324.cloudfunctions.net/createGame"
-CHECK_INTERVAL_SEC = 30
-EXPIRE_WINDOW_MIN = 30
+EXPIRE_GAMES_INTERVAL_SEC = 30
+EXPIRE_GAMES_WINDOW_MIN = 30
+EXPIRE_WAITS_INTERVAL_SEC = 300
+EXPIRE_WAITS_WINDOW_MIN = 30
 
 
 def is_admin(channel, user_or_member):
@@ -91,16 +94,20 @@ class SpellBot(discord.Client):
             if hasattr(member[1], "is_command") and member[1].is_command
         ]
 
-        # Start up our periodic task to clean up expired games now.
+        self._begin_background_tasks(loop)
+
+    def _begin_background_tasks(self, loop):  # pragma: no cover
+        """Start up any periodic background tasks."""
         self.cleanup_expired_games_task(loop)
+        self.cleanup_expired_wait_times_task(loop)
 
     def cleanup_expired_games_task(self, loop):  # pragma: no cover
         """Starts a task that deletes old games."""
 
         async def task():
             while True:
-                await self.cleanup_expired_games(EXPIRE_WINDOW_MIN)
-                await asyncio.sleep(CHECK_INTERVAL_SEC)
+                await self.cleanup_expired_games(EXPIRE_GAMES_WINDOW_MIN)
+                await asyncio.sleep(EXPIRE_GAMES_INTERVAL_SEC)
 
         loop.create_task(task())
 
@@ -118,6 +125,30 @@ class SpellBot(discord.Client):
             session.commit()
         except exc.SQLAlchemyError as e:
             logging.error("error: cleanup_expired_games:", e)
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def cleanup_expired_wait_times_task(self, loop):  # pragma: no cover
+        """Starts a task that deletes old wait times data."""
+
+        async def task():
+            while True:
+                await self.cleanup_expired_waits(EXPIRE_WAITS_WINDOW_MIN)
+                await asyncio.sleep(EXPIRE_WAITS_INTERVAL_SEC)
+
+        loop.create_task(task())
+
+    async def cleanup_expired_waits(self, window):
+        """Deletes wait time data older than the given window of minutes."""
+        session = self.data.Session()
+        try:
+            cutoff = datetime.utcnow() - timedelta(minutes=window)
+            session.query(WaitTime).filter(WaitTime.created_at < cutoff).delete()
+            session.commit()
+        except exc.SQLAlchemyError as e:
+            logging.error("error: cleanup_expired_waits:", e)
             session.rollback()
             raise
         finally:
@@ -380,23 +411,31 @@ class SpellBot(discord.Client):
                 self.session.add(tag)
             tags.append(tag)
 
-        user.enqueue(
-            size=size, guild_xid=channel.guild.id, include=mentioned_users, tags=tags
-        )
-        self.session.commit()
+        guild_xid = channel.guild.id
+        user.enqueue(size=size, guild_xid=guild_xid, include=mentioned_users, tags=tags)
 
         if len(user.game.users) == size:
+            self.session.commit()  # must commit before we can delete
             game_url = self.create_game()
             for player in user.game.users:
                 discord_user = self.get_user(player.xid)
                 if discord_user:
                     await discord_user.send(s("queue_ready", url=game_url))
+                dequeue_at = datetime.utcnow()
+                seconds = (dequeue_at - player.queued_at).total_seconds()
+                WaitTime.log(self.session, guild_xid=guild_xid, seconds=seconds)
             self.session.delete(user.game)
         else:
+            average = WaitTime.average(self.session, guild_xid, EXPIRE_WAITS_WINDOW_MIN)
             for player in user.game.users:
                 discord_user = self.get_user(player.xid)
                 if discord_user:
-                    await discord_user.send(s("queue"))
+                    if average:
+                        await discord_user.send(
+                            s("queue_with_average", average=f"{average:.2f}")
+                        )
+                    else:
+                        await discord_user.send(s("queue"))
 
     @command(allow_dm=True)
     async def leave(self, prefix, channel, author, mentions, params):
@@ -409,6 +448,18 @@ class SpellBot(discord.Client):
 
         user.dequeue()
         await author.send(s("leave"))
+
+    @command(allow_dm=False)
+    async def status(self, prefix, channel, author, mentions, params):
+        """
+        Show some details about the queues on your server.
+        """
+        guild_xid = channel.guild.id
+        avg = WaitTime.average(self.session, guild_xid, EXPIRE_WAITS_WINDOW_MIN)
+        if avg:
+            await channel.send(s("status", average=f"{avg:.2f}"))
+        else:
+            await channel.send(s("status_unknown"))
 
     @command(allow_dm=False)
     async def spellbot(self, prefix, channel, author, mentions, params):
