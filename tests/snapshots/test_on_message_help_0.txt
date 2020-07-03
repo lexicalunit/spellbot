@@ -29,3 +29,5 @@ __**SpellBot Usage**__
 > - prefix <string>: Set SpellBot prefix for commands in text channels
 
 _SpellBot created by amy@lexicalunit.com_
+
+💜 You can help keep SpellBot running by supporting me on ko-fi! <https://ko-fi.com/Y8Y51VTHZ>
