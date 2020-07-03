@@ -11,11 +11,13 @@ from sqlalchemy import (
     Integer,
     String,
     Table,
+    and_,
     create_engine,
     func,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
+from sqlalchemy.sql.expression import label
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = PACKAGE_ROOT / "assets"
@@ -24,6 +26,33 @@ VERSIONS_DIR = PACKAGE_ROOT / "versions"
 
 
 Base = declarative_base()
+
+
+class WaitTime(Base):
+    __tablename__ = "wait_times"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    guild_xid = Column(BigInteger, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    seconds = Column(Integer, nullable=False)
+
+    @classmethod
+    def log(cls, session, guild_xid, seconds):
+        session.add(WaitTime(guild_xid=guild_xid, seconds=seconds))
+
+    @classmethod
+    def average(cls, session, guild_xid, window_min):
+        row = (
+            session.query(label("average", func.sum(WaitTime.seconds) / func.count()))
+            .filter(
+                and_(
+                    WaitTime.guild_xid == guild_xid,
+                    WaitTime.created_at
+                    > datetime.utcnow() - timedelta(minutes=window_min),
+                )
+            )
+            .one_or_none()
+        )
+        return row.average if row else None
 
 
 class BotPrefix(Base):
@@ -53,6 +82,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     xid = Column(BigInteger, nullable=False)
     game_id = Column(Integer, ForeignKey("games.id"), nullable=True)
+    queued_at = Column(DateTime, nullable=True)
     game = relationship("Game", back_populates="users")
 
     @property
@@ -92,8 +122,11 @@ class User(Base):
         else:
             self.game = Game(size=size, guild_xid=guild_xid, tags=tags)
             session.add(self.game)
+        queued_at = datetime.utcnow()
+        self.queued_at = queued_at
         for user in include:
             user.game = self.game
+            user.queued_at = queued_at
 
     def dequeue(self):
         session = Session.object_session(self)
