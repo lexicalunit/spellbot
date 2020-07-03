@@ -25,8 +25,8 @@ Discord via the following commands in any of the authorized channels.
 
 ### ✋ Queueing
 
-- `!queue`: Get in line to play some Magic: The Gathering!
-- `!leave`: Get out of line; it's the opposite of `!queue`.
+- `!play`: Get in line to play some Magic: The Gathering!
+- `!leave`: Get out of line; it's the opposite of `!play`.
 - `!status`: Show some details about the queues on your server.
 
 ### 👑 Administration
