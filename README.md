@@ -13,6 +13,8 @@ A Discord bot for [SpellTable][spelltable].
 
 [![add-bot][add-img]][add-bot]
 
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)][ko-fi]
+
 ## 📱 Using SpellBot
 
 Once you've connected the bot to your server, you can interact with it over
@@ -48,8 +50,8 @@ Provide your Discord bot token with the environment variable `SPELLBOT_TOKEN`.
 By default SpellBot will use sqlite3 as its database. You can however choose to
 use another database by providing a [SQLAlchemy Connection URL][db-url]. This
 can be done via the `--database-url` command line option or the environment
-variable `SPELLBOT_DB_URL`. Note that, at the time of this writing, SpellBot is only
-tested against sqlite3 and PostgreSQL.
+variable `SPELLBOT_DB_URL`. Note that, at the time of this writing, SpellBot is
+only tested against sqlite3 and PostgreSQL.
 
 More usage help can be found by running `spellbot --help`.
 
@@ -60,10 +62,15 @@ You can also run SpellBot via docker. See
 
 ## ❤️ Contributing
 
-If you'd like to become a part of the SpellBot development community please first
-know that we have a documented [code of conduct](CODE_OF_CONDUCT.md) and then
-see our [documentation on how to contribute](CONTRIBUTING.md) for details on
-how to get started.
+If you'd like to become a part of the SpellBot development community please
+first know that we have a documented [code of conduct](CODE_OF_CONDUCT.md) and
+then see our [documentation on how to contribute](CONTRIBUTING.md) for details
+on how to get started.
+
+## 🙌 Support Me
+
+I'm keeping SpellBot running using my own money but if you like the bot and want
+to help me out, please consider donating to [my ko-fi][ko-fi].
 
 ---
 
@@ -79,6 +86,7 @@ how to get started.
 [codecov]:          https://codecov.io/gh/lexicalunit/spellbot
 [contributors]:     https://github.com/lexicalunit/spellbot/graphs/contributors
 [db-url]:           https://docs.sqlalchemy.org/en/latest/core/engines.html
+[ko-fi]:            https://ko-fi.com/Y8Y51VTHZ
 [lexicalunit]:      http://github.com/lexicalunit
 [mit-badge]:        https://img.shields.io/badge/License-MIT-yellow.svg
 [mit]:              https://opensource.org/licenses/MIT
