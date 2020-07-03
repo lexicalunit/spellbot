@@ -15,6 +15,7 @@ import toml
 
 import spellbot
 from spellbot.assets import load_strings
+from spellbot.data import Game
 
 ##############################
 # Discord.py Mocks
@@ -310,8 +311,8 @@ def client(monkeypatch, mocker, patch_discord, tmp_path):
     # Keep track of strings used in the test suite.
     monkeypatch.setattr(spellbot, "s", S_SPY)
 
-    # Don't actually begin the cleanup_expired_games_task during tests.
-    monkeypatch.setattr(spellbot.SpellBot, "cleanup_expired_games_task", MagicMock())
+    # Don't actually begin background tasks during tests.
+    monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())
 
     # Fallback to using sqlite for tests, but use the environment variable if it's set.
     (tmp_path / "spellbot.db").touch()
@@ -413,15 +414,14 @@ class TestSpellBot:
         await client.on_message(MockMessage(someone(), channel, " !   !"))
         channel.sent.assert_not_called()
 
-    @pytest.mark.skip(reason="can only be tested when ambiguity is possible")
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_ambiguous_request(self, client, channel):
         author = someone()
-        msg = MockMessage(author, channel, "!h")
+        msg = MockMessage(author, channel, "!s")
         if hasattr(channel, "recipient"):
             assert channel.recipient == author
         await client.on_message(msg)
-        assert channel.last_sent_response == ("Did you mean: !hello, !help?")
+        assert channel.last_sent_response == "Did you mean: !spellbot, !status?"
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_invalid_request(self, client, channel):
@@ -527,7 +527,9 @@ class TestSpellBot:
         assert DUDE.last_sent_response == ready
 
         await client.on_message(MockMessage(GUY, channel, "!queue"))
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert GUY.last_sent_response.startswith(
+            "You have been entered into the play queue."
+        )
 
     async def test_on_message_queue_cedh(self, client):
         channel = text_channel()
@@ -554,7 +556,9 @@ class TestSpellBot:
         assert DUDE.last_sent_response == ready
 
         await client.on_message(MockMessage(GUY, channel, "!queue cedh"))
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert GUY.last_sent_response.startswith(
+            "You have been entered into the play queue."
+        )
 
     async def test_on_message_queue_cedh_and_proxy(self, client):
         channel = text_channel()
@@ -581,7 +585,9 @@ class TestSpellBot:
         assert DUDE.last_sent_response == ready
 
         await client.on_message(MockMessage(GUY, channel, "!queue cedh proxy"))
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert GUY.last_sent_response.startswith(
+            "You have been entered into the play queue."
+        )
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_leave_not_queued(self, client, channel):
@@ -656,6 +662,17 @@ class TestSpellBot:
         assert GUY.last_sent_response == resp
         assert BUDDY.last_sent_response == resp
         assert DUDE.last_sent_response == resp
+
+    async def test_on_message_queue_then_leave_3(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(FRIEND, channel, "!queue"))
+        await client.on_message(MockMessage(BUDDY, channel, "!queue"))
+        await client.on_message(MockMessage(GUY, channel, "!queue"))
+        await client.on_message(MockMessage(FRIEND, channel, "!leave"))
+        await client.on_message(MockMessage(BUDDY, channel, "!leave"))
+        await client.on_message(MockMessage(GUY, channel, "!leave"))
+        session = client.data.Session()
+        assert len(session.query(Game).all()) == 0
 
     async def test_on_message_queue_3_then_1(self, client):
         channel = text_channel()
@@ -829,6 +846,55 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!spellbot prefix )"))
         assert channel.last_sent_response == (
             'This bot will now use ")" as its command prefix for this server.'
+        )
+
+    async def test_on_message_status(self, client, freezer):
+        channel = text_channel()
+        await client.on_message(MockMessage(BUDDY, channel, "!status"))
+        assert channel.last_sent_response == (
+            "There is not enough information to calculate the current average "
+            "queue wait time right now."
+        )
+
+        NOW = datetime.utcnow()
+        freezer.move_to(NOW)
+        await client.on_message(MockMessage(GUY, channel, "!queue size:2"))
+
+        freezer.move_to(NOW + timedelta(seconds=10))
+        await client.on_message(MockMessage(BUDDY, channel, "!queue size:2"))
+
+        await client.on_message(MockMessage(BUDDY, channel, "!status"))
+        assert channel.last_sent_response == (
+            "The average queue wait time is currently 5.00 seconds."
+        )
+
+        await client.on_message(MockMessage(FRIEND, channel, "!queue"))
+        assert FRIEND.last_sent_response == (
+            "You have been entered into the play queue. "
+            "The current average queue wait time is 5.00 seconds."
+        )
+
+    async def test_cleanup_expired_waits(self, client, freezer):
+        channel = text_channel()
+        NOW = datetime.utcnow()
+        freezer.move_to(NOW)
+        await client.on_message(MockMessage(GUY, channel, "!queue size:2"))
+
+        freezer.move_to(NOW + timedelta(seconds=10))
+        await client.on_message(MockMessage(BUDDY, channel, "!queue size:2"))
+
+        await client.on_message(MockMessage(BUDDY, channel, "!status"))
+        assert channel.last_sent_response == (
+            "The average queue wait time is currently 5.00 seconds."
+        )
+
+        freezer.move_to(NOW + timedelta(minutes=35))
+        await client.cleanup_expired_waits(30)
+
+        await client.on_message(MockMessage(BUDDY, channel, "!status"))
+        assert channel.last_sent_response == (
+            "There is not enough information to calculate the current average "
+            "queue wait time right now."
         )
 
 
