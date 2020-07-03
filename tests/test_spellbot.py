@@ -499,6 +499,12 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!help"))  # bad channel now
         assert author.last_sent_response == resp
 
+    async def test_on_message_queue_too_many_tags(self, client):
+        channel = text_channel()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!queue a b c d e f"))
+        assert author.last_sent_response == "Sorry, you can not use more than 5 tags."
+
     async def test_on_message_queue(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!queue"))
