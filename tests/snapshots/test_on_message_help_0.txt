@@ -31,7 +31,7 @@ __**SpellBot Usage**__
 > 
 > - channel <list>: Set SpellBot to only respond in the given list of channels
 > - prefix <string>: Set SpellBot prefix for commands in text channels
-> - scope [server|channel]: Set matchmaking scope to server-wide or channel-only
+> - scope <server|channel>: Set matchmaking scope to server-wide or channel-only
 
 **!status**
 >  Show some details about the queues on your server.
