@@ -359,19 +359,19 @@ class SpellBot(discord.Client):
         """
         Enter the queue for a game on SpellTable.
 
-        You can get in the queue with a friend by including them in the command with as
-        many @ mentions as you want. You can also choose the number of players by using
-        `size:2` for a two player game, for example. The default number of players is 4.
+        You can get in the queue with a friend by mentioning them in the command using
+        the @ character. You can also change the number of players from the default of
+        four by using, for example, `!play size:2` to create a two player game.
 
-        You can also give a list of tags and you will only be matched against users who
-        have the same tags as you. For example, if you want to enter into a cEDH queue
-        you could try `queue cEDH`. Check with your server for supported tags. A valid
-        tag can not be just a number, like `10` for example, nor can it be longer than
-        50 characters.
+        Up to five tags can be given as well. For example, `!play power:10 proxy` shows
+        two tags: `power:10` and `proxy`. Check with your server for what tags are being
+        used. Tags can not be just a number and must be no longer than 50 characters. Be
+        careful when using tags because the matchmaker will only pair you up with other
+        players who use *EXACTLY* the same tags that you used.
 
-        If the scope for your server is set to "channel" then matchmaking will only happen
-        between other players who alos enter the queue in the same channel as yourself.
-        The default scope however is server wide.
+        If your server's admins have set the scope for your server to "channel", then
+        matchmaking will only happen between other players who run this command in the
+        same channel as you did. The default scope is server wide.
         & [@mention-1] [@mention-2] [...] [size:N] [tag-1] [tag-2] [...]
         """
         params = [param.lower() for param in params]
