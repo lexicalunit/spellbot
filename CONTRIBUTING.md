@@ -218,8 +218,7 @@ git push --tags origin master
 > command is to ensure that all test still pass after the version is updated.
 
 You can get the `M.N.P` version numbers from `pyproject.toml` after you've run
-the `poetry version` command. On a *NIX shell you could also get automatically
-it like so:
+the `poetry version` command. On a *NIX shell you could also get it automatically like so:
 
 ```shell
 grep "^version" < pyproject.toml | cut -d= -f2 | sed 's/"//g;s/ //g;s/^/v/;'
