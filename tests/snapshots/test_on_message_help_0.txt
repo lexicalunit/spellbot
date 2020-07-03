@@ -9,7 +9,7 @@ __**SpellBot Usage**__
 **!leave**
 >  Leave your place in the queue.
 
-**!queue** _[@mention-1] [@mention-2] [...] [size:N] [tag-1] [tag-2] [...]_
+**!play** _[@mention-1] [@mention-2] [...] [size:N] [tag-1] [tag-2] [...]_
 >  Enter the queue for a game on SpellTable.
 > 
 > You can get in the queue with a friend by including them in the command with as
