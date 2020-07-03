@@ -497,7 +497,7 @@ class SpellBot(discord.Client):
 
         - channel <list>: Set SpellBot to only respond in the given list of channels
         - prefix <string>: Set SpellBot prefix for commands in text channels
-        - scope [server|channel]: Set matchmaking scope to server-wide or channel-only
+        - scope <server|channel>: Set matchmaking scope to server-wide or channel-only
         & <subcommand> [subcommand parameters]
         """
         if not is_admin(channel, author):
