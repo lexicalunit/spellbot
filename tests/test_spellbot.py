@@ -838,10 +838,10 @@ class TestSpellBot:
         author = someone()
         await client.on_message(MockMessage(author, channel, "!play"))
         assert author.last_sent_response == "You have been entered into the play queue."
-        freezer.move_to(NOW + timedelta(minutes=10))
-        await client.cleanup_expired_games(window=5)
+        freezer.move_to(NOW + timedelta(days=1))
+        await client.cleanup_expired_games()
         assert author.last_sent_response == (
-            "SpellBot has removed you from the queue after waiting 5 minutes to try and"
+            "SpellBot has removed you from the queue after waiting 30 minutes to try and"
             " match you up with other players. Sorry, but unfortunately not enough"
             " players were found in that time. Please try again when there's more"
             " players available."
@@ -1020,6 +1020,43 @@ class TestSpellBot:
         assert_game_created(FRIEND.last_sent_response, players, channel, power=5)
         assert_game_created(DUDE.last_sent_response, players, channel, power=5)
         assert_game_created(JR.last_sent_response, players, channel, power=5)
+
+    async def test_on_message_spellbot_expire_none(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot expire"))
+        assert author.last_sent_response == "Please provide a number of minutes."
+
+    async def test_on_message_spellbot_expire_bad(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot expire world"))
+        assert author.last_sent_response == (
+            "Sorry, game expiration time should be between 10 and 60 minutes."
+        )
+
+    async def test_on_message_spellbot_expire(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot expire 45"))
+        assert author.last_sent_response == "Game expiration time set to 45 minutes."
+
+    async def test_on_message_play_then_custom_expire(self, client, freezer):
+        NOW = datetime.utcnow()
+        freezer.move_to(NOW)
+        channel = text_channel()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!play"))
+        assert author.last_sent_response == "You have been entered into the play queue."
+        await client.on_message(MockMessage(an_admin(), channel, "!spellbot expire 45"))
+        freezer.move_to(NOW + timedelta(days=1))
+        await client.cleanup_expired_games()
+        assert author.last_sent_response == (
+            "SpellBot has removed you from the queue after waiting 45 minutes to try and"
+            " match you up with other players. Sorry, but unfortunately not enough"
+            " players were found in that time. Please try again when there's more"
+            " players available."
+        )
 
 
 def test_paginate():
