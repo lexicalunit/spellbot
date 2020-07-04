@@ -92,7 +92,7 @@ class User(Base):
     def waiting(self):
         return self.game is not None
 
-    def enqueue(self, *, server, include, size, power, tags):
+    def enqueue(self, *, server, channel_xid, include, size, power, tags):
         session = Session.object_session(self)
         guild_xid = server.guild_xid
         required_tag_ids = set(tag.id for tag in tags)
@@ -114,6 +114,12 @@ class User(Base):
                 continue
             if game.size != size:
                 continue
+            if (
+                server.scope == "channel"
+                and game.channel_xid
+                and game.channel_xid != channel_xid
+            ):
+                continue
             if power:
                 if not game.power:
                     continue
@@ -129,7 +135,13 @@ class User(Base):
         if existing_game:
             self.game = existing_game
         else:
-            self.game = Game(size=size, guild_xid=guild_xid, power=power, tags=tags)
+            self.game = Game(
+                size=size,
+                guild_xid=guild_xid,
+                channel_xid=channel_xid if server.scope == "channel" else None,
+                power=power,
+                tags=tags,
+            )
             session.add(self.game)
         queued_at = datetime.utcnow()
         self.queued_at = queued_at
@@ -150,6 +162,7 @@ class Game(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     size = Column(Integer, nullable=False)
     guild_xid = Column(BigInteger, nullable=False)
+    channel_xid = Column(BigInteger)
     power = Column(Integer)
     users = relationship("User", back_populates="game")
     tags = relationship("Tag", secondary=games_tags, back_populates="games")
