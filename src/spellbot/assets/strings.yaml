@@ -10,6 +10,7 @@ not_admin: You do not have admin permissions for this bot.
 play: You have been entered into the play queue.
 play_already: You are already in the queue.
 play_mention_already: Sorry, $user is already in the play queue.
+play_power_bad: Sorry, power level should a number between 1 and 10.
 play_ready: Your game is ready, go to $url to begin playing!
 play_size_bad: Game size must be between 2 and 4.
 play_too_many: Sorry, you mentioned too many people.
