@@ -441,7 +441,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!help"))
         for response in author.all_sent_responses:
             snap(response)
-        assert len(author.all_sent_calls) == 1
+        assert len(author.all_sent_calls) == 2
 
     async def test_on_message_play_dm(self, client):
         author = someone()
@@ -589,6 +589,14 @@ class TestSpellBot:
             "You have been entered into the play queue."
         )
 
+    async def test_on_message_play_no_power_then_power(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(GUY, channel, "!play size:2"))
+        assert GUY.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(FRIEND, channel, "!play size:2 power:5"))
+        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_leave_not_queued(self, client, channel):
         author = someone()
@@ -617,8 +625,8 @@ class TestSpellBot:
             "Use the command `!help` for usage details. Having issues with SpellBot? "
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
             "\n"
-            "💜 Help keep SpellBot running and "
-            "[support me on ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
+            "💜 Help keep SpellBot running by "
+            "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
         )
         assert about["footer"]["text"] == "MIT \u00a9 amy@lexicalunit et al"
         assert about["thumbnail"]["url"] == (
@@ -938,6 +946,90 @@ class TestSpellBot:
         resp = "Your game is ready, go to http://example.com/game to begin playing!"
         assert BUDDY.last_sent_response == resp
         assert GUY.last_sent_response == resp
+
+    async def test_on_message_play_with_power_bad(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(GUY, channel, "!play power:42"))
+        assert GUY.last_sent_response == (
+            "Sorry, power level should a number between 1 and 10."
+        )
+
+    async def test_on_message_play_with_power_level_high(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(GUY, channel, "!play power:5"))
+        assert GUY.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(FRIEND, channel, "!play power:7"))
+        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(BUDDY, channel, "!play power:8"))
+        assert BUDDY.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(AMY, channel, "!play power:9"))
+        assert AMY.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(DUDE, channel, "!play power:8"))
+        assert DUDE.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(JR, channel, "!play power:8"))
+        ready = "Your game is ready, go to http://example.com/game to begin playing!"
+        assert BUDDY.last_sent_response == ready
+        assert AMY.last_sent_response == ready
+        assert DUDE.last_sent_response == ready
+        assert JR.last_sent_response == ready
+
+    async def test_on_message_play_with_power_level_low(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(GUY, channel, "!play power:5"))
+        assert GUY.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(FRIEND, channel, "!play power:7"))
+        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(BUDDY, channel, "!play power:8"))
+        assert BUDDY.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(AMY, channel, "!play power:9"))
+        assert AMY.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(DUDE, channel, "!play power:4"))
+        assert DUDE.last_sent_response == "You have been entered into the play queue."
+
+        await client.on_message(MockMessage(JR, channel, "!play power:6"))
+        ready = "Your game is ready, go to http://example.com/game to begin playing!"
+        assert GUY.last_sent_response == ready
+        assert FRIEND.last_sent_response == ready
+        assert DUDE.last_sent_response == ready
+        assert JR.last_sent_response == ready
+
+
+def test_paginate():
+    def subject(text):
+        return [page for page in spellbot.paginate(text)]
+
+    assert subject("") == [""]
+    assert subject("four") == ["four"]
+
+    with open(Path(FIXTURES_ROOT) / "ipsum_2011.txt") as f:
+        text = f.read()
+        pages = subject(text)
+        assert len(pages) == 2
+        assert all(len(page) <= 2000 for page in pages)
+        assert pages == [text[0:1937], text[1937:]]
+
+    with open(Path(FIXTURES_ROOT) / "aaa_2001.txt") as f:
+        text = f.read()
+        pages = subject(text)
+        assert len(pages) == 2
+        assert all(len(page) <= 2000 for page in pages)
+        assert pages == [text[0:2000], text[2000:]]
+
+    with open(Path(FIXTURES_ROOT) / "quotes.txt") as f:
+        text = f.read()
+        pages = subject(text)
+        assert len(pages) == 2
+        assert all(len(page) <= 2000 for page in pages)
+        assert pages == [text[0:2000], f"> {text[2000:]}"]
 
 
 class TestMigrations:

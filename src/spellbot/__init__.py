@@ -50,6 +50,33 @@ def ensure_application_directories_exist():
     DB_DIR.mkdir(exist_ok=True)
 
 
+def paginate(text):
+    """Discord responses must be 2000 characters of less; paginate breaks them up."""
+    breakpoints = ["\n", ".", ",", "-"]
+    remaining = text
+    while len(remaining) > 2000:
+        breakpoint = 1999
+
+        for char in breakpoints:
+            index = remaining.rfind(char, 1800, 1999)
+            if index != -1:
+                breakpoint = index
+                break
+
+        message = remaining[0 : breakpoint + 1]
+        yield message
+        remaining = remaining[breakpoint + 1 :]
+        last_line_end = message.rfind("\n")
+        if last_line_end != -1 and len(message) > last_line_end + 1:
+            last_line_start = last_line_end + 1
+        else:
+            last_line_start = 0
+        if message[last_line_start] == ">":
+            remaining = f"> {remaining}"
+
+    yield remaining
+
+
 def command(allow_dm=True):
     """Decorator for bot command methods."""
 
@@ -300,7 +327,7 @@ class SpellBot(discord.Client):
         """
         Sends you this help message.
         """
-        usage = "__**SpellBot Usage**__\n"
+        usage = ""
         for command in self.commands:
             method = getattr(self, command)
             doc = method.__doc__.split("&")
@@ -308,19 +335,24 @@ class SpellBot(discord.Client):
             use = inspect.cleandoc(use)
             use = use.replace("\n", "\n> ")
 
-            title = f"**{prefix}{command}**"
+            title = f"{prefix}{command}"
             if params:
-                title = f"{title} _{params}_"
-            usage += f"\n{title}"
+                title = f"{title} {params}"
+            usage += f"\n`{title}`"
             usage += f"\n>  {use}"
             usage += "\n"
-        usage += "\n_SpellBot created by amy@lexicalunit.com_"
+        usage += "---"
+        usage += (
+            " \nPlease report any bugs and suggestions at"
+            " <https://github.com/lexicalunit/spellbot/issues>!"
+        )
         usage += "\n"
         usage += (
-            "\n💜 You can help keep SpellBot running by supporting me on ko-fi! "
+            "\n💜 You can help keep SpellBot running by supporting me on Ko-fi! "
             "<https://ko-fi.com/Y8Y51VTHZ>"
         )
-        await author.send(usage, file=None)
+        for page in paginate(usage):
+            await author.send(page)
 
     @command(allow_dm=True)
     async def about(self, prefix, channel, author, mentions, params):
@@ -346,8 +378,8 @@ class SpellBot(discord.Client):
             "Having issues with SpellBot? "
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
             "\n"
-            "💜 Help keep SpellBot running and "
-            "[support me on ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
+            "💜 Help keep SpellBot running by "
+            "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
         )
         embed.url = "https://github.com/lexicalunit/spellbot"
         embed.set_footer(text="MIT © amy@lexicalunit et al")
@@ -357,22 +389,28 @@ class SpellBot(discord.Client):
     @command(allow_dm=False)
     async def play(self, prefix, channel, author, mentions, params):
         """
-        Enter the queue for a game on SpellTable.
+        Enter a play queue for a game on SpellTable.
 
-        You can get in the queue with a friend by mentioning them in the command using
-        the @ character. You can also change the number of players from the default of
-        four by using, for example, `!play size:2` to create a two player game.
+        You can get in a queue with a friend by mentioning them in the command with the @
+        character. You can also change the number of players from the default of four by
+        using, for example, `!play size:2` to create a two player game.
 
-        Up to five tags can be given as well. For example, `!play power:10 proxy` shows
-        two tags: `power:10` and `proxy`. Check with your server for what tags are being
-        used. Tags can not be just a number and must be no longer than 50 characters. Be
-        careful when using tags because the matchmaker will only pair you up with other
-        players who use *EXACTLY* the same tags that you used.
+        Up to five tags can be given as well. For example, `!play no-combo proxy` has
+        two tags: `no-combo` and `proxy`. Look on your server for what tags are being
+        used by your community members. Tags can not be just a number and must be no
+        longer than 50 characters. Be careful when using tags because the matchmaker will
+        only pair you up with other players who've used **EXACTLY** the same tags.
+
+        You can also specify a power level like `!play power:7` for example and the
+        matchmaker will attempt to find a game with similar power levels for you. Note
+        that players who specify a power level will never get paired up with players who
+        have not, and vice versa. You will also not be matched up _exactly_ by power level
+        as there is a fudge factor involved.
 
         If your server's admins have set the scope for your server to "channel", then
         matchmaking will only happen between other players who run this command in the
-        same channel as you did. The default scope is server wide.
-        & [@mention-1] [@mention-2] [...] [size:N] [tag-1] [tag-2] [...]
+        same channel as you did. The default scope for matchmaking is server-wide.
+        & [@mention-1] [@mention-2] [...] [size:N] [power:N] [tag-1] [tag-2] [...]
         """
         params = [param.lower() for param in params]
         user = self.ensure_user_exists(author)
@@ -386,12 +424,18 @@ class SpellBot(discord.Client):
                 return None
 
         size = 4
+        power = None
         for param in params:
             if param.startswith("size:"):
                 size = to_int(param.replace("size:", ""))
+            elif param.startswith("power:"):
+                power = to_int(param.replace("power:", ""))
 
         if not size or not (1 < size < 5):
             return await author.send(s("play_size_bad"))
+
+        if power and not (1 <= power <= 10):
+            return await author.send(s("play_power_bad"))
 
         if len(mentions) >= size:
             return await author.send(s("play_too_many"))
@@ -408,6 +452,7 @@ class SpellBot(discord.Client):
             param
             for param in params
             if not param.startswith("size:")
+            and not param.startswith("power:")
             and not param.startswith("@")
             and not param.isdigit()
             and not len(param) >= 50
@@ -424,7 +469,9 @@ class SpellBot(discord.Client):
             tags.append(tag)
 
         server = self.ensure_server_exists(channel.guild.id)
-        user.enqueue(server=server, include=mentioned_users, size=size, tags=tags)
+        user.enqueue(
+            server=server, include=mentioned_users, size=size, power=power, tags=tags
+        )
 
         if len(user.game.users) == size:
             self.session.commit()  # must commit before we can delete
@@ -493,11 +540,15 @@ class SpellBot(discord.Client):
     @command(allow_dm=False)
     async def spellbot(self, prefix, channel, author, mentions, params):
         """
-        Configure SpellBot for your server. Use with one of the following subcommands:
+        Configure SpellBot for your server.
 
-        - channel <list>: Set SpellBot to only respond in the given list of channels
-        - prefix <string>: Set SpellBot prefix for commands in text channels
-        - scope <server|channel>: Set matchmaking scope to server-wide or channel-only
+        The following subcommands are supported:
+
+        * `channel <list>`: Set SpellBot to only respond in the given list of channels.
+        * `prefix <string>`: Set SpellBot prefix for commands in text channels.
+        * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
+
+        _You must have the "SpellBot Admin" role to use any of these commands._
         & <subcommand> [subcommand parameters]
         """
         if not is_admin(channel, author):
