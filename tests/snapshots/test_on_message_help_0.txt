@@ -1,41 +1,45 @@
-__**SpellBot Usage**__
 
-**!about**
+`!about`
 >  Get information about SpellBot.
 
-**!help**
+`!help`
 >  Sends you this help message.
 
-**!leave**
+`!leave`
 >  Leave your place in the queue.
 
-**!play** _[@mention-1] [@mention-2] [...] [size:N] [tag-1] [tag-2] [...]_
->  Enter the queue for a game on SpellTable.
+`!play [@mention-1] [@mention-2] [...] [size:N] [power:N] [tag-1] [tag-2] [...]`
+>  Enter a play queue for a game on SpellTable.
 > 
-> You can get in the queue with a friend by mentioning them in the command using
-> the @ character. You can also change the number of players from the default of
-> four by using, for example, `!play size:2` to create a two player game.
+> You can get in a queue with a friend by mentioning them in the command with the @
+> character. You can also change the number of players from the default of four by
+> using, for example, `!play size:2` to create a two player game.
 > 
-> Up to five tags can be given as well. For example, `!play power:10 proxy` shows
-> two tags: `power:10` and `proxy`. Check with your server for what tags are being
-> used. Tags can not be just a number and must be no longer than 50 characters. Be
-> careful when using tags because the matchmaker will only pair you up with other
-> players who use *EXACTLY* the same tags that you used.
+> Up to five tags can be given as well. For example, `!play no-combo proxy` has
+> two tags: `no-combo` and `proxy`. Look on your server for what tags are being
+> used by your community members. Tags can not be just a number and must be no
+> longer than 50 characters. Be careful when using tags because the matchmaker will
+> only pair you up with other players who've used **EXACTLY** the same tags.
+> 
+> You can also specify a power level like `!play power:7` for example and the
+> matchmaker will attempt to find a game with similar power levels for you. Note
+> that players who specify a power level will never get paired up with players who
+> have not, and vice versa. You will also not be matched up _exactly_ by power level
+> as there is a fudge factor involved.
 > 
 > If your server's admins have set the scope for your server to "channel", then
 > matchmaking will only happen between other players who run this command in the
-> same channel as you did. The default scope is server wide.
+> same channel as you did. The default scope for matchmaking is server-wide.
 
-**!spellbot** _<subcommand> [subcommand parameters]_
->  Configure SpellBot for your server. Use with one of the following subcommands:
+`!spellbot <subcommand> [subcommand parameters]`
+>  Configure SpellBot for your server.
 > 
-> - channel <list>: Set SpellBot to only respond in the given list of channels
-> - prefix <string>: Set SpellBot prefix for commands in text channels
-> - scope <server|channel>: Set matchmaking scope to server-wide or channel-only
+> The following subcommands are supported:
+> 
+> * `channel <list>`: Set SpellBot to only respond in the given list of channels.
+> * `prefix <string>`: Set SpellBot prefix for commands in text channels.
+> * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
+> 
+> _You must have the "SpellBot Admin" role to use any of these commands._
 
-**!status**
->  Show some details about the queues on your server.
-
-_SpellBot created by amy@lexicalunit.com_
-
-💜 You can help keep SpellBot running by supporting me on ko-fi! <https://ko-fi.com/Y8Y51VTHZ>
+`!status`
