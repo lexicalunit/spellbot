@@ -453,6 +453,7 @@ class SpellBot(discord.Client):
             for param in params
             if not param.startswith("size:")
             and not param.startswith("power:")
+            and not param.startswith("<")
             and not param.startswith("@")
             and not param.isdigit()
             and not len(param) >= 50
@@ -470,7 +471,12 @@ class SpellBot(discord.Client):
 
         server = self.ensure_server_exists(channel.guild.id)
         user.enqueue(
-            server=server, include=mentioned_users, size=size, power=power, tags=tags
+            server=server,
+            channel_xid=channel.id,
+            include=mentioned_users,
+            size=size,
+            power=power,
+            tags=tags,
         )
         self.session.commit()
 
@@ -485,8 +491,23 @@ class SpellBot(discord.Client):
 
         if len(found_discord_users) == size:  # all players matched, game is ready
             game_url = self.create_game()
+            players_s = ", ".join(
+                [f"<@!{discord_user.id}>" for discord_user in found_discord_users]
+            )
+            tags_s = ", ".join([tag.name for tag in user.game.tags])
+            channel_s = f"<#{channel.id}>"
+            power_s = str(user.game.power)
+            response = s(
+                "play_ready",
+                url=game_url,
+                players=players_s,
+                tags=tags_s,
+                channel=channel_s,
+                power=power_s,
+            )
+
             for game_user, discord_user in zip(user.game.users, found_discord_users):
-                await discord_user.send(s("play_ready", url=game_url))
+                await discord_user.send(response)
                 dequeue_at = datetime.utcnow()
                 seconds = (dequeue_at - game_user.queued_at).total_seconds()
                 WaitTime.log(
