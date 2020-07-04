@@ -106,9 +106,10 @@ class MockRole:
 
 
 class MockGuild:
-    def __init__(self, channel_id, members):
+    def __init__(self, guild_id, name, members):
+        self.id = guild_id
+        self.name = name
         self.members = members
-        self.id = channel_id
 
 
 class MockChannel:
@@ -182,7 +183,7 @@ class MockTextChannel(MockChannel):
         super().__init__(channel_id, "text")
         self.name = channel_name
         self.members = members
-        self.guild = MockGuild(channel_id, members)
+        self.guild = MockGuild(500, "Guild Name", members)
 
 
 class MockDM(MockChannel):
@@ -286,6 +287,22 @@ def text_channel():
 
 def private_channel():
     return MockDM(1)
+
+
+def assert_game_created(message, players, channel, tags=None, power=None):
+    tags = tags if tags else ["default"]
+    lines = message.split("\n")
+    assert lines[0] == "**Your SpellTable game is ready!**"
+    assert lines[1] == "http://example.com/game"
+    assert lines[2] == ""
+    assert lines[3].startswith("Players: ")
+    tokens = set(lines[3].replace("Players: ", "").split(", "))
+    assert tokens == set(f"<@!{player.id}>" for player in players)
+    assert lines[4].startswith("Tags: ")
+    tokens = set(lines[4].replace("Tags: ", "").split(", "))
+    assert tokens == set(tags)
+    assert lines[5] == f"Channel: <#{channel.id}>"
+    assert lines[6] == f"Power Level: {power}"
 
 
 ##############################
@@ -520,11 +537,11 @@ class TestSpellBot:
         assert BUDDY.last_sent_response == "You have been entered into the play queue."
 
         await client.on_message(MockMessage(DUDE, channel, "!play"))
-        ready = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert GUY.last_sent_response == ready
-        assert BUDDY.last_sent_response == ready
-        assert FRIEND.last_sent_response == ready
-        assert DUDE.last_sent_response == ready
+        players = [GUY, BUDDY, FRIEND, DUDE]
+        assert_game_created(GUY.last_sent_response, players, channel)
+        assert_game_created(BUDDY.last_sent_response, players, channel)
+        assert_game_created(FRIEND.last_sent_response, players, channel)
+        assert_game_created(DUDE.last_sent_response, players, channel)
 
         await client.on_message(MockMessage(GUY, channel, "!play"))
         assert GUY.last_sent_response.startswith(
@@ -549,11 +566,12 @@ class TestSpellBot:
         assert AMY.last_sent_response == "You have been entered into the play queue."
 
         await client.on_message(MockMessage(DUDE, channel, "!play cedh"))
-        ready = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert GUY.last_sent_response == ready
-        assert BUDDY.last_sent_response == ready
-        assert FRIEND.last_sent_response == ready
-        assert DUDE.last_sent_response == ready
+        players = [GUY, BUDDY, FRIEND, DUDE]
+        tags = ["cedh"]
+        assert_game_created(GUY.last_sent_response, players, channel, tags=tags)
+        assert_game_created(BUDDY.last_sent_response, players, channel, tags=tags)
+        assert_game_created(FRIEND.last_sent_response, players, channel, tags=tags)
+        assert_game_created(DUDE.last_sent_response, players, channel, tags=tags)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh"))
         assert GUY.last_sent_response.startswith(
@@ -578,11 +596,12 @@ class TestSpellBot:
         assert AMY.last_sent_response == "You have been entered into the play queue."
 
         await client.on_message(MockMessage(DUDE, channel, "!play cedh proxy"))
-        ready = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert GUY.last_sent_response == ready
-        assert BUDDY.last_sent_response == ready
-        assert FRIEND.last_sent_response == ready
-        assert DUDE.last_sent_response == ready
+        players = [GUY, BUDDY, FRIEND, DUDE]
+        tags = ["cedh", "proxy"]
+        assert_game_created(GUY.last_sent_response, players, channel, tags=tags)
+        assert_game_created(BUDDY.last_sent_response, players, channel, tags=tags)
+        assert_game_created(FRIEND.last_sent_response, players, channel, tags=tags)
+        assert_game_created(DUDE.last_sent_response, players, channel, tags=tags)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh proxy"))
         assert GUY.last_sent_response.startswith(
@@ -665,11 +684,11 @@ class TestSpellBot:
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!play {mentions_str}"
         await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        resp = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert FRIEND.last_sent_response == resp
-        assert GUY.last_sent_response == resp
-        assert BUDDY.last_sent_response == resp
-        assert DUDE.last_sent_response == resp
+        players = [GUY, BUDDY, FRIEND, DUDE]
+        assert_game_created(FRIEND.last_sent_response, players, channel)
+        assert_game_created(GUY.last_sent_response, players, channel)
+        assert_game_created(BUDDY.last_sent_response, players, channel)
+        assert_game_created(DUDE.last_sent_response, players, channel)
 
     async def test_on_message_play_then_leave_3(self, client):
         channel = text_channel()
@@ -694,11 +713,11 @@ class TestSpellBot:
         assert BUDDY.last_sent_response == resp
 
         await client.on_message(MockMessage(DUDE, channel, content))
-        resp = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert FRIEND.last_sent_response == resp
-        assert GUY.last_sent_response == resp
-        assert BUDDY.last_sent_response == resp
-        assert DUDE.last_sent_response == resp
+        players = [GUY, BUDDY, FRIEND, DUDE]
+        assert_game_created(FRIEND.last_sent_response, players, channel)
+        assert_game_created(GUY.last_sent_response, players, channel)
+        assert_game_created(BUDDY.last_sent_response, players, channel)
+        assert_game_created(DUDE.last_sent_response, players, channel)
 
     async def test_on_message_play_1_then_3(self, client):
         channel = text_channel()
@@ -709,11 +728,11 @@ class TestSpellBot:
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!play {mentions_str}"
         await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        resp = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert FRIEND.last_sent_response == resp
-        assert GUY.last_sent_response == resp
-        assert BUDDY.last_sent_response == resp
-        assert DUDE.last_sent_response == resp
+        players = [GUY, BUDDY, FRIEND, DUDE]
+        assert_game_created(FRIEND.last_sent_response, players, channel)
+        assert_game_created(GUY.last_sent_response, players, channel)
+        assert_game_created(BUDDY.last_sent_response, players, channel)
+        assert_game_created(DUDE.last_sent_response, players, channel)
 
     async def test_on_message_play_3_then_3_then_1_then_1(self, client, freezer):
         NOW = datetime.utcnow()
@@ -740,19 +759,19 @@ class TestSpellBot:
 
         freezer.move_to(NOW + timedelta(minutes=10))
         await client.on_message(MockMessage(DUDE, channel, content))
-        resp = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert FRIEND.last_sent_response == resp
-        assert GUY.last_sent_response == resp
-        assert BUDDY.last_sent_response == resp
-        assert DUDE.last_sent_response == resp
+        players = [GUY, BUDDY, FRIEND, DUDE]
+        assert_game_created(FRIEND.last_sent_response, players, channel)
+        assert_game_created(GUY.last_sent_response, players, channel)
+        assert_game_created(BUDDY.last_sent_response, players, channel)
+        assert_game_created(DUDE.last_sent_response, players, channel)
 
         freezer.move_to(NOW + timedelta(minutes=15))
         await client.on_message(MockMessage(JACOB, channel, content))
-        resp = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert AMY.last_sent_response == resp
-        assert JR.last_sent_response == resp
-        assert ADAM.last_sent_response == resp
-        assert JACOB.last_sent_response == resp
+        players = [AMY, JR, ADAM, JACOB]
+        assert_game_created(AMY.last_sent_response, players, channel)
+        assert_game_created(JR.last_sent_response, players, channel)
+        assert_game_created(ADAM.last_sent_response, players, channel)
+        assert_game_created(JACOB.last_sent_response, players, channel)
 
     async def test_on_message_play_size_1(self, client):
         author = someone()
@@ -784,9 +803,9 @@ class TestSpellBot:
         assert FRIEND.last_sent_response == "You have been entered into the play queue."
 
         await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-        resp = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert FRIEND.last_sent_response == resp
-        assert BUDDY.last_sent_response == resp
+        players = [BUDDY, FRIEND]
+        assert_game_created(FRIEND.last_sent_response, players, channel)
+        assert_game_created(BUDDY.last_sent_response, players, channel)
 
     async def test_on_message_play_size_2_and_4(self, client):
         channel = text_channel()
@@ -797,9 +816,9 @@ class TestSpellBot:
         assert FRIEND.last_sent_response == "You have been entered into the play queue."
 
         await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-        resp = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert FRIEND.last_sent_response == resp
-        assert BUDDY.last_sent_response == resp
+        players = [BUDDY, FRIEND]
+        assert_game_created(FRIEND.last_sent_response, players, channel)
+        assert_game_created(BUDDY.last_sent_response, players, channel)
 
         assert GUY.last_sent_response == "You have been entered into the play queue."
 
@@ -943,9 +962,9 @@ class TestSpellBot:
         assert DUDE.last_sent_response == "You have been entered into the play queue."
 
         await client.on_message(MockMessage(BUDDY, channel_a, "!play size:2"))
-        resp = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert BUDDY.last_sent_response == resp
-        assert GUY.last_sent_response == resp
+        players = [BUDDY, GUY]
+        assert_game_created(GUY.last_sent_response, players, channel_a)
+        assert_game_created(BUDDY.last_sent_response, players, channel_a)
 
     async def test_on_message_play_with_power_bad(self, client):
         channel = text_channel()
@@ -972,11 +991,11 @@ class TestSpellBot:
         assert DUDE.last_sent_response == "You have been entered into the play queue."
 
         await client.on_message(MockMessage(JR, channel, "!play power:8"))
-        ready = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert BUDDY.last_sent_response == ready
-        assert AMY.last_sent_response == ready
-        assert DUDE.last_sent_response == ready
-        assert JR.last_sent_response == ready
+        players = [BUDDY, AMY, DUDE, JR]
+        assert_game_created(BUDDY.last_sent_response, players, channel, power=8)
+        assert_game_created(AMY.last_sent_response, players, channel, power=8)
+        assert_game_created(DUDE.last_sent_response, players, channel, power=8)
+        assert_game_created(JR.last_sent_response, players, channel, power=8)
 
     async def test_on_message_play_with_power_level_low(self, client):
         channel = text_channel()
@@ -996,11 +1015,11 @@ class TestSpellBot:
         assert DUDE.last_sent_response == "You have been entered into the play queue."
 
         await client.on_message(MockMessage(JR, channel, "!play power:6"))
-        ready = "Your game is ready, go to http://example.com/game to begin playing!"
-        assert GUY.last_sent_response == ready
-        assert FRIEND.last_sent_response == ready
-        assert DUDE.last_sent_response == ready
-        assert JR.last_sent_response == ready
+        players = [GUY, FRIEND, DUDE, JR]
+        assert_game_created(GUY.last_sent_response, players, channel, power=5)
+        assert_game_created(FRIEND.last_sent_response, players, channel, power=5)
+        assert_game_created(DUDE.last_sent_response, players, channel, power=5)
+        assert_game_created(JR.last_sent_response, players, channel, power=5)
 
 
 def test_paginate():
