@@ -397,9 +397,9 @@ class SpellBot(discord.Client):
 
         Up to five tags can be given as well. For example, `!play no-combo proxy` has
         two tags: `no-combo` and `proxy`. Look on your server for what tags are being
-        used by your community members. Tags can not be just a number and must be no
-        longer than 50 characters. Be careful when using tags because the matchmaker will
-        only pair you up with other players who've used **EXACTLY** the same tags.
+        used by your community members. Tags can **not** be a number like `5`. Be careful
+        when using tags because the matchmaker will only pair you up with other players
+        who've used **EXACTLY** the same tags.
 
         You can also specify a power level like `!play power:7` for example and the
         matchmaker will attempt to find a game with similar power levels for you. Note
@@ -438,7 +438,7 @@ class SpellBot(discord.Client):
             return await author.send(s("play_power_bad"))
 
         if len(mentions) >= size:
-            return await author.send(s("play_too_many"))
+            return await author.send(s("play_too_many_mentions"))
 
         mentioned_users = []
         for mentioned in mentions:
@@ -472,16 +472,23 @@ class SpellBot(discord.Client):
         user.enqueue(
             server=server, include=mentioned_users, size=size, power=power, tags=tags
         )
+        self.session.commit()
 
+        found_discord_users = []
         if len(user.game.users) == size:
-            self.session.commit()  # must commit before we can delete
+            for game_user in user.game.users:
+                discord_user = self.get_user(game_user.xid)
+                if not discord_user:  # game_user has left the server since queueing
+                    game_user.dequeue()
+                else:
+                    found_discord_users.append(discord_user)
+
+        if len(found_discord_users) == size:  # all players matched, game is ready
             game_url = self.create_game()
-            for player in user.game.users:
-                discord_user = self.get_user(player.xid)
-                if discord_user:
-                    await discord_user.send(s("play_ready", url=game_url))
+            for game_user, discord_user in zip(user.game.users, found_discord_users):
+                await discord_user.send(s("play_ready", url=game_url))
                 dequeue_at = datetime.utcnow()
-                seconds = (dequeue_at - player.queued_at).total_seconds()
+                seconds = (dequeue_at - game_user.queued_at).total_seconds()
                 WaitTime.log(
                     self.session,
                     guild_xid=server.guild_xid,
@@ -489,7 +496,7 @@ class SpellBot(discord.Client):
                     seconds=seconds,
                 )
             self.session.delete(user.game)
-        else:
+        else:  # still waiting on more players, game is pending
             average = WaitTime.average(
                 self.session,
                 guild_xid=server.guild_xid,
@@ -501,11 +508,10 @@ class SpellBot(discord.Client):
                 discord_user = self.get_user(player.xid)
                 if discord_user:
                     if average:
-                        await discord_user.send(
-                            s("play_with_average", average=f"{average:.2f}")
-                        )
+                        response = s("play_queue_with_average", average=f"{average:.2f}")
+                        await discord_user.send(response)
                     else:
-                        await discord_user.send(s("play"))
+                        await discord_user.send(s("play_queue"))
 
     @command(allow_dm=True)
     async def leave(self, prefix, channel, author, mentions, params):

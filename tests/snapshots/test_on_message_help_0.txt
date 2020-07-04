@@ -17,9 +17,9 @@
 > 
 > Up to five tags can be given as well. For example, `!play no-combo proxy` has
 > two tags: `no-combo` and `proxy`. Look on your server for what tags are being
-> used by your community members. Tags can not be just a number and must be no
-> longer than 50 characters. Be careful when using tags because the matchmaker will
-> only pair you up with other players who've used **EXACTLY** the same tags.
+> used by your community members. Tags can **not** be a number like `5`. Be careful
+> when using tags because the matchmaker will only pair you up with other players
+> who've used **EXACTLY** the same tags.
 > 
 > You can also specify a power level like `!play power:7` for example and the
 > matchmaker will attempt to find a game with similar power levels for you. Note
@@ -43,3 +43,4 @@
 > _You must have the "SpellBot Admin" role to use any of these commands._
 
 `!status`
+>  Show some details about the queues on your server.
