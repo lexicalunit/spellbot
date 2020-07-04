@@ -28,10 +28,14 @@ MIGRATIONS_DIR = SCRIPTS_DIR / "migrations"
 # Application Settings
 ADMIN_ROLE = "SpellBot Admin"
 CREATE_ENDPOINT = "https://us-central1-magic-night-30324.cloudfunctions.net/createGame"
-EXPIRE_GAMES_INTERVAL_SEC = 30
-EXPIRE_GAMES_WINDOW_MIN = 30
-EXPIRE_WAITS_INTERVAL_SEC = 300
-EXPIRE_WAITS_WINDOW_MIN = 30
+AVG_QUEUE_TIME_WINDOW_MIN = 30
+
+
+def to_int(s):
+    try:
+        return int(s)
+    except ValueError:
+        return None
 
 
 def is_admin(channel, user_or_member):
@@ -130,24 +134,25 @@ class SpellBot(discord.Client):
 
     def cleanup_expired_games_task(self, loop):  # pragma: no cover
         """Starts a task that deletes old games."""
+        THIRTY_SECONDS = 30
 
         async def task():
             while True:
-                await self.cleanup_expired_games(EXPIRE_GAMES_WINDOW_MIN)
-                await asyncio.sleep(EXPIRE_GAMES_INTERVAL_SEC)
+                await self.cleanup_expired_games()
+                await asyncio.sleep(THIRTY_SECONDS)
 
         loop.create_task(task())
 
-    async def cleanup_expired_games(self, window):
+    async def cleanup_expired_games(self):
         """Deletes games older than the given window of minutes."""
         session = self.data.Session()
         try:
-            expired = Game.expired(session, window=window)
+            expired = Game.expired(session)
             for game in expired:
                 for user in game.users:
                     discord_user = self.get_user(user.xid)
                     if discord_user:
-                        await discord_user.send(s("expired", window=window))
+                        await discord_user.send(s("expired", window=game.server.expire))
                 session.delete(game)
             session.commit()
         except exc.SQLAlchemyError as e:
@@ -159,11 +164,12 @@ class SpellBot(discord.Client):
 
     def cleanup_expired_wait_times_task(self, loop):  # pragma: no cover
         """Starts a task that deletes old wait times data."""
+        FIVE_MINUTES = 300
 
         async def task():
             while True:
-                await self.cleanup_expired_waits(EXPIRE_WAITS_WINDOW_MIN)
-                await asyncio.sleep(EXPIRE_WAITS_INTERVAL_SEC)
+                await self.cleanup_expired_waits(AVG_QUEUE_TIME_WINDOW_MIN)
+                await asyncio.sleep(FIVE_MINUTES)
 
         loop.create_task(task())
 
@@ -417,12 +423,6 @@ class SpellBot(discord.Client):
         if user.waiting:
             return await author.send(s("play_already"))
 
-        def to_int(s):
-            try:
-                return int(s)
-            except ValueError:
-                return None
-
         size = 4
         power = None
         for param in params:
@@ -523,7 +523,7 @@ class SpellBot(discord.Client):
                 guild_xid=server.guild_xid,
                 channel_xid=channel.id,
                 scope=server.scope,
-                window_min=EXPIRE_WAITS_WINDOW_MIN,
+                window_min=AVG_QUEUE_TIME_WINDOW_MIN,
             )
             for player in user.game.users:
                 discord_user = self.get_user(player.xid)
@@ -557,7 +557,7 @@ class SpellBot(discord.Client):
             guild_xid=server.guild_xid,
             channel_xid=channel.id,
             scope=server.scope,
-            window_min=EXPIRE_WAITS_WINDOW_MIN,
+            window_min=AVG_QUEUE_TIME_WINDOW_MIN,
         )
         if average:
             await channel.send(s("status", average=f"{average:.2f}"))
@@ -574,6 +574,7 @@ class SpellBot(discord.Client):
         * `channel <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot prefix for commands in text channels.
         * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
+        * `exxpire <number>`: Set the number of minutes before pending games expire.
 
         _You must have the "SpellBot Admin" role to use any of these commands._
         & <subcommand> [subcommand parameters]
@@ -584,19 +585,15 @@ class SpellBot(discord.Client):
             return await author.send(s("spellbot_missing_subcommand"))
         command = params[0]
         if command == "channels":
-            return await self.spellbot_channels(
-                prefix, channel, author, mentions, params[1:]
-            )
+            await self.spellbot_channels(prefix, channel, author, mentions, params[1:])
         elif command == "prefix":
-            return await self.spellbot_prefix(
-                prefix, channel, author, mentions, params[1:]
-            )
+            await self.spellbot_prefix(prefix, channel, author, mentions, params[1:])
         elif command == "scope":
-            return await self.spellbot_scope(
-                prefix, channel, author, mentions, params[1:]
-            )
+            await self.spellbot_scope(prefix, channel, author, mentions, params[1:])
+        elif command == "expire":
+            await self.spellbot_expire(prefix, channel, author, mentions, params[1:])
         else:
-            return await author.send(s("spellbot_unknown_subcommand", command=command))
+            await author.send(s("spellbot_unknown_subcommand", command=command))
 
     async def spellbot_channels(self, prefix, channel, author, mentions, params):
         if not params:
@@ -641,6 +638,23 @@ class SpellBot(discord.Client):
         else:
             self.session.add(Server(guild_xid=channel.guild.id, scope=scope_str))
         return await channel.send(s("spellbot_scope", scope=scope_str))
+
+    async def spellbot_expire(self, prefix, channel, author, mentions, params):
+        if not params:
+            return await author.send(s("spellbot_expire_none"))
+        expire = to_int(params[0])
+        if not expire or not (10 < expire < 60):
+            return await author.send(s("spellbot_expire_bad"))
+        server = (
+            self.session.query(Server)
+            .filter(Server.guild_xid == channel.guild.id)
+            .one_or_none()
+        )
+        if server:
+            server.expire = expire
+        else:
+            self.session.add(Server(guild_xid=channel.guild.id, expire=expire))
+        return await author.send(s("spellbot_expire", expire=expire))
 
 
 def get_db_env(fallback):  # pragma: no cover

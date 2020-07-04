@@ -14,6 +14,7 @@ from sqlalchemy import (
     and_,
     create_engine,
     func,
+    text,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
@@ -60,16 +61,20 @@ class WaitTime(Base):
 class Server(Base):
     __tablename__ = "servers"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    guild_xid = Column(BigInteger, nullable=False)
+    guild_xid = Column(BigInteger, primary_key=True, nullable=False)
     prefix = Column(String(10), nullable=False, default="!")
     scope = Column(String(10), nullable=False, default="server")
+    expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
+    games = relationship("Game", back_populates="server")
+    authorized_channels = relationship("AuthorizedChannel", back_populates="server")
 
 
 class AuthorizedChannel(Base):
     __tablename__ = "authorized_channels"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    guild_xid = Column(BigInteger, nullable=False)
+    guild_xid = Column(BigInteger, ForeignKey("servers.guild_xid"), nullable=False)
     name = Column(String(100), nullable=False)
+    server = relationship("Server", back_populates="authorized_channels")
 
 
 games_tags = Table(
@@ -161,16 +166,21 @@ class Game(Base):
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     size = Column(Integer, nullable=False)
-    guild_xid = Column(BigInteger, nullable=False)
+    guild_xid = Column(BigInteger, ForeignKey("servers.guild_xid"), nullable=False)
     channel_xid = Column(BigInteger)
     power = Column(Integer)
     users = relationship("User", back_populates="game")
     tags = relationship("Tag", secondary=games_tags, back_populates="games")
+    server = relationship("Server", back_populates="games")
 
     @classmethod
-    def expired(cls, session, *, window):
-        cutoff = datetime.utcnow() - timedelta(minutes=window)
-        return session.query(Game).filter(Game.created_at < cutoff).all()
+    def expired(cls, session):
+        now = datetime.utcnow()
+        if "sqlite" in session.bind.driver:
+            comp = text(f"datetime('{now}', '-' || servers.expire || ' minutes')")
+        else:
+            comp = text(f"'{now}' - (servers.expire * interval '1 minute')")
+        return session.query(Game).join(Server).filter(Game.created_at < comp).all()
 
 
 class Tag(Base):
