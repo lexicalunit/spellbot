@@ -1,4 +1,3 @@
->  Show some details about the queues on your server.
 --- 
 Please report any bugs and suggestions at <https://github.com/lexicalunit/spellbot/issues>!
 
