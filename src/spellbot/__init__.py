@@ -574,7 +574,7 @@ class SpellBot(discord.Client):
         * `channel <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot prefix for commands in text channels.
         * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
-        * `exxpire <number>`: Set the number of minutes before pending games expire.
+        * `expire <number>`: Set the number of minutes before pending games expire.
 
         _You must have the "SpellBot Admin" role to use any of these commands._
         & <subcommand> [subcommand parameters]
