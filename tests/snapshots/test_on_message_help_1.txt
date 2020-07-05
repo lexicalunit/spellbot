@@ -1,3 +1,7 @@
+> _You must have the "SpellBot Admin" role to use any of these commands._
+
+`!status`
+>  Show some details about the queues on your server.
 --- 
 Please report any bugs and suggestions at <https://github.com/lexicalunit/spellbot/issues>!
 
