@@ -30,6 +30,9 @@ play_too_many_mentions: Sorry, you mentioned too many people.
 play_too_many_tags: Sorry, you can not use more than 5 tags.
 spellbot_channels: 'This bot is now authroized to respond only in: $channels'
 spellbot_channels_none: Please provide a list of channels.
+spellbot_expire: Game expiration time set to $expire minutes.
+spellbot_expire_bad: Sorry, game expiration time should be between 10 and 60 minutes.
+spellbot_expire_none: Please provide a number of minutes.
 spellbot_missing_subcommand: Please provide a subcommand when using this command.
 spellbot_prefix: This bot will now use "$prefix" as its command prefix for this server.
 spellbot_prefix_none: Please provide a prefix string.
