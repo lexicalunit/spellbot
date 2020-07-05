@@ -10,6 +10,7 @@ import click
 import discord
 import hupper
 import requests
+from humanize import naturaldelta
 from sqlalchemy import exc
 from sqlalchemy.sql import text
 
@@ -529,11 +530,10 @@ class SpellBot(discord.Client):
                 discord_user = self.get_user(player.xid)
                 if not discord_user:
                     continue
-                wait = (
-                    f"_The average wait time is {average:.2f} seconds._"
-                    if average
-                    else ""
-                )
+                wait = ""
+                if average:
+                    delta = naturaldelta(timedelta(seconds=average))
+                    wait = f"_The average wait time is {delta}._"
                 others = ", ".join(
                     [f"<!@{u.xid}>" for u in user.game.users if u.xid != player.xid]
                 )
@@ -574,7 +574,8 @@ class SpellBot(discord.Client):
             window_min=AVG_QUEUE_TIME_WINDOW_MIN,
         )
         if average:
-            await channel.send(s("status", average=f"{average:.2f}"))
+            wait = naturaldelta(timedelta(seconds=average))
+            await channel.send(s("status", wait=wait))
         else:
             await channel.send(s("status_unknown"))
 
