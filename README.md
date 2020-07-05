@@ -38,11 +38,12 @@ Discord via the following commands in any of the authorized channels.
 - `channels`: Set the channels SpellBot is allowed to operate within.
 - `prefix`: Set the command prefix for SpellBot in text channels.
 - `scope`: Set the matchmaking scope to server-wide or channel-specific.
+- `expire`: Set how many minutes before games are expired due to inactivity.
 
 ## 🙌 Support Me
 
 I'm keeping SpellBot running using my own money but if you like the bot and want
-to help me out, please consider donating to [my ko-fi][ko-fi].
+to help me out, please consider donating to [my Ko-fi][ko-fi].
 
 ## ❤️ Contributing
 
