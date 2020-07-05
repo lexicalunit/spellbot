@@ -44,6 +44,6 @@ spellbot_scope: 'Matchmaking on this server is now set to: $scope.'
 spellbot_scope_bad: Sorry, scope should be either "server" or "channel".
 spellbot_scope_none: Please provide a scope string.
 spellbot_unknown_subcommand: The subcommand "$command" is not recognized.
-status: The average queue wait time is currently $average seconds.
+status: The average queue wait time is currently $wait.
 status_unknown: There is not enough information to calculate the current average queue
   wait time right now.
