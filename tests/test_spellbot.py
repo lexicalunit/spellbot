@@ -897,18 +897,18 @@ class TestSpellBot:
         freezer.move_to(NOW)
         await client.on_message(MockMessage(GUY, channel, "!play size:2"))
 
-        freezer.move_to(NOW + timedelta(seconds=10))
+        freezer.move_to(NOW + timedelta(minutes=10))
         await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
 
         await client.on_message(MockMessage(BUDDY, channel, "!status"))
         assert channel.last_sent_response == (
-            "The average queue wait time is currently 5.00 seconds."
+            "The average queue wait time is currently 5 minutes."
         )
 
         await client.on_message(MockMessage(FRIEND, channel, "!play"))
         assert FRIEND.last_sent_response.split("\n")[0] == (
             "**You have been entered in a play queue for a 4 player game.** "
-            "_The average wait time is 5.00 seconds._"
+            "_The average wait time is 5 minutes._"
         )
 
     async def test_cleanup_expired_waits(self, client, freezer):
@@ -922,7 +922,7 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(BUDDY, channel, "!status"))
         assert channel.last_sent_response == (
-            "The average queue wait time is currently 5.00 seconds."
+            "The average queue wait time is currently 5 seconds."
         )
 
         freezer.move_to(NOW + timedelta(minutes=35))
