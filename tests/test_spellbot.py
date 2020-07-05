@@ -305,6 +305,23 @@ def assert_game_created(message, players, channel, tags=None, power=None):
     assert lines[6] == f"Power Level: {power}"
 
 
+def assert_game_queued(message, size=4, others=None, tags=None, power=None):
+    tags = tags if tags else ["default"]
+    lines = message.split("\n")
+    assert lines[0].startswith(
+        f"**You have been entered in a play queue for a {size} player game.** "
+    )
+    assert lines[1].startswith("Players queued with you: ")
+    rest = lines[1].replace("Players queued with you: ", "")
+    if rest != "None":
+        tokens = set(rest.split(", "))
+        assert tokens == set(f"<!@{other.id}>" for other in others)
+    assert lines[2].startswith("Tags: ")
+    tokens = set(lines[2].replace("Tags: ", "").split(", "))
+    assert tokens == set(tags)
+    assert lines[3] == f"Power Level: {power}"
+
+
 ##############################
 # Test Fixtures
 ##############################
@@ -525,16 +542,16 @@ class TestSpellBot:
     async def test_on_message_play(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play"))
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(GUY.last_sent_response)
 
         await client.on_message(MockMessage(GUY, channel, "!play"))
         assert GUY.last_sent_response == "You are already in the queue."
 
         await client.on_message(MockMessage(FRIEND, channel, "!play"))
-        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(FRIEND.last_sent_response, others=[GUY])
 
         await client.on_message(MockMessage(BUDDY, channel, "!play"))
-        assert BUDDY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(BUDDY.last_sent_response, others=[GUY, FRIEND])
 
         await client.on_message(MockMessage(DUDE, channel, "!play"))
         players = [GUY, BUDDY, FRIEND, DUDE]
@@ -544,77 +561,71 @@ class TestSpellBot:
         assert_game_created(DUDE.last_sent_response, players, channel)
 
         await client.on_message(MockMessage(GUY, channel, "!play"))
-        assert GUY.last_sent_response.startswith(
-            "You have been entered into the play queue."
-        )
+        assert_game_queued(GUY.last_sent_response)
 
     async def test_on_message_play_cedh(self, client):
         channel = text_channel()
+        tags = ["cedh"]
         await client.on_message(MockMessage(GUY, channel, "!play cedh"))
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(GUY.last_sent_response, tags=tags)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh"))
         assert GUY.last_sent_response == "You are already in the queue."
 
         await client.on_message(MockMessage(FRIEND, channel, "!play cedh"))
-        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(FRIEND.last_sent_response, tags=tags, others=[GUY])
 
         await client.on_message(MockMessage(BUDDY, channel, "!play cedh"))
-        assert BUDDY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(BUDDY.last_sent_response, tags=tags, others=[GUY, FRIEND])
 
         await client.on_message(MockMessage(AMY, channel, "!play"))
-        assert AMY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(AMY.last_sent_response)
 
         await client.on_message(MockMessage(DUDE, channel, "!play cedh"))
         players = [GUY, BUDDY, FRIEND, DUDE]
-        tags = ["cedh"]
         assert_game_created(GUY.last_sent_response, players, channel, tags=tags)
         assert_game_created(BUDDY.last_sent_response, players, channel, tags=tags)
         assert_game_created(FRIEND.last_sent_response, players, channel, tags=tags)
         assert_game_created(DUDE.last_sent_response, players, channel, tags=tags)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh"))
-        assert GUY.last_sent_response.startswith(
-            "You have been entered into the play queue."
-        )
+        assert_game_queued(GUY.last_sent_response, tags=tags)
 
     async def test_on_message_play_cedh_and_proxy(self, client):
         channel = text_channel()
+        tags = ["cedh", "proxy"]
         await client.on_message(MockMessage(GUY, channel, "!play cedh proxy"))
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(GUY.last_sent_response, tags=tags)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh proxy"))
         assert GUY.last_sent_response == "You are already in the queue."
 
         await client.on_message(MockMessage(FRIEND, channel, "!play cedh proxy"))
-        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(FRIEND.last_sent_response, tags=tags, others=[GUY])
 
         await client.on_message(MockMessage(BUDDY, channel, "!play cedh proxy"))
-        assert BUDDY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(BUDDY.last_sent_response, tags=tags, others=[GUY, FRIEND])
 
         await client.on_message(MockMessage(AMY, channel, "!play proxy"))
-        assert AMY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(AMY.last_sent_response, tags=["proxy"])
 
         await client.on_message(MockMessage(DUDE, channel, "!play cedh proxy"))
         players = [GUY, BUDDY, FRIEND, DUDE]
-        tags = ["cedh", "proxy"]
         assert_game_created(GUY.last_sent_response, players, channel, tags=tags)
         assert_game_created(BUDDY.last_sent_response, players, channel, tags=tags)
         assert_game_created(FRIEND.last_sent_response, players, channel, tags=tags)
         assert_game_created(DUDE.last_sent_response, players, channel, tags=tags)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh proxy"))
-        assert GUY.last_sent_response.startswith(
-            "You have been entered into the play queue."
-        )
+        assert_game_queued(GUY.last_sent_response, tags=tags)
 
     async def test_on_message_play_no_power_then_power(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play size:2"))
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(GUY.last_sent_response, size=2)
 
         await client.on_message(MockMessage(FRIEND, channel, "!play size:2 power:5"))
-        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(FRIEND.last_sent_response, size=2, power=5)
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_leave_not_queued(self, client, channel):
@@ -707,10 +718,9 @@ class TestSpellBot:
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!play {mentions_str}"
         await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        resp = "You have been entered into the play queue."
-        assert FRIEND.last_sent_response == resp
-        assert GUY.last_sent_response == resp
-        assert BUDDY.last_sent_response == resp
+        assert_game_queued(FRIEND.last_sent_response, others=[GUY, BUDDY])
+        assert_game_queued(GUY.last_sent_response, others=[FRIEND, BUDDY])
+        assert_game_queued(BUDDY.last_sent_response, others=[FRIEND, GUY])
 
         await client.on_message(MockMessage(DUDE, channel, content))
         players = [GUY, BUDDY, FRIEND, DUDE]
@@ -722,7 +732,7 @@ class TestSpellBot:
     async def test_on_message_play_1_then_3(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(DUDE, channel, "!play"))
-        assert DUDE.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(DUDE.last_sent_response)
 
         mentions = [GUY, BUDDY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
@@ -742,20 +752,18 @@ class TestSpellBot:
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!play {mentions_str}"
         await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        resp = "You have been entered into the play queue."
-        assert FRIEND.last_sent_response == resp
-        assert GUY.last_sent_response == resp
-        assert BUDDY.last_sent_response == resp
+        assert_game_queued(FRIEND.last_sent_response, others=[GUY, BUDDY])
+        assert_game_queued(GUY.last_sent_response, others=[FRIEND, BUDDY])
+        assert_game_queued(BUDDY.last_sent_response, others=[FRIEND, GUY])
 
         freezer.move_to(NOW + timedelta(minutes=5))
         mentions = [JR, ADAM]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!play {mentions_str}"
         await client.on_message(MockMessage(AMY, channel, content, mentions=mentions))
-        resp = "You have been entered into the play queue."
-        assert AMY.last_sent_response == resp
-        assert JR.last_sent_response == resp
-        assert ADAM.last_sent_response == resp
+        assert_game_queued(AMY.last_sent_response, others=[JR, ADAM])
+        assert_game_queued(JR.last_sent_response, others=[AMY, ADAM])
+        assert_game_queued(ADAM.last_sent_response, others=[AMY, JR])
 
         freezer.move_to(NOW + timedelta(minutes=10))
         await client.on_message(MockMessage(DUDE, channel, content))
@@ -800,7 +808,7 @@ class TestSpellBot:
     async def test_on_message_play_size_2(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(FRIEND, channel, "!play size:2"))
-        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(FRIEND.last_sent_response, size=2)
 
         await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
         players = [BUDDY, FRIEND]
@@ -810,23 +818,23 @@ class TestSpellBot:
     async def test_on_message_play_size_2_and_4(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play"))
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(GUY.last_sent_response)
 
         await client.on_message(MockMessage(FRIEND, channel, "!play size:2"))
-        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(FRIEND.last_sent_response, size=2)
 
         await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
         players = [BUDDY, FRIEND]
         assert_game_created(FRIEND.last_sent_response, players, channel)
         assert_game_created(BUDDY.last_sent_response, players, channel)
 
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(GUY.last_sent_response)
 
     async def test_on_message_play_size_2_and_4_already(self, client):
         channel = text_channel()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!play"))
-        assert author.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(author.last_sent_response)
 
         await client.on_message(MockMessage(author, channel, "!play size:2"))
         assert author.last_sent_response == "You are already in the queue."
@@ -837,7 +845,7 @@ class TestSpellBot:
         channel = text_channel()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!play"))
-        assert author.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(author.last_sent_response)
         freezer.move_to(NOW + timedelta(days=1))
         await client.cleanup_expired_games()
         assert author.last_sent_response == (
@@ -861,7 +869,7 @@ class TestSpellBot:
             'This bot will now use "$" as its command prefix for this server.'
         )
         await client.on_message(MockMessage(author, channel, "$play"))
-        assert author.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(author.last_sent_response)
         await client.on_message(MockMessage(author, channel, "$spellbot prefix $"))
         assert channel.last_sent_response == (
             'This bot will now use "$" as its command prefix for this server.'
@@ -896,9 +904,9 @@ class TestSpellBot:
         )
 
         await client.on_message(MockMessage(FRIEND, channel, "!play"))
-        assert FRIEND.last_sent_response == (
-            "You have been entered into the play queue. "
-            "The current average queue wait time is 5.00 seconds."
+        assert FRIEND.last_sent_response.split("\n")[0] == (
+            "**You have been entered in a play queue for a 4 player game.** "
+            "_The average wait time is 5.00 seconds._"
         )
 
     async def test_cleanup_expired_waits(self, client, freezer):
@@ -957,9 +965,9 @@ class TestSpellBot:
         await client.on_message(MockMessage(admin, channel_a, "!spellbot scope channel"))
 
         await client.on_message(MockMessage(GUY, channel_a, "!play size:2"))
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(GUY.last_sent_response, size=2)
         await client.on_message(MockMessage(DUDE, channel_b, "!play size:2"))
-        assert DUDE.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(DUDE.last_sent_response, size=2, others=[GUY])
 
         await client.on_message(MockMessage(BUDDY, channel_a, "!play size:2"))
         players = [BUDDY, GUY]
@@ -976,19 +984,19 @@ class TestSpellBot:
     async def test_on_message_play_with_power_level_high(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play power:5"))
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(GUY.last_sent_response, power=5)
 
         await client.on_message(MockMessage(FRIEND, channel, "!play power:7"))
-        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(FRIEND.last_sent_response, power=7, others=[GUY])
 
         await client.on_message(MockMessage(BUDDY, channel, "!play power:8"))
-        assert BUDDY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(BUDDY.last_sent_response, power=8)
 
         await client.on_message(MockMessage(AMY, channel, "!play power:9"))
-        assert AMY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(AMY.last_sent_response, power=9, others=[BUDDY])
 
         await client.on_message(MockMessage(DUDE, channel, "!play power:8"))
-        assert DUDE.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(DUDE.last_sent_response, power=8, others=[BUDDY, AMY])
 
         await client.on_message(MockMessage(JR, channel, "!play power:8"))
         players = [BUDDY, AMY, DUDE, JR]
@@ -1000,19 +1008,19 @@ class TestSpellBot:
     async def test_on_message_play_with_power_level_low(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play power:5"))
-        assert GUY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(GUY.last_sent_response, power=5)
 
         await client.on_message(MockMessage(FRIEND, channel, "!play power:7"))
-        assert FRIEND.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(FRIEND.last_sent_response, power=7, others=[GUY])
 
         await client.on_message(MockMessage(BUDDY, channel, "!play power:8"))
-        assert BUDDY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(BUDDY.last_sent_response, power=8)
 
         await client.on_message(MockMessage(AMY, channel, "!play power:9"))
-        assert AMY.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(AMY.last_sent_response, power=9, others=[BUDDY])
 
         await client.on_message(MockMessage(DUDE, channel, "!play power:4"))
-        assert DUDE.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(DUDE.last_sent_response, power=4, others=[GUY, FRIEND])
 
         await client.on_message(MockMessage(JR, channel, "!play power:6"))
         players = [GUY, FRIEND, DUDE, JR]
@@ -1047,7 +1055,7 @@ class TestSpellBot:
         channel = text_channel()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!play"))
-        assert author.last_sent_response == "You have been entered into the play queue."
+        assert_game_queued(author.last_sent_response)
         await client.on_message(MockMessage(an_admin(), channel, "!spellbot expire 45"))
         freezer.move_to(NOW + timedelta(days=1))
         await client.cleanup_expired_games()
