@@ -583,6 +583,7 @@ class SpellBot(discord.Client):
             return await author.send(s("not_admin"))
         if not params:
             return await author.send(s("spellbot_missing_subcommand"))
+        self.ensure_server_exists(channel.guild.id)
         command = params[0]
         if command == "channels":
             await self.spellbot_channels(prefix, channel, author, mentions, params[1:])
