@@ -845,14 +845,16 @@ class TestSpellBot:
         channel = text_channel()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!play"))
-        assert_game_queued(author.last_sent_response)
+        first_response = author.last_sent_response
+        assert_game_queued(first_response)
+        await client.cleanup_expired_games()
+        assert author.last_sent_response == first_response
         freezer.move_to(NOW + timedelta(days=1))
         await client.cleanup_expired_games()
         assert author.last_sent_response == (
-            "SpellBot has removed you from the queue after waiting 30 minutes to try and"
-            " match you up with other players. Sorry, but unfortunately not enough"
-            " players were found in that time. Please try again when there's more"
-            " players available."
+            "SpellBot has removed you from the queue due to server inactivity. "
+            "Sorry, but unfortunately not enough players available at this time. "
+            "Please try again when there are more players available."
         )
 
     async def test_on_message_spellbot_prefix_none(self, client):
@@ -1054,16 +1056,19 @@ class TestSpellBot:
         freezer.move_to(NOW)
         channel = text_channel()
         author = someone()
-        await client.on_message(MockMessage(author, channel, "!play"))
-        assert_game_queued(author.last_sent_response)
         await client.on_message(MockMessage(an_admin(), channel, "!spellbot expire 45"))
-        freezer.move_to(NOW + timedelta(days=1))
+        await client.on_message(MockMessage(author, channel, "!play"))
+        first_response = author.last_sent_response
+        assert_game_queued(first_response)
+        freezer.move_to(NOW + timedelta(minutes=30))
+        await client.cleanup_expired_games()
+        assert author.last_sent_response == first_response
+        freezer.move_to(NOW + timedelta(minutes=50))
         await client.cleanup_expired_games()
         assert author.last_sent_response == (
-            "SpellBot has removed you from the queue after waiting 45 minutes to try and"
-            " match you up with other players. Sorry, but unfortunately not enough"
-            " players were found in that time. Please try again when there's more"
-            " players available."
+            "SpellBot has removed you from the queue due to server inactivity. Sorry,"
+            " but unfortunately not enough players available at this time. Please try"
+            " again when there are more players available."
         )
 
 
