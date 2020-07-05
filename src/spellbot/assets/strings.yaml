@@ -1,7 +1,7 @@
 did_you_mean: 'Did you mean: $possible?'
-expired: SpellBot has removed you from the queue after waiting $window minutes to
-  try and match you up with other players. Sorry, but unfortunately not enough players
-  were found in that time. Please try again when there's more players available.
+expired: SpellBot has removed you from the queue due to server inactivity. Sorry,
+  but unfortunately not enough players available at this time. Please try again when
+  there are more players available.
 leave: You have been removed from the queue.
 leave_already: You were not in the queue.
 no_dm: That command only works in text channels.

@@ -138,22 +138,28 @@ class User(Base):
             .order_by(Game.created_at)
             .first()
         )
+        now = datetime.utcnow()
+        expires_at = now + timedelta(minutes=server.expire)
         if existing_game:
             self.game = existing_game
+            self.game.updated_at = now
+            self.game.expires_at = expires_at
         else:
             self.game = Game(
-                size=size,
-                guild_xid=guild_xid,
                 channel_xid=channel_xid if server.scope == "channel" else None,
+                created_at=now,
+                expires_at=expires_at,
+                guild_xid=guild_xid,
                 power=power,
+                size=size,
                 tags=tags,
+                updated_at=now,
             )
             session.add(self.game)
-        queued_at = datetime.utcnow()
-        self.queued_at = queued_at
+        self.queued_at = now
         for user in include:
             user.game = self.game
-            user.queued_at = queued_at
+            user.queued_at = now
 
     def dequeue(self):
         session = Session.object_session(self)
@@ -166,6 +172,8 @@ class Game(Base):
     __tablename__ = "games"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime)
     size = Column(Integer, nullable=False)
     guild_xid = Column(
         BigInteger, ForeignKey("servers.guild_xid", ondelete="CASCADE"), nullable=False
@@ -178,14 +186,7 @@ class Game(Base):
 
     @classmethod
     def expired(cls, session):
-        now = datetime.utcnow()
-        if "sqlite" in session.bind.driver:
-            comp = text(f"datetime('{now}', '-' || servers.expire || ' minutes')")
-        else:
-            comp = text(
-                f"CAST('{now}' AS TIMESTAMP) - (servers.expire * interval '1 minute')"
-            )
-        return session.query(Game).join(Server).filter(Game.created_at < comp).all()
+        return session.query(Game).filter(datetime.utcnow() >= Game.expires_at).all()
 
 
 class Tag(Base):
