@@ -10,9 +10,13 @@ not_admin: You do not have admin permissions for this bot.
 play_already: You are already in the queue.
 play_mention_already: Sorry, $user is already in the play queue.
 play_power_bad: Sorry, power level should a number between 1 and 10.
-play_queue: You have been entered into the play queue.
-play_queue_with_average: You have been entered into the play queue. The current average
-  queue wait time is $average seconds.
+play_queue: '**You have been entered in a play queue for a $size player game.** $wait
+
+  Players queued with you: $others
+
+  Tags: $tags
+
+  Power Level: $power'
 play_ready: '**Your SpellTable game is ready!**
 
   $url

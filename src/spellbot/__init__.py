@@ -527,12 +527,26 @@ class SpellBot(discord.Client):
             )
             for player in user.game.users:
                 discord_user = self.get_user(player.xid)
-                if discord_user:
-                    if average:
-                        response = s("play_queue_with_average", average=f"{average:.2f}")
-                        await discord_user.send(response)
-                    else:
-                        await discord_user.send(s("play_queue"))
+                if not discord_user:
+                    continue
+                wait = (
+                    f"_The average wait time is {average:.2f} seconds._"
+                    if average
+                    else ""
+                )
+                others = ", ".join(
+                    [f"<!@{u.xid}>" for u in user.game.users if u.xid != player.xid]
+                )
+                tags_s = ", ".join(tag_names)
+                reply = s(
+                    "play_queue",
+                    size=size,
+                    wait=wait,
+                    others=others if others else "None",
+                    tags=tags_s,
+                    power=str(power),
+                )
+                await discord_user.send(reply)
 
     @command(allow_dm=True)
     async def leave(self, prefix, channel, author, mentions, params):
@@ -617,10 +631,7 @@ class SpellBot(discord.Client):
             .filter(Server.guild_xid == channel.guild.id)
             .one_or_none()
         )
-        if server:
-            server.prefix = prefix_str
-        else:
-            self.session.add(Server(guild_xid=channel.guild.id, prefix=prefix_str))
+        server.prefix = prefix_str
         return await channel.send(s("spellbot_prefix", prefix=prefix_str))
 
     async def spellbot_scope(self, prefix, channel, author, mentions, params):
@@ -634,10 +645,7 @@ class SpellBot(discord.Client):
             .filter(Server.guild_xid == channel.guild.id)
             .one_or_none()
         )
-        if server:
-            server.scope = scope_str
-        else:
-            self.session.add(Server(guild_xid=channel.guild.id, scope=scope_str))
+        server.scope = scope_str
         return await channel.send(s("spellbot_scope", scope=scope_str))
 
     async def spellbot_expire(self, prefix, channel, author, mentions, params):
@@ -651,10 +659,7 @@ class SpellBot(discord.Client):
             .filter(Server.guild_xid == channel.guild.id)
             .one_or_none()
         )
-        if server:
-            server.expire = expire
-        else:
-            self.session.add(Server(guild_xid=channel.guild.id, expire=expire))
+        server.expire = expire
         return await author.send(s("spellbot_expire", expire=expire))
 
 
