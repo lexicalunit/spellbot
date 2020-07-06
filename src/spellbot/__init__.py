@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import logging
+import sys
 from datetime import datetime, timedelta
 from functools import wraps
 from os import getenv
@@ -763,9 +764,19 @@ def main(
     # before we try to create we can run any of the migrations.
     ensure_application_directories_exist()
 
+    token = getenv("SPELLBOT_TOKEN", None)
+    if not token:
+        print("error: SPELLBOT_TOKEN environment variable not set", file=sys.stderr)
+        sys.exit(1)
+
+    auth = getenv("SPELLTABLE_AUTH", None)
+    if not auth:
+        print("error: SPELLTABLE_AUTH environment variable not set", file=sys.stderr)
+        sys.exit(1)
+
     client = SpellBot(
-        token=getenv("SPELLBOT_TOKEN", None),
-        auth=getenv("SPELLTABLE_AUTH", None),
+        token=token,
+        auth=auth,
         db_url=database_url,
         log_level="DEBUG" if verbose else log_level,
         mock_games=mock_games,
