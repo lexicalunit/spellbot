@@ -3,6 +3,7 @@ from pathlib import Path
 
 import alembic
 import alembic.config
+from humanize import naturaldelta
 from sqlalchemy import (
     BigInteger,
     Column,
@@ -19,6 +20,8 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
 from sqlalchemy.sql.expression import label
+
+from spellbot.constants import AVG_QUEUE_TIME_WINDOW_MIN
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = PACKAGE_ROOT / "assets"
@@ -96,7 +99,7 @@ class User(Base):
 
     @property
     def waiting(self):
-        return self.game is not None
+        return self.queued_at is not None
 
     def enqueue(self, *, server, channel_xid, include, size, power, tags):
         session = Session.object_session(self)
@@ -112,6 +115,10 @@ class User(Base):
         valid_game_ids = []
         for row in considerations:
             game = session.query(Game).get(row.game_id)
+            if not game:
+                continue
+            if game.url is not None:
+                continue
             if set(tag.id for tag in game.tags) != required_tag_ids:
                 continue
             if len(game.users) >= size - len(include):
@@ -163,9 +170,10 @@ class User(Base):
 
     def dequeue(self):
         session = Session.object_session(self)
-        if len(self.game.users) == 1:
+        if self.game and len(self.game.users) == 1:
             session.delete(self.game)
         self.game = None
+        self.queued_at = None
 
 
 class Game(Base):
@@ -180,13 +188,52 @@ class Game(Base):
     )
     channel_xid = Column(BigInteger)
     power = Column(Integer)
+    url = Column(String(255))
     users = relationship("User", back_populates="game")
     tags = relationship("Tag", secondary=games_tags, back_populates="games")
     server = relationship("Server", back_populates="games")
 
     @classmethod
     def expired(cls, session):
-        return session.query(Game).filter(datetime.utcnow() >= Game.expires_at).all()
+        return (
+            session.query(Game)
+            .filter(and_(datetime.utcnow() >= Game.expires_at, Game.url == None))
+            .all()
+        )
+
+    def to_str(self):
+        session = Session.object_session(self)
+        rvalue = ""
+        if self.url:
+            rvalue += "**Your SpellTable game is ready!**\n"
+            rvalue += f"{self.url}\n"
+        else:
+            rvalue += (
+                "**You have been entered in a play queue "
+                f"for a {self.size} player game.**"
+            )
+            average = WaitTime.average(
+                session,
+                guild_xid=self.server.guild_xid,
+                channel_xid=self.channel_xid,
+                scope=self.server.scope,
+                window_min=AVG_QUEUE_TIME_WINDOW_MIN,
+            )
+            if average:
+                delta = naturaldelta(timedelta(seconds=average))
+                rvalue += f" _The average wait time is {delta}._\n"
+            else:
+                rvalue += "\n"
+        players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
+        rvalue += f"Players: {players}\n"
+        if self.channel_xid:
+            rvalue += f"Channel: <#{self.channel_xid}>\n"
+        if not (len(self.tags) == 1 and self.tags[0].name == "default"):
+            tag_names = ", ".join(sorted([tag.name for tag in self.tags]))
+            rvalue += f"Tags: {tag_names}\n"
+        if self.power:
+            rvalue += f"Power Level: {self.power}\n"
+        return rvalue.strip()
 
 
 class Tag(Base):

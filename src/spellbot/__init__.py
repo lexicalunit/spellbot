@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from os import getenv
 from pathlib import Path
+from uuid import uuid4
 
 import click
 import discord
@@ -16,6 +17,7 @@ from sqlalchemy.sql import text
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
+from spellbot.constants import ADMIN_ROLE, AVG_QUEUE_TIME_WINDOW_MIN, CREATE_ENDPOINT
 from spellbot.data import AuthorizedChannel, Data, Game, Server, Tag, User, WaitTime
 
 # Application Paths
@@ -25,11 +27,6 @@ DB_DIR = RUNTIME_ROOT / "db"
 DEFAULT_DB_URL = f"sqlite:///{DB_DIR}/spellbot.db"
 TMP_DIR = RUNTIME_ROOT / "tmp"
 MIGRATIONS_DIR = SCRIPTS_DIR / "migrations"
-
-# Application Settings
-ADMIN_ROLE = "SpellBot Admin"
-CREATE_ENDPOINT = "https://us-central1-magic-night-30324.cloudfunctions.net/createGame"
-AVG_QUEUE_TIME_WINDOW_MIN = 30
 
 
 def to_int(s):
@@ -101,13 +98,19 @@ class SpellBot(discord.Client):
     """Discord SpellTable Bot"""
 
     def __init__(
-        self, token="", auth="", db_url=DEFAULT_DB_URL, log_level=logging.ERROR,
+        self,
+        token="",
+        auth="",
+        db_url=DEFAULT_DB_URL,
+        log_level=logging.ERROR,
+        mock_games=False,
     ):
         logging.basicConfig(level=log_level)
         loop = asyncio.get_event_loop()
         super().__init__(loop=loop)
         self.token = token
         self.auth = auth
+        self.mock_games = mock_games
 
         # During the processing of a command there will be valid SQLAlchemy session
         # object available for use, commits and rollbacks are handled automatically.
@@ -132,6 +135,7 @@ class SpellBot(discord.Client):
         """Start up any periodic background tasks."""
         self.cleanup_expired_games_task(loop)
         self.cleanup_expired_wait_times_task(loop)
+        self.cleanup_started_games_task(loop)
 
     def cleanup_expired_games_task(self, loop):  # pragma: no cover
         """Starts a task that deletes old games."""
@@ -188,13 +192,40 @@ class SpellBot(discord.Client):
         finally:
             session.close()
 
+    def cleanup_started_games_task(self, loop):  # pragma: no cover
+        """Starts a task that deletes old games."""
+        FIVE_MINUTES = 300
+
+        async def task():
+            while True:
+                await self.cleanup_started_games()
+                await asyncio.sleep(FIVE_MINUTES)
+
+        loop.create_task(task())
+
+    async def cleanup_started_games(self):
+        """Deletes games older than the given window of minutes."""
+        session = self.data.Session()
+        try:
+            session.query(Game).filter(Game.url != None).delete()
+            session.commit()
+        except exc.SQLAlchemyError as e:
+            logging.error("error: cleanup_started_games:", e)
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
     def run(self):  # pragma: no cover
         super().run(self.token)
 
     def create_game(self):  # pragma: no cover
-        headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
-        r = requests.post(CREATE_ENDPOINT, headers=headers)
-        return r.json()["gameUrl"]
+        if self.mock_games:
+            return f"http://exmaple.com/game/{uuid4()}"
+        else:
+            headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
+            r = requests.post(CREATE_ENDPOINT, headers=headers)
+            return r.json()["gameUrl"]
 
     def ensure_user_exists(self, user):
         """Ensures that the user row exists for the given discord user."""
@@ -491,62 +522,23 @@ class SpellBot(discord.Client):
                     found_discord_users.append(discord_user)
 
         if len(found_discord_users) == size:  # all players matched, game is ready
-            game_url = self.create_game()
-            players_s = ", ".join(
-                [f"<@!{discord_user.id}>" for discord_user in found_discord_users]
-            )
-            tags_s = ", ".join([tag.name for tag in user.game.tags])
-            channel_s = f"<#{channel.id}>"
-            power_s = str(user.game.power)
-            response = s(
-                "play_ready",
-                url=game_url,
-                players=players_s,
-                tags=tags_s,
-                channel=channel_s,
-                power=power_s,
-            )
-
+            user.game.url = self.create_game()
+            game_created_at = datetime.utcnow()
+            response = user.game.to_str()
             for game_user, discord_user in zip(user.game.users, found_discord_users):
                 await discord_user.send(response)
-                dequeue_at = datetime.utcnow()
-                seconds = (dequeue_at - game_user.queued_at).total_seconds()
                 WaitTime.log(
                     self.session,
                     guild_xid=server.guild_xid,
                     channel_xid=channel.id,
-                    seconds=seconds,
+                    seconds=(game_created_at - game_user.queued_at).total_seconds(),
                 )
-            self.session.delete(user.game)
+                game_user.queued_at = None
         else:  # still waiting on more players, game is pending
-            average = WaitTime.average(
-                self.session,
-                guild_xid=server.guild_xid,
-                channel_xid=channel.id,
-                scope=server.scope,
-                window_min=AVG_QUEUE_TIME_WINDOW_MIN,
-            )
-            for player in user.game.users:
-                discord_user = self.get_user(player.xid)
-                if not discord_user:
-                    continue
-                wait = ""
-                if average:
-                    delta = naturaldelta(timedelta(seconds=average))
-                    wait = f"_The average wait time is {delta}._"
-                others = ", ".join(
-                    [f"<!@{u.xid}>" for u in user.game.users if u.xid != player.xid]
-                )
-                tags_s = ", ".join(tag_names)
-                reply = s(
-                    "play_queue",
-                    size=size,
-                    wait=wait,
-                    others=others if others else "None",
-                    tags=tags_s,
-                    power=str(power),
-                )
-                await discord_user.send(reply)
+            response = user.game.to_str()
+            await author.send(response)
+            for mention in mentions:
+                await mention.send(response)
 
     @command(allow_dm=True)
     async def leave(self, prefix, channel, author, mentions, params):
@@ -717,8 +709,14 @@ def get_log_level(fallback):  # pragma: no cover
     is_flag=True,
     help="Development mode, automatically reload bot when source changes",
 )
+@click.option(
+    "--mock-games",
+    default=False,
+    is_flag=True,
+    help="Produce mock game urls instead of real ones",
+)
 def main(
-    log_level, verbose, database_url, database_env, dev,
+    log_level, verbose, database_url, database_env, dev, mock_games
 ):  # pragma: no cover
     database_env = get_db_env(database_env)
     database_url = get_db_url(database_env, database_url)
@@ -733,6 +731,7 @@ def main(
         auth=getenv("SPELLTABLE_AUTH", None),
         db_url=database_url,
         log_level="DEBUG" if verbose else log_level,
+        mock_games=mock_games,
     )
 
     if dev:
