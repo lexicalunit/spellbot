@@ -209,8 +209,8 @@ class Game(Base):
             rvalue += f"{self.url}\n"
         else:
             rvalue += (
-                "**You have been entered in a play queue "
-                f"for a {self.size} player game.**"
+                "**You have been entered in a play queue"
+                f" for a {self.size} player game.**"
             )
             average = WaitTime.average(
                 session,
@@ -224,6 +224,9 @@ class Game(Base):
                 rvalue += f" _The average wait time is {delta}._\n"
             else:
                 rvalue += "\n"
+        rvalue += (
+            "\n🚨 When your game is ready I will send you another Direct Message! 🚨\n\n"
+        )
         players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
         rvalue += f"Players: {players}\n"
         if self.channel_xid:

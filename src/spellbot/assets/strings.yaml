@@ -1,4 +1,5 @@
 did_you_mean: 'Did you mean: $possible?'
+dm_sent: Right on, I'll send you a Direct Message with details.
 expired: SpellBot has removed you from the queue due to server inactivity. Sorry,
   but unfortunately not enough players available at this time. Please try again when
   there are more players available.
