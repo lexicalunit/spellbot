@@ -10,25 +10,6 @@ not_admin: You do not have admin permissions for this bot.
 play_already: You are already in the queue.
 play_mention_already: Sorry, $user is already in the play queue.
 play_power_bad: Sorry, power level should a number between 1 and 10.
-play_queue: '**You have been entered in a play queue for a $size player game.** $wait
-
-  Players queued with you: $others
-
-  Tags: $tags
-
-  Power Level: $power'
-play_ready: '**Your SpellTable game is ready!**
-
-  $url
-
-
-  Players: $players
-
-  Tags: $tags
-
-  Channel: $channel
-
-  Power Level: $power'
 play_size_bad: Game size must be between 2 and 4.
 play_too_many_mentions: Sorry, you mentioned too many people.
 play_too_many_tags: Sorry, you can not use more than 5 tags.
