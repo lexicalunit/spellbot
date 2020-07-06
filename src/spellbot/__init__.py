@@ -158,6 +158,9 @@ class SpellBot(discord.Client):
                     discord_user = self.get_user(user.xid)
                     if discord_user:
                         await discord_user.send(s("expired", window=game.server.expire))
+                    user.queued_at = None
+                    user.game = None
+                game.tags = []
                 session.delete(game)
             session.commit()
         except exc.SQLAlchemyError as e:
@@ -207,7 +210,10 @@ class SpellBot(discord.Client):
         """Deletes games older than the given window of minutes."""
         session = self.data.Session()
         try:
-            session.query(Game).filter(Game.url != None).delete()
+            games = session.query(Game).filter(Game.url != None).all()
+            for game in games:
+                game.tags = []
+                session.delete(game)
             session.commit()
         except exc.SQLAlchemyError as e:
             logging.error("error: cleanup_started_games:", e)
@@ -578,6 +584,7 @@ class SpellBot(discord.Client):
 
         The following subcommands are supported:
 
+        * `config`: Just show the current configuration for this server.
         * `channel <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot prefix for commands in text channels.
         * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
@@ -600,6 +607,8 @@ class SpellBot(discord.Client):
             await self.spellbot_scope(prefix, channel, author, mentions, params[1:])
         elif command == "expire":
             await self.spellbot_expire(prefix, channel, author, mentions, params[1:])
+        elif command == "config":
+            await self.spellbot_config(prefix, channel, author, mentions, params[1:])
         else:
             await author.send(s("spellbot_unknown_subcommand", command=command))
 
@@ -645,7 +654,7 @@ class SpellBot(discord.Client):
         if not params:
             return await author.send(s("spellbot_expire_none"))
         expire = to_int(params[0])
-        if not expire or not (10 < expire < 60):
+        if not expire or not (0 < expire <= 60):
             return await author.send(s("spellbot_expire_bad"))
         server = (
             self.session.query(Server)
@@ -654,6 +663,32 @@ class SpellBot(discord.Client):
         )
         server.expire = expire
         return await author.send(s("spellbot_expire", expire=expire))
+
+    async def spellbot_config(self, prefix, channel, author, mentions, params):
+        server = (
+            self.session.query(Server)
+            .filter(Server.guild_xid == channel.guild.id)
+            .one_or_none()
+        )
+        embed = discord.Embed(title="SpellBot Server Config")
+        thumb = (
+            "https://raw.githubusercontent.com/lexicalunit/spellbot/master/spellbot.png"
+        )
+        embed.set_thumbnail(url=thumb)
+        embed.add_field(name="Command prefix", value=server.prefix)
+        scope = "server-wide" if server.scope == "server" else "channel-specific"
+        embed.add_field(name="Queue scope", value=scope)
+        expires_str = f"{server.expire} minutes"
+        embed.add_field(name="Inactivity expiration time", value=expires_str)
+        channels = server.authorized_channels
+        if channels:
+            channels_str = ", ".join(f"#{channel.name}" for channel in channels)
+        else:
+            channels_str = "all"
+        embed.add_field(name="Authorized channels", value=channels_str)
+        embed.color = discord.Color(0x5A3EFD)
+        embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
+        await author.send(embed=embed, file=None)
 
 
 def get_db_env(fallback):  # pragma: no cover

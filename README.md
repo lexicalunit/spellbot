@@ -18,7 +18,9 @@ A Discord bot for [SpellTable][spelltable].
 ## 🤖 Using SpellBot
 
 Once you've connected the bot to your server, you can interact with it over
-Discord via the following commands in any of the authorized channels.
+Discord via the following commands in any of the authorized channels. **Keep in
+mind that sometimes SpellBot will respond to you via Direct Message to avoid
+being too spammy in text channels.**
 
 - `!help`: Provides detailed help about all of the following commands.
 - `!about`: Get information about SpellBot and its creators.
@@ -35,6 +37,7 @@ Discord via the following commands in any of the authorized channels.
 
 **Subcommands:**
 
+- `config`: Just show the current configuration for this server.
 - `channels`: Set the channels SpellBot is allowed to operate within.
 - `prefix`: Set the command prefix for SpellBot in text channels.
 - `scope`: Set the matchmaking scope to server-wide or channel-specific.

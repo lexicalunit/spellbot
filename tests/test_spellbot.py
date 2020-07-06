@@ -1077,6 +1077,32 @@ class TestSpellBot:
             " again when there are more players available."
         )
 
+    async def test_on_message_spellbot_config(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot prefix $"))
+        await client.on_message(MockMessage(author, channel, "$spellbot expire 45"))
+        await client.on_message(MockMessage(author, channel, "$spellbot scope channel"))
+        await client.on_message(MockMessage(author, channel, "$spellbot config"))
+
+        about = author.last_sent_embed
+        assert about["title"] == "SpellBot Server Config"
+        assert about["footer"]["text"] == f"Config for Guild ID: {channel.guild.id}"
+        assert about["thumbnail"]["url"] == (
+            "https://raw.githubusercontent.com/lexicalunit/spellbot/master/spellbot.png"
+        )
+        fields = {f["name"]: f["value"] for f in about["fields"]}
+        assert fields["Queue scope"] == "channel-specific"
+        assert fields["Inactivity expiration time"] == "45 minutes"
+        assert fields["Authorized channels"] == "all"
+
+        channels_cmd = f"$spellbot channels {AUTHORIZED_CHANNEL} foo bar"
+        await client.on_message(MockMessage(author, channel, channels_cmd))
+        await client.on_message(MockMessage(author, channel, "$spellbot config"))
+        about = author.last_sent_embed
+        fields = {f["name"]: f["value"] for f in about["fields"]}
+        assert fields["Authorized channels"] == f"#{AUTHORIZED_CHANNEL}, #foo, #bar"
+
 
 def test_paginate():
     def subject(text):
