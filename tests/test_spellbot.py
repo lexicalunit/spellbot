@@ -408,8 +408,13 @@ class TestSpellBot:
         channel.sent.assert_not_called()
 
     async def test_on_message_in_unauthorized_channel(self, client):
-        channel = MockTextChannel(5, UNAUTHORIZED_CHANNEL, members=CHANNEL_MEMBERS)
-        await client.on_message(MockMessage(someone(), channel, "!help"))
+        author = an_admin()
+        channel = text_channel()
+        admin_cmd = f"!spellbot channels {AUTHORIZED_CHANNEL}"
+        await client.on_message(MockMessage(author, text_channel(), admin_cmd))
+
+        bad_channel = MockTextChannel(5, UNAUTHORIZED_CHANNEL, members=CHANNEL_MEMBERS)
+        await client.on_message(MockMessage(someone(), bad_channel, "!help"))
         channel.sent.assert_not_called()
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
@@ -471,7 +476,7 @@ class TestSpellBot:
         author = not_an_admin()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!spellbot channels foo"))
-        assert author.last_sent_response == (
+        assert channel.last_sent_response == (
             "You do not have admin permissions for this bot."
         )
 
@@ -479,7 +484,7 @@ class TestSpellBot:
         author = an_admin()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!spellbot"))
-        assert author.last_sent_response == (
+        assert channel.last_sent_response == (
             "Please provide a subcommand when using this command."
         )
 
@@ -487,13 +492,13 @@ class TestSpellBot:
         author = an_admin()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!spellbot foo"))
-        assert author.last_sent_response == 'The subcommand "foo" is not recognized.'
+        assert channel.last_sent_response == 'The subcommand "foo" is not recognized.'
 
     async def test_on_message_spellbot_channels_none(self, client):
         author = an_admin()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!spellbot channels"))
-        assert author.last_sent_response == "Please provide a list of channels."
+        assert channel.last_sent_response == "Please provide a list of channels."
 
     async def test_on_message_spellbot_channels(self, client):
         author = an_admin()
@@ -501,30 +506,33 @@ class TestSpellBot:
         await client.on_message(
             MockMessage(author, channel, f"!spellbot channels {AUTHORIZED_CHANNEL}")
         )
-        assert author.last_sent_response == (
+        assert channel.last_sent_response == (
             f"This bot is now authroized to respond only in: #{AUTHORIZED_CHANNEL}"
         )
         await client.on_message(
             MockMessage(author, channel, "!spellbot channels foo bar baz")
         )
         resp = "This bot is now authroized to respond only in: #foo, #bar, #baz"
-        assert author.last_sent_response == resp
+        assert channel.last_sent_response == resp
         await client.on_message(MockMessage(author, channel, "!help"))  # bad channel now
-        assert author.last_sent_response == resp
+        assert channel.last_sent_response == resp
 
     async def test_on_message_play_too_many_tags(self, client):
         channel = text_channel()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!play a b c d e f"))
-        assert author.last_sent_response == "Sorry, you can not use more than 5 tags."
+        assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
 
     async def test_on_message_play(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play"))
         assert GUY.last_sent_response == game_response_for(client, GUY)
+        assert channel.last_sent_response == (
+            "Right on, I'll send you a Direct Message with details."
+        )
 
         await client.on_message(MockMessage(GUY, channel, "!play"))
-        assert GUY.last_sent_response == "You are already in the queue."
+        assert channel.last_sent_response == "You are already in the queue."
 
         await client.on_message(MockMessage(FRIEND, channel, "!play"))
         assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
@@ -547,7 +555,7 @@ class TestSpellBot:
         assert GUY.last_sent_response == game_response_for(client, GUY)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh"))
-        assert GUY.last_sent_response == "You are already in the queue."
+        assert channel.last_sent_response == "You are already in the queue."
 
         await client.on_message(MockMessage(FRIEND, channel, "!play cedh"))
         assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
@@ -573,7 +581,7 @@ class TestSpellBot:
         assert GUY.last_sent_response == game_response_for(client, GUY)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh proxy"))
-        assert GUY.last_sent_response == "You are already in the queue."
+        assert channel.last_sent_response == "You are already in the queue."
 
         await client.on_message(MockMessage(FRIEND, channel, "!play cedh proxy"))
         assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
@@ -605,7 +613,7 @@ class TestSpellBot:
     async def test_on_message_leave_not_queued(self, client, channel):
         author = someone()
         await client.on_message(MockMessage(author, channel, "!leave"))
-        assert author.last_sent_response == "You were not in the queue."
+        assert channel.last_sent_response == "You were not in the queue."
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_leave(self, client, channel):
@@ -613,7 +621,7 @@ class TestSpellBot:
         public_channel = text_channel()
         await client.on_message(MockMessage(author, public_channel, "!play"))
         await client.on_message(MockMessage(author, channel, "!leave"))
-        assert author.last_sent_response == "You have been removed from the queue."
+        assert channel.last_sent_response == "You have been removed from the queue."
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_about(self, client, channel):
@@ -653,7 +661,7 @@ class TestSpellBot:
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!play {mentions_str}"
         await client.on_message(MockMessage(author, channel, content, mentions=mentions))
-        assert author.last_sent_response == "Sorry, you mentioned too many people."
+        assert channel.last_sent_response == "Sorry, you mentioned too many people."
 
     async def test_on_message_play_mention_already(self, client):
         channel = text_channel()
@@ -661,7 +669,7 @@ class TestSpellBot:
         await client.on_message(
             MockMessage(DUDE, channel, f"!play @{GUY.name}", mentions=[GUY])
         )
-        assert DUDE.last_sent_response == f"Sorry, {GUY} is already in the play queue."
+        assert channel.last_sent_response == f"Sorry, {GUY} is already in the play queue."
 
     async def test_on_message_play_all(self, client):
         channel = text_channel()
@@ -754,25 +762,25 @@ class TestSpellBot:
         author = someone()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!play size:1"))
-        assert author.last_sent_response == "Game size must be between 2 and 4."
+        assert channel.last_sent_response == "Game size must be between 2 and 4."
 
     async def test_on_message_play_size_neg_1(self, client):
         author = someone()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!play size:-1"))
-        assert author.last_sent_response == "Game size must be between 2 and 4."
+        assert channel.last_sent_response == "Game size must be between 2 and 4."
 
     async def test_on_message_play_size_5(self, client):
         author = someone()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!play size:5"))
-        assert author.last_sent_response == "Game size must be between 2 and 4."
+        assert channel.last_sent_response == "Game size must be between 2 and 4."
 
     async def test_on_message_play_size_invalid(self, client):
         author = someone()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!play size:three"))
-        assert author.last_sent_response == "Game size must be between 2 and 4."
+        assert channel.last_sent_response == "Game size must be between 2 and 4."
 
     async def test_on_message_play_size_2(self, client):
         channel = text_channel()
@@ -834,7 +842,7 @@ class TestSpellBot:
         assert author.last_sent_response == game_response_for(client, author)
 
         await client.on_message(MockMessage(author, channel, "!play size:2"))
-        assert author.last_sent_response == "You are already in the queue."
+        assert channel.last_sent_response == "You are already in the queue."
 
     async def test_on_message_play_then_expire(self, client, freezer):
         NOW = datetime.utcnow()
@@ -870,7 +878,7 @@ class TestSpellBot:
         author = an_admin()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!spellbot prefix"))
-        assert author.last_sent_response == "Please provide a prefix string."
+        assert channel.last_sent_response == "Please provide a prefix string."
 
     async def test_on_message_spellbot_prefix(self, client):
         author = an_admin()
@@ -898,8 +906,8 @@ class TestSpellBot:
         channel = text_channel()
         await client.on_message(MockMessage(BUDDY, channel, "!status"))
         assert channel.last_sent_response == (
-            "There is not enough information to calculate the current average "
-            "queue wait time right now."
+            "There is not enough information to calculate the current average"
+            " queue wait time right now."
         )
 
         NOW = datetime.utcnow()
@@ -916,8 +924,8 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(FRIEND, channel, "!play"))
         assert FRIEND.last_sent_response.split("\n")[0] == (
-            "**You have been entered in a play queue for a 4 player game.** "
-            "_The average wait time is 5 minutes._"
+            "**You have been entered in a play queue for a 4 player game.**"
+            " _The average wait time is 5 minutes._"
         )
 
     async def test_cleanup_expired_waits(self, client, freezer):
@@ -947,13 +955,13 @@ class TestSpellBot:
         author = an_admin()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!spellbot scope"))
-        assert author.last_sent_response == "Please provide a scope string."
+        assert channel.last_sent_response == "Please provide a scope string."
 
     async def test_on_message_spellbot_scope_bad(self, client):
         author = an_admin()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!spellbot scope world"))
-        assert author.last_sent_response == (
+        assert channel.last_sent_response == (
             'Sorry, scope should be either "server" or "channel".'
         )
 
@@ -987,7 +995,7 @@ class TestSpellBot:
     async def test_on_message_play_with_power_bad(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play power:42"))
-        assert GUY.last_sent_response == (
+        assert channel.last_sent_response == (
             "Sorry, power level should a number between 1 and 10."
         )
 
@@ -1041,13 +1049,13 @@ class TestSpellBot:
         author = an_admin()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!spellbot expire"))
-        assert author.last_sent_response == "Please provide a number of minutes."
+        assert channel.last_sent_response == "Please provide a number of minutes."
 
     async def test_on_message_spellbot_expire_bad(self, client):
         author = an_admin()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!spellbot expire world"))
-        assert author.last_sent_response == (
+        assert channel.last_sent_response == (
             "Sorry, game expiration time should be between 10 and 60 minutes."
         )
 
@@ -1055,7 +1063,7 @@ class TestSpellBot:
         author = an_admin()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!spellbot expire 45"))
-        assert author.last_sent_response == "Game expiration time set to 45 minutes."
+        assert channel.last_sent_response == "Game expiration time set to 45 minutes."
 
     async def test_on_message_play_then_custom_expire(self, client, freezer):
         NOW = datetime.utcnow()
@@ -1085,7 +1093,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "$spellbot scope channel"))
         await client.on_message(MockMessage(author, channel, "$spellbot config"))
 
-        about = author.last_sent_embed
+        about = channel.last_sent_embed
         assert about["title"] == "SpellBot Server Config"
         assert about["footer"]["text"] == f"Config for Guild ID: {channel.guild.id}"
         assert about["thumbnail"]["url"] == (
@@ -1099,7 +1107,7 @@ class TestSpellBot:
         channels_cmd = f"$spellbot channels {AUTHORIZED_CHANNEL} foo bar"
         await client.on_message(MockMessage(author, channel, channels_cmd))
         await client.on_message(MockMessage(author, channel, "$spellbot config"))
-        about = author.last_sent_embed
+        about = channel.last_sent_embed
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert fields["Authorized channels"] == f"#{AUTHORIZED_CHANNEL}, #foo, #bar"
 

@@ -395,6 +395,7 @@ class SpellBot(discord.Client):
             "\n💜 You can help keep SpellBot running by supporting me on Ko-fi! "
             "<https://ko-fi.com/Y8Y51VTHZ>"
         )
+        await channel.send(s("dm_sent"))
         for page in paginate(usage):
             await author.send(page)
 
@@ -459,7 +460,7 @@ class SpellBot(discord.Client):
         params = [param.lower() for param in params]
         user = self.ensure_user_exists(author)
         if user.waiting:
-            return await author.send(s("play_already"))
+            return await channel.send(s("play_already"))
 
         size = 4
         power = None
@@ -470,19 +471,19 @@ class SpellBot(discord.Client):
                 power = to_int(param.replace("power:", ""))
 
         if not size or not (1 < size < 5):
-            return await author.send(s("play_size_bad"))
+            return await channel.send(s("play_size_bad"))
 
         if power and not (1 <= power <= 10):
-            return await author.send(s("play_power_bad"))
+            return await channel.send(s("play_power_bad"))
 
         if len(mentions) >= size:
-            return await author.send(s("play_too_many_mentions"))
+            return await channel.send(s("play_too_many_mentions"))
 
         mentioned_users = []
         for mentioned in mentions:
             mentioned_user = self.ensure_user_exists(mentioned)
             if mentioned_user.waiting:
-                return await author.send(s("play_mention_already", user=mentioned))
+                return await channel.send(s("play_mention_already", user=mentioned))
             mentioned_users.append(mentioned_user)
 
         tags = []
@@ -499,7 +500,7 @@ class SpellBot(discord.Client):
         if not tag_names:
             tag_names = ["default"]
         if len(tag_names) > 5:
-            return await author.send(s("play_too_many_tags"))
+            return await channel.send(s("play_too_many_tags"))
         for tag_name in tag_names:
             tag = self.session.query(Tag).filter_by(name=tag_name).first()
             if not tag:
@@ -527,6 +528,7 @@ class SpellBot(discord.Client):
                 else:
                     found_discord_users.append(discord_user)
 
+        await channel.send(s("dm_sent"))
         if len(found_discord_users) == size:  # all players matched, game is ready
             user.game.url = self.create_game()
             game_created_at = datetime.utcnow()
@@ -553,10 +555,10 @@ class SpellBot(discord.Client):
         """
         user = self.ensure_user_exists(author)
         if not user.waiting:
-            return await author.send(s("leave_already"))
+            return await channel.send(s("leave_already"))
 
         user.dequeue()
-        await author.send(s("leave"))
+        await channel.send(s("leave"))
 
     @command(allow_dm=False)
     async def status(self, prefix, channel, author, mentions, params):
@@ -594,9 +596,9 @@ class SpellBot(discord.Client):
         & <subcommand> [subcommand parameters]
         """
         if not is_admin(channel, author):
-            return await author.send(s("not_admin"))
+            return await channel.send(s("not_admin"))
         if not params:
-            return await author.send(s("spellbot_missing_subcommand"))
+            return await channel.send(s("spellbot_missing_subcommand"))
         self.ensure_server_exists(channel.guild.id)
         command = params[0]
         if command == "channels":
@@ -610,23 +612,23 @@ class SpellBot(discord.Client):
         elif command == "config":
             await self.spellbot_config(prefix, channel, author, mentions, params[1:])
         else:
-            await author.send(s("spellbot_unknown_subcommand", command=command))
+            await channel.send(s("spellbot_unknown_subcommand", command=command))
 
     async def spellbot_channels(self, prefix, channel, author, mentions, params):
         if not params:
-            return await author.send(s("spellbot_channels_none"))
+            return await channel.send(s("spellbot_channels_none"))
         self.session.query(AuthorizedChannel).filter_by(
             guild_xid=channel.guild.id
         ).delete()
         for param in params:
             self.session.add(AuthorizedChannel(guild_xid=channel.guild.id, name=param))
-        return await author.send(
+        return await channel.send(
             s("spellbot_channels", channels=", ".join([f"#{param}" for param in params]))
         )
 
     async def spellbot_prefix(self, prefix, channel, author, mentions, params):
         if not params:
-            return await author.send(s("spellbot_prefix_none"))
+            return await channel.send(s("spellbot_prefix_none"))
         prefix_str = params[0][0:10]
         server = (
             self.session.query(Server)
@@ -638,10 +640,10 @@ class SpellBot(discord.Client):
 
     async def spellbot_scope(self, prefix, channel, author, mentions, params):
         if not params:
-            return await author.send(s("spellbot_scope_none"))
+            return await channel.send(s("spellbot_scope_none"))
         scope_str = params[0].lower()
         if scope_str not in ("server", "channel"):
-            return await author.send(s("spellbot_scope_bad"))
+            return await channel.send(s("spellbot_scope_bad"))
         server = (
             self.session.query(Server)
             .filter(Server.guild_xid == channel.guild.id)
@@ -652,17 +654,17 @@ class SpellBot(discord.Client):
 
     async def spellbot_expire(self, prefix, channel, author, mentions, params):
         if not params:
-            return await author.send(s("spellbot_expire_none"))
+            return await channel.send(s("spellbot_expire_none"))
         expire = to_int(params[0])
         if not expire or not (0 < expire <= 60):
-            return await author.send(s("spellbot_expire_bad"))
+            return await channel.send(s("spellbot_expire_bad"))
         server = (
             self.session.query(Server)
             .filter(Server.guild_xid == channel.guild.id)
             .one_or_none()
         )
         server.expire = expire
-        return await author.send(s("spellbot_expire", expire=expire))
+        return await channel.send(s("spellbot_expire", expire=expire))
 
     async def spellbot_config(self, prefix, channel, author, mentions, params):
         server = (
@@ -688,7 +690,7 @@ class SpellBot(discord.Client):
         embed.add_field(name="Authorized channels", value=channels_str)
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
-        await author.send(embed=embed, file=None)
+        await channel.send(embed=embed, file=None)
 
 
 def get_db_env(fallback):  # pragma: no cover
