@@ -36,8 +36,8 @@
 > 
 > The following subcommands are supported:
 > 
+> * `config`: Just show the current configuration for this server.
 > * `channel <list>`: Set SpellBot to only respond in the given list of channels.
 > * `prefix <string>`: Set SpellBot prefix for commands in text channels.
 > * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
 > * `expire <number>`: Set the number of minutes before pending games expire.
-> 

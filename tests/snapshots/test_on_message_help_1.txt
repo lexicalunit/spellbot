@@ -1,3 +1,4 @@
+> 
 > _You must have the "SpellBot Admin" role to use any of these commands._
 
 `!status`
