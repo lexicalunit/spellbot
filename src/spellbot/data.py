@@ -8,6 +8,7 @@ from sqlalchemy import (
     BigInteger,
     Column,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -148,9 +149,20 @@ class User(Base):
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=server.expire)
         if existing_game:
+            already_seated = len(existing_game.users)
             self.game = existing_game
             self.game.updated_at = now
             self.game.expires_at = expires_at
+            if power:
+                newly_seated = 1 + len(include)
+                now_seated = already_seated + newly_seated
+                print(
+                    f"power: (({self.game.power} * {already_seated}) +"
+                    f" ({power} * {newly_seated})) / {now_seated} "
+                )
+                self.game.power = (
+                    (self.game.power * already_seated) + (power * now_seated)
+                ) / now_seated
         else:
             self.game = Game(
                 channel_xid=channel_xid if server.scope == "channel" else None,
@@ -187,7 +199,7 @@ class Game(Base):
         BigInteger, ForeignKey("servers.guild_xid", ondelete="CASCADE"), nullable=False
     )
     channel_xid = Column(BigInteger)
-    power = Column(Integer)
+    power = Column(Float)
     url = Column(String(255))
     users = relationship("User", back_populates="game")
     tags = relationship("Tag", secondary=games_tags, back_populates="games")
@@ -235,7 +247,7 @@ class Game(Base):
             tag_names = ", ".join(sorted([tag.name for tag in self.tags]))
             rvalue += f"Tags: {tag_names}\n"
         if self.power:
-            rvalue += f"Power Level: {self.power}\n"
+            rvalue += f"Average Power Level: {self.power:.1f}\n"
         return rvalue.strip()
 
 

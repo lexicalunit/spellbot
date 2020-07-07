@@ -289,10 +289,15 @@ def private_channel():
     return MockDM(1)
 
 
-def game_response_for(client, user):
+def game_response_for(client, user, ready):
     session = client.data.Session()
     db_user = session.query(User).filter(User.xid == user.id).first()
     rvalue = db_user.game.to_str() if db_user and db_user.game else None
+    if rvalue:
+        if ready:
+            assert rvalue.startswith("**Your SpellTable game is ready!**")
+        else:
+            assert rvalue.startswith("**You have been entered in a play queue")
     session.close()
     return rvalue
 
@@ -526,7 +531,7 @@ class TestSpellBot:
     async def test_on_message_play(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
         assert channel.last_sent_response == (
             "Right on, I'll send you a Direct Message with details."
         )
@@ -535,79 +540,79 @@ class TestSpellBot:
         assert channel.last_sent_response == "You are already in the queue."
 
         await client.on_message(MockMessage(FRIEND, channel, "!play"))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
 
         await client.on_message(MockMessage(BUDDY, channel, "!play"))
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, False)
 
         await client.on_message(MockMessage(DUDE, channel, "!play"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
-        assert DUDE.last_sent_response == game_response_for(client, DUDE)
+        assert GUY.last_sent_response == game_response_for(client, GUY, True)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, True)
+        assert DUDE.last_sent_response == game_response_for(client, DUDE, True)
 
         await client.on_message(MockMessage(GUY, channel, "!play"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
 
     async def test_on_message_play_cedh(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play cedh"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh"))
         assert channel.last_sent_response == "You are already in the queue."
 
         await client.on_message(MockMessage(FRIEND, channel, "!play cedh"))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
 
         await client.on_message(MockMessage(BUDDY, channel, "!play cedh"))
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, False)
 
         await client.on_message(MockMessage(AMY, channel, "!play"))
-        assert AMY.last_sent_response == game_response_for(client, AMY)
+        assert AMY.last_sent_response == game_response_for(client, AMY, False)
 
         await client.on_message(MockMessage(DUDE, channel, "!play cedh"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
-        assert DUDE.last_sent_response == game_response_for(client, DUDE)
+        assert GUY.last_sent_response == game_response_for(client, GUY, True)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, True)
+        assert DUDE.last_sent_response == game_response_for(client, DUDE, True)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
 
     async def test_on_message_play_cedh_and_proxy(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play cedh proxy"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh proxy"))
         assert channel.last_sent_response == "You are already in the queue."
 
         await client.on_message(MockMessage(FRIEND, channel, "!play cedh proxy"))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
 
         await client.on_message(MockMessage(BUDDY, channel, "!play cedh proxy"))
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, False)
 
         await client.on_message(MockMessage(AMY, channel, "!play proxy"))
-        assert AMY.last_sent_response == game_response_for(client, AMY)
+        assert AMY.last_sent_response == game_response_for(client, AMY, False)
 
         await client.on_message(MockMessage(DUDE, channel, "!play cedh proxy"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
-        assert DUDE.last_sent_response == game_response_for(client, DUDE)
+        assert GUY.last_sent_response == game_response_for(client, GUY, True)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, True)
+        assert DUDE.last_sent_response == game_response_for(client, DUDE, True)
 
         await client.on_message(MockMessage(GUY, channel, "!play cedh proxy"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
 
     async def test_on_message_play_no_power_then_power(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play size:2"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
 
         await client.on_message(MockMessage(FRIEND, channel, "!play size:2 power:5"))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_leave_not_queued(self, client, channel):
@@ -677,10 +682,10 @@ class TestSpellBot:
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!play {mentions_str}"
         await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
-        assert DUDE.last_sent_response == game_response_for(client, DUDE)
+        assert GUY.last_sent_response == game_response_for(client, GUY, True)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, True)
+        assert DUDE.last_sent_response == game_response_for(client, DUDE, True)
 
     async def test_on_message_play_then_leave_3(self, client):
         channel = text_channel()
@@ -699,29 +704,29 @@ class TestSpellBot:
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!play {mentions_str}"
         await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
-        assert GUY.last_sent_response == game_response_for(client, GUY)
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, False)
 
         await client.on_message(MockMessage(DUDE, channel, content))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
-        assert GUY.last_sent_response == game_response_for(client, GUY)
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
-        assert DUDE.last_sent_response == game_response_for(client, DUDE)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, True)
+        assert GUY.last_sent_response == game_response_for(client, GUY, True)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
+        assert DUDE.last_sent_response == game_response_for(client, DUDE, True)
 
     async def test_on_message_play_1_then_3(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(DUDE, channel, "!play"))
-        assert DUDE.last_sent_response == game_response_for(client, DUDE)
+        assert DUDE.last_sent_response == game_response_for(client, DUDE, False)
 
         mentions = [GUY, BUDDY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!play {mentions_str}"
         await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
-        assert GUY.last_sent_response == game_response_for(client, GUY)
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
-        assert DUDE.last_sent_response == game_response_for(client, DUDE)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, True)
+        assert GUY.last_sent_response == game_response_for(client, GUY, True)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
+        assert DUDE.last_sent_response == game_response_for(client, DUDE, True)
 
     async def test_on_message_play_3_then_3_then_1_then_1(self, client, freezer):
         NOW = datetime.utcnow()
@@ -731,32 +736,32 @@ class TestSpellBot:
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!play {mentions_str}"
         await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
-        assert GUY.last_sent_response == game_response_for(client, GUY)
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, False)
 
         freezer.move_to(NOW + timedelta(minutes=5))
         mentions = [JR, ADAM]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         content = f"!play {mentions_str}"
         await client.on_message(MockMessage(AMY, channel, content, mentions=mentions))
-        assert AMY.last_sent_response == game_response_for(client, AMY)
-        assert JR.last_sent_response == game_response_for(client, JR)
-        assert ADAM.last_sent_response == game_response_for(client, ADAM)
+        assert AMY.last_sent_response == game_response_for(client, AMY, False)
+        assert JR.last_sent_response == game_response_for(client, JR, False)
+        assert ADAM.last_sent_response == game_response_for(client, ADAM, False)
 
         freezer.move_to(NOW + timedelta(minutes=10))
         await client.on_message(MockMessage(DUDE, channel, content))
-        assert DUDE.last_sent_response == game_response_for(client, DUDE)
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
-        assert GUY.last_sent_response == game_response_for(client, GUY)
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
+        assert DUDE.last_sent_response == game_response_for(client, DUDE, True)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, True)
+        assert GUY.last_sent_response == game_response_for(client, GUY, True)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
 
         freezer.move_to(NOW + timedelta(minutes=15))
         await client.on_message(MockMessage(JACOB, channel, content))
-        assert AMY.last_sent_response == game_response_for(client, AMY)
-        assert JR.last_sent_response == game_response_for(client, JR)
-        assert ADAM.last_sent_response == game_response_for(client, ADAM)
-        assert JACOB.last_sent_response == game_response_for(client, JACOB)
+        assert AMY.last_sent_response == game_response_for(client, AMY, True)
+        assert JR.last_sent_response == game_response_for(client, JR, True)
+        assert ADAM.last_sent_response == game_response_for(client, ADAM, True)
+        assert JACOB.last_sent_response == game_response_for(client, JACOB, True)
 
     async def test_on_message_play_size_1(self, client):
         author = someone()
@@ -785,21 +790,21 @@ class TestSpellBot:
     async def test_on_message_play_size_2(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(FRIEND, channel, "!play size:2"))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
 
         await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, True)
 
     async def test_on_message_play_size_2_multiple_games(self, client):
         channel = text_channel()
 
         # game 1
         await client.on_message(MockMessage(FRIEND, channel, "!play size:2"))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
         await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, True)
 
         session = client.data.Session()
         user = session.query(User).filter(User.xid == FRIEND.id).first()
@@ -807,10 +812,10 @@ class TestSpellBot:
 
         # game 2
         await client.on_message(MockMessage(FRIEND, channel, "!play size:2"))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
         await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, True)
 
         session = client.data.Session()
         user = session.query(User).filter(User.xid == FRIEND.id).first()
@@ -824,14 +829,14 @@ class TestSpellBot:
         channel = text_channel()
         await client.on_message(MockMessage(GUY, channel, "!play"))
         first_response = GUY.last_sent_response
-        assert first_response == game_response_for(client, GUY)
+        assert first_response == game_response_for(client, GUY, False)
 
         await client.on_message(MockMessage(FRIEND, channel, "!play size:2"))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
 
         await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, True)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
 
         assert GUY.last_sent_response == first_response
 
@@ -839,7 +844,7 @@ class TestSpellBot:
         channel = text_channel()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!play"))
-        assert author.last_sent_response == game_response_for(client, author)
+        assert author.last_sent_response == game_response_for(client, author, False)
 
         await client.on_message(MockMessage(author, channel, "!play size:2"))
         assert channel.last_sent_response == "You are already in the queue."
@@ -851,7 +856,7 @@ class TestSpellBot:
         author = someone()
         await client.on_message(MockMessage(author, channel, "!play"))
         first_response = author.last_sent_response
-        assert first_response == game_response_for(client, author)
+        assert first_response == game_response_for(client, author, False)
         await client.cleanup_expired_games()
         assert author.last_sent_response == first_response
         freezer.move_to(NOW + timedelta(days=1))
@@ -888,7 +893,7 @@ class TestSpellBot:
             'This bot will now use "$" as its command prefix for this server.'
         )
         await client.on_message(MockMessage(author, channel, "$play"))
-        assert author.last_sent_response == game_response_for(client, author)
+        assert author.last_sent_response == game_response_for(client, author, False)
         await client.on_message(MockMessage(author, channel, "$spellbot prefix $"))
         assert channel.last_sent_response == (
             'This bot will now use "$" as its command prefix for this server.'
@@ -984,13 +989,15 @@ class TestSpellBot:
         await client.on_message(MockMessage(admin, channel_a, "!spellbot scope channel"))
 
         await client.on_message(MockMessage(GUY, channel_a, "!play size:2"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
         await client.on_message(MockMessage(DUDE, channel_b, "!play size:2"))
-        assert DUDE.last_sent_response == game_response_for(client, DUDE)
+        first_response = DUDE.last_sent_response
+        assert first_response == game_response_for(client, DUDE, False)
 
         await client.on_message(MockMessage(BUDDY, channel_a, "!play size:2"))
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
-        assert GUY.last_sent_response == game_response_for(client, GUY)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
+        assert GUY.last_sent_response == game_response_for(client, GUY, True)
+        assert DUDE.last_sent_response == first_response
 
     async def test_on_message_play_with_power_bad(self, client):
         channel = text_channel()
@@ -1001,26 +1008,41 @@ class TestSpellBot:
 
     async def test_on_message_play_with_power_level_high(self, client):
         channel = text_channel()
+        print("\n### 1")
         await client.on_message(MockMessage(GUY, channel, "!play power:5"))
-        assert GUY.last_sent_response == game_response_for(client, GUY)
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
+        print(GUY.last_sent_response)
+        print("####################################")
 
+        print("\n### 2")
         await client.on_message(MockMessage(FRIEND, channel, "!play power:7"))
-        assert FRIEND.last_sent_response == game_response_for(client, FRIEND)
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
+        print(FRIEND.last_sent_response)
+        print("####################################")
 
+        print("\n### 3")
         await client.on_message(MockMessage(BUDDY, channel, "!play power:8"))
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, False)
+        print(BUDDY.last_sent_response)
+        print("####################################")
 
+        print("\n### 4")
         await client.on_message(MockMessage(AMY, channel, "!play power:9"))
-        assert AMY.last_sent_response == game_response_for(client, AMY)
+        assert AMY.last_sent_response == game_response_for(client, AMY, False)
+        print(AMY.last_sent_response)
+        print("####################################")
 
+        print("\n### 5")
         await client.on_message(MockMessage(DUDE, channel, "!play power:8"))
-        assert DUDE.last_sent_response == game_response_for(client, DUDE)
+        assert DUDE.last_sent_response == game_response_for(client, DUDE, False)
+        print(DUDE.last_sent_response)
+        print("####################################")
 
         await client.on_message(MockMessage(JR, channel, "!play power:8"))
-        assert BUDDY.last_sent_response == game_response_for(client, BUDDY)
-        assert AMY.last_sent_response == game_response_for(client, AMY)
-        assert DUDE.last_sent_response == game_response_for(client, DUDE)
-        assert JR.last_sent_response == game_response_for(client, JR)
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
+        assert AMY.last_sent_response == game_response_for(client, AMY, True)
+        assert DUDE.last_sent_response == game_response_for(client, DUDE, True)
+        assert JR.last_sent_response == game_response_for(client, JR, True)
 
     async def test_on_message_play_with_power_level_low(self, client):
         channel = text_channel()
