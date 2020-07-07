@@ -161,7 +161,7 @@ class User(Base):
                     f" ({power} * {newly_seated})) / {now_seated} "
                 )
                 self.game.power = (
-                    (self.game.power * already_seated) + (power * now_seated)
+                    (self.game.power * already_seated) + (power * newly_seated)
                 ) / now_seated
         else:
             self.game = Game(
