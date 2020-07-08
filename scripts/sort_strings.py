@@ -35,7 +35,7 @@ after = dump(data, Dumper=Dumper, sort_keys=True)
 changes = diff(after, before)
 
 if changes and len(sys.argv) > 1 and sys.argv[1] == "--check":
-    print(changes)
+    print(changes)  # noqa: T001
 else:
     open(STRINGS_DATA_FILE, "w").write(after)
 
