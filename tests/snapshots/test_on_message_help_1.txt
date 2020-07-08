@@ -1,3 +1,4 @@
+> * `expire <number>`: Set the number of minutes before pending games expire.
 > 
 > _You must have the "SpellBot Admin" role to use any of these commands._
 
