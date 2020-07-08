@@ -37,6 +37,33 @@ def to_int(s):
         return None
 
 
+def power_and_size_from_params(params):
+    size = 4
+    power = None
+    for param in params:
+        if param.startswith("size:"):
+            size = to_int(param.replace("size:", ""))
+        elif param.startswith("power:"):
+            power = to_int(param.replace("power:", ""))
+    return power, size
+
+
+def tag_names_from_params(params):
+    tag_names = [
+        param
+        for param in params
+        if not param.startswith("size:")
+        and not param.startswith("power:")
+        and not param.startswith("<")
+        and not param.startswith("@")
+        and not param.isdigit()
+        and not len(param) >= 50
+    ]
+    if not tag_names:
+        tag_names = ["default"]
+    return tag_names
+
+
 def is_admin(channel, user_or_member):
     """Checks to see if given user or member has the admin role on this server."""
     member = (
@@ -236,7 +263,7 @@ class SpellBot(discord.Client):
 
     def ensure_user_exists(self, user):
         """Ensures that the user row exists for the given discord user."""
-        db_user = self.session.query(User).filter(User.xid == user.id).first()
+        db_user = self.session.query(User).filter(User.xid == user.id).one_or_none()
         if not db_user:
             db_user = User(xid=user.id)
             self.session.add(db_user)
@@ -244,7 +271,9 @@ class SpellBot(discord.Client):
 
     def ensure_server_exists(self, guild_xid):
         """Ensures that the server row exists for the given discord guild id."""
-        server = self.session.query(Server).filter(Server.guild_xid == guild_xid).first()
+        server = (
+            self.session.query(Server).filter(Server.guild_xid == guild_xid).one_or_none()
+        )
         if not server:
             server = Server(guild_xid=guild_xid)
             self.session.add(server)
@@ -458,26 +487,19 @@ class SpellBot(discord.Client):
         same channel as you did. The default scope for matchmaking is server-wide.
         & [@mention-1] [@mention-2] [...] [size:N] [power:N] [tag-1] [tag-2] [...]
         """
-        params = [param.lower() for param in params]
         user = self.ensure_user_exists(author)
         if user.waiting:
             return await channel.send(s("play_already"))
 
-        size = 4
-        power = None
-        for param in params:
-            if param.startswith("size:"):
-                size = to_int(param.replace("size:", ""))
-            elif param.startswith("power:"):
-                power = to_int(param.replace("power:", ""))
+        params = [param.lower() for param in params]
 
+        power, size = power_and_size_from_params(params)
         if not size or not (1 < size < 5):
             return await channel.send(s("play_size_bad"))
-
         if power and not (1 <= power <= 10):
             return await channel.send(s("play_power_bad"))
 
-        if len(mentions) >= size:
+        if len(mentions) + 1 > size:
             return await channel.send(s("play_too_many_mentions"))
 
         mentioned_users = []
@@ -487,21 +509,11 @@ class SpellBot(discord.Client):
                 return await channel.send(s("play_mention_already", user=mentioned))
             mentioned_users.append(mentioned_user)
 
-        tags = []
-        tag_names = [
-            param
-            for param in params
-            if not param.startswith("size:")
-            and not param.startswith("power:")
-            and not param.startswith("<")
-            and not param.startswith("@")
-            and not param.isdigit()
-            and not len(param) >= 50
-        ]
-        if not tag_names:
-            tag_names = ["default"]
+        tag_names = tag_names_from_params(params)
         if len(tag_names) > 5:
             return await channel.send(s("play_too_many_tags"))
+
+        tags = []
         for tag_name in tag_names:
             tag = self.session.query(Tag).filter_by(name=tag_name).first()
             if not tag:
@@ -510,6 +522,8 @@ class SpellBot(discord.Client):
             tags.append(tag)
 
         server = self.ensure_server_exists(channel.guild.id)
+        self.session.commit()
+
         user.enqueue(
             server=server,
             channel_xid=channel.id,
@@ -548,6 +562,76 @@ class SpellBot(discord.Client):
             await author.send(response)
             for mention in mentions:
                 await mention.send(response)
+
+    @command(allow_dm=False)
+    async def game(self, prefix, channel, author, mentions, params):
+        """
+        Create a game between mentioned users.
+        """
+        if not is_admin(channel, author):
+            return await channel.send(s("not_admin"))
+
+        params = [param.lower() for param in params]
+
+        power, size = power_and_size_from_params(params)
+        if not size or not (1 < size < 5):
+            return await channel.send(s("game_size_bad"))
+        if power and not (1 <= power <= 10):
+            return await channel.send(s("game_power_bad"))
+
+        if len(mentions) > size:
+            return await channel.send(s("game_too_many_mentions", size=size))
+        elif len(mentions) < size:
+            return await channel.send(s("game_too_few_mentions", size=size))
+
+        mentioned_users = []
+        for mentioned in mentions:
+            mentioned_user = self.ensure_user_exists(mentioned)
+            if mentioned_user.waiting:
+                mentioned_user.dequeue()
+            mentioned_users.append(mentioned_user)
+        self.session.commit()
+
+        tag_names = tag_names_from_params(params)
+        if len(tag_names) > 5:
+            return await channel.send(s("game_too_many_tags"))
+
+        tags = []
+        for tag_name in tag_names:
+            tag = self.session.query(Tag).filter_by(name=tag_name).first()
+            if not tag:
+                tag = Tag(name=tag_name)
+                self.session.add(tag)
+            tags.append(tag)
+
+        server = self.ensure_server_exists(channel.guild.id)
+        self.session.commit()
+
+        now = datetime.utcnow()
+        expires_at = now + timedelta(minutes=server.expire)
+        url = self.create_game()
+        game = Game(
+            channel_xid=channel.id if server.scope == "channel" else None,
+            created_at=now,
+            expires_at=expires_at,
+            guild_xid=server.guild_xid,
+            power=power,
+            size=size,
+            updated_at=now,
+            url=url,
+            users=mentioned_users,
+            tags=tags,
+        )
+        self.session.add(game)
+        self.session.commit()
+
+        player_response = game.to_str()
+        for player in mentioned_users:
+            discord_user = self.get_user(player.xid)
+            await discord_user.send(player_response)
+            player.queued_at = None
+
+        await channel.send(s("game_created", id=game.id))
 
     @command(allow_dm=True)
     async def leave(self, prefix, channel, author, mentions, params):
