@@ -3,6 +3,14 @@ dm_sent: Right on, I'll send you a Direct Message with details.
 expired: SpellBot has removed you from the queue due to server inactivity. Sorry,
   but unfortunately not enough players available at this time. Please try again when
   there are more players available.
+game_created: Game $id has been created!
+game_power_bad: Sorry, power level should a number between 1 and 10.
+game_size_bad: Game size must be between 2 and 4.
+game_too_few_mentions: Sorry, you mentioned too few people. I expected $size players
+  to be mentioned.
+game_too_many_mentions: Sorry, you mentioned too many people. I expected $size players
+  to be mentioned.
+game_too_many_tags: Sorry, you can not use more than 5 tags.
 leave: You have been removed from the queue.
 leave_already: You were not in the queue.
 no_dm: That command only works in text channels.

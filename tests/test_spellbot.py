@@ -304,7 +304,8 @@ def game_response_for(client, user, ready):
 
 def all_games(client):
     session = client.data.Session()
-    rvalue = len(session.query(Game).all())
+    games = session.query(Game).all()
+    rvalue = [json.loads(str(game)) for game in games]
     session.close()
     return rvalue
 
@@ -869,15 +870,15 @@ class TestSpellBot:
 
     async def test_on_message_play_then_cleanup(self, client):
         channel = text_channel()
-        assert all_games(client) == 0
+        assert len(all_games(client)) == 0
 
         await client.on_message(MockMessage(AMY, channel, "!play size:2"))
         await client.cleanup_started_games()
-        assert all_games(client) == 1
+        assert len(all_games(client)) == 1
 
         await client.on_message(MockMessage(JR, channel, "!play size:2"))
         await client.cleanup_started_games()
-        assert all_games(client) == 0
+        assert len(all_games(client)) == 0
 
     async def test_on_message_spellbot_prefix_none(self, client):
         author = an_admin()
@@ -1008,35 +1009,20 @@ class TestSpellBot:
 
     async def test_on_message_play_with_power_level_high(self, client):
         channel = text_channel()
-        print("\n### 1")
         await client.on_message(MockMessage(GUY, channel, "!play power:5"))
         assert GUY.last_sent_response == game_response_for(client, GUY, False)
-        print(GUY.last_sent_response)
-        print("####################################")
 
-        print("\n### 2")
         await client.on_message(MockMessage(FRIEND, channel, "!play power:7"))
         assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
-        print(FRIEND.last_sent_response)
-        print("####################################")
 
-        print("\n### 3")
         await client.on_message(MockMessage(BUDDY, channel, "!play power:9"))
         assert BUDDY.last_sent_response == game_response_for(client, BUDDY, False)
-        print(BUDDY.last_sent_response)
-        print("####################################")
 
-        print("\n### 4")
         await client.on_message(MockMessage(AMY, channel, "!play power:9"))
         assert AMY.last_sent_response == game_response_for(client, AMY, False)
-        print(AMY.last_sent_response)
-        print("####################################")
 
-        print("\n### 5")
         await client.on_message(MockMessage(DUDE, channel, "!play power:10"))
         assert DUDE.last_sent_response == game_response_for(client, DUDE, False)
-        print(DUDE.last_sent_response)
-        print("####################################")
 
         await client.on_message(MockMessage(JR, channel, "!play power:9"))
         assert BUDDY.last_sent_response == game_response_for(client, BUDDY, True)
@@ -1145,6 +1131,136 @@ class TestSpellBot:
         about = channel.last_sent_embed
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert fields["Authorized channels"] == f"#{AUTHORIZED_CHANNEL}, #foo, #bar"
+
+    async def test_on_message_game_with_power_bad(self, client):
+        channel = text_channel()
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str} power:42"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == (
+            "Sorry, power level should a number between 1 and 10."
+        )
+
+    async def test_on_message_game_with_too_many_mentions(self, client):
+        channel = text_channel()
+        mentions = [FRIEND, GUY, BUDDY, DUDE, AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == (
+            "Sorry, you mentioned too many people. I expected 4 players to be mentioned."
+        )
+
+    async def test_on_message_game_with_too_few_mentions(self, client):
+        channel = text_channel()
+        mentions = [FRIEND, GUY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == (
+            "Sorry, you mentioned too few people. I expected 4 players to be mentioned."
+        )
+
+    async def test_on_message_game_with_too_many_tags(self, client):
+        channel = text_channel()
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        tags = ["one", "two", "three", "four", "five", "six"]
+        tags_str = " ".join(tags)
+        cmd = f"!game {tags_str} {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
+
+    async def test_on_message_game_with_size_bad(self, client):
+        channel = text_channel()
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str} size:100"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == "Game size must be between 2 and 4."
+
+    async def test_on_message_game_non_admin(self, client):
+        channel = text_channel()
+        author = not_an_admin()
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str}"
+        await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == (
+            "You do not have admin permissions for this bot."
+        )
+
+    async def test_on_message_game(self, client):
+        channel = text_channel()
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        game = all_games(client)[0]
+        assert channel.last_sent_response == f"Game {game['id']} has been created!"
+        player_response = game_response_for(client, FRIEND, True)
+        assert FRIEND.last_sent_response == player_response
+        assert GUY.last_sent_response == player_response
+        assert BUDDY.last_sent_response == player_response
+        assert DUDE.last_sent_response == player_response
+
+    async def test_on_message_game_with_auto_dequeue(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(FRIEND, channel, "!play"))
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
+        assert channel.last_sent_response == (
+            "Right on, I'll send you a Direct Message with details."
+        )
+
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        game = all_games(client)[0]
+        assert channel.last_sent_response == f"Game {game['id']} has been created!"
+        player_response = game_response_for(client, FRIEND, True)
+        assert FRIEND.last_sent_response == player_response
+        assert GUY.last_sent_response == player_response
+        assert BUDDY.last_sent_response == player_response
+        assert DUDE.last_sent_response == player_response
+
+    async def test_on_message_game_multiple_times(self, client):
+        channel = text_channel()
+
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        game = all_games(client)[0]
+        assert channel.last_sent_response == f"Game {game['id']} has been created!"
+        player_response = game_response_for(client, FRIEND, True)
+        assert FRIEND.last_sent_response == player_response
+        assert GUY.last_sent_response == player_response
+        assert BUDDY.last_sent_response == player_response
+        assert DUDE.last_sent_response == player_response
+
+        mentions = [AMY, JR, ADAM, FRIEND]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        game = all_games(client)[1]
+        assert channel.last_sent_response == f"Game {game['id']} has been created!"
+        player_response = game_response_for(client, FRIEND, True)
+        assert FRIEND.last_sent_response == player_response
+        assert AMY.last_sent_response == player_response
+        assert JR.last_sent_response == player_response
+        assert ADAM.last_sent_response == player_response
+
+    async def test_ensure_server_exists(self, client, spoof_session):
+        server = client.ensure_server_exists(5)
+        client.session.commit()
+        assert json.loads(str(server)) == {
+            "guild_xid": 5,
+            "prefix": "!",
+            "scope": "server",
+            "expire": 30,
+        }
 
 
 def test_paginate():

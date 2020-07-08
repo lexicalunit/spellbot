@@ -33,6 +33,7 @@ being too spammy in text channels.**
 
 ### 👑 Administration
 
+- `!game`: Directly create games for the mentioned users.
 - `!spellbot`: Admin subcommands to configure SpellBot for your server.
 
 **Subcommands:**
