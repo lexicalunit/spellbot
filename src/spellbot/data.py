@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -70,6 +71,16 @@ class Server(Base):
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
     games = relationship("Game", back_populates="server")
     authorized_channels = relationship("AuthorizedChannel", back_populates="server")
+
+    def __repr__(self):
+        return json.dumps(
+            {
+                "guild_xid": self.guild_xid,
+                "prefix": self.prefix,
+                "scope": self.scope,
+                "expire": self.expire,
+            }
+        )
 
 
 class AuthorizedChannel(Base):
@@ -213,6 +224,21 @@ class Game(Base):
             .all()
         )
 
+    def __repr__(self):
+        return json.dumps(
+            {
+                "id": self.id,
+                "created_at": str(self.created_at),
+                "updated_at": str(self.updated_at),
+                "expires_at": str(self.expires_at),
+                "size": self.size,
+                "guild_xid": self.guild_xid,
+                "channel_xid": self.channel_xid,
+                "power": self.power,
+                "url": self.url,
+            }
+        )
+
     def to_str(self):
         session = Session.object_session(self)
         rvalue = ""
@@ -236,9 +262,10 @@ class Game(Base):
                 rvalue += f" _The average wait time is {delta}._\n"
             else:
                 rvalue += "\n"
-        rvalue += (
-            "\n🚨 When your game is ready I will send you another Direct Message! 🚨\n\n"
-        )
+            rvalue += (
+                "\n🚨 When your game is ready I will"
+                " send you another Direct Message! 🚨\n\n"
+            )
         players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
         rvalue += f"Players: {players}\n"
         if self.channel_xid:

@@ -2,6 +2,9 @@
 `!about`
 >  Get information about SpellBot.
 
+`!game`
+>  Create a game between mentioned users.
+
 `!help`
 >  Sends you this help message.
 
@@ -40,4 +43,3 @@
 > * `channel <list>`: Set SpellBot to only respond in the given list of channels.
 > * `prefix <string>`: Set SpellBot prefix for commands in text channels.
 > * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
-> * `expire <number>`: Set the number of minutes before pending games expire.
