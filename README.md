@@ -25,7 +25,7 @@ being too spammy in text channels.**
 - `!help`: Provides detailed help about all of the following commands.
 - `!about`: Get information about SpellBot and its creators.
 
-### ✋ Queueing
+### ✋ Matchmaking
 
 - `!play`: Get in line to play some Magic: The Gathering!
 - `!leave`: Get out of line; it's the opposite of `!play`.
