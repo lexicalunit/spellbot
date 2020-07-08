@@ -34,15 +34,13 @@ being too spammy in text channels.**
 ### 👑 Administration
 
 - `!game`: Directly create games for the mentioned users.
-- `!spellbot`: Admin subcommands to configure SpellBot for your server.
-
-**Subcommands:**
-
-- `config`: Just show the current configuration for this server.
-- `channels`: Set the channels SpellBot is allowed to operate within.
-- `prefix`: Set the command prefix for SpellBot in text channels.
-- `scope`: Set the matchmaking scope to server-wide or channel-specific.
-- `expire`: Set how many minutes before games are expired due to inactivity.
+- `!spellbot`: This command allows admins to configure SpellBot for their
+               server. It supports the following subcommands:
+  - `config`: Just show the current configuration for this server.
+  - `channels`: Set the channels SpellBot is allowed to operate within.
+  - `prefix`: Set the command prefix for SpellBot in text channels.
+  - `scope`: Set the matchmaking scope to server-wide or channel-specific.
+  - `expire`: Set how many minutes before games are expired due to inactivity.
 
 ## 🙌 Support Me
 
