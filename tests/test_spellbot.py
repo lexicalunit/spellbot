@@ -235,22 +235,22 @@ ADMIN_ROLE = MockRole("SpellBot Admin")
 PLAYER_ROLE = MockRole("Player Player")
 
 ADMIN = MockMember(CLIENT_USER, CLIENT_USER_ID, roles=[ADMIN_ROLE])
-FRIEND = MockMember("friend", 82169952898912256, roles=[PLAYER_ROLE])
-BUDDY = MockMember("buddy", 82942320688758784, roles=[ADMIN_ROLE, PLAYER_ROLE])
-GUY = MockMember("guy", 82988021019836416)
-DUDE = MockMember("dude", 82988761019835305, roles=[ADMIN_ROLE])
+FRIEND = MockMember("friend", 82169952898900001, roles=[PLAYER_ROLE])
+BUDDY = MockMember("buddy", 82942320688700002, roles=[ADMIN_ROLE, PLAYER_ROLE])
+GUY = MockMember("guy", 82988021019800003)
+DUDE = MockMember("dude", 82988761019800004, roles=[ADMIN_ROLE])
 
-JR = MockMember("J.R.", 72988021019836416)
-ADAM = MockMember("Adam", 62988021019836416)
-AMY = MockMember("Amy", 52988021019836416)
-JACOB = MockMember("Jacob", 42988021019836416)
+JR = MockMember("J.R.", 72988021019800005)
+ADAM = MockMember("Adam", 62988021019800006)
+AMY = MockMember("Amy", 52988021019800007)
+JACOB = MockMember("Jacob", 42988021019800008)
 
-PUNK = MockMember("punk", 119678027792646146)  # for a memeber that's not in our channel
-BOT = MockMember("robot", 82169567890912256)
+PUNK = MockMember("punk", 119678027792600009)  # for a memeber that's not in our channel
+BOT = MockMember("robot", 82169567890900010)
 BOT.bot = True
 
 CHANNEL_MEMBERS = [FRIEND, BUDDY, GUY, DUDE, ADMIN, JR, ADAM, AMY, JACOB]
-ALL_USERS = CHANNEL_MEMBERS + [PUNK, BOT]
+ALL_USERS = []  # users that are on the server, setup in client fixture
 
 S_SPY = Mock(wraps=spellbot.s)
 
@@ -330,6 +330,10 @@ def set_random_seed():
 
 @pytest.fixture
 def client(monkeypatch, mocker, patch_discord, tmp_path):
+    # Define which users are on this Discord server.
+    global ALL_USERS
+    ALL_USERS = CHANNEL_MEMBERS + [PUNK, BOT]
+
     # Keep track of strings used in the test suite.
     monkeypatch.setattr(spellbot, "s", S_SPY)
 
@@ -554,6 +558,27 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(GUY, channel, "!play"))
         assert GUY.last_sent_response == game_response_for(client, GUY, False)
+
+    async def test_on_message_play_then_leave_server(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(GUY, channel, "!play"))
+        assert GUY.last_sent_response == game_response_for(client, GUY, False)
+
+        await client.on_message(MockMessage(FRIEND, channel, "!play"))
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
+
+        # Simulate FRIEND leaving this Discord server
+        global ALL_USERS
+        ALL_USERS = [user for user in ALL_USERS if user != FRIEND]
+
+        await client.on_message(MockMessage(BUDDY, channel, "!play"))
+        assert BUDDY.last_sent_response == game_response_for(client, BUDDY, False)
+
+        await client.on_message(MockMessage(DUDE, channel, "!play"))
+        assert DUDE.last_sent_response == game_response_for(client, DUDE, False)
+
+        await client.on_message(MockMessage(AMY, channel, "!play"))
+        assert AMY.last_sent_response == game_response_for(client, AMY, True)
 
     async def test_on_message_play_cedh(self, client):
         channel = text_channel()
@@ -867,6 +892,22 @@ class TestSpellBot:
             "Sorry, but unfortunately not enough players available at this time. "
             "Please try again when there are more players available."
         )
+
+    async def test_on_message_play_then_expire_after_left_server(self, client, freezer):
+        NOW = datetime.utcnow()
+        freezer.move_to(NOW)
+        channel = text_channel()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!play"))
+
+        # Simulate author leaving this Discord server
+        global ALL_USERS
+        ALL_USERS = [user for user in ALL_USERS if user != author]
+
+        freezer.move_to(NOW + timedelta(days=1))
+        await client.cleanup_expired_games()
+        assert len(author.all_sent_calls) == 1
+        assert len(all_games(client)) == 0
 
     async def test_on_message_play_then_cleanup(self, client):
         channel = text_channel()
@@ -1310,7 +1351,7 @@ class TestCodebase:
         """Checks that the Python codebase passes configured flake8 checks."""
         chdir(REPO_ROOT)
         cmd = ["flake8", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
         assert proc.returncode == 0, f"flake8 issues:\n{proc.stdout.decode('utf-8')}"
 
@@ -1318,7 +1359,7 @@ class TestCodebase:
         """Checks that the Python codebase passes configured black checks."""
         chdir(REPO_ROOT)
         cmd = ["black", "-v", "--check", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
         assert proc.returncode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
 
@@ -1326,7 +1367,7 @@ class TestCodebase:
         """Checks that the Python codebase imports are correctly sorted."""
         chdir(REPO_ROOT)
         cmd = ["isort", "-df", "-rc", "-c", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
         assert proc.returncode == 0, f"isort issues:\n{proc.stdout.decode('utf-8')}"
 
@@ -1334,7 +1375,7 @@ class TestCodebase:
         """Checks that the strings data is correctly sorted."""
         chdir(REPO_ROOT)
         cmd = ["python", "scripts/sort_strings.py", "--check"]
-        print("running:", " ".join(str(part) for part in cmd))
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
         assert proc.returncode == 0, (
             f"sort strings issues:\n{proc.stdout.decode('utf-8')}\n\n"

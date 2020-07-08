@@ -117,46 +117,35 @@ class User(Base):
         session = Session.object_session(self)
         guild_xid = server.guild_xid
         required_tag_ids = set(tag.id for tag in tags)
+        filters = [
+            games_tags.c.tag_id.in_([tag.id for tag in tags]),
+            Game.status == "pending",
+            Game.guild_xid == guild_xid,
+            Game.size == size,
+        ]
+        if server.scope == "channel":
+            filters.append(Game.channel_xid == channel_xid)
+        if power:
+            filters.append(Game.power >= power - 2)
+            filters.append(Game.power <= power + 2)
         considerations = (
             session.query(games_tags.c.game_id, func.count(games_tags.c.game_id))
-            .filter(games_tags.c.tag_id.in_([tag.id for tag in tags]))
+            .join(Game)
+            .filter(and_(*filters))
             .group_by(games_tags.c.game_id)
             .having(func.count(games_tags.c.game_id) == len(tags))
             .all()
         )
-        valid_game_ids = []
+        existing_game = None
         for row in considerations:
+            # FIXME: How can we move these checks into the query statement?
             game = session.query(Game).get(row.game_id)
-            if not game:
-                continue
-            if game.url is not None:
-                continue
             if set(tag.id for tag in game.tags) != required_tag_ids:
                 continue
             if len(game.users) >= size - len(include):
                 continue
-            if game.guild_xid != guild_xid:
-                continue
-            if game.size != size:
-                continue
-            if (
-                server.scope == "channel"
-                and game.channel_xid
-                and game.channel_xid != channel_xid
-            ):
-                continue
-            if power:
-                if not game.power:
-                    continue
-                if not (power - 2 <= game.power <= power + 2):
-                    continue
-            valid_game_ids.append(row.game_id)
-        existing_game = (
-            session.query(Game)
-            .filter(Game.id.in_(valid_game_ids))
-            .order_by(Game.created_at)
-            .first()
-        )
+            existing_game = game
+            break
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=server.expire)
         if existing_game:
@@ -165,15 +154,11 @@ class User(Base):
             self.game.updated_at = now
             self.game.expires_at = expires_at
             if power:
+                # recalculating the average power for this game
                 newly_seated = 1 + len(include)
                 now_seated = already_seated + newly_seated
-                print(
-                    f"power: (({self.game.power} * {already_seated}) +"
-                    f" ({power} * {newly_seated})) / {now_seated} "
-                )
-                self.game.power = (
-                    (self.game.power * already_seated) + (power * newly_seated)
-                ) / now_seated
+                total_power = self.game.power * already_seated + power * newly_seated
+                self.game.power = total_power / now_seated
         else:
             self.game = Game(
                 channel_xid=channel_xid if server.scope == "channel" else None,
@@ -194,6 +179,7 @@ class User(Base):
     def dequeue(self):
         session = Session.object_session(self)
         if self.game and len(self.game.users) == 1:
+            self.game.tags = []  # cascade delete tag associations
             session.delete(self.game)
         self.game = None
         self.queued_at = None
@@ -212,6 +198,7 @@ class Game(Base):
     channel_xid = Column(BigInteger)
     power = Column(Float)
     url = Column(String(255))
+    status = Column(String(30), nullable=False, server_default=text("'pending'"))
     users = relationship("User", back_populates="game")
     tags = relationship("Tag", secondary=games_tags, back_populates="games")
     server = relationship("Server", back_populates="games")
@@ -236,6 +223,7 @@ class Game(Base):
                 "channel_xid": self.channel_xid,
                 "power": self.power,
                 "url": self.url,
+                "status": self.status,
             }
         )
 

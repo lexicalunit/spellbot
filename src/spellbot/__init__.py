@@ -166,7 +166,7 @@ class SpellBot(discord.Client):
         self.cleanup_started_games_task(loop)
 
     def cleanup_expired_games_task(self, loop):  # pragma: no cover
-        """Starts a task that deletes old games."""
+        """Starts a task that culls old games."""
         THIRTY_SECONDS = 30
 
         async def task():
@@ -177,7 +177,7 @@ class SpellBot(discord.Client):
         loop.create_task(task())
 
     async def cleanup_expired_games(self):
-        """Deletes games older than the given window of minutes."""
+        """Culls games older than the given window of minutes."""
         session = self.data.Session()
         try:
             expired = Game.expired(session)
@@ -188,7 +188,7 @@ class SpellBot(discord.Client):
                         await discord_user.send(s("expired", window=game.server.expire))
                     user.queued_at = None
                     user.game = None
-                game.tags = []
+                game.tags = []  # cascade delete tag associations
                 session.delete(game)
             session.commit()
         except exc.SQLAlchemyError as e:
@@ -199,7 +199,7 @@ class SpellBot(discord.Client):
             session.close()
 
     def cleanup_expired_wait_times_task(self, loop):  # pragma: no cover
-        """Starts a task that deletes old wait times data."""
+        """Starts a task that culls old wait times data."""
         FIVE_MINUTES = 300
 
         async def task():
@@ -210,7 +210,7 @@ class SpellBot(discord.Client):
         loop.create_task(task())
 
     async def cleanup_expired_waits(self, window):
-        """Deletes wait time data older than the given window of minutes."""
+        """Culls wait time data older than the given window of minutes."""
         session = self.data.Session()
         try:
             cutoff = datetime.utcnow() - timedelta(minutes=window)
@@ -224,23 +224,23 @@ class SpellBot(discord.Client):
             session.close()
 
     def cleanup_started_games_task(self, loop):  # pragma: no cover
-        """Starts a task that deletes old games."""
-        FIVE_MINUTES = 300
+        """Starts a task that culls old games."""
+        FOUR_HOURS = 14400
 
         async def task():
             while True:
                 await self.cleanup_started_games()
-                await asyncio.sleep(FIVE_MINUTES)
+                await asyncio.sleep(FOUR_HOURS)
 
         loop.create_task(task())
 
     async def cleanup_started_games(self):
-        """Deletes games older than the given window of minutes."""
+        """Culls games older than the given window of minutes."""
         session = self.data.Session()
         try:
-            games = session.query(Game).filter(Game.url != None).all()
+            games = session.query(Game).filter(Game.status == "started").all()
             for game in games:
-                game.tags = []
+                game.tags = []  # cascade delete tag associations
                 session.delete(game)
             session.commit()
         except exc.SQLAlchemyError as e:
@@ -546,6 +546,7 @@ class SpellBot(discord.Client):
         await channel.send(s("dm_sent"))
         if len(found_discord_users) == size:  # all players matched, game is ready
             user.game.url = self.create_game()
+            user.game.status = "started"
             game_created_at = datetime.utcnow()
             response = user.game.to_str()
             for game_user, discord_user in zip(user.game.users, found_discord_users):
@@ -619,6 +620,7 @@ class SpellBot(discord.Client):
             size=size,
             updated_at=now,
             url=url,
+            status="started",
             users=mentioned_users,
             tags=tags,
         )
@@ -850,12 +852,16 @@ def main(
 
     token = getenv("SPELLBOT_TOKEN", None)
     if not token:
-        print("error: SPELLBOT_TOKEN environment variable not set", file=sys.stderr)
+        print(  # noqa: T001
+            "error: SPELLBOT_TOKEN environment variable not set", file=sys.stderr
+        )
         sys.exit(1)
 
     auth = getenv("SPELLTABLE_AUTH", None)
     if not auth:
-        print("error: SPELLTABLE_AUTH environment variable not set", file=sys.stderr)
+        print(  # noqa: T001
+            "error: SPELLTABLE_AUTH environment variable not set", file=sys.stderr
+        )
         sys.exit(1)
 
     client = SpellBot(
