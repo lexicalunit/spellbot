@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import logging
+import re
 import sys
 from datetime import datetime, timedelta
 from functools import wraps
@@ -407,7 +408,19 @@ class SpellBot(discord.Client):
             doc = method.__doc__.split("&")
             use, params = doc[0], ", ".join([param.strip() for param in doc[1:]])
             use = inspect.cleandoc(use)
+
+            transformed = ""
+            for line in use.split("\n"):
+                if line:
+                    if line.startswith("*"):
+                        transformed += f"\n{line}"
+                    else:
+                        transformed += f"{line} "
+                else:
+                    transformed += "\n\n"
+            use = transformed
             use = use.replace("\n", "\n> ")
+            use = re.sub(r"\s+$", "", use, flags=re.M)
 
             title = f"{prefix}{command}"
             if params:
@@ -567,10 +580,28 @@ class SpellBot(discord.Client):
     @command(allow_dm=False)
     async def game(self, prefix, channel, author, mentions, params):
         """
-        Create a game between mentioned users.
+        Create a game between mentioned users. _Requires the "SpellBot Admin" role._
+
+        Operates similarly to the !play command with a few key deferences. First, see that
+        command's usage help for more details. Then, here are the differences:
+        * The user who issues this command is **NOT** added to the game themselves.
+        * You must mention all of the players to be seated in the game.
+        * Optional: Add a message by using " -- " followed by the message content.
+        & [similar parameters as !play] [-- An optional additional message to send.]
         """
         if not is_admin(channel, author):
             return await channel.send(s("not_admin"))
+
+        message = None
+        try:
+            sentry = params.index("--")
+            message = " ".join(params[sentry + 1 :])
+            params = params[0:sentry]
+        except ValueError:
+            pass
+
+        if message and len(message) >= 255:
+            return await channel.send(s("game_message_too_long"))
 
         params = [param.lower() for param in params]
 
@@ -621,6 +652,7 @@ class SpellBot(discord.Client):
             updated_at=now,
             url=url,
             status="started",
+            message=message,
             users=mentioned_users,
             tags=tags,
         )
@@ -669,17 +701,14 @@ class SpellBot(discord.Client):
     @command(allow_dm=False)
     async def spellbot(self, prefix, channel, author, mentions, params):
         """
-        Configure SpellBot for your server.
+        Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
 
         The following subcommands are supported:
-
         * `config`: Just show the current configuration for this server.
         * `channel <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot prefix for commands in text channels.
         * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
         * `expire <number>`: Set the number of minutes before pending games expire.
-
-        _You must have the "SpellBot Admin" role to use any of these commands._
         & <subcommand> [subcommand parameters]
         """
         if not is_admin(channel, author):

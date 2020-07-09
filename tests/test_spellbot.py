@@ -289,13 +289,16 @@ def private_channel():
     return MockDM(1)
 
 
-def game_response_for(client, user, ready):
+def game_response_for(client, user, ready, message=None):
     session = client.data.Session()
     db_user = session.query(User).filter(User.xid == user.id).first()
     rvalue = db_user.game.to_str() if db_user and db_user.game else None
     if rvalue:
         if ready:
-            assert rvalue.startswith("**Your SpellTable game is ready!**")
+            if message:
+                assert rvalue.startswith(message)
+            else:
+                assert rvalue.startswith("**Your SpellTable game is ready!**")
         else:
             assert rvalue.startswith("**You have been entered in a play queue")
     session.close()
@@ -1232,6 +1235,18 @@ class TestSpellBot:
             "You do not have admin permissions for this bot."
         )
 
+    async def test_on_message_game_message_too_long(self, client):
+        channel = text_channel()
+        author = an_admin()
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        message = "foo bar baz" * 100
+        cmd = f"!game {mentions_str} -- {message}"
+        await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == (
+            "Sorry, the optional game message must be shorter than 255 characters."
+        )
+
     async def test_on_message_game(self, client):
         channel = text_channel()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
@@ -1241,6 +1256,21 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == f"Game {game['id']} has been created!"
         player_response = game_response_for(client, FRIEND, True)
+        assert FRIEND.last_sent_response == player_response
+        assert GUY.last_sent_response == player_response
+        assert BUDDY.last_sent_response == player_response
+        assert DUDE.last_sent_response == player_response
+
+    async def test_on_message_game_with_message(self, client):
+        channel = text_channel()
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        message = "This is a message!"
+        cmd = f"!game {mentions_str} -- {message}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        game = all_games(client)[0]
+        assert channel.last_sent_response == f"Game {game['id']} has been created!"
+        player_response = game_response_for(client, FRIEND, True, message=message)
         assert FRIEND.last_sent_response == player_response
         assert GUY.last_sent_response == player_response
         assert BUDDY.last_sent_response == player_response
