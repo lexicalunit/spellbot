@@ -34,6 +34,7 @@ being too spammy in text channels.**
 ### 👑 Administration
 
 - `!game`: Directly create games for the mentioned users.
+- `!event`: Create a bunch of games all at once based on some uploaded data.
 - `!spellbot`: This command allows admins to configure SpellBot for their
                server. It supports the following subcommands:
   - `config`: Just show the current configuration for this server.
