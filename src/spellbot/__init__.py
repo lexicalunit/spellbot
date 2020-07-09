@@ -661,7 +661,10 @@ class SpellBot(discord.Client):
             await discord_user.send(player_response)
             player.queued_at = None
 
-        await message.channel.send(s("game_created", id=game.id))
+        players_str = ", ".join(sorted([f"<@{user.xid}>" for user in mentioned_users]))
+        await message.channel.send(
+            s("game_created", id=game.id, url=game.url, players=players_str)
+        )
 
     @command(allow_dm=True)
     async def leave(self, prefix, params, message):
