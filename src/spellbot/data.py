@@ -70,7 +70,7 @@ class Server(Base):
     scope = Column(String(10), nullable=False, default="server")
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
     games = relationship("Game", back_populates="server")
-    authorized_channels = relationship("AuthorizedChannel", back_populates="server")
+    authorized_channels = relationship("Channel", back_populates="server")
 
     def __repr__(self):
         return json.dumps(
@@ -83,7 +83,7 @@ class Server(Base):
         )
 
 
-class AuthorizedChannel(Base):
+class Channel(Base):
     __tablename__ = "authorized_channels"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     guild_xid = Column(
@@ -99,6 +99,15 @@ games_tags = Table(
     Column("game_id", Integer, ForeignKey("games.id", ondelete="CASCADE")),
     Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE")),
 )
+
+
+class Event(Base):
+    __tablename__ = "events"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    games = relationship("Game", back_populates="event")
+
+    def __repr__(self):
+        return json.dumps({"id": self.id})
 
 
 class User(Base):
@@ -199,15 +208,25 @@ class Game(Base):
     url = Column(String(255))
     status = Column(String(30), nullable=False, server_default=text("'pending'"))
     message = Column(String(255))
+    event_id = Column(
+        Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True
+    )
     users = relationship("User", back_populates="game")
     tags = relationship("Tag", secondary=games_tags, back_populates="games")
     server = relationship("Server", back_populates="games")
+    event = relationship("Event", back_populates="games")
 
     @classmethod
     def expired(cls, session):
         return (
             session.query(Game)
-            .filter(and_(datetime.utcnow() >= Game.expires_at, Game.url == None))
+            .filter(
+                and_(
+                    datetime.utcnow() >= Game.expires_at,
+                    Game.url == None,
+                    Game.status != "ready",
+                )
+            )
             .all()
         )
 
