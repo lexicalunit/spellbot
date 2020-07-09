@@ -199,6 +199,7 @@ class Game(Base):
     power = Column(Float)
     url = Column(String(255))
     status = Column(String(30), nullable=False, server_default=text("'pending'"))
+    message = Column(String(255))
     users = relationship("User", back_populates="game")
     tags = relationship("Tag", secondary=games_tags, back_populates="games")
     server = relationship("Server", back_populates="games")
@@ -224,6 +225,7 @@ class Game(Base):
                 "power": self.power,
                 "url": self.url,
                 "status": self.status,
+                "message": self.message,
             }
         )
 
@@ -231,7 +233,10 @@ class Game(Base):
         session = Session.object_session(self)
         rvalue = ""
         if self.url:
-            rvalue += "**Your SpellTable game is ready!**\n"
+            if self.message:
+                rvalue += f"{self.message}\n"
+            else:
+                rvalue += "**Your SpellTable game is ready!**\n"
             rvalue += f"{self.url}\n"
         else:
             rvalue += (
