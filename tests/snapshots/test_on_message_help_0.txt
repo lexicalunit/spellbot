@@ -2,8 +2,13 @@
 `!about`
 >  Get information about SpellBot.
 
-`!game`
->  Create a game between mentioned users.
+`!game [similar parameters as !play] [-- An optional additional message to send.]`
+>  Create a game between mentioned users. _Requires the "SpellBot Admin" role._
+>
+> Operates similarly to the !play command with a few key deferences. First, see that command's usage help for more details. Then, here are the differences:
+> * The user who issues this command is **NOT** added to the game themselves.
+> * You must mention all of the players to be seated in the game.
+> * Optional: Add a message by using " -- " followed by the message content.
 
 `!help`
 >  Sends you this help message.
@@ -13,33 +18,12 @@
 
 `!play [@mention-1] [@mention-2] [...] [size:N] [power:N] [tag-1] [tag-2] [...]`
 >  Enter a play queue for a game on SpellTable.
-> 
-> You can get in a queue with a friend by mentioning them in the command with the @
-> character. You can also change the number of players from the default of four by
-> using, for example, `!play size:2` to create a two player game.
-> 
-> Up to five tags can be given as well. For example, `!play no-combo proxy` has
-> two tags: `no-combo` and `proxy`. Look on your server for what tags are being
-> used by your community members. Tags can **not** be a number like `5`. Be careful
-> when using tags because the matchmaker will only pair you up with other players
-> who've used **EXACTLY** the same tags.
-> 
-> You can also specify a power level like `!play power:7` for example and the
-> matchmaker will attempt to find a game with similar power levels for you. Note
-> that players who specify a power level will never get paired up with players who
-> have not, and vice versa. You will also not be matched up _exactly_ by power level
-> as there is a fudge factor involved.
-> 
-> If your server's admins have set the scope for your server to "channel", then
-> matchmaking will only happen between other players who run this command in the
-> same channel as you did. The default scope for matchmaking is server-wide.
+>
+> You can get in a queue with a friend by mentioning them in the command with the @ character. You can also change the number of players from the default of four by using, for example, `!play size:2` to create a two player game.
+>
+> Up to five tags can be given as well. For example, `!play no-combo proxy` has two tags: `no-combo` and `proxy`. Look on your server for what tags are being used by your community members. Tags can **not** be a number like `5`. Be careful when using tags because the matchmaker will only pair you up with other players who've used **EXACTLY** the same tags.
+>
+> You can also specify a power level like `!play power:7` for example and the matchmaker will attempt to find a game with similar power levels for you. Note that players who specify a power level will never get paired up with players who have not, and vice versa. You will also not be matched up _exactly_ by power level as there is a fudge factor involved.
+>
+> If your server's admins have set the scope for your server to "channel", then matchmaking will only happen between other players who run this command in the same channel as you did. The default scope for matchmaking is server-wide.
 
-`!spellbot <subcommand> [subcommand parameters]`
->  Configure SpellBot for your server.
-> 
-> The following subcommands are supported:
-> 
-> * `config`: Just show the current configuration for this server.
-> * `channel <list>`: Set SpellBot to only respond in the given list of channels.
-> * `prefix <string>`: Set SpellBot prefix for commands in text channels.
-> * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
