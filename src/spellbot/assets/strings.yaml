@@ -3,7 +3,11 @@ dm_sent: Right on, I'll send you a Direct Message with details.
 expired: SpellBot has removed you from the queue due to server inactivity. Sorry,
   but unfortunately not enough players available at this time. Please try again when
   there are more players available.
-game_created: Game $id has been created!
+game_created: '**Game $id created:**
+
+  > $url
+
+  > Players: $players'
 game_message_too_long: Sorry, the optional game message must be shorter than 255 characters.
 game_power_bad: Sorry, power level should a number between 1 and 10.
 game_size_bad: Game size must be between 2 and 4.
