@@ -1254,7 +1254,11 @@ class TestSpellBot:
         cmd = f"!game {mentions_str}"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         game = all_games(client)[0]
-        assert channel.last_sent_response == f"Game {game['id']} has been created!"
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> {game['url']}\n"
+            f"> Players: <@{FRIEND.id}>, <@{BUDDY.id}>, <@{GUY.id}>, <@{DUDE.id}>"
+        )
         player_response = game_response_for(client, FRIEND, True)
         assert FRIEND.last_sent_response == player_response
         assert GUY.last_sent_response == player_response
@@ -1269,7 +1273,11 @@ class TestSpellBot:
         cmd = f"!game {mentions_str} -- {message}"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         game = all_games(client)[0]
-        assert channel.last_sent_response == f"Game {game['id']} has been created!"
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> {game['url']}\n"
+            f"> Players: <@{FRIEND.id}>, <@{BUDDY.id}>, <@{GUY.id}>, <@{DUDE.id}>"
+        )
         player_response = game_response_for(client, FRIEND, True, message=message)
         assert FRIEND.last_sent_response == player_response
         assert GUY.last_sent_response == player_response
@@ -1289,7 +1297,11 @@ class TestSpellBot:
         cmd = f"!game {mentions_str}"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         game = all_games(client)[0]
-        assert channel.last_sent_response == f"Game {game['id']} has been created!"
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> {game['url']}\n"
+            f"> Players: <@{FRIEND.id}>, <@{BUDDY.id}>, <@{GUY.id}>, <@{DUDE.id}>"
+        )
         player_response = game_response_for(client, FRIEND, True)
         assert FRIEND.last_sent_response == player_response
         assert GUY.last_sent_response == player_response
@@ -1304,7 +1316,11 @@ class TestSpellBot:
         cmd = f"!game {mentions_str}"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         game = all_games(client)[0]
-        assert channel.last_sent_response == f"Game {game['id']} has been created!"
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> {game['url']}\n"
+            f"> Players: <@{FRIEND.id}>, <@{BUDDY.id}>, <@{GUY.id}>, <@{DUDE.id}>"
+        )
         player_response = game_response_for(client, FRIEND, True)
         assert FRIEND.last_sent_response == player_response
         assert GUY.last_sent_response == player_response
@@ -1316,7 +1332,11 @@ class TestSpellBot:
         cmd = f"!game {mentions_str}"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         game = all_games(client)[1]
-        assert channel.last_sent_response == f"Game {game['id']} has been created!"
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> {game['url']}\n"
+            f"> Players: <@{AMY.id}>, <@{ADAM.id}>, <@{JR.id}>, <@{FRIEND.id}>"
+        )
         player_response = game_response_for(client, FRIEND, True)
         assert FRIEND.last_sent_response == player_response
         assert AMY.last_sent_response == player_response
