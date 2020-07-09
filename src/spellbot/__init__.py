@@ -858,7 +858,7 @@ def main(
         sys.exit(1)
 
     auth = getenv("SPELLTABLE_AUTH", None)
-    if not auth:
+    if not auth and not mock_games:
         print(  # noqa: T001
             "error: SPELLTABLE_AUTH environment variable not set", file=sys.stderr
         )
