@@ -103,8 +103,7 @@ games_tags = Table(
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    xid = Column(BigInteger, nullable=False)
+    xid = Column(BigInteger, primary_key=True, nullable=False)
     game_id = Column(Integer, ForeignKey("games.id", ondelete="SET NULL"), nullable=True)
     queued_at = Column(DateTime, nullable=True)
     game = relationship("Game", back_populates="users")
