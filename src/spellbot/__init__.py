@@ -587,8 +587,9 @@ class SpellBot(discord.Client):
         "Player2Username" CSV columns. The game size is deduced from the number of column
         names given, so we know the games created in this example are `size:2`.
 
-        Games will not be created immediately to allow you to verify things look ok first.
-        After the event is created you will be given directions on how to start it.
+        Games will not be created immediately. This is to allow you to verify things look
+        ok. This command will also give you directions on how to actually start the games
+        for this event as part of its reply.
         & <player 1 column> <player 2 column> ... <player N column>
         """
         if not is_admin(message.channel, message.author):
