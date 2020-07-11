@@ -1495,11 +1495,37 @@ class TestSpellBot:
             f" next run `!begin {event['id']}` to start the event."
         )
 
+    async def test_on_message_event_message_too_long(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        opt = "foo bar baz" * 100
+        comment = f"!event player1 player2 -- {opt}"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            "Sorry, the optional game message must be shorter than 255 characters."
+        )
+
     async def test_on_message_event(self, client):
         channel = text_channel()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[0]
+        assert channel.last_sent_response == (
+            f"Event {event['id']} created! If everything looks good,"
+            f" next run `!begin {event['id']}` to start the event."
+        )
+
+    async def test_on_message_event_with_message(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        opt = "an message override"
+        comment = f"!event player1 player2 -- {opt}"
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         event = all_events(client)[0]
@@ -1584,6 +1610,32 @@ class TestSpellBot:
             f"> Players: <@{AMY.id}>, <@{JR.id}>"
         )
         player_response = game_response_for(client, AMY, True)
+        assert AMY.last_sent_response == player_response
+        assert JR.last_sent_response == player_response
+
+    async def test_on_message_begin_event_with_message(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        opt = "this is an optional message"
+        comment = f"!event player1 player2 -- {opt}"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[0]
+        event_id = event["id"]
+        assert channel.last_sent_response == (
+            f"Event {event_id} created! If everything looks good,"
+            f" next run `!begin {event_id}` to start the event."
+        )
+
+        await client.on_message(MockMessage(an_admin(), channel, f"!begin {event_id}"))
+        game = all_games(client)[0]
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> {game['url']}\n"
+            f"> Players: <@{AMY.id}>, <@{JR.id}>"
+        )
+        player_response = game_response_for(client, AMY, True, message=opt)
         assert AMY.last_sent_response == player_response
         assert JR.last_sent_response == player_response
 
