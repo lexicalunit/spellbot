@@ -470,7 +470,7 @@ class TestSpellBot:
         if hasattr(channel, "recipient"):
             assert channel.recipient == author
         await client.on_message(msg)
-        assert channel.last_sent_response == "Did you mean: !spellbot, !status?"
+        assert channel.last_sent_response == "Did you mean: !spellbot, !start, !status?"
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_invalid_request(self, client, channel):
@@ -1506,6 +1506,130 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f"Event {event['id']} created! If everything looks good,"
             f" next run `!start {event['id']}` to start the event."
+        )
+
+    async def test_on_message_start_not_admin(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[0]
+        event_id = event["id"]
+        assert channel.last_sent_response == (
+            f"Event {event_id} created! If everything looks good,"
+            f" next run `!start {event_id}` to start the event."
+        )
+
+        await client.on_message(
+            MockMessage(not_an_admin(), channel, f"!start {event_id}")
+        )
+        assert channel.last_sent_response == (
+            "You do not have admin permissions for this bot."
+        )
+
+    async def test_on_message_start_no_params(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(an_admin(), channel, "!start"))
+        assert channel.last_sent_response == "Please provide the event id."
+
+    async def test_on_message_start_bad_param(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(an_admin(), channel, "!start sock"))
+        assert channel.last_sent_response == (
+            "Sorry, SpellBot can not find an event with that id."
+        )
+
+    async def test_on_message_start_event_not_found(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[0]
+        event_id = event["id"]
+        assert channel.last_sent_response == (
+            f"Event {event_id} created! If everything looks good,"
+            f" next run `!start {event_id}` to start the event."
+        )
+
+        await client.on_message(
+            MockMessage(an_admin(), channel, f"!start {event_id + 1}")
+        )
+        assert channel.last_sent_response == (
+            "Sorry, SpellBot can not find an event with that id."
+        )
+
+    async def test_on_message_start_event(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[0]
+        event_id = event["id"]
+        assert channel.last_sent_response == (
+            f"Event {event_id} created! If everything looks good,"
+            f" next run `!start {event_id}` to start the event."
+        )
+
+        await client.on_message(MockMessage(an_admin(), channel, f"!start {event_id}"))
+        game = all_games(client)[0]
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> {game['url']}\n"
+            f"> Players: <@{AMY.id}>, <@{JR.id}>"
+        )
+        player_response = game_response_for(client, AMY, True)
+        assert AMY.last_sent_response == player_response
+        assert JR.last_sent_response == player_response
+
+    async def test_on_message_start_event_when_user_left(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[0]
+        event_id = event["id"]
+        assert channel.last_sent_response == (
+            f"Event {event_id} created! If everything looks good,"
+            f" next run `!start {event_id}` to start the event."
+        )
+
+        # Simulate AMY leaving this Discord server
+        global ALL_USERS
+        ALL_USERS = [user for user in ALL_USERS if user != AMY]
+
+        await client.on_message(MockMessage(an_admin(), channel, f"!start {event_id}"))
+        assert channel.last_sent_response == (
+            "**Warning:** A user left the server since this event was created."
+            " SpellBot did **NOT** start the game for the players:"
+            f" <@{AMY.id}>, <@{JR.id}>."
+        )
+
+    async def test_on_message_start_event_already(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[0]
+        event_id = event["id"]
+        assert channel.last_sent_response == (
+            f"Event {event_id} created! If everything looks good,"
+            f" next run `!start {event_id}` to start the event."
+        )
+
+        await client.on_message(MockMessage(an_admin(), channel, f"!start {event_id}"))
+        await client.on_message(MockMessage(an_admin(), channel, f"!start {event_id}"))
+        assert channel.last_sent_response == (
+            "Sorry, that event has already started and can not be started again."
         )
 
 
