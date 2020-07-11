@@ -691,7 +691,7 @@ class SpellBot(discord.Client):
         await message.channel.send(s("event_created", prefix=prefix, event_id=event.id))
 
     @command(allow_dm=False)
-    async def start(self, prefix, params, message):
+    async def begin(self, prefix, params, message):
         """
         Confirm creation of games for the given event id. _Requires the
         "SpellBot Admin" role._
@@ -701,18 +701,18 @@ class SpellBot(discord.Client):
             return await message.channel.send(s("not_admin"))
 
         if not params:
-            return await message.channel.send(s("start_no_params"))
+            return await message.channel.send(s("begin_no_params"))
 
         event_id = to_int(params[0])
         if not event_id:
-            return await message.channel.send(s("start_bad_event"))
+            return await message.channel.send(s("begin_bad_event"))
 
         event = self.session.query(Event).filter(Event.id == event_id).one_or_none()
         if not event:
-            return await message.channel.send(s("start_bad_event"))
+            return await message.channel.send(s("begin_bad_event"))
 
         if event.started:
-            return await message.channel.send(s("start_event_already_started"))
+            return await message.channel.send(s("begin_event_already_started"))
 
         for game in event.games:
             players_str = ", ".join(sorted([f"<@{user.xid}>" for user in game.users]))
@@ -721,7 +721,7 @@ class SpellBot(discord.Client):
             for game_user in game.users:
                 discord_user = self.get_user(game_user.xid)
                 if not discord_user:  # game_user has left the server since event created
-                    warning = s("start_user_left", players=players_str)
+                    warning = s("begin_user_left", players=players_str)
                     await message.channel.send(warning)
                 else:
                     found_discord_users.append(discord_user)

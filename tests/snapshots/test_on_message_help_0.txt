@@ -2,6 +2,9 @@
 `!about`
 >  Get information about SpellBot.
 
+`!begin <event id>`
+>  Confirm creation of games for the given event id. _Requires the "SpellBot Admin" role._
+
 `!event <player 1 column> <player 2 column> ... <player N column>`
 >  Create many games in batch from an attached CSV data file. _Requires the "SpellBot Admin" role._
 > 
@@ -27,5 +30,3 @@
 >  Enter a play queue for a game on SpellTable.
 > 
 > You can get in a queue with a friend by mentioning them in the command with the @ character. You can also change the number of players from the default of four by using, for example, `!play size:2` to create a two player game.
-> 
-> Up to five tags can be given as well. For example, `!play no-combo proxy` has two tags: `no-combo` and `proxy`. Look on your server for what tags are being used by your community members. Tags can **not** be a number like `5`.
