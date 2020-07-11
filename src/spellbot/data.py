@@ -106,6 +106,10 @@ class Event(Base):
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     games = relationship("Game", back_populates="event")
 
+    @property
+    def started(self):
+        return any(game.status == "started" for game in self.games)
+
     def __repr__(self):
         return json.dumps({"id": self.id})
 

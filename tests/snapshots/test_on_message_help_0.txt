@@ -6,6 +6,8 @@
 >  Create many games in batch from an attached CSV data file. _Requires the "SpellBot Admin" role._
 > 
 > For example, if your event is for a Modern tournement you might attach a CSV file with a comment like `!event Player1Username Player2Username`. This would assume that the players' discord user names are found in the "Player1Username" and "Player2Username" CSV columns. The game size is deduced from the number of column names given, so we know the games created in this example are `size:2`.
+> 
+> Games will not be created immediately to allow you to verify things look ok first. After the event is created you will be given directions on how to start it.
 
 `!game [similar parameters as !play] [-- An optional additional message to send.]`
 >  Create a game between mentioned users. _Requires the "SpellBot Admin" role._
@@ -26,4 +28,4 @@
 > 
 > You can get in a queue with a friend by mentioning them in the command with the @ character. You can also change the number of players from the default of four by using, for example, `!play size:2` to create a two player game.
 > 
-> Up to five tags can be given as well. For example, `!play no-combo proxy` has two tags: `no-combo` and `proxy`. Look on your server for what tags are being used by your community members. Tags can **not** be a number like `5`. Be careful when using tags because the matchmaker will only pair you up with other players who've used **EXACTLY** the same tags.
+> Up to five tags can be given as well. For example, `!play no-combo proxy` has two tags: `no-combo` and `proxy`. Look on your server for what tags are being used by your community members. Tags can **not** be a number like `5`.
