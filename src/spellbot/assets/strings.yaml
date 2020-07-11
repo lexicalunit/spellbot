@@ -1,7 +1,13 @@
+begin_bad_event: Sorry, SpellBot can not find an event with that id.
+begin_event_already_started: Sorry, that event has already started and can not be
+  started again.
+begin_no_params: Please provide the event id.
+begin_user_left: '**Warning:** A user left the server since this event was created.
+  SpellBot did **NOT** start the game for the players: $players.'
 did_you_mean: 'Did you mean: $possible?'
 dm_sent: Right on, I'll send you a Direct Message with details.
 event_bad_play_count: Player count must be between 2 and 4.
-event_created: Event $event_id created! If everything looks good, next run `${prefix}start
+event_created: Event $event_id created! If everything looks good, next run `${prefix}begin
   $event_id` to start the event.
 event_empty: No games created for this event, please address any warnings and try
   again.
@@ -55,12 +61,6 @@ spellbot_scope: 'Matchmaking on this server is now set to: $scope.'
 spellbot_scope_bad: Sorry, scope should be either "server" or "channel".
 spellbot_scope_none: Please provide a scope string.
 spellbot_unknown_subcommand: The subcommand "$command" is not recognized.
-start_bad_event: Sorry, SpellBot can not find an event with that id.
-start_event_already_started: Sorry, that event has already started and can not be
-  started again.
-start_no_params: Please provide the event id.
-start_user_left: '**Warning:** A user left the server since this event was created.
-  SpellBot did **NOT** start the game for the players: $players.'
 status: The average queue wait time is currently $wait.
 status_unknown: There is not enough information to calculate the current average queue
   wait time right now.
