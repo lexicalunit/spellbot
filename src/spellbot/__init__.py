@@ -1,10 +1,12 @@
 import asyncio
+import csv
 import inspect
 import logging
 import re
 import sys
 from datetime import datetime, timedelta
 from functools import wraps
+from io import StringIO
 from os import getenv
 from pathlib import Path
 from uuid import uuid4
@@ -20,7 +22,7 @@ from sqlalchemy.sql import text
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
 from spellbot.constants import ADMIN_ROLE, AVG_QUEUE_TIME_WINDOW_MIN, CREATE_ENDPOINT
-from spellbot.data import AuthorizedChannel, Data, Game, Server, Tag, User, WaitTime
+from spellbot.data import Channel, Data, Event, Game, Server, Tag, User, WaitTime
 
 # Application Paths
 RUNTIME_ROOT = Path(".")
@@ -95,7 +97,7 @@ def paginate(text):
                 break
 
         message = remaining[0 : breakpoint + 1]
-        yield message
+        yield message.rstrip(" >\n")
         remaining = remaining[breakpoint + 1 :]
         last_line_end = message.rfind("\n")
         if last_line_end != -1 and len(message) > last_line_end + 1:
@@ -193,7 +195,7 @@ class SpellBot(discord.Client):
                 session.delete(game)
             session.commit()
         except exc.SQLAlchemyError as e:
-            logging.error("error: cleanup_expired_games:", e)
+            logging.exception("error: cleanup_expired_games:", e)
             session.rollback()
             raise
         finally:
@@ -218,7 +220,7 @@ class SpellBot(discord.Client):
             session.query(WaitTime).filter(WaitTime.created_at < cutoff).delete()
             session.commit()
         except exc.SQLAlchemyError as e:
-            logging.error("error: cleanup_expired_waits:", e)
+            logging.exception("error: cleanup_expired_waits:", e)
             session.rollback()
             raise
         finally:
@@ -245,7 +247,7 @@ class SpellBot(discord.Client):
                 session.delete(game)
             session.commit()
         except exc.SQLAlchemyError as e:
-            logging.error("error: cleanup_started_games:", e)
+            logging.exception("error: cleanup_started_games:", e)
             session.rollback()
             raise
         finally:
@@ -312,7 +314,7 @@ class SpellBot(discord.Client):
                 await method(prefix, params, message)
                 self.session.commit()
             except exc.SQLAlchemyError as e:
-                logging.error(f"error: {request}:", e)
+                logging.exception(f"error: {request}:", e)
                 self.session.rollback()
                 raise
             finally:
@@ -375,11 +377,12 @@ class SpellBot(discord.Client):
     # bot command. These methods should have a signature like:
     #
     #     @command(allow_dm=True)
-    #     def command_name(self, channel, params, message)
+    #     def command_name(self, prefix, params, message)
     #
     # - `allow_dm` indicates if the command is allowed to be used in direct messages.
+    # - `prefix` is the command prefix, which is "!" by default.
     # - `params` are any space delimitered parameters also sent with the command.
-    # - `message` TODO.
+    # - `message` is the discord.py message object that triggered the command.
     #
     # The docstring used for the command method will be automatically used as the help
     # message for the command. To document commands with parameters use a & to delimit
@@ -412,7 +415,7 @@ class SpellBot(discord.Client):
                     transformed += "\n\n"
             use = transformed
             use = use.replace("\n", "\n> ")
-            use = re.sub(r"\s+$", "", use, flags=re.M)
+            use = re.sub(r"([^>])\s+$", r"\1", use, flags=re.M)
 
             title = f"{prefix}{command}"
             if params:
@@ -573,12 +576,124 @@ class SpellBot(discord.Client):
                 await mention.send(response)
 
     @command(allow_dm=False)
+    async def event(self, prefix, params, message):
+        """
+        Create many games in batch from an attached CSV data file. _Requires the
+        "SpellBot Admin" role._
+
+        For example, if your event is for a Modern tournement you might attach a CSV file
+        with a comment like `!event Player1Username Player2Username`. This would assume
+        that the players' discord user names are found in the "Player1Username" and
+        "Player2Username" CSV columns. The game size is deduced from the number of column
+        names given, so we know the games created in this example are `size:2`.
+        & <player 1 column> <player 2 column> ... <player N column>
+        """
+        if not is_admin(message.channel, message.author):
+            return await message.channel.send(s("not_admin"))
+
+        if not message.attachments:
+            return await message.channel.send(s("event_no_data"))
+
+        if not params:
+            return await message.channel.send(s("event_no_params"))
+
+        size = len(params)
+        if not (1 < size <= 4):
+            return await message.channel.send(s("event_bad_play_count"))
+
+        attachment = message.attachments[0]
+
+        if not attachment.filename.lower().endswith(".csv"):
+            return await message.channel.send(s("event_not_csv"))
+
+        bdata = await message.attachments[0].read()
+        sdata = bdata.decode("utf-8")
+
+        has_header = csv.Sniffer().has_header(sdata)
+        if not has_header:
+            return await message.channel.send(s("event_no_header"))
+
+        server = self.ensure_server_exists(message.channel.guild.id)
+        reader = csv.reader(StringIO(sdata))
+        header = [column.lower().strip() for column in next(reader)]
+        params = [param.lower().strip() for param in params]
+
+        if any(param not in header for param in params):
+            return await message.channel.send(s("event_no_header"))
+
+        columns = [header.index(param) for param in params]
+
+        event = Event()
+        self.session.add(event)
+        self.session.commit()
+
+        members = message.channel.guild.members
+        member_lookup = {member.name.lower().strip(): member for member in members}
+        for i, row in enumerate(reader):
+            values = [row[column] for column in columns]
+            players_s = ", ".join([f'"{value}"' for value in values])
+            player_names = [value.lower().strip() for value in values]
+
+            if any(not player_name for player_name in player_names):
+                warning = s("event_missing_player", row=i + 1, players=players_s)
+                await message.channel.send(warning)
+                continue
+
+            player_discord_users = []
+            for player_name in player_names:
+                player_discord_user = member_lookup.get(player_name)
+                if player_discord_user:
+                    player_discord_users.append(player_discord_user)
+                else:
+                    warning = s(
+                        "event_missing_user",
+                        row=i + 1,
+                        name=player_name,
+                        players=players_s,
+                    )
+                    await message.channel.send(warning)
+
+            if len(player_discord_users) != size:
+                continue
+
+            player_users = [
+                self.ensure_user_exists(player_discord_user)
+                for player_discord_user in player_discord_users
+            ]
+
+            for player_user in player_users:
+                if player_user.waiting:
+                    player_user.dequeue()
+            self.session.commit()
+
+            now = datetime.utcnow()
+            expires_at = now + timedelta(minutes=server.expire)
+            game = Game(
+                created_at=now,
+                expires_at=expires_at,
+                guild_xid=message.channel.guild.id,
+                size=size,
+                updated_at=now,
+                status="ready",
+                users=player_users,
+                event=event,
+            )
+            self.session.add(game)
+            self.session.commit()
+
+        if not event.games:
+            self.session.delete(event)
+            return await message.channel.send(s("event_empty"))
+
+        await message.channel.send(s("event_created", prefix=prefix, event_id=event.id))
+
+    @command(allow_dm=False)
     async def game(self, prefix, params, message):
         """
         Create a game between mentioned users. _Requires the "SpellBot Admin" role._
 
-        Operates similarly to the !play command with a few key deferences. First, see that
-        command's usage help for more details. Then, here are the differences:
+        Operates similarly to the `!play` command with a few key deferences. First, see
+        that command's usage help for more details. Then, here are the differences:
         * The user who issues this command is **NOT** added to the game themselves.
         * You must mention all of the players to be seated in the game.
         * Optional: Add a message by using " -- " followed by the message content.
@@ -602,7 +717,7 @@ class SpellBot(discord.Client):
         mentions = message.mentions if message.channel.type != "private" else []
 
         power, size = power_and_size_from_params(params)
-        if not size or not (1 < size < 5):
+        if not size or not (1 < size <= 4):
             return await message.channel.send(s("game_size_bad"))
         if power and not (1 <= power <= 10):
             return await message.channel.send(s("game_power_bad"))
@@ -732,14 +847,10 @@ class SpellBot(discord.Client):
     async def spellbot_channels(self, prefix, params, message):
         if not params:
             return await message.channel.send(s("spellbot_channels_none"))
-        self.session.query(AuthorizedChannel).filter_by(
-            guild_xid=message.channel.guild.id
-        ).delete()
+        self.session.query(Channel).filter_by(guild_xid=message.channel.guild.id).delete()
         for param in params:
-            self.session.add(
-                AuthorizedChannel(guild_xid=message.channel.guild.id, name=param)
-            )
-        return await message.channel.send(
+            self.session.add(Channel(guild_xid=message.channel.guild.id, name=param))
+        await message.channel.send(
             s("spellbot_channels", channels=", ".join([f"#{param}" for param in params]))
         )
 
@@ -767,7 +878,7 @@ class SpellBot(discord.Client):
             .one_or_none()
         )
         server.scope = scope_str
-        return await message.channel.send(s("spellbot_scope", scope=scope_str))
+        await message.channel.send(s("spellbot_scope", scope=scope_str))
 
     async def spellbot_expire(self, prefix, params, message):
         if not params:
@@ -781,7 +892,7 @@ class SpellBot(discord.Client):
             .one_or_none()
         )
         server.expire = expire
-        return await message.channel.send(s("spellbot_expire", expire=expire))
+        await message.channel.send(s("spellbot_expire", expire=expire))
 
     async def spellbot_config(self, prefix, params, message):
         server = (

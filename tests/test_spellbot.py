@@ -15,7 +15,7 @@ import toml
 
 import spellbot
 from spellbot.assets import load_strings
-from spellbot.data import Game, User
+from spellbot.data import Event, Game, User
 
 ##############################
 # Discord.py Mocks
@@ -30,6 +30,15 @@ class AsyncMock(MagicMock):
 class MockFile:
     def __init__(self, fp):
         self.fp = fp
+
+
+class MockAttachment:
+    def __init__(self, filename, data):
+        self.filename = filename
+        self.data = data
+
+    async def read(self, *, use_cached=False):
+        return self.data
 
 
 class MockMember:
@@ -193,11 +202,12 @@ class MockDM(MockChannel):
 
 
 class MockMessage:
-    def __init__(self, author, channel, content, mentions=[]):
+    def __init__(self, author, channel, content, mentions=None, attachments=None):
         self.author = author
         self.channel = channel
         self.content = content
-        self.mentions = mentions
+        self.mentions = mentions or []
+        self.attachments = attachments or []
         if isinstance(channel, MockDM):
             channel.recipient = author
 
@@ -309,6 +319,14 @@ def all_games(client):
     session = client.data.Session()
     games = session.query(Game).all()
     rvalue = [json.loads(str(game)) for game in games]
+    session.close()
+    return rvalue
+
+
+def all_events(client):
+    session = client.data.Session()
+    events = session.query(Event).all()
+    rvalue = [json.loads(str(event)) for event in events]
     session.close()
     return rvalue
 
@@ -1352,6 +1370,143 @@ class TestSpellBot:
             "scope": "server",
             "expire": 30,
         }
+
+    async def test_on_message_event_no_data(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(an_admin(), channel, "!event"))
+        assert channel.last_sent_response == (
+            "Sorry, you must include an attachment containing"
+            " event data with this command."
+        )
+
+    async def test_on_message_event_no_params(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        message = MockMessage(an_admin(), channel, "!event", attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            "Please include the column names from the CSV file"
+            " too identify the players' discord names."
+        )
+
+    async def test_on_message_event_invalid_player_count(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        message = MockMessage(an_admin(), channel, "!event a", attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == "Player count must be between 2 and 4."
+
+    async def test_on_message_event_missing_player(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        warning = (
+            "**Warning:** Event file is missing a player name on row 1."
+            f' SpellBot will **NOT** create a game for the players: "{AMY.name}", "".'
+        )
+        assert warning in channel.all_sent_responses
+        assert channel.last_sent_response == (
+            "No games created for this event, please address any warnings and try again."
+        )
+
+    async def test_on_message_event_no_header(self, client):
+        channel = text_channel()
+        data = bytes(f"{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            "Sorry, the attached CSV file is missing a header."
+        )
+
+    async def test_on_message_event_no_header_v2(self, client):
+        channel = text_channel()
+        data = bytes("1,2,3\n4,5,6\n7,8,9", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            "Sorry, the attached CSV file is missing a header."
+        )
+
+    async def test_on_message_event_not_csv(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        txt_file = MockAttachment("event.txt", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[txt_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            "Sorry, the file is not a CSV file."
+            ' Make sure the filename ends with ".csv" please.'
+        )
+
+    async def test_on_message_event_missing_discord_user(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{PUNK.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+
+        warning = (
+            '**Warning:** On row 1 the username "punk" is not on this server. '
+            "SpellBot will **NOT** create a game for the players:"
+            f' "{AMY.name}", "{PUNK.name}".'
+        )
+        assert warning in channel.all_sent_responses
+
+    async def test_on_message_event_not_admin(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(not_an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            "You do not have admin permissions for this bot."
+        )
+
+    async def test_on_message_event_with_dequeue(self, client):
+        channel = text_channel()
+
+        await client.on_message(MockMessage(AMY, channel, "!play"))
+        assert AMY.last_sent_response == game_response_for(client, AMY, False)
+
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+
+        events = all_events(client)
+        assert len(events) == 1
+
+        event = all_events(client)[0]
+        assert channel.last_sent_response == (
+            f"Event {event['id']} created! If everything looks good,"
+            f" next run `!start {event['id']}` to start the event."
+        )
+
+    async def test_on_message_event(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[0]
+        assert channel.last_sent_response == (
+            f"Event {event['id']} created! If everything looks good,"
+            f" next run `!start {event['id']}` to start the event."
+        )
 
 
 def test_paginate():
