@@ -5,12 +5,13 @@
 `!begin <event id>`
 >  Confirm creation of games for the given event id. _Requires the "SpellBot Admin" role._
 
-`!event <player 1 column> <player 2 column> ... <player N column>`
+`!event <column 1> <column 2> ... <column 3> [-- An optional message to add.]`
 >  Create many games in batch from an attached CSV data file. _Requires the "SpellBot Admin" role._
 > 
 > For example, if your event is for a Modern tournement you might attach a CSV file with a comment like `!event Player1Username Player2Username`. This would assume that the players' discord user names are found in the "Player1Username" and "Player2Username" CSV columns. The game size is deduced from the number of column names given, so we know the games created in this example are `size:2`.
 > 
 > Games will not be created immediately. This is to allow you to verify things look ok. This command will also give you directions on how to actually start the games for this event as part of its reply.
+> * Optional: Add a message by using " -- " followed by the message content.
 
 `!game [similar parameters as !play] [-- An optional additional message to send.]`
 >  Create a game between mentioned users. _Requires the "SpellBot Admin" role._
@@ -29,4 +30,4 @@
 `!play [@mention-1] [@mention-2] [...] [size:N] [power:N] [tag-1] [tag-2] [...]`
 >  Enter a play queue for a game on SpellTable.
 > 
-> You can get in a queue with a friend by mentioning them in the command with the @ character. You can also change the number of players from the default of four by using, for example, `!play size:2` to create a two player game.
+> You can get in a queue with a friend by mentioning them in the command with the @ character.
