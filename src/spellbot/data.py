@@ -7,6 +7,7 @@ import alembic.config
 from humanize import naturaldelta
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     Column,
     DateTime,
     Float,
@@ -69,6 +70,7 @@ class Server(Base):
     prefix = Column(String(10), nullable=False, default="!")
     scope = Column(String(10), nullable=False, default="server")
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
+    friendly = Column(Boolean)  # Note that unset means that friendly is ON!
     games = relationship("Game", back_populates="server")
     authorized_channels = relationship("Channel", back_populates="server")
 
@@ -79,6 +81,7 @@ class Server(Base):
                 "prefix": self.prefix,
                 "scope": self.scope,
                 "expire": self.expire,
+                "friendly": self.friendly if self.friendly is not None else True,
             }
         )
 

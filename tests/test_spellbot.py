@@ -1184,6 +1184,7 @@ class TestSpellBot:
         )
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert fields["Queue scope"] == "channel-specific"
+        assert fields["Friendly queueing"] == "on"
         assert fields["Inactivity expiration time"] == "45 minutes"
         assert fields["Authorized channels"] == "all"
 
@@ -1369,6 +1370,7 @@ class TestSpellBot:
             "prefix": "!",
             "scope": "server",
             "expire": 30,
+            "friendly": True,
         }
 
     async def test_on_message_event_no_data(self, client):
@@ -1682,6 +1684,32 @@ class TestSpellBot:
         await client.on_message(MockMessage(an_admin(), channel, f"!begin {event_id}"))
         assert channel.last_sent_response == (
             "Sorry, that event has already started and can not be started again."
+        )
+
+    async def test_on_message_spellbot_friendly_none(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot friendly"))
+        assert channel.last_sent_response == 'Please indicate either "off" or "on".'
+
+    async def test_on_message_spellbot_friendly_bad(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot friendly world"))
+        assert channel.last_sent_response == (
+            'Sorry, this setting should be either "off" or "on".'
+        )
+
+    async def test_on_message_spellbot_friendly(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(MockMessage(author, channel, "!spellbot friendly off"))
+        assert channel.last_sent_response == (
+            "Allow users to queue with their friends: off."
+        )
+        await client.on_message(MockMessage(author, channel, "!spellbot friendly on"))
+        assert channel.last_sent_response == (
+            "Allow users to queue with their friends: on."
         )
 
 

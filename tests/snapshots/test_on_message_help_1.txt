@@ -15,6 +15,7 @@
 > * `prefix <string>`: Set SpellBot prefix for commands in text channels.
 > * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
 > * `expire <number>`: Set the number of minutes before pending games expire.
+> * `friendly <on|off>`: Allow or disallow friendly queueing with mentions.
 
 `!status`
 >  Show some details about the queues on your server.
