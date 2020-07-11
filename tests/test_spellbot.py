@@ -1712,6 +1712,22 @@ class TestSpellBot:
             "Allow users to queue with their friends: on."
         )
 
+    async def test_on_message_play_all_non_friendly(self, client):
+        channel = text_channel()
+        await client.on_message(
+            MockMessage(an_admin(), channel, "!spellbot friendly off")
+        )
+
+        mentions = [GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        content = f"!play {mentions_str}"
+        await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
+        assert FRIEND.last_sent_response == game_response_for(client, FRIEND, False)
+
+        assert len(GUY.all_sent_calls) == 0
+        assert len(BUDDY.all_sent_calls) == 0
+        assert len(DUDE.all_sent_calls) == 0
+
 
 def test_paginate():
     def subject(text):
