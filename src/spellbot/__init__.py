@@ -502,23 +502,29 @@ class SpellBot(discord.Client):
         params = [param.lower() for param in params]
         mentions = message.mentions if message.channel.type != "private" else []
 
+        server = self.ensure_server_exists(message.channel.guild.id)
+        self.session.commit()
+
+        friendly = server.friendly if server.friendly is not None else True
+
         power, size = power_and_size_from_params(params)
         if not size or not (1 < size < 5):
             return await message.channel.send(s("play_size_bad"))
         if power and not (1 <= power <= 10):
             return await message.channel.send(s("play_power_bad"))
 
-        if len(mentions) + 1 > size:
+        if friendly and len(mentions) + 1 > size:
             return await message.channel.send(s("play_too_many_mentions"))
 
         mentioned_users = []
-        for mentioned in mentions:
-            mentioned_user = self.ensure_user_exists(mentioned)
-            if mentioned_user.waiting:
-                return await message.channel.send(
-                    s("play_mention_already", user=mentioned)
-                )
-            mentioned_users.append(mentioned_user)
+        if friendly:
+            for mentioned in mentions:
+                mentioned_user = self.ensure_user_exists(mentioned)
+                if mentioned_user.waiting:
+                    return await message.channel.send(
+                        s("play_mention_already", user=mentioned)
+                    )
+                mentioned_users.append(mentioned_user)
 
         tag_names = tag_names_from_params(params)
         if len(tag_names) > 5:
@@ -531,9 +537,6 @@ class SpellBot(discord.Client):
                 tag = Tag(name=tag_name)
                 self.session.add(tag)
             tags.append(tag)
-
-        server = self.ensure_server_exists(message.channel.guild.id)
-        self.session.commit()
 
         user.enqueue(
             server=server,
@@ -572,8 +575,9 @@ class SpellBot(discord.Client):
         else:  # still waiting on more players, game is pending
             response = user.game.to_str()
             await message.author.send(response)
-            for mention in mentions:
-                await mention.send(response)
+            if friendly:
+                for mention in mentions:
+                    await mention.send(response)
 
     @command(allow_dm=False)
     async def event(self, prefix, params, message):
