@@ -590,7 +590,8 @@ class SpellBot(discord.Client):
         Games will not be created immediately. This is to allow you to verify things look
         ok. This command will also give you directions on how to actually start the games
         for this event as part of its reply.
-        & <player 1 column> <player 2 column> ... <player N column>
+        * Optional: Add a message by using " -- " followed by the message content.
+        & <column 1> <column 2> ... <column 3> [-- An optional message to add.]
         """
         if not is_admin(message.channel, message.author):
             return await message.channel.send(s("not_admin"))
@@ -600,6 +601,17 @@ class SpellBot(discord.Client):
 
         if not params:
             return await message.channel.send(s("event_no_params"))
+
+        optional_message = None
+        try:
+            sentry = params.index("--")
+            optional_message = " ".join(params[sentry + 1 :])
+            params = params[0:sentry]
+        except ValueError:
+            pass
+
+        if optional_message and len(optional_message) >= 255:
+            return await message.channel.send(s("game_message_too_long"))
 
         size = len(params)
         if not (1 < size <= 4):
@@ -679,6 +691,7 @@ class SpellBot(discord.Client):
                 size=size,
                 updated_at=now,
                 status="ready",
+                message=optional_message,
                 users=player_users,
                 event=event,
             )
