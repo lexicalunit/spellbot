@@ -888,6 +888,7 @@ class SpellBot(discord.Client):
         * `prefix <string>`: Set SpellBot prefix for commands in text channels.
         * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
         * `expire <number>`: Set the number of minutes before pending games expire.
+        * `friendly <on|off>`: Allow or disallow friendly queueing with mentions.
         & <subcommand> [subcommand parameters]
         """
         if not is_admin(message.channel, message.author):
@@ -904,6 +905,8 @@ class SpellBot(discord.Client):
             await self.spellbot_scope(prefix, params[1:], message)
         elif command == "expire":
             await self.spellbot_expire(prefix, params[1:], message)
+        elif command == "friendly":
+            await self.spellbot_friendly(prefix, params[1:], message)
         elif command == "config":
             await self.spellbot_config(prefix, params[1:], message)
         else:
@@ -959,6 +962,20 @@ class SpellBot(discord.Client):
         server.expire = expire
         await message.channel.send(s("spellbot_expire", expire=expire))
 
+    async def spellbot_friendly(self, prefix, params, message):
+        if not params:
+            return await message.channel.send(s("spellbot_friendly_none"))
+        friendly_str = params[0].lower()
+        if friendly_str not in ("off", "on"):
+            return await message.channel.send(s("spellbot_friendly_bad"))
+        server = (
+            self.session.query(Server)
+            .filter(Server.guild_xid == message.channel.guild.id)
+            .one_or_none()
+        )
+        server.friendly = friendly_str == "on"
+        await message.channel.send(s("spellbot_friendly", friendly=friendly_str))
+
     async def spellbot_config(self, prefix, params, message):
         server = (
             self.session.query(Server)
@@ -973,6 +990,9 @@ class SpellBot(discord.Client):
         embed.add_field(name="Command prefix", value=server.prefix)
         scope = "server-wide" if server.scope == "server" else "channel-specific"
         embed.add_field(name="Queue scope", value=scope)
+        friendly_value = server.friendly if server.friendly is not None else True
+        friendly = "on" if friendly_value else "off"
+        embed.add_field(name="Friendly queueing", value=friendly)
         expires_str = f"{server.expire} minutes"
         embed.add_field(name="Inactivity expiration time", value=expires_str)
         channels = server.authorized_channels
