@@ -1,6 +1,10 @@
+> You can also specify a power level like `!play power:7` for example and the matchmaker will attempt to find a game with similar power levels for you. Note that players who specify a power level will never get paired up with players who have not, and vice versa. You will also not be matched up _exactly_ by power level as there is a fudge factor involved.
+> 
+> If your server's admins have set the scope for your server to "channel", then matchmaking will only happen between other players who run this command in the same channel as you did. The default scope for matchmaking is server-wide.
+
 `!spellbot <subcommand> [subcommand parameters]`
 >  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
->
+> 
 > The following subcommands are supported:
 > * `config`: Just show the current configuration for this server.
 > * `channel <list>`: Set SpellBot to only respond in the given list of channels.
