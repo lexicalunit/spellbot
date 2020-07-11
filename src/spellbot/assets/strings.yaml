@@ -55,6 +55,12 @@ spellbot_scope: 'Matchmaking on this server is now set to: $scope.'
 spellbot_scope_bad: Sorry, scope should be either "server" or "channel".
 spellbot_scope_none: Please provide a scope string.
 spellbot_unknown_subcommand: The subcommand "$command" is not recognized.
+start_bad_event: Sorry, SpellBot can not find an event with that id.
+start_event_already_started: Sorry, that event has already started and can not be
+  started again.
+start_no_params: Please provide the event id.
+start_user_left: '**Warning:** A user left the server since this event was created.
+  SpellBot did **NOT** start the game for the players: $players.'
 status: The average queue wait time is currently $wait.
 status_unknown: There is not enough information to calculate the current average queue
   wait time right now.
