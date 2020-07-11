@@ -43,6 +43,7 @@ being too spammy in text channels.**
   - `prefix`: Set the command prefix for SpellBot in text channels.
   - `scope`: Set the matchmaking scope to server-wide or channel-specific.
   - `expire`: Set how many minutes before games are expired due to inactivity.
+  - `friendly`: Allow or disallow friendly queueing with mentions.
 
 ## 🙌 Support Me
 
