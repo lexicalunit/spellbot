@@ -650,26 +650,23 @@ class SpellBot(discord.Client):
         members = message.channel.guild.members
         member_lookup = {member.name.lower().strip(): member for member in members}
         for i, row in enumerate(reader):
-            values = [row[column] for column in columns]
-            players_s = ", ".join([f'"{value}"' for value in values])
-            player_names = [value.lower().strip() for value in values]
+            csv_row_data = [row[column].strip() for column in columns]
+            players_s = ", ".join([f'"{value}"' for value in csv_row_data])
+            player_lnames = [value.lower() for value in csv_row_data]
 
-            if any(not player_name for player_name in player_names):
+            if any(not lname for lname in player_lnames):
                 warning = s("event_missing_player", row=i + 1, players=players_s)
                 await message.channel.send(warning)
                 continue
 
             player_discord_users = []
-            for player_name in player_names:
-                player_discord_user = member_lookup.get(player_name)
+            for csv_data, lname in zip(csv_row_data, player_lnames):
+                player_discord_user = member_lookup.get(lname)
                 if player_discord_user:
                     player_discord_users.append(player_discord_user)
                 else:
                     warning = s(
-                        "event_missing_user",
-                        row=i + 1,
-                        name=player_name,
-                        players=players_s,
+                        "event_missing_user", row=i + 1, name=csv_data, players=players_s,
                     )
                     await message.channel.send(warning)
 
@@ -681,9 +678,12 @@ class SpellBot(discord.Client):
                 for player_discord_user in player_discord_users
             ]
 
-            for player_user in player_users:
+            for player_discord_user, player_user in zip(
+                player_discord_users, player_users
+            ):
                 if player_user.waiting:
                     player_user.dequeue()
+                player_user.cached_name = player_discord_user.name
             self.session.commit()
 
             now = datetime.utcnow()
@@ -733,7 +733,9 @@ class SpellBot(discord.Client):
             return await message.channel.send(s("begin_event_already_started"))
 
         for game in event.games:
-            players_str = ", ".join(sorted([f"<@{user.xid}>" for user in game.users]))
+            # Can't rely on "<@{xid}>" working because the user could have logged out.
+            # players_str = ", ".join(sorted([f"<@{user.xid}>" for user in game.users]))
+            players_str = ", ".join(sorted([user.cached_name for user in game.users]))
 
             found_discord_users = []
             for game_user in game.users:

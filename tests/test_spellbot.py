@@ -1609,7 +1609,7 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
             f"> {game['url']}\n"
-            f"> Players: <@{AMY.id}>, <@{JR.id}>"
+            f"> Players: {AMY.name}, {JR.name}"
         )
         player_response = game_response_for(client, AMY, True)
         assert AMY.last_sent_response == player_response
@@ -1635,7 +1635,7 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
             f"> {game['url']}\n"
-            f"> Players: <@{AMY.id}>, <@{JR.id}>"
+            f"> Players: {AMY.name}, {JR.name}"
         )
         player_response = game_response_for(client, AMY, True, message=opt)
         assert AMY.last_sent_response == player_response
@@ -1663,7 +1663,7 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             "**Warning:** A user left the server since this event was created."
             " SpellBot did **NOT** start the game for the players:"
-            f" <@{AMY.id}>, <@{JR.id}>."
+            f" {AMY.name}, {JR.name}."
         )
 
     async def test_on_message_begin_event_already(self, client):
