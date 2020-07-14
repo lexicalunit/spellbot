@@ -29,7 +29,7 @@ game_created: '**Game $id created:**
 
   > $url
 
-  > Players: $players'
+  > Players notified by DM: $players'
 game_message_too_long: Sorry, the optional game message must be shorter than 255 characters.
 game_power_bad: Sorry, power level should a number between 1 and 10.
 game_size_bad: Game size must be between 2 and 4.
