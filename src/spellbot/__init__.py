@@ -21,7 +21,12 @@ from sqlalchemy.sql import text
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
-from spellbot.constants import ADMIN_ROLE, AVG_QUEUE_TIME_WINDOW_MIN, CREATE_ENDPOINT
+from spellbot.constants import (
+    ADMIN_ROLE,
+    AVG_QUEUE_TIME_WINDOW_MIN,
+    CREATE_ENDPOINT,
+    THUMB_URL,
+)
 from spellbot.data import Channel, Data, Event, Game, Server, Tag, User, WaitTime
 
 # Application Paths
@@ -296,11 +301,11 @@ class SpellBot(discord.Client):
             return
         matching = [command for command in self.commands if command.startswith(request)]
         if not matching:
-            await message.channel.send(s("not_a_command", request=request), file=None)
+            await message.channel.send(s("not_a_command", request=request))
             return
         if len(matching) > 1 and request not in matching:
             possible = ", ".join(f"{prefix}{m}" for m in matching)
-            await message.channel.send(s("did_you_mean", possible=possible), file=None)
+            await message.channel.send(s("did_you_mean", possible=possible))
         else:
             command = request if request in matching else matching[0]
             method = getattr(self, command)
@@ -443,10 +448,7 @@ class SpellBot(discord.Client):
         Get information about SpellBot.
         """
         embed = discord.Embed(title="SpellBot")
-        thumb = (
-            "https://raw.githubusercontent.com/lexicalunit/spellbot/master/spellbot.png"
-        )
-        embed.set_thumbnail(url=thumb)
+        embed.set_thumbnail(url=THUMB_URL)
         version = f"[{__version__}](https://pypi.org/project/spellbot/{__version__}/)"
         embed.add_field(name="Version", value=version)
         embed.add_field(
@@ -467,7 +469,7 @@ class SpellBot(discord.Client):
         embed.url = "https://github.com/lexicalunit/spellbot"
         embed.set_footer(text="MIT © amy@lexicalunit et al")
         embed.color = discord.Color(0x5A3EFD)
-        await message.channel.send(embed=embed, file=None)
+        await message.channel.send(embed=embed)
 
     @command(allow_dm=False)
     async def play(self, prefix, params, message):
@@ -557,14 +559,11 @@ class SpellBot(discord.Client):
                 else:
                     found_discord_users.append(discord_user)
 
-        await message.channel.send(s("dm_sent"))
         if len(found_discord_users) == size:  # all players matched, game is ready
             user.game.url = self.create_game()
             user.game.status = "started"
             game_created_at = datetime.utcnow()
-            response = user.game.to_str()
-            for game_user, discord_user in zip(user.game.users, found_discord_users):
-                await discord_user.send(response)
+            for game_user in user.game.users:
                 WaitTime.log(
                     self.session,
                     guild_xid=server.guild_xid,
@@ -572,12 +571,8 @@ class SpellBot(discord.Client):
                     seconds=(game_created_at - game_user.queued_at).total_seconds(),
                 )
                 game_user.queued_at = None
-        else:  # still waiting on more players, game is pending
-            response = user.game.to_str()
-            await message.author.send(response)
-            if friendly:
-                for mention in mentions:
-                    await mention.send(response)
+        message = await message.channel.send(embed=user.game.to_embed())
+        user.game.message_xid = message.id
 
     @command(allow_dm=False)
     async def event(self, prefix, params, message):
@@ -734,7 +729,6 @@ class SpellBot(discord.Client):
 
         for game in event.games:
             # Can't rely on "<@{xid}>" working because the user could have logged out.
-            # players_str = ", ".join(sorted([f"<@{user.xid}>" for user in game.users]))
             players_str = ", ".join(sorted([user.cached_name for user in game.users]))
 
             found_discord_users = []
@@ -750,9 +744,9 @@ class SpellBot(discord.Client):
 
             game.url = self.create_game()
             game.status = "started"
-            response = game.to_str()
+            response = game.to_embed()
             for discord_user in found_discord_users:
-                await discord_user.send(response)
+                await discord_user.send(embed=response)
 
             await message.channel.send(
                 s("game_created", id=game.id, url=game.url, players=players_str)
@@ -841,10 +835,10 @@ class SpellBot(discord.Client):
         self.session.add(game)
         self.session.commit()
 
-        player_response = game.to_str()
+        player_response = game.to_embed()
         for player in mentioned_users:
             discord_user = self.get_user(player.xid)
-            await discord_user.send(player_response)
+            await discord_user.send(embed=player_response)
             player.queued_at = None
 
         players_str = ", ".join(sorted([f"<@{user.xid}>" for user in mentioned_users]))
@@ -989,10 +983,7 @@ class SpellBot(discord.Client):
             .one_or_none()
         )
         embed = discord.Embed(title="SpellBot Server Config")
-        thumb = (
-            "https://raw.githubusercontent.com/lexicalunit/spellbot/master/spellbot.png"
-        )
-        embed.set_thumbnail(url=thumb)
+        embed.set_thumbnail(url=THUMB_URL)
         embed.add_field(name="Command prefix", value=server.prefix)
         scope = "server-wide" if server.scope == "server" else "channel-specific"
         embed.add_field(name="Queue scope", value=scope)
@@ -1009,7 +1000,7 @@ class SpellBot(discord.Client):
         embed.add_field(name="Authorized channels", value=channels_str)
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
-        await message.channel.send(embed=embed, file=None)
+        await message.channel.send(embed=embed)
 
 
 def get_db_env(fallback):  # pragma: no cover
