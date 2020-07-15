@@ -4,6 +4,7 @@ from pathlib import Path
 
 import alembic
 import alembic.config
+from discord import Color, Embed
 from humanize import naturaldelta
 from sqlalchemy import (
     BigInteger,
@@ -24,7 +25,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
 from sqlalchemy.sql.expression import label
 
-from spellbot.constants import AVG_QUEUE_TIME_WINDOW_MIN
+from spellbot.constants import AVG_QUEUE_TIME_WINDOW_MIN, THUMB_URL
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = PACKAGE_ROOT / "assets"
@@ -219,6 +220,7 @@ class Game(Base):
     event_id = Column(
         Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True
     )
+    message_xid = Column(BigInteger)
     users = relationship("User", back_populates="game")
     tags = relationship("Tag", secondary=games_tags, back_populates="games")
     server = relationship("Server", back_populates="games")
@@ -252,23 +254,22 @@ class Game(Base):
                 "url": self.url,
                 "status": self.status,
                 "message": self.message,
+                "message_xid": self.message_xid,
             }
         )
 
-    def to_str(self):
-        session = Session.object_session(self)
-        rvalue = ""
+    def to_embed(self):
         if self.url:
-            if self.message:
-                rvalue += f"{self.message}\n"
-            else:
-                rvalue += "**Your SpellTable game is ready!**\n"
-            rvalue += f"{self.url}\n"
+            title = self.message if self.message else "**Your game is ready!**"
         else:
-            rvalue += (
-                "**You have been entered in a play queue"
-                f" for a {self.size} player game.**"
-            )
+            title = "**Waiting for more people to join...**"
+        embed = Embed(title=title)
+        embed.set_thumbnail(url=THUMB_URL)
+        embed.add_field(name="Game size", value=self.size)
+        if self.url:
+            embed.description = f"Click the link below to join.\n<{self.url}>"
+        else:
+            session = Session.object_session(self)
             average = WaitTime.average(
                 session,
                 guild_xid=self.server.guild_xid,
@@ -278,23 +279,30 @@ class Game(Base):
             )
             if average:
                 delta = naturaldelta(timedelta(seconds=average))
-                rvalue += f" _The average wait time is {delta}._\n"
-            else:
-                rvalue += "\n"
-            rvalue += (
-                "\n🚨 When your game is ready I will"
-                " send you another Direct Message! 🚨\n\n"
-            )
+                embed.add_field(name="Average wait time", value=delta)
+            embed.description = "🚨 When this game is ready I will send another message!"
         players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
-        rvalue += f"Players: {players}\n"
+        embed.add_field(name="Players", value=players)
         if self.channel_xid:
-            rvalue += f"Channel: <#{self.channel_xid}>\n"
+            embed.add_field(name="Channel", value=f"<#{self.channel_xid}>")
+        tag_names = None
         if not (len(self.tags) == 1 and self.tags[0].name == "default"):
             tag_names = ", ".join(sorted([tag.name for tag in self.tags]))
-            rvalue += f"Tags: {tag_names}\n"
+            embed.add_field(name="Tags", value=tag_names)
         if self.power:
-            rvalue += f"Average Power Level: {self.power:.1f}\n"
-        return rvalue.strip()
+            embed.add_field(name="Average power level", value=f"{self.power:.1f}")
+        cmd = f"{self.server.prefix}play "
+        if self.size != 4:
+            cmd += f"size:{self.size} "
+        if self.power:
+            cmd += f"power:{round(self.power)} "
+        if not (len(self.tags) == 1 and self.tags[0].name == "default"):
+            tags = " ".join(sorted([tag.name for tag in self.tags]))
+            cmd += f"{tags} "
+        if not self.url:
+            embed.set_footer(text=f"To join this game run: {cmd.rstrip()}")
+        embed.color = Color(0x5A3EFD)
+        return embed
 
 
 class Tag(Base):
