@@ -11,10 +11,12 @@ from unittest.mock import MagicMock, Mock
 from warnings import warn
 
 import pytest
+import pytz
 import toml
 
 import spellbot
 from spellbot.assets import load_strings
+from spellbot.constants import THUMB_URL
 from spellbot.data import Event, Game, User
 
 ##############################
@@ -49,6 +51,80 @@ class MockDiscordMessage:
         global MOCK_DISCORD_MESSAGE_ID_START
         self.id = MOCK_DISCORD_MESSAGE_ID_START
         MOCK_DISCORD_MESSAGE_ID_START += 1
+        self.reactions = []
+
+        # edited is a spy for tracking calls to edit(), it doesn't exist on the real obj.
+        # There are also helpers for inspecting calls to sent defined on this class of
+        # the form `last_edited_XXX` and `all_edited_XXX` to make our lives easier.
+        self.edited = AsyncMock()
+
+    async def add_reaction(self, emoji):
+        self.reactions.append(emoji)
+
+    async def clear_reactions(self):
+        self.reactions = []
+
+    async def delete(self):
+        pass
+
+    async def remove_reaction(self, emoji, user):
+        done = False
+        update = []
+        for reaction in self.reactions:
+            if not done and reaction == emoji:
+                done = True
+                continue
+            update.append(reaction)
+        self.reactions = update
+
+    async def edit(self, content=None, *args, **kwargs):
+        await self.edited(
+            content,
+            **{param: value for param, value in kwargs.items() if value is not None},
+        )
+
+    @property
+    def last_edited_call(self):
+        args, kwargs = self.edited.call_args
+        return {"args": args, "kwargs": kwargs}
+
+    @property
+    def last_edited_response(self):
+        return self.all_edited_responses[-1]
+
+    @property
+    def last_edited_embed(self):
+        return self.last_edited_call["kwargs"]["embed"].to_dict()
+
+    @property
+    def all_edited_calls(self):
+        edited_calls = []
+        for edited_call in self.edited.call_args_list:
+            args, kwargs = edited_call
+            edited_calls.append({"args": args, "kwargs": kwargs})
+        return edited_calls
+
+    @property
+    def all_edited_responses(self):
+        return [edited_call["args"][0] for edited_call in self.all_edited_calls]
+
+    @property
+    def all_edited_embeds(self):
+        return [
+            edited_call["kwargs"]["embed"].to_dict()
+            for edited_call in self.all_edited_calls
+            if "embed" in edited_call["kwargs"]
+        ]
+
+
+class MockPayload:
+    def __init__(self, user_id, emoji, channel_id, message_id, guild_id, member=None):
+        self.member = member
+        self.user_id = user_id
+        self.emoji = emoji
+        self.channel_id = channel_id
+        self.message_id = message_id
+        self.guild_id = guild_id
 
 
 def send_side_effect(*args, **kwargs):
@@ -67,12 +143,14 @@ class MockMember:
         # There are also helpers for inspecting calls to sent defined on this class of
         # the form `last_sent_XXX` and `all_sent_XXX` to make our lives easier.
         self.sent = AsyncMock(side_effect=send_side_effect)
+        self.last_sent_message = None
 
     async def send(self, content=None, *args, **kwargs):
-        return await self.sent(
+        self.last_sent_message = await self.sent(
             content,
             **{param: value for param, value in kwargs.items() if value is not None},
         )
+        return self.last_sent_message
 
     @property
     def last_sent_call(self):
@@ -144,12 +222,22 @@ class MockChannel:
         # There are also helpers for inspecting calls to sent defined on this class of
         # the form `last_sent_XXX` and `all_sent_XXX` to make our lives easier.
         self.sent = AsyncMock(side_effect=send_side_effect)
+        self.last_sent_message = None
+        self.messages = []
 
     async def send(self, content=None, *args, **kwargs):
-        return await self.sent(
+        self.last_sent_message = await self.sent(
             content,
             **{param: value for param, value in kwargs.items() if value is not None},
         )
+        self.messages.append(self.last_sent_message)
+        return self.last_sent_message
+
+    async def fetch_message(self, message_id):
+        for message in self.messages:
+            if message.id == message_id:
+                return message
+        return None
 
     @property
     def last_sent_call(self):
@@ -229,11 +317,27 @@ class MockMessage:
 class MockDiscordClient:
     def __init__(self, **kwargs):
         self.user = ADMIN
+        self.channels = []
+
+    def mock_add_channel(self, channel):
+        self.channels.append(channel)
 
     def get_user(self, user_id):
         for user in ALL_USERS:
             if user.id == user_id:
                 return user
+
+    async def fetch_user(self, user_id):
+        return self.get_user(user_id)
+
+    def get_channel(self, channel_id):
+        for channel in self.channels:
+            if channel.id == channel_id:
+                return channel
+        return None
+
+    async def fetch_channel(self, channel_id):
+        return self.get_channel(channel_id)
 
 
 ##############################
@@ -310,18 +414,14 @@ def text_channel():
 
 
 def private_channel():
-    return MockDM(1)
+    return MockDM(2)
 
 
-def game_response_for(client, user, ready, message=None):
+def user_has_game(client, user):
     session = client.data.Session()
     db_user = session.query(User).filter(User.xid == user.id).first()
-    rvalue = db_user.game.to_str() if db_user and db_user.game else None
+    rvalue = db_user.game is not None
     session.close()
-    if ready:
-        assert db_user.game.url is not None
-    if message:
-        assert db_user.game.message == message
     return rvalue
 
 
@@ -334,7 +434,7 @@ def game_embed_for(client, user, ready, message=None):
         assert db_user.game.url is not None
     if message:
         assert db_user.game.message == message
-    return rvalue.to_dict()
+    return rvalue.to_dict() if rvalue else None
 
 
 def all_games(client):
@@ -428,12 +528,12 @@ def snap(snapshot):
 
 
 @pytest.fixture
-def spoof_session(client):
+def session(client):
     """
     The client creates a session when processing a command,
     we have to create one ourselves when not in a command context.
     """
-    client.session = client.data.Session()
+    return client.data.Session()
 
 
 ##############################
@@ -488,11 +588,11 @@ class TestSpellBot:
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_ambiguous_request(self, client, channel):
         author = someone()
-        msg = MockMessage(author, channel, "!s")
+        msg = MockMessage(author, channel, "!l")
         if hasattr(channel, "recipient"):
             assert channel.recipient == author
         await client.on_message(msg)
-        assert channel.last_sent_response == "Did you mean: !spellbot, !status?"
+        assert channel.last_sent_response == "Did you mean: !leave, !lfg?"
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_invalid_request(self, client, channel):
@@ -513,11 +613,6 @@ class TestSpellBot:
         for response in author.all_sent_responses:
             snap(response)
         assert len(author.all_sent_calls) == 2
-
-    async def test_on_message_play_dm(self, client):
-        author = someone()
-        await client.on_message(MockMessage(author, private_channel(), "!play"))
-        assert author.last_sent_response == "That command only works in text channels."
 
     async def test_on_message_spellbot_dm(self, client):
         author = an_admin()
@@ -560,139 +655,15 @@ class TestSpellBot:
             MockMessage(author, channel, f"!spellbot channels {AUTHORIZED_CHANNEL}")
         )
         assert channel.last_sent_response == (
-            f"This bot is now authroized to respond only in: #{AUTHORIZED_CHANNEL}"
+            f"This bot is now authorized to respond only in: #{AUTHORIZED_CHANNEL}"
         )
         await client.on_message(
             MockMessage(author, channel, "!spellbot channels foo bar baz")
         )
-        resp = "This bot is now authroized to respond only in: #foo, #bar, #baz"
+        resp = "This bot is now authorized to respond only in: #foo, #bar, #baz"
         assert channel.last_sent_response == resp
         await client.on_message(MockMessage(author, channel, "!help"))  # bad channel now
         assert channel.last_sent_response == resp
-
-    async def test_on_message_play_too_many_tags(self, client):
-        channel = text_channel()
-        author = someone()
-        await client.on_message(MockMessage(author, channel, "!play a b c d e f"))
-        assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
-
-    async def test_on_message_play(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-        await client.on_message(MockMessage(GUY, channel, "!play"))
-        assert channel.last_sent_response == "You are already in the queue."
-
-        await client.on_message(MockMessage(FRIEND, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-
-        await client.on_message(MockMessage(BUDDY, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, False)
-
-        await client.on_message(MockMessage(DUDE, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, True)
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, True)
-
-        await client.on_message(MockMessage(GUY, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-    async def test_on_message_play_then_leave_server(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-        await client.on_message(MockMessage(FRIEND, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-
-        # Simulate FRIEND leaving this Discord server
-        global ALL_USERS
-        ALL_USERS = [user for user in ALL_USERS if user != FRIEND]
-
-        await client.on_message(MockMessage(BUDDY, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, False)
-
-        await client.on_message(MockMessage(DUDE, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, False)
-
-        await client.on_message(MockMessage(AMY, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, AMY, True)
-
-    async def test_on_message_play_cedh(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!play cedh"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-        await client.on_message(MockMessage(GUY, channel, "!play cedh"))
-        assert channel.last_sent_response == "You are already in the queue."
-
-        await client.on_message(MockMessage(FRIEND, channel, "!play cedh"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-
-        await client.on_message(MockMessage(BUDDY, channel, "!play cedh"))
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, False)
-
-        await client.on_message(MockMessage(AMY, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, AMY, False)
-
-        await client.on_message(MockMessage(DUDE, channel, "!play cedh"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, True)
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, True)
-
-        await client.on_message(MockMessage(GUY, channel, "!play cedh"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-    async def test_on_message_play_cedh_and_proxy(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!play cedh proxy"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-        await client.on_message(MockMessage(GUY, channel, "!play cedh proxy"))
-        assert channel.last_sent_response == "You are already in the queue."
-
-        await client.on_message(MockMessage(FRIEND, channel, "!play cedh proxy"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-
-        await client.on_message(MockMessage(BUDDY, channel, "!play cedh proxy"))
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, False)
-
-        await client.on_message(MockMessage(AMY, channel, "!play proxy"))
-        assert channel.last_sent_embed == game_embed_for(client, AMY, False)
-
-        await client.on_message(MockMessage(DUDE, channel, "!play cedh proxy"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, True)
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, True)
-
-        await client.on_message(MockMessage(GUY, channel, "!play cedh proxy"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-    async def test_on_message_play_no_power_then_power(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!play size:2"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-        await client.on_message(MockMessage(FRIEND, channel, "!play size:2 power:5"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-
-    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
-    async def test_on_message_leave_not_queued(self, client, channel):
-        author = someone()
-        await client.on_message(MockMessage(author, channel, "!leave"))
-        assert channel.last_sent_response == "You were not in the queue."
-
-    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
-    async def test_on_message_leave(self, client, channel):
-        author = someone()
-        public_channel = text_channel()
-        await client.on_message(MockMessage(author, public_channel, "!play"))
-        await client.on_message(MockMessage(author, channel, "!leave"))
-        assert channel.last_sent_response == "You have been removed from the queue."
 
     @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
     async def test_on_message_about(self, client, channel):
@@ -712,9 +683,7 @@ class TestSpellBot:
             "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
         )
         assert about["footer"]["text"] == "MIT \u00a9 amy@lexicalunit et al"
-        assert about["thumbnail"]["url"] == (
-            "https://raw.githubusercontent.com/lexicalunit/spellbot/master/spellbot.png"
-        )
+        assert about["thumbnail"]["url"] == THUMB_URL
 
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert fields["Package"] == "[PyPI](https://pypi.org/project/spellbot/)"
@@ -724,250 +693,6 @@ class TestSpellBot:
         assert fields["Version"] == (
             f"[{version}](https://pypi.org/project/spellbot/{version}/)"
         )
-
-    async def test_on_message_play_too_many(self, client):
-        author = someone()
-        channel = text_channel()
-        mentions = [FRIEND, GUY, BUDDY, DUDE]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        content = f"!play {mentions_str}"
-        await client.on_message(MockMessage(author, channel, content, mentions=mentions))
-        assert channel.last_sent_response == "Sorry, you mentioned too many people."
-
-    async def test_on_message_play_mention_already(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!play"))
-        await client.on_message(
-            MockMessage(DUDE, channel, f"!play @{GUY.name}", mentions=[GUY])
-        )
-        assert channel.last_sent_response == f"Sorry, {GUY} is already in the play queue."
-
-    async def test_on_message_play_all(self, client):
-        channel = text_channel()
-        mentions = [GUY, BUDDY, DUDE]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        content = f"!play {mentions_str}"
-        await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, True)
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, True)
-
-    async def test_on_message_play_then_leave_3(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(FRIEND, channel, "!play"))
-        await client.on_message(MockMessage(BUDDY, channel, "!play"))
-        await client.on_message(MockMessage(GUY, channel, "!play"))
-        await client.on_message(MockMessage(FRIEND, channel, "!leave"))
-        await client.on_message(MockMessage(BUDDY, channel, "!leave"))
-        await client.on_message(MockMessage(GUY, channel, "!leave"))
-        session = client.data.Session()
-        assert len(session.query(Game).all()) == 0
-
-    async def test_on_message_play_3_then_1(self, client):
-        channel = text_channel()
-        mentions = [GUY, BUDDY]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        content = f"!play {mentions_str}"
-        await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, False)
-
-        await client.on_message(MockMessage(DUDE, channel, content))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-        assert channel.last_sent_embed == game_embed_for(client, GUY, True)
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, True)
-
-    async def test_on_message_play_1_then_3(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(DUDE, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, False)
-
-        mentions = [GUY, BUDDY]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        content = f"!play {mentions_str}"
-        await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-        assert channel.last_sent_embed == game_embed_for(client, GUY, True)
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, True)
-
-    async def test_on_message_play_3_then_3_then_1_then_1(self, client, freezer):
-        NOW = datetime.utcnow()
-        freezer.move_to(NOW)
-        channel = text_channel()
-        mentions = [GUY, BUDDY]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        content = f"!play {mentions_str}"
-        await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, False)
-
-        freezer.move_to(NOW + timedelta(minutes=5))
-        mentions = [JR, ADAM]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        content = f"!play {mentions_str}"
-        await client.on_message(MockMessage(AMY, channel, content, mentions=mentions))
-        assert channel.last_sent_embed == game_embed_for(client, AMY, False)
-        assert channel.last_sent_embed == game_embed_for(client, JR, False)
-        assert channel.last_sent_embed == game_embed_for(client, ADAM, False)
-
-        freezer.move_to(NOW + timedelta(minutes=10))
-        await client.on_message(MockMessage(DUDE, channel, content))
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, True)
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-        assert channel.last_sent_embed == game_embed_for(client, GUY, True)
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-
-        freezer.move_to(NOW + timedelta(minutes=15))
-        await client.on_message(MockMessage(JACOB, channel, content))
-        assert channel.last_sent_embed == game_embed_for(client, AMY, True)
-        assert channel.last_sent_embed == game_embed_for(client, JR, True)
-        assert channel.last_sent_embed == game_embed_for(client, ADAM, True)
-        assert channel.last_sent_embed == game_embed_for(client, JACOB, True)
-
-    async def test_on_message_play_size_1(self, client):
-        author = someone()
-        channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!play size:1"))
-        assert channel.last_sent_response == "Game size must be between 2 and 4."
-
-    async def test_on_message_play_size_neg_1(self, client):
-        author = someone()
-        channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!play size:-1"))
-        assert channel.last_sent_response == "Game size must be between 2 and 4."
-
-    async def test_on_message_play_size_5(self, client):
-        author = someone()
-        channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!play size:5"))
-        assert channel.last_sent_response == "Game size must be between 2 and 4."
-
-    async def test_on_message_play_size_invalid(self, client):
-        author = someone()
-        channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!play size:three"))
-        assert channel.last_sent_response == "Game size must be between 2 and 4."
-
-    async def test_on_message_play_size_2(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(FRIEND, channel, "!play size:2"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-
-        await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-
-    async def test_on_message_play_size_2_multiple_games(self, client):
-        channel = text_channel()
-
-        # game 1
-        await client.on_message(MockMessage(FRIEND, channel, "!play size:2"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-        await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-
-        session = client.data.Session()
-        user = session.query(User).filter(User.xid == FRIEND.id).first()
-        first_game_url = user.game.url
-
-        # game 2
-        await client.on_message(MockMessage(FRIEND, channel, "!play size:2"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-        await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-
-        session = client.data.Session()
-        user = session.query(User).filter(User.xid == FRIEND.id).first()
-        second_game_url = user.game.url
-
-        assert first_game_url is not None
-        assert second_game_url is not None
-        assert first_game_url != second_game_url
-
-    async def test_on_message_play_size_2_and_4(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!play"))
-        first_response = channel.last_sent_embed
-        assert first_response == game_embed_for(client, GUY, False)
-
-        await client.on_message(MockMessage(FRIEND, channel, "!play size:2"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-
-        await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-
-        # ignoring any wait time adjustments, embed should be the same for this user
-        second_response = game_embed_for(client, GUY, False)
-        second_response["fields"] = [
-            field
-            for field in second_response["fields"]
-            if field["name"] != "Average wait time"
-        ]
-        assert second_response == first_response
-
-    async def test_on_message_play_size_2_and_4_already(self, client):
-        channel = text_channel()
-        author = someone()
-        await client.on_message(MockMessage(author, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, author, False)
-
-        await client.on_message(MockMessage(author, channel, "!play size:2"))
-        assert channel.last_sent_response == "You are already in the queue."
-
-    async def test_on_message_play_then_expire(self, client, freezer):
-        NOW = datetime.utcnow()
-        freezer.move_to(NOW)
-        channel = text_channel()
-        author = someone()
-        await client.on_message(MockMessage(author, channel, "!play"))
-        first_response = channel.last_sent_embed
-        assert first_response == game_embed_for(client, author, False)
-        await client.cleanup_expired_games()
-        assert game_embed_for(client, author, False) == first_response
-        freezer.move_to(NOW + timedelta(days=1))
-        await client.cleanup_expired_games()
-        assert author.last_sent_response == (
-            "SpellBot has removed you from the queue due to server inactivity. "
-            "Sorry, but unfortunately not enough players available at this time. "
-            "Please try again when there are more players available."
-        )
-
-    async def test_on_message_play_then_expire_after_left_server(self, client, freezer):
-        NOW = datetime.utcnow()
-        freezer.move_to(NOW)
-        channel = text_channel()
-        author = someone()
-        await client.on_message(MockMessage(author, channel, "!play"))
-
-        # Simulate author leaving this Discord server
-        global ALL_USERS
-        ALL_USERS = [user for user in ALL_USERS if user != author]
-
-        freezer.move_to(NOW + timedelta(days=1))
-        await client.cleanup_expired_games()
-        assert len(channel.all_sent_calls) == 1
-        assert len(author.all_sent_calls) == 0
-        assert len(all_games(client)) == 0
-
-    async def test_on_message_play_then_cleanup(self, client):
-        channel = text_channel()
-        assert len(all_games(client)) == 0
-
-        await client.on_message(MockMessage(AMY, channel, "!play size:2"))
-        await client.cleanup_started_games()
-        assert len(all_games(client)) == 1
-
-        await client.on_message(MockMessage(JR, channel, "!play size:2"))
-        await client.cleanup_started_games()
-        assert len(all_games(client)) == 0
 
     async def test_on_message_spellbot_prefix_none(self, client):
         author = an_admin()
@@ -982,8 +707,8 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             'This bot will now use "$" as its command prefix for this server.'
         )
-        await client.on_message(MockMessage(author, channel, "$play"))
-        assert channel.last_sent_embed == game_embed_for(client, author, False)
+        await client.on_message(MockMessage(author, channel, "$about"))
+        assert channel.last_sent_embed["url"] == "https://github.com/lexicalunit/spellbot"
         await client.on_message(MockMessage(author, channel, "$spellbot prefix $"))
         assert channel.last_sent_response == (
             'This bot will now use "$" as its command prefix for this server.'
@@ -996,168 +721,6 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             'This bot will now use ")" as its command prefix for this server.'
         )
-
-    async def test_on_message_status(self, client, freezer):
-        channel = text_channel()
-        await client.on_message(MockMessage(BUDDY, channel, "!status"))
-        assert channel.last_sent_response == (
-            "There is not enough information to calculate the current average"
-            " queue wait time right now."
-        )
-
-        NOW = datetime.utcnow()
-        freezer.move_to(NOW)
-        await client.on_message(MockMessage(GUY, channel, "!play size:2"))
-
-        freezer.move_to(NOW + timedelta(minutes=10))
-        await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-
-        await client.on_message(MockMessage(BUDDY, channel, "!status"))
-        assert channel.last_sent_response == (
-            "The average queue wait time is currently 5 minutes."
-        )
-
-        await client.on_message(MockMessage(FRIEND, channel, "!play"))
-        embed = game_embed_for(client, FRIEND, False)
-        assert embed["title"] == "**Waiting for more people to join...**"
-        assert {
-            "inline": True,
-            "name": "Average wait time",
-            "value": "5 minutes",
-        } in embed["fields"]
-
-    async def test_cleanup_expired_waits(self, client, freezer):
-        channel = text_channel()
-        NOW = datetime.utcnow()
-        freezer.move_to(NOW)
-        await client.on_message(MockMessage(GUY, channel, "!play size:2"))
-
-        freezer.move_to(NOW + timedelta(seconds=10))
-        await client.on_message(MockMessage(BUDDY, channel, "!play size:2"))
-
-        await client.on_message(MockMessage(BUDDY, channel, "!status"))
-        assert channel.last_sent_response == (
-            "The average queue wait time is currently 5 seconds."
-        )
-
-        freezer.move_to(NOW + timedelta(minutes=35))
-        await client.cleanup_expired_waits(30)
-
-        await client.on_message(MockMessage(BUDDY, channel, "!status"))
-        assert channel.last_sent_response == (
-            "There is not enough information to calculate the current average "
-            "queue wait time right now."
-        )
-
-    async def test_on_message_spellbot_scope_none(self, client):
-        author = an_admin()
-        channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!spellbot scope"))
-        assert channel.last_sent_response == "Please provide a scope string."
-
-    async def test_on_message_spellbot_scope_bad(self, client):
-        author = an_admin()
-        channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!spellbot scope world"))
-        assert channel.last_sent_response == (
-            'Sorry, scope should be either "server" or "channel".'
-        )
-
-    async def test_on_message_spellbot_scope(self, client):
-        author = an_admin()
-        channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!spellbot scope channel"))
-        assert channel.last_sent_response == (
-            "Matchmaking on this server is now set to: channel."
-        )
-        await client.on_message(MockMessage(author, channel, "!spellbot scope server"))
-        assert channel.last_sent_response == (
-            "Matchmaking on this server is now set to: server."
-        )
-
-    async def test_on_message_play_with_scope(self, client):
-        channel_a = MockTextChannel(1, "channel_a", members=CHANNEL_MEMBERS)
-        channel_b = MockTextChannel(2, "channel_b", members=CHANNEL_MEMBERS)
-        admin = an_admin()
-        await client.on_message(MockMessage(admin, channel_a, "!spellbot scope channel"))
-
-        await client.on_message(MockMessage(GUY, channel_a, "!play size:2"))
-        assert channel_a.last_sent_embed == game_embed_for(client, GUY, False)
-        await client.on_message(MockMessage(DUDE, channel_b, "!play size:2"))
-        first_response = channel_b.last_sent_embed
-        assert first_response == game_embed_for(client, DUDE, False)
-
-        await client.on_message(MockMessage(BUDDY, channel_a, "!play size:2"))
-        assert channel_a.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel_a.last_sent_embed == game_embed_for(client, GUY, True)
-
-        assert game_embed_for(client, DUDE, False) == first_response
-
-    async def test_on_message_play_with_power_bad(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!play power:42"))
-        assert channel.last_sent_response == (
-            "Sorry, power level should a number between 1 and 10."
-        )
-
-    async def test_on_message_play_with_power_level_high(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!play power:5"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-        await client.on_message(MockMessage(FRIEND, channel, "!play power:7"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-
-        await client.on_message(MockMessage(BUDDY, channel, "!play power:9"))
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, False)
-
-        await client.on_message(MockMessage(AMY, channel, "!play power:9"))
-        assert channel.last_sent_embed == game_embed_for(client, AMY, False)
-
-        await client.on_message(MockMessage(DUDE, channel, "!play power:10"))
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, False)
-
-        await client.on_message(MockMessage(JR, channel, "!play power:9"))
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel.last_sent_embed == game_embed_for(client, AMY, True)
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, True)
-        assert channel.last_sent_embed == game_embed_for(client, JR, True)
-
-    async def test_on_message_play_average_power(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!play size:3 power:5"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-        await client.on_message(MockMessage(FRIEND, channel, "!play size:3 power:7"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-
-        await client.on_message(MockMessage(BUDDY, channel, "!play size:3 power:8"))
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, True)
-        assert channel.last_sent_embed == game_embed_for(client, GUY, True)
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-
-    async def test_on_message_play_with_power_level_low(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!play power:5"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-        await client.on_message(MockMessage(FRIEND, channel, "!play power:7"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-
-        await client.on_message(MockMessage(BUDDY, channel, "!play power:10"))
-        assert channel.last_sent_embed == game_embed_for(client, BUDDY, False)
-
-        await client.on_message(MockMessage(AMY, channel, "!play power:9"))
-        assert channel.last_sent_embed == game_embed_for(client, AMY, False)
-
-        await client.on_message(MockMessage(DUDE, channel, "!play power:4"))
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, False)
-
-        await client.on_message(MockMessage(JR, channel, "!play power:6"))
-        assert channel.last_sent_embed == game_embed_for(client, GUY, True)
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, True)
-        assert channel.last_sent_embed == game_embed_for(client, DUDE, True)
-        assert channel.last_sent_embed == game_embed_for(client, JR, True)
 
     async def test_on_message_spellbot_expire_none(self, client):
         author = an_admin()
@@ -1179,44 +742,18 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!spellbot expire 45"))
         assert channel.last_sent_response == "Game expiration time set to 45 minutes."
 
-    async def test_on_message_play_then_custom_expire(self, client, freezer):
-        NOW = datetime.utcnow()
-        freezer.move_to(NOW)
-        channel = text_channel()
-        author = someone()
-        await client.on_message(MockMessage(an_admin(), channel, "!spellbot expire 45"))
-        await client.on_message(MockMessage(author, channel, "!play"))
-        first_response = channel.last_sent_embed
-        assert first_response == game_embed_for(client, author, False)
-        freezer.move_to(NOW + timedelta(minutes=30))
-        await client.cleanup_expired_games()
-        assert game_embed_for(client, author, False) == first_response
-        assert len(author.all_sent_calls) == 0
-        freezer.move_to(NOW + timedelta(minutes=50))
-        await client.cleanup_expired_games()
-        assert author.last_sent_response == (
-            "SpellBot has removed you from the queue due to server inactivity. Sorry,"
-            " but unfortunately not enough players available at this time. Please try"
-            " again when there are more players available."
-        )
-
     async def test_on_message_spellbot_config(self, client):
         author = an_admin()
         channel = text_channel()
         await client.on_message(MockMessage(author, channel, "!spellbot prefix $"))
         await client.on_message(MockMessage(author, channel, "$spellbot expire 45"))
-        await client.on_message(MockMessage(author, channel, "$spellbot scope channel"))
         await client.on_message(MockMessage(author, channel, "$spellbot config"))
 
         about = channel.last_sent_embed
         assert about["title"] == "SpellBot Server Config"
         assert about["footer"]["text"] == f"Config for Guild ID: {channel.guild.id}"
-        assert about["thumbnail"]["url"] == (
-            "https://raw.githubusercontent.com/lexicalunit/spellbot/master/spellbot.png"
-        )
+        assert about["thumbnail"]["url"] == THUMB_URL
         fields = {f["name"]: f["value"] for f in about["fields"]}
-        assert fields["Queue scope"] == "channel-specific"
-        assert fields["Friendly queueing"] == "on"
         assert fields["Inactivity expiration time"] == "45 minutes"
         assert fields["Authorized channels"] == "all"
 
@@ -1226,16 +763,6 @@ class TestSpellBot:
         about = channel.last_sent_embed
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert fields["Authorized channels"] == f"#{AUTHORIZED_CHANNEL}, #foo, #bar"
-
-    async def test_on_message_game_with_power_bad(self, client):
-        channel = text_channel()
-        mentions = [FRIEND, GUY, BUDDY, DUDE]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        cmd = f"!game {mentions_str} power:42"
-        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
-        assert channel.last_sent_response == (
-            "Sorry, power level should a number between 1 and 10."
-        )
 
     async def test_on_message_game_with_too_many_mentions(self, client):
         channel = text_channel()
@@ -1337,28 +864,6 @@ class TestSpellBot:
         assert BUDDY.last_sent_embed == player_response
         assert DUDE.last_sent_embed == player_response
 
-    async def test_on_message_game_with_auto_dequeue(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(FRIEND, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, FRIEND, False)
-
-        mentions = [FRIEND, GUY, BUDDY, DUDE]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        cmd = f"!game {mentions_str}"
-        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
-        game = all_games(client)[0]
-        assert channel.last_sent_response == (
-            f"**Game {game['id']} created:**\n"
-            f"> {game['url']}\n"
-            f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
-            f" <@{GUY.id}>, <@{DUDE.id}>"
-        )
-        player_response = game_embed_for(client, FRIEND, True)
-        assert FRIEND.last_sent_embed == player_response
-        assert GUY.last_sent_embed == player_response
-        assert BUDDY.last_sent_embed == player_response
-        assert DUDE.last_sent_embed == player_response
-
     async def test_on_message_game_multiple_times(self, client):
         channel = text_channel()
 
@@ -1396,15 +901,14 @@ class TestSpellBot:
         assert JR.last_sent_embed == player_response
         assert ADAM.last_sent_embed == player_response
 
-    async def test_ensure_server_exists(self, client, spoof_session):
-        server = client.ensure_server_exists(5)
-        client.session.commit()
+    async def test_ensure_server_exists(self, client, session):
+        server = client.ensure_server_exists(session, 5)
+        session.commit()
         assert json.loads(str(server)) == {
+            "channels": [],
             "guild_xid": 5,
             "prefix": "!",
-            "scope": "server",
             "expire": 30,
-            "friendly": True,
         }
 
     async def test_on_message_event_no_data(self, client):
@@ -1508,27 +1012,6 @@ class TestSpellBot:
         await client.on_message(message)
         assert channel.last_sent_response == (
             "You do not have admin permissions for this bot."
-        )
-
-    async def test_on_message_event_with_dequeue(self, client):
-        channel = text_channel()
-
-        await client.on_message(MockMessage(AMY, channel, "!play"))
-        assert channel.last_sent_embed == game_embed_for(client, AMY, False)
-
-        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
-        csv_file = MockAttachment("event.csv", data)
-        comment = "!event player1 player2"
-        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
-        await client.on_message(message)
-
-        events = all_events(client)
-        assert len(events) == 1
-
-        event = all_events(client)[0]
-        assert channel.last_sent_response == (
-            f"Event {event['id']} created! If everything looks good,"
-            f" next run `!begin {event['id']}` to start the event."
         )
 
     async def test_on_message_event_message_too_long(self, client):
@@ -1720,51 +1203,511 @@ class TestSpellBot:
             "Sorry, that event has already started and can not be started again."
         )
 
-    async def test_on_message_spellbot_friendly_none(self, client):
-        author = an_admin()
-        channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!spellbot friendly"))
-        assert channel.last_sent_response == 'Please indicate either "off" or "on".'
+    async def test_on_message_lfg_dm(self, client):
+        channel = private_channel()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg"))
+        assert author.last_sent_response == "That command only works in text channels."
 
-    async def test_on_message_spellbot_friendly_bad(self, client):
-        author = an_admin()
+    async def test_on_message_lfg_size_too_much(self, client):
         channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!spellbot friendly world"))
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg size:10"))
+        assert channel.last_sent_response == "Sorry, game size should be between 2 and 4."
+
+    async def test_on_message_lfg_size_too_little(self, client):
+        channel = text_channel()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg size:1"))
+        assert channel.last_sent_response == "Sorry, game size should be between 2 and 4."
+
+    async def test_on_message_lfg_size_not_number(self, client):
+        channel = text_channel()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg size:x"))
+        assert channel.last_sent_response == "Sorry, game size should be between 2 and 4."
+
+    async def test_on_message_lfg_too_many_tags(self, client):
+        channel = text_channel()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg a b c d e f"))
+        assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
+
+    async def test_on_message_lfg_already(self, client):
+        channel = text_channel()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg"))
+        await client.on_message(MockMessage(author, channel, "!lfg"))
         assert channel.last_sent_response == (
-            'Sorry, this setting should be either "off" or "on".'
+            "You're already in a pending game. If you want to,"
+            " you can leave all games with `!leave`."
         )
 
-    async def test_on_message_spellbot_friendly(self, client):
-        author = an_admin()
+    async def test_on_message_lfg(self, client):
         channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!spellbot friendly off"))
-        assert channel.last_sent_response == (
-            "Allow users to queue with their friends: off."
-        )
-        await client.on_message(MockMessage(author, channel, "!spellbot friendly on"))
-        assert channel.last_sent_response == (
-            "Allow users to queue with their friends: on."
-        )
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg"))
+        assert channel.last_sent_embed == game_embed_for(client, author, False)
 
-    async def test_on_message_play_all_non_friendly(self, client):
+    async def test_on_message_lfg_with_size(self, client):
         channel = text_channel()
-        await client.on_message(
-            MockMessage(an_admin(), channel, "!spellbot friendly off")
-        )
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg size:2"))
+        assert "1 more player" in channel.last_sent_embed["title"]
 
-        mentions = [GUY, BUDDY, DUDE]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        content = f"!play {mentions_str}"
-        await client.on_message(MockMessage(FRIEND, channel, content, mentions=mentions))
-        embed = game_embed_for(client, FRIEND, False)
-        assert channel.last_sent_embed == embed
-        assert {"inline": True, "name": "Players", "value": f"<@{FRIEND.id}>",} in embed[
-            "fields"
+    async def test_on_message_lfg_with_tags(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(ADAM, channel, "!lfg modern no-ban-list"))
+        assert channel.last_sent_embed["fields"] == [
+            {"inline": True, "name": "Tags", "value": "modern, no-ban-list"}
         ]
 
-        assert len(GUY.all_sent_calls) == 0
-        assert len(BUDDY.all_sent_calls) == 0
-        assert len(DUDE.all_sent_calls) == 0
+        await client.on_message(MockMessage(JR, channel, "!lfg modern"))
+        assert channel.last_sent_embed["fields"] == [
+            {"inline": True, "name": "Tags", "value": "modern"}
+        ]
+
+    async def test_on_message_leave(self, client):
+        channel = text_channel()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg"))
+        assert channel.last_sent_embed == game_embed_for(client, author, False)
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        assert channel.last_sent_response == (
+            "You've been removed from the pending game that you were signed up for."
+        )
+
+    async def test_on_message_leave_already(self, client):
+        channel = text_channel()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        assert channel.last_sent_response == "You we're not in any pending games."
+
+    async def test_on_raw_reaction_add_irrelevant(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="👍",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert game_embed_for(client, ADAM, False) == None
+
+    async def test_on_raw_reaction_add_bad_channel(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert game_embed_for(client, ADAM, False) == None
+
+    async def test_on_raw_reaction_add_self(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADMIN.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADMIN,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert game_embed_for(client, ADMIN, False) == None
+
+    async def test_on_raw_reaction_add_bad_message(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id + 1,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert game_embed_for(client, ADAM, False) == None
+
+    async def test_on_raw_reaction_add_plus_unauth_channel(self, client):
+        channel_a = MockTextChannel(1, "a", members=CHANNEL_MEMBERS)
+        channel_b = MockTextChannel(2, "b", members=CHANNEL_MEMBERS)
+        client.mock_add_channel(channel_a)
+        client.mock_add_channel(channel_b)
+
+        await client.on_message(MockMessage(GUY, channel_a, "!lfg"))
+        message = channel_a.last_sent_message
+
+        lock_up = MockMessage(an_admin(), channel_a, "!spellbot channels b")
+        await client.on_message(lock_up)
+
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel_a.id,
+            guild_id=channel_a.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert game_embed_for(client, ADAM, False) == None
+
+    async def test_on_raw_reaction_add_plus_not_a_game(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!leave"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert message.reactions == []
+
+    async def test_on_raw_reaction_add_plus_twice(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        await client.on_raw_reaction_add(payload)
+        assert ADAM.last_sent_response == (
+            "Sorry, I couldn't add you to that game because you're already signed up"
+            " for another game. You can use `!leave` to leave that game."
+        )
+
+    async def test_on_raw_reaction_add_plus(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert "2 more players" in game_embed_for(client, ADAM, False)["title"]
+
+    async def test_on_raw_reaction_add_plus_complete(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        ready = game_embed_for(client, ADAM, True)
+        assert GUY.last_sent_embed == ready
+        assert ADAM.last_sent_embed == ready
+
+    async def test_on_raw_reaction_add_plus_after_disconnect(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
+        message = channel.last_sent_message
+
+        # Simulate GUY leaving this Discord server
+        global ALL_USERS
+        ALL_USERS = [user for user in ALL_USERS if user != GUY]
+
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert "1 more player" in game_embed_for(client, ADAM, False)["title"]
+
+    async def test_on_raw_reaction_add_plus_then_minus(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert message.reactions == ["➕", "➖"]
+
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➖",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+
+        # When ADAM adds the ➖ reaction, this will trigger the bot to remove the
+        # previous ➕ that was added by them, as well as the ➖ too. So in tests,
+        # we should see no reactions now. In the real system, we'd still have the
+        # two reactions that were added by the bot itself. We don't see this in the
+        # tests because the edit() method of messages is mocked out.
+        # We also don't see that ADAM is removed from the game in tests because we
+        # don't trigger the chain reaction where on_raw_reaction_remove() is called
+        # when the bot removes ADAM's reaction. The tests could be improved by
+        # building out better mocks for these interactions...
+        assert message.reactions == []
+
+    async def test_on_raw_reaction_add_minus_when_not_in_game(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert message.reactions == ["➕", "➖"]
+
+        payload = MockPayload(
+            user_id=AMY.id,
+            message_id=message.id,
+            emoji="➖",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=AMY,
+        )
+        await client.on_raw_reaction_add(payload)
+
+        # The bot should remove a ➖ to undo the irrelevent reaction AMY added.
+        assert message.reactions == ["➕"]
+
+    async def test_on_raw_reaction_remove_minus(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➖",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+        )
+        await client.on_raw_reaction_remove(payload)
+        assert message.reactions == ["➕", "➖"]
+
+    async def test_on_raw_reaction_remove_bad_channel(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+        )
+        await client.on_raw_reaction_remove(payload)
+        assert message.reactions == ["➕", "➖"]
+
+    async def test_on_raw_reaction_remove_self(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADMIN.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+        )
+        await client.on_raw_reaction_remove(payload)
+        assert message.reactions == ["➕", "➖"]
+
+    async def test_on_raw_reaction_remove_bad_message(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id + 1,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+        )
+        await client.on_raw_reaction_remove(payload)
+        assert message.reactions == ["➕", "➖"]
+
+    async def test_on_raw_reaction_remove_plus_unauth_channel(self, client):
+        channel_a = MockTextChannel(1, "a", members=CHANNEL_MEMBERS)
+        channel_b = MockTextChannel(2, "b", members=CHANNEL_MEMBERS)
+        client.mock_add_channel(channel_a)
+        client.mock_add_channel(channel_b)
+
+        await client.on_message(MockMessage(GUY, channel_a, "!lfg"))
+        message = channel_a.last_sent_message
+
+        lock_up = MockMessage(an_admin(), channel_a, "!spellbot channels b")
+        await client.on_message(lock_up)
+
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel_a.id,
+            guild_id=channel_a.guild.id,
+        )
+        await client.on_raw_reaction_remove(payload)
+        assert message.reactions == ["➕", "➖"]
+
+    async def test_on_raw_reaction_remove_plus_not_a_game(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!leave"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+        )
+        await client.on_raw_reaction_remove(payload)
+        assert message.reactions == []
+
+    async def test_on_raw_reaction_remove_plus_when_not_in_game(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+        )
+        await client.on_raw_reaction_remove(payload)
+        assert message.reactions == ["➕", "➖"]
+
+    async def test_on_raw_reaction_remove_plus(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+        )
+        await client.on_raw_reaction_remove(payload)
+        assert game_embed_for(client, ADAM, False) == None
+
+    async def test_game_cleanup_started(self, client, freezer):
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        freezer.move_to(NOW)
+
+        channel = text_channel()
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        game = all_games(client)[0]
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> {game['url']}\n"
+            f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
+            f" <@{GUY.id}>, <@{DUDE.id}>"
+        )
+        player_response = game_embed_for(client, FRIEND, True)
+        assert FRIEND.last_sent_embed == player_response
+        assert GUY.last_sent_embed == player_response
+        assert BUDDY.last_sent_embed == player_response
+        assert DUDE.last_sent_embed == player_response
+
+        assert user_has_game(client, FRIEND)
+
+        freezer.move_to(NOW + timedelta(days=3))
+        await client.cleanup_started_games()
+
+        assert not user_has_game(client, FRIEND)
+
+    async def test_game_cleanup_expired(self, client, freezer):
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        freezer.move_to(NOW)
+
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
+
+        assert user_has_game(client, GUY)
+
+        freezer.move_to(NOW + timedelta(days=3))
+        await client.cleanup_expired_games()
+
+        assert not user_has_game(client, GUY)
+        assert GUY.last_sent_response == (
+            "SpellBot has deleted your pending game due to server inactivity."
+        )
 
 
 def test_paginate():

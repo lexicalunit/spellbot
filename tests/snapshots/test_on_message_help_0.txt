@@ -13,10 +13,10 @@
 > Games will not be created immediately. This is to allow you to verify things look ok. This command will also give you directions on how to actually start the games for this event as part of its reply.
 > * Optional: Add a message by using " -- " followed by the message content.
 
-`!game [similar parameters as !play] [-- An optional additional message to send.]`
+`!game [similar parameters as !lfg] [-- An optional additional message to send.]`
 >  Create a game between mentioned users. _Requires the "SpellBot Admin" role._
 > 
-> Operates similarly to the `!play` command with a few key deferences. First, see that command's usage help for more details. Then, here are the differences:
+> Operates similarly to the `!lfg` command with a few key deferences. First, see that command's usage help for more details. Then, here are the differences:
 > * The user who issues this command is **NOT** added to the game themselves.
 > * You must mention all of the players to be seated in the game.
 > * Optional: Add a message by using " -- " followed by the message content.
@@ -25,9 +25,9 @@
 >  Sends you this help message.
 
 `!leave`
->  Leave your place in the queue.
+>  Leave any pending game that you've signed up for on this server.
 
-`!play [@mention-1] [@mention-2] [...] [size:N] [power:N] [tag-1] [tag-2] [...]`
->  Enter a play queue for a game on SpellTable.
+`!lfg [size:N] [tag-1] [tag-2] [...] [tag-N]`
+>  Create a pending game for players to join.
 > 
-> You can get in a queue with a friend by mentioning them in the command with the @ character.
+> The default game size is 4 but you can change it by adding, for example, `size:2` to create a two player game.
