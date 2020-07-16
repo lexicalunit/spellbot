@@ -25,25 +25,32 @@ being too spammy in text channels.**
 - `!help`: Provides detailed help about all of the following commands.
 - `!about`: Get information about SpellBot and its creators.
 
-### ✋ Matchmaking
+### ✋ Looking For Game
 
-- `!play`: Get in line to play some Magic: The Gathering!
-- `!leave`: Get out of line; it's the opposite of `!play`.
-- `!status`: Show some details about the queues on your server.
+For players just looking to start some games, these commands are for you!
 
-### 👑 Administration
+- `!lfg`: Create a pending game for people join.
+- `!leave`: Leave any pending games that you've signed up for.
+
+### 🎟️ Commands for Event Runners
+
+These commands are intended to be run by SpellBot Admins and help facilitate
+online events.
 
 - `!game`: Directly create games for the mentioned users.
 - `!event`: Create a bunch of games all at once based on some uploaded data.
 - `!begin`: Start an event that you previously created with `!event`.
+
+### 👑 Administrative Commands
+
+These commands will help you configure SpellBot for your server.
+
 - `!spellbot`: This command allows admins to configure SpellBot for their
                server. It supports the following subcommands:
   - `config`: Just show the current configuration for this server.
   - `channels`: Set the channels SpellBot is allowed to operate within.
   - `prefix`: Set the command prefix for SpellBot in text channels.
-  - `scope`: Set the matchmaking scope to server-wide or channel-specific.
   - `expire`: Set how many minutes before games are expired due to inactivity.
-  - `friendly`: Allow or disallow friendly queueing with mentions.
 
 ## 🙌 Support Me
 
@@ -89,7 +96,7 @@ You can also run SpellBot via docker. See
 
 [MIT][mit] © [amy@lexicalunit][lexicalunit] et [al][contributors]
 
-[add-bot]:            https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=247872&scope=bot
+[add-bot]:            https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=92224&scope=bot
 [add-img]:            https://user-images.githubusercontent.com/1903876/82262797-71745100-9916-11ea-8b65-b3f656115e4f.png
 [black-badge]:        https://img.shields.io/badge/code%20style-black-000000.svg
 [black]:              https://github.com/psf/black
