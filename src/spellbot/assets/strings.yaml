@@ -22,48 +22,36 @@ event_no_params: Please include the column names from the CSV file too identify 
   players' discord names.
 event_not_csv: Sorry, the file is not a CSV file. Make sure the filename ends with
   ".csv" please.
-expired: SpellBot has removed you from the queue due to server inactivity. Sorry,
-  but unfortunately not enough players available at this time. Please try again when
-  there are more players available.
+expired: SpellBot has deleted your pending game due to server inactivity.
 game_created: '**Game $id created:**
 
   > $url
 
   > Players notified by DM: $players'
 game_message_too_long: Sorry, the optional game message must be shorter than 255 characters.
-game_power_bad: Sorry, power level should a number between 1 and 10.
 game_size_bad: Game size must be between 2 and 4.
 game_too_few_mentions: Sorry, you mentioned too few people. I expected $size players
   to be mentioned.
 game_too_many_mentions: Sorry, you mentioned too many people. I expected $size players
   to be mentioned.
 game_too_many_tags: Sorry, you can not use more than 5 tags.
-leave: You have been removed from the queue.
-leave_already: You were not in the queue.
+leave: You've been removed from the pending game that you were signed up for.
+leave_already: You we're not in any pending games.
+lfg_already: You're already in a pending game. If you want to, you can leave all games
+  with `${prefix}leave`.
+lfg_size_bad: Sorry, game size should be between 2 and 4.
+lfg_too_many_tags: Sorry, you can not use more than 5 tags.
 no_dm: That command only works in text channels.
 not_a_command: Sorry, there is no "$request" command.
 not_admin: You do not have admin permissions for this bot.
-play_already: You are already in the queue.
-play_mention_already: Sorry, $user is already in the play queue.
-play_power_bad: Sorry, power level should a number between 1 and 10.
-play_size_bad: Game size must be between 2 and 4.
-play_too_many_mentions: Sorry, you mentioned too many people.
-play_too_many_tags: Sorry, you can not use more than 5 tags.
-spellbot_channels: 'This bot is now authroized to respond only in: $channels'
+react_already_in: Sorry, I couldn't add you to that game because you're already signed
+  up for another game. You can use `${prefix}leave` to leave that game.
+spellbot_channels: 'This bot is now authorized to respond only in: $channels'
 spellbot_channels_none: Please provide a list of channels.
 spellbot_expire: Game expiration time set to $expire minutes.
 spellbot_expire_bad: Sorry, game expiration time should be between 10 and 60 minutes.
 spellbot_expire_none: Please provide a number of minutes.
-spellbot_friendly: 'Allow users to queue with their friends: $friendly.'
-spellbot_friendly_bad: Sorry, this setting should be either "off" or "on".
-spellbot_friendly_none: Please indicate either "off" or "on".
 spellbot_missing_subcommand: Please provide a subcommand when using this command.
 spellbot_prefix: This bot will now use "$prefix" as its command prefix for this server.
 spellbot_prefix_none: Please provide a prefix string.
-spellbot_scope: 'Matchmaking on this server is now set to: $scope.'
-spellbot_scope_bad: Sorry, scope should be either "server" or "channel".
-spellbot_scope_none: Please provide a scope string.
 spellbot_unknown_subcommand: The subcommand "$command" is not recognized.
-status: The average queue wait time is currently $wait.
-status_unknown: There is not enough information to calculate the current average queue
-  wait time right now.
