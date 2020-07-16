@@ -420,7 +420,7 @@ def private_channel():
 def user_has_game(client, user):
     session = client.data.Session()
     db_user = session.query(User).filter(User.xid == user.id).first()
-    rvalue = db_user.game is not None
+    rvalue = db_user and db_user.game is not None
     session.close()
     return rvalue
 
@@ -1028,7 +1028,7 @@ class TestSpellBot:
 
     async def test_on_message_event(self, client):
         channel = text_channel()
-        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        data = bytes(f"player1,player2\n{AMY.name}#1234,@{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
@@ -1258,14 +1258,18 @@ class TestSpellBot:
     async def test_on_message_lfg_with_tags(self, client):
         channel = text_channel()
         await client.on_message(MockMessage(ADAM, channel, "!lfg modern no-ban-list"))
-        assert channel.last_sent_embed["fields"] == [
-            {"inline": True, "name": "Tags", "value": "modern, no-ban-list"}
-        ]
+        assert {
+            "inline": True,
+            "name": "Tags",
+            "value": "modern, no-ban-list",
+        } in channel.last_sent_embed["fields"]
 
         await client.on_message(MockMessage(JR, channel, "!lfg modern"))
-        assert channel.last_sent_embed["fields"] == [
-            {"inline": True, "name": "Tags", "value": "modern"}
-        ]
+        assert {
+            "inline": True,
+            "name": "Tags",
+            "value": "modern",
+        } in channel.last_sent_embed["fields"]
 
     async def test_on_message_leave(self, client):
         channel = text_channel()
@@ -1399,6 +1403,37 @@ class TestSpellBot:
         )
         await client.on_raw_reaction_add(payload)
         await client.on_raw_reaction_add(payload)
+        assert len(ADAM.all_sent_calls) == 0
+
+    async def test_on_raw_reaction_add_plus_already(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+
+        # first game
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+
+        # second game
+        await client.on_message(MockMessage(JR, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
         assert ADAM.last_sent_response == (
             "Sorry, I couldn't add you to that game because you're already signed up"
             " for another game. You can use `!leave` to leave that game."
@@ -1464,6 +1499,9 @@ class TestSpellBot:
         client.mock_add_channel(channel)
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
+
+        assert not user_has_game(client, ADAM)
+
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
@@ -1473,7 +1511,7 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        assert message.reactions == ["➕", "➖"]
+        assert user_has_game(client, ADAM)
 
         payload = MockPayload(
             user_id=ADAM.id,
@@ -1484,17 +1522,9 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
+        assert not user_has_game(client, ADAM)
 
-        # When ADAM adds the ➖ reaction, this will trigger the bot to remove the
-        # previous ➕ that was added by them, as well as the ➖ too. So in tests,
-        # we should see no reactions now. In the real system, we'd still have the
-        # two reactions that were added by the bot itself. We don't see this in the
-        # tests because the edit() method of messages is mocked out.
-        # We also don't see that ADAM is removed from the game in tests because we
-        # don't trigger the chain reaction where on_raw_reaction_remove() is called
-        # when the bot removes ADAM's reaction. The tests could be improved by
-        # building out better mocks for these interactions...
-        assert message.reactions == []
+        # TODO: Actually test that the embed was edited correctly.
 
     async def test_on_raw_reaction_add_minus_when_not_in_game(self, client):
         channel = text_channel()
@@ -1524,142 +1554,6 @@ class TestSpellBot:
 
         # The bot should remove a ➖ to undo the irrelevent reaction AMY added.
         assert message.reactions == ["➕"]
-
-    async def test_on_raw_reaction_remove_minus(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
-        await client.on_message(MockMessage(GUY, channel, "!lfg"))
-        message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji="➖",
-            channel_id=channel.id,
-            guild_id=channel.guild.id,
-        )
-        await client.on_raw_reaction_remove(payload)
-        assert message.reactions == ["➕", "➖"]
-
-    async def test_on_raw_reaction_remove_bad_channel(self, client):
-        channel = text_channel()
-        await client.on_message(MockMessage(GUY, channel, "!lfg"))
-        message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji="➕",
-            channel_id=channel.id,
-            guild_id=channel.guild.id,
-        )
-        await client.on_raw_reaction_remove(payload)
-        assert message.reactions == ["➕", "➖"]
-
-    async def test_on_raw_reaction_remove_self(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
-        await client.on_message(MockMessage(GUY, channel, "!lfg"))
-        message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADMIN.id,
-            message_id=message.id,
-            emoji="➕",
-            channel_id=channel.id,
-            guild_id=channel.guild.id,
-        )
-        await client.on_raw_reaction_remove(payload)
-        assert message.reactions == ["➕", "➖"]
-
-    async def test_on_raw_reaction_remove_bad_message(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
-        await client.on_message(MockMessage(GUY, channel, "!lfg"))
-        message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id + 1,
-            emoji="➕",
-            channel_id=channel.id,
-            guild_id=channel.guild.id,
-        )
-        await client.on_raw_reaction_remove(payload)
-        assert message.reactions == ["➕", "➖"]
-
-    async def test_on_raw_reaction_remove_plus_unauth_channel(self, client):
-        channel_a = MockTextChannel(1, "a", members=CHANNEL_MEMBERS)
-        channel_b = MockTextChannel(2, "b", members=CHANNEL_MEMBERS)
-        client.mock_add_channel(channel_a)
-        client.mock_add_channel(channel_b)
-
-        await client.on_message(MockMessage(GUY, channel_a, "!lfg"))
-        message = channel_a.last_sent_message
-
-        lock_up = MockMessage(an_admin(), channel_a, "!spellbot channels b")
-        await client.on_message(lock_up)
-
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji="➕",
-            channel_id=channel_a.id,
-            guild_id=channel_a.guild.id,
-        )
-        await client.on_raw_reaction_remove(payload)
-        assert message.reactions == ["➕", "➖"]
-
-    async def test_on_raw_reaction_remove_plus_not_a_game(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
-        await client.on_message(MockMessage(GUY, channel, "!leave"))
-        message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji="➕",
-            channel_id=channel.id,
-            guild_id=channel.guild.id,
-        )
-        await client.on_raw_reaction_remove(payload)
-        assert message.reactions == []
-
-    async def test_on_raw_reaction_remove_plus_when_not_in_game(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
-        await client.on_message(MockMessage(GUY, channel, "!lfg"))
-        message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji="➕",
-            channel_id=channel.id,
-            guild_id=channel.guild.id,
-        )
-        await client.on_raw_reaction_remove(payload)
-        assert message.reactions == ["➕", "➖"]
-
-    async def test_on_raw_reaction_remove_plus(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
-        await client.on_message(MockMessage(GUY, channel, "!lfg"))
-        message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji="➕",
-            channel_id=channel.id,
-            guild_id=channel.guild.id,
-            member=ADAM,
-        )
-        await client.on_raw_reaction_add(payload)
-
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji="➕",
-            channel_id=channel.id,
-            guild_id=channel.guild.id,
-        )
-        await client.on_raw_reaction_remove(payload)
-        assert game_embed_for(client, ADAM, False) == None
 
     async def test_game_cleanup_started(self, client, freezer):
         NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)

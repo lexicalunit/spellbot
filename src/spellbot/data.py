@@ -165,10 +165,11 @@ class Game(Base):
             embed.description = (
                 f"Click the link below to join your SpellTable game.\n<{self.url}>"
             )
-            players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
-            embed.add_field(name="Players", value=players)
         else:
             embed.description = "To join/leave this game, react with ➕/➖."
+        if self.users:
+            players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
+            embed.add_field(name="Players", value=players)
         tag_names = None
         if not (len(self.tags) == 1 and self.tags[0].name == "default"):
             tag_names = ", ".join(sorted([tag.name for tag in self.tags]))
