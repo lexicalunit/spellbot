@@ -407,9 +407,15 @@ class SpellBot(discord.Client):
             user = self.ensure_user_exists(session, author)
             session.commit()
 
+            now = datetime.utcnow()
+            expires_at = now + timedelta(minutes=server.expire)
+
             if emoji == "➕":
                 if any(user.xid == game_user.xid for game_user in game.users):
                     # this author is already in this game, they don't need to be added
+                    return
+                if user.game and user.game.id != game.id:
+                    # this author is already another game, they can't be added
                     return await author.send(s("react_already_in", prefix=server.prefix))
                 user.game = game
             else:  # emoji == "➖":
@@ -417,13 +423,19 @@ class SpellBot(discord.Client):
                     # this author is not in this game, so they can't be removed from it
                     return await self.safe_remove_reaction(message, emoji, author)
 
+                # remove this user's reactions from the game message
                 await self.safe_remove_reaction(message, "➖", author)
+                await self.safe_remove_reaction(message, "➕", author)
 
-                # removing the + emoji triggers the code to remove this user
-                return await self.safe_remove_reaction(message, "➕", author)
+                # update the game and remove the user from the game
+                game.updated_at = now
+                game.expires_at = expires_at
+                user.game = None
+                session.commit()
 
-            now = datetime.utcnow()
-            expires_at = now + timedelta(minutes=server.expire)
+                # update the game message
+                return await self.safe_edit_message(message, embed=game.to_embed())
+
             game.updated_at = now
             game.expires_at = expires_at
             session.commit()
@@ -450,59 +462,6 @@ class SpellBot(discord.Client):
             else:
                 session.commit()
                 await self.safe_edit_message(message, embed=game.to_embed())
-
-    async def on_raw_reaction_remove(self, payload):
-        """Behavior when the client sees a reaction removed from a Discord message."""
-        emoji = str(payload.emoji)
-        if emoji not in ["➕"]:
-            return
-
-        channel = await self.safe_fetch_channel(payload.channel_id)
-        if not channel or str(channel.type) != "text":
-            return
-
-        author = await self.safe_fetch_user(payload.user_id)
-        if not author or author.bot or author.id == self.user.id:
-            return
-
-        message = await self.safe_fetch_message(channel, payload.message_id)
-        if not message:
-            return
-
-        async with self.session() as session:
-            server = self.ensure_server_exists(session, payload.guild_id)
-            session.commit()
-
-            if not server.bot_allowed_in(channel.name):
-                return
-
-            game = (
-                session.query(Game).filter(Game.message_xid == message.id).one_or_none()
-            )
-            if not game or game.status != "pending":
-                return
-
-            user = self.ensure_user_exists(session, author)
-            session.commit()
-
-            if not any(user.xid == game_user.xid for game_user in game.users):
-                # It should be fine to re-update the message with the embed. This can
-                # be necessiary if the user used !leave to exit the game, thus removing
-                # them from the association with this game. This will trigger a removal
-                # of their ➕ reaction to the game message, which leads to this code,
-                # which can then update the messsage since they're not in the game now.
-                await self.safe_edit_message(message, embed=game.to_embed())
-                # this author is not in this game, so they can't be removed from it
-                return
-
-            now = datetime.utcnow()
-            expires_at = now + timedelta(minutes=server.expire)
-            game.updated_at = now
-            game.expires_at = expires_at
-            user.game = None
-
-            session.commit()
-            await self.safe_edit_message(message, embed=game.to_embed())
 
     async def on_message(self, message):
         """Behavior when the client gets a message from Discord."""
@@ -778,7 +737,9 @@ class SpellBot(discord.Client):
         for i, row in enumerate(reader):
             csv_row_data = [row[column].strip() for column in columns]
             players_s = ", ".join([f'"{value}"' for value in csv_row_data])
-            player_lnames = [value.lower() for value in csv_row_data]
+            player_lnames = [
+                re.sub("#.*$", "", value.lower()).lstrip("@") for value in csv_row_data
+            ]
 
             if any(not lname for lname in player_lnames):
                 warning = s("event_missing_player", row=i + 1, players=players_s)
@@ -813,6 +774,12 @@ class SpellBot(discord.Client):
                 player_user.cached_name = player_discord_user.name
             session.commit()
 
+            tag = session.query(Tag).filter_by(name="default").one_or_none()
+            if not tag:
+                tag = Tag(name="default")
+                session.add(tag)
+            session.commit()
+
             now = datetime.utcnow()
             expires_at = now + timedelta(minutes=server.expire)
             game = Game(
@@ -825,6 +792,7 @@ class SpellBot(discord.Client):
                 message=optional_message,
                 users=player_users,
                 event=event,
+                tags=[tag],
             )
             session.add(game)
             session.commit()
