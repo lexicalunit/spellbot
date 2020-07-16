@@ -1,31 +1,26 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 import alembic
 import alembic.config
-from discord import Color, Embed
-from humanize import naturaldelta
+import discord
 from sqlalchemy import (
     BigInteger,
-    Boolean,
     Column,
     DateTime,
-    Float,
     ForeignKey,
     Integer,
     String,
     Table,
     and_,
     create_engine,
-    func,
     text,
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session, relationship, sessionmaker
-from sqlalchemy.sql.expression import label
+from sqlalchemy.orm import relationship, sessionmaker
 
-from spellbot.constants import AVG_QUEUE_TIME_WINDOW_MIN, THUMB_URL
+from spellbot.constants import THUMB_URL
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = PACKAGE_ROOT / "assets"
@@ -36,53 +31,26 @@ VERSIONS_DIR = PACKAGE_ROOT / "versions"
 Base = declarative_base()
 
 
-class WaitTime(Base):
-    __tablename__ = "wait_times"
-    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    guild_xid = Column(BigInteger, nullable=False)
-    channel_xid = Column(BigInteger, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    seconds = Column(Integer, nullable=False)
-
-    @classmethod
-    def log(cls, session, *, guild_xid, channel_xid, seconds):
-        row = WaitTime(guild_xid=guild_xid, channel_xid=channel_xid, seconds=seconds)
-        session.add(row)
-
-    @classmethod
-    def average(cls, session, *, guild_xid, channel_xid, scope, window_min):
-        filters = [
-            WaitTime.guild_xid == guild_xid,
-            WaitTime.created_at > datetime.utcnow() - timedelta(minutes=window_min),
-        ]
-        if scope == "channel":
-            filters.append(WaitTime.channel_xid == channel_xid)
-        row = (
-            session.query(label("average", func.sum(WaitTime.seconds) / func.count()))
-            .filter(and_(*filters))
-            .one_or_none()
-        )
-        return row.average if row else None
-
-
 class Server(Base):
     __tablename__ = "servers"
     guild_xid = Column(BigInteger, primary_key=True, nullable=False)
     prefix = Column(String(10), nullable=False, default="!")
-    scope = Column(String(10), nullable=False, default="server")
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
-    friendly = Column(Boolean)  # Note that unset means that friendly is ON!
     games = relationship("Game", back_populates="server")
-    authorized_channels = relationship("Channel", back_populates="server")
+    channels = relationship("Channel", back_populates="server")
+
+    def bot_allowed_in(self, channel_name):
+        return not self.channels or any(
+            channel.name == channel_name for channel in self.channels
+        )
 
     def __repr__(self):
         return json.dumps(
             {
                 "guild_xid": self.guild_xid,
                 "prefix": self.prefix,
-                "scope": self.scope,
                 "expire": self.expire,
-                "friendly": self.friendly if self.friendly is not None else True,
+                "channels": [channel.name for channel in self.channels],
             }
         )
 
@@ -94,7 +62,7 @@ class Channel(Base):
         BigInteger, ForeignKey("servers.guild_xid", ondelete="CASCADE"), nullable=False
     )
     name = Column(String(100), nullable=False)
-    server = relationship("Server", back_populates="authorized_channels")
+    server = relationship("Server", back_populates="channels")
 
 
 games_tags = Table(
@@ -122,84 +90,12 @@ class User(Base):
     __tablename__ = "users"
     xid = Column(BigInteger, primary_key=True, nullable=False)
     game_id = Column(Integer, ForeignKey("games.id", ondelete="SET NULL"), nullable=True)
-    queued_at = Column(DateTime, nullable=True)
     cached_name = Column(String(50))
     game = relationship("Game", back_populates="users")
 
     @property
     def waiting(self):
-        return self.queued_at is not None
-
-    def enqueue(self, *, server, channel_xid, include, size, power, tags):
-        session = Session.object_session(self)
-        guild_xid = server.guild_xid
-        required_tag_ids = set(tag.id for tag in tags)
-        filters = [
-            games_tags.c.tag_id.in_([tag.id for tag in tags]),
-            Game.status == "pending",
-            Game.guild_xid == guild_xid,
-            Game.size == size,
-        ]
-        if server.scope == "channel":
-            filters.append(Game.channel_xid == channel_xid)
-        if power:
-            filters.append(Game.power >= power - 2)
-            filters.append(Game.power <= power + 2)
-        considerations = (
-            session.query(games_tags.c.game_id, func.count(games_tags.c.game_id))
-            .join(Game)
-            .filter(and_(*filters))
-            .group_by(games_tags.c.game_id)
-            .having(func.count(games_tags.c.game_id) == len(tags))
-            .all()
-        )
-        existing_game = None
-        for row in considerations:
-            # FIXME: How can we move these checks into the query statement?
-            game = session.query(Game).get(row.game_id)
-            if set(tag.id for tag in game.tags) != required_tag_ids:
-                continue
-            if len(game.users) >= size - len(include):
-                continue
-            existing_game = game
-            break
-        now = datetime.utcnow()
-        expires_at = now + timedelta(minutes=server.expire)
-        if existing_game:
-            already_seated = len(existing_game.users)
-            self.game = existing_game
-            self.game.updated_at = now
-            self.game.expires_at = expires_at
-            if power:
-                # recalculating the average power for this game
-                newly_seated = 1 + len(include)
-                now_seated = already_seated + newly_seated
-                total_power = self.game.power * already_seated + power * newly_seated
-                self.game.power = total_power / now_seated
-        else:
-            self.game = Game(
-                channel_xid=channel_xid if server.scope == "channel" else None,
-                created_at=now,
-                expires_at=expires_at,
-                guild_xid=guild_xid,
-                power=power,
-                size=size,
-                tags=tags,
-                updated_at=now,
-            )
-            session.add(self.game)
-        self.queued_at = now
-        for user in include:
-            user.game = self.game
-            user.queued_at = now
-
-    def dequeue(self):
-        session = Session.object_session(self)
-        if self.game and len(self.game.users) == 1:
-            self.game.tags = []  # cascade delete tag associations
-            session.delete(self.game)
-        self.game = None
-        self.queued_at = None
+        return self.game and self.game.status in ["pending", "ready"]
 
 
 class Game(Base):
@@ -213,7 +109,6 @@ class Game(Base):
         BigInteger, ForeignKey("servers.guild_xid", ondelete="CASCADE"), nullable=False
     )
     channel_xid = Column(BigInteger)
-    power = Column(Float)
     url = Column(String(255))
     status = Column(String(30), nullable=False, server_default=text("'pending'"))
     message = Column(String(255))
@@ -250,7 +145,6 @@ class Game(Base):
                 "size": self.size,
                 "guild_xid": self.guild_xid,
                 "channel_xid": self.channel_xid,
-                "power": self.power,
                 "url": self.url,
                 "status": self.status,
                 "message": self.message,
@@ -262,46 +156,24 @@ class Game(Base):
         if self.url:
             title = self.message if self.message else "**Your game is ready!**"
         else:
-            title = "**Waiting for more people to join...**"
-        embed = Embed(title=title)
+            remaining = self.size - len(self.users)
+            plural = "s" if remaining > 1 else ""
+            title = f"**Waiting for {remaining} more player{plural} to join...**"
+        embed = discord.Embed(title=title)
         embed.set_thumbnail(url=THUMB_URL)
-        embed.add_field(name="Game size", value=self.size)
         if self.url:
-            embed.description = f"Click the link below to join.\n<{self.url}>"
-        else:
-            session = Session.object_session(self)
-            average = WaitTime.average(
-                session,
-                guild_xid=self.server.guild_xid,
-                channel_xid=self.channel_xid,
-                scope=self.server.scope,
-                window_min=AVG_QUEUE_TIME_WINDOW_MIN,
+            embed.description = (
+                f"Click the link below to join your SpellTable game.\n<{self.url}>"
             )
-            if average:
-                delta = naturaldelta(timedelta(seconds=average))
-                embed.add_field(name="Average wait time", value=delta)
-            embed.description = "🚨 When this game is ready I will send another message!"
-        players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
-        embed.add_field(name="Players", value=players)
-        if self.channel_xid:
-            embed.add_field(name="Channel", value=f"<#{self.channel_xid}>")
+            players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
+            embed.add_field(name="Players", value=players)
+        else:
+            embed.description = "To join/leave this game, react with ➕/➖."
         tag_names = None
         if not (len(self.tags) == 1 and self.tags[0].name == "default"):
             tag_names = ", ".join(sorted([tag.name for tag in self.tags]))
             embed.add_field(name="Tags", value=tag_names)
-        if self.power:
-            embed.add_field(name="Average power level", value=f"{self.power:.1f}")
-        cmd = f"{self.server.prefix}play "
-        if self.size != 4:
-            cmd += f"size:{self.size} "
-        if self.power:
-            cmd += f"power:{round(self.power)} "
-        if not (len(self.tags) == 1 and self.tags[0].name == "default"):
-            tags = " ".join(sorted([tag.name for tag in self.tags]))
-            cmd += f"{tags} "
-        if not self.url:
-            embed.set_footer(text=f"To join this game run: {cmd.rstrip()}")
-        embed.color = Color(0x5A3EFD)
+        embed.color = discord.Color(0x5A3EFD)
         return embed
 
 

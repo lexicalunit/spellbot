@@ -4,6 +4,7 @@ import inspect
 import logging
 import re
 import sys
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from functools import wraps
 from io import StringIO
@@ -15,19 +16,13 @@ import click
 import discord
 import hupper
 import requests
-from humanize import naturaldelta
 from sqlalchemy import exc
 from sqlalchemy.sql import text
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
-from spellbot.constants import (
-    ADMIN_ROLE,
-    AVG_QUEUE_TIME_WINDOW_MIN,
-    CREATE_ENDPOINT,
-    THUMB_URL,
-)
-from spellbot.data import Channel, Data, Event, Game, Server, Tag, User, WaitTime
+from spellbot.constants import ADMIN_ROLE, CREATE_ENDPOINT, THUMB_URL
+from spellbot.data import Channel, Data, Event, Game, Server, Tag, User
 
 # Application Paths
 RUNTIME_ROOT = Path(".")
@@ -45,15 +40,12 @@ def to_int(s):
         return None
 
 
-def power_and_size_from_params(params):
+def size_from_params(params):
     size = 4
-    power = None
     for param in params:
         if param.startswith("size:"):
             size = to_int(param.replace("size:", ""))
-        elif param.startswith("power:"):
-            power = to_int(param.replace("power:", ""))
-    return power, size
+    return size
 
 
 def tag_names_from_params(params):
@@ -61,10 +53,8 @@ def tag_names_from_params(params):
         param
         for param in params
         if not param.startswith("size:")
-        and not param.startswith("power:")
         and not param.startswith("<")
         and not param.startswith("@")
-        and not param.isdigit()
         and not len(param) >= 50
     ]
     if not tag_names:
@@ -148,10 +138,6 @@ class SpellBot(discord.Client):
         self.auth = auth
         self.mock_games = mock_games
 
-        # During the processing of a command there will be valid SQLAlchemy session
-        # object available for use, commits and rollbacks are handled automatically.
-        self.session = None
-
         # We have to make sure that DB_DIR exists before we try to create
         # the database as part of instantiating the Data object.
         ensure_application_directories_exist()
@@ -167,10 +153,93 @@ class SpellBot(discord.Client):
 
         self._begin_background_tasks(loop)
 
+    @asynccontextmanager
+    async def session(self):  # pragma: no cover
+        session = self.data.Session()
+        try:
+            yield session
+        except exc.SQLAlchemyError as e:
+            logging.exception("database error:", e)
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    async def safe_fetch_message(self, channel, message_xid):  # pragma: no cover
+        try:
+            return await channel.fetch_message(message_xid)
+        except (
+            discord.errors.HTTPException,
+            discord.errors.NotFound,
+            discord.errors.Forbidden,
+        ) as e:
+            logging.exception("warning: discord: could not fetch message", e)
+
+    async def safe_fetch_channel(self, channel_xid):  # pragma: no cover
+        channel = self.get_channel(channel_xid)
+        if channel:
+            return channel
+        try:
+            return await self.fetch_channel(channel_xid)
+        except (
+            discord.errors.InvalidData,
+            discord.errors.HTTPException,
+            discord.errors.NotFound,
+            discord.errors.Forbidden,
+        ) as e:
+            logging.exception("warning: discord: could not fetch channel", e)
+
+    async def safe_fetch_user(self, user_xid):  # pragma: no cover
+        user = self.get_user(user_xid)
+        if user:
+            return user
+        try:
+            return await self.fetch_user(user_xid)
+        except (discord.errors.NotFound, discord.errors.HTTPException,) as e:
+            logging.exception("warning: discord: could fetch user", e)
+
+    async def safe_remove_reaction(self, message, emoji, user):  # pragma: no cover
+        try:
+            await message.remove_reaction(emoji, user)
+        except (
+            discord.errors.HTTPException,
+            discord.errors.Forbidden,
+            discord.errors.NotFound,
+            discord.errors.InvalidArgument,
+        ) as e:
+            logging.exception("warning: discord: could not remove reaction", e)
+
+    async def safe_clear_reactions(self, message):  # pragma: no cover
+        try:
+            await message.clear_reactions()
+        except (discord.errors.HTTPException, discord.errors.Forbidden,) as e:
+            logging.exception("warning: discord: could not clear reactions", e)
+
+    async def safe_edit_message(
+        self, message, *, reason=None, **options
+    ):  # pragma: no cover
+        try:
+            await message.edit(reason=reason, **options)
+        except (
+            discord.errors.InvalidArgument,
+            discord.errors.Forbidden,
+            discord.errors.HTTPException,
+        ) as e:
+            logging.exception("warning: discord: could not edit message", e)
+
+    async def safe_delete_message(self, message):  # pragma: no cover
+        try:
+            await message.delete()
+        except (
+            discord.errors.Forbidden,
+            discord.errors.NotFound,
+            discord.errors.HTTPException,
+        ) as e:
+            logging.exception("warning: discord: could not delete message", e)
+
     def _begin_background_tasks(self, loop):  # pragma: no cover
         """Start up any periodic background tasks."""
         self.cleanup_expired_games_task(loop)
-        self.cleanup_expired_wait_times_task(loop)
         self.cleanup_started_games_task(loop)
 
     def cleanup_expired_games_task(self, loop):  # pragma: no cover
@@ -179,57 +248,25 @@ class SpellBot(discord.Client):
 
         async def task():
             while True:
-                await self.cleanup_expired_games()
                 await asyncio.sleep(THIRTY_SECONDS)
+                await self.cleanup_expired_games()
 
         loop.create_task(task())
 
     async def cleanup_expired_games(self):
         """Culls games older than the given window of minutes."""
-        session = self.data.Session()
-        try:
+        async with self.session() as session:
             expired = Game.expired(session)
             for game in expired:
+                await self.try_to_delete_message(game)
                 for user in game.users:
-                    discord_user = self.get_user(user.xid)
+                    discord_user = await self.safe_fetch_user(user.xid)
                     if discord_user:
                         await discord_user.send(s("expired", window=game.server.expire))
-                    user.queued_at = None
                     user.game = None
                 game.tags = []  # cascade delete tag associations
                 session.delete(game)
             session.commit()
-        except exc.SQLAlchemyError as e:
-            logging.exception("error: cleanup_expired_games:", e)
-            session.rollback()
-            raise
-        finally:
-            session.close()
-
-    def cleanup_expired_wait_times_task(self, loop):  # pragma: no cover
-        """Starts a task that culls old wait times data."""
-        FIVE_MINUTES = 300
-
-        async def task():
-            while True:
-                await self.cleanup_expired_waits(AVG_QUEUE_TIME_WINDOW_MIN)
-                await asyncio.sleep(FIVE_MINUTES)
-
-        loop.create_task(task())
-
-    async def cleanup_expired_waits(self, window):
-        """Culls wait time data older than the given window of minutes."""
-        session = self.data.Session()
-        try:
-            cutoff = datetime.utcnow() - timedelta(minutes=window)
-            session.query(WaitTime).filter(WaitTime.created_at < cutoff).delete()
-            session.commit()
-        except exc.SQLAlchemyError as e:
-            logging.exception("error: cleanup_expired_waits:", e)
-            session.rollback()
-            raise
-        finally:
-            session.close()
 
     def cleanup_started_games_task(self, loop):  # pragma: no cover
         """Starts a task that culls old games."""
@@ -237,26 +274,19 @@ class SpellBot(discord.Client):
 
         async def task():
             while True:
-                await self.cleanup_started_games()
                 await asyncio.sleep(FOUR_HOURS)
+                await self.cleanup_started_games()
 
         loop.create_task(task())
 
     async def cleanup_started_games(self):
         """Culls games older than the given window of minutes."""
-        session = self.data.Session()
-        try:
+        async with self.session() as session:
             games = session.query(Game).filter(Game.status == "started").all()
             for game in games:
                 game.tags = []  # cascade delete tag associations
                 session.delete(game)
             session.commit()
-        except exc.SQLAlchemyError as e:
-            logging.exception("error: cleanup_started_games:", e)
-            session.rollback()
-            raise
-        finally:
-            session.close()
 
     def run(self):  # pragma: no cover
         super().run(self.token)
@@ -269,23 +299,45 @@ class SpellBot(discord.Client):
             r = requests.post(CREATE_ENDPOINT, headers=headers)
             return r.json()["gameUrl"]
 
-    def ensure_user_exists(self, user):
+    def ensure_user_exists(self, session, user):
         """Ensures that the user row exists for the given discord user."""
-        db_user = self.session.query(User).filter(User.xid == user.id).one_or_none()
+        db_user = session.query(User).filter(User.xid == user.id).one_or_none()
         if not db_user:
             db_user = User(xid=user.id)
-            self.session.add(db_user)
+            session.add(db_user)
         return db_user
 
-    def ensure_server_exists(self, guild_xid):
+    def ensure_server_exists(self, session, guild_xid):
         """Ensures that the server row exists for the given discord guild id."""
-        server = (
-            self.session.query(Server).filter(Server.guild_xid == guild_xid).one_or_none()
-        )
+        server = session.query(Server).filter(Server.guild_xid == guild_xid).one_or_none()
         if not server:
             server = Server(guild_xid=guild_xid)
-            self.session.add(server)
+            session.add(server)
         return server
+
+    async def try_to_delete_message(self, game):
+        """Attempts to remove a ➕ from the given game message for the given user."""
+        chan = await self.safe_fetch_channel(game.channel_xid)
+        if not chan:
+            return
+
+        post = await self.safe_fetch_message(chan, game.message_xid)
+        if not post:
+            return
+
+        await self.safe_delete_message(post)
+
+    async def try_to_remove_plus(self, game, discord_user):
+        """Attempts to remove a ➕ from the given game message for the given user."""
+        chan = await self.safe_fetch_channel(game.channel_xid)
+        if not chan:
+            return
+
+        post = await self.safe_fetch_message(chan, game.message_xid)
+        if not post:
+            return
+
+        await self.safe_remove_reaction(post, "➕", discord_user)
 
     @property
     def commands(self):
@@ -314,20 +366,143 @@ class SpellBot(discord.Client):
             logging.debug(
                 "%s%s (params=%s, message=%s)", prefix, command, params, message
             )
-            self.session = self.data.Session()
-            try:
-                await method(prefix, params, message)
-                self.session.commit()
-            except exc.SQLAlchemyError as e:
-                logging.exception(f"error: {request}:", e)
-                self.session.rollback()
-                raise
-            finally:
-                self.session.close()
+            async with self.session() as session:
+                await method(session, prefix, params, message)
 
     ##############################
     # Discord Client Behavior
     ##############################
+
+    async def on_raw_reaction_add(self, payload):
+        """Behavior when the client gets a new reaction on a Discord message."""
+        emoji = str(payload.emoji)
+        if emoji not in ["➕", "➖"]:
+            return
+
+        channel = await self.safe_fetch_channel(payload.channel_id)
+        if not channel or str(channel.type) != "text":
+            return
+
+        author = payload.member
+        if author.bot or author.id == self.user.id:
+            return
+
+        message = await self.safe_fetch_message(channel, payload.message_id)
+        if not message:
+            return
+
+        async with self.session() as session:
+            server = self.ensure_server_exists(session, payload.guild_id)
+            session.commit()
+
+            if not server.bot_allowed_in(channel.name):
+                return
+
+            game = (
+                session.query(Game).filter(Game.message_xid == message.id).one_or_none()
+            )
+            if not game or game.status != "pending":
+                return  # this isn't a post relating to a game, just ignore it
+
+            user = self.ensure_user_exists(session, author)
+            session.commit()
+
+            if emoji == "➕":
+                if any(user.xid == game_user.xid for game_user in game.users):
+                    # this author is already in this game, they don't need to be added
+                    return await author.send(s("react_already_in", prefix=server.prefix))
+                user.game = game
+            else:  # emoji == "➖":
+                if not any(user.xid == game_user.xid for game_user in game.users):
+                    # this author is not in this game, so they can't be removed from it
+                    return await self.safe_remove_reaction(message, emoji, author)
+
+                await self.safe_remove_reaction(message, "➖", author)
+
+                # removing the + emoji triggers the code to remove this user
+                return await self.safe_remove_reaction(message, "➕", author)
+
+            now = datetime.utcnow()
+            expires_at = now + timedelta(minutes=server.expire)
+            game.updated_at = now
+            game.expires_at = expires_at
+            session.commit()
+
+            found_discord_users = []
+            if len(game.users) == game.size:
+                for game_user in game.users:
+                    discord_user = await self.safe_fetch_user(game_user.xid)
+                    if not discord_user:  # user has left the server since signing up
+                        game_user.game = None
+                        obj = discord.Object(game_user.xid)
+                        await self.safe_remove_reaction(message, "➕", obj)
+                    else:
+                        found_discord_users.append(discord_user)
+
+            if len(found_discord_users) == game.size:  # game is ready
+                game.url = self.create_game()
+                game.status = "started"
+                session.commit()
+                for discord_user in found_discord_users:
+                    await discord_user.send(embed=game.to_embed())
+                await self.safe_edit_message(message, embed=game.to_embed())
+                await self.safe_clear_reactions(message)
+            else:
+                session.commit()
+                await self.safe_edit_message(message, embed=game.to_embed())
+
+    async def on_raw_reaction_remove(self, payload):
+        """Behavior when the client sees a reaction removed from a Discord message."""
+        emoji = str(payload.emoji)
+        if emoji not in ["➕"]:
+            return
+
+        channel = await self.safe_fetch_channel(payload.channel_id)
+        if not channel or str(channel.type) != "text":
+            return
+
+        author = await self.safe_fetch_user(payload.user_id)
+        if not author or author.bot or author.id == self.user.id:
+            return
+
+        message = await self.safe_fetch_message(channel, payload.message_id)
+        if not message:
+            return
+
+        async with self.session() as session:
+            server = self.ensure_server_exists(session, payload.guild_id)
+            session.commit()
+
+            if not server.bot_allowed_in(channel.name):
+                return
+
+            game = (
+                session.query(Game).filter(Game.message_xid == message.id).one_or_none()
+            )
+            if not game or game.status != "pending":
+                return
+
+            user = self.ensure_user_exists(session, author)
+            session.commit()
+
+            if not any(user.xid == game_user.xid for game_user in game.users):
+                # It should be fine to re-update the message with the embed. This can
+                # be necessiary if the user used !leave to exit the game, thus removing
+                # them from the association with this game. This will trigger a removal
+                # of their ➕ reaction to the game message, which leads to this code,
+                # which can then update the messsage since they're not in the game now.
+                await self.safe_edit_message(message, embed=game.to_embed())
+                # this author is not in this game, so they can't be removed from it
+                return
+
+            now = datetime.utcnow()
+            expires_at = now + timedelta(minutes=server.expire)
+            game.updated_at = now
+            game.expires_at = expires_at
+            user.game = None
+
+            session.commit()
+            await self.safe_edit_message(message, embed=game.to_embed())
 
     async def on_message(self, message):
         """Behavior when the client gets a message from Discord."""
@@ -359,14 +534,11 @@ class SpellBot(discord.Client):
             return
 
         if not private:
-            # check for admin authorized channels on this server
-            rows = self.data.conn.execute(
-                text("SELECT name FROM authorized_channels WHERE guild_xid = :g"),
-                g=message.channel.guild.id,
-            )
-            authorized_channels = set(row["name"] for row in rows)
-            if authorized_channels and message.channel.name not in authorized_channels:
-                return
+            async with self.session() as session:
+                server = self.ensure_server_exists(session, message.channel.guild.id)
+                session.commit()
+                if not server.bot_allowed_in(message.channel.name):
+                    return
 
         await self.process(message, prefix)
 
@@ -398,7 +570,7 @@ class SpellBot(discord.Client):
     # Where [foo] indicates foo is optional and <bar> indicates bar is required.
 
     @command(allow_dm=True)
-    async def help(self, prefix, params, message):
+    async def help(self, session, prefix, params, message):
         """
         Sends you this help message.
         """
@@ -443,7 +615,7 @@ class SpellBot(discord.Client):
             await message.author.send(page)
 
     @command(allow_dm=True)
-    async def about(self, prefix, params, message):
+    async def about(self, session, prefix, params, message):
         """
         Get information about SpellBot.
         """
@@ -472,110 +644,69 @@ class SpellBot(discord.Client):
         await message.channel.send(embed=embed)
 
     @command(allow_dm=False)
-    async def play(self, prefix, params, message):
+    async def lfg(self, session, prefix, params, message):
         """
-        Enter a play queue for a game on SpellTable.
+        Create a pending game for players to join.
 
-        You can get in a queue with a friend by mentioning them in the command with the @
-        character. You can also change the number of players from the default of four by
-        using, for example, `!play size:2` to create a two player game.
+        The default game size is 4 but you can change it by adding, for example, `size:2`
+        to create a two player game.
 
-        Up to five tags can be given as well. For example, `!play no-combo proxy` has
-        two tags: `no-combo` and `proxy`. Look on your server for what tags are being
-        used by your community members. Tags can **not** be a number like `5`. Be careful
-        when using tags because the matchmaker will only pair you up with other players
-        who've used **EXACTLY** the same tags.
+        Players will be able to join or leave the game by reacting to the message that
+        SpellBot sends with the ➕ and ➖ emoji.
 
-        You can also specify a power level like `!play power:7` for example and the
-        matchmaker will attempt to find a game with similar power levels for you. Note
-        that players who specify a power level will never get paired up with players who
-        have not, and vice versa. You will also not be matched up _exactly_ by power level
-        as there is a fudge factor involved.
-
-        If your server's admins have set the scope for your server to "channel", then
-        matchmaking will only happen between other players who run this command in the
-        same channel as you did. The default scope for matchmaking is server-wide.
-        & [@mention-1] [@mention-2] [...] [size:N] [power:N] [tag-1] [tag-2] [...]
+        Up to five tags can be given as well to help describe the game expereince that you
+        want. For example you might send `!lfg no-combo proxy` which will assign the tags:
+        `no-combo` and `proxy` to your game. People will be able to see what tags are set
+        on your game when they are looking for games to join.
+        & [size:N] [tag-1] [tag-2] [...] [tag-N]
         """
-        user = self.ensure_user_exists(message.author)
+        server = self.ensure_server_exists(session, message.channel.guild.id)
+        session.commit()
+
+        user = self.ensure_user_exists(session, message.author)
         if user.waiting:
-            return await message.channel.send(s("play_already"))
+            return await message.channel.send(s("lfg_already", prefix=server.prefix))
 
         params = [param.lower() for param in params]
-        mentions = message.mentions if message.channel.type != "private" else []
 
-        server = self.ensure_server_exists(message.channel.guild.id)
-        self.session.commit()
-
-        friendly = server.friendly if server.friendly is not None else True
-
-        power, size = power_and_size_from_params(params)
+        size = size_from_params(params)
         if not size or not (1 < size < 5):
-            return await message.channel.send(s("play_size_bad"))
-        if power and not (1 <= power <= 10):
-            return await message.channel.send(s("play_power_bad"))
-
-        if friendly and len(mentions) + 1 > size:
-            return await message.channel.send(s("play_too_many_mentions"))
-
-        mentioned_users = []
-        if friendly:
-            for mentioned in mentions:
-                mentioned_user = self.ensure_user_exists(mentioned)
-                if mentioned_user.waiting:
-                    return await message.channel.send(
-                        s("play_mention_already", user=mentioned)
-                    )
-                mentioned_users.append(mentioned_user)
+            return await message.channel.send(s("lfg_size_bad"))
 
         tag_names = tag_names_from_params(params)
         if len(tag_names) > 5:
-            return await message.channel.send(s("play_too_many_tags"))
+            return await message.channel.send(s("lfg_too_many_tags"))
 
         tags = []
         for tag_name in tag_names:
-            tag = self.session.query(Tag).filter_by(name=tag_name).first()
+            tag = session.query(Tag).filter_by(name=tag_name).one_or_none()
             if not tag:
                 tag = Tag(name=tag_name)
-                self.session.add(tag)
+                session.add(tag)
             tags.append(tag)
 
-        user.enqueue(
-            server=server,
-            channel_xid=message.channel.id,
-            include=mentioned_users,
+        now = datetime.utcnow()
+        expires_at = now + timedelta(minutes=server.expire)
+        user.game = Game(
+            created_at=now,
+            updated_at=now,
+            expires_at=expires_at,
             size=size,
-            power=power,
+            channel_xid=message.channel.id,
             tags=tags,
+            server=server,
         )
-        self.session.commit()
+        session.commit()
 
-        found_discord_users = []
-        if len(user.game.users) == size:
-            for game_user in user.game.users:
-                discord_user = self.get_user(game_user.xid)
-                if not discord_user:  # game_user has left the server since queueing
-                    game_user.dequeue()
-                else:
-                    found_discord_users.append(discord_user)
+        post = await message.channel.send(embed=user.game.to_embed())
+        user.game.message_xid = post.id
+        session.commit()
 
-        if len(found_discord_users) == size:  # all players matched, game is ready
-            user.game.url = self.create_game()
-            user.game.status = "started"
-            game_created_at = datetime.utcnow()
-            for game_user in user.game.users:
-                WaitTime.log(
-                    self.session,
-                    guild_xid=server.guild_xid,
-                    channel_xid=message.channel.id,
-                    seconds=(game_created_at - game_user.queued_at).total_seconds(),
-                )
-                game_user.queued_at = None
-        message = await message.channel.send(embed=user.game.to_embed())
-        user.game.message_xid = message.id
+        await post.add_reaction("➕")
+        await post.add_reaction("➖")
 
     @command(allow_dm=False)
-    async def event(self, prefix, params, message):
+    async def event(self, session, prefix, params, message):
         """
         Create many games in batch from an attached CSV data file. _Requires the
         "SpellBot Admin" role._
@@ -628,7 +759,7 @@ class SpellBot(discord.Client):
         if not has_header:
             return await message.channel.send(s("event_no_header"))
 
-        server = self.ensure_server_exists(message.channel.guild.id)
+        server = self.ensure_server_exists(session, message.channel.guild.id)
         reader = csv.reader(StringIO(sdata))
         header = [column.lower().strip() for column in next(reader)]
         params = [param.lower().strip() for param in params]
@@ -639,8 +770,8 @@ class SpellBot(discord.Client):
         columns = [header.index(param) for param in params]
 
         event = Event()
-        self.session.add(event)
-        self.session.commit()
+        session.add(event)
+        session.commit()
 
         members = message.channel.guild.members
         member_lookup = {member.name.lower().strip(): member for member in members}
@@ -669,7 +800,7 @@ class SpellBot(discord.Client):
                 continue
 
             player_users = [
-                self.ensure_user_exists(player_discord_user)
+                self.ensure_user_exists(session, player_discord_user)
                 for player_discord_user in player_discord_users
             ]
 
@@ -677,9 +808,10 @@ class SpellBot(discord.Client):
                 player_discord_users, player_users
             ):
                 if player_user.waiting:
-                    player_user.dequeue()
+                    await self.try_to_remove_plus(player_user.game, player_discord_user)
+                    player_user.game = None
                 player_user.cached_name = player_discord_user.name
-            self.session.commit()
+            session.commit()
 
             now = datetime.utcnow()
             expires_at = now + timedelta(minutes=server.expire)
@@ -694,17 +826,18 @@ class SpellBot(discord.Client):
                 users=player_users,
                 event=event,
             )
-            self.session.add(game)
-            self.session.commit()
+            session.add(game)
+            session.commit()
 
         if not event.games:
-            self.session.delete(event)
+            session.delete(event)
             return await message.channel.send(s("event_empty"))
 
+        session.commit()
         await message.channel.send(s("event_created", prefix=prefix, event_id=event.id))
 
     @command(allow_dm=False)
-    async def begin(self, prefix, params, message):
+    async def begin(self, session, prefix, params, message):
         """
         Confirm creation of games for the given event id. _Requires the
         "SpellBot Admin" role._
@@ -720,7 +853,7 @@ class SpellBot(discord.Client):
         if not event_id:
             return await message.channel.send(s("begin_bad_event"))
 
-        event = self.session.query(Event).filter(Event.id == event_id).one_or_none()
+        event = session.query(Event).filter(Event.id == event_id).one_or_none()
         if not event:
             return await message.channel.send(s("begin_bad_event"))
 
@@ -733,7 +866,7 @@ class SpellBot(discord.Client):
 
             found_discord_users = []
             for game_user in game.users:
-                discord_user = self.get_user(game_user.xid)
+                discord_user = await self.safe_fetch_user(game_user.xid)
                 if not discord_user:  # game_user has left the server since event created
                     warning = s("begin_user_left", players=players_str)
                     await message.channel.send(warning)
@@ -748,21 +881,22 @@ class SpellBot(discord.Client):
             for discord_user in found_discord_users:
                 await discord_user.send(embed=response)
 
+            session.commit()
             await message.channel.send(
                 s("game_created", id=game.id, url=game.url, players=players_str)
             )
 
     @command(allow_dm=False)
-    async def game(self, prefix, params, message):
+    async def game(self, session, prefix, params, message):
         """
         Create a game between mentioned users. _Requires the "SpellBot Admin" role._
 
-        Operates similarly to the `!play` command with a few key deferences. First, see
+        Operates similarly to the `!lfg` command with a few key deferences. First, see
         that command's usage help for more details. Then, here are the differences:
         * The user who issues this command is **NOT** added to the game themselves.
         * You must mention all of the players to be seated in the game.
         * Optional: Add a message by using " -- " followed by the message content.
-        & [similar parameters as !play] [-- An optional additional message to send.]
+        & [similar parameters as !lfg] [-- An optional additional message to send.]
         """
         if not is_admin(message.channel, message.author):
             return await message.channel.send(s("not_admin"))
@@ -781,11 +915,9 @@ class SpellBot(discord.Client):
         params = [param.lower() for param in params]
         mentions = message.mentions if message.channel.type != "private" else []
 
-        power, size = power_and_size_from_params(params)
+        size = size_from_params(params)
         if not size or not (1 < size <= 4):
             return await message.channel.send(s("game_size_bad"))
-        if power and not (1 <= power <= 10):
-            return await message.channel.send(s("game_power_bad"))
 
         if len(mentions) > size:
             return await message.channel.send(s("game_too_many_mentions", size=size))
@@ -794,11 +926,12 @@ class SpellBot(discord.Client):
 
         mentioned_users = []
         for mentioned in mentions:
-            mentioned_user = self.ensure_user_exists(mentioned)
+            mentioned_user = self.ensure_user_exists(session, mentioned)
             if mentioned_user.waiting:
-                mentioned_user.dequeue()
+                await self.try_to_remove_plus(mentioned_user.game, mentioned)
+                mentioned_user.game = None
             mentioned_users.append(mentioned_user)
-        self.session.commit()
+        session.commit()
 
         tag_names = tag_names_from_params(params)
         if len(tag_names) > 5:
@@ -806,24 +939,23 @@ class SpellBot(discord.Client):
 
         tags = []
         for tag_name in tag_names:
-            tag = self.session.query(Tag).filter_by(name=tag_name).first()
+            tag = session.query(Tag).filter_by(name=tag_name).first()
             if not tag:
                 tag = Tag(name=tag_name)
-                self.session.add(tag)
+                session.add(tag)
             tags.append(tag)
 
-        server = self.ensure_server_exists(message.channel.guild.id)
-        self.session.commit()
+        server = self.ensure_server_exists(session, message.channel.guild.id)
+        session.commit()
 
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=server.expire)
         url = self.create_game()
         game = Game(
-            channel_xid=message.channel.id if server.scope == "channel" else None,
+            channel_xid=message.channel.id,
             created_at=now,
             expires_at=expires_at,
             guild_xid=server.guild_xid,
-            power=power,
             size=size,
             updated_at=now,
             url=url,
@@ -832,14 +964,13 @@ class SpellBot(discord.Client):
             users=mentioned_users,
             tags=tags,
         )
-        self.session.add(game)
-        self.session.commit()
+        session.add(game)
+        session.commit()
 
         player_response = game.to_embed()
         for player in mentioned_users:
-            discord_user = self.get_user(player.xid)
+            discord_user = await self.safe_fetch_user(player.xid)
             await discord_user.send(embed=player_response)
-            player.queued_at = None
 
         players_str = ", ".join(sorted([f"<@{user.xid}>" for user in mentioned_users]))
         await message.channel.send(
@@ -847,38 +978,22 @@ class SpellBot(discord.Client):
         )
 
     @command(allow_dm=True)
-    async def leave(self, prefix, params, message):
+    async def leave(self, session, prefix, params, message):
         """
-        Leave your place in the queue.
+        Leave any pending game that you've signed up for on this server.
         """
-        user = self.ensure_user_exists(message.author)
+        user = self.ensure_user_exists(session, message.author)
         if not user.waiting:
             return await message.channel.send(s("leave_already"))
 
-        user.dequeue()
+        await self.try_to_remove_plus(user.game, message.author)
+
+        user.game = None
+        session.commit()
         await message.channel.send(s("leave"))
 
     @command(allow_dm=False)
-    async def status(self, prefix, params, message):
-        """
-        Show some details about the queues on your server.
-        """
-        server = self.ensure_server_exists(message.channel.guild.id)
-        average = WaitTime.average(
-            self.session,
-            guild_xid=server.guild_xid,
-            channel_xid=message.channel.id,
-            scope=server.scope,
-            window_min=AVG_QUEUE_TIME_WINDOW_MIN,
-        )
-        if average:
-            wait = naturaldelta(timedelta(seconds=average))
-            await message.channel.send(s("status", wait=wait))
-        else:
-            await message.channel.send(s("status_unknown"))
-
-    @command(allow_dm=False)
-    async def spellbot(self, prefix, params, message):
+    async def spellbot(self, session, prefix, params, message):
         """
         Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
 
@@ -886,113 +1001,78 @@ class SpellBot(discord.Client):
         * `config`: Just show the current configuration for this server.
         * `channel <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot prefix for commands in text channels.
-        * `scope <server|channel>`: Set matchmaking scope to server-wide or channel-only.
         * `expire <number>`: Set the number of minutes before pending games expire.
-        * `friendly <on|off>`: Allow or disallow friendly queueing with mentions.
         & <subcommand> [subcommand parameters]
         """
         if not is_admin(message.channel, message.author):
             return await message.channel.send(s("not_admin"))
         if not params:
             return await message.channel.send(s("spellbot_missing_subcommand"))
-        self.ensure_server_exists(message.channel.guild.id)
+
+        self.ensure_server_exists(session, message.channel.guild.id)
         command = params[0]
         if command == "channels":
-            await self.spellbot_channels(prefix, params[1:], message)
+            await self.spellbot_channels(session, prefix, params[1:], message)
         elif command == "prefix":
-            await self.spellbot_prefix(prefix, params[1:], message)
-        elif command == "scope":
-            await self.spellbot_scope(prefix, params[1:], message)
+            await self.spellbot_prefix(session, prefix, params[1:], message)
         elif command == "expire":
-            await self.spellbot_expire(prefix, params[1:], message)
-        elif command == "friendly":
-            await self.spellbot_friendly(prefix, params[1:], message)
+            await self.spellbot_expire(session, prefix, params[1:], message)
         elif command == "config":
-            await self.spellbot_config(prefix, params[1:], message)
+            await self.spellbot_config(session, prefix, params[1:], message)
         else:
             await message.channel.send(s("spellbot_unknown_subcommand", command=command))
 
-    async def spellbot_channels(self, prefix, params, message):
+    async def spellbot_channels(self, session, prefix, params, message):
         if not params:
             return await message.channel.send(s("spellbot_channels_none"))
-        self.session.query(Channel).filter_by(guild_xid=message.channel.guild.id).delete()
+        session.query(Channel).filter_by(guild_xid=message.channel.guild.id).delete()
         for param in params:
-            self.session.add(Channel(guild_xid=message.channel.guild.id, name=param))
+            session.add(Channel(guild_xid=message.channel.guild.id, name=param))
+        session.commit()
         await message.channel.send(
             s("spellbot_channels", channels=", ".join([f"#{param}" for param in params]))
         )
 
-    async def spellbot_prefix(self, prefix, params, message):
+    async def spellbot_prefix(self, session, prefix, params, message):
         if not params:
             return await message.channel.send(s("spellbot_prefix_none"))
         prefix_str = params[0][0:10]
         server = (
-            self.session.query(Server)
+            session.query(Server)
             .filter(Server.guild_xid == message.channel.guild.id)
             .one_or_none()
         )
         server.prefix = prefix_str
+        session.commit()
         return await message.channel.send(s("spellbot_prefix", prefix=prefix_str))
 
-    async def spellbot_scope(self, prefix, params, message):
-        if not params:
-            return await message.channel.send(s("spellbot_scope_none"))
-        scope_str = params[0].lower()
-        if scope_str not in ("server", "channel"):
-            return await message.channel.send(s("spellbot_scope_bad"))
-        server = (
-            self.session.query(Server)
-            .filter(Server.guild_xid == message.channel.guild.id)
-            .one_or_none()
-        )
-        server.scope = scope_str
-        await message.channel.send(s("spellbot_scope", scope=scope_str))
-
-    async def spellbot_expire(self, prefix, params, message):
+    async def spellbot_expire(self, session, prefix, params, message):
         if not params:
             return await message.channel.send(s("spellbot_expire_none"))
         expire = to_int(params[0])
         if not expire or not (0 < expire <= 60):
             return await message.channel.send(s("spellbot_expire_bad"))
         server = (
-            self.session.query(Server)
+            session.query(Server)
             .filter(Server.guild_xid == message.channel.guild.id)
             .one_or_none()
         )
         server.expire = expire
+        session.commit()
         await message.channel.send(s("spellbot_expire", expire=expire))
 
-    async def spellbot_friendly(self, prefix, params, message):
-        if not params:
-            return await message.channel.send(s("spellbot_friendly_none"))
-        friendly_str = params[0].lower()
-        if friendly_str not in ("off", "on"):
-            return await message.channel.send(s("spellbot_friendly_bad"))
+    async def spellbot_config(self, session, prefix, params, message):
         server = (
-            self.session.query(Server)
-            .filter(Server.guild_xid == message.channel.guild.id)
-            .one_or_none()
-        )
-        server.friendly = friendly_str == "on"
-        await message.channel.send(s("spellbot_friendly", friendly=friendly_str))
-
-    async def spellbot_config(self, prefix, params, message):
-        server = (
-            self.session.query(Server)
+            session.query(Server)
             .filter(Server.guild_xid == message.channel.guild.id)
             .one_or_none()
         )
         embed = discord.Embed(title="SpellBot Server Config")
         embed.set_thumbnail(url=THUMB_URL)
         embed.add_field(name="Command prefix", value=server.prefix)
-        scope = "server-wide" if server.scope == "server" else "channel-specific"
-        embed.add_field(name="Queue scope", value=scope)
-        friendly_value = server.friendly if server.friendly is not None else True
-        friendly = "on" if friendly_value else "off"
-        embed.add_field(name="Friendly queueing", value=friendly)
         expires_str = f"{server.expire} minutes"
         embed.add_field(name="Inactivity expiration time", value=expires_str)
-        channels = server.authorized_channels
+        channels = server.channels
         if channels:
             channels_str = ", ".join(f"#{channel.name}" for channel in channels)
         else:
