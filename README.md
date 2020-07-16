@@ -32,6 +32,17 @@ For players just looking to start some games, these commands are for you!
 - `!lfg`: Create a pending game for people join.
 - `!leave`: Leave any pending games that you've signed up for.
 
+When you run the `!lfg` command, SpellBot will post a message for sign ups.
+
+![lfg][lfg]
+
+Other users can react to it with the ➕ emoji to be added to the game. When the
+game is ready, SpellBot will update the message with your SpellTable details.
+
+![ready][ready]
+
+Users can also use the ➖ emoji reaction to leave the game.
+
 ### 🎟️ Commands for Event Runners
 
 These commands are intended to be run by SpellBot Admins and help facilitate
@@ -109,11 +120,13 @@ You can also run SpellBot via docker. See
 [discord-bot-docs]:   https://discord.com/developers/docs/topics/oauth2#bots
 [ko-fi]:              https://ko-fi.com/Y8Y51VTHZ
 [lexicalunit]:        http://github.com/lexicalunit
+[lfg]:                https://user-images.githubusercontent.com/1903876/87704209-e61a0f00-c750-11ea-87d2-0d5b0a1ef42f.png
 [mit-badge]:          https://img.shields.io/badge/License-MIT-yellow.svg
 [mit]:                https://opensource.org/licenses/MIT
 [pypi-badge]:         https://img.shields.io/pypi/v/spellbot
 [pypi]:               https://pypi.org/project/spellbot/
 [python-badge]:       https://img.shields.io/badge/python-3.7+-blue.svg
 [python]:             https://www.python.org/
+[ready]:              https://user-images.githubusercontent.com/1903876/87704204-e5817880-c750-11ea-8e39-67bbe4003ddd.png
 [spelltable-patron]:  https://www.patreon.com/spelltable?fan_landing=true
 [spelltable]:         https://www.spelltable.com/
