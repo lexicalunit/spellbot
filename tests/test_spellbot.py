@@ -1540,7 +1540,8 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        assert message.reactions == ["➕", "➖"]
+        assert user_has_game(client, GUY)
+        assert user_has_game(client, ADAM)
 
         payload = MockPayload(
             user_id=AMY.id,
@@ -1550,10 +1551,7 @@ class TestSpellBot:
             guild_id=channel.guild.id,
             member=AMY,
         )
-        await client.on_raw_reaction_add(payload)
-
-        # The bot should remove a ➖ to undo the irrelevent reaction AMY added.
-        assert message.reactions == ["➕"]
+        assert not user_has_game(client, AMY)
 
     async def test_game_cleanup_started(self, client, freezer):
         NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
