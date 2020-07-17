@@ -1215,6 +1215,30 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!lfg size:10"))
         assert channel.last_sent_response == "Sorry, game size should be between 2 and 4."
 
+    async def test_on_message_lfg_too_many_mentions(self, client):
+        channel = text_channel()
+        author = DUDE
+        mentions = [FRIEND, GUY, BUDDY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!lfg {mentions_str}"
+        await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == (
+            "Sorry, you've mentioned too many players for this size game."
+        )
+
+    async def test_on_message_lfg_mention_already(self, client):
+        channel = text_channel()
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!lfg {mentions_str}"
+        await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == (
+            f"Sorry, but <@{AMY.id}> is already in another"
+            " pending game and can't be invited."
+        )
+
     async def test_on_message_lfg_size_too_little(self, client):
         channel = text_channel()
         author = someone()
@@ -1271,6 +1295,84 @@ class TestSpellBot:
             "value": "modern",
         } in channel.last_sent_embed["fields"]
 
+    async def test_on_message_lfg_with_invite(self, client):
+        channel = text_channel()
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!lfg {mentions_str}"
+        await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
+        assert len(channel.all_sent_calls) == 0
+        q = (
+            f"You've been invtied to a game by <@{JR.id}>."
+            " To confirm or deny please respond with yes or no."
+        )
+        assert AMY.last_sent_response == q
+        assert ADAM.last_sent_response == q
+
+    async def test_on_message_lfg_with_invite_all_confirmed(self, client):
+        channel = text_channel()
+        dm = private_channel()
+        client.mock_add_channel(channel)
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!lfg {mentions_str}"
+        await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
+        assert len(channel.all_sent_calls) == 0
+        q = (
+            f"You've been invtied to a game by <@{JR.id}>."
+            " To confirm or deny please respond with yes or no."
+        )
+        assert AMY.last_sent_response == q
+        assert ADAM.last_sent_response == q
+
+        await client.on_message(MockMessage(AMY, dm, "yes"))
+        assert AMY.last_sent_response == "Thanks, your invitation has been confirmed!"
+        assert len(channel.all_sent_calls) == 0
+
+        await client.on_message(MockMessage(AMY, dm, "yes"))
+        assert AMY.last_sent_response == "Your invitation has already been confirmed."
+        assert len(channel.all_sent_calls) == 0
+
+        await client.on_message(MockMessage(ADAM, dm, "yes"))
+        assert ADAM.last_sent_response == "Thanks, your invitation has been confirmed!"
+
+        assert channel.last_sent_embed == game_embed_for(client, JR, False)
+        assert channel.last_sent_embed == game_embed_for(client, AMY, False)
+        assert channel.last_sent_embed == game_embed_for(client, ADAM, False)
+
+    async def test_on_message_lfg_with_invite_some_confirmed(self, client):
+        channel = text_channel()
+        dm = private_channel()
+        client.mock_add_channel(channel)
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!lfg {mentions_str}"
+        await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
+        assert len(channel.all_sent_calls) == 0
+        q = (
+            f"You've been invtied to a game by <@{JR.id}>."
+            " To confirm or deny please respond with yes or no."
+        )
+        assert AMY.last_sent_response == q
+        assert ADAM.last_sent_response == q
+
+        await client.on_message(MockMessage(AMY, dm, "yes"))
+        assert AMY.last_sent_response == "Thanks, your invitation has been confirmed!"
+        assert len(channel.all_sent_calls) == 0
+
+        await client.on_message(MockMessage(DUDE, dm, "yes"))
+        assert DUDE.last_sent_response == (
+            "Sorry, you do not currently have any pending invitations."
+        )
+        assert len(channel.all_sent_calls) == 0
+
+        await client.on_message(MockMessage(ADAM, dm, "no"))
+        assert ADAM.last_sent_response == "Thank you for your response."
+
+        assert channel.last_sent_embed == game_embed_for(client, JR, False)
+        assert channel.last_sent_embed == game_embed_for(client, AMY, False)
+        assert not user_has_game(client, ADAM)
+
     async def test_on_message_leave(self, client):
         channel = text_channel()
         author = someone()
@@ -1280,6 +1382,8 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             "You've been removed from the pending game that you were signed up for."
         )
+
+        # TODO: Actually test that the embed was edited correctly.
 
     async def test_on_message_leave_already(self, client):
         channel = text_channel()
@@ -1405,6 +1509,8 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert len(ADAM.all_sent_calls) == 0
 
+        # TODO: Actually test that the embed was edited correctly.
+
     async def test_on_raw_reaction_add_plus_already(self, client):
         channel = text_channel()
         client.mock_add_channel(channel)
@@ -1439,6 +1545,8 @@ class TestSpellBot:
             " for another game. You can use `!leave` to leave that game."
         )
 
+        # TODO: Actually test that the embed was edited correctly.
+
     async def test_on_raw_reaction_add_plus(self, client):
         channel = text_channel()
         client.mock_add_channel(channel)
@@ -1454,6 +1562,8 @@ class TestSpellBot:
         )
         await client.on_raw_reaction_add(payload)
         assert "2 more players" in game_embed_for(client, ADAM, False)["title"]
+
+        # TODO: Actually test that the embed was edited correctly.
 
     async def test_on_raw_reaction_add_plus_complete(self, client):
         channel = text_channel()
@@ -1472,6 +1582,8 @@ class TestSpellBot:
         ready = game_embed_for(client, ADAM, True)
         assert GUY.last_sent_embed == ready
         assert ADAM.last_sent_embed == ready
+
+        # TODO: Actually test that the embed was edited correctly.
 
     async def test_on_raw_reaction_add_plus_after_disconnect(self, client):
         channel = text_channel()
@@ -1493,6 +1605,8 @@ class TestSpellBot:
         )
         await client.on_raw_reaction_add(payload)
         assert "1 more player" in game_embed_for(client, ADAM, False)["title"]
+
+        # TODO: Actually test that the embed was edited correctly.
 
     async def test_on_raw_reaction_add_plus_then_minus(self, client):
         channel = text_channel()
@@ -1553,6 +1667,37 @@ class TestSpellBot:
         )
         assert not user_has_game(client, AMY)
 
+    async def test_on_raw_reaction_add_minus_when_not_in_that_game(self, client):
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+        assert user_has_game(client, AMY)
+
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert user_has_game(client, GUY)
+        assert user_has_game(client, ADAM)
+
+        payload = MockPayload(
+            user_id=AMY.id,
+            message_id=message.id,
+            emoji="➖",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=AMY,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert user_has_game(client, AMY)
+
     async def test_game_cleanup_started(self, client, freezer):
         NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
         freezer.move_to(NOW)
@@ -1600,6 +1745,8 @@ class TestSpellBot:
         assert GUY.last_sent_response == (
             "SpellBot has deleted your pending game due to server inactivity."
         )
+
+        # TODO: Actually test that the embed was deleted correctly.
 
 
 def test_paginate():

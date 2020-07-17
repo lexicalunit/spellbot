@@ -303,7 +303,13 @@ class SpellBot(discord.Client):
         """Ensures that the user row exists for the given discord user."""
         db_user = session.query(User).filter(User.xid == user.id).one_or_none()
         if not db_user:
-            db_user = User(xid=user.id)
+            db_user = User(
+                xid=user.id,
+                game_id=None,
+                cached_name=None,
+                invited=False,
+                invite_confirmed=False,
+            )
             session.add(db_user)
         return db_user
 
@@ -368,6 +374,48 @@ class SpellBot(discord.Client):
             )
             async with self.session() as session:
                 await method(session, prefix, params, message)
+
+    async def process_invite_response(self, message, choice):
+        async with self.session() as session:
+            user = self.ensure_user_exists(session, message.author)
+            session.commit()
+
+            if not user.invited:
+                return await message.author.send(s("invite_not_invited"))
+
+            if user.invite_confirmed:
+                return await message.author.send(s("invite_already_confirmed"))
+
+            game = user.game
+            if choice == "yes":
+                user.invite_confirmed = True
+                await message.author.send(s("invite_confirmed"))
+            else:  # choice == "no":
+                user.invited = False
+                user.game = None
+                await message.author.send(s("invite_denied"))
+            session.commit()
+
+            if all(
+                not user.invited or user.invited and user.invite_confirmed
+                for user in game.users
+            ):
+                channel = await self.safe_fetch_channel(game.channel_xid)
+                if not channel:
+                    # This shouldn't be possible, if it happens just delete the game.
+                    # TODO: Inform players that their game is being deleted.
+                    err = f"process_invite_response: fetch channel {game.channel_xid}"
+                    logging.error(err)
+                    game.tags = []  # cascade delete tag associations
+                    session.delete(game)
+                    session.commit()
+                    return
+
+                post = await channel.send(embed=game.to_embed())
+                game.message_xid = post.id
+                session.commit()
+                await post.add_reaction("➕")
+                await post.add_reaction("➖")
 
     ##############################
     # Discord Client Behavior
@@ -444,8 +492,6 @@ class SpellBot(discord.Client):
                     discord_user = await self.safe_fetch_user(game_user.xid)
                     if not discord_user:  # user has left the server since signing up
                         game_user.game = None
-                        obj = discord.Object(game_user.xid)
-                        await self.safe_remove_reaction(message, "➕", obj)
                     else:
                         found_discord_users.append(discord_user)
 
@@ -476,6 +522,12 @@ class SpellBot(discord.Client):
         # don't respond to yourself
         if message.author.id == self.user.id:
             return
+
+        # handle confirm/deny invitations over direct message
+        if private:
+            choice = message.content.lstrip()[0:3].rstrip().lower()
+            if choice in ["yes", "no"]:
+                return await self.process_invite_response(message, choice)
 
         # only respond to command-like messages
         if not private:
@@ -608,6 +660,10 @@ class SpellBot(discord.Client):
         The default game size is 4 but you can change it by adding, for example, `size:2`
         to create a two player game.
 
+        You can automatically invite players to the game by @ mentioning them in the
+        command. They will be sent invite confirmations and the game won't be posted to
+        the channel until they've responded.
+
         Players will be able to join or leave the game by reacting to the message that
         SpellBot sends with the ➕ and ➖ emoji.
 
@@ -625,10 +681,25 @@ class SpellBot(discord.Client):
             return await message.channel.send(s("lfg_already", prefix=server.prefix))
 
         params = [param.lower() for param in params]
+        mentions = message.mentions if message.channel.type != "private" else []
 
         size = size_from_params(params)
         if not size or not (1 < size < 5):
             return await message.channel.send(s("lfg_size_bad"))
+
+        if len(mentions) + 1 >= size:
+            return await message.channel.send(s("lfg_too_many_mentions"))
+
+        mentioned_users = []
+        for mentioned in mentions:
+            mentioned_user = self.ensure_user_exists(session, mentioned)
+            if mentioned_user.waiting:
+                return await message.channel.send(
+                    s("lfg_mention_already", mention=f"<@{mentioned.id}>")
+                )
+            mentioned_users.append(mentioned_user)
+        if mentioned_users:
+            session.commit()
 
         tag_names = tag_names_from_params(params)
         if len(tag_names) > 5:
@@ -644,6 +715,7 @@ class SpellBot(discord.Client):
 
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=server.expire)
+        user.invited = False
         user.game = Game(
             created_at=now,
             updated_at=now,
@@ -653,14 +725,21 @@ class SpellBot(discord.Client):
             tags=tags,
             server=server,
         )
+        for mentioned_user in mentioned_users:
+            mentioned_user.game = user.game
+            mentioned_user.invited = True
+            mentioned_user.invite_confirmed = False
         session.commit()
 
-        post = await message.channel.send(embed=user.game.to_embed())
-        user.game.message_xid = post.id
-        session.commit()
-
-        await post.add_reaction("➕")
-        await post.add_reaction("➖")
+        if mentioned_users:
+            for mentioned in mentions:
+                await mentioned.send(s("lfg_invited", mention=f"<@{message.author.id}>"))
+        else:
+            post = await message.channel.send(embed=user.game.to_embed())
+            user.game.message_xid = post.id
+            session.commit()
+            await post.add_reaction("➕")
+            await post.add_reaction("➖")
 
     @command(allow_dm=False)
     async def event(self, session, prefix, params, message):
