@@ -410,6 +410,8 @@ class SpellBot(discord.Client):
             now = datetime.utcnow()
             expires_at = now + timedelta(minutes=server.expire)
 
+            await self.safe_remove_reaction(message, emoji, author)
+
             if emoji == "➕":
                 if any(user.xid == game_user.xid for game_user in game.users):
                     # this author is already in this game, they don't need to be added
@@ -421,11 +423,7 @@ class SpellBot(discord.Client):
             else:  # emoji == "➖":
                 if not any(user.xid == game_user.xid for game_user in game.users):
                     # this author is not in this game, so they can't be removed from it
-                    return await self.safe_remove_reaction(message, emoji, author)
-
-                # remove this user's reactions from the game message
-                await self.safe_remove_reaction(message, "➖", author)
-                await self.safe_remove_reaction(message, "➕", author)
+                    return
 
                 # update the game and remove the user from the game
                 game.updated_at = now
