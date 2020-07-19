@@ -139,21 +139,23 @@ class Game(Base):
         )
 
     def __repr__(self):
-        return json.dumps(
-            {
-                "id": self.id,
-                "created_at": str(self.created_at),
-                "updated_at": str(self.updated_at),
-                "expires_at": str(self.expires_at),
-                "size": self.size,
-                "guild_xid": self.guild_xid,
-                "channel_xid": self.channel_xid,
-                "url": self.url,
-                "status": self.status,
-                "message": self.message,
-                "message_xid": self.message_xid,
-            }
-        )
+        return json.dumps(self.to_json())
+
+    def to_json(self):
+        return {
+            "id": self.id,
+            "created_at": str(self.created_at),
+            "updated_at": str(self.updated_at),
+            "expires_at": str(self.expires_at),
+            "size": self.size,
+            "guild_xid": self.guild_xid,
+            "channel_xid": self.channel_xid,
+            "url": self.url,
+            "status": self.status,
+            "message": self.message,
+            "message_xid": self.message_xid,
+            "tags": [tag.name for tag in self.tags],
+        }
 
     def to_embed(self):
         if self.url:
