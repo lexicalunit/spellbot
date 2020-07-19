@@ -240,7 +240,8 @@ class SpellBot(discord.Client):
     def _begin_background_tasks(self, loop):  # pragma: no cover
         """Start up any periodic background tasks."""
         self.cleanup_expired_games_task(loop)
-        self.cleanup_started_games_task(loop)
+        # TODO: Make this manually triggered.
+        # self.cleanup_started_games_task(loop)
 
     def cleanup_expired_games_task(self, loop):  # pragma: no cover
         """Starts a task that culls old games."""
@@ -756,8 +757,9 @@ class SpellBot(discord.Client):
         Games will not be created immediately. This is to allow you to verify things look
         ok. This command will also give you directions on how to actually start the games
         for this event as part of its reply.
-        * Optional: Add a message by using " -- " followed by the message content.
-        & <column 1> <column 2> ... <column 3> [-- An optional message to add.]
+        * Optional: Add a message by using "msg: " followed by the message content.
+        * Optional: Add tags by using "tags: " followed by the tags you want.
+        & <column 1> <column 2> ... [tags: tag-1 tag-2] [msg: Hello world!]
         """
         if not is_admin(message.channel, message.author):
             return await message.channel.send(s("not_admin"))
@@ -768,20 +770,43 @@ class SpellBot(discord.Client):
         if not params:
             return await message.channel.send(s("event_no_params"))
 
+        n_params = len(params)
         optional_message = None
+        optional_tags = None
         try:
-            sentry = params.index("--")
-            optional_message = " ".join(params[sentry + 1 :])
-            params = params[0:sentry]
+            msg_index = params.index("msg:")
         except ValueError:
-            pass
-
+            msg_index = None
+        try:
+            tag_index = params.index("tags:")
+        except ValueError:
+            tag_index = None
+        if msg_index:
+            stop = tag_index if tag_index and tag_index > msg_index else n_params
+            optional_message = " ".join(params[msg_index + 1 : stop])
+        if tag_index:
+            stop = msg_index if msg_index and msg_index > tag_index else n_params
+            optional_tags = params[tag_index + 1 : stop]
+        if optional_message or optional_tags:
+            params = params[0 : min(msg_index or n_params, tag_index or n_params)]
         if optional_message and len(optional_message) >= 255:
             return await message.channel.send(s("game_message_too_long"))
+        if optional_tags and len(optional_tags) > 5:
+            return await message.channel.send(s("game_too_many_tags"))
 
         size = len(params)
         if not (1 < size <= 4):
             return await message.channel.send(s("event_bad_play_count"))
+
+        tags = []
+        if optional_tags:
+            for tag_name in optional_tags:
+                tag = session.query(Tag).filter_by(name=tag_name).first()
+                if not tag:
+                    tag = Tag(name=tag_name)
+                    session.add(tag)
+                tags.append(tag)
+            session.commit()
 
         attachment = message.attachments[0]
 
@@ -823,16 +848,26 @@ class SpellBot(discord.Client):
                 await message.channel.send(warning)
                 continue
 
+            warnings = set()
+
             player_discord_users = []
             for csv_data, lname in zip(csv_row_data, player_lnames):
                 player_discord_user = member_lookup.get(lname)
                 if player_discord_user:
                     player_discord_users.append(player_discord_user)
                 else:
-                    warning = s(
-                        "event_missing_user", row=i + 1, name=csv_data, players=players_s,
+                    warnings.add(
+                        s(
+                            "event_missing_user",
+                            row=i + 1,
+                            name=csv_data,
+                            players=players_s,
+                        )
                     )
-                    await message.channel.send(warning)
+
+            warnings_s = "\n".join(warnings)
+            for page in paginate(warnings_s):
+                await message.channel.send(page)
 
             if len(player_discord_users) != size:
                 continue
@@ -851,12 +886,6 @@ class SpellBot(discord.Client):
                 player_user.cached_name = player_discord_user.name
             session.commit()
 
-            tag = session.query(Tag).filter_by(name="default").one_or_none()
-            if not tag:
-                tag = Tag(name="default")
-                session.add(tag)
-            session.commit()
-
             now = datetime.utcnow()
             expires_at = now + timedelta(minutes=server.expire)
             game = Game(
@@ -869,7 +898,7 @@ class SpellBot(discord.Client):
                 message=optional_message,
                 users=player_users,
                 event=event,
-                tags=[tag],
+                tags=tags,
             )
             session.add(game)
             session.commit()
@@ -936,26 +965,39 @@ class SpellBot(discord.Client):
         """
         Create a game between mentioned users. _Requires the "SpellBot Admin" role._
 
-        Operates similarly to the `!lfg` command with a few key deferences. First, see
-        that command's usage help for more details. Then, here are the differences:
+        Allows event runners to spin up an ad-hoc game directly between mentioned players.
         * The user who issues this command is **NOT** added to the game themselves.
         * You must mention all of the players to be seated in the game.
-        * Optional: Add a message by using " -- " followed by the message content.
-        & [similar parameters as !lfg] [-- An optional additional message to send.]
+        * Optional: Add a message by using "msg: " followed by the message content.
+        * Optional: Add tags by using "tags: " followed by the tags you want.
+        & @player1 @player2 ... [tags: tag-1 tag-2] [msg: Hello world!]
         """
         if not is_admin(message.channel, message.author):
             return await message.channel.send(s("not_admin"))
 
+        n_params = len(params)
         optional_message = None
+        optional_tags = None
         try:
-            sentry = params.index("--")
-            optional_message = " ".join(params[sentry + 1 :])
-            params = params[0:sentry]
+            msg_index = params.index("msg:")
         except ValueError:
-            pass
-
+            msg_index = None
+        try:
+            tag_index = params.index("tags:")
+        except ValueError:
+            tag_index = None
+        if msg_index:
+            stop = tag_index if tag_index and tag_index > msg_index else n_params
+            optional_message = " ".join(params[msg_index + 1 : stop])
+        if tag_index:
+            stop = msg_index if msg_index and msg_index > tag_index else n_params
+            optional_tags = params[tag_index + 1 : stop]
+        if optional_message or optional_tags:
+            params = params[0 : min(msg_index or n_params, tag_index or n_params)]
         if optional_message and len(optional_message) >= 255:
             return await message.channel.send(s("game_message_too_long"))
+        if optional_tags and len(optional_tags) > 5:
+            return await message.channel.send(s("game_too_many_tags"))
 
         params = [param.lower() for param in params]
         mentions = message.mentions if message.channel.type != "private" else []
@@ -978,17 +1020,14 @@ class SpellBot(discord.Client):
             mentioned_users.append(mentioned_user)
         session.commit()
 
-        tag_names = tag_names_from_params(params)
-        if len(tag_names) > 5:
-            return await message.channel.send(s("game_too_many_tags"))
-
         tags = []
-        for tag_name in tag_names:
-            tag = session.query(Tag).filter_by(name=tag_name).first()
-            if not tag:
-                tag = Tag(name=tag_name)
-                session.add(tag)
-            tags.append(tag)
+        if optional_tags:
+            for tag_name in optional_tags:
+                tag = session.query(Tag).filter_by(name=tag_name).first()
+                if not tag:
+                    tag = Tag(name=tag_name)
+                    session.add(tag)
+                tags.append(tag)
 
         server = self.ensure_server_exists(session, message.channel.guild.id)
         session.commit()

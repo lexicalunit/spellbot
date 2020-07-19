@@ -425,6 +425,14 @@ def user_has_game(client, user):
     return rvalue
 
 
+def game_json_for(client, user):
+    session = client.data.Session()
+    db_user = session.query(User).filter(User.xid == user.id).first()
+    rvalue = db_user.game.to_json() if db_user and db_user.game else None
+    session.close()
+    return rvalue
+
+
 def game_embed_for(client, user, ready, message=None):
     session = client.data.Session()
     db_user = session.query(User).filter(User.xid == user.id).first()
@@ -790,7 +798,7 @@ class TestSpellBot:
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         tags = ["one", "two", "three", "four", "five", "six"]
         tags_str = " ".join(tags)
-        cmd = f"!game {tags_str} {mentions_str}"
+        cmd = f"!game {mentions_str} tags: {tags_str}"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
 
@@ -819,7 +827,7 @@ class TestSpellBot:
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         message = "foo bar baz" * 100
-        cmd = f"!game {mentions_str} -- {message}"
+        cmd = f"!game {mentions_str} msg: {message}"
         await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
         assert channel.last_sent_response == (
             "Sorry, the optional game message must be shorter than 255 characters."
@@ -844,12 +852,15 @@ class TestSpellBot:
         assert BUDDY.last_sent_embed == player_response
         assert DUDE.last_sent_embed == player_response
 
+        assert game_json_for(client, GUY)["tags"] == []
+        assert game_json_for(client, GUY)["message"] == None
+
     async def test_on_message_game_with_message(self, client):
         channel = text_channel()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         message = "This is a message!"
-        cmd = f"!game {mentions_str} -- {message}"
+        cmd = f"!game {mentions_str} msg: {message}"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         game = all_games(client)[0]
         assert channel.last_sent_response == (
@@ -863,6 +874,73 @@ class TestSpellBot:
         assert GUY.last_sent_embed == player_response
         assert BUDDY.last_sent_embed == player_response
         assert DUDE.last_sent_embed == player_response
+
+        assert game_json_for(client, GUY)["tags"] == []
+        assert game_json_for(client, GUY)["message"] == message
+
+    async def test_on_message_game_with_message_and_tags(self, client):
+        channel = text_channel()
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        message = "This is a message!"
+        cmd = f"!game {mentions_str} msg: {message} tags: a b c"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        game = all_games(client)[0]
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> {game['url']}\n"
+            f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
+            f" <@{GUY.id}>, <@{DUDE.id}>"
+        )
+        player_response = game_embed_for(client, FRIEND, True, message=message)
+        assert FRIEND.last_sent_embed == player_response
+        assert GUY.last_sent_embed == player_response
+        assert BUDDY.last_sent_embed == player_response
+        assert DUDE.last_sent_embed == player_response
+
+        assert game_json_for(client, GUY)["tags"] == ["a", "b", "c"]
+        assert game_json_for(client, GUY)["message"] == message
+
+        mentions = [ADAM, AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        message = "This is a message!"
+        cmd = f"!game {mentions_str} size:2 msg: {message} tags: a b c"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        game = all_games(client)[1]
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> {game['url']}\n"
+            f"> Players notified by DM: <@{AMY.id}>, <@{ADAM.id}>"
+        )
+        player_response = game_embed_for(client, ADAM, True, message=message)
+        assert ADAM.last_sent_embed == player_response
+        assert AMY.last_sent_embed == player_response
+
+        assert game_json_for(client, ADAM)["tags"] == ["a", "b", "c"]
+        assert game_json_for(client, ADAM)["message"] == message
+
+    async def test_on_message_game_with_tags_and_message(self, client):
+        channel = text_channel()
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        message = "This is a message!"
+        cmd = f"!game {mentions_str} tags: a b c msg: {message}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        game = all_games(client)[0]
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> {game['url']}\n"
+            f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
+            f" <@{GUY.id}>, <@{DUDE.id}>"
+        )
+        player_response = game_embed_for(client, FRIEND, True, message=message)
+        assert FRIEND.last_sent_embed == player_response
+        assert GUY.last_sent_embed == player_response
+        assert BUDDY.last_sent_embed == player_response
+        assert DUDE.last_sent_embed == player_response
+
+        assert game_json_for(client, GUY)["tags"] == ["a", "b", "c"]
+        assert game_json_for(client, GUY)["message"] == message
 
     async def test_on_message_game_multiple_times(self, client):
         channel = text_channel()
@@ -1019,12 +1097,23 @@ class TestSpellBot:
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         opt = "foo bar baz" * 100
-        comment = f"!event player1 player2 -- {opt}"
+        comment = f"!event player1 player2 msg: {opt}"
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         assert channel.last_sent_response == (
             "Sorry, the optional game message must be shorter than 255 characters."
         )
+
+    async def test_on_message_event_with_too_many_tags(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name}#1234,@{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        tags = ["one", "two", "three", "four", "five", "six"]
+        tags_str = " ".join(tags)
+        comment = f"!event player1 player2 tags: {tags_str}"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
 
     async def test_on_message_event(self, client):
         channel = text_channel()
@@ -1044,7 +1133,7 @@ class TestSpellBot:
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         opt = "an message override"
-        comment = f"!event player1 player2 -- {opt}"
+        comment = f"!event player1 player2 msg: {opt}"
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         event = all_events(client)[0]
@@ -1052,6 +1141,55 @@ class TestSpellBot:
             f"Event {event['id']} created! If everything looks good,"
             f" next run `!begin {event['id']}` to start the event."
         )
+
+    async def test_on_message_event_with_message_and_tags(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        opt = "an message override"
+        comment = f"!event player1 player2 msg: {opt} tags: a b c"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[0]
+        assert channel.last_sent_response == (
+            f"Event {event['id']} created! If everything looks good,"
+            f" next run `!begin {event['id']}` to start the event."
+        )
+        assert game_json_for(client, AMY)["tags"] == ["a", "b", "c"]
+        assert game_json_for(client, AMY)["message"] == "an message override"
+        assert game_json_for(client, AMY) == game_json_for(client, JR)
+
+    async def test_on_message_event_with_tags_and_message(self, client):
+        channel = text_channel()
+        data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        opt = "an message override"
+        comment = f"!event player1 player2 tags: a b c msg: {opt}"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[0]
+        assert channel.last_sent_response == (
+            f"Event {event['id']} created! If everything looks good,"
+            f" next run `!begin {event['id']}` to start the event."
+        )
+        assert game_json_for(client, AMY)["tags"] == ["a", "b", "c"]
+        assert game_json_for(client, AMY)["message"] == "an message override"
+        assert game_json_for(client, AMY) == game_json_for(client, JR)
+
+        data = bytes(f"player1,player2\n{ADAM.name},{GUY.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        opt = "an message override"
+        comment = f"!event player1 player2 tags: a b c msg: {opt}"
+        message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[1]
+        assert channel.last_sent_response == (
+            f"Event {event['id']} created! If everything looks good,"
+            f" next run `!begin {event['id']}` to start the event."
+        )
+        assert game_json_for(client, ADAM)["tags"] == ["a", "b", "c"]
+        assert game_json_for(client, ADAM)["message"] == "an message override"
+        assert game_json_for(client, ADAM) == game_json_for(client, GUY)
 
     async def test_on_message_begin_not_admin(self, client):
         channel = text_channel()
@@ -1137,7 +1275,7 @@ class TestSpellBot:
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         opt = "this is an optional message"
-        comment = f"!event player1 player2 -- {opt}"
+        comment = f"!event player1 player2 msg: {opt}"
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         event = all_events(client)[0]
