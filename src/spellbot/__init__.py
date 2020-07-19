@@ -816,10 +816,6 @@ class SpellBot(discord.Client):
         bdata = await message.attachments[0].read()
         sdata = bdata.decode("utf-8")
 
-        has_header = csv.Sniffer().has_header(sdata)
-        if not has_header:
-            return await message.channel.send(s("event_no_header"))
-
         server = self.ensure_server_exists(session, message.channel.guild.id)
         reader = csv.reader(StringIO(sdata))
         header = [column.lower().strip() for column in next(reader)]
@@ -908,7 +904,9 @@ class SpellBot(discord.Client):
             return await message.channel.send(s("event_empty"))
 
         session.commit()
-        await message.channel.send(s("event_created", prefix=prefix, event_id=event.id))
+        await message.channel.send(
+            s("event_created", prefix=prefix, event_id=event.id, count=len(event.games))
+        )
 
     @command(allow_dm=False)
     async def begin(self, session, prefix, params, message):
