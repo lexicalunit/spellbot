@@ -7,8 +7,8 @@ begin_user_left: '**Warning:** A user left the server since this event was creat
 did_you_mean: 'Did you mean: $possible?'
 dm_sent: Right on, I'll send you a Direct Message with details.
 event_bad_play_count: Player count must be between 2 and 4.
-event_created: Event $event_id created! If everything looks good, next run `${prefix}begin
-  $event_id` to start the event.
+event_created: Event $event_id created! This event will have $count games. If everything
+  looks good, next run `${prefix}begin $event_id` to start the event.
 event_empty: No games created for this event, please address any warnings and try
   again.
 event_missing_player: '**Warning:** Event file is missing a player name on row $row.

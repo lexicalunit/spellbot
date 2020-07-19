@@ -1117,15 +1117,21 @@ class TestSpellBot:
 
     async def test_on_message_event(self, client):
         channel = text_channel()
-        data = bytes(f"player1,player2\n{AMY.name}#1234,@{JR.name}", "utf-8")
+        data = bytes(
+            "player1,player2\n"
+            f"{AMY.name}#1234,@{JR.name}\n"
+            f"{ADAM.name},{GUY.name}\n",
+            "utf-8",
+        )
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         event = all_events(client)[0]
+        event_id = event["id"]
         assert channel.last_sent_response == (
-            f"Event {event['id']} created! If everything looks good,"
-            f" next run `!begin {event['id']}` to start the event."
+            f"Event {event_id} created! This event will have 2 games."
+            f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
 
     async def test_on_message_event_with_message(self, client):
@@ -1137,9 +1143,10 @@ class TestSpellBot:
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         event = all_events(client)[0]
+        event_id = event["id"]
         assert channel.last_sent_response == (
-            f"Event {event['id']} created! If everything looks good,"
-            f" next run `!begin {event['id']}` to start the event."
+            f"Event {event_id} created! This event will have 1 games."
+            f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
 
     async def test_on_message_event_with_message_and_tags(self, client):
@@ -1151,9 +1158,10 @@ class TestSpellBot:
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         event = all_events(client)[0]
+        event_id = event["id"]
         assert channel.last_sent_response == (
-            f"Event {event['id']} created! If everything looks good,"
-            f" next run `!begin {event['id']}` to start the event."
+            f"Event {event_id} created! This event will have 1 games."
+            f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
         assert game_json_for(client, AMY)["tags"] == ["a", "b", "c"]
         assert game_json_for(client, AMY)["message"] == "an message override"
@@ -1168,9 +1176,10 @@ class TestSpellBot:
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         event = all_events(client)[0]
+        event_id = event["id"]
         assert channel.last_sent_response == (
-            f"Event {event['id']} created! If everything looks good,"
-            f" next run `!begin {event['id']}` to start the event."
+            f"Event {event_id} created! This event will have 1 games."
+            f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
         assert game_json_for(client, AMY)["tags"] == ["a", "b", "c"]
         assert game_json_for(client, AMY)["message"] == "an message override"
@@ -1183,9 +1192,10 @@ class TestSpellBot:
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         event = all_events(client)[1]
+        event_id = event["id"]
         assert channel.last_sent_response == (
-            f"Event {event['id']} created! If everything looks good,"
-            f" next run `!begin {event['id']}` to start the event."
+            f"Event {event_id} created! This event will have 1 games."
+            f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
         assert game_json_for(client, ADAM)["tags"] == ["a", "b", "c"]
         assert game_json_for(client, ADAM)["message"] == "an message override"
@@ -1201,8 +1211,8 @@ class TestSpellBot:
         event = all_events(client)[0]
         event_id = event["id"]
         assert channel.last_sent_response == (
-            f"Event {event_id} created! If everything looks good,"
-            f" next run `!begin {event_id}` to start the event."
+            f"Event {event_id} created! This event will have 1 games."
+            f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
 
         await client.on_message(
@@ -1234,8 +1244,8 @@ class TestSpellBot:
         event = all_events(client)[0]
         event_id = event["id"]
         assert channel.last_sent_response == (
-            f"Event {event_id} created! If everything looks good,"
-            f" next run `!begin {event_id}` to start the event."
+            f"Event {event_id} created! This event will have 1 games."
+            f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
 
         await client.on_message(
@@ -1255,8 +1265,8 @@ class TestSpellBot:
         event = all_events(client)[0]
         event_id = event["id"]
         assert channel.last_sent_response == (
-            f"Event {event_id} created! If everything looks good,"
-            f" next run `!begin {event_id}` to start the event."
+            f"Event {event_id} created! This event will have 1 games."
+            f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
 
         await client.on_message(MockMessage(an_admin(), channel, f"!begin {event_id}"))
@@ -1281,8 +1291,8 @@ class TestSpellBot:
         event = all_events(client)[0]
         event_id = event["id"]
         assert channel.last_sent_response == (
-            f"Event {event_id} created! If everything looks good,"
-            f" next run `!begin {event_id}` to start the event."
+            f"Event {event_id} created! This event will have 1 games."
+            f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
 
         await client.on_message(MockMessage(an_admin(), channel, f"!begin {event_id}"))
@@ -1306,8 +1316,8 @@ class TestSpellBot:
         event = all_events(client)[0]
         event_id = event["id"]
         assert channel.last_sent_response == (
-            f"Event {event_id} created! If everything looks good,"
-            f" next run `!begin {event_id}` to start the event."
+            f"Event {event_id} created! This event will have 1 games."
+            f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
 
         # Simulate AMY leaving this Discord server
@@ -1331,8 +1341,8 @@ class TestSpellBot:
         event = all_events(client)[0]
         event_id = event["id"]
         assert channel.last_sent_response == (
-            f"Event {event_id} created! If everything looks good,"
-            f" next run `!begin {event_id}` to start the event."
+            f"Event {event_id} created! This event will have 1 games."
+            f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
 
         await client.on_message(MockMessage(an_admin(), channel, f"!begin {event_id}"))
