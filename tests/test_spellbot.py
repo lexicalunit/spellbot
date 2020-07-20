@@ -656,6 +656,18 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!spellbot channels"))
         assert channel.last_sent_response == "Please provide a list of channels."
 
+    async def test_on_message_spellbot_channels_with_hash(self, client):
+        author = an_admin()
+        channel = text_channel()
+        await client.on_message(
+            MockMessage(author, channel, f"!spellbot channels #{AUTHORIZED_CHANNEL}")
+        )
+        assert channel.last_sent_response == (
+            f"This bot is now authorized to respond only in: #{AUTHORIZED_CHANNEL}"
+        )
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        assert channel.last_sent_response == "You we're not in any pending games."
+
     async def test_on_message_spellbot_channels(self, client):
         author = an_admin()
         channel = text_channel()
