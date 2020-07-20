@@ -1108,13 +1108,24 @@ class SpellBot(discord.Client):
         if not params:
             return await message.channel.send(s("spellbot_channels_none"))
         session.query(Channel).filter_by(guild_xid=message.channel.guild.id).delete()
-        params = [param.strip(" #") for param in params]
-        for param in params:
-            session.add(Channel(guild_xid=message.channel.guild.id, name=param))
+        chans = []
+        for param in (param.strip(" #") for param in params):
+            m = re.match("<#([0-9]+)>", param)
+            chan = None
+            if m:
+                chan_obj = await self.safe_fetch_channel(int(m[1]))
+                if chan_obj:
+                    chan = chan_obj.name
+            else:
+                chan = param
+            if chan:
+                session.add(Channel(guild_xid=message.channel.guild.id, name=chan))
+                chans.append(chan)
         session.commit()
-        await message.channel.send(
-            s("spellbot_channels", channels=", ".join([f"#{param}" for param in params]))
-        )
+        if chans:
+            await message.channel.send(
+                s("spellbot_channels", channels=", ".join([f"#{c}" for c in chans]))
+            )
 
     async def spellbot_prefix(self, session, prefix, params, message):
         if not params:

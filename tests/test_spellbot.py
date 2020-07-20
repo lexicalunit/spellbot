@@ -668,6 +668,28 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!leave"))
         assert channel.last_sent_response == "You we're not in any pending games."
 
+    async def test_on_message_spellbot_channels_with_ref(self, client):
+        author = an_admin()
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(
+            MockMessage(author, channel, f"!spellbot channels <#{channel.id}>")
+        )
+        assert channel.last_sent_response == (
+            f"This bot is now authorized to respond only in: #{AUTHORIZED_CHANNEL}"
+        )
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        assert channel.last_sent_response == "You we're not in any pending games."
+
+    async def test_on_message_spellbot_channels_with_bad_ref(self, client):
+        author = an_admin()
+        channel = text_channel()
+        client.mock_add_channel(channel)
+        await client.on_message(MockMessage(author, channel, "!spellbot channels <#42>"))
+        assert len(channel.all_sent_calls) == 0
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        assert channel.last_sent_response == "You we're not in any pending games."
+
     async def test_on_message_spellbot_channels(self, client):
         author = an_admin()
         channel = text_channel()
