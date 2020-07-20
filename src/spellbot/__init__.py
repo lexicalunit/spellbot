@@ -1108,6 +1108,7 @@ class SpellBot(discord.Client):
         if not params:
             return await message.channel.send(s("spellbot_channels_none"))
         session.query(Channel).filter_by(guild_xid=message.channel.guild.id).delete()
+        params = [param.strip(" #") for param in params]
         for param in params:
             session.add(Channel(guild_xid=message.channel.guild.id, name=param))
         session.commit()
