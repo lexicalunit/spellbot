@@ -10,7 +10,7 @@ from subprocess import run
 from unittest.mock import MagicMock, Mock
 from warnings import warn
 
-import pytest
+import pytest  # type: ignore
 import pytz
 import toml
 
@@ -376,6 +376,7 @@ JACOB = MockMember("Jacob", 42988021019800008)
 PUNK = MockMember("punk", 119678027792600009)  # for a memeber that's not in our channel
 BOT = MockMember("robot", 82169567890900010)
 BOT.bot = True
+ADMIN.bot = True
 
 SERVER_MEMBERS = [FRIEND, BUDDY, GUY, DUDE, ADMIN, JR, ADAM, AMY, JACOB]
 ALL_USERS = []  # users that are on the server, setup in client fixture
@@ -579,12 +580,6 @@ class TestSpellBot:
     async def test_on_message_non_text(self, client, channel_maker):
         channel = MockChannel(6, "voice")
         await client.on_message(MockMessage(someone(), channel, "!help"))
-        channel.sent.assert_not_called()
-
-    @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_from_admin(self, client, channel_maker, channel_type):
-        channel = channel_maker.make(channel_type)
-        await client.on_message(MockMessage(ADMIN, channel, "!help"))
         channel.sent.assert_not_called()
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
@@ -1998,6 +1993,14 @@ class TestMigrations:
 
 
 class TestCodebase:
+    def test_mypy(self):
+        """Checks that the Python codebase passes mypy static analysis checks."""
+        chdir(REPO_ROOT)
+        cmd = ["mypy", *SRC_DIRS, "--warn-unused-configs"]
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        proc = run(cmd, capture_output=True)
+        assert proc.returncode == 0, f"mypy issues:\n{proc.stdout.decode('utf-8')}"
+
     def test_flake8(self):
         """Checks that the Python codebase passes configured flake8 checks."""
         chdir(REPO_ROOT)
