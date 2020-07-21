@@ -4,8 +4,9 @@ import sys
 from os.path import dirname, realpath
 from pathlib import Path
 
-import alembic
-import alembic.config
+import alembic  # type: ignore
+import alembic.command  # type: ignore
+import alembic.config  # type: ignore
 
 SRC_ROOT = Path(dirname(realpath(__file__))).parent
 ASSETS_DIR = SRC_ROOT / "src" / "spellbot" / "assets"

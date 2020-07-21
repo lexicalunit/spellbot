@@ -12,8 +12,8 @@ STRINGS_DATA_FILE = ASSETS_DIR / "strings.yaml"
 
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
-except ImportError:
-    from yaml import Loader, Dumper
+except ImportError:  # pragma: no cover
+    from yaml import Loader, Dumper  # type: ignore
 
 
 def diff(expected, actual):

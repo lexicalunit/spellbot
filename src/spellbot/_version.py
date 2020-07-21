@@ -1,4 +1,4 @@
-import dunamai as _dunamai
+import dunamai as _dunamai  # type: ignore
 
 
 def version_from_git():
