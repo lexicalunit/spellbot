@@ -252,6 +252,17 @@ You may have to edit this script manually to ensure that it is correct as
 the autogenerate facility of `alembic revision` is not perfect, especially
 if you are using sqlite which doesn't support many database features.
 
+## Heroku Deployment
+
+For example, you could deploy to Heroku using Docker with the following. This
+assumes that you've named your Heroku application "lexicalunit-spellbot".
+
+```shell
+docker build -t spellbot .
+heroku container:push worker --app lexicalunit-spellbot
+heroku container:release worker --app lexicalunit-spellbot
+```
+
 [alembic]:          https://alembic.sqlalchemy.org/
 [black]:            https://github.com/psf/black
 [wiki]:             https://animalcrossing.fandom.com/
