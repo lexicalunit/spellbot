@@ -444,7 +444,7 @@ class SpellBot(discord.Client):
             server = self.ensure_server_exists(session, payload.guild_id)
             session.commit()
 
-            if not server.bot_allowed_in(channel.name):
+            if not server.bot_allowed_in(channel.id):
                 return
 
             game = (
@@ -547,7 +547,7 @@ class SpellBot(discord.Client):
             async with self.session() as session:
                 server = self.ensure_server_exists(session, message.channel.guild.id)
                 session.commit()
-                if not server.bot_allowed_in(message.channel.name):
+                if not server.bot_allowed_in(message.channel.id):
                     return
 
         await self.process(message, prefix)
@@ -1091,56 +1091,58 @@ class SpellBot(discord.Client):
         if not params:
             return await message.channel.send(s("spellbot_missing_subcommand"))
 
-        self.ensure_server_exists(session, message.channel.guild.id)
+        server = self.ensure_server_exists(session, message.channel.guild.id)
+        session.commit()
+
         command = params[0]
         if command == "channels":
-            await self.spellbot_channels(session, prefix, params[1:], message)
+            await self.spellbot_channels(session, server, params[1:], message)
         elif command == "prefix":
-            await self.spellbot_prefix(session, prefix, params[1:], message)
+            await self.spellbot_prefix(session, server, params[1:], message)
         elif command == "expire":
-            await self.spellbot_expire(session, prefix, params[1:], message)
+            await self.spellbot_expire(session, server, params[1:], message)
         elif command == "config":
-            await self.spellbot_config(session, prefix, params[1:], message)
+            await self.spellbot_config(session, server, params[1:], message)
         else:
             await message.channel.send(s("spellbot_unknown_subcommand", command=command))
 
-    async def spellbot_channels(self, session, prefix, params, message):
+    async def spellbot_channels(self, session, server, params, message):
         if not params:
             return await message.channel.send(s("spellbot_channels_none"))
-        session.query(Channel).filter_by(guild_xid=message.channel.guild.id).delete()
-        chans = []
-        for param in (param.strip(" #") for param in params):
-            m = re.match("<#([0-9]+)>", param)
-            chan = None
-            if m:
-                chan_obj = await self.safe_fetch_channel(int(m[1]))
-                if chan_obj:
-                    chan = chan_obj.name
-            else:
-                chan = param
-            if chan:
-                session.add(Channel(guild_xid=message.channel.guild.id, name=chan))
-                chans.append(chan)
-        session.commit()
-        if chans:
-            await message.channel.send(
-                s("spellbot_channels", channels=", ".join([f"#{c}" for c in chans]))
-            )
 
-    async def spellbot_prefix(self, session, prefix, params, message):
+        # Blow away the current associations first, otherwise SQLAlchemy will explode.
+        session.query(Channel).filter_by(guild_xid=server.guild_xid).delete()
+
+        channels = []
+        for param in params:
+            m = re.match("<#([0-9]+)>", param)
+            if not m:
+                continue
+
+            discord_channel = await self.safe_fetch_channel(int(m[1]))
+            if not discord_channel:
+                continue
+
+            channel = Channel(channel_xid=discord_channel.id, guild_xid=server.guild_xid)
+            session.add(channel)
+            channels.append(channel)
+            session.commit()
+
+        if channels:
+            server.channels = channels
+            session.commit()
+            channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])
+            await message.channel.send(s("spellbot_channels", channels=channels_str))
+
+    async def spellbot_prefix(self, session, server, params, message):
         if not params:
             return await message.channel.send(s("spellbot_prefix_none"))
         prefix_str = params[0][0:10]
-        server = (
-            session.query(Server)
-            .filter(Server.guild_xid == message.channel.guild.id)
-            .one_or_none()
-        )
         server.prefix = prefix_str
         session.commit()
         return await message.channel.send(s("spellbot_prefix", prefix=prefix_str))
 
-    async def spellbot_expire(self, session, prefix, params, message):
+    async def spellbot_expire(self, session, server, params, message):
         if not params:
             return await message.channel.send(s("spellbot_expire_none"))
         expire = to_int(params[0])
@@ -1155,23 +1157,18 @@ class SpellBot(discord.Client):
         session.commit()
         await message.channel.send(s("spellbot_expire", expire=expire))
 
-    async def spellbot_config(self, session, prefix, params, message):
-        server = (
-            session.query(Server)
-            .filter(Server.guild_xid == message.channel.guild.id)
-            .one_or_none()
-        )
+    async def spellbot_config(self, session, server, params, message):
         embed = discord.Embed(title="SpellBot Server Config")
         embed.set_thumbnail(url=THUMB_URL)
         embed.add_field(name="Command prefix", value=server.prefix)
         expires_str = f"{server.expire} minutes"
         embed.add_field(name="Inactivity expiration time", value=expires_str)
-        channels = server.channels
+        channels = sorted(server.channels, key=lambda channel: channel.channel_xid)
         if channels:
-            channels_str = ", ".join(f"#{channel.name}" for channel in channels)
+            channels_str = ", ".join(f"<#{channel.channel_xid}>" for channel in channels)
         else:
             channels_str = "all"
-        embed.add_field(name="Authorized channels", value=channels_str)
+        embed.add_field(name="Active channels", value=channels_str)
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
         await message.channel.send(embed=embed)

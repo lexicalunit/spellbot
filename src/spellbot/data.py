@@ -40,9 +40,9 @@ class Server(Base):
     games = relationship("Game", back_populates="server")
     channels = relationship("Channel", back_populates="server")
 
-    def bot_allowed_in(self, channel_name):
+    def bot_allowed_in(self, channel_xid):
         return not self.channels or any(
-            channel.name == channel_name for channel in self.channels
+            channel.channel_xid == channel_xid for channel in self.channels
         )
 
     def __repr__(self):
@@ -57,12 +57,11 @@ class Server(Base):
 
 
 class Channel(Base):
-    __tablename__ = "authorized_channels"
-    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    __tablename__ = "channels"
+    channel_xid = Column(BigInteger, primary_key=True, nullable=False)
     guild_xid = Column(
         BigInteger, ForeignKey("servers.guild_xid", ondelete="CASCADE"), nullable=False
     )
-    name = Column(String(100), nullable=False)
     server = relationship("Server", back_populates="channels")
 
 

@@ -55,7 +55,7 @@ not_a_command: Sorry, there is no "$request" command.
 not_admin: You do not have admin permissions for this bot.
 react_already_in: Sorry, I couldn't add you to that game because you're already signed
   up for another game. You can use `${prefix}leave` to leave that game.
-spellbot_channels: 'This bot is now authorized to respond only in: $channels'
+spellbot_channels: 'This bot will now only respond in: $channels'
 spellbot_channels_none: Please provide a list of channels.
 spellbot_expire: Game expiration time set to $expire minutes.
 spellbot_expire_bad: Sorry, game expiration time should be between 10 and 60 minutes.

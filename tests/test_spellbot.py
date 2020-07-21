@@ -214,6 +214,8 @@ class MockGuild:
 
 
 class MockChannel:
+    """Don't create this directly, use the channel_maker fixture instead."""
+
     def __init__(self, channel_id, channel_type):
         self.id = channel_id
         self.type = channel_type
@@ -290,6 +292,8 @@ class MockChannel:
 
 
 class MockTextChannel(MockChannel):
+    """Don't create this directly, use the channel_maker fixture instead."""
+
     def __init__(self, channel_id, channel_name, members):
         super().__init__(channel_id, "text")
         self.name = channel_name
@@ -298,6 +302,8 @@ class MockTextChannel(MockChannel):
 
 
 class MockDM(MockChannel):
+    """Don't create this directly, use the channel_maker fixture instead."""
+
     def __init__(self, channel_id):
         super().__init__(channel_id, "private")
         self.recipient = None  # can't be set until we know the author of a message
@@ -318,9 +324,6 @@ class MockDiscordClient:
     def __init__(self, **kwargs):
         self.user = ADMIN
         self.channels = []
-
-    def mock_add_channel(self, channel):
-        self.channels.append(channel)
 
     def get_user(self, user_id):
         for user in ALL_USERS:
@@ -349,9 +352,6 @@ CLIENT_AUTH = "my-auth"
 CLIENT_USER = "ADMIN"
 CLIENT_USER_ID = 82226367030108160
 
-AUTHORIZED_CHANNEL = "good-channel"
-UNAUTHORIZED_CHANNEL = "bad-channel"
-
 TST_ROOT = Path(__file__).resolve().parent
 FIXTURES_ROOT = TST_ROOT / "fixtures"
 REPO_ROOT = TST_ROOT.parent
@@ -377,7 +377,7 @@ PUNK = MockMember("punk", 119678027792600009)  # for a memeber that's not in our
 BOT = MockMember("robot", 82169567890900010)
 BOT.bot = True
 
-CHANNEL_MEMBERS = [FRIEND, BUDDY, GUY, DUDE, ADMIN, JR, ADAM, AMY, JACOB]
+SERVER_MEMBERS = [FRIEND, BUDDY, GUY, DUDE, ADMIN, JR, ADAM, AMY, JACOB]
 ALL_USERS = []  # users that are on the server, setup in client fixture
 
 S_SPY = Mock(wraps=spellbot.s)
@@ -389,32 +389,24 @@ S_SPY = Mock(wraps=spellbot.s)
 
 def someone():
     """Returns some non-admin user"""
-    return random.choice(list(filter(lambda member: member != ADMIN, CHANNEL_MEMBERS)))
+    return random.choice(list(filter(lambda member: member != ADMIN, SERVER_MEMBERS)))
 
 
 def an_admin():
     """Returns a random non-admin user with the SpellBot Admin role"""
     cond = lambda member: member != ADMIN and ADMIN_ROLE in member.roles
-    return random.choice(list(filter(cond, CHANNEL_MEMBERS)))
+    return random.choice(list(filter(cond, SERVER_MEMBERS)))
 
 
 def not_an_admin():
     """Returns a random non-admin user without the SpellBot Admin role"""
     cond = lambda member: member != ADMIN and ADMIN_ROLE not in member.roles
-    return random.choice(list(filter(cond, CHANNEL_MEMBERS)))
+    return random.choice(list(filter(cond, SERVER_MEMBERS)))
 
 
 def is_discord_file(obj):
     """Returns true if the given object is a discord File object."""
     return (obj.__class__.__name__) == "File"
-
-
-def text_channel():
-    return MockTextChannel(1, AUTHORIZED_CHANNEL, members=CHANNEL_MEMBERS)
-
-
-def private_channel():
-    return MockDM(2)
 
 
 def user_has_game(client, user):
@@ -483,7 +475,7 @@ def set_random_seed():
 def client(monkeypatch, mocker, patch_discord, tmp_path):
     # Define which users are on this Discord server.
     global ALL_USERS
-    ALL_USERS = CHANNEL_MEMBERS + [PUNK, BOT]
+    ALL_USERS = SERVER_MEMBERS + [PUNK, BOT]
 
     # Keep track of strings used in the test suite.
     monkeypatch.setattr(spellbot, "s", S_SPY)
@@ -544,6 +536,33 @@ def session(client):
     return client.data.Session()
 
 
+@pytest.fixture
+def channel_maker(client):
+    """Use this fixture to create channels so that we can hook them up to the client."""
+
+    class MockChannelFactory:
+        def __init__(self, next_channel_id):
+            self.next_channel_id = next_channel_id
+
+        def text(self, name="a-text-channel", members=SERVER_MEMBERS):
+            channel = MockTextChannel(self.next_channel_id, name, members)
+            client.channels.append(channel)  # not something you can do with a real client
+            self.next_channel_id += 1
+            return channel
+
+        def dm(self):
+            channel = MockDM(self.next_channel_id)
+            self.next_channel_id += 1
+            return channel
+
+        def make(self, channel_type):
+            if channel_type == "dm":
+                return self.dm()
+            return self.text()
+
+    return MockChannelFactory(6500)
+
+
 ##############################
 # Test Suites
 ##############################
@@ -551,40 +570,32 @@ def session(client):
 
 @pytest.mark.asyncio
 class TestSpellBot:
-    async def test_init(self, client):
+    async def test_init(self, client, channel_maker):
         assert client.token == CLIENT_TOKEN
 
-    async def test_on_ready(self, client):
+    async def test_on_ready(self, client, channel_maker):
         await client.on_ready()
 
-    async def test_on_message_non_text(self, client):
-        invalid_channel_type = "voice"
-        channel = MockChannel(6, invalid_channel_type)
+    async def test_on_message_non_text(self, client, channel_maker):
+        channel = MockChannel(6, "voice")
         await client.on_message(MockMessage(someone(), channel, "!help"))
         channel.sent.assert_not_called()
 
-    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
-    async def test_on_message_from_admin(self, client, channel):
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_from_admin(self, client, channel_maker, channel_type):
+        channel = channel_maker.make(channel_type)
         await client.on_message(MockMessage(ADMIN, channel, "!help"))
         channel.sent.assert_not_called()
 
-    async def test_on_message_in_unauthorized_channel(self, client):
-        author = an_admin()
-        channel = text_channel()
-        admin_cmd = f"!spellbot channels {AUTHORIZED_CHANNEL}"
-        await client.on_message(MockMessage(author, text_channel(), admin_cmd))
-
-        bad_channel = MockTextChannel(5, UNAUTHORIZED_CHANNEL, members=CHANNEL_MEMBERS)
-        await client.on_message(MockMessage(someone(), bad_channel, "!help"))
-        channel.sent.assert_not_called()
-
-    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
-    async def test_is_admin(self, client, channel):
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_is_admin(self, client, channel_maker, channel_type):
+        channel = channel_maker.make(channel_type)
         assert spellbot.is_admin(channel, not_an_admin()) == False
         assert spellbot.is_admin(channel, an_admin()) == True
 
-    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
-    async def test_on_message_no_request(self, client, channel):
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_no_request(self, client, channel_maker, channel_type):
+        channel = channel_maker.make(channel_type)
         await client.on_message(MockMessage(someone(), channel, "!"))
         await client.on_message(MockMessage(someone(), channel, "!!"))
         await client.on_message(MockMessage(someone(), channel, "!!!"))
@@ -593,122 +604,112 @@ class TestSpellBot:
         await client.on_message(MockMessage(someone(), channel, " !   !"))
         channel.sent.assert_not_called()
 
-    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
-    async def test_on_message_ambiguous_request(self, client, channel):
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_ambiguous_request(
+        self, client, channel_maker, channel_type
+    ):
         author = someone()
+        channel = channel_maker.make(channel_type)
         msg = MockMessage(author, channel, "!l")
         if hasattr(channel, "recipient"):
             assert channel.recipient == author
         await client.on_message(msg)
         assert channel.last_sent_response == "Did you mean: !leave, !lfg?"
 
-    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
-    async def test_on_message_invalid_request(self, client, channel):
-        await client.on_message(MockMessage(someone(), channel, "!xenomorph"))
-        assert channel.last_sent_response == 'Sorry, there is no "xenomorph" command.'
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_invalid_request(self, client, channel_maker, channel_type):
+        dm = channel_maker.make(channel_type)
+        await client.on_message(MockMessage(someone(), dm, "!xeno"))
+        assert dm.last_sent_response == 'Sorry, there is no "xeno" command.'
 
-    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
-    async def test_on_message_from_a_bot(self, client, channel):
-        author = BOT
-        await client.on_message(MockMessage(author, channel, "!help"))
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_from_a_bot(self, client, channel_maker, channel_type):
+        channel = channel_maker.make(channel_type)
+        await client.on_message(MockMessage(BOT, channel, "!help"))
         assert len(channel.all_sent_calls) == 0
 
-    @pytest.mark.parametrize(
-        "channel,author", [(text_channel(), GUY), (private_channel(), FRIEND)]
-    )
-    async def test_on_message_help(self, client, channel, author, snap):
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_help(self, client, channel_maker, channel_type, snap):
+        author = someone()
+        channel = channel_maker.make(channel_type)
         await client.on_message(MockMessage(author, channel, "!help"))
         for response in author.all_sent_responses:
             snap(response)
         assert len(author.all_sent_calls) == 2
 
-    async def test_on_message_spellbot_dm(self, client):
+    async def test_on_message_spellbot_dm(self, client, channel_maker):
         author = an_admin()
-        channel = private_channel()
-        await client.on_message(MockMessage(author, channel, "!spellbot channels foo"))
+        dm = channel_maker.dm()
+        await client.on_message(MockMessage(author, dm, "!spellbot channels foo"))
         assert author.last_sent_response == "That command only works in text channels."
 
-    async def test_on_message_spellbot_non_admin(self, client):
+    async def test_on_message_spellbot_non_admin(self, client, channel_maker):
         author = not_an_admin()
-        channel = text_channel()
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot channels foo"))
         assert channel.last_sent_response == (
             "You do not have admin permissions for this bot."
         )
 
-    async def test_on_message_spellbot_no_subcommand(self, client):
-        author = an_admin()
-        channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!spellbot"))
+    async def test_on_message_spellbot_no_subcommand(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(an_admin(), channel, "!spellbot"))
         assert channel.last_sent_response == (
             "Please provide a subcommand when using this command."
         )
 
-    async def test_on_message_spellbot_bad_subcommand(self, client):
-        author = an_admin()
-        channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!spellbot foo"))
+    async def test_on_message_spellbot_bad_subcommand(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(an_admin(), channel, "!spellbot foo"))
         assert channel.last_sent_response == 'The subcommand "foo" is not recognized.'
 
-    async def test_on_message_spellbot_channels_none(self, client):
-        author = an_admin()
-        channel = text_channel()
-        await client.on_message(MockMessage(author, channel, "!spellbot channels"))
+    async def test_on_message_spellbot_channels_none(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(an_admin(), channel, "!spellbot channels"))
         assert channel.last_sent_response == "Please provide a list of channels."
 
-    async def test_on_message_spellbot_channels_with_hash(self, client):
+    async def test_on_message_spellbot_channels_with_bad_ref(self, client, channel_maker):
+        channel = channel_maker.text()
         author = an_admin()
-        channel = text_channel()
         await client.on_message(
-            MockMessage(author, channel, f"!spellbot channels #{AUTHORIZED_CHANNEL}")
+            MockMessage(author, channel, f"!spellbot channels <#{channel.id + 1}>")
         )
-        assert channel.last_sent_response == (
-            f"This bot is now authorized to respond only in: #{AUTHORIZED_CHANNEL}"
-        )
-        await client.on_message(MockMessage(author, channel, "!leave"))
-        assert channel.last_sent_response == "You we're not in any pending games."
-
-    async def test_on_message_spellbot_channels_with_ref(self, client):
-        author = an_admin()
-        channel = text_channel()
-        client.mock_add_channel(channel)
-        await client.on_message(
-            MockMessage(author, channel, f"!spellbot channels <#{channel.id}>")
-        )
-        assert channel.last_sent_response == (
-            f"This bot is now authorized to respond only in: #{AUTHORIZED_CHANNEL}"
-        )
-        await client.on_message(MockMessage(author, channel, "!leave"))
-        assert channel.last_sent_response == "You we're not in any pending games."
-
-    async def test_on_message_spellbot_channels_with_bad_ref(self, client):
-        author = an_admin()
-        channel = text_channel()
-        client.mock_add_channel(channel)
-        await client.on_message(MockMessage(author, channel, "!spellbot channels <#42>"))
         assert len(channel.all_sent_calls) == 0
         await client.on_message(MockMessage(author, channel, "!leave"))
         assert channel.last_sent_response == "You we're not in any pending games."
 
-    async def test_on_message_spellbot_channels(self, client):
+    async def test_on_message_spellbot_channels_with_invalid(self, client, channel_maker):
+        channel = channel_maker.text()
         author = an_admin()
-        channel = text_channel()
         await client.on_message(
-            MockMessage(author, channel, f"!spellbot channels {AUTHORIZED_CHANNEL}")
+            MockMessage(author, channel, f"!spellbot channels #{channel.id}")
+        )
+        assert len(channel.all_sent_calls) == 0
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        assert channel.last_sent_response == "You we're not in any pending games."
+
+    async def test_on_message_spellbot_channels(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        foo = channel_maker.text("foo")
+        bar = channel_maker.text("bar")
+        baz = channel_maker.text("baz")
+        await client.on_message(
+            MockMessage(author, channel, f"!spellbot channels <#{channel.id}>")
         )
         assert channel.last_sent_response == (
-            f"This bot is now authorized to respond only in: #{AUTHORIZED_CHANNEL}"
+            f"This bot will now only respond in: <#{channel.id}>"
         )
-        await client.on_message(
-            MockMessage(author, channel, "!spellbot channels foo bar baz")
-        )
-        resp = "This bot is now authorized to respond only in: #foo, #bar, #baz"
+        cmd = f"!spellbot channels <#{foo.id}> <#{bar.id}> <#{baz.id}>"
+        await client.on_message(MockMessage(author, channel, cmd))
+        resp = f"This bot will now only respond in: <#{foo.id}>, <#{bar.id}>, <#{baz.id}>"
         assert channel.last_sent_response == resp
         await client.on_message(MockMessage(author, channel, "!help"))  # bad channel now
         assert channel.last_sent_response == resp
 
-    @pytest.mark.parametrize("channel", [text_channel(), private_channel()])
-    async def test_on_message_about(self, client, channel):
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_about(self, client, channel_maker, channel_type):
+        channel = channel_maker.make(channel_type)
         await client.on_message(MockMessage(someone(), channel, "!about"))
         assert len(channel.all_sent_calls) == 1
 
@@ -736,15 +737,15 @@ class TestSpellBot:
             f"[{version}](https://pypi.org/project/spellbot/{version}/)"
         )
 
-    async def test_on_message_spellbot_prefix_none(self, client):
+    async def test_on_message_spellbot_prefix_none(self, client, channel_maker):
         author = an_admin()
-        channel = text_channel()
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot prefix"))
         assert channel.last_sent_response == "Please provide a prefix string."
 
-    async def test_on_message_spellbot_prefix(self, client):
+    async def test_on_message_spellbot_prefix(self, client, channel_maker):
         author = an_admin()
-        channel = text_channel()
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot prefix $"))
         assert channel.last_sent_response == (
             'This bot will now use "$" as its command prefix for this server.'
@@ -764,29 +765,29 @@ class TestSpellBot:
             'This bot will now use ")" as its command prefix for this server.'
         )
 
-    async def test_on_message_spellbot_expire_none(self, client):
+    async def test_on_message_spellbot_expire_none(self, client, channel_maker):
         author = an_admin()
-        channel = text_channel()
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot expire"))
         assert channel.last_sent_response == "Please provide a number of minutes."
 
-    async def test_on_message_spellbot_expire_bad(self, client):
+    async def test_on_message_spellbot_expire_bad(self, client, channel_maker):
         author = an_admin()
-        channel = text_channel()
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot expire world"))
         assert channel.last_sent_response == (
             "Sorry, game expiration time should be between 10 and 60 minutes."
         )
 
-    async def test_on_message_spellbot_expire(self, client):
+    async def test_on_message_spellbot_expire(self, client, channel_maker):
         author = an_admin()
-        channel = text_channel()
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot expire 45"))
         assert channel.last_sent_response == "Game expiration time set to 45 minutes."
 
-    async def test_on_message_spellbot_config(self, client):
+    async def test_on_message_spellbot_config(self, client, channel_maker):
         author = an_admin()
-        channel = text_channel()
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot prefix $"))
         await client.on_message(MockMessage(author, channel, "$spellbot expire 45"))
         await client.on_message(MockMessage(author, channel, "$spellbot config"))
@@ -797,17 +798,19 @@ class TestSpellBot:
         assert about["thumbnail"]["url"] == THUMB_URL
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert fields["Inactivity expiration time"] == "45 minutes"
-        assert fields["Authorized channels"] == "all"
+        assert fields["Active channels"] == "all"
 
-        channels_cmd = f"$spellbot channels {AUTHORIZED_CHANNEL} foo bar"
+        foo = channel_maker.text("foo")
+        bar = channel_maker.text("bar")
+        channels_cmd = f"$spellbot channels <#{channel.id}> <#{foo.id}> <#{bar.id}>"
         await client.on_message(MockMessage(author, channel, channels_cmd))
         await client.on_message(MockMessage(author, channel, "$spellbot config"))
         about = channel.last_sent_embed
         fields = {f["name"]: f["value"] for f in about["fields"]}
-        assert fields["Authorized channels"] == f"#{AUTHORIZED_CHANNEL}, #foo, #bar"
+        assert fields["Active channels"] == f"<#{channel.id}>, <#{foo.id}>, <#{bar.id}>"
 
-    async def test_on_message_game_with_too_many_mentions(self, client):
-        channel = text_channel()
+    async def test_on_message_game_with_too_many_mentions(self, client, channel_maker):
+        channel = channel_maker.text()
         mentions = [FRIEND, GUY, BUDDY, DUDE, AMY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!game {mentions_str}"
@@ -816,8 +819,8 @@ class TestSpellBot:
             "Sorry, you mentioned too many people. I expected 4 players to be mentioned."
         )
 
-    async def test_on_message_game_with_too_few_mentions(self, client):
-        channel = text_channel()
+    async def test_on_message_game_with_too_few_mentions(self, client, channel_maker):
+        channel = channel_maker.text()
         mentions = [FRIEND, GUY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!game {mentions_str}"
@@ -826,8 +829,8 @@ class TestSpellBot:
             "Sorry, you mentioned too few people. I expected 4 players to be mentioned."
         )
 
-    async def test_on_message_game_with_too_many_tags(self, client):
-        channel = text_channel()
+    async def test_on_message_game_with_too_many_tags(self, client, channel_maker):
+        channel = channel_maker.text()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         tags = ["one", "two", "three", "four", "five", "six"]
@@ -836,16 +839,16 @@ class TestSpellBot:
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
 
-    async def test_on_message_game_with_size_bad(self, client):
-        channel = text_channel()
+    async def test_on_message_game_with_size_bad(self, client, channel_maker):
+        channel = channel_maker.text()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!game {mentions_str} size:100"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         assert channel.last_sent_response == "Game size must be between 2 and 4."
 
-    async def test_on_message_game_non_admin(self, client):
-        channel = text_channel()
+    async def test_on_message_game_non_admin(self, client, channel_maker):
+        channel = channel_maker.text()
         author = not_an_admin()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
@@ -855,8 +858,8 @@ class TestSpellBot:
             "You do not have admin permissions for this bot."
         )
 
-    async def test_on_message_game_message_too_long(self, client):
-        channel = text_channel()
+    async def test_on_message_game_message_too_long(self, client, channel_maker):
+        channel = channel_maker.text()
         author = an_admin()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
@@ -867,8 +870,8 @@ class TestSpellBot:
             "Sorry, the optional game message must be shorter than 255 characters."
         )
 
-    async def test_on_message_game(self, client):
-        channel = text_channel()
+    async def test_on_message_game(self, client, channel_maker):
+        channel = channel_maker.text()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!game {mentions_str}"
@@ -889,8 +892,8 @@ class TestSpellBot:
         assert game_json_for(client, GUY)["tags"] == []
         assert game_json_for(client, GUY)["message"] == None
 
-    async def test_on_message_game_with_message(self, client):
-        channel = text_channel()
+    async def test_on_message_game_with_message(self, client, channel_maker):
+        channel = channel_maker.text()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         message = "This is a message!"
@@ -912,8 +915,8 @@ class TestSpellBot:
         assert game_json_for(client, GUY)["tags"] == []
         assert game_json_for(client, GUY)["message"] == message
 
-    async def test_on_message_game_with_message_and_tags(self, client):
-        channel = text_channel()
+    async def test_on_message_game_with_message_and_tags(self, client, channel_maker):
+        channel = channel_maker.text()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         message = "This is a message!"
@@ -953,8 +956,8 @@ class TestSpellBot:
         assert game_json_for(client, ADAM)["tags"] == ["a", "b", "c"]
         assert game_json_for(client, ADAM)["message"] == message
 
-    async def test_on_message_game_with_tags_and_message(self, client):
-        channel = text_channel()
+    async def test_on_message_game_with_tags_and_message(self, client, channel_maker):
+        channel = channel_maker.text()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         message = "This is a message!"
@@ -976,9 +979,8 @@ class TestSpellBot:
         assert game_json_for(client, GUY)["tags"] == ["a", "b", "c"]
         assert game_json_for(client, GUY)["message"] == message
 
-    async def test_on_message_game_multiple_times(self, client):
-        channel = text_channel()
-
+    async def test_on_message_game_multiple_times(self, client, channel_maker):
+        channel = channel_maker.text()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!game {mentions_str}"
@@ -1023,16 +1025,16 @@ class TestSpellBot:
             "expire": 30,
         }
 
-    async def test_on_message_event_no_data(self, client):
-        channel = text_channel()
+    async def test_on_message_event_no_data(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(an_admin(), channel, "!event"))
         assert channel.last_sent_response == (
             "Sorry, you must include an attachment containing"
             " event data with this command."
         )
 
-    async def test_on_message_event_no_params(self, client):
-        channel = text_channel()
+    async def test_on_message_event_no_params(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         message = MockMessage(an_admin(), channel, "!event", attachments=[csv_file])
@@ -1042,16 +1044,16 @@ class TestSpellBot:
             " too identify the players' discord names."
         )
 
-    async def test_on_message_event_invalid_player_count(self, client):
-        channel = text_channel()
+    async def test_on_message_event_invalid_player_count(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         message = MockMessage(an_admin(), channel, "!event a", attachments=[csv_file])
         await client.on_message(message)
         assert channel.last_sent_response == "Player count must be between 2 and 4."
 
-    async def test_on_message_event_missing_player(self, client):
-        channel = text_channel()
+    async def test_on_message_event_missing_player(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
@@ -1066,8 +1068,8 @@ class TestSpellBot:
             "No games created for this event, please address any warnings and try again."
         )
 
-    async def test_on_message_event_no_header(self, client):
-        channel = text_channel()
+    async def test_on_message_event_no_header(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
@@ -1077,8 +1079,8 @@ class TestSpellBot:
             "Sorry, the attached CSV file is missing a header."
         )
 
-    async def test_on_message_event_no_header_v2(self, client):
-        channel = text_channel()
+    async def test_on_message_event_no_header_v2(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes("1,2,3\n4,5,6\n7,8,9", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
@@ -1088,8 +1090,8 @@ class TestSpellBot:
             "Sorry, the attached CSV file is missing a header."
         )
 
-    async def test_on_message_event_not_csv(self, client):
-        channel = text_channel()
+    async def test_on_message_event_not_csv(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         txt_file = MockAttachment("event.txt", data)
         comment = "!event player1 player2"
@@ -1100,8 +1102,8 @@ class TestSpellBot:
             ' Make sure the filename ends with ".csv" please.'
         )
 
-    async def test_on_message_event_missing_discord_user(self, client):
-        channel = text_channel()
+    async def test_on_message_event_missing_discord_user(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{PUNK.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
@@ -1115,8 +1117,8 @@ class TestSpellBot:
         )
         assert warning in channel.all_sent_responses
 
-    async def test_on_message_event_not_admin(self, client):
-        channel = text_channel()
+    async def test_on_message_event_not_admin(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
@@ -1126,8 +1128,8 @@ class TestSpellBot:
             "You do not have admin permissions for this bot."
         )
 
-    async def test_on_message_event_message_too_long(self, client):
-        channel = text_channel()
+    async def test_on_message_event_message_too_long(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         opt = "foo bar baz" * 100
@@ -1138,8 +1140,8 @@ class TestSpellBot:
             "Sorry, the optional game message must be shorter than 255 characters."
         )
 
-    async def test_on_message_event_with_too_many_tags(self, client):
-        channel = text_channel()
+    async def test_on_message_event_with_too_many_tags(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name}#1234,@{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         tags = ["one", "two", "three", "four", "five", "six"]
@@ -1149,8 +1151,8 @@ class TestSpellBot:
         await client.on_message(message)
         assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
 
-    async def test_on_message_event(self, client):
-        channel = text_channel()
+    async def test_on_message_event(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(
             "player1,player2\n"
             f"{AMY.name}#1234,@{JR.name}\n"
@@ -1168,8 +1170,8 @@ class TestSpellBot:
             f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
 
-    async def test_on_message_event_with_message(self, client):
-        channel = text_channel()
+    async def test_on_message_event_with_message(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         opt = "an message override"
@@ -1183,8 +1185,8 @@ class TestSpellBot:
             f" If everything looks good, next run `!begin {event_id}` to start the event."
         )
 
-    async def test_on_message_event_with_message_and_tags(self, client):
-        channel = text_channel()
+    async def test_on_message_event_with_message_and_tags(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         opt = "an message override"
@@ -1201,8 +1203,8 @@ class TestSpellBot:
         assert game_json_for(client, AMY)["message"] == "an message override"
         assert game_json_for(client, AMY) == game_json_for(client, JR)
 
-    async def test_on_message_event_with_tags_and_message(self, client):
-        channel = text_channel()
+    async def test_on_message_event_with_tags_and_message(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         opt = "an message override"
@@ -1235,8 +1237,8 @@ class TestSpellBot:
         assert game_json_for(client, ADAM)["message"] == "an message override"
         assert game_json_for(client, ADAM) == game_json_for(client, GUY)
 
-    async def test_on_message_begin_not_admin(self, client):
-        channel = text_channel()
+    async def test_on_message_begin_not_admin(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
@@ -1256,20 +1258,20 @@ class TestSpellBot:
             "You do not have admin permissions for this bot."
         )
 
-    async def test_on_message_begin_no_params(self, client):
-        channel = text_channel()
+    async def test_on_message_begin_no_params(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(an_admin(), channel, "!begin"))
         assert channel.last_sent_response == "Please provide the event id."
 
-    async def test_on_message_begin_bad_param(self, client):
-        channel = text_channel()
+    async def test_on_message_begin_bad_param(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(an_admin(), channel, "!begin sock"))
         assert channel.last_sent_response == (
             "Sorry, SpellBot can not find an event with that id."
         )
 
-    async def test_on_message_begin_event_not_found(self, client):
-        channel = text_channel()
+    async def test_on_message_begin_event_not_found(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
@@ -1289,8 +1291,8 @@ class TestSpellBot:
             "Sorry, SpellBot can not find an event with that id."
         )
 
-    async def test_on_message_begin_event(self, client):
-        channel = text_channel()
+    async def test_on_message_begin_event(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
@@ -1314,8 +1316,8 @@ class TestSpellBot:
         assert AMY.last_sent_embed == player_response
         assert JR.last_sent_embed == player_response
 
-    async def test_on_message_begin_event_with_message(self, client):
-        channel = text_channel()
+    async def test_on_message_begin_event_with_message(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         opt = "this is an optional message"
@@ -1340,8 +1342,8 @@ class TestSpellBot:
         assert AMY.last_sent_embed == player_response
         assert JR.last_sent_embed == player_response
 
-    async def test_on_message_begin_event_when_user_left(self, client):
-        channel = text_channel()
+    async def test_on_message_begin_event_when_user_left(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
@@ -1365,8 +1367,8 @@ class TestSpellBot:
             f" {AMY.name}, {JR.name}."
         )
 
-    async def test_on_message_begin_event_already(self, client):
-        channel = text_channel()
+    async def test_on_message_begin_event_already(self, client, channel_maker):
+        channel = channel_maker.text()
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         comment = "!event player1 player2"
@@ -1385,20 +1387,20 @@ class TestSpellBot:
             "Sorry, that event has already started and can not be started again."
         )
 
-    async def test_on_message_lfg_dm(self, client):
-        channel = private_channel()
+    async def test_on_message_lfg_dm(self, client, channel_maker):
+        channel = channel_maker.dm()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg"))
         assert author.last_sent_response == "That command only works in text channels."
 
-    async def test_on_message_lfg_size_too_much(self, client):
-        channel = text_channel()
+    async def test_on_message_lfg_size_too_much(self, client, channel_maker):
+        channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg size:10"))
         assert channel.last_sent_response == "Sorry, game size should be between 2 and 4."
 
-    async def test_on_message_lfg_too_many_mentions(self, client):
-        channel = text_channel()
+    async def test_on_message_lfg_too_many_mentions(self, client, channel_maker):
+        channel = channel_maker.text()
         author = DUDE
         mentions = [FRIEND, GUY, BUDDY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
@@ -1408,8 +1410,8 @@ class TestSpellBot:
             "Sorry, you've mentioned too many players for this size game."
         )
 
-    async def test_on_message_lfg_mention_already(self, client):
-        channel = text_channel()
+    async def test_on_message_lfg_mention_already(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(AMY, channel, "!lfg"))
 
         mentions = [AMY, ADAM]
@@ -1421,26 +1423,26 @@ class TestSpellBot:
             " pending game and can't be invited."
         )
 
-    async def test_on_message_lfg_size_too_little(self, client):
-        channel = text_channel()
+    async def test_on_message_lfg_size_too_little(self, client, channel_maker):
+        channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg size:1"))
         assert channel.last_sent_response == "Sorry, game size should be between 2 and 4."
 
-    async def test_on_message_lfg_size_not_number(self, client):
-        channel = text_channel()
+    async def test_on_message_lfg_size_not_number(self, client, channel_maker):
+        channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg size:x"))
         assert channel.last_sent_response == "Sorry, game size should be between 2 and 4."
 
-    async def test_on_message_lfg_too_many_tags(self, client):
-        channel = text_channel()
+    async def test_on_message_lfg_too_many_tags(self, client, channel_maker):
+        channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg a b c d e f"))
         assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
 
-    async def test_on_message_lfg_already(self, client):
-        channel = text_channel()
+    async def test_on_message_lfg_already(self, client, channel_maker):
+        channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg"))
         await client.on_message(MockMessage(author, channel, "!lfg"))
@@ -1449,20 +1451,20 @@ class TestSpellBot:
             " you can leave all games with `!leave`."
         )
 
-    async def test_on_message_lfg(self, client):
-        channel = text_channel()
+    async def test_on_message_lfg(self, client, channel_maker):
+        channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg"))
         assert channel.last_sent_embed == game_embed_for(client, author, False)
 
-    async def test_on_message_lfg_with_size(self, client):
-        channel = text_channel()
+    async def test_on_message_lfg_with_size(self, client, channel_maker):
+        channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg size:2"))
         assert "1 more player" in channel.last_sent_embed["title"]
 
-    async def test_on_message_lfg_with_tags(self, client):
-        channel = text_channel()
+    async def test_on_message_lfg_with_tags(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(ADAM, channel, "!lfg modern no-ban-list"))
         assert {
             "inline": True,
@@ -1477,8 +1479,8 @@ class TestSpellBot:
             "value": "modern",
         } in channel.last_sent_embed["fields"]
 
-    async def test_on_message_lfg_with_invite(self, client):
-        channel = text_channel()
+    async def test_on_message_lfg_with_invite(self, client, channel_maker):
+        channel = channel_maker.text()
         mentions = [AMY, ADAM]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!lfg {mentions_str}"
@@ -1491,10 +1493,9 @@ class TestSpellBot:
         assert AMY.last_sent_response == q
         assert ADAM.last_sent_response == q
 
-    async def test_on_message_lfg_with_invite_all_confirmed(self, client):
-        channel = text_channel()
-        dm = private_channel()
-        client.mock_add_channel(channel)
+    async def test_on_message_lfg_with_invite_all_confirmed(self, client, channel_maker):
+        channel = channel_maker.text()
+        dm = channel_maker.dm()
         mentions = [AMY, ADAM]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!lfg {mentions_str}"
@@ -1522,10 +1523,9 @@ class TestSpellBot:
         assert channel.last_sent_embed == game_embed_for(client, AMY, False)
         assert channel.last_sent_embed == game_embed_for(client, ADAM, False)
 
-    async def test_on_message_lfg_with_invite_some_confirmed(self, client):
-        channel = text_channel()
-        dm = private_channel()
-        client.mock_add_channel(channel)
+    async def test_on_message_lfg_with_invite_some_confirmed(self, client, channel_maker):
+        channel = channel_maker.text()
+        dm = channel_maker.dm()
         mentions = [AMY, ADAM]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!lfg {mentions_str}"
@@ -1555,8 +1555,8 @@ class TestSpellBot:
         assert channel.last_sent_embed == game_embed_for(client, AMY, False)
         assert not user_has_game(client, ADAM)
 
-    async def test_on_message_leave(self, client):
-        channel = text_channel()
+    async def test_on_message_leave(self, client, channel_maker):
+        channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg"))
         assert channel.last_sent_embed == game_embed_for(client, author, False)
@@ -1567,14 +1567,14 @@ class TestSpellBot:
 
         # TODO: Actually test that the embed was edited correctly.
 
-    async def test_on_message_leave_already(self, client):
-        channel = text_channel()
+    async def test_on_message_leave_already(self, client, channel_maker):
+        channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!leave"))
         assert channel.last_sent_response == "You we're not in any pending games."
 
-    async def test_on_raw_reaction_add_irrelevant(self, client):
-        channel = text_channel()
+    async def test_on_raw_reaction_add_irrelevant(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
         payload = MockPayload(
@@ -1588,24 +1588,23 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert game_embed_for(client, ADAM, False) == None
 
-    async def test_on_raw_reaction_add_bad_channel(self, client):
-        channel = text_channel()
+    async def test_on_raw_reaction_add_bad_channel(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
             emoji="➕",
-            channel_id=channel.id,
+            channel_id=channel.id + 1,
             guild_id=channel.guild.id,
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
         assert game_embed_for(client, ADAM, False) == None
 
-    async def test_on_raw_reaction_add_self(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
+    async def test_on_raw_reaction_add_self(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
         payload = MockPayload(
@@ -1619,9 +1618,8 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert game_embed_for(client, ADMIN, False) == None
 
-    async def test_on_raw_reaction_add_bad_message(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
+    async def test_on_raw_reaction_add_bad_message(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
         payload = MockPayload(
@@ -1635,16 +1633,16 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert game_embed_for(client, ADAM, False) == None
 
-    async def test_on_raw_reaction_add_plus_unauth_channel(self, client):
-        channel_a = MockTextChannel(1, "a", members=CHANNEL_MEMBERS)
-        channel_b = MockTextChannel(2, "b", members=CHANNEL_MEMBERS)
-        client.mock_add_channel(channel_a)
-        client.mock_add_channel(channel_b)
+    async def test_on_raw_reaction_add_plus_unauth_channel(self, client, channel_maker):
+        channel_a = channel_maker.text("a")
+        channel_b = channel_maker.text("b")
 
         await client.on_message(MockMessage(GUY, channel_a, "!lfg"))
         message = channel_a.last_sent_message
 
-        lock_up = MockMessage(an_admin(), channel_a, "!spellbot channels b")
+        lock_up = MockMessage(
+            an_admin(), channel_a, f"!spellbot channels <#{channel_b.id}>"
+        )
         await client.on_message(lock_up)
 
         payload = MockPayload(
@@ -1658,9 +1656,8 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert game_embed_for(client, ADAM, False) == None
 
-    async def test_on_raw_reaction_add_plus_not_a_game(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
+    async def test_on_raw_reaction_add_plus_not_a_game(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!leave"))
         message = channel.last_sent_message
         payload = MockPayload(
@@ -1674,9 +1671,8 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert message.reactions == []
 
-    async def test_on_raw_reaction_add_plus_twice(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
+    async def test_on_raw_reaction_add_plus_twice(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
         payload = MockPayload(
@@ -1693,9 +1689,8 @@ class TestSpellBot:
 
         # TODO: Actually test that the embed was edited correctly.
 
-    async def test_on_raw_reaction_add_plus_already(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
+    async def test_on_raw_reaction_add_plus_already(self, client, channel_maker):
+        channel = channel_maker.text()
 
         # first game
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
@@ -1729,9 +1724,8 @@ class TestSpellBot:
 
         # TODO: Actually test that the embed was edited correctly.
 
-    async def test_on_raw_reaction_add_plus(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
+    async def test_on_raw_reaction_add_plus(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
         payload = MockPayload(
@@ -1747,9 +1741,8 @@ class TestSpellBot:
 
         # TODO: Actually test that the embed was edited correctly.
 
-    async def test_on_raw_reaction_add_plus_complete(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
+    async def test_on_raw_reaction_add_plus_complete(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
         message = channel.last_sent_message
         payload = MockPayload(
@@ -1767,9 +1760,8 @@ class TestSpellBot:
 
         # TODO: Actually test that the embed was edited correctly.
 
-    async def test_on_raw_reaction_add_plus_after_disconnect(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
+    async def test_on_raw_reaction_add_plus_after_disconnect(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
         message = channel.last_sent_message
 
@@ -1790,9 +1782,8 @@ class TestSpellBot:
 
         # TODO: Actually test that the embed was edited correctly.
 
-    async def test_on_raw_reaction_add_plus_then_minus(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
+    async def test_on_raw_reaction_add_plus_then_minus(self, client, channel_maker):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
 
@@ -1822,9 +1813,42 @@ class TestSpellBot:
 
         # TODO: Actually test that the embed was edited correctly.
 
-    async def test_on_raw_reaction_add_minus_when_not_in_game(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
+    async def test_on_raw_reaction_minus_to_empty_game(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+
+        payload = MockPayload(
+            user_id=GUY.id,
+            message_id=message.id,
+            emoji="➖",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=GUY,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert not user_has_game(client, GUY)
+
+        session = client.data.Session()
+        games = session.query(Game).all()
+        rvalue = [game.to_embed().to_dict() for game in games]
+        session.close()
+        assert rvalue == [
+            {
+                "color": 5914365,
+                "description": "To join/leave this game, react with ➕/➖.",
+                "thumbnail": {"url": THUMB_URL},
+                "title": "**Waiting for 4 more players to join...**",
+                "type": "rich",
+            },
+        ]
+
+        # TODO: Actually test that the embed was edited correctly.
+
+    async def test_on_raw_reaction_add_minus_when_not_in_game(
+        self, client, channel_maker
+    ):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
         payload = MockPayload(
@@ -1849,9 +1873,10 @@ class TestSpellBot:
         )
         assert not user_has_game(client, AMY)
 
-    async def test_on_raw_reaction_add_minus_when_not_in_that_game(self, client):
-        channel = text_channel()
-        client.mock_add_channel(channel)
+    async def test_on_raw_reaction_add_minus_when_not_in_that_game(
+        self, client, channel_maker
+    ):
+        channel = channel_maker.text()
         await client.on_message(MockMessage(AMY, channel, "!lfg"))
         assert user_has_game(client, AMY)
 
@@ -1880,11 +1905,11 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert user_has_game(client, AMY)
 
-    async def test_game_cleanup_started(self, client, freezer):
+    async def test_game_cleanup_started(self, client, freezer, channel_maker):
         NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
         freezer.move_to(NOW)
 
-        channel = text_channel()
+        channel = channel_maker.text()
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!game {mentions_str}"
@@ -1909,12 +1934,11 @@ class TestSpellBot:
 
         assert not user_has_game(client, FRIEND)
 
-    async def test_game_cleanup_expired(self, client, freezer):
+    async def test_game_cleanup_expired(self, client, freezer, channel_maker):
         NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
         freezer.move_to(NOW)
 
-        channel = text_channel()
-        client.mock_add_channel(channel)
+        channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         assert channel.last_sent_embed == game_embed_for(client, GUY, False)
 
@@ -2027,7 +2051,7 @@ class TestCodebase:
                 "a test with inline data is much easier to reason about and refactor."
             )
 
-    def test_readme_commands(self, client):
+    def test_readme_commands(self, client, channel_maker):
         """Checks that all commands are documented in our readme."""
         with open(REPO_ROOT / "README.md") as f:
             readme = f.read()
