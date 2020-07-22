@@ -7,6 +7,7 @@ import alembic.config
 import discord
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     Column,
     DateTime,
     ForeignKey,
@@ -39,9 +40,9 @@ class Server(Base):
     games = relationship("Game", back_populates="server")
     channels = relationship("Channel", back_populates="server")
 
-    def bot_allowed_in(self, channel_name):
+    def bot_allowed_in(self, channel_xid):
         return not self.channels or any(
-            channel.name == channel_name for channel in self.channels
+            channel.channel_xid == channel_xid for channel in self.channels
         )
 
     def __repr__(self):
@@ -56,12 +57,11 @@ class Server(Base):
 
 
 class Channel(Base):
-    __tablename__ = "authorized_channels"
-    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    __tablename__ = "channels"
+    channel_xid = Column(BigInteger, primary_key=True, nullable=False)
     guild_xid = Column(
         BigInteger, ForeignKey("servers.guild_xid", ondelete="CASCADE"), nullable=False
     )
-    name = Column(String(100), nullable=False)
     server = relationship("Server", back_populates="channels")
 
 
@@ -91,6 +91,8 @@ class User(Base):
     xid = Column(BigInteger, primary_key=True, nullable=False)
     game_id = Column(Integer, ForeignKey("games.id", ondelete="SET NULL"), nullable=True)
     cached_name = Column(String(50))
+    invited = Column(Boolean, server_default=text("false"), nullable=False)
+    invite_confirmed = Column(Boolean, server_default=text("false"), nullable=False)
     game = relationship("Game", back_populates="users")
 
     @property
@@ -136,21 +138,23 @@ class Game(Base):
         )
 
     def __repr__(self):
-        return json.dumps(
-            {
-                "id": self.id,
-                "created_at": str(self.created_at),
-                "updated_at": str(self.updated_at),
-                "expires_at": str(self.expires_at),
-                "size": self.size,
-                "guild_xid": self.guild_xid,
-                "channel_xid": self.channel_xid,
-                "url": self.url,
-                "status": self.status,
-                "message": self.message,
-                "message_xid": self.message_xid,
-            }
-        )
+        return json.dumps(self.to_json())
+
+    def to_json(self):
+        return {
+            "id": self.id,
+            "created_at": str(self.created_at),
+            "updated_at": str(self.updated_at),
+            "expires_at": str(self.expires_at),
+            "size": self.size,
+            "guild_xid": self.guild_xid,
+            "channel_xid": self.channel_xid,
+            "url": self.url,
+            "status": self.status,
+            "message": self.message,
+            "message_xid": self.message_xid,
+            "tags": [tag.name for tag in self.tags],
+        }
 
     def to_embed(self):
         if self.url:

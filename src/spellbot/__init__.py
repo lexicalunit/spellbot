@@ -240,7 +240,8 @@ class SpellBot(discord.Client):
     def _begin_background_tasks(self, loop):  # pragma: no cover
         """Start up any periodic background tasks."""
         self.cleanup_expired_games_task(loop)
-        self.cleanup_started_games_task(loop)
+        # TODO: Make this manually triggered.
+        # self.cleanup_started_games_task(loop)
 
     def cleanup_expired_games_task(self, loop):  # pragma: no cover
         """Starts a task that culls old games."""
@@ -303,7 +304,13 @@ class SpellBot(discord.Client):
         """Ensures that the user row exists for the given discord user."""
         db_user = session.query(User).filter(User.xid == user.id).one_or_none()
         if not db_user:
-            db_user = User(xid=user.id)
+            db_user = User(
+                xid=user.id,
+                game_id=None,
+                cached_name=None,
+                invited=False,
+                invite_confirmed=False,
+            )
             session.add(db_user)
         return db_user
 
@@ -369,6 +376,48 @@ class SpellBot(discord.Client):
             async with self.session() as session:
                 await method(session, prefix, params, message)
 
+    async def process_invite_response(self, message, choice):
+        async with self.session() as session:
+            user = self.ensure_user_exists(session, message.author)
+            session.commit()
+
+            if not user.invited:
+                return await message.author.send(s("invite_not_invited"))
+
+            if user.invite_confirmed:
+                return await message.author.send(s("invite_already_confirmed"))
+
+            game = user.game
+            if choice == "yes":
+                user.invite_confirmed = True
+                await message.author.send(s("invite_confirmed"))
+            else:  # choice == "no":
+                user.invited = False
+                user.game = None
+                await message.author.send(s("invite_denied"))
+            session.commit()
+
+            if all(
+                not user.invited or user.invited and user.invite_confirmed
+                for user in game.users
+            ):
+                channel = await self.safe_fetch_channel(game.channel_xid)
+                if not channel:
+                    # This shouldn't be possible, if it happens just delete the game.
+                    # TODO: Inform players that their game is being deleted.
+                    err = f"process_invite_response: fetch channel {game.channel_xid}"
+                    logging.error(err)
+                    game.tags = []  # cascade delete tag associations
+                    session.delete(game)
+                    session.commit()
+                    return
+
+                post = await channel.send(embed=game.to_embed())
+                game.message_xid = post.id
+                session.commit()
+                await post.add_reaction("➕")
+                await post.add_reaction("➖")
+
     ##############################
     # Discord Client Behavior
     ##############################
@@ -395,7 +444,7 @@ class SpellBot(discord.Client):
             server = self.ensure_server_exists(session, payload.guild_id)
             session.commit()
 
-            if not server.bot_allowed_in(channel.name):
+            if not server.bot_allowed_in(channel.id):
                 return
 
             game = (
@@ -444,8 +493,6 @@ class SpellBot(discord.Client):
                     discord_user = await self.safe_fetch_user(game_user.xid)
                     if not discord_user:  # user has left the server since signing up
                         game_user.game = None
-                        obj = discord.Object(game_user.xid)
-                        await self.safe_remove_reaction(message, "➕", obj)
                     else:
                         found_discord_users.append(discord_user)
 
@@ -477,6 +524,12 @@ class SpellBot(discord.Client):
         if message.author.id == self.user.id:
             return
 
+        # handle confirm/deny invitations over direct message
+        if private:
+            choice = message.content.lstrip()[0:3].rstrip().lower()
+            if choice in ["yes", "no"]:
+                return await self.process_invite_response(message, choice)
+
         # only respond to command-like messages
         if not private:
             rows = self.data.conn.execute(
@@ -494,7 +547,7 @@ class SpellBot(discord.Client):
             async with self.session() as session:
                 server = self.ensure_server_exists(session, message.channel.guild.id)
                 session.commit()
-                if not server.bot_allowed_in(message.channel.name):
+                if not server.bot_allowed_in(message.channel.id):
                     return
 
         await self.process(message, prefix)
@@ -608,6 +661,10 @@ class SpellBot(discord.Client):
         The default game size is 4 but you can change it by adding, for example, `size:2`
         to create a two player game.
 
+        You can automatically invite players to the game by @ mentioning them in the
+        command. They will be sent invite confirmations and the game won't be posted to
+        the channel until they've responded.
+
         Players will be able to join or leave the game by reacting to the message that
         SpellBot sends with the ➕ and ➖ emoji.
 
@@ -625,10 +682,25 @@ class SpellBot(discord.Client):
             return await message.channel.send(s("lfg_already", prefix=server.prefix))
 
         params = [param.lower() for param in params]
+        mentions = message.mentions if message.channel.type != "private" else []
 
         size = size_from_params(params)
         if not size or not (1 < size < 5):
             return await message.channel.send(s("lfg_size_bad"))
+
+        if len(mentions) + 1 >= size:
+            return await message.channel.send(s("lfg_too_many_mentions"))
+
+        mentioned_users = []
+        for mentioned in mentions:
+            mentioned_user = self.ensure_user_exists(session, mentioned)
+            if mentioned_user.waiting:
+                return await message.channel.send(
+                    s("lfg_mention_already", mention=f"<@{mentioned.id}>")
+                )
+            mentioned_users.append(mentioned_user)
+        if mentioned_users:
+            session.commit()
 
         tag_names = tag_names_from_params(params)
         if len(tag_names) > 5:
@@ -644,6 +716,7 @@ class SpellBot(discord.Client):
 
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=server.expire)
+        user.invited = False
         user.game = Game(
             created_at=now,
             updated_at=now,
@@ -653,14 +726,21 @@ class SpellBot(discord.Client):
             tags=tags,
             server=server,
         )
+        for mentioned_user in mentioned_users:
+            mentioned_user.game = user.game
+            mentioned_user.invited = True
+            mentioned_user.invite_confirmed = False
         session.commit()
 
-        post = await message.channel.send(embed=user.game.to_embed())
-        user.game.message_xid = post.id
-        session.commit()
-
-        await post.add_reaction("➕")
-        await post.add_reaction("➖")
+        if mentioned_users:
+            for mentioned in mentions:
+                await mentioned.send(s("lfg_invited", mention=f"<@{message.author.id}>"))
+        else:
+            post = await message.channel.send(embed=user.game.to_embed())
+            user.game.message_xid = post.id
+            session.commit()
+            await post.add_reaction("➕")
+            await post.add_reaction("➖")
 
     @command(allow_dm=False)
     async def event(self, session, prefix, params, message):
@@ -677,8 +757,9 @@ class SpellBot(discord.Client):
         Games will not be created immediately. This is to allow you to verify things look
         ok. This command will also give you directions on how to actually start the games
         for this event as part of its reply.
-        * Optional: Add a message by using " -- " followed by the message content.
-        & <column 1> <column 2> ... <column 3> [-- An optional message to add.]
+        * Optional: Add a message by using "msg: " followed by the message content.
+        * Optional: Add tags by using "tags: " followed by the tags you want.
+        & <column 1> <column 2> ... [tags: tag-1 tag-2] [msg: Hello world!]
         """
         if not is_admin(message.channel, message.author):
             return await message.channel.send(s("not_admin"))
@@ -689,20 +770,43 @@ class SpellBot(discord.Client):
         if not params:
             return await message.channel.send(s("event_no_params"))
 
+        n_params = len(params)
         optional_message = None
+        optional_tags = None
         try:
-            sentry = params.index("--")
-            optional_message = " ".join(params[sentry + 1 :])
-            params = params[0:sentry]
+            msg_index = params.index("msg:")
         except ValueError:
-            pass
-
+            msg_index = None
+        try:
+            tag_index = params.index("tags:")
+        except ValueError:
+            tag_index = None
+        if msg_index:
+            stop = tag_index if tag_index and tag_index > msg_index else n_params
+            optional_message = " ".join(params[msg_index + 1 : stop])
+        if tag_index:
+            stop = msg_index if msg_index and msg_index > tag_index else n_params
+            optional_tags = params[tag_index + 1 : stop]
+        if optional_message or optional_tags:
+            params = params[0 : min(msg_index or n_params, tag_index or n_params)]
         if optional_message and len(optional_message) >= 255:
             return await message.channel.send(s("game_message_too_long"))
+        if optional_tags and len(optional_tags) > 5:
+            return await message.channel.send(s("game_too_many_tags"))
 
         size = len(params)
         if not (1 < size <= 4):
             return await message.channel.send(s("event_bad_play_count"))
+
+        tags = []
+        if optional_tags:
+            for tag_name in optional_tags:
+                tag = session.query(Tag).filter_by(name=tag_name).first()
+                if not tag:
+                    tag = Tag(name=tag_name)
+                    session.add(tag)
+                tags.append(tag)
+            session.commit()
 
         attachment = message.attachments[0]
 
@@ -711,10 +815,6 @@ class SpellBot(discord.Client):
 
         bdata = await message.attachments[0].read()
         sdata = bdata.decode("utf-8")
-
-        has_header = csv.Sniffer().has_header(sdata)
-        if not has_header:
-            return await message.channel.send(s("event_no_header"))
 
         server = self.ensure_server_exists(session, message.channel.guild.id)
         reader = csv.reader(StringIO(sdata))
@@ -744,16 +844,26 @@ class SpellBot(discord.Client):
                 await message.channel.send(warning)
                 continue
 
+            warnings = set()
+
             player_discord_users = []
             for csv_data, lname in zip(csv_row_data, player_lnames):
                 player_discord_user = member_lookup.get(lname)
                 if player_discord_user:
                     player_discord_users.append(player_discord_user)
                 else:
-                    warning = s(
-                        "event_missing_user", row=i + 1, name=csv_data, players=players_s,
+                    warnings.add(
+                        s(
+                            "event_missing_user",
+                            row=i + 1,
+                            name=csv_data,
+                            players=players_s,
+                        )
                     )
-                    await message.channel.send(warning)
+
+            warnings_s = "\n".join(warnings)
+            for page in paginate(warnings_s):
+                await message.channel.send(page)
 
             if len(player_discord_users) != size:
                 continue
@@ -772,12 +882,6 @@ class SpellBot(discord.Client):
                 player_user.cached_name = player_discord_user.name
             session.commit()
 
-            tag = session.query(Tag).filter_by(name="default").one_or_none()
-            if not tag:
-                tag = Tag(name="default")
-                session.add(tag)
-            session.commit()
-
             now = datetime.utcnow()
             expires_at = now + timedelta(minutes=server.expire)
             game = Game(
@@ -790,7 +894,7 @@ class SpellBot(discord.Client):
                 message=optional_message,
                 users=player_users,
                 event=event,
-                tags=[tag],
+                tags=tags,
             )
             session.add(game)
             session.commit()
@@ -800,7 +904,9 @@ class SpellBot(discord.Client):
             return await message.channel.send(s("event_empty"))
 
         session.commit()
-        await message.channel.send(s("event_created", prefix=prefix, event_id=event.id))
+        await message.channel.send(
+            s("event_created", prefix=prefix, event_id=event.id, count=len(event.games))
+        )
 
     @command(allow_dm=False)
     async def begin(self, session, prefix, params, message):
@@ -857,26 +963,39 @@ class SpellBot(discord.Client):
         """
         Create a game between mentioned users. _Requires the "SpellBot Admin" role._
 
-        Operates similarly to the `!lfg` command with a few key deferences. First, see
-        that command's usage help for more details. Then, here are the differences:
+        Allows event runners to spin up an ad-hoc game directly between mentioned players.
         * The user who issues this command is **NOT** added to the game themselves.
         * You must mention all of the players to be seated in the game.
-        * Optional: Add a message by using " -- " followed by the message content.
-        & [similar parameters as !lfg] [-- An optional additional message to send.]
+        * Optional: Add a message by using "msg: " followed by the message content.
+        * Optional: Add tags by using "tags: " followed by the tags you want.
+        & @player1 @player2 ... [tags: tag-1 tag-2] [msg: Hello world!]
         """
         if not is_admin(message.channel, message.author):
             return await message.channel.send(s("not_admin"))
 
+        n_params = len(params)
         optional_message = None
+        optional_tags = None
         try:
-            sentry = params.index("--")
-            optional_message = " ".join(params[sentry + 1 :])
-            params = params[0:sentry]
+            msg_index = params.index("msg:")
         except ValueError:
-            pass
-
+            msg_index = None
+        try:
+            tag_index = params.index("tags:")
+        except ValueError:
+            tag_index = None
+        if msg_index:
+            stop = tag_index if tag_index and tag_index > msg_index else n_params
+            optional_message = " ".join(params[msg_index + 1 : stop])
+        if tag_index:
+            stop = msg_index if msg_index and msg_index > tag_index else n_params
+            optional_tags = params[tag_index + 1 : stop]
+        if optional_message or optional_tags:
+            params = params[0 : min(msg_index or n_params, tag_index or n_params)]
         if optional_message and len(optional_message) >= 255:
             return await message.channel.send(s("game_message_too_long"))
+        if optional_tags and len(optional_tags) > 5:
+            return await message.channel.send(s("game_too_many_tags"))
 
         params = [param.lower() for param in params]
         mentions = message.mentions if message.channel.type != "private" else []
@@ -899,17 +1018,14 @@ class SpellBot(discord.Client):
             mentioned_users.append(mentioned_user)
         session.commit()
 
-        tag_names = tag_names_from_params(params)
-        if len(tag_names) > 5:
-            return await message.channel.send(s("game_too_many_tags"))
-
         tags = []
-        for tag_name in tag_names:
-            tag = session.query(Tag).filter_by(name=tag_name).first()
-            if not tag:
-                tag = Tag(name=tag_name)
-                session.add(tag)
-            tags.append(tag)
+        if optional_tags:
+            for tag_name in optional_tags:
+                tag = session.query(Tag).filter_by(name=tag_name).first()
+                if not tag:
+                    tag = Tag(name=tag_name)
+                    session.add(tag)
+                tags.append(tag)
 
         server = self.ensure_server_exists(session, message.channel.guild.id)
         session.commit()
@@ -975,44 +1091,58 @@ class SpellBot(discord.Client):
         if not params:
             return await message.channel.send(s("spellbot_missing_subcommand"))
 
-        self.ensure_server_exists(session, message.channel.guild.id)
+        server = self.ensure_server_exists(session, message.channel.guild.id)
+        session.commit()
+
         command = params[0]
         if command == "channels":
-            await self.spellbot_channels(session, prefix, params[1:], message)
+            await self.spellbot_channels(session, server, params[1:], message)
         elif command == "prefix":
-            await self.spellbot_prefix(session, prefix, params[1:], message)
+            await self.spellbot_prefix(session, server, params[1:], message)
         elif command == "expire":
-            await self.spellbot_expire(session, prefix, params[1:], message)
+            await self.spellbot_expire(session, server, params[1:], message)
         elif command == "config":
-            await self.spellbot_config(session, prefix, params[1:], message)
+            await self.spellbot_config(session, server, params[1:], message)
         else:
             await message.channel.send(s("spellbot_unknown_subcommand", command=command))
 
-    async def spellbot_channels(self, session, prefix, params, message):
+    async def spellbot_channels(self, session, server, params, message):
         if not params:
             return await message.channel.send(s("spellbot_channels_none"))
-        session.query(Channel).filter_by(guild_xid=message.channel.guild.id).delete()
-        for param in params:
-            session.add(Channel(guild_xid=message.channel.guild.id, name=param))
-        session.commit()
-        await message.channel.send(
-            s("spellbot_channels", channels=", ".join([f"#{param}" for param in params]))
-        )
 
-    async def spellbot_prefix(self, session, prefix, params, message):
+        # Blow away the current associations first, otherwise SQLAlchemy will explode.
+        session.query(Channel).filter_by(guild_xid=server.guild_xid).delete()
+
+        channels = []
+        for param in params:
+            m = re.match("<#([0-9]+)>", param)
+            if not m:
+                continue
+
+            discord_channel = await self.safe_fetch_channel(int(m[1]))
+            if not discord_channel:
+                continue
+
+            channel = Channel(channel_xid=discord_channel.id, guild_xid=server.guild_xid)
+            session.add(channel)
+            channels.append(channel)
+            session.commit()
+
+        if channels:
+            server.channels = channels
+            session.commit()
+            channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])
+            await message.channel.send(s("spellbot_channels", channels=channels_str))
+
+    async def spellbot_prefix(self, session, server, params, message):
         if not params:
             return await message.channel.send(s("spellbot_prefix_none"))
         prefix_str = params[0][0:10]
-        server = (
-            session.query(Server)
-            .filter(Server.guild_xid == message.channel.guild.id)
-            .one_or_none()
-        )
         server.prefix = prefix_str
         session.commit()
         return await message.channel.send(s("spellbot_prefix", prefix=prefix_str))
 
-    async def spellbot_expire(self, session, prefix, params, message):
+    async def spellbot_expire(self, session, server, params, message):
         if not params:
             return await message.channel.send(s("spellbot_expire_none"))
         expire = to_int(params[0])
@@ -1027,23 +1157,18 @@ class SpellBot(discord.Client):
         session.commit()
         await message.channel.send(s("spellbot_expire", expire=expire))
 
-    async def spellbot_config(self, session, prefix, params, message):
-        server = (
-            session.query(Server)
-            .filter(Server.guild_xid == message.channel.guild.id)
-            .one_or_none()
-        )
+    async def spellbot_config(self, session, server, params, message):
         embed = discord.Embed(title="SpellBot Server Config")
         embed.set_thumbnail(url=THUMB_URL)
         embed.add_field(name="Command prefix", value=server.prefix)
         expires_str = f"{server.expire} minutes"
         embed.add_field(name="Inactivity expiration time", value=expires_str)
-        channels = server.channels
+        channels = sorted(server.channels, key=lambda channel: channel.channel_xid)
         if channels:
-            channels_str = ", ".join(f"#{channel.name}" for channel in channels)
+            channels_str = ", ".join(f"<#{channel.channel_xid}>" for channel in channels)
         else:
             channels_str = "all"
-        embed.add_field(name="Authorized channels", value=channels_str)
+        embed.add_field(name="Active channels", value=channels_str)
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
         await message.channel.send(embed=embed)
