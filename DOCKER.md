@@ -17,10 +17,10 @@ doesn't get blown away whenever you kill and remove the image.
 ```shell
 docker run \
     -e SPELLBOT_TOKEN="<your-discord-bot-token>" \
-    -e SPELLBOT_AUTH="<your-spellbot-api-token>" \
+    -e SPELLTABLE_AUTH="<your-spellbot-api-token>" \
     -e SPELLBOT_DB_URL="<your-sqlalchemy-database-url>" \
     -v "$(pwd)/db":/db \
-    --rm
+    --rm \
     spellbot
 ```
 
