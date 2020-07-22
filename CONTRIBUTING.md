@@ -26,7 +26,7 @@ poetry install
 
 ## Running the application
 
-Make sure that you have set your Discord bot token in your environment, then run:
+Make sure that you have [set up your environmental variables](/README.md#-running-spellbot-yourself), then run:
 
 ```shell
 poetry run spellbot --help
