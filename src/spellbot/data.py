@@ -1,9 +1,11 @@
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Any, List, cast
 
-import alembic
-import alembic.config
+import alembic  # type: ignore
+import alembic.command  # type: ignore
+import alembic.config  # type: ignore
 import discord
 from sqlalchemy import (
     BigInteger,
@@ -37,8 +39,8 @@ class Server(Base):
     guild_xid = Column(BigInteger, primary_key=True, nullable=False)
     prefix = Column(String(10), nullable=False, default="!")
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
-    games = relationship("Game", back_populates="server")
-    channels = relationship("Channel", back_populates="server")
+    games = relationship("Game", back_populates="server", uselist=True)
+    channels = relationship("Channel", back_populates="server", uselist=True)
 
     def bot_allowed_in(self, channel_xid):
         return not self.channels or any(
@@ -76,7 +78,7 @@ games_tags = Table(
 class Event(Base):
     __tablename__ = "events"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    games = relationship("Game", back_populates="event")
+    games = relationship("Game", back_populates="event", uselist=True)
 
     @property
     def started(self):
@@ -118,8 +120,8 @@ class Game(Base):
         Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True
     )
     message_xid = Column(BigInteger)
-    users = relationship("User", back_populates="game")
-    tags = relationship("Tag", secondary=games_tags, back_populates="games")
+    users = relationship("User", back_populates="game", uselist=True)
+    tags = relationship("Tag", secondary=games_tags, back_populates="games", uselist=True)
     server = relationship("Server", back_populates="games")
     event = relationship("Event", back_populates="games")
 
@@ -160,7 +162,7 @@ class Game(Base):
         if self.url:
             title = self.message if self.message else "**Your game is ready!**"
         else:
-            remaining = self.size - len(self.users)
+            remaining = int(self.size) - len(self.users)
             plural = "s" if remaining > 1 else ""
             title = f"**Waiting for {remaining} more player{plural} to join...**"
         embed = discord.Embed(title=title)
@@ -176,7 +178,8 @@ class Game(Base):
             embed.add_field(name="Players", value=players)
         tag_names = None
         if not (len(self.tags) == 1 and self.tags[0].name == "default"):
-            tag_names = ", ".join(sorted([tag.name for tag in self.tags]))
+            sorted_tag_names: List[str] = sorted([tag.name for tag in self.tags])
+            tag_names = ", ".join(sorted_tag_names)
             embed.add_field(name="Tags", value=tag_names)
         embed.color = discord.Color(0x5A3EFD)
         return embed
@@ -186,14 +189,16 @@ class Tag(Base):
     __tablename__ = "tags"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     name = Column(String(50), nullable=False)
-    games = relationship("Game", secondary=games_tags, back_populates="tags")
+    games = relationship(
+        "Game", secondary=games_tags, back_populates="tags", uselist=True
+    )
 
 
 def create_all(connection, db_url):
     config = alembic.config.Config(str(ALEMBIC_INI))
     config.set_main_option("script_location", str(VERSIONS_DIR))
     config.set_main_option("sqlalchemy.url", db_url)
-    config.attributes["connection"] = connection
+    cast(Any, config.attributes)["connection"] = connection
     alembic.command.upgrade(config, "head")
 
 
@@ -201,7 +206,7 @@ def reverse_all(connection, db_url):
     config = alembic.config.Config(str(ALEMBIC_INI))
     config.set_main_option("script_location", str(VERSIONS_DIR))
     config.set_main_option("sqlalchemy.url", db_url)
-    config.attributes["connection"] = connection
+    cast(Any, config.attributes)["connection"] = connection
     alembic.command.downgrade(config, "base")
 
 
