@@ -1330,7 +1330,7 @@ def get_log_level(fallback: str) -> str:  # pragma: no cover
     "--database-env",
     default="SPELLBOT_DB_URL",
     help=(
-        "By default SpellBot look in the environment variable SPELLBOT_DB_URL for the "
+        "By default SpellBot looks in the environment variable SPELLBOT_DB_URL for the "
         "database connection string. If you need it to look in a different variable "
         "you can set it with this option. For example Heroku uses DATABASE_URL."
         "Can also be set by the environment variable SPELLBOT_DB_ENV."
