@@ -34,7 +34,6 @@ game_too_few_mentions: Sorry, you mentioned too few people. I expected $size pla
   to be mentioned.
 game_too_many_mentions: Sorry, you mentioned too many people. I expected $size players
   to be mentioned.
-game_too_many_tags: Sorry, you can not use more than 5 tags.
 invite_already_confirmed: Your invitation has already been confirmed.
 invite_confirmed: Thanks, your invitation has been confirmed!
 invite_denied: Thank you for your response.
@@ -49,7 +48,6 @@ lfg_mention_already: Sorry, but $mention is already in another pending game and 
   be invited.
 lfg_size_bad: Sorry, game size should be between 2 and 4.
 lfg_too_many_mentions: Sorry, you've mentioned too many players for this size game.
-lfg_too_many_tags: Sorry, you can not use more than 5 tags.
 no_dm: That command only works in text channels.
 not_a_command: Sorry, there is no "$request" command.
 not_admin: You do not have admin permissions for this bot.
@@ -64,3 +62,4 @@ spellbot_missing_subcommand: Please provide a subcommand when using this command
 spellbot_prefix: This bot will now use "$prefix" as its command prefix for this server.
 spellbot_prefix_none: Please provide a prefix string.
 spellbot_unknown_subcommand: The subcommand "$command" is not recognized.
+tags_too_many: Sorry, you can not use more than 5 tags.
