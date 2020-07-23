@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from datetime import datetime
 from pathlib import Path
@@ -20,8 +22,9 @@ from sqlalchemy import (
     create_engine,
     text,
 )
+from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import Session, relationship, sessionmaker
 
 from spellbot.constants import THUMB_URL
 
@@ -42,18 +45,18 @@ class Server(Base):
     games = relationship("Game", back_populates="server", uselist=True)
     channels = relationship("Channel", back_populates="server", uselist=True)
 
-    def bot_allowed_in(self, channel_xid):
+    def bot_allowed_in(self, channel_xid: int) -> bool:
         return not self.channels or any(
             channel.channel_xid == channel_xid for channel in self.channels
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return json.dumps(
             {
                 "guild_xid": self.guild_xid,
                 "prefix": self.prefix,
                 "expire": self.expire,
-                "channels": [channel.name for channel in self.channels],
+                "channels": [channel.channel_xid for channel in self.channels],
             }
         )
 
@@ -81,10 +84,10 @@ class Event(Base):
     games = relationship("Game", back_populates="event", uselist=True)
 
     @property
-    def started(self):
+    def started(self) -> bool:
         return any(game.status == "started" for game in self.games)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return json.dumps({"id": self.id})
 
 
@@ -98,8 +101,34 @@ class User(Base):
     game = relationship("Game", back_populates="users")
 
     @property
-    def waiting(self):
-        return self.game and self.game.status in ["pending", "ready"]
+    def waiting(self) -> bool:
+        if self.game and self.game.status in ["pending", "ready"]:
+            return True
+        return False
+
+
+class Tag(Base):
+    __tablename__ = "tags"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    name = Column(String(50), nullable=False)
+    games = relationship(
+        "Game", secondary=games_tags, back_populates="tags", uselist=True
+    )
+
+    @classmethod
+    def create_many(cls, session: Session, tag_names: List[str]) -> List[Tag]:
+        created_at_least_one = False
+        tags = []
+        for tag_name in tag_names:
+            tag = session.query(Tag).filter_by(name=tag_name).one_or_none()
+            if not tag:
+                created_at_least_one = True
+                tag = Tag(name=tag_name)
+                session.add(tag)
+            tags.append(tag)
+        if created_at_least_one:
+            session.commit()
+        return tags
 
 
 class Game(Base):
@@ -126,8 +155,9 @@ class Game(Base):
     event = relationship("Event", back_populates="games")
 
     @classmethod
-    def expired(cls, session):
-        return (
+    def expired(cls, session: Session) -> List[Game]:
+        return cast(
+            List[Game],
             session.query(Game)
             .filter(
                 and_(
@@ -136,13 +166,13 @@ class Game(Base):
                     Game.status != "ready",
                 )
             )
-            .all()
+            .all(),
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return json.dumps(self.to_json())
 
-    def to_json(self):
+    def to_json(self) -> dict:
         return {
             "id": self.id,
             "created_at": str(self.created_at),
@@ -158,11 +188,11 @@ class Game(Base):
             "tags": [tag.name for tag in self.tags],
         }
 
-    def to_embed(self):
+    def to_embed(self) -> discord.Embed:
         if self.url:
             title = self.message if self.message else "**Your game is ready!**"
         else:
-            remaining = int(self.size) - len(self.users)
+            remaining = int(self.size) - len(cast(List[User], self.users))
             plural = "s" if remaining > 1 else ""
             title = f"**Waiting for {remaining} more player{plural} to join...**"
         embed = discord.Embed(title=title)
@@ -177,7 +207,7 @@ class Game(Base):
             players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
             embed.add_field(name="Players", value=players)
         tag_names = None
-        if self.tags and len(self.tags) >= 1:
+        if self.tags and len(cast(List[Tag], self.tags)) >= 1:
             sorted_tag_names: List[str] = sorted([tag.name for tag in self.tags])
             tag_names = ", ".join(sorted_tag_names)
             embed.add_field(name="Tags", value=tag_names)
@@ -185,16 +215,7 @@ class Game(Base):
         return embed
 
 
-class Tag(Base):
-    __tablename__ = "tags"
-    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    name = Column(String(50), nullable=False)
-    games = relationship(
-        "Game", secondary=games_tags, back_populates="tags", uselist=True
-    )
-
-
-def create_all(connection, db_url):
+def create_all(connection: Connection, db_url: str) -> None:
     config = alembic.config.Config(str(ALEMBIC_INI))
     config.set_main_option("script_location", str(VERSIONS_DIR))
     config.set_main_option("sqlalchemy.url", db_url)
@@ -202,7 +223,7 @@ def create_all(connection, db_url):
     alembic.command.upgrade(config, "head")
 
 
-def reverse_all(connection, db_url):
+def reverse_all(connection: Connection, db_url: str) -> None:
     config = alembic.config.Config(str(ALEMBIC_INI))
     config.set_main_option("script_location", str(VERSIONS_DIR))
     config.set_main_option("sqlalchemy.url", db_url)
@@ -213,7 +234,7 @@ def reverse_all(connection, db_url):
 class Data:
     """Persistent and in-memory store for user data."""
 
-    def __init__(self, db_url):
+    def __init__(self, db_url: str):
         self.db_url = db_url
         self.engine = create_engine(db_url, echo=False)
         self.conn = self.engine.connect()
