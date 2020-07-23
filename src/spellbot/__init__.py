@@ -1292,7 +1292,7 @@ class SpellBot(discord.Client):
 
 def get_db_env(fallback: str) -> str:  # pragma: no cover
     """Returns the database env var from the environment or else the given gallback."""
-    value = getenv("SPELLTABLE_DB_ENV", fallback)
+    value = getenv("SPELLBOT_DB_ENV", fallback)
     return value or fallback
 
 
@@ -1304,7 +1304,7 @@ def get_db_url(database_env: str, fallback: str) -> str:  # pragma: no cover
 
 def get_log_level(fallback: str) -> str:  # pragma: no cover
     """Returns the log level from the environment or else the given gallback."""
-    value = getenv("SPELLTABLE_LOG_LEVEL", fallback)
+    value = getenv("SPELLBOT_LOG_LEVEL", fallback)
     return value or fallback
 
 
@@ -1314,7 +1314,7 @@ def get_log_level(fallback: str) -> str:  # pragma: no cover
     "--log-level",
     type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]),
     default="ERROR",
-    help="Can also be set by the environment variable SPELLTABLE_LOG_LEVEL.",
+    help="Can also be set by the environment variable SPELLBOT_LOG_LEVEL.",
 )
 @click.option("-v", "--verbose", count=True, help="Sets log level to DEBUG.")
 @click.option(
@@ -1333,7 +1333,7 @@ def get_log_level(fallback: str) -> str:  # pragma: no cover
         "By default SpellBot look in the environment variable SPELLBOT_DB_URL for the "
         "database connection string. If you need it to look in a different variable "
         "you can set it with this option. For example Heroku uses DATABASE_URL."
-        "Can also be set by the environment variable SPELLTABLE_DB_ENV."
+        "Can also be set by the environment variable SPELLBOT_DB_ENV."
     ),
 )
 @click.version_option(version=__version__)
