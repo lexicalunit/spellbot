@@ -25,7 +25,7 @@ from sqlalchemy.sql import text
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
-from spellbot.constants import ADMIN_ROLE, CREATE_ENDPOINT, THUMB_URL
+from spellbot.constants import ADMIN_ROLE, CREATE_ENDPOINT, DEFAULT_GAME_SIZE, THUMB_URL
 from spellbot.data import Channel, Data, Event, Game, Server, Tag, User
 
 # Application Paths
@@ -54,26 +54,54 @@ def to_int(s: str) -> Optional[int]:
         return None
 
 
-def size_from_params(params: List[str]) -> Optional[int]:
-    size: Optional[int] = 4
-    for param in params:
-        if param.startswith("size:"):
-            size = to_int(param.replace("size:", ""))
-    return size
+def parse_opts(params: List[str]) -> dict:
+    tags: List[str] = []
+    first_pass: List[str] = []
+    second_pass: List[str] = []
+    size: Optional[int] = DEFAULT_GAME_SIZE
+    msg: Optional[str] = None
+    skip_next: bool = False
 
+    for i, param in enumerate(params):
+        if skip_next:
+            skip_next = False
+            continue
 
-def tag_names_from_params(params: List[str]) -> List[str]:
-    tag_names = [
-        param
-        for param in params
-        if not param.startswith("size:")
-        and not param.startswith("<")
-        and not param.startswith("@")
-        and not len(param) >= 50
-    ]
-    if not tag_names:
-        tag_names = []
-    return tag_names
+        if param.startswith("~"):
+            tags.append(param[1:].lower())
+        elif param.lower().startswith("size:"):
+            rest = param[5:]
+            if rest:
+                if rest.isdigit():
+                    size = int(rest)
+                else:
+                    size = None
+            else:
+                if params[i + 1].isdigit():
+                    size = int(params[i + 1])
+                    skip_next = True
+                else:
+                    size = None
+        else:
+            first_pass.append(param)
+
+    for i, param in enumerate(first_pass):
+        if param.lower().startswith("msg:"):
+            rest = param[4:]
+            if rest:
+                msg = " ".join([rest] + first_pass[i + 1 :])
+            else:
+                msg = " ".join(first_pass[i + 1 :])
+            break
+        else:
+            second_pass.append(param)
+
+    return {
+        "params": second_pass,
+        "tags": tags,
+        "size": size,
+        "message": msg,
+    }
 
 
 def is_admin(
@@ -740,10 +768,10 @@ class SpellBot(discord.Client):
         SpellBot sends with the ➕ and ➖ emoji.
 
         Up to five tags can be given as well to help describe the game expereince that you
-        want. For example you might send `!lfg no-combo proxy` which will assign the tags:
-        `no-combo` and `proxy` to your game. People will be able to see what tags are set
-        on your game when they are looking for games to join.
-        & [size:N] [tag-1] [tag-2] [...] [tag-N]
+        want. For example you might send `!lfg ~no-combo ~proxy` which will assign the
+        tags: `no-combo` and `proxy` to your game. People will be able to see what tags
+        are set on your game when they are looking for games to join.
+        & [size:N] [~tag-1] [~tag-2] [...] [~tag-N]
         """
         server = self.ensure_server_exists(session, message.channel.guild.id)
         session.commit()
@@ -752,10 +780,11 @@ class SpellBot(discord.Client):
         if user.waiting:
             return await message.channel.send(s("lfg_already", prefix=server.prefix))
 
-        params = [param.lower() for param in params]
         mentions = message.mentions if message.channel.type != "private" else []
 
-        size = size_from_params(params)
+        opts = parse_opts(params)
+        size, tag_names = opts["size"], opts["tags"]
+
         if not size or not (1 < size < 5):
             return await message.channel.send(s("lfg_size_bad"))
 
@@ -773,17 +802,9 @@ class SpellBot(discord.Client):
         if mentioned_users:
             session.commit()
 
-        tag_names = tag_names_from_params(params)
         if len(tag_names) > 5:
-            return await message.channel.send(s("lfg_too_many_tags"))
-
-        tags = []
-        for tag_name in tag_names:
-            tag = session.query(Tag).filter_by(name=tag_name).one_or_none()
-            if not tag:
-                tag = Tag(name=tag_name)
-                session.add(tag)
-            tags.append(tag)
+            return await message.channel.send(s("tags_too_many"))
+        tags = Tag.create_many(session, tag_names)
 
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=server.expire)
@@ -833,63 +854,32 @@ class SpellBot(discord.Client):
         Games will not be created immediately. This is to allow you to verify things look
         ok. This command will also give you directions on how to actually start the games
         for this event as part of its reply.
-        * Optional: Add a message by using "msg: " followed by the message content.
-        * Optional: Add tags by using "tags: " followed by the tags you want.
-        & <column 1> <column 2> ... [tags: tag-1 tag-2] [msg: Hello world!]
+        * Optional: Add a message to DM players with "msg: " followed by whatever.
+        * Optional: Add up to five tags by using `~tag-name`.
+        & <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]
         """
         if not is_admin(message.channel, message.author):
             return await message.channel.send(s("not_admin"))
-
         if not message.attachments:
             return await message.channel.send(s("event_no_data"))
-
         if not params:
             return await message.channel.send(s("event_no_params"))
 
-        n_params = len(params)
-        optional_message = None
-        optional_tags = None
-        msg_index: Optional[int] = None
-        tag_index: Optional[int] = None
-        try:
-            msg_index = params.index("msg:")
-        except ValueError:
-            pass
-        try:
-            tag_index = params.index("tags:")
-        except ValueError:
-            pass
-        if msg_index:
-            stop = tag_index if tag_index and tag_index > msg_index else n_params
-            optional_message = " ".join(params[msg_index + 1 : stop])
-        if tag_index:
-            stop = msg_index if msg_index and msg_index > tag_index else n_params
-            optional_tags = params[tag_index + 1 : stop]
-        if optional_message or optional_tags:
-            params = params[0 : min(msg_index or n_params, tag_index or n_params)]
-        if optional_message and len(optional_message) >= 255:
-            return await message.channel.send(s("game_message_too_long"))
-        if optional_tags and len(optional_tags) > 5:
-            return await message.channel.send(s("game_too_many_tags"))
-
+        opts = parse_opts(params)
+        params, tag_names, opt_msg = opts["params"], opts["tags"], opts["message"]
         size = len(params)
-        if not (1 < size <= 4):
-            return await message.channel.send(s("event_bad_play_count"))
-
-        tags = []
-        if optional_tags:
-            for tag_name in optional_tags:
-                tag = session.query(Tag).filter_by(name=tag_name).first()
-                if not tag:
-                    tag = Tag(name=tag_name)
-                    session.add(tag)
-                tags.append(tag)
-            session.commit()
-
         attachment = message.attachments[0]
 
+        if len(tag_names) > 5:
+            return await message.channel.send(s("tags_too_many"))
+        if opt_msg and len(opt_msg) >= 255:
+            return await message.channel.send(s("game_message_too_long"))
+        if not (1 < size <= 4):
+            return await message.channel.send(s("event_bad_play_count"))
         if not attachment.filename.lower().endswith(".csv"):
             return await message.channel.send(s("event_not_csv"))
+
+        tags = Tag.create_many(session, tag_names)
 
         bdata = await message.attachments[0].read()
         sdata = bdata.decode("utf-8")
@@ -969,7 +959,7 @@ class SpellBot(discord.Client):
                 size=size,
                 updated_at=now,
                 status="ready",
-                message=optional_message,
+                message=opt_msg,
                 users=player_users,
                 event=event,
                 tags=tags,
@@ -1051,42 +1041,21 @@ class SpellBot(discord.Client):
         * The user who issues this command is **NOT** added to the game themselves.
         * You must mention all of the players to be seated in the game.
         * Optional: Add a message by using "msg: " followed by the message content.
-        * Optional: Add tags by using "tags: " followed by the tags you want.
-        & @player1 @player2 ... [tags: tag-1 tag-2] [msg: Hello world!]
+        * Optional: Add tags by using "~tag-name" for the tags you want.
+        & @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]
         """
         if not is_admin(message.channel, message.author):
             return await message.channel.send(s("not_admin"))
 
-        n_params = len(params)
-        optional_message = None
-        optional_tags = None
-        msg_index: Optional[int] = None
-        tag_index: Optional[int] = None
-        try:
-            msg_index = params.index("msg:")
-        except ValueError:
-            pass
-        try:
-            tag_index = params.index("tags:")
-        except ValueError:
-            pass
-        if msg_index:
-            stop = tag_index if tag_index and tag_index > msg_index else n_params
-            optional_message = " ".join(params[msg_index + 1 : stop])
-        if tag_index:
-            stop = msg_index if msg_index and msg_index > tag_index else n_params
-            optional_tags = params[tag_index + 1 : stop]
-        if optional_message or optional_tags:
-            params = params[0 : min(msg_index or n_params, tag_index or n_params)]
-        if optional_message and len(optional_message) >= 255:
-            return await message.channel.send(s("game_message_too_long"))
-        if optional_tags and len(optional_tags) > 5:
-            return await message.channel.send(s("game_too_many_tags"))
-
-        params = [param.lower() for param in params]
+        opts = parse_opts(params)
+        size, tag_names, opt_msg = opts["size"], opts["tags"], opts["message"]
         mentions = message.mentions if message.channel.type != "private" else []
 
-        size = size_from_params(params)
+        if opt_msg and len(opt_msg) >= 255:
+            return await message.channel.send(s("game_message_too_long"))
+        if tag_names and len(tag_names) > 5:
+            return await message.channel.send(s("tags_too_many"))
+
         if not size or not (1 < size <= 4):
             return await message.channel.send(s("game_size_bad"))
 
@@ -1104,14 +1073,7 @@ class SpellBot(discord.Client):
             mentioned_users.append(mentioned_user)
         session.commit()
 
-        tags = []
-        if optional_tags:
-            for tag_name in optional_tags:
-                tag = session.query(Tag).filter_by(name=tag_name).first()
-                if not tag:
-                    tag = Tag(name=tag_name)
-                    session.add(tag)
-                tags.append(tag)
+        tags = Tag.create_many(session, tag_names)
 
         server = self.ensure_server_exists(session, message.channel.guild.id)
         session.commit()
@@ -1128,7 +1090,7 @@ class SpellBot(discord.Client):
             updated_at=now,
             url=url,
             status="started",
-            message=optional_message,
+            message=opt_msg,
             users=mentioned_users,
             tags=tags,
         )

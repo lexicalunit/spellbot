@@ -588,6 +588,52 @@ class TestSpellBot:
         assert spellbot.is_admin(channel, not_an_admin()) == False
         assert spellbot.is_admin(channel, an_admin()) == True
 
+    async def test_parse_opts(self):
+        assert spellbot.parse_opts(["a", "B", "c"]) == {
+            "message": None,
+            "params": ["a", "B", "c"],
+            "size": 4,
+            "tags": [],
+        }
+
+        assert spellbot.parse_opts(["a", "~B", "c"]) == {
+            "message": None,
+            "params": ["a", "c"],
+            "size": 4,
+            "tags": ["b"],
+        }
+
+        assert spellbot.parse_opts(["a", "size:5", "c"]) == {
+            "message": None,
+            "params": ["a", "c"],
+            "size": 5,
+            "tags": [],
+        }
+
+        assert spellbot.parse_opts(["a", "size:fancy", "c"]) == {
+            "message": None,
+            "params": ["a", "c"],
+            "size": None,
+            "tags": [],
+        }
+
+        assert spellbot.parse_opts(["a", "size:", "5", "c"]) == {
+            "message": None,
+            "params": ["a", "c"],
+            "size": 5,
+            "tags": [],
+        }
+
+        assert spellbot.parse_opts(["a", "size:", "fancy", "c"]) == {
+            "message": None,
+            "params": ["a", "fancy", "c"],
+            "size": None,
+            "tags": [],
+        }
+
+        # TODO: Coverage for all functionality of parse_opts could be here, but it is
+        #       actually covered in other places in these tests so, shrug...
+
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_on_message_no_request(self, client, channel_maker, channel_type):
         channel = channel_maker.make(channel_type)
@@ -829,8 +875,8 @@ class TestSpellBot:
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         tags = ["one", "two", "three", "four", "five", "six"]
-        tags_str = " ".join(tags)
-        cmd = f"!game {mentions_str} tags: {tags_str}"
+        tags_str = " ".join([f"~{tag}" for tag in tags])
+        cmd = f"!game {mentions_str} {tags_str}"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
 
@@ -915,7 +961,7 @@ class TestSpellBot:
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         message = "This is a message!"
-        cmd = f"!game {mentions_str} msg: {message} tags: a b c"
+        cmd = f"!game {mentions_str} msg: {message} ~a ~b ~c"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         game = all_games(client)[0]
         assert channel.last_sent_response == (
@@ -936,7 +982,7 @@ class TestSpellBot:
         mentions = [ADAM, AMY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         message = "This is a message!"
-        cmd = f"!game {mentions_str} size:2 msg: {message} tags: a b c"
+        cmd = f"!game {mentions_str} size: 2 msg: {message} ~a ~b ~c"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         game = all_games(client)[1]
         assert channel.last_sent_response == (
@@ -956,7 +1002,7 @@ class TestSpellBot:
         mentions = [FRIEND, GUY, BUDDY, DUDE]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         message = "This is a message!"
-        cmd = f"!game {mentions_str} tags: a b c msg: {message}"
+        cmd = f"!game {mentions_str} ~a ~b ~c msg:{message}"
         await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
         game = all_games(client)[0]
         assert channel.last_sent_response == (
@@ -1140,8 +1186,8 @@ class TestSpellBot:
         data = bytes(f"player1,player2\n{AMY.name}#1234,@{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         tags = ["one", "two", "three", "four", "five", "six"]
-        tags_str = " ".join(tags)
-        comment = f"!event player1 player2 tags: {tags_str}"
+        tags_str = " ".join([f"~{tag}" for tag in tags])
+        comment = f"!event player1 player2 {tags_str}"
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
@@ -1185,7 +1231,7 @@ class TestSpellBot:
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         opt = "an message override"
-        comment = f"!event player1 player2 msg: {opt} tags: a b c"
+        comment = f"!event player1 player2 msg: {opt} ~a ~b ~c"
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         event = all_events(client)[0]
@@ -1203,7 +1249,7 @@ class TestSpellBot:
         data = bytes(f"player1,player2\n{AMY.name},{JR.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         opt = "an message override"
-        comment = f"!event player1 player2 tags: a b c msg: {opt}"
+        comment = f"!event player1 player2 ~a ~b ~c msg: {opt}"
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         event = all_events(client)[0]
@@ -1219,7 +1265,7 @@ class TestSpellBot:
         data = bytes(f"player1,player2\n{ADAM.name},{GUY.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
         opt = "an message override"
-        comment = f"!event player1 player2 tags: a b c msg: {opt}"
+        comment = f"!event player1 player2 ~a ~b ~c msg: {opt}"
         message = MockMessage(an_admin(), channel, comment, attachments=[csv_file])
         await client.on_message(message)
         event = all_events(client)[1]
@@ -1433,7 +1479,7 @@ class TestSpellBot:
     async def test_on_message_lfg_too_many_tags(self, client, channel_maker):
         channel = channel_maker.text()
         author = someone()
-        await client.on_message(MockMessage(author, channel, "!lfg a b c d e f"))
+        await client.on_message(MockMessage(author, channel, "!lfg ~a ~b ~c ~d ~e ~f"))
         assert channel.last_sent_response == "Sorry, you can not use more than 5 tags."
 
     async def test_on_message_lfg_already(self, client, channel_maker):
@@ -1458,16 +1504,22 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!lfg size:2"))
         assert "1 more player" in channel.last_sent_embed["title"]
 
+    async def test_on_message_lfg_with_size_with_space(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg size: 2"))
+        assert "1 more player" in channel.last_sent_embed["title"]
+
     async def test_on_message_lfg_with_tags(self, client, channel_maker):
         channel = channel_maker.text()
-        await client.on_message(MockMessage(ADAM, channel, "!lfg modern no-ban-list"))
+        await client.on_message(MockMessage(ADAM, channel, "!lfg ~modern ~no-ban-list"))
         assert {
             "inline": True,
             "name": "Tags",
             "value": "modern, no-ban-list",
         } in channel.last_sent_embed["fields"]
 
-        await client.on_message(MockMessage(JR, channel, "!lfg modern"))
+        await client.on_message(MockMessage(JR, channel, "!lfg ~modern"))
         assert {
             "inline": True,
             "name": "Tags",
