@@ -72,7 +72,7 @@ def tag_names_from_params(params: List[str]) -> List[str]:
         and not len(param) >= 50
     ]
     if not tag_names:
-        tag_names = ["default"]
+        tag_names = []
     return tag_names
 
 
