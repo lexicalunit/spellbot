@@ -177,7 +177,7 @@ class Game(Base):
             players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
             embed.add_field(name="Players", value=players)
         tag_names = None
-        if not (len(self.tags) == 1 and self.tags[0].name == "default"):
+        if self.tags and len(self.tags) >= 1:
             sorted_tag_names: List[str] = sorted([tag.name for tag in self.tags])
             tag_names = ", ".join(sorted_tag_names)
             embed.add_field(name="Tags", value=tag_names)
