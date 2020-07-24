@@ -61,13 +61,18 @@ def parse_opts(params: List[str]) -> dict:
     size: Optional[int] = DEFAULT_GAME_SIZE
     msg: Optional[str] = None
     skip_next: bool = False
+    system: str = "spelltable"
 
     for i, param in enumerate(params):
         if skip_next:
             skip_next = False
             continue
 
-        if param.startswith("~"):
+        if param.lower() in ["~mtgo", "~modo"]:
+            system = "mtgo"
+        elif param.lower() in ["~arena", "~mtga"]:
+            system = "arena"
+        elif param.startswith("~"):
             tags.append(param[1:].lower())
         elif param.lower().startswith("size:"):
             rest = param[5:]
@@ -97,10 +102,11 @@ def parse_opts(params: List[str]) -> dict:
             second_pass.append(param)
 
     return {
-        "params": second_pass,
-        "tags": tags,
-        "size": size,
         "message": msg,
+        "params": second_pass,
+        "size": size,
+        "system": system,
+        "tags": tags,
     }
 
 
@@ -593,7 +599,7 @@ class SpellBot(discord.Client):
                         found_discord_users.append(discord_user)
 
             if len(found_discord_users) == game.size:  # game is ready
-                game.url = self.create_game()
+                game.url = self.create_game() if game.system == "spelltable" else None
                 game.status = "started"
                 session.commit()
                 for discord_user in found_discord_users:
@@ -783,7 +789,7 @@ class SpellBot(discord.Client):
         mentions = message.mentions if message.channel.type != "private" else []
 
         opts = parse_opts(params)
-        size, tag_names = opts["size"], opts["tags"]
+        size, tag_names, system = opts["size"], opts["tags"], opts["system"]
 
         if not size or not (1 < size < 5):
             return await message.channel.send(s("lfg_size_bad"))
@@ -815,6 +821,7 @@ class SpellBot(discord.Client):
             expires_at=expires_at,
             size=size,
             channel_xid=message.channel.id,
+            system=system,
             tags=tags,
             server=server,
         )
@@ -866,7 +873,12 @@ class SpellBot(discord.Client):
             return await message.channel.send(s("event_no_params"))
 
         opts = parse_opts(params)
-        params, tag_names, opt_msg = opts["params"], opts["tags"], opts["message"]
+        params, tag_names, opt_msg, system = (
+            opts["params"],
+            opts["tags"],
+            opts["message"],
+            opts["system"],
+        )
         size = len(params)
         attachment = message.attachments[0]
 
@@ -959,6 +971,7 @@ class SpellBot(discord.Client):
                 size=size,
                 updated_at=now,
                 status="ready",
+                system=system,
                 message=opt_msg,
                 users=player_users,
                 event=event,
@@ -1019,7 +1032,7 @@ class SpellBot(discord.Client):
             if len(found_discord_users) != len(game.users):
                 continue
 
-            game.url = self.create_game()
+            game.url = self.create_game() if game.system == "spelltable" else None
             game.status = "started"
             response = game.to_embed()
             for discord_user in found_discord_users:
@@ -1048,7 +1061,12 @@ class SpellBot(discord.Client):
             return await message.channel.send(s("not_admin"))
 
         opts = parse_opts(params)
-        size, tag_names, opt_msg = opts["size"], opts["tags"], opts["message"]
+        size, tag_names, opt_msg, system = (
+            opts["size"],
+            opts["tags"],
+            opts["message"],
+            opts["system"],
+        )
         mentions = message.mentions if message.channel.type != "private" else []
 
         if opt_msg and len(opt_msg) >= 255:
@@ -1080,7 +1098,7 @@ class SpellBot(discord.Client):
 
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=server.expire)
-        url = self.create_game()
+        url = self.create_game() if system == "spelltable" else None
         game = Game(
             channel_xid=message.channel.id,
             created_at=now,
@@ -1090,6 +1108,7 @@ class SpellBot(discord.Client):
             updated_at=now,
             url=url,
             status="started",
+            system=system,
             message=opt_msg,
             users=mentioned_users,
             tags=tags,

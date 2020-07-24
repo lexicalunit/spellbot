@@ -63,6 +63,15 @@ These commands will help you configure SpellBot for your server.
   - `prefix`: Set the command prefix for SpellBot in text channels.
   - `expire`: Set how many minutes before games are expired due to inactivity.
 
+### 🤫 Secrets
+
+There's some secret hidden features of SpellBot. For example, if you use the
+tags `~mtgo` or `~arena` when creating a game, it will direct players to use
+those systems instead of SpellTable. Ok, I guess that's not secret anymore. But
+you kinda get the idea. Well, you've been warned. Hopefully these features are
+intuitive and helpful 🤞 — and if not,
+[please report bugs and request features][issues] to your heart's content.
+
 ## 🙌 Support Me
 
 I'm keeping SpellBot running using my own money but if you like the bot and want
@@ -118,6 +127,7 @@ You can also run SpellBot via docker. See
 [contributors]:       https://github.com/lexicalunit/spellbot/graphs/contributors
 [db-url]:             https://docs.sqlalchemy.org/en/latest/core/engines.html
 [discord-bot-docs]:   https://discord.com/developers/docs/topics/oauth2#bots
+[issues]:             https://github.com/lexicalunit/spellbot/issues
 [ko-fi]:              https://ko-fi.com/Y8Y51VTHZ
 [lexicalunit]:        http://github.com/lexicalunit
 [lfg]:                https://user-images.githubusercontent.com/1903876/87704209-e61a0f00-c750-11ea-87d2-0d5b0a1ef42f.png

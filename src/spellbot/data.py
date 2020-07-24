@@ -149,6 +149,7 @@ class Game(Base):
         Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True
     )
     message_xid = Column(BigInteger)
+    system = Column(String(30), nullable=False, server_default=text("'spelltable'"))
     users = relationship("User", back_populates="game", uselist=True)
     tags = relationship("Tag", secondary=games_tags, back_populates="games", uselist=True)
     server = relationship("Server", back_populates="games")
@@ -183,26 +184,36 @@ class Game(Base):
             "channel_xid": self.channel_xid,
             "url": self.url,
             "status": self.status,
+            "system": self.system,
             "message": self.message,
             "message_xid": self.message_xid,
             "tags": [tag.name for tag in self.tags],
         }
 
     def to_embed(self) -> discord.Embed:
-        if self.url:
-            title = self.message if self.message else "**Your game is ready!**"
-        else:
+        if self.status == "pending":
             remaining = int(self.size) - len(cast(List[User], self.users))
             plural = "s" if remaining > 1 else ""
             title = f"**Waiting for {remaining} more player{plural} to join...**"
+        else:
+            title = self.message if self.message else "**Your game is ready!**"
         embed = discord.Embed(title=title)
         embed.set_thumbnail(url=THUMB_URL)
-        if self.url:
+        if self.status == "pending":
+            embed.description = "To join/leave this game, react with ➕/➖."
+        elif self.system == "spelltable":
+            assert self.url is not None  # TODO: Shouldn't be possible?
             embed.description = (
                 f"Click the link below to join your SpellTable game.\n<{self.url}>"
             )
-        else:
-            embed.description = "To join/leave this game, react with ➕/➖."
+        elif self.system == "mtgo":
+            embed.description = (
+                "Please exchange MTGO contact information and head over there to play!"
+            )
+        else:  # self.system == "arena"
+            embed.description = (
+                "Please exchange Arena contact information and head over there to play!"
+            )
         if self.users:
             players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
             embed.add_field(name="Players", value=players)
