@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, List, cast
+from typing import Any, Dict, List, cast
 
 import alembic  # type: ignore
 import alembic.command  # type: ignore
@@ -49,6 +49,39 @@ class Server(Base):
         return not self.channels or any(
             channel.channel_xid == channel_xid for channel in self.channels
         )
+
+    def games_data(self) -> Dict[str, List[str]]:
+        data: Dict[str, List[str]] = {
+            "id": [],
+            "size": [],
+            "status": [],
+            "message": [],
+            "system": [],
+            "channel_xid": [],
+            "url": [],
+            "event_id": [],
+            "created_at": [],
+            "tags": [],
+        }
+        for game in self.games:
+            if game.status == "pending":
+                continue
+            tags_str = f"{','.join(sorted(tag.name for tag in game.tags))}"
+            tags_str = (
+                f'"{tags_str}"' if len(cast(List[Tag], game.tags)) > 1 else tags_str
+            )
+            event_id = game.event.id if game.event else None
+            data["id"].append(str(game.id))
+            data["size"].append(str(game.size))
+            data["status"].append(game.status)
+            data["message"].append(game.message or "")
+            data["system"].append(game.system)
+            data["channel_xid"].append(str(game.channel_xid))
+            data["url"].append(game.url or "")
+            data["event_id"].append(str(event_id) if event_id else "")
+            data["created_at"].append(str(game.created_at))
+            data["tags"].append(tags_str)
+        return data
 
     def __repr__(self) -> str:
         return json.dumps(
