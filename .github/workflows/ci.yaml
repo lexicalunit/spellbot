@@ -52,3 +52,7 @@ jobs:
 
     - name: Send Reports to Codecov
       uses: codecov/codecov-action@v1
+      env:
+        DB_URL: ${{ matrix.database-url }}
+      with:
+        env_vars: PYTHON,DB_URL
