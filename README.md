@@ -65,7 +65,7 @@ These commands will help you configure SpellBot for your server.
 
 ### 🤫 Secrets
 
-There's some secret hidden features of SpellBot. For example, if you use the
+There's some secret hidden features of SpellBot. For example if you use the
 tags `~mtgo` or `~arena` when creating a game, it will direct players to use
 those systems instead of SpellTable. Ok, I guess that's not secret anymore. But
 you kinda get the idea. Well, you've been warned. Hopefully these features are
