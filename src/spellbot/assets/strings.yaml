@@ -25,7 +25,7 @@ event_not_csv: Sorry, the file is not a CSV file. Make sure the filename ends wi
 expired: SpellBot has deleted your pending game due to server inactivity.
 game_created: '**Game $id created:**
 
-  > $url
+  > Link: $url
 
   > Players notified by DM: $players'
 game_message_too_long: Sorry, the optional game message must be shorter than 255 characters.

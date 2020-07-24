@@ -1,3 +1,5 @@
+> The default game size is 4 but you can change it by adding, for example, `size:2` to create a two player game.
+> 
 > You can automatically invite players to the game by @ mentioning them in the command. They will be sent invite confirmations and the game won't be posted to the channel until they've responded.
 > 
 > Players will be able to join or leave the game by reacting to the message that SpellBot sends with the ➕ and ➖ emoji.
