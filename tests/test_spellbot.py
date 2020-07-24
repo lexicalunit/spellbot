@@ -432,7 +432,7 @@ def game_embed_for(client, user, ready, message=None):
     rvalue = db_user.game.to_embed() if db_user and db_user.game else None
     session.close()
     if ready:
-        assert db_user.game.url is not None
+        assert db_user.game.status != "pending"
     if message:
         assert db_user.game.message == message
     return rvalue.to_dict() if rvalue else None
@@ -594,6 +594,7 @@ class TestSpellBot:
             "params": ["a", "B", "c"],
             "size": 4,
             "tags": [],
+            "system": "spelltable",
         }
 
         assert spellbot.parse_opts(["a", "~B", "c"]) == {
@@ -601,6 +602,7 @@ class TestSpellBot:
             "params": ["a", "c"],
             "size": 4,
             "tags": ["b"],
+            "system": "spelltable",
         }
 
         assert spellbot.parse_opts(["a", "size:5", "c"]) == {
@@ -608,6 +610,7 @@ class TestSpellBot:
             "params": ["a", "c"],
             "size": 5,
             "tags": [],
+            "system": "spelltable",
         }
 
         assert spellbot.parse_opts(["a", "size:fancy", "c"]) == {
@@ -615,6 +618,7 @@ class TestSpellBot:
             "params": ["a", "c"],
             "size": None,
             "tags": [],
+            "system": "spelltable",
         }
 
         assert spellbot.parse_opts(["a", "size:", "5", "c"]) == {
@@ -622,6 +626,7 @@ class TestSpellBot:
             "params": ["a", "c"],
             "size": 5,
             "tags": [],
+            "system": "spelltable",
         }
 
         assert spellbot.parse_opts(["a", "size:", "fancy", "c"]) == {
@@ -629,6 +634,7 @@ class TestSpellBot:
             "params": ["a", "fancy", "c"],
             "size": None,
             "tags": [],
+            "system": "spelltable",
         }
 
         # TODO: Coverage for all functionality of parse_opts could be here, but it is
@@ -1497,6 +1503,60 @@ class TestSpellBot:
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg"))
         assert channel.last_sent_embed == game_embed_for(client, author, False)
+
+    async def test_on_message_lfg_mtgo(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2 ~mtgo"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert game_json_for(client, ADAM)["system"] == "mtgo"
+        assert game_json_for(client, ADAM)["tags"] == []
+        assert game_embed_for(client, ADAM, True) == {
+            "color": 5914365,
+            "description": "Please exchange MTGO contact information and head over there"
+            " to play!",
+            "fields": [
+                {"inline": True, "name": "Players", "value": f"<@{ADAM.id}>, <@{JR.id}>"}
+            ],
+            "thumbnail": {"url": THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+
+    async def test_on_message_lfg_arena(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2 ~arena"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        assert game_json_for(client, ADAM)["system"] == "arena"
+        assert game_json_for(client, ADAM)["tags"] == []
+        assert game_embed_for(client, ADAM, True) == {
+            "color": 5914365,
+            "description": "Please exchange Arena contact information and head over there"
+            " to play!",
+            "fields": [
+                {"inline": True, "name": "Players", "value": f"<@{ADAM.id}>, <@{JR.id}>"}
+            ],
+            "thumbnail": {"url": THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
 
     async def test_on_message_lfg_with_size(self, client, channel_maker):
         channel = channel_maker.text()
