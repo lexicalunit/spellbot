@@ -926,7 +926,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> {game['url']}\n"
+            f"> Link: {game['url']}\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
@@ -949,7 +949,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> {game['url']}\n"
+            f"> Link: {game['url']}\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
@@ -972,7 +972,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> {game['url']}\n"
+            f"> Link: {game['url']}\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
@@ -993,7 +993,7 @@ class TestSpellBot:
         game = all_games(client)[1]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> {game['url']}\n"
+            f"> Link: {game['url']}\n"
             f"> Players notified by DM: <@{AMY.id}>, <@{ADAM.id}>"
         )
         player_response = game_embed_for(client, ADAM, True, message=message)
@@ -1013,7 +1013,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> {game['url']}\n"
+            f"> Link: {game['url']}\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
@@ -1035,7 +1035,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> {game['url']}\n"
+            f"> Link: {game['url']}\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
@@ -1052,7 +1052,7 @@ class TestSpellBot:
         game = all_games(client)[1]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> {game['url']}\n"
+            f"> Link: {game['url']}\n"
             f"> Players notified by DM: <@{AMY.id}>, <@{ADAM.id}>,"
             f" <@{JR.id}>, <@{FRIEND.id}>"
         )
@@ -1356,7 +1356,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> {game['url']}\n"
+            f"> Link: {game['url']}\n"
             f"> Players notified by DM: {AMY.name}, {JR.name}"
         )
         player_response = game_embed_for(client, AMY, True)
@@ -1382,7 +1382,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> {game['url']}\n"
+            f"> Link: {game['url']}\n"
             f"> Players notified by DM: {AMY.name}, {JR.name}"
         )
         player_response = game_embed_for(client, AMY, True, message=opt)
@@ -2024,7 +2024,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> {game['url']}\n"
+            f"> Link: {game['url']}\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
@@ -2060,6 +2060,40 @@ class TestSpellBot:
         )
 
         # TODO: Actually test that the embed was deleted correctly.
+
+    async def test_on_message_export_non_admin(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(someone(), channel, "!export"))
+        assert channel.last_sent_response == (
+            "You do not have admin permissions for this bot."
+        )
+
+    async def test_on_message_export(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2 ~mtgo"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="➕",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+        game = all_games(client)[0]
+        created_at = game["created_at"]
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
+
+        await client.on_message(MockMessage(an_admin(), channel, "!export"))
+        attachment = channel.all_sent_files[0]
+        assert attachment.fp.read() == (
+            str.encode(
+                "id,size,status,message,system,channel_xid,url,event_id,created_at,tags\n"
+                f"{game['id']},2,started,,mtgo,#{channel.name},,,{created_at},\n"
+            )
+        )
 
 
 def test_paginate():

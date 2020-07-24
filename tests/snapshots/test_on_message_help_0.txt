@@ -14,6 +14,9 @@
 > * Optional: Add a message to DM players with "msg: " followed by whatever.
 > * Optional: Add up to five tags by using `~tag-name`.
 
+`!export`
+>  Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._
+
 `!game @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]`
 >  Create a game between mentioned users. _Requires the "SpellBot Admin" role._
 > 
@@ -31,5 +34,3 @@
 
 `!lfg [size:N] [~tag-1] [~tag-2] [...] [~tag-N]`
 >  Create a pending game for players to join.
-> 
-> The default game size is 4 but you can change it by adding, for example, `size:2` to create a two player game.

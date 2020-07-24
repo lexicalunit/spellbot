@@ -51,6 +51,7 @@ online events.
 - `!game`: Directly create games for the mentioned users.
 - `!event`: Create a bunch of games all at once based on some uploaded data.
 - `!begin`: Start an event that you previously created with `!event`.
+- `!export`: Export historical game data for your server.
 
 ### 👑 Administrative Commands
 
