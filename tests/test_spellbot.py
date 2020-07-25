@@ -370,6 +370,7 @@ DUDE = MockMember("dude", 82988761019800004, roles=[ADMIN_ROLE])
 
 JR = MockMember("J.R.", 72988021019800005)
 ADAM = MockMember("Adam", 62988021019800006)
+TOM = MockMember("Tom", 62988021019800016)
 AMY = MockMember("Amy", 52988021019800007)
 JACOB = MockMember("Jacob", 42988021019800008)
 
@@ -378,7 +379,7 @@ BOT = MockMember("robot", 82169567890900010)
 BOT.bot = True
 ADMIN.bot = True
 
-SERVER_MEMBERS = [FRIEND, BUDDY, GUY, DUDE, ADMIN, JR, ADAM, AMY, JACOB]
+SERVER_MEMBERS = [FRIEND, BUDDY, GUY, DUDE, ADMIN, JR, ADAM, TOM, AMY, JACOB]
 ALL_USERS = []  # users that are on the server, setup in client fixture
 
 S_SPY = Mock(wraps=spellbot.s)
@@ -1444,7 +1445,7 @@ class TestSpellBot:
         channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg size:10"))
-        assert channel.last_sent_response == "Sorry, game size should be between 2 and 4."
+        assert channel.last_sent_response == "Game size must be between 2 and 4."
 
     async def test_on_message_lfg_too_many_mentions(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1454,7 +1455,7 @@ class TestSpellBot:
         cmd = f"!lfg {mentions_str}"
         await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
         assert channel.last_sent_response == (
-            "Sorry, you've mentioned too many players for this size game."
+            "Sorry, you've mentioned too many players for that size game."
         )
 
     async def test_on_message_lfg_mention_already(self, client, channel_maker):
@@ -1474,13 +1475,13 @@ class TestSpellBot:
         channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg size:1"))
-        assert channel.last_sent_response == "Sorry, game size should be between 2 and 4."
+        assert channel.last_sent_response == "Game size must be between 2 and 4."
 
     async def test_on_message_lfg_size_not_number(self, client, channel_maker):
         channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg size:x"))
-        assert channel.last_sent_response == "Sorry, game size should be between 2 and 4."
+        assert channel.last_sent_response == "Game size must be between 2 and 4."
 
     async def test_on_message_lfg_too_many_tags(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1494,8 +1495,8 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!lfg"))
         await client.on_message(MockMessage(author, channel, "!lfg"))
         assert channel.last_sent_response == (
-            "You're already in a pending game. If you want to,"
-            " you can leave all games with `!leave`."
+            "You're already waiting for a game. If you want to, "
+            "you can leave that game with `!leave` and then try again."
         )
 
     async def test_on_message_lfg(self, client, channel_maker):
@@ -2095,6 +2096,39 @@ class TestSpellBot:
             )
         )
 
+    async def test_on_message_play(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        await client.on_message(MockMessage(ADAM, channel, "!play ~modern"))
+        assert len(all_games(client)) == 1
+
+        await client.on_message(MockMessage(ADAM, channel, "!play ~modern"))
+        assert len(all_games(client)) == 1
+
+        await client.on_message(MockMessage(JR, channel, "!play ~modern ~chaos"))
+        assert len(all_games(client)) == 2
+
+        await client.on_message(MockMessage(AMY, channel, "!play ~modern"))
+        assert len(all_games(client)) == 2
+        assert game_embed_for(client, ADAM, False) == game_embed_for(client, AMY, False)
+
+        await client.on_message(MockMessage(TOM, channel, "!play ~modern ~chaos"))
+        assert len(all_games(client)) == 2
+        assert game_embed_for(client, JR, False) == game_embed_for(client, TOM, False)
+
+        await client.on_message(MockMessage(JACOB, channel, "!play"))
+        assert len(all_games(client)) == 3
+
+    async def test_on_message_play_full(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        await client.on_message(MockMessage(JR, channel, "!play size:2"))
+        assert len(all_games(client)) == 1
+
+        await client.on_message(MockMessage(TOM, channel, "!play size:2"))
+        assert len(all_games(client)) == 1
+        assert game_embed_for(client, JR, True) == game_embed_for(client, TOM, True)
+
 
 def test_paginate():
     def subject(text):
@@ -2158,7 +2192,7 @@ class TestCodebase:
     def test_black(self):
         """Checks that the Python codebase passes configured black checks."""
         chdir(REPO_ROOT)
-        cmd = ["black", "-v", "--check", *SRC_DIRS]
+        cmd = ["black", "--check", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
         assert proc.returncode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
