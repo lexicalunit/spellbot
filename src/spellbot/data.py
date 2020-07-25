@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 import alembic  # type: ignore
 import alembic.command  # type: ignore
@@ -20,11 +20,14 @@ from sqlalchemy import (
     Table,
     and_,
     create_engine,
+    func,
+    or_,
     text,
 )
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
+from sqlalchemy.sql.expression import distinct
 
 from spellbot.constants import THUMB_URL
 
@@ -32,7 +35,6 @@ PACKAGE_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = PACKAGE_ROOT / "assets"
 ALEMBIC_INI = ASSETS_DIR / "alembic.ini"
 VERSIONS_DIR = PACKAGE_ROOT / "versions"
-
 
 Base = declarative_base()
 
@@ -187,6 +189,47 @@ class Game(Base):
     tags = relationship("Tag", secondary=games_tags, back_populates="games", uselist=True)
     server = relationship("Server", back_populates="games")
     event = relationship("Event", back_populates="games")
+
+    @classmethod
+    def find_existing(
+        cls,
+        session: Session,
+        server: Server,
+        channel_xid: int,
+        size: int,
+        seats: int,
+        tags: List[Tag],
+        system: str,
+    ) -> Optional[Game]:
+        guild_xid = server.guild_xid
+        required_tag_ids = set(tag.id for tag in tags)
+        select_filters = [
+            Game.status == "pending",
+            Game.guild_xid == guild_xid,
+            Game.size == size,
+            Game.channel_xid == channel_xid,
+            Game.system == system,
+        ]
+        having_filters = [
+            func.count(distinct(User.xid)) <= size - seats,
+            func.count(distinct(games_tags.c.tag_id)) == len(required_tag_ids),
+        ]
+        if required_tag_ids:
+            tag_filters = []
+            for tid in required_tag_ids:
+                tag_filters.append(games_tags.c.tag_id == tid)
+            select_filters.append(or_(*tag_filters))
+        game: Optional[Game] = (
+            session.query(Game)
+            .join(User)
+            .join(games_tags, isouter=True)
+            .filter(and_(*select_filters))
+            .group_by(Game.id)
+            .having(and_(*having_filters))
+            .order_by(Game.updated_at)
+            .first()
+        )
+        return game
 
     @classmethod
     def expired(cls, session: Session) -> List[Game]:

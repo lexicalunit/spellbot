@@ -32,5 +32,5 @@
 `!leave`
 >  Leave any pending game that you've signed up for on this server.
 
-`!lfg [size:N] [~tag-1] [~tag-2] [...] [~tag-N]`
+`!lfg [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
 >  Create a pending game for players to join.

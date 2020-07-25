@@ -4,7 +4,12 @@
 > 
 > Players will be able to join or leave the game by reacting to the message that SpellBot sends with the ➕ and ➖ emoji.
 > 
-> Up to five tags can be given as well to help describe the game expereince that you want. For example you might send `!lfg ~no-combo ~proxy` which will assign the tags: `no-combo` and `proxy` to your game. People will be able to see what tags are set on your game when they are looking for games to join.
+> Up to five tags can be given as well to help describe the game expereince that you want. For example you might send `!lfg ~no-combo ~proxy` which will assign the tags `no-combo` and `proxy` to your game. People will be able to see what tags are set on your game when they are looking for games to join.
+
+`!play`
+>  Quickly join a game now or else create a new looking-for-game post.
+> 
+> This command works exactly like the !lfg command except that it will first try to add you to an existing pending game if one exists. Useful if you just want to play a game of Magic and don't want to go find one and manually add your emoji reaction to it manually.
 
 `!spellbot <subcommand> [subcommand parameters]`
 >  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._

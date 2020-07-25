@@ -30,6 +30,7 @@ being too spammy in text channels.**
 For players just looking to start some games, these commands are for you!
 
 - `!lfg`: Create a pending game for people join.
+- `!play`: Same as `!lfg`, but look for an existing game to join first.
 - `!leave`: Leave any pending games that you've signed up for.
 
 When you run the `!lfg` command, SpellBot will post a message for sign ups.

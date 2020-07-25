@@ -759,34 +759,19 @@ class SpellBot(discord.Client):
         embed.color = discord.Color(0x5A3EFD)
         await message.channel.send(embed=embed)
 
-    @command(allow_dm=False)
-    async def lfg(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+    async def _play_helper(
+        self,
+        session: Session,
+        prefix: str,
+        params: List[str],
+        message: discord.Message,
+        join_first: bool,
     ) -> None:
-        """
-        Create a pending game for players to join.
-
-        The default game size is 4 but you can change it by adding, for example, `size:2`
-        to create a two player game.
-
-        You can automatically invite players to the game by @ mentioning them in the
-        command. They will be sent invite confirmations and the game won't be posted to
-        the channel until they've responded.
-
-        Players will be able to join or leave the game by reacting to the message that
-        SpellBot sends with the ➕ and ➖ emoji.
-
-        Up to five tags can be given as well to help describe the game expereince that you
-        want. For example you might send `!lfg ~no-combo ~proxy` which will assign the
-        tags: `no-combo` and `proxy` to your game. People will be able to see what tags
-        are set on your game when they are looking for games to join.
-        & [size:N] [~tag-1] [~tag-2] [...] [~tag-N]
-        """
         server = self.ensure_server_exists(session, message.channel.guild.id)
 
         user = self.ensure_user_exists(session, message.author)
         if user.waiting:
-            await message.channel.send(s("lfg_already", prefix=server.prefix))
+            await message.channel.send(s("user_waiting", prefix=server.prefix))
             return
 
         mentions = message.mentions if message.channel.type != "private" else []
@@ -795,7 +780,7 @@ class SpellBot(discord.Client):
         size, tag_names, system = opts["size"], opts["tags"], opts["system"]
 
         if not size or not (1 < size < 5):
-            await message.channel.send(s("lfg_size_bad"))
+            await message.channel.send(s("game_size_bad"))
             return
 
         if len(mentions) + 1 >= size:
@@ -820,16 +805,30 @@ class SpellBot(discord.Client):
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=server.expire)
         user.invited = False
-        user.game = Game(
-            created_at=now,
-            updated_at=now,
-            expires_at=expires_at,
-            size=size,
-            channel_xid=message.channel.id,
-            system=system,
-            tags=tags,
-            server=server,
-        )
+
+        found_existing = False
+        if join_first:
+            seats = 1 + len(mentions)
+            game = Game.find_existing(
+                session, server, message.channel.id, size, seats, tags, system
+            )
+            if game:
+                found_existing = True
+                user.game = game
+                user.game.expires_at = expires_at
+                user.game.updated_at = now
+
+        if not user.game:
+            user.game = Game(
+                created_at=now,
+                updated_at=now,
+                expires_at=expires_at,
+                size=size,
+                channel_xid=message.channel.id,
+                system=system,
+                tags=tags,
+                server=server,
+            )
         for mentioned_user in mentioned_users:
             mentioned_user.game = user.game
             mentioned_user.invited = True
@@ -842,12 +841,79 @@ class SpellBot(discord.Client):
         if mentioned_users:
             for mentioned in mentions:
                 await mentioned.send(s("lfg_invited", mention=f"<@{mentionor_xid}>"))
-        else:
-            post = await message.channel.send(embed=user.game.to_embed())
-            user.game.message_xid = post.id
-            session.commit()
-            await post.add_reaction("➕")
-            await post.add_reaction("➖")
+            return  # we can't create the game post until we get confirmations
+
+        if found_existing and user.game.message_xid:
+            post = await self.safe_fetch_message(message.channel, user.game.message_xid)
+            if post:
+                found_discord_users = []
+                if len(cast(List[User], user.game.users)) == user.game.size:
+                    for game_user in user.game.users:
+                        discord_user = await self.safe_fetch_user(game_user.xid)
+                        if not discord_user:  # user has left the server since signing up
+                            game_user.game_id = None
+                        else:
+                            found_discord_users.append(discord_user)
+
+                if len(found_discord_users) == user.game.size:  # game is ready
+                    user.game.url = (
+                        self.create_game() if user.game.system == "spelltable" else None
+                    )
+                    user.game.status = "started"
+                    session.commit()
+                    for discord_user in found_discord_users:
+                        await discord_user.send(embed=user.game.to_embed())
+                    await self.safe_edit_message(post, embed=user.game.to_embed())
+                    await self.safe_clear_reactions(post)
+                else:
+                    session.commit()
+                    await self.safe_edit_message(post, embed=user.game.to_embed())
+                return  # Done!
+
+        post = await message.channel.send(embed=user.game.to_embed())
+        user.game.message_xid = post.id
+        session.commit()
+        await post.add_reaction("➕")
+        await post.add_reaction("➖")
+
+    @command(allow_dm=False)
+    async def lfg(
+        self, session: Session, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """
+        Create a pending game for players to join.
+
+        The default game size is 4 but you can change it by adding, for example, `size:2`
+        to create a two player game.
+
+        You can automatically invite players to the game by @ mentioning them in the
+        command. They will be sent invite confirmations and the game won't be posted to
+        the channel until they've responded.
+
+        Players will be able to join or leave the game by reacting to the message that
+        SpellBot sends with the ➕ and ➖ emoji.
+
+        Up to five tags can be given as well to help describe the game expereince that you
+        want. For example you might send `!lfg ~no-combo ~proxy` which will assign the
+        tags `no-combo` and `proxy` to your game. People will be able to see what tags
+        are set on your game when they are looking for games to join.
+        & [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...
+        """
+        await self._play_helper(session, prefix, params, message, join_first=False)
+
+    @command(allow_dm=False)
+    async def play(
+        self, session: Session, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """
+        Quickly join a game now or else create a new looking-for-game post.
+
+        This command works exactly like the !lfg command except that it will first try
+        to add you to an existing pending game if one exists. Useful if you just want
+        to play a game of Magic and don't want to go find one and manually add your emoji
+        reaction to it manually.
+        """
+        await self._play_helper(session, prefix, params, message, join_first=True)
 
     @command(allow_dm=False)
     async def event(
