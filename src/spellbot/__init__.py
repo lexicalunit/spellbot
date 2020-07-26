@@ -846,6 +846,7 @@ class SpellBot(discord.Client):
         if found_existing and user.game.message_xid:
             post = await self.safe_fetch_message(message.channel, user.game.message_xid)
             if post:
+                await message.channel.send(s("play_found", user=f"<@{mentionor_xid}>"))
                 found_discord_users = []
                 if len(cast(List[User], user.game.users)) == user.game.size:
                     for game_user in user.game.users:

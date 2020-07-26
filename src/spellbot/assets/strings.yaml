@@ -48,6 +48,7 @@ lfg_too_many_mentions: Sorry, you've mentioned too many players for that size ga
 no_dm: That command only works in text channels.
 not_a_command: Sorry, there is no "$request" command.
 not_admin: You do not have admin permissions for this bot.
+play_found: I found a game for you, $user. You have been signed up for it!
 react_already_in: Sorry, I couldn't add you to that game because you're already signed
   up for another game. You can use `${prefix}leave` to leave that game.
 spellbot_channels: 'This bot will now only respond in: $channels'
