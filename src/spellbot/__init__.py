@@ -424,9 +424,9 @@ class SpellBot(discord.Client):
 
         await self.safe_delete_message(post)
 
-    async def try_to_remove_plus(self, game, discord_user: discord.User) -> None:
-        """Attempts to remove a ➕ from the given game message for the given user."""
-        if not game.channel_xid:
+    async def try_to_update_game(self, game) -> None:
+        """Attempts to update the embed for a game."""
+        if not game.channel_xid or not game.message_xid:
             return
 
         chan = await self.safe_fetch_channel(game.channel_xid)
@@ -437,7 +437,7 @@ class SpellBot(discord.Client):
         if not post:
             return
 
-        await self.safe_remove_reaction(post, "➕", discord_user)
+        await post.edit(embed=game.to_embed())
 
     @property
     def commands(self) -> List[str]:
@@ -1037,8 +1037,9 @@ class SpellBot(discord.Client):
                 player_discord_users, player_users
             ):
                 if player_user.waiting:
-                    await self.try_to_remove_plus(player_user.game, player_discord_user)
+                    game_to_update = player_user.game
                     player_user.game_id = None
+                    await self.try_to_update_game(game_to_update)
                 player_user.cached_name = player_discord_user.name
             session.commit()
 
@@ -1178,8 +1179,9 @@ class SpellBot(discord.Client):
         for mentioned in mentions:
             mentioned_user = self.ensure_user_exists(session, mentioned)
             if mentioned_user.waiting:
-                await self.try_to_remove_plus(mentioned_user.game, mentioned)
+                game_to_update = mentioned_user.game
                 mentioned_user.game_id = None
+                await self.try_to_update_game(game_to_update)
             mentioned_users.append(mentioned_user)
         session.commit()
 
@@ -1231,11 +1233,11 @@ class SpellBot(discord.Client):
             await message.channel.send(s("leave_already"))
             return
 
-        await self.try_to_remove_plus(user.game, cast(discord.User, message.author))
-
+        game = user.game
         user.game_id = None
         session.commit()
         await message.channel.send(s("leave"))
+        await self.try_to_update_game(game)
 
     @command(allow_dm=False)
     async def export(
