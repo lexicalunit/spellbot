@@ -10,7 +10,17 @@ from functools import wraps
 from io import StringIO
 from os import getenv
 from pathlib import Path
-from typing import Any, AsyncGenerator, Callable, Iterator, List, Optional, Union, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Union,
+    cast,
+)
 from uuid import uuid4
 
 import click
@@ -156,7 +166,7 @@ def paginate(text: str) -> Iterator[str]:
     yield remaining
 
 
-def command(allow_dm: bool = True) -> Callable:
+def command(allow_dm: bool = True, aliases: Optional[List[str]] = None) -> Callable:
     """Decorator for bot command methods."""
 
     def callable(func: Callable):
@@ -166,6 +176,7 @@ def command(allow_dm: bool = True) -> Callable:
 
         cast(Any, wrapped).is_command = True
         cast(Any, wrapped).allow_dm = allow_dm
+        cast(Any, wrapped).aliases = aliases
         return wrapped
 
     return callable
@@ -196,11 +207,17 @@ class SpellBot(discord.Client):
 
         # build a list of commands supported by this bot by fetching @command methods
         members = inspect.getmembers(self, predicate=inspect.ismethod)
-        self._commands = [
-            member[0]
+        command_members = [
+            member
             for member in members
             if hasattr(member[1], "is_command") and member[1].is_command
         ]
+        self._commands: Dict[str, str] = {}
+        for command_member in command_members:
+            self._commands[command_member[0]] = command_member[0]
+            if command_member[1].aliases:
+                for alias in command_member[1].aliases:
+                    self._commands[alias] = command_member[0]
 
         self._begin_background_tasks(loop)
 
@@ -442,7 +459,7 @@ class SpellBot(discord.Client):
     @property
     def commands(self) -> List[str]:
         """Returns a list of commands supported by this bot."""
-        return self._commands
+        return [key for key in self._commands.keys()]
 
     async def process(self, message: discord.Message, prefix: str) -> None:
         """Process a command message."""
@@ -451,7 +468,11 @@ class SpellBot(discord.Client):
         params = list(filter(None, params))  # ignore any empty string parameters
         if not request:
             return
-        matching = [command for command in self.commands if command.startswith(request)]
+        matching = [
+            command
+            for alias, command in self._commands.items()
+            if alias.startswith(request)
+        ]
         if not matching:
             await message.channel.send(s("not_a_command", request=request))
             return
@@ -688,7 +709,7 @@ class SpellBot(discord.Client):
         Sends you this help message.
         """
         usage = ""
-        for command in self.commands:
+        for command in sorted(set(self._commands.values())):
             method = getattr(self, command)
             doc = method.__doc__.split("&")
             cmd_params: List[str] = [param.strip() for param in doc[1:]]
@@ -707,6 +728,9 @@ class SpellBot(discord.Client):
             use = transformed
             use = use.replace("\n", "\n> ")
             use = re.sub(r"([^>])\s+$", r"\1", use, flags=re.M)
+            if method.aliases:
+                aliases_s = ", ".join(sorted([f"{prefix}{m}" for m in method.aliases]))
+                use += f"\n> Aliases: {aliases_s}"
 
             title = f"{prefix}{command}"
             if cmd_params_use:
@@ -759,14 +783,29 @@ class SpellBot(discord.Client):
         embed.color = discord.Color(0x5A3EFD)
         await message.channel.send(embed=embed)
 
-    async def _play_helper(
-        self,
-        session: Session,
-        prefix: str,
-        params: List[str],
-        message: discord.Message,
-        join_first: bool,
+    @command(allow_dm=False, aliases=["play", "queue"])
+    async def lfg(
+        self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
+        """
+        Join or create a pending game for players to join.
+
+        The default game size is 4 but you can change it by adding, for example, `size:2`
+        to create a two player game.
+
+        You can automatically invite players to the game by @ mentioning them in the
+        command. They will be sent invite confirmations and the game won't be posted to
+        the channel until they've responded.
+
+        Players will be able to join or leave the game by reacting to the message that
+        SpellBot sends with the ➕ and ➖ emoji.
+
+        Up to five tags can be given as well to help describe the game expereince that you
+        want. For example you might send `!lfg ~no-combo ~proxy` which will assign the
+        tags `no-combo` and `proxy` to your game. People will be able to see what tags
+        are set on your game when they are looking for games to join.
+        & [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...
+        """
         server = self.ensure_server_exists(session, message.channel.guild.id)
 
         user = self.ensure_user_exists(session, message.author)
@@ -807,18 +846,16 @@ class SpellBot(discord.Client):
         user.invited = False
 
         found_existing = False
-        if join_first:
-            seats = 1 + len(mentions)
-            game = Game.find_existing(
-                session, server, message.channel.id, size, seats, tags, system
-            )
-            if game:
-                found_existing = True
-                user.game = game
-                user.game.expires_at = expires_at
-                user.game.updated_at = now
-
-        if not user.game:
+        seats = 1 + len(mentions)
+        game = Game.find_existing(
+            session, server, message.channel.id, size, seats, tags, system
+        )
+        if game:
+            found_existing = True
+            user.game = game
+            user.game.expires_at = expires_at
+            user.game.updated_at = now
+        else:
             user.game = Game(
                 created_at=now,
                 updated_at=now,
@@ -876,45 +913,6 @@ class SpellBot(discord.Client):
         session.commit()
         await post.add_reaction("➕")
         await post.add_reaction("➖")
-
-    @command(allow_dm=False)
-    async def lfg(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
-        """
-        Create a pending game for players to join.
-
-        The default game size is 4 but you can change it by adding, for example, `size:2`
-        to create a two player game.
-
-        You can automatically invite players to the game by @ mentioning them in the
-        command. They will be sent invite confirmations and the game won't be posted to
-        the channel until they've responded.
-
-        Players will be able to join or leave the game by reacting to the message that
-        SpellBot sends with the ➕ and ➖ emoji.
-
-        Up to five tags can be given as well to help describe the game expereince that you
-        want. For example you might send `!lfg ~no-combo ~proxy` which will assign the
-        tags `no-combo` and `proxy` to your game. People will be able to see what tags
-        are set on your game when they are looking for games to join.
-        & [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...
-        """
-        await self._play_helper(session, prefix, params, message, join_first=False)
-
-    @command(allow_dm=False)
-    async def play(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
-        """
-        Quickly join a game now or else create a new looking-for-game post.
-
-        This command works exactly like the !lfg command except that it will first try
-        to add you to an existing pending game if one exists. Useful if you just want
-        to play a game of Magic and don't want to go find one and manually add your emoji
-        reaction to it manually.
-        """
-        await self._play_helper(session, prefix, params, message, join_first=True)
 
     @command(allow_dm=False)
     async def event(
