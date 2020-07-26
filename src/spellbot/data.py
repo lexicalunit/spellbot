@@ -100,7 +100,10 @@ class Channel(Base):
     __tablename__ = "channels"
     channel_xid = Column(BigInteger, primary_key=True, nullable=False)
     guild_xid = Column(
-        BigInteger, ForeignKey("servers.guild_xid", ondelete="CASCADE"), nullable=False
+        BigInteger,
+        ForeignKey("servers.guild_xid", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     server = relationship("Server", back_populates="channels")
 
@@ -108,8 +111,12 @@ class Channel(Base):
 games_tags = Table(
     "games_tags",
     Base.metadata,
-    Column("game_id", Integer, ForeignKey("games.id", ondelete="CASCADE")),
-    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE")),
+    Column(
+        "game_id", Integer, ForeignKey("games.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column(
+        "tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True
+    ),
 )
 
 
@@ -129,7 +136,9 @@ class Event(Base):
 class User(Base):
     __tablename__ = "users"
     xid = Column(BigInteger, primary_key=True, nullable=False)
-    game_id = Column(Integer, ForeignKey("games.id", ondelete="SET NULL"), nullable=True)
+    game_id = Column(
+        Integer, ForeignKey("games.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     cached_name = Column(String(50))
     invited = Column(Boolean, server_default=text("false"), nullable=False)
     invite_confirmed = Column(Boolean, server_default=text("false"), nullable=False)
@@ -170,21 +179,28 @@ class Game(Base):
     __tablename__ = "games"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, index=True)
     expires_at = Column(DateTime)
-    size = Column(Integer, nullable=False)
+    size = Column(Integer, nullable=False, index=True)
     guild_xid = Column(
-        BigInteger, ForeignKey("servers.guild_xid", ondelete="CASCADE"), nullable=False
+        BigInteger,
+        ForeignKey("servers.guild_xid", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
-    channel_xid = Column(BigInteger)
+    channel_xid = Column(BigInteger, index=True)
     url = Column(String(255))
-    status = Column(String(30), nullable=False, server_default=text("'pending'"))
+    status = Column(
+        String(30), nullable=False, server_default=text("'pending'"), index=True
+    )
     message = Column(String(255))
     event_id = Column(
-        Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True
+        Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True, index=True
     )
     message_xid = Column(BigInteger)
-    system = Column(String(30), nullable=False, server_default=text("'spelltable'"))
+    system = Column(
+        String(30), nullable=False, server_default=text("'spelltable'"), index=True
+    )
     users = relationship("User", back_populates="game", uselist=True)
     tags = relationship("Tag", secondary=games_tags, back_populates="games", uselist=True)
     server = relationship("Server", back_populates="games")
