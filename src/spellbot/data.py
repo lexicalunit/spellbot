@@ -27,7 +27,7 @@ from sqlalchemy import (
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
-from sqlalchemy.sql.expression import distinct
+from sqlalchemy.sql.expression import desc, distinct
 
 from spellbot.constants import THUMB_URL
 
@@ -227,24 +227,29 @@ class Game(Base):
             Game.system == system,
         ]
         having_filters = [
-            func.count(distinct(User.xid)) <= size - seats,
             func.count(distinct(games_tags.c.tag_id)) == len(required_tag_ids),
+            func.count(distinct(User.xid)) <= size - seats,
         ]
-        if required_tag_ids:
-            tag_filters = []
-            for tid in required_tag_ids:
-                tag_filters.append(games_tags.c.tag_id == tid)
-            select_filters.append(or_(*tag_filters))
-        game: Optional[Game] = (
-            session.query(Game)
-            .join(User)
+        inner = (
+            session.query(Game.id)
+            .join(User, isouter=True)
             .join(games_tags, isouter=True)
             .filter(and_(*select_filters))
             .group_by(Game.id)
             .having(and_(*having_filters))
-            .order_by(Game.updated_at)
-            .first()
         )
+        tag_filters = []
+        for tid in required_tag_ids:
+            tag_filters.append(games_tags.c.tag_id == tid)
+        outer = (
+            session.query(Game)
+            .join(games_tags, isouter=True)
+            .filter(and_(Game.id.in_(inner), or_(*tag_filters)))
+            .group_by(Game.id)
+            .having(having_filters[0])
+            .order_by(desc(Game.updated_at))
+        )
+        game: Optional[Game] = outer.first()
         return game
 
     @classmethod
@@ -314,6 +319,7 @@ class Game(Base):
             sorted_tag_names: List[str] = sorted([tag.name for tag in self.tags])
             tag_names = ", ".join(sorted_tag_names)
             embed.add_field(name="Tags", value=tag_names)
+        embed.set_footer(text=f"SpellBot Reference #SB{self.id}")
         embed.color = discord.Color(0x5A3EFD)
         return embed
 

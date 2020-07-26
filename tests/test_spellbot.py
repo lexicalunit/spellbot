@@ -1518,8 +1518,9 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        assert game_json_for(client, ADAM)["system"] == "mtgo"
-        assert game_json_for(client, ADAM)["tags"] == []
+        game = game_json_for(client, ADAM)
+        assert game["system"] == "mtgo"
+        assert game["tags"] == []
         assert game_embed_for(client, ADAM, True) == {
             "color": 5914365,
             "description": "Please exchange MTGO contact information and head over there"
@@ -1527,6 +1528,7 @@ class TestSpellBot:
             "fields": [
                 {"inline": True, "name": "Players", "value": f"<@{ADAM.id}>, <@{JR.id}>"}
             ],
+            "footer": {"text": f"SpellBot Reference #SB{game['id']}"},
             "thumbnail": {"url": THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -1545,8 +1547,9 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        assert game_json_for(client, ADAM)["system"] == "arena"
-        assert game_json_for(client, ADAM)["tags"] == []
+        game = game_json_for(client, ADAM)
+        assert game["system"] == "arena"
+        assert game["tags"] == []
         assert game_embed_for(client, ADAM, True) == {
             "color": 5914365,
             "description": "Please exchange Arena contact information and head over there"
@@ -1554,6 +1557,7 @@ class TestSpellBot:
             "fields": [
                 {"inline": True, "name": "Players", "value": f"<@{ADAM.id}>, <@{JR.id}>"}
             ],
+            "footer": {"text": f"SpellBot Reference #SB{game['id']}"},
             "thumbnail": {"url": THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -1945,6 +1949,7 @@ class TestSpellBot:
             {
                 "color": 5914365,
                 "description": "To join/leave this game, react with ➕/➖.",
+                "footer": {"text": f"SpellBot Reference #SB{games[0].id}"},
                 "thumbnail": {"url": THUMB_URL},
                 "title": "**Waiting for 4 more players to join...**",
                 "type": "rich",
@@ -2110,6 +2115,7 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(AMY, channel, "!play ~modern"))
         assert len(all_games(client)) == 2
+
         assert game_embed_for(client, ADAM, False) == game_embed_for(client, AMY, False)
 
         await client.on_message(MockMessage(TOM, channel, "!play ~modern ~chaos"))
@@ -2118,6 +2124,9 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(JACOB, channel, "!play"))
         assert len(all_games(client)) == 3
+
+        await client.on_message(MockMessage(GUY, channel, "!play ~modern ~no-ban-list"))
+        assert len(all_games(client)) == 4
 
     async def test_on_message_play_full(self, client, channel_maker):
         channel = channel_maker.text()
