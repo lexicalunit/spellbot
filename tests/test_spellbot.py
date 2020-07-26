@@ -1818,7 +1818,7 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
 
         # second game
-        await client.on_message(MockMessage(JR, channel, "!lfg"))
+        await client.on_message(MockMessage(JR, channel, "!lfg ~modern"))
         message = channel.last_sent_message
         payload = MockPayload(
             user_id=ADAM.id,
@@ -1993,7 +1993,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(AMY, channel, "!lfg"))
         assert user_has_game(client, AMY)
 
-        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        await client.on_message(MockMessage(GUY, channel, "!lfg ~chaos"))
         message = channel.last_sent_message
         payload = MockPayload(
             user_id=ADAM.id,
