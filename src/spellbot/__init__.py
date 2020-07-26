@@ -1022,8 +1022,9 @@ class SpellBot(discord.Client):
                     )
 
             warnings_s = "\n".join(warnings)
-            for page in paginate(warnings_s):
-                await message.channel.send(page)
+            if warnings_s:
+                for page in paginate(warnings_s):
+                    await message.channel.send(page)
 
             if len(player_discord_users) != size:
                 continue
