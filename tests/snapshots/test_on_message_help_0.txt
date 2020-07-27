@@ -29,8 +29,10 @@
 `!help`
 >  Sends you this help message.
 
+`!join`
+>  Works exactly like `!lfg` except that it will NOT create a new game.
+> Aliases: !find, !search
+
 `!leave`
 >  Leave any pending game that you've signed up for on this server.
-
-`!lfg [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
->  Join or create a pending game for players to join.
+> Aliases: !exit, !quit

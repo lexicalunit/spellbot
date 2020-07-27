@@ -1,3 +1,6 @@
+`!lfg [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
+>  Join or create a pending game for players to join.
+> 
 > The default game size is 4 but you can change it by adding, for example, `size:2` to create a two player game.
 > 
 > You can automatically invite players to the game by @ mentioning them in the command. They will be sent invite confirmations and the game won't be posted to the channel until they've responded.
