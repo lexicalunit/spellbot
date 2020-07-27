@@ -96,10 +96,16 @@ pip install spellbot
 ```
 
 Provide your Discord bot token with the environment variable `SPELLBOT_TOKEN`.
-As well as your SpellTable API authorization token via `SPELLTABLE_AUTH`. You
-can get [your bot token from Discord][discord-bot-docs]. As for the SpellTable
-API authorization token, you'll have to talk to the SpellTable developers.
-You can join their Discord server by
+As well as your SpellTable API authorization token via `SPELLTABLE_AUTH`.
+
+You can get [your bot token from Discord][discord-bot-docs]. Your bot will
+need the following text permissions enabled:
+
+* Send Messages
+* Add Reactions
+
+As for the SpellTable API authorization token, you'll have to talk to the
+SpellTable developers.  You can join their Discord server by
 [becoming a SpellTable patron][spelltable-patron].
 
 By default SpellBot will use sqlite3 as its database. You can however choose to
