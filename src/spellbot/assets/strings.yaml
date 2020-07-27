@@ -1,65 +1,77 @@
-begin_bad_event: Sorry, SpellBot can not find an event with that id.
-begin_event_already_started: Sorry, that event has already started and can not be
-  started again.
-begin_no_params: Please provide the event id.
+begin_bad_event: Sorry $reply, but I can't find an event with that ID.
+begin_event_already_started: Sorry $reply, but that event has already started and
+  can not be started again.
+begin_no_params: $reply, please provide the event ID with that command.
 begin_user_left: '**Warning:** A user left the server since this event was created.
   SpellBot did **NOT** start the game for the players: $players.'
-did_you_mean: 'Did you mean: $possible?'
-dm_sent: Right on, I'll send you a Direct Message with details.
-event_bad_play_count: Player count must be between 2 and 4.
-event_created: Event $event_id created! This event will have $count games. If everything
-  looks good, next run `${prefix}begin $event_id` to start the event.
-event_empty: No games created for this event, please address any warnings and try
-  again.
+did_you_mean: 'Sorry $reply, that''s not a command. Did you mean to use one of these
+  commands: $possible?'
+dm_sent: Right on $reply, I'll send you a Direct Message with details.
+event_bad_play_count: Sorry $reply, but the player count must be between 2 and 4.
+event_created: Ok $reply, I've created event $event_id! This event will have $count
+  games. If everything looks good, next run `${prefix}begin $event_id` to start the
+  event.
+event_empty: Hey $reply, no games were created for this event. Please address any
+  warnings and try again.
 event_missing_player: '**Warning:** Event file is missing a player name on row $row.
   SpellBot will **NOT** create a game for the players: $players.'
 event_missing_user: '**Warning:** On row $row the username "$name" is not on this
   server. SpellBot will **NOT** create a game for the players: $players.'
-event_no_data: Sorry, you must include an attachment containing event data with this
-  command.
-event_no_header: Sorry, the attached CSV file is missing a header.
-event_no_params: Please include the column names from the CSV file too identify the
-  players' discord names.
-event_not_csv: Sorry, the file is not a CSV file. Make sure the filename ends with
-  ".csv" please.
-expired: SpellBot has deleted your pending game due to server inactivity.
+event_no_data: Sorry $reply, but you must include an attachment containing event data
+  with this command.
+event_no_header: Sorry $reply, but the attached CSV file is missing a header.
+event_no_params: Sorry $reply, please include the column names from the CSV file too
+  identify the players' discord names.
+event_not_csv: Sorry $reply, but the file is not a CSV file. Make sure the filename
+  ends with ".csv" please.
+expired: My appologies $reply, but I deleted your pending game due to server inactivity.
 game_created: '**Game $id created:**
 
   > Link: $url
 
   > Players notified by DM: $players'
-game_message_too_long: Sorry, the optional game message must be shorter than 255 characters.
-game_size_bad: Game size must be between 2 and 4.
-game_too_few_mentions: Sorry, you mentioned too few people. I expected $size players
-  to be mentioned.
-game_too_many_mentions: Sorry, you mentioned too many people. I expected $size players
-  to be mentioned.
-invite_already_confirmed: Your invitation has already been confirmed.
-invite_confirmed: Thanks, your invitation has been confirmed!
-invite_denied: Thank you for your response.
-invite_not_invited: Sorry, you do not currently have any pending invitations.
-leave: You've been removed from the pending game that you were signed up for.
-leave_already: You we're not in any pending games.
-lfg_invited: You've been invtied to a game by $mention. To confirm or deny please
-  respond with yes or no.
-lfg_mention_already: Sorry, but $mention is already in another pending game and can't
-  be invited.
-lfg_too_many_mentions: Sorry, you've mentioned too many players for that size game.
-no_dm: That command only works in text channels.
-not_a_command: Sorry, there is no "$request" command.
-not_admin: You do not have admin permissions for this bot.
-play_found: I found a game for you, $user. You have been signed up for it!
-react_already_in: Sorry, I couldn't add you to that game because you're already signed
-  up for another game. You can use `${prefix}leave` to leave that game.
-spellbot_channels: 'This bot will now only respond in: $channels'
-spellbot_channels_none: Please provide a list of channels.
-spellbot_expire: Game expiration time set to $expire minutes.
-spellbot_expire_bad: Sorry, game expiration time should be between 10 and 60 minutes.
-spellbot_expire_none: Please provide a number of minutes.
-spellbot_missing_subcommand: Please provide a subcommand when using this command.
-spellbot_prefix: This bot will now use "$prefix" as its command prefix for this server.
-spellbot_prefix_none: Please provide a prefix string.
-spellbot_unknown_subcommand: The subcommand "$command" is not recognized.
-tags_too_many: Sorry, you can not use more than 5 tags.
-user_waiting: You're already waiting for a game. If you want to, you can leave that
-  game with `${prefix}leave` and then try again.
+game_message_too_long: Sorry $reply, but the optional game message must be shorter
+  than 255 characters.
+game_not_found: Sorry $reply, but I didn't find any games for you to join.
+game_size_bad: Sorry $reply, but the game size must be between 2 and 4.
+game_too_few_mentions: Sorry $reply, you mentioned too few people. I expected $size
+  players to be mentioned.
+game_too_many_mentions: Sorry $reply, you mentioned too many people. I expected $size
+  players to be mentioned.
+invite_already_confirmed: Hi $reply, just letting you know that your invitation was
+  already confirmed.
+invite_confirmed: Thanks $reply, your invitation has been confirmed!
+invite_denied: Thank you for your response, $reply.
+invite_not_invited: Sorry $reply, but you do not currently have any pending invitations.
+leave: Ok $reply, you've been removed from the pending game that you were signed up
+  for.
+leave_already: Sorry $reply, but you we're not in any pending games.
+lfg_invited: Hello $reply! You've been invited to a game by $mention. To confirm or
+  deny please respond with yes or no.
+lfg_mention_already: Sorry $reply, but $mention is already in another pending game
+  and can't be invited.
+lfg_too_many_mentions: Sorry $reply, but you've mentioned too many players for that
+  size game.
+no_dm: Hello $reply! That command only works in text channels.
+not_a_command: Sorry $reply, there is no "$request" command.
+not_admin: $reply, you do not have admin permissions to run that command.
+play_found: I found a game for you, $reply. You have been signed up for it!
+react_already_in: Sorry $reply, I couldn't add you to that game because you're already
+  signed up for another game. You can use `${prefix}leave` to leave that game.
+spellbot_channels: 'Ok $reply, I will now only respond in: $channels'
+spellbot_channels_none: 'Sorry $reply, but please provide a list of channels. Like
+  #bot-commands, for example.'
+spellbot_expire: Ok $reply, game expiration time on this server has been set to $expire
+  minutes.
+spellbot_expire_bad: Sorry $reply, but game expiration time should be between 10 and
+  60 minutes.
+spellbot_expire_none: Sorry $reply, but please provide a number of minutes.
+spellbot_missing_subcommand: Sorry $reply, please provide a subcommand when using
+  this command.
+spellbot_prefix: Ok $reply, I will now use "$prefix" as my command prefix on this
+  server.
+spellbot_prefix_none: Sorry $reply, but please provide a prefix string.
+spellbot_unknown_subcommand: Sorry $reply, but the subcommand "$command" is not recognized.
+tags_too_many: Sorry $reply, but you can not use more than 5 tags.
+user_waiting: Hi $reply! You're already waiting in a game. If you want to, you can
+  leave that game with `${prefix}leave` and then try again.
