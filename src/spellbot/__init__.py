@@ -75,6 +75,30 @@ def parse_opts(params: List[str]) -> dict:
     skip_next: bool = False
     system: str = "spelltable"
 
+    TWO_PLAYER_FORMATS = [
+        "standard",
+        "modern",
+        "pioneer",
+        "legacy",
+        "vintage",
+        "pauper",
+        "peasant",
+        "frontier",
+        "cube",
+    ]
+    FOUR_PLAYER_FORMATS = [
+        "commander",
+        "edh",
+        "cedh",
+        "oathbreaker",
+        "2hg",
+        "two-headed-giant",
+        "2-headed-giant",
+    ]
+    FIVE_PLAYER_FORMATS = ["king"]
+    SIX_PLAYER_FORMATS = ["emperor"]
+
+    size_set = False
     for i, param in enumerate(params):
         if skip_next:
             skip_next = False
@@ -85,8 +109,18 @@ def parse_opts(params: List[str]) -> dict:
         elif param.lower() in ["~arena", "~mtga"]:
             system = "arena"
         elif param.startswith("~"):
-            tags.append(param[1:].lower())
+            tag = param[1:].lower()
+            tags.append(tag)
+            if not size_set and tag in TWO_PLAYER_FORMATS:
+                size = 2
+            elif not size_set and tag in FOUR_PLAYER_FORMATS:
+                size = 4
+            elif not size_set and tag in FIVE_PLAYER_FORMATS:
+                size = 5
+            elif not size_set and tag in SIX_PLAYER_FORMATS:
+                size = 6
         elif param.lower().startswith("size:"):
+            size_set = True
             rest = param[5:]
             if rest:
                 if rest.isdigit():
