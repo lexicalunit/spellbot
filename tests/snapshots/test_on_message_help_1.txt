@@ -8,7 +8,8 @@
 > Players will be able to join or leave the game by reacting to the message that SpellBot sends with the ➕ and ➖ emoji.
 > 
 > Up to five tags can be given as well to help describe the game expereince that you want. For example you might send `!lfg ~no-combo ~proxy` which will assign the tags `no-combo` and `proxy` to your game. People will be able to see what tags are set on your game when they are looking for games to join.
-> Aliases: !play, !queue
+> 
+> Aliases: `!play`, `!queue`
 
 `!spellbot <subcommand> [subcommand parameters]`
 >  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
@@ -16,7 +17,7 @@
 > The following subcommands are supported:
 > * `config`: Just show the current configuration for this server.
 > * `channel <list>`: Set SpellBot to only respond in the given list of channels.
-> * `prefix <string>`: Set SpellBot prefix for commands in text channels.
+> * `prefix <string>`: Set SpellBot's command prefix for text channels.
 > * `expire <number>`: Set the number of minutes before pending games expire.
 --- 
 Please report any bugs and suggestions at <https://github.com/lexicalunit/spellbot/issues>!
