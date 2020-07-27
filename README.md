@@ -30,8 +30,7 @@ being too spammy in text channels.**
 For players just looking to start some games, these commands are for you!
 
 - `!lfg`: Sign up to play Magic: The Gathering!
-- `!play`: Same as `!lfg`.
-- `!queue`: Same as `!lfg`.
+- `!join`: Look for a game to join, but don't create a new one.
 - `!leave`: Leave any games that you've signed up for.
 
 When you run the `!lfg` command, SpellBot will post a message for sign ups.
@@ -101,8 +100,8 @@ As well as your SpellTable API authorization token via `SPELLTABLE_AUTH`.
 You can get [your bot token from Discord][discord-bot-docs]. Your bot will
 need the following text permissions enabled:
 
-* Send Messages
-* Add Reactions
+- Send Messages
+- Add Reactions
 
 As for the SpellTable API authorization token, you'll have to talk to the
 SpellTable developers.  You can join their Discord server by
