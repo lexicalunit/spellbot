@@ -2180,6 +2180,28 @@ class TestSpellBot:
 
         # TODO: Actually test that the embed was deleted correctly.
 
+    async def test_game_cleanup_expired_after_left(self, client, freezer, channel_maker):
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        freezer.move_to(NOW)
+
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
+
+        assert user_has_game(client, GUY)
+
+        # Simulate GUY leaving this Discord server
+        global ALL_USERS
+        ALL_USERS = [user for user in ALL_USERS if user != GUY]
+
+        freezer.move_to(NOW + timedelta(days=3))
+        await client.cleanup_expired_games()
+
+        assert not user_has_game(client, GUY)
+        assert len(GUY.all_sent_calls) == 0
+
+        # TODO: Actually test that the embed was deleted correctly.
+
     async def test_on_message_export_non_admin(self, client, channel_maker):
         channel = channel_maker.text()
         author = someone()
@@ -2278,6 +2300,36 @@ class TestSpellBot:
     #     )
     #     jgame = game_embed_for(client, JACOB, False)
     #     assert jgame == game_embed_for(client, AMY, False)
+
+    async def test_on_message_lfg_with_functional_tag(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg ~modern"))
+        assert "1 more player" in channel.last_sent_embed["title"]
+
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        await client.on_message(MockMessage(author, channel, "!lfg ~oathbreaker"))
+        assert "3 more players" in channel.last_sent_embed["title"]
+
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        await client.on_message(MockMessage(author, channel, "!lfg ~edh size: 3"))
+        assert "2 more players" in channel.last_sent_embed["title"]
+
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        await client.on_message(MockMessage(author, channel, "!lfg size:3 ~cedh"))
+        assert "2 more players" in channel.last_sent_embed["title"]
+
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        await client.on_message(MockMessage(author, channel, "!lfg ~king"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but the game size must be between 2 and 4."
+        )
+
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        await client.on_message(MockMessage(author, channel, "!lfg ~emperor"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but the game size must be between 2 and 4."
+        )
 
 
 def test_paginate():
