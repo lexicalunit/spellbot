@@ -790,8 +790,8 @@ class SpellBot(discord.Client):
             use = use.replace("\n", "\n> ")
             use = re.sub(r"([^>])\s+$", r"\1", use, flags=re.M)
             if method.aliases:
-                aliases_s = ", ".join(sorted([f"{prefix}{m}" for m in method.aliases]))
-                use += f"\n> Aliases: {aliases_s}"
+                aliases_s = ", ".join(sorted([f"`{prefix}{m}`" for m in method.aliases]))
+                use += f"\n> \n> Aliases: {aliases_s}"
 
             title = f"{prefix}{command}"
             if cmd_params_use:
@@ -1047,7 +1047,7 @@ class SpellBot(discord.Client):
         Games will not be created immediately. This is to allow you to verify things look
         ok. This command will also give you directions on how to actually start the games
         for this event as part of its reply.
-        * Optional: Add a message to DM players with "msg: " followed by whatever.
+        * Optional: Add a message to DM players with `msg:` followed by whatever.
         * Optional: Add up to five tags by using `~tag-name`.
         & <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]
         """
@@ -1304,8 +1304,8 @@ class SpellBot(discord.Client):
         Allows event runners to spin up an ad-hoc game directly between mentioned players.
         * The user who issues this command is **NOT** added to the game themselves.
         * You must mention all of the players to be seated in the game.
-        * Optional: Add a message by using "msg: " followed by the message content.
-        * Optional: Add tags by using "~tag-name" for the tags you want.
+        * Optional: Add a message by using `msg:` followed by the message content.
+        * Optional: Add tags by using `~tag-name` for the tags you want.
         & @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]
         """
         if not is_admin(message.channel, message.author):
@@ -1419,7 +1419,7 @@ class SpellBot(discord.Client):
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
-        Leave any pending game that you've signed up for on this server.
+        Leave any pending games that you've signed up.
         """
         user = self.ensure_user_exists(session, message.author)
         if not user.waiting:
@@ -1494,7 +1494,7 @@ class SpellBot(discord.Client):
         The following subcommands are supported:
         * `config`: Just show the current configuration for this server.
         * `channel <list>`: Set SpellBot to only respond in the given list of channels.
-        * `prefix <string>`: Set SpellBot prefix for commands in text channels.
+        * `prefix <string>`: Set SpellBot's command prefix for text channels.
         * `expire <number>`: Set the number of minutes before pending games expire.
         & <subcommand> [subcommand parameters]
         """
