@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
@@ -36,6 +37,7 @@ ASSETS_DIR = PACKAGE_ROOT / "assets"
 ALEMBIC_INI = ASSETS_DIR / "alembic.ini"
 VERSIONS_DIR = PACKAGE_ROOT / "versions"
 
+logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 
