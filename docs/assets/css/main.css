@@ -943,6 +943,8 @@ pre {
   display: block;
   margin-left: auto;
   margin-right: auto;
-  border: 2px solid #5A3EFD;
-  border-radius: 10px;
+  border: 5px solid;
+  border-image-source: linear-gradient(45deg, rgb(90, 62, 253), rgb(246, 173, 75));
+  border-image-slice: 1;
+  box-shadow: 10px 10px rgba(113, 128, 150, .20);
 }
