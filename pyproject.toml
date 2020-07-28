@@ -23,7 +23,7 @@ readme = 'README.md'
 description = 'A Discord bot for SpellTable'
 keywords=['discord', 'magic', 'bot', 'mtg', 'SpellTable']
 repository = 'https://github.com/lexicalunit/spellbot'
-homepage = 'https://github.com/lexicalunit/spellbot'
+homepage = 'https://spellbot.io/'
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",

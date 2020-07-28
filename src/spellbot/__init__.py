@@ -46,6 +46,10 @@ DB_DIR = RUNTIME_ROOT / "db"
 DEFAULT_DB_URL = f"sqlite:///{DB_DIR}/spellbot.db"
 TMP_DIR = RUNTIME_ROOT / "tmp"
 MIGRATIONS_DIR = SCRIPTS_DIR / "migrations"
+INVITE_LINK = (
+    "https://discordapp.com/api/oauth2/authorize"
+    "?client_id=725510263251402832&permissions=92224&scope=bot"
+)
 
 logger = logging.getLogger(__name__)
 
@@ -839,6 +843,8 @@ class SpellBot(discord.Client):
             " <https://github.com/lexicalunit/spellbot/issues>!"
         )
         usage += "\n"
+        usage += f"[🔗 Add SpellBot to your Discord!]({INVITE_LINK})\n"
+        usage += "\n"
         usage += (
             "\n💜 You can help keep SpellBot running by supporting me on Ko-fi! "
             "<https://ko-fi.com/Y8Y51VTHZ>"
@@ -872,10 +878,12 @@ class SpellBot(discord.Client):
             "Having issues with SpellBot? "
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
             "\n"
+            f"[🔗 Add SpellBot to your Discord!]({INVITE_LINK})\n"
+            "\n"
             "💜 Help keep SpellBot running by "
             "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
         )
-        embed.url = "https://github.com/lexicalunit/spellbot"
+        embed.url = "https://spellbot.io/"
         embed.set_footer(text="MIT © amy@lexicalunit et al")
         embed.color = discord.Color(0x5A3EFD)
         await message.channel.send(embed=embed)

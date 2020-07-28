@@ -786,12 +786,15 @@ class TestSpellBot:
 
         about = channel.last_sent_embed
         assert about["title"] == "SpellBot"
-        assert about["url"] == "https://github.com/lexicalunit/spellbot"
+        assert about["url"] == "https://spellbot.io/"
         assert about["description"] == (
             "_A Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
             "\n"
             "Use the command `!help` for usage details. Having issues with SpellBot? "
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
+            "\n"
+            "[🔗 Add SpellBot to your Discord!](https://discordapp.com/api/oauth2"
+            "/authorize?client_id=725510263251402832&permissions=92224&scope=bot)\n"
             "\n"
             "💜 Help keep SpellBot running by "
             "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
@@ -824,7 +827,7 @@ class TestSpellBot:
             f'Ok <@{author.id}>, I will now use "$" as my command prefix on this server.'
         )
         await client.on_message(MockMessage(author, channel, "$about"))
-        assert channel.last_sent_embed["url"] == "https://github.com/lexicalunit/spellbot"
+        assert channel.last_sent_embed["url"] == "https://spellbot.io/"
         await client.on_message(MockMessage(author, channel, "$spellbot prefix $"))
         assert channel.last_sent_response == (
             f'Ok <@{author.id}>, I will now use "$" as my command prefix on this server.'
