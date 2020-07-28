@@ -1552,13 +1552,9 @@ class SpellBot(discord.Client):
         * `channel <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot's command prefix for text channels.
         * `expire <number>`: Set the number of minutes before pending games expire.
+        * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
-        if not is_admin(message.channel, message.author):
-            await message.channel.send(
-                s("not_admin", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
-            return
         if not params:
             await message.channel.send(
                 s(
@@ -1568,9 +1564,18 @@ class SpellBot(discord.Client):
             )
             return
 
-        server = self.ensure_server_exists(session, message.channel.guild.id)
-
         command = params[0]
+        if command == "help":
+            await self.spellbot_help(session, prefix, params[1:], message)
+            return
+
+        if not is_admin(message.channel, message.author):
+            await message.channel.send(
+                s("not_admin", reply=f"<@{cast(discord.User, message.author).id}>")
+            )
+            return
+
+        server = self.ensure_server_exists(session, message.channel.guild.id)
         if command == "channels":
             await self.spellbot_channels(session, server, params[1:], message)
         elif command == "prefix":
@@ -1721,6 +1726,11 @@ class SpellBot(discord.Client):
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
         await message.channel.send(embed=embed)
+
+    async def spellbot_help(
+        self, session: Session, prefix: str, params: List[str], message: discord.Message,
+    ) -> None:
+        await self.help(session, prefix, params, message)
 
 
 def get_db_env(fallback: str) -> str:  # pragma: no cover
