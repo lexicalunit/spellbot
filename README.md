@@ -54,7 +54,7 @@ online events.
 - `!begin`: Start an event that you previously created with `!event`.
 - `!export`: Export historical game data for your server.
 
-### 👑 Administrative Commands
+### 👑 Commands for Admins
 
 These commands will help you configure SpellBot for your server.
 
