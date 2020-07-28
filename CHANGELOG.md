@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Added a webpage for SpellBot: https://spellbot.io/
+- Added a webpage for SpellBot: http://spellbot.io/
 - Adds an invite link to the !about embed and !help response.
 
 ### Fixed

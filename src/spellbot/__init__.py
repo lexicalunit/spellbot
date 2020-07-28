@@ -883,7 +883,7 @@ class SpellBot(discord.Client):
             "💜 Help keep SpellBot running by "
             "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
         )
-        embed.url = "https://spellbot.io/"
+        embed.url = "http://spellbot.io/"
         embed.set_footer(text="MIT © amy@lexicalunit et al")
         embed.color = discord.Color(0x5A3EFD)
         await message.channel.send(embed=embed)
