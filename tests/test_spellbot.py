@@ -2288,19 +2288,6 @@ class TestSpellBot:
         await client.on_message(MockMessage(JACOB, channel, "!join"))
         assert game_embed_for(client, AMY, False) == game_embed_for(client, JACOB, False)
 
-    # async def test_on_message_join_a_user(self, client, channel_maker):
-    #     channel = channel_maker.text()
-    #     await client.on_message(MockMessage(AMY, channel, "!lfg ~fun"))
-    #     await client.on_message(MockMessage(JR, channel, "!lfg ~chaos"))
-
-    #     mentions = [AMY]
-    #     mentions_str = " ".join([f"@{user.name}" for user in mentions])
-    #     await client.on_message(
-    #         MockMessage(JACOB, channel, f"!join {mentions_str}", mentions=mentions)
-    #     )
-    #     jgame = game_embed_for(client, JACOB, False)
-    #     assert jgame == game_embed_for(client, AMY, False)
-
     async def test_on_message_lfg_with_functional_tag(self, client, channel_maker):
         channel = channel_maker.text()
         author = someone()
