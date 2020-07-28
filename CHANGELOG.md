@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Makes the navbar easier to read, especially the hamburger menu icon.
+- Adds a neat border to the screenshot images.
+
 ## [v3.13.0](https://github.com/lexicalunit/spellbot/releases/tag/v3.13.0) - 2020-07-28
 
 ### Added
