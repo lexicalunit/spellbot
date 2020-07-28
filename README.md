@@ -25,9 +25,9 @@ being too spammy in text channels.**
 - `!help`: Provides detailed help about all of the following commands.
 - `!about`: Get information about SpellBot and its creators.
 
-### ✋ Looking For Game
+### ✋ Commands for Players
 
-For players just looking to start some games, these commands are for you!
+Just looking to play some games of Magic? These commands are for you!
 
 - `!lfg`: Sign up to play Magic: The Gathering!
 - `!join`: Look for a game to join, but don't create a new one.
@@ -138,13 +138,13 @@ You can also run SpellBot via docker. See
 [issues]:             https://github.com/lexicalunit/spellbot/issues
 [ko-fi]:              https://ko-fi.com/Y8Y51VTHZ
 [lexicalunit]:        http://github.com/lexicalunit
-[lfg]:                https://user-images.githubusercontent.com/1903876/87704209-e61a0f00-c750-11ea-87d2-0d5b0a1ef42f.png
+[lfg]:                https://user-images.githubusercontent.com/1903876/88613723-f54b6780-d042-11ea-9435-6dbfdbb7c92b.png
 [mit-badge]:          https://img.shields.io/badge/License-MIT-yellow.svg
 [mit]:                https://opensource.org/licenses/MIT
 [pypi-badge]:         https://img.shields.io/pypi/v/spellbot
 [pypi]:               https://pypi.org/project/spellbot/
 [python-badge]:       https://img.shields.io/badge/python-3.7+-blue.svg
 [python]:             https://www.python.org/
-[ready]:              https://user-images.githubusercontent.com/1903876/87704204-e5817880-c750-11ea-8e39-67bbe4003ddd.png
+[ready]:              https://user-images.githubusercontent.com/1903876/88613720-f41a3a80-d042-11ea-9e03-acf169798968.png
 [spelltable-patron]:  https://www.patreon.com/spelltable?fan_landing=true
 [spelltable]:         https://www.spelltable.com/
