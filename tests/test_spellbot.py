@@ -2331,6 +2331,13 @@ class TestSpellBot:
         await client.on_message(MockMessage(JACOB, channel, cmd, mentions=mentions))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
 
+    async def test_on_message_spellbot_help(self, client, channel_maker):
+        author = not_an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot help"))
+        assert len(channel.all_sent_calls) == 1
+        assert len(author.all_sent_calls) >= 1
+
 
 def test_paginate():
     def subject(text):
