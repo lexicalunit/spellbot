@@ -921,10 +921,22 @@ class SpellBot(discord.Client):
             )
             return
 
+        game: Optional[Game] = None
+        found_existing = False
+        join_existing = False
+
         mentioned_users = []
         for mentioned in mentions:
             mentioned_user = self.ensure_user_exists(session, mentioned)
-            if mentioned_user.waiting:
+            if (
+                len(mentions) == 1
+                and mentioned_user.game
+                and mentioned_user.game.status == "pending"
+            ):
+                game = mentioned_user.game
+                found_existing = True
+                join_existing = True
+            elif mentioned_user.waiting:
                 await message.channel.send(
                     s(
                         "lfg_mention_already",
@@ -946,11 +958,12 @@ class SpellBot(discord.Client):
         expires_at = now + timedelta(minutes=server.expire)
         user.invited = False
 
-        found_existing = False
-        seats = 1 + len(mentions)
-        game = Game.find_existing(
-            session, server, message.channel.id, size, seats, tags, system
-        )
+        if not game:
+            seats = 1 + len(mentions)
+            game = Game.find_existing(
+                session, server, message.channel.id, size, seats, tags, system
+            )
+
         if game:
             found_existing = True
             user.game = game
@@ -966,7 +979,7 @@ class SpellBot(discord.Client):
                 )
                 return
 
-            user.game = Game(
+            game = Game(
                 created_at=now,
                 updated_at=now,
                 expires_at=expires_at,
@@ -976,56 +989,57 @@ class SpellBot(discord.Client):
                 tags=tags,
                 server=server,
             )
-        for mentioned_user in mentioned_users:
-            mentioned_user.game = user.game
-            mentioned_user.invited = True
-            mentioned_user.invite_confirmed = False
+            user.game = game
+        if not join_existing:
+            for mentioned_user in mentioned_users:
+                mentioned_user.game = game
+                mentioned_user.invited = True
+                mentioned_user.invite_confirmed = False
         session.commit()
 
         mentionor = message.author
         mentionor_xid = cast(Any, mentionor).id  # typing doesn't recognize author.id
 
-        if mentioned_users:
-            for mentioned in mentions:
-                await mentioned.send(
-                    s(
-                        "lfg_invited",
-                        reply=f"<@{mentioned.id}>",
-                        mention=f"<@{mentionor_xid}>",
+        if not join_existing:
+            if mentioned_users:
+                for mentioned in mentions:
+                    await mentioned.send(
+                        s(
+                            "lfg_invited",
+                            reply=f"<@{mentioned.id}>",
+                            mention=f"<@{mentionor_xid}>",
+                        )
                     )
-                )
-            return  # we can't create the game post until we get confirmations
+                return  # we can't create the game post until we get confirmations
 
-        if found_existing and user.game.message_xid:
-            post = await self.safe_fetch_message(message.channel, user.game.message_xid)
+        if found_existing and game.message_xid:
+            post = await self.safe_fetch_message(message.channel, game.message_xid)
             if post:
                 await message.channel.send(s("play_found", reply=f"<@{mentionor_xid}>"))
                 found_discord_users = []
-                if len(cast(List[User], user.game.users)) == user.game.size:
-                    for game_user in user.game.users:
+                if len(cast(List[User], game.users)) == game.size:
+                    for game_user in game.users:
                         discord_user = await self.safe_fetch_user(game_user.xid)
                         if not discord_user:  # user has left the server since signing up
                             game_user.game_id = None
                         else:
                             found_discord_users.append(discord_user)
 
-                if len(found_discord_users) == user.game.size:  # game is ready
-                    user.game.url = (
-                        self.create_game() if user.game.system == "spelltable" else None
-                    )
-                    user.game.status = "started"
+                if len(found_discord_users) == game.size:  # game is ready
+                    game.url = self.create_game() if game.system == "spelltable" else None
+                    game.status = "started"
                     session.commit()
                     for discord_user in found_discord_users:
-                        await discord_user.send(embed=user.game.to_embed())
-                    await self.safe_edit_message(post, embed=user.game.to_embed())
+                        await discord_user.send(embed=game.to_embed())
+                    await self.safe_edit_message(post, embed=game.to_embed())
                     await self.safe_clear_reactions(post)
                 else:
                     session.commit()
-                    await self.safe_edit_message(post, embed=user.game.to_embed())
+                    await self.safe_edit_message(post, embed=game.to_embed())
                 return  # Done!
 
-        post = await message.channel.send(embed=user.game.to_embed())
-        user.game.message_xid = post.id
+        post = await message.channel.send(embed=game.to_embed())
+        game.message_xid = post.id
         session.commit()
         await post.add_reaction("➕")
         await post.add_reaction("➖")
