@@ -2331,6 +2331,16 @@ class TestSpellBot:
             f"Sorry <@{author.id}>, but the game size must be between 2 and 4."
         )
 
+    async def test_on_message_join_up_with_someone(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~modern"))
+
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!join {mentions_str}"
+        await client.on_message(MockMessage(JACOB, channel, cmd, mentions=mentions))
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
+
 
 def test_paginate():
     def subject(text):
