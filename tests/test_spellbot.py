@@ -786,7 +786,7 @@ class TestSpellBot:
 
         about = channel.last_sent_embed
         assert about["title"] == "SpellBot"
-        assert about["url"] == "https://spellbot.io/"
+        assert about["url"] == "http://spellbot.io/"
         assert about["description"] == (
             "_A Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
             "\n"
@@ -827,7 +827,7 @@ class TestSpellBot:
             f'Ok <@{author.id}>, I will now use "$" as my command prefix on this server.'
         )
         await client.on_message(MockMessage(author, channel, "$about"))
-        assert channel.last_sent_embed["url"] == "https://spellbot.io/"
+        assert channel.last_sent_embed["url"] == "http://spellbot.io/"
         await client.on_message(MockMessage(author, channel, "$spellbot prefix $"))
         assert channel.last_sent_response == (
             f'Ok <@{author.id}>, I will now use "$" as my command prefix on this server.'
