@@ -11,9 +11,9 @@ html {
 }
 
 body {
-  font-family: 'Lora', 'Times New Roman', serif;
+  font-family: 'Verdana', sans-serif;
   font-size: 1.125rem;
-  color: #404040;
+  color: {{ site.page-text-col | default: "#404040" }};
   position: relative;
   background-color: {{ site.page-col | default: "#FFFFFF" }};
   {% if site.page-img %}
@@ -26,7 +26,7 @@ p {
   margin: 1.875rem 0;
 }
 h1,h2,h3,h4,h5,h6 {
-  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Verdana', sans-serif;
   font-weight: 800;
   line-height: 1.1;
 }
@@ -48,6 +48,7 @@ a {
 a:hover,
 a:focus {
   color: {{ site.hover-col | default: "#0085A1" }};
+  text-decoration: none;
 }
 blockquote {
   color: #808080;
@@ -65,7 +66,7 @@ hr.small {
 }
 
 /* fix in-page anchors to not be behind fixed header */
-:target:before { 
+:target:before {
   content: "";
   display: block;
   height: 3.125rem; /* navbar height */
@@ -128,7 +129,7 @@ img {
 .navbar-custom {
   background-color: {{ site.navbar-col | default: "#F5F5F5" }};
   border-bottom: 1px solid {{ site.navbar-border-col | default: "#EAEAEA" }};
-  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Verdana', sans-serif;
   {% if site.navbar-img %}
     background-image: url({{ site.navbar-img | relative_url }});
     background-attachment: fixed;
@@ -316,6 +317,7 @@ img {
   left: 50%;
   width: 3.125rem;
   margin-top: 1.75rem;
+  padding-top: 1em;
   transition: opacity 0.5s ease-in-out;
   -webkit-transition: opacity 0.5s ease-in-out;
   -moz-transition: opacity 0.5s ease-in-out;
@@ -374,7 +376,6 @@ img {
 
 footer {
   padding: 1.875rem 0;
-  border-top: 1px #EAEAEA solid;
   margin-top: 3.125rem;
   font-size: 0.875rem;
   background-color: {{ site.footer-col | default: "#F5F5F5" }};
@@ -398,7 +399,7 @@ footer .list-inline {
   margin-bottom: 1.875rem;
 }
 footer .copyright {
-  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Verdana', sans-serif;
   text-align: center;
   margin-bottom: 0;
   margin-top: 0;
@@ -410,7 +411,7 @@ footer .theme-by {
 footer .footer-custom-content {
   text-align: center;
   margin-bottom: 0.9375rem;
-  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Verdana', sans-serif;
 }
 
 @media (min-width: 768px) {
@@ -473,7 +474,7 @@ footer .footer-custom-content {
   margin: 0 0 0.625rem;
 }
 .post-preview .post-entry {
-  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Verdana', sans-serif;
 }
 .post-entry-container {
   display: inline-block;
@@ -511,7 +512,7 @@ footer .footer-custom-content {
 /* --- Tags --- */
 
 .blog-tags {
-  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Verdana', sans-serif;
   color: #999;
   font-size: 0.9375rem;
   margin-bottom: 1.875rem;
@@ -613,7 +614,7 @@ footer .footer-custom-content {
   font-size: 1.6875rem;
   line-height: 1.1;
   display: block;
-  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Verdana', sans-serif;
   font-weight: 300;
   margin: 0.625rem 0 0;
 }
@@ -638,7 +639,7 @@ footer .footer-custom-content {
   padding: 0.3125rem 0.625rem;
   font-size: 0.6875rem;
   color: #EEE;
-  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Verdana', sans-serif;
   right: 0;
   bottom: 0;
   display: none;
@@ -727,7 +728,7 @@ footer .footer-custom-content {
     display: block;
   }
 }
-.reader-time .middot { 
+.reader-time .middot {
   margin: 0 0.625rem;
 }
 
@@ -753,7 +754,7 @@ footer .footer-custom-content {
 }
 
 .pagination .page-item .page-link {
-  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Verdana', sans-serif;
   text-transform: uppercase;
   font-size: 0.875rem;
   font-weight: 800;
@@ -910,7 +911,7 @@ pre {
 }
 
 #full-tags-list {
-  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Verdana', sans-serif;
 }
 
 #full-tags-list .tag-entry {
@@ -925,4 +926,15 @@ pre {
   color: #808080;
   font-style: italic;
   font-size: 1rem;
+}
+
+.add-to-discord {
+  width: 100%;
+}
+
+.add-to-discord img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem;
 }
