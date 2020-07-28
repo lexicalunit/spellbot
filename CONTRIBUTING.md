@@ -165,7 +165,7 @@ Where `your_test_function` is the name of the test you'd like to update.
 ## Release process
 
 There's two methods for doing a release. You can use a script to handle
-everything for your automatically, or you can basically do every step in that
+everything for you automatically, or you can basically do every step in that
 script manually. Both methods are described below but I recommend the script.
 
 ### Scripted
@@ -207,6 +207,7 @@ To release a new version of `spellbot`, use `poetry`:
 ```shell
 poetry version [major|minor|patch]
 tox # verify that all tests pass for all environments
+# edit the CHANGELOG.md file to promote all unlreased changes to the new version
 poetry build
 git commit -am "Release vM.N.P"
 poetry publish
