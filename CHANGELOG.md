@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Adds #BLM donation link to front page.
+- Removes some information from the !about embed that is just clutter.
+- Disables auto-embed links for responses to admin when games are created.
+
 ## [v3.13.2](https://github.com/lexicalunit/spellbot/releases/tag/v3.13.2) - 2020-07-28
+
+### Fixed
+
+- Adds logic to handle the error when a user appears in multiple parings in an event.
 
 ## [v3.13.1](https://github.com/lexicalunit/spellbot/releases/tag/v3.13.1) - 2020-07-28
 
