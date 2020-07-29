@@ -13,30 +13,38 @@ subtitle: A Discord bot for SpellTable
     </a>
 </div>
 
-<section id="using-spellbot" class="level2">
-    <h2>🤖 Using SpellBot</h2>
-    <p>Once you’ve connected the bot to your server, you can interact with it over Discord via the following commands in any of the authorized channels. <strong>Keep in mind that sometimes SpellBot will respond to you via Direct Message to avoid being too spammy in text channels.</strong></p>
-    <ul>
-        <li><code>!help</code>: Provides detailed help about all of the following commands.</li>
-        <li><code>!about</code>: Get information about SpellBot and its creators.</li>
-    </ul>
+<section id="getting-started" class="level2">
+    <h2>Getting Started</h2>
+    <p>
+        SpellBot is a Disocrd bot that helps you find other players looking to play <em>Magic: The Gathering</em> over <a href="https://spelltable.com">SpellTable</a>.
+        It can also be used by event runners to help organize online events over SpellTable. To get started, just <a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=92224&scope=bot">invite the bot</a> to your server and send the message <code>!spellbot help</code>.
+    </p>
+
+    <section id="bot-commands" class="level3">
+        <h2>🤖 Bot Commands</h2>
+        <ul>
+            <li><code>!help</code>: Provides detailed help about all of the following commands.</li>
+            <li><code>!about</code>: Get information about SpellBot and its creators.</li>
+        </ul>
+    </section>
     <section id="commands-for-players" class="level3">
         <h3>✋ Commands for Players</h3>
         <p>Just looking to play some games of Magic? These commands are for you!</p>
         <ul>
-            <li><code>!lfg</code>: Sign up to play Magic: The Gathering!</li>
+            <li><code>!lfg</code>: Sign up to play <em>Magic: The Gathering</em>!</li>
             <li><code>!join</code>: Look for a game to join, but don’t create a new one.</li>
             <li><code>!leave</code>: Leave any games that you’ve signed up for.</li>
         </ul>
         <p>When you run the <code>!lfg</code> command, SpellBot will post a message for sign ups.</p>
         <img class="screenshot" src="https://user-images.githubusercontent.com/1903876/88613723-f54b6780-d042-11ea-9435-6dbfdbb7c92b.png" alt="looking for game">
-        <p>Other users can react to it with the ➕ emoji to be added to the game. When the game is ready, SpellBot will update the message with your SpellTable details.</p>
+        <p>Other users can react to it with the ➕ (plus) emoji to be added to the game. When the game is ready, SpellBot will update the message with your SpellTable details.</p>
         <img class="screenshot" src="https://user-images.githubusercontent.com/1903876/88613720-f41a3a80-d042-11ea-9e03-acf169798968.png" alt="game ready">
-        <p>Users can also use the ➖ emoji reaction to leave the game.</p>
+        <p>Users can also use the ➖ (minus) emoji reaction to leave the game.</p>
     </section>
     <section id="commands-for-event-runners" class="level3">
         <h3>🎟️ Commands for Event Runners</h3>
-        <p>These commands are intended to be run by SpellBot Admins and help facilitate online events.</p>
+        <p>These commands help facilitate online events over <a href="https://spelltable.com">SpellTable</a> and can only be run by users with the <code>SpellBot Admin</code> role.</p>
+        </p>
         <ul>
             <li><code>!game</code>: Directly create games for the mentioned users.</li>
             <li><code>!event</code>: Create a bunch of games all at once based on some uploaded data.</li>
@@ -44,9 +52,9 @@ subtitle: A Discord bot for SpellTable
             <li><code>!export</code>: Export historical game data for your server.</li>
         </ul>
     </section>
-    <section id="administrative-commands" class="level3">
+    <section id="commands-for-admins" class="level3">
         <h3>👑 Commands for Admins</h3>
-        <p>These commands will help you configure SpellBot for your server.</p>
+        <p>These commands will help you configure SpellBot for your server and can only be run by users with the <code>SpellBot Admin</code> role.</p>
         <ul>
             <li><code>!spellbot</code>: This command allows admins to configure SpellBot for their server. It supports the following subcommands:
                 <ul>

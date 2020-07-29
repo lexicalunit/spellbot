@@ -7,13 +7,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updates the logo to be something different than exactly what SpellTable uses to avoid confusion.
+- Rewrites some copy on the front page.
+
 ## [v3.13.4](https://github.com/lexicalunit/spellbot/releases/tag/v3.13.4) - 2020-07-29
+
+### Changed
 
 - Don't allow admins to lock themselves out of using SpellBot by setting invalid channels.
 - Allow admins to set the bot to operate within all channels.
 - Better communication about warnings and errors when using the `!spellbot channels` command.
 
 ## [v3.13.3](https://github.com/lexicalunit/spellbot/releases/tag/v3.13.3) - 2020-07-28
+
+### Added
 
 - Adds #BLM donation link to front page.
 - Removes some information from the !about embed that is just clutter.
