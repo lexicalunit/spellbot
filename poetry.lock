@@ -679,7 +679,7 @@ description = "Thin-wrapper around the mock package for easier use with pytest"
 name = "pytest-mock"
 optional = false
 python-versions = ">=3.5"
-version = "3.1.1"
+version = "3.2.0"
 
 [package.dependencies]
 pytest = ">=2.7"
@@ -960,8 +960,8 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "5ce23254af240cae0484ddf5c08ede6d79ab773101b590e171b46f9645966fc8"
-python-versions = '>=3.7,<4'
+content-hash = "82bb59676b15bcebefa899321edf59d3455d75c0c9b8ef32b974845513b3d300"
+python-versions = ">=3.7,<4"
 
 [metadata.files]
 aiohttp = [
@@ -1338,8 +1338,8 @@ pytest-freezegun = [
     {file = "pytest_freezegun-0.4.1-py2.py3-none-any.whl", hash = "sha256:1c77b2917883b8abf817fc39a1fd3f40ac43711eb923512abe7b6557e55eaaf1"},
 ]
 pytest-mock = [
-    {file = "pytest-mock-3.1.1.tar.gz", hash = "sha256:636e792f7dd9e2c80657e174c04bf7aa92672350090736d82e97e92ce8f68737"},
-    {file = "pytest_mock-3.1.1-py3-none-any.whl", hash = "sha256:a9fedba70e37acf016238bb2293f2652ce19985ceb245bbd3d7f3e4032667402"},
+    {file = "pytest-mock-3.2.0.tar.gz", hash = "sha256:7122d55505d5ed5a6f3df940ad174b3f606ecae5e9bc379569cdcbd4cd9d2b83"},
+    {file = "pytest_mock-3.2.0-py3-none-any.whl", hash = "sha256:5564c7cd2569b603f8451ec77928083054d8896046830ca763ed68f4112d17c7"},
 ]
 pytest-snapshot = [
     {file = "pytest-snapshot-0.4.1.tar.gz", hash = "sha256:27303acbb354044888286d7a27a9d111a5e50822d989557d40ccc8f0f36209f8"},
