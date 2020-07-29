@@ -799,11 +799,9 @@ class TestSpellBot:
             "💜 Help keep SpellBot running by "
             "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
         )
-        assert about["footer"]["text"] == "MIT \u00a9 amy@lexicalunit et al"
         assert about["thumbnail"]["url"] == THUMB_URL
 
         fields = {f["name"]: f["value"] for f in about["fields"]}
-        assert fields["Package"] == "[PyPI](https://pypi.org/project/spellbot/)"
         assert fields["Author"] == "[@lexicalunit](https://github.com/lexicalunit)"
 
         version = spellbot.__version__
@@ -972,7 +970,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: {game['url']}\n"
+            f"> Link: <{game['url']}>\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
@@ -995,7 +993,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: {game['url']}\n"
+            f"> Link: <{game['url']}>\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
@@ -1018,7 +1016,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: {game['url']}\n"
+            f"> Link: <{game['url']}>\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
@@ -1039,7 +1037,7 @@ class TestSpellBot:
         game = all_games(client)[1]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: {game['url']}\n"
+            f"> Link: <{game['url']}>\n"
             f"> Players notified by DM: <@{AMY.id}>, <@{ADAM.id}>"
         )
         player_response = game_embed_for(client, ADAM, True, message=message)
@@ -1059,7 +1057,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: {game['url']}\n"
+            f"> Link: <{game['url']}>\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
@@ -1081,7 +1079,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: {game['url']}\n"
+            f"> Link: <{game['url']}>\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
@@ -1098,7 +1096,7 @@ class TestSpellBot:
         game = all_games(client)[1]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: {game['url']}\n"
+            f"> Link: <{game['url']}>\n"
             f"> Players notified by DM: <@{AMY.id}>, <@{ADAM.id}>,"
             f" <@{JR.id}>, <@{FRIEND.id}>"
         )
@@ -1455,7 +1453,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: {game['url']}\n"
+            f"> Link: <{game['url']}>\n"
             f"> Players notified by DM: {AMY.name}, {JR.name}"
         )
         player_response = game_embed_for(client, AMY, True)
@@ -1483,7 +1481,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: {game['url']}\n"
+            f"> Link: <{game['url']}>\n"
             f"> Players notified by DM: {AMY.name}, {JR.name}"
         )
         player_response = game_embed_for(client, AMY, True, message=opt)
@@ -2165,7 +2163,7 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: {game['url']}\n"
+            f"> Link: <{game['url']}>\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )
