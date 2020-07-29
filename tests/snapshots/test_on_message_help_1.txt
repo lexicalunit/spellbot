@@ -20,9 +20,9 @@
 > * `prefix <string>`: Set SpellBot's command prefix for text channels.
 > * `expire <number>`: Set the number of minutes before pending games expire.
 > * `help`: Get detailed usage help for SpellBot.
---- 
+---
 Please report any bugs and suggestions at <https://github.com/lexicalunit/spellbot/issues>!
-[🔗 Add SpellBot to your Discord!](https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=92224&scope=bot)
 
+Add SpellBot to your Discord: <https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=92224&scope=bot>
 
 💜 You can help keep SpellBot running by supporting me on Ko-fi! <https://ko-fi.com/Y8Y51VTHZ>
