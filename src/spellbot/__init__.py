@@ -684,7 +684,11 @@ class SpellBot(discord.Client):
                 if any(user.xid == game_user.xid for game_user in game.users):
                     # this author is already in this game, they don't need to be added
                     return
-                if user.game and user.game.id != game.id:
+                if (
+                    user.game
+                    and user.game.id != game.id
+                    and user.game.status != "started"
+                ):
                     # this author is already another game, they can't be added
                     await author.send(
                         s(
