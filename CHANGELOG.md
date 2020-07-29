@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-- Don't allow admins to lock themselves out of using SpellBot but setting invalid channels.
+- Don't allow admins to lock themselves out of using SpellBot by setting invalid channels.
 - Allow admins to set the bot to operate within all channels.
 - Better communication about warnings and errors when using the `!spellbot channels` command.
 
