@@ -1261,6 +1261,26 @@ class TestSpellBot:
             f"Sorry <@{author.id}>, but you can not use more than 5 tags."
         )
 
+    async def test_on_message_event_duplicate_user(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        data = bytes(
+            "player1,player2\n"
+            f"{AMY.name}#1234,@{JR.name}\n"
+            f"{ADAM.name},{AMY.name}\n",
+            "utf-8",
+        )
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(author, channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            f"**Error:** The user {AMY.name} appears in more than one paring in this"
+            " event file! I first noticed this duplicate on row 2 which contains the"
+            f' players: "{ADAM.name}", "{AMY.name}". Please resolve this issue and try'
+            " again."
+        )
+
     async def test_on_message_event(self, client, channel_maker):
         channel = channel_maker.text()
         author = an_admin()
