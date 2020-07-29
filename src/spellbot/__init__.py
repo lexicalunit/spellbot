@@ -18,6 +18,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Set,
     Union,
     cast,
 )
@@ -1182,6 +1183,9 @@ class SpellBot(discord.Client):
         session.add(event)
         session.commit()
 
+        players_in_this_event: Set[str] = set()
+        warnings = set()
+
         members = message.channel.guild.members
         member_lookup = {member.name.lower().strip(): member for member in members}
         for i, row in enumerate(reader):
@@ -1196,12 +1200,21 @@ class SpellBot(discord.Client):
                 await message.channel.send(warning)
                 continue
 
-            warnings = set()
-
-            player_discord_users = []
+            player_discord_users: List[discord.User] = []
             for csv_data, lname in zip(csv_row_data, player_lnames):
+                if lname in players_in_this_event:
+                    await message.channel.send(
+                        s(
+                            "event_duplicate_user",
+                            row=i + 1,
+                            name=csv_data,
+                            players=players_s,
+                        )
+                    )
+                    return
                 player_discord_user = member_lookup.get(lname)
                 if player_discord_user:
+                    players_in_this_event.add(lname)
                     player_discord_users.append(player_discord_user)
                 else:
                     warnings.add(
@@ -1212,11 +1225,6 @@ class SpellBot(discord.Client):
                             players=players_s,
                         )
                     )
-
-            warnings_s = "\n".join(warnings)
-            if warnings_s:
-                for page in paginate(warnings_s):
-                    await message.channel.send(page)
 
             if len(player_discord_users) != size:
                 continue
@@ -1253,6 +1261,18 @@ class SpellBot(discord.Client):
             )
             session.add(game)
             session.commit()
+
+        def by_row(s: str) -> int:
+            m = re.match("^.*row ([0-9]+).*$", s)
+            # TODO: Hopefully no one adds a strings.yaml warning
+            #       that doesn't fit this exact format!
+            assert m is not None
+            return int(m[1])
+
+        warnings_s = "\n".join(sorted(warnings, key=by_row))
+        if warnings_s:
+            for page in paginate(warnings_s):
+                await message.channel.send(page)
 
         if not event.games:
             session.delete(event)
@@ -1336,10 +1356,11 @@ class SpellBot(discord.Client):
             game.url = self.create_game() if game.system == "spelltable" else None
             game.status = "started"
             response = game.to_embed()
+            session.commit()
+
             for discord_user in found_discord_users:
                 await discord_user.send(embed=response)
 
-            session.commit()
             await message.channel.send(
                 s(
                     "game_created",
