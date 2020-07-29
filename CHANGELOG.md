@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v3.13.6](https://github.com/lexicalunit/spellbot/releases/tag/v3.13.6) - 2020-07-29
+
 ### Fixed
 
 - Fixes an issue where users might react with + to a game but not be able to join it, but also not be able to !leave any games either.
