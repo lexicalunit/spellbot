@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updates the screenshots in the readme and front page.
+
 ### Fixed
 
 - Fixes some broken markdown syntax in the response to `!help`.

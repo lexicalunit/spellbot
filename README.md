@@ -138,13 +138,13 @@ You can also run SpellBot via docker. See
 [issues]:             https://github.com/lexicalunit/spellbot/issues
 [ko-fi]:              https://ko-fi.com/Y8Y51VTHZ
 [lexicalunit]:        http://github.com/lexicalunit
-[lfg]:                https://user-images.githubusercontent.com/1903876/88613723-f54b6780-d042-11ea-9435-6dbfdbb7c92b.png
+[lfg]:                https://user-images.githubusercontent.com/1903876/88854660-7a02c680-d1a6-11ea-9f12-75b9cbb439b4.png
 [mit-badge]:          https://img.shields.io/badge/License-MIT-yellow.svg
 [mit]:                https://opensource.org/licenses/MIT
 [pypi-badge]:         https://img.shields.io/pypi/v/spellbot
 [pypi]:               https://pypi.org/project/spellbot/
 [python-badge]:       https://img.shields.io/badge/python-3.7+-blue.svg
 [python]:             https://www.python.org/
-[ready]:              https://user-images.githubusercontent.com/1903876/88613720-f41a3a80-d042-11ea-9e03-acf169798968.png
+[ready]:              https://user-images.githubusercontent.com/1903876/88854658-796a3000-d1a6-11ea-93b6-63dccae5d637.png
 [spelltable-patron]:  https://www.patreon.com/spelltable?fan_landing=true
 [spelltable]:         https://www.spelltable.com/
