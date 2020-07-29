@@ -867,9 +867,6 @@ class SpellBot(discord.Client):
         embed.set_thumbnail(url=THUMB_URL)
         version = f"[{__version__}](https://pypi.org/project/spellbot/{__version__}/)"
         embed.add_field(name="Version", value=version)
-        embed.add_field(
-            name="Package", value="[PyPI](https://pypi.org/project/spellbot/)"
-        )
         author = "[@lexicalunit](https://github.com/lexicalunit)"
         embed.add_field(name="Author", value=author)
         embed.description = (
@@ -885,7 +882,6 @@ class SpellBot(discord.Client):
             "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
         )
         embed.url = "http://spellbot.io/"
-        embed.set_footer(text="MIT © amy@lexicalunit et al")
         embed.color = discord.Color(0x5A3EFD)
         await message.channel.send(embed=embed)
 
