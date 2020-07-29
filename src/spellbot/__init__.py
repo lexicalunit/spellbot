@@ -737,8 +737,10 @@ class SpellBot(discord.Client):
 
     async def on_message(self, message: discord.Message) -> None:
         """Behavior when the client gets a message from Discord."""
+        author = cast(discord.User, message.author)
+
         # don't respond to any bots
-        if cast(discord.User, message.author).bot:
+        if author.bot:
             return
 
         private = str(message.channel.type) == "private"
@@ -766,7 +768,8 @@ class SpellBot(discord.Client):
         if not message.content.startswith(prefix):
             return
 
-        if not private:
+        is_admin = author.permissions_in(message.channel).administrator
+        if not private and not is_admin:
             async with self.session() as session:
                 server = self.ensure_server_exists(session, message.channel.guild.id)
                 if not server.bot_allowed_in(message.channel.id):
@@ -1629,14 +1632,33 @@ class SpellBot(discord.Client):
         # Blow away the current associations first, otherwise SQLAlchemy will explode.
         session.query(Channel).filter_by(guild_xid=server.guild_xid).delete()
 
+        all_channels = False
         channels = []
         for param in params:
+            if param.lower() == "all":
+                all_channels = True
+                break
+
             m = re.match("<#([0-9]+)>", param)
             if not m:
+                await message.channel.send(
+                    s(
+                        "spellbot_channels_warn",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        param=param,
+                    )
+                )
                 continue
 
             discord_channel = await self.safe_fetch_channel(int(m[1]))
             if not discord_channel:
+                await message.channel.send(
+                    s(
+                        "spellbot_channels_warn",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        param=param,
+                    )
+                )
                 continue
 
             channel = Channel(channel_xid=discord_channel.id, guild_xid=server.guild_xid)
@@ -1644,7 +1666,17 @@ class SpellBot(discord.Client):
             channels.append(channel)
             session.commit()
 
-        if channels:
+        if all_channels:
+            server.channels = []
+            session.commit()
+            await message.channel.send(
+                s(
+                    "spellbot_channels",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    channels="all channels",
+                )
+            )
+        elif channels:
             server.channels = channels
             session.commit()
             channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])

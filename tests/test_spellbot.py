@@ -132,12 +132,13 @@ def send_side_effect(*args, **kwargs):
 
 
 class MockMember:
-    def __init__(self, member_name, member_id, roles=[]):
+    def __init__(self, member_name, member_id, roles=[], admin=False):
         self.name = member_name
         self.id = member_id
         self.roles = roles
         self.avatar_url = "http://example.com/avatar.png"
         self.bot = False
+        self.admin = admin
 
         # sent is a spy for tracking calls to send(), it doesn't exist on the real object.
         # There are also helpers for inspecting calls to sent defined on this class of
@@ -151,6 +152,13 @@ class MockMember:
             **{param: value for param, value in kwargs.items() if value is not None},
         )
         return self.last_sent_message
+
+    def permissions_in(self, channel):
+        class Permissions:
+            def __init__(self, administrator):
+                self.administrator = administrator
+
+        return Permissions(self.admin)
 
     @property
     def last_sent_call(self):
@@ -362,7 +370,7 @@ SRC_DIRS = [REPO_ROOT / "tests", SRC_ROOT / "spellbot", REPO_ROOT / "scripts"]
 ADMIN_ROLE = MockRole("SpellBot Admin")
 PLAYER_ROLE = MockRole("Player Player")
 
-ADMIN = MockMember(CLIENT_USER, CLIENT_USER_ID, roles=[ADMIN_ROLE])
+ADMIN = MockMember(CLIENT_USER, CLIENT_USER_ID, roles=[ADMIN_ROLE], admin=True)
 FRIEND = MockMember("friend", 82169952898900001, roles=[PLAYER_ROLE])
 BUDDY = MockMember("buddy", 82942320688700002, roles=[ADMIN_ROLE, PLAYER_ROLE])
 GUY = MockMember("guy", 82988021019800003)
@@ -732,13 +740,44 @@ class TestSpellBot:
             " Like #bot-commands, for example."
         )
 
+    async def test_on_message_spellbot_channels_all_bad(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot channels foo"))
+        assert channel.last_sent_response == (
+            f'Sorry <@{author.id}>, but "foo" is not a valid channel. Try using # to'
+            ' mention the channels you want or using "all" if you want me to operate'
+            " in all channels."
+        )
+
+    async def test_on_message_spellbot_channels_one_bad_one_good(
+        self, client, channel_maker
+    ):
+        channel = channel_maker.text()
+        author = an_admin()
+        cmd = f"!spellbot channels foo <#{channel.id}>"
+        await client.on_message(MockMessage(author, channel, cmd))
+        assert len(channel.all_sent_responses) == 2
+        assert channel.all_sent_responses[0] == (
+            f'Sorry <@{author.id}>, but "foo" is not a valid channel. Try using # to'
+            ' mention the channels you want or using "all" if you want me to operate'
+            " in all channels."
+        )
+        assert channel.all_sent_responses[1] == (
+            f"Ok <@{author.id}>, I will now operate within: <#{channel.id}>"
+        )
+
     async def test_on_message_spellbot_channels_with_bad_ref(self, client, channel_maker):
         channel = channel_maker.text()
         author = an_admin()
         await client.on_message(
             MockMessage(author, channel, f"!spellbot channels <#{channel.id + 1}>")
         )
-        assert len(channel.all_sent_calls) == 0
+        assert channel.last_sent_response == (
+            f'Sorry <@{author.id}>, but "<#{channel.id + 1}>" is not a valid channel.'
+            ' Try using # to mention the channels you want or using "all" if you'
+            " want me to operate in all channels."
+        )
         await client.on_message(MockMessage(author, channel, "!leave"))
         assert channel.last_sent_response == (
             f"Sorry <@{author.id}>, but you we're not in any pending games."
@@ -750,7 +789,29 @@ class TestSpellBot:
         await client.on_message(
             MockMessage(author, channel, f"!spellbot channels #{channel.id}")
         )
-        assert len(channel.all_sent_calls) == 0
+        assert channel.last_sent_response == (
+            f'Sorry <@{author.id}>, but "#{channel.id}" is not a valid channel.'
+            ' Try using # to mention the channels you want or using "all" if you'
+            " want me to operate in all channels."
+        )
+
+        await client.on_message(MockMessage(author, channel, "!leave"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but you we're not in any pending games."
+        )
+
+    async def test_on_message_spellbot_channels_no_mention(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(
+            MockMessage(author, channel, f"!spellbot channels #{channel.name}")
+        )
+        assert channel.last_sent_response == (
+            f'Sorry <@{author.id}>, but "#{channel.name}" is not a valid channel.'
+            ' Try using # to mention the channels you want or using "all" if you'
+            " want me to operate in all channels."
+        )
+
         await client.on_message(MockMessage(author, channel, "!leave"))
         assert channel.last_sent_response == (
             f"Sorry <@{author.id}>, but you we're not in any pending games."
@@ -766,17 +827,22 @@ class TestSpellBot:
             MockMessage(author, channel, f"!spellbot channels <#{channel.id}>")
         )
         assert channel.last_sent_response == (
-            f"Ok <@{author.id}>, I will now only respond in: <#{channel.id}>"
+            f"Ok <@{author.id}>, I will now operate within: <#{channel.id}>"
         )
         cmd = f"!spellbot channels <#{foo.id}> <#{bar.id}> <#{baz.id}>"
         await client.on_message(MockMessage(author, channel, cmd))
         resp = (
-            f"Ok <@{author.id}>, I will now only respond in:"
+            f"Ok <@{author.id}>, I will now operate within:"
             f" <#{foo.id}>, <#{bar.id}>, <#{baz.id}>"
         )
         assert channel.last_sent_response == resp
         await client.on_message(MockMessage(author, channel, "!help"))  # bad channel now
         assert channel.last_sent_response == resp
+
+        await client.on_message(MockMessage(author, foo, "!spellbot channels all"))
+        assert foo.last_sent_response == (
+            f"Ok <@{author.id}>, I will now operate within: all channels"
+        )
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_on_message_about(self, client, channel_maker, channel_type):
@@ -2225,7 +2291,7 @@ class TestSpellBot:
 
     async def test_on_message_export_non_admin(self, client, channel_maker):
         channel = channel_maker.text()
-        author = someone()
+        author = GUY
         await client.on_message(MockMessage(author, channel, "!export"))
         assert channel.last_sent_response == (
             f"<@{author.id}>, you do not have admin permissions to run that command."

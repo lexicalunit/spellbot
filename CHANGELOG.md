@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Don't allow admins to lock themselves out of using SpellBot but setting invalid channels.
+- Allow admins to set the bot to operate within all channels.
+- Better communication about warnings and errors when using the `!spellbot channels` command.
+
 ## [v3.13.3](https://github.com/lexicalunit/spellbot/releases/tag/v3.13.3) - 2020-07-28
 
 - Adds #BLM donation link to front page.
