@@ -845,16 +845,16 @@ class SpellBot(discord.Client):
             usage += f"\n`{title}`"
             usage += f"\n>  {use}"
             usage += "\n"
-        usage += "---"
+        usage += "---\n"
         usage += (
-            " \nPlease report any bugs and suggestions at"
-            " <https://github.com/lexicalunit/spellbot/issues>!"
+            "Please report any bugs and suggestions at"
+            " <https://github.com/lexicalunit/spellbot/issues>!\n"
         )
         usage += "\n"
-        usage += f"[🔗 Add SpellBot to your Discord!]({INVITE_LINK})\n"
+        usage += f"Add SpellBot to your Discord: <{INVITE_LINK}>\n"
         usage += "\n"
         usage += (
-            "\n💜 You can help keep SpellBot running by supporting me on Ko-fi! "
+            "💜 You can help keep SpellBot running by supporting me on Ko-fi! "
             "<https://ko-fi.com/Y8Y51VTHZ>"
         )
         await message.channel.send(
