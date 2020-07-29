@@ -14,7 +14,7 @@ max-line-length = 90
 
 [tool.poetry]
 name = 'spellbot'
-version = "3.13.4"
+version = "3.13.5"
 license = 'MIT'
 authors = [
     'Amy <amy@lexicalunit.com>'
