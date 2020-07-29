@@ -1,4 +1,4 @@
-<img align="right" src="https://raw.githubusercontent.com/lexicalunit/spellbot/master/spellbot.png" />
+<img align="right" width="200" src="https://raw.githubusercontent.com/lexicalunit/spellbot/master/spellbot.png" />
 
 # SpellBot
 
