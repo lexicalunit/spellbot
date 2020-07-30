@@ -9,7 +9,7 @@
 [![black][black-badge]][black]
 [![mit][mit-badge]][mit]
 
-A Discord bot for [SpellTable][spelltable].
+The Discord bot for [SpellTable][spelltable].
 
 [![add-bot][add-img]][add-bot]
 

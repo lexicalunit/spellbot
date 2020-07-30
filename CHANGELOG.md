@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added a longer meta description for the front page.
+- Added FB OpenGraph and Twitter Summary cards back into the header.
+
+### Changed
+
+- Use the phrase "the Discord bot" instead of "a Discord bot".
+- Use the size title for the front page.
+
 ### Fixed
 
 - Fixes a spelling error on the front page.
