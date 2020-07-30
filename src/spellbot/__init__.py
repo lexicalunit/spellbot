@@ -37,20 +37,23 @@ from sqlalchemy.sql import text
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
-from spellbot.constants import ADMIN_ROLE, CREATE_ENDPOINT, DEFAULT_GAME_SIZE, THUMB_URL
+from spellbot.constants import (
+    ADMIN_ROLE,
+    CREATE_ENDPOINT,
+    DEFAULT_GAME_SIZE,
+    INVITE_LINK,
+    THUMB_URL,
+)
 from spellbot.data import Channel, Data, Event, Game, Server, Tag, User
 
 # Application Paths
 RUNTIME_ROOT = Path(".")
 SCRIPTS_DIR = RUNTIME_ROOT / "scripts"
 DB_DIR = RUNTIME_ROOT / "db"
-DEFAULT_DB_URL = f"sqlite:///{DB_DIR}/spellbot.db"
 TMP_DIR = RUNTIME_ROOT / "tmp"
 MIGRATIONS_DIR = SCRIPTS_DIR / "migrations"
-INVITE_LINK = (
-    "https://discordapp.com/api/oauth2/authorize"
-    "?client_id=725510263251402832&permissions=92224&scope=bot"
-)
+
+DEFAULT_DB_URL = f"sqlite:///{DB_DIR}/spellbot.db"
 
 logger = logging.getLogger(__name__)
 
