@@ -50,22 +50,13 @@ footer-link-col: "#765bff"
 #page-img: "/assets/img/bgimage.png"
 
 # --- Web Statistics Section --- #
-# Fill in your Google Analytics gtag.js ID to track your website using gtag
-#gtag: ""
-
-# Fill in your Google Analytics ID to track your website using GA
-#google_analytics: ""
-
-# Google Tag Manager ID
-#gtm: ""
-
-# Matomo (aka Piwik) Web statistics
-# Uncomment the following section to enable Matomo. The opt-out parameter controls
-# whether or not you want to allow users to opt out of tracking.
-#matomo:
-#  site_id: "9"
-#  uri: "demo.wiki.pro"
-#  opt-out: true
+gtag: "UA-174106299-1" # Google Analytics gtag.js ID to track using gtag
+# google_analytics: "UA-174106299-1" # Google Analytics ID to track using GA
+# gtm: "" # Google Tag Manager ID
+# matomo:
+#   site_id: "9"
+#   uri: "demo.wiki.pro"
+#   opt-out: true
 
 # --- Comments --- #
 # To use Disqus comments, sign up to https://disqus.com and fill in your Disqus shortname (NOT the userid)
