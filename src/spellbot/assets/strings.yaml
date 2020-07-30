@@ -53,6 +53,11 @@ lfg_invited: Hello $reply! You've been invited to a game by $mention. To confirm
   deny please respond with yes or no.
 lfg_mention_already: Sorry $reply, but $mention is already in another pending game
   and can't be invited.
+lfg_player_added_to_queue: I added $player to a queue.
+lfg_player_removed_from_queue: The player $player was already in a game. I have removed
+  them from that game. If you want to enter them into a queue, please run that command
+  again to add them.
+lfg_queue_no_mention: Sorry $reply, but you need to mention at least one player.
 lfg_too_many_mentions: Sorry $reply, but you've mentioned too many players for that
   size game.
 no_dm: Hello $reply! That command only works in text channels.

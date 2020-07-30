@@ -1,0 +1,5 @@
+Please report any bugs and suggestions at <https://github.com/lexicalunit/spellbot/issues>!
+
+Add SpellBot to your Discord: <https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=92224&scope=bot>
+
+💜 You can help keep SpellBot running by supporting me on Ko-fi! <https://ko-fi.com/Y8Y51VTHZ>
