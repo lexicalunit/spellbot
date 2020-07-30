@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Use the phrase "the Discord bot" instead of "a Discord bot".
 - Use the size title for the front page.
+- Enabled mypy analysis for pytest since version 6.0.0 now supports it!
+- Moved tox and pytest configuration into pyproject.toml.
+- Moved flake8 configuration into .flak8 so that I could delete tox.ini.
 
 ### Fixed
 
