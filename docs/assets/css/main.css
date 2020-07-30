@@ -928,23 +928,48 @@ pre {
   font-size: 1rem;
 }
 
-.add-to-discord {
-  width: 100%;
+.hero {
+  padding: 1rem;
+  text-align: center;
 }
 
-.add-to-discord img {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 1rem;
+.add-bot {
+  background-color: rgb(90, 62, 253);
+  border-radius: 3px;
+  border: none;
+  color: rgb(255, 255, 255);
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 200;
+  line-height: 1;
+  min-height: 32px;
+  padding: 10px 30px;
+  transition: all 0.3s ease-in-out;
+  user-select: none;
+}
+
+.add-bot:hover {
+  background-color: rgba(90, 62, 253, .90);
+  box-shadow: 0 0 10px rgba(90, 62, 253, .80);
+  font-size: 17px;
+  transform: scale(1.05, 1.05);
 }
 
 .screenshot {
+  border-image-slice: 1;
+  border-image-source: linear-gradient(45deg, rgb(90, 62, 253), rgb(246, 173, 75));
+  border: 5px solid;
+  box-shadow: 10px 10px rgba(113, 128, 150, .20);
   display: block;
   margin-left: auto;
   margin-right: auto;
-  border: 5px solid;
-  border-image-source: linear-gradient(45deg, rgb(90, 62, 253), rgb(246, 173, 75));
-  border-image-slice: 1;
-  box-shadow: 10px 10px rgba(113, 128, 150, .20);
 }
+
+.avatar-img {
+  -webkit-animation: spin 60s linear infinite;
+  -moz-animation: spin 60s linear infinite;
+  animation: spin 60s linear infinite;
+}
+@-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
+@-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
+@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
