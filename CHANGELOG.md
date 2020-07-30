@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Removes the unused pydantic dependency.
+
 ### Added
 
 - Adds some much nicer buttons and logos to the front page.
