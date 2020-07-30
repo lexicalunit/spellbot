@@ -11,9 +11,9 @@
 
 The Discord bot for [SpellTable][spelltable].
 
-[![add-bot][add-img]][add-bot]
+[![add-bot][add-bot-button]][add-bot]
 
-[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)][ko-fi]
+[![ko-fi][kofi-button]][ko-fi]
 
 ## 🤖 Using SpellBot
 
@@ -125,8 +125,8 @@ You can also run SpellBot via docker. See
 
 [MIT][mit] © [amy@lexicalunit][lexicalunit] et [al][contributors]
 
+[add-bot-button]:     https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png
 [add-bot]:            https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=92224&scope=bot
-[add-img]:            https://user-images.githubusercontent.com/1903876/82262797-71745100-9916-11ea-8b65-b3f656115e4f.png
 [black-badge]:        https://img.shields.io/badge/code%20style-black-000000.svg
 [black]:              https://github.com/psf/black
 [build-badge]:        https://github.com/lexicalunit/spellbot/workflows/build/badge.svg
@@ -138,6 +138,7 @@ You can also run SpellBot via docker. See
 [discord-bot-docs]:   https://discord.com/developers/docs/topics/oauth2#bots
 [issues]:             https://github.com/lexicalunit/spellbot/issues
 [ko-fi]:              https://ko-fi.com/Y8Y51VTHZ
+[kofi-button]:        https://user-images.githubusercontent.com/1903876/88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
 [lexicalunit]:        http://github.com/lexicalunit
 [lfg]:                https://user-images.githubusercontent.com/1903876/88854660-7a02c680-d1a6-11ea-9f12-75b9cbb439b4.png
 [mit-badge]:          https://img.shields.io/badge/License-MIT-yellow.svg
