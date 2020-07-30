@@ -854,7 +854,7 @@ class TestSpellBot:
         assert about["title"] == "SpellBot"
         assert about["url"] == "http://spellbot.io/"
         assert about["description"] == (
-            "_A Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
+            "_The Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
             "\n"
             "Use the command `!help` for usage details. Having issues with SpellBot? "
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"

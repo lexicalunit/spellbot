@@ -877,7 +877,7 @@ class SpellBot(discord.Client):
         author = "[@lexicalunit](https://github.com/lexicalunit)"
         embed.add_field(name="Author", value=author)
         embed.description = (
-            "_A Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
+            "_The Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
             "\n"
             f"Use the command `{prefix}help` for usage details. "
             "Having issues with SpellBot? "

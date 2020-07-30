@@ -20,7 +20,7 @@ authors = [
     'Amy <amy@lexicalunit.com>'
 ]
 readme = 'README.md'
-description = 'A Discord bot for SpellTable'
+description = 'The Discord bot for SpellTable'
 keywords=['discord', 'magic', 'bot', 'mtg', 'SpellTable']
 repository = 'https://github.com/lexicalunit/spellbot'
 homepage = 'http://spellbot.io/'
