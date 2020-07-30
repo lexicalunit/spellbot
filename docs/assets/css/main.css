@@ -939,7 +939,7 @@ pre {
   border: none;
   color: rgb(255, 255, 255);
   cursor: pointer;
-  font-size: 17px;
+  font-size: large;
   font-weight: 200;
   line-height: 1;
   min-height: 32px;
@@ -951,7 +951,6 @@ pre {
 .add-bot:hover {
   background-color: rgba(90, 62, 253, .90);
   box-shadow: 0 0 10px rgba(90, 62, 253, .80);
-  font-size: 17px;
   transform: scale(1.05, 1.05);
 }
 
