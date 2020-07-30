@@ -10,7 +10,7 @@ from subprocess import run
 from unittest.mock import MagicMock, Mock
 from warnings import warn
 
-import pytest  # type: ignore
+import pytest
 import pytz
 import toml
 
