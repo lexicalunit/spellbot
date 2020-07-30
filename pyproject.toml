@@ -77,7 +77,6 @@ dunamai = "^1.2.0"
 humanize = "^2.5.0"
 hupper = "^1.10.2"
 psycopg2-binary = "^2.8.5"
-pydantic = "^1.5.1"
 python = '>=3.7,<4'
 python-dateutil = "^2.8.1"
 pytz = "^2020.1"
