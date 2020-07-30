@@ -697,7 +697,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!help"))
         for response in author.all_sent_responses:
             snap(response)
-        assert len(author.all_sent_calls) == 2
+        assert len(author.all_sent_calls) == 3
 
     async def test_on_message_spellbot_dm(self, client, channel_maker):
         author = an_admin()
@@ -2421,6 +2421,99 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!spellbot help"))
         assert len(channel.all_sent_calls) == 1
         assert len(author.all_sent_calls) >= 1
+
+    async def test_on_message_queue_no_mentions(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!queue"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but you need to mention at least one player."
+        )
+
+    async def test_on_message_queue_dm(self, client, channel_maker):
+        author = an_admin()
+        dm = channel_maker.dm()
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!queue {mentions_str}"
+        await client.on_message(MockMessage(author, dm, cmd, mentions=mentions))
+        assert author.last_sent_response == (
+            f"Hello <@{author.id}>! That command only works in text channels."
+        )
+
+    async def test_on_message_queue_non_admin(self, client, channel_maker):
+        author = not_an_admin()
+        channel = channel_maker.text()
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!queue {mentions_str}"
+        await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == (
+            f"<@{author.id}>, you do not have admin permissions to run that command."
+        )
+
+    async def test_on_message_queue_admin(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!queue {mentions_str} size:2"
+        await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
+        assert channel.all_sent_responses[0] == f"I added <@{AMY.id}> to a queue."
+        game = all_games(client)[0]
+        game_id = game["id"]
+        assert channel.all_sent_embeds[0] == {
+            "color": 5914365,
+            "description": "To join/leave this game, react with ➕/➖.",
+            "fields": [{"inline": True, "name": "Players", "value": f"<@{AMY.id}>"}],
+            "footer": {"text": f"SpellBot Reference #SB{game_id}"},
+            "thumbnail": {"url": THUMB_URL},
+            "title": "**Waiting for 1 more player to join...**",
+            "type": "rich",
+        }
+
+    async def test_on_message_queue_twice(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!queue {mentions_str} size:2"
+        await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
+        await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == (
+            f"The player <@{AMY.id}> was already in a game. I have removed them from"
+            " that game. If you want to enter them into a queue, please run that"
+            " command again to add them."
+        )
+        assert len(all_games(client)) == 1
+        assert game_json_for(client, AMY) == None
+
+    async def test_on_message_queue_till_ready(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!queue {mentions_str} size:2"
+        await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
+
+        mentions = [JR]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!queue {mentions_str} size:2"
+        await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
+
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JR, True)
+
+    async def test_on_message_queue_till_ready_all(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+
+        mentions = [AMY, JR]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!queue {mentions_str} size:2"
+        await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
+
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JR, True)
 
 
 def test_paginate():
