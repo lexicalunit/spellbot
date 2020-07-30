@@ -50,8 +50,8 @@ footer-link-col: "#765bff"
 #page-img: "/assets/img/bgimage.png"
 
 # --- Web Statistics Section --- #
-gtag: "UA-174106299-1" # Google Analytics gtag.js ID to track using gtag
-# google_analytics: "UA-174106299-1" # Google Analytics ID to track using GA
+# gtag: "" # Google Analytics gtag.js ID to track using gtag
+google_analytics: "UA-174106299-1" # Google Analytics ID to track using GA
 # gtm: "" # Google Tag Manager ID
 # matomo:
 #   site_id: "9"
