@@ -26,7 +26,11 @@ poetry install
 
 ## Running the application
 
-Make sure that you have [set up your environmental variables](/README.md#-running-spellbot-yourself), then run:
+Make sure that you have [set up your environmental variables](/README.md#-running-spellbot-yourself).
+
+If you wish, you can use a [.env file](https://pypi.org/project/python-dotenv/). Copy the `.env.example` file to get started.
+
+When your environmental variables are set, run:
 
 ```shell
 poetry run spellbot --help
