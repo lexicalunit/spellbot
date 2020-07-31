@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Support for google analytics tag manager.
+
 ### Changed
 
 - Changed the colors of the add-bot and ko-fi buttons in the readme to match the front page.
