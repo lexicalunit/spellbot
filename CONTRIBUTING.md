@@ -32,6 +32,14 @@ Make sure that you have [set up your environmental variables](/README.md#-runnin
 poetry run spellbot --help
 ```
 
+This will list some useful flags you can provide to run SpellBot. To get started developing, run:
+
+```
+poetry run spellbot --dev
+```
+
+This will start SpellBot and reload it whenever the source code changes.
+
 ## Running tests
 
 We use [tox](https://tox.readthedocs.io/en/latest/) to manage test execution.
