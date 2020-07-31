@@ -20,9 +20,10 @@ def version_from_package():
 
 
 def version_from_toml():
-    import toml
     from os.path import dirname, realpath
     from pathlib import Path
+
+    import toml
 
     try:
         PKG_ROOT = dirname(realpath(__file__))
