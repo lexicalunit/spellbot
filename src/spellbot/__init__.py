@@ -697,15 +697,11 @@ class SpellBot(discord.Client):
                     and user.game.id != game.id
                     and user.game.status != "started"
                 ):
-                    # this author is already another game, they can't be added
-                    await author.send(
-                        s(
-                            "react_already_in",
-                            reply=f"<@{author.id}>",
-                            prefix=server.prefix,
-                        )
-                    )
-                    return
+                    # this author is already another game, leave that one now
+                    game_to_update = user.game
+                    user.game_id = None
+                    session.commit()
+                    await self.try_to_update_game(game_to_update)
                 user.game = game
             else:  # emoji == "➖":
                 if not any(user.xid == game_user.xid for game_user in game.users):
@@ -913,14 +909,10 @@ class SpellBot(discord.Client):
 
         user = self.ensure_user_exists(session, message.author)
         if not use_queue and user.waiting:
-            await message.channel.send(
-                s(
-                    "user_waiting",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                    prefix=server.prefix,
-                )
-            )
-            return
+            game_to_update = user.game
+            user.game_id = None
+            session.commit()
+            await self.try_to_update_game(game_to_update)
 
         mentions = message.mentions if message.channel.type != "private" else []
 
