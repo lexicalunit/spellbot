@@ -2547,8 +2547,9 @@ def test_paginate():
 
 class TestMigrations:
     def test_alembic(self, tmp_path):
-        from spellbot.data import create_all, reverse_all
         from sqlalchemy import create_engine
+
+        from spellbot.data import create_all, reverse_all
 
         db_file = tmp_path / "spellbot.db"
         connection_url = f"sqlite:///{db_file}"
@@ -2586,7 +2587,7 @@ class TestCodebase:
     def test_isort(self):
         """Checks that the Python codebase imports are correctly sorted."""
         chdir(REPO_ROOT)
-        cmd = ["isort", "-df", "-w90", "-rc", "-c", *SRC_DIRS]
+        cmd = ["isort", "--df", "-w90", "-c", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
         assert proc.returncode == 0, f"isort issues:\n{proc.stdout.decode('utf-8')}"

@@ -11,9 +11,10 @@ ASSETS_DIR = SRC_ROOT / "src" / "spellbot" / "assets"
 STRINGS_DATA_FILE = ASSETS_DIR / "strings.yaml"
 
 try:
-    from yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CDumper as Dumper
+    from yaml import CLoader as Loader
 except ImportError:  # pragma: no cover
-    from yaml import Loader, Dumper  # type: ignore
+    from yaml import Dumper, Loader  # type: ignore
 
 
 def diff(expected, actual):
