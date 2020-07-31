@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Changed the colors of the add-bot and ko-fi buttons in the readme to match the front page.
 - Updated dunamai dependency to 1.3.0.
 - Changed twitter social link to the new @SpellBotIO twitter account.
+- Updated isort dev dependency to 5.2.2.
 
 ## [v3.14.0](https://github.com/lexicalunit/spellbot/releases/tag/v3.14.0) - 2020-07-30
 
