@@ -167,6 +167,10 @@ def parse_opts(params: List[str]) -> dict:
     }
 
 
+def post_link(server_xid: int, channel_xid: int, message_xid: int,) -> str:
+    return f"https://discordapp.com/channels/{server_xid}/{channel_xid}/{message_xid}"
+
+
 def is_admin(
     channel: TextChannel, user_or_member: Union[discord.User, discord.Member]
 ) -> bool:
@@ -697,15 +701,11 @@ class SpellBot(discord.Client):
                     and user.game.id != game.id
                     and user.game.status != "started"
                 ):
-                    # this author is already another game, they can't be added
-                    await author.send(
-                        s(
-                            "react_already_in",
-                            reply=f"<@{author.id}>",
-                            prefix=server.prefix,
-                        )
-                    )
-                    return
+                    # this author is already another game, leave that one now
+                    game_to_update = user.game
+                    user.game_id = None
+                    session.commit()
+                    await self.try_to_update_game(game_to_update)
                 user.game = game
             else:  # emoji == "➖":
                 if not any(user.xid == game_user.xid for game_user in game.users):
@@ -913,14 +913,10 @@ class SpellBot(discord.Client):
 
         user = self.ensure_user_exists(session, message.author)
         if not use_queue and user.waiting:
-            await message.channel.send(
-                s(
-                    "user_waiting",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                    prefix=server.prefix,
-                )
-            )
-            return
+            game_to_update = user.game
+            user.game_id = None
+            session.commit()
+            await self.try_to_update_game(game_to_update)
 
         mentions = message.mentions if message.channel.type != "private" else []
 
@@ -1068,7 +1064,13 @@ class SpellBot(discord.Client):
             if post:
                 if not use_queue:
                     await message.channel.send(
-                        s("play_found", reply=f"<@{mentionor_xid}>")
+                        s(
+                            "play_found",
+                            reply=f"<@{mentionor_xid}>",
+                            link=post_link(
+                                server.guild_xid, message.channel.id, game.message_xid
+                            ),
+                        )
                     )
                 found_discord_users = []
                 if len(cast(List[User], game.users)) == game.size:

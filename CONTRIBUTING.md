@@ -38,7 +38,7 @@ poetry run spellbot --help
 
 This will list some useful flags you can provide to run SpellBot. To get started developing, run:
 
-```
+```shell
 poetry run spellbot --dev
 ```
 
