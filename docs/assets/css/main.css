@@ -955,9 +955,9 @@ pre {
 }
 
 .screenshot {
-  border-image-slice: 1;
-  border-image-source: linear-gradient(45deg, rgb(90, 62, 253), rgb(246, 173, 75));
-  border: 5px solid;
+  border-radius: 1rem;
+  background: linear-gradient(45deg, rgb(246, 173, 75), rgb(90, 62, 253));
+  padding: .5rem;
   box-shadow: 10px 10px rgba(113, 128, 150, .20);
   display: block;
   margin-left: auto;
