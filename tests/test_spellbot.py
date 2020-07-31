@@ -2418,7 +2418,7 @@ class TestSpellBot:
         author = not_an_admin()
         channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot help"))
-        assert len(channel.all_sent_calls) == 1
+        assert len(channel.all_sent_calls) == 0
         assert len(author.all_sent_calls) >= 1
 
     async def test_on_message_queue_no_mentions(self, client, channel_maker):
