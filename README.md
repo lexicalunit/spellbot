@@ -25,6 +25,8 @@ being too spammy in text channels.**
 - `!help`: Provides detailed help about all of the following commands.
 - `!about`: Get information about SpellBot and its creators.
 
+To use the [commands for event runners](#%EF%B8%8F-commands-for-event-runners), you will need to [create the roll on your server][create-role] called `SpellBot Admin` (capitalization matters). Only users on your server that have that role will be able to use those commands.
+
 ### ✋ Commands for Players
 
 Just looking to play some games of Magic? These commands are for you!
@@ -134,6 +136,7 @@ You can also run SpellBot via docker. See
 [codecov-badge]:      https://codecov.io/gh/lexicalunit/spellbot/branch/master/graph/badge.svg
 [codecov]:            https://codecov.io/gh/lexicalunit/spellbot
 [contributors]:       https://github.com/lexicalunit/spellbot/graphs/contributors
+[create-role]:        https://support.discord.com/hc/en-us/articles/206029707-How-do-I-set-up-Permissions-
 [db-url]:             https://docs.sqlalchemy.org/en/latest/core/engines.html
 [discord-bot-docs]:   https://discord.com/developers/docs/topics/oauth2#bots
 [issues]:             https://github.com/lexicalunit/spellbot/issues
