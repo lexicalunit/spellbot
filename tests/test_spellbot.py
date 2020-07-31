@@ -1673,9 +1673,12 @@ class TestSpellBot:
         channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg"))
+        post = channel.last_sent_message
         await client.on_message(MockMessage(author, channel, "!lfg"))
         assert channel.last_sent_response == (
             f"I found a game for you, <@{author.id}>. You have been signed up for it!"
+            " Go to game post: https://discordapp.com/channels/"
+            f"{channel.guild.id}/{channel.id}/{post.id}"
         )
 
     async def test_on_message_lfg(self, client, channel_maker):
