@@ -28,7 +28,9 @@ description: "SpellBot is the Discord bot that helps you find other players look
         SpellBot is the Discord bot that helps you find other players looking to play <em>Magic: The Gathering</em> on <a href="https://spelltable.com">SpellTable</a>.
         It can also be used by event runners to help organize online events on SpellTable. To get started, just <a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=92224&scope=bot">invite the bot</a> to your server and send the message <code>!spellbot help</code>.
     </p>
-
+    <p class="note">
+        To use the <a href="#commands-for-event-runners">commands for event runners</a> and <a href="#commands-for-admins">commands for admins</a> you will need to <a href="https://support.discord.com/hc/en-us/articles/206029707-How-do-I-set-up-Permissions-">create a role</a> with the name <code>SpellBot Admin</code> (capitalization matters) your server. Only users with that role will be able to use these commands.
+    </p>
     <section id="bot-commands" class="level3">
         <h2>🤖 Bot Commands</h2>
         <ul>
@@ -52,29 +54,28 @@ description: "SpellBot is the Discord bot that helps you find other players look
     </section>
     <section id="commands-for-event-runners" class="level3">
         <h3>🎟️ Commands for Event Runners</h3>
-        <p>These commands help facilitate online events on <a href="https://spelltable.com">SpellTable</a> and can only be run by users with the <code>SpellBot Admin</code> role.</p>
-        </p>
-        <ul>
-            <li><code>!game</code>: Directly create games for the mentioned users.</li>
-            <li><code>!queue</code>: Enter a player into an on-demand queue.</li>
-            <li><code>!event</code>: Create a bunch of games all at once based on some uploaded data.</li>
-            <li><code>!begin</code>: Start an event that you previously created with <code>!event</code>.</li>
-            <li><code>!export</code>: Export historical game data for your server.</li>
-        </ul>
+        <p>These commands help facilitate online events on <a href="https://spelltable.com">SpellTable</a>.
+            <ul>
+                <li><code>!game</code>: Directly create games for the mentioned users.</li>
+                <li><code>!queue</code>: Enter a player into an on-demand queue.</li>
+                <li><code>!event</code>: Create a bunch of games all at once based on some uploaded data.</li>
+                <li><code>!begin</code>: Start an event that you previously created with <code>!event</code>.</li>
+                <li><code>!export</code>: Export historical game data for your server.</li>
+            </ul>
     </section>
     <section id="commands-for-admins" class="level3">
         <h3>👑 Commands for Admins</h3>
-        <p>These commands will help you configure SpellBot for your server and can only be run by users with the <code>SpellBot Admin</code> role.</p>
-        <ul>
-            <li><code>!spellbot</code>: This command allows admins to configure SpellBot for their server. It supports the following subcommands:
+        <p>These commands will help you configure SpellBot for your server.<p>
                 <ul>
-                    <li><code>config</code>: Just show the current configuration for this server.</li>
-                    <li><code>channels</code>: Set the channels SpellBot is allowed to operate within.</li>
-                    <li><code>prefix</code>: Set the command prefix for SpellBot in text channels.</li>
-                    <li><code>expire</code>: Set how many minutes before games are expired due to inactivity.</li>
+                    <li><code>!spellbot</code>: This command allows admins to configure SpellBot for their server. It supports the following subcommands:
+                        <ul>
+                            <li><code>config</code>: Just show the current configuration for this server.</li>
+                            <li><code>channels</code>: Set the channels SpellBot is allowed to operate within.</li>
+                            <li><code>prefix</code>: Set the command prefix for SpellBot in text channels.</li>
+                            <li><code>expire</code>: Set how many minutes before games are expired due to inactivity.</li>
+                        </ul>
+                    </li>
                 </ul>
-            </li>
-        </ul>
     </section>
     <section id="secrets" class="level3">
         <h3>🤫 Secrets</h3>

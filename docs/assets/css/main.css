@@ -972,3 +972,17 @@ pre {
 @-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
 @-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
 @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+
+p.note {
+  background: linear-gradient(45deg, rgba(246, 173, 75, .2), rgba(90, 62, 253, .2));
+  border-radius: 1rem;
+  padding: .5rem 1rem;
+  margin: .5rem 1rem;
+
+  padding-left: 3rem;
+  text-indent: -2rem;
+}
+
+p.note:before {
+  content: "💡"
+}
