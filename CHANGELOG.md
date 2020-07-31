@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Cleans up some css on the front page.
+- Refactors test mocks into their own module.
 
 ### Added
 
