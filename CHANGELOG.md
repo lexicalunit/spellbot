@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Updated dunamai dependency to 1.3.0.
 - Changed twitter social link to the new @SpellBotIO twitter account.
 - Updated isort dev dependency to 5.2.2.
+- When trying to `!lfg` and you're already in a pending game, you will now automatically be
+  removed from that game first, then your command will be processed as normal.
+- When trying to react with a + to a game when you're already in a pending game, you will
+  first be removed from your pending game and then added to that new game.
 
 ## [v3.14.0](https://github.com/lexicalunit/spellbot/releases/tag/v3.14.0) - 2020-07-30
 
