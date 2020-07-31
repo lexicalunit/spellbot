@@ -31,6 +31,7 @@ import discord.errors
 import hupper  # type: ignore
 import requests
 from discord.channel import TextChannel
+from dotenv import load_dotenv
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import text
@@ -45,6 +46,8 @@ from spellbot.constants import (
     THUMB_URL,
 )
 from spellbot.data import Channel, Data, Event, Game, Server, Tag, User
+
+load_dotenv()
 
 # Application Paths
 RUNTIME_ROOT = Path(".")
