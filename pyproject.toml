@@ -79,6 +79,7 @@ hupper = "^1.10.2"
 psycopg2-binary = "^2.8.5"
 python = '>=3.7,<4'
 python-dateutil = "^2.8.1"
+python-dotenv = "^0.14.0"
 pytz = "^2020.1"
 pyyaml = "^5.3.1"
 requests = "^2.24.0"
