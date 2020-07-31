@@ -976,13 +976,12 @@ pre {
 p.note {
   background: linear-gradient(45deg, rgba(246, 173, 75, .2), rgba(90, 62, 253, .2));
   border-radius: 1rem;
-  padding: .5rem 1rem;
-  margin: .5rem 1rem;
-
-  padding-left: 3rem;
-  text-indent: -2rem;
+  margin: 2rem 1rem;
+  padding: .5rem 1rem .5rem 3rem;
 }
 
 p.note:before {
-  content: "💡"
+  content: "💡";
+  float: left;
+  margin-left: -2rem;
 }

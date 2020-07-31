@@ -7,11 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Cleans up some css on the front page.
+
+## [v3.15.0](https://github.com/lexicalunit/spellbot/releases/tag/v3.15.0) - 2020-07-31
+
 ### Added
 
 - Support for google analytics tag manager.
 - Adds some notes about the `SpellBot Admin` role and links to Discord
-  documentation on role creation to both the readme (thanks to @crookedneighbor) and front page.
+  documentation on role creation to both the readme (thanks to
+  [@crookedneighbor](https://github.com/crookedneighbor)) and front page.
+- Added message links when informing the player that they were added to a game so it's easier to
+  find the post. Before you would have had to scroll up in history to find it manually.
+- Added a markdown-lint configuration and made some small improvements to some markdown files.
 
 ### Changed
 
@@ -19,6 +29,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Updated dunamai dependency to 1.3.0.
 - Changed twitter social link to the new @SpellBotIO twitter account.
 - Updated isort dev dependency to 5.2.2.
+- When trying to `!lfg` and you're already in a pending game, you will now automatically be
+  removed from that game first, then your command will be processed as normal.
+- When trying to react with a + to a game when you're already in a pending game, you will
+  first be removed from your pending game and then added to that new game.
 
 ## [v3.14.0](https://github.com/lexicalunit/spellbot/releases/tag/v3.14.0) - 2020-07-30
 
@@ -114,7 +128,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Added a webpage for SpellBot: http://spellbot.io/
+- Added a webpage for SpellBot: spellbot.io.
 - Adds an invite link to the !about embed and !help response.
 
 ### Fixed

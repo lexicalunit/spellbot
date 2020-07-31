@@ -63,9 +63,8 @@ lfg_too_many_mentions: Sorry $reply, but you've mentioned too many players for t
 no_dm: Hello $reply! That command only works in text channels.
 not_a_command: Sorry $reply, there is no "$request" command.
 not_admin: $reply, you do not have admin permissions to run that command.
-play_found: I found a game for you, $reply. You have been signed up for it!
-react_already_in: Sorry $reply, I couldn't add you to that game because you're already
-  signed up for another game. You can use `${prefix}leave` to leave that game.
+play_found: 'I found a game for you, $reply. You have been signed up for it! Go to
+  game post: $link'
 spellbot_channels: 'Ok $reply, I will now operate within: $channels'
 spellbot_channels_none: 'Sorry $reply, but please provide a list of channels. Like
   #bot-commands, for example.'
@@ -84,5 +83,3 @@ spellbot_prefix: Ok $reply, I will now use "$prefix" as my command prefix on thi
 spellbot_prefix_none: Sorry $reply, but please provide a prefix string.
 spellbot_unknown_subcommand: Sorry $reply, but the subcommand "$command" is not recognized.
 tags_too_many: Sorry $reply, but you can not use more than 5 tags.
-user_waiting: Hi $reply! You're already waiting in a game. If you want to, you can
-  leave that game with `${prefix}leave` and then try again.
