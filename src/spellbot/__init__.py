@@ -167,7 +167,7 @@ def parse_opts(params: List[str]) -> dict:
     }
 
 
-def post_link(server_xid: int, channel_xid: int, message_xid: int,) -> str:
+def post_link(server_xid: int, channel_xid: int, message_xid: int) -> str:
     return f"https://discordapp.com/channels/{server_xid}/{channel_xid}/{message_xid}"
 
 
@@ -1053,9 +1053,20 @@ class SpellBot(discord.Client):
                         )
                     )
                 else:
-                    await message.channel.send(
-                        s("lfg_player_added_to_queue", player=f"<@{mentioned.id}>",)
-                    )
+                    if game.message_xid:
+                        await message.channel.send(
+                            s(
+                                "lfg_player_added_to_queue_with_link",
+                                player=f"<@{mentioned.id}>",
+                                link=post_link(
+                                    server.guild_xid, message.channel.id, game.message_xid
+                                ),
+                            )
+                        )
+                    else:
+                        await message.channel.send(
+                            s("lfg_player_added_to_queue", player=f"<@{mentioned.id}>")
+                        )
             if not use_queue:
                 return  # we can't create the game post until we get confirmations
 

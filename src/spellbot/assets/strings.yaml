@@ -54,6 +54,7 @@ lfg_invited: Hello $reply! You've been invited to a game by $mention. To confirm
 lfg_mention_already: Sorry $reply, but $mention is already in another pending game
   and can't be invited.
 lfg_player_added_to_queue: I added $player to a queue.
+lfg_player_added_to_queue_with_link: 'I added $player to a queue. Game post: $link'
 lfg_player_removed_from_queue: The player $player was already in a game. I have removed
   them from that game. If you want to enter them into a queue, please run that command
   again to add them.
