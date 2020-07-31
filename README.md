@@ -25,7 +25,7 @@ being too spammy in text channels.**
 - `!help`: Provides detailed help about all of the following commands.
 - `!about`: Get information about SpellBot and its creators.
 
-To use the [commands for event runners](#%EF%B8%8F-commands-for-event-runners), you will need to [create  roll on your server][create-role] called `SpellBot Admin` (capitalization matters). Only users on your server that have that role will be able to use those commands.
+To use the [commands for event runners](#%EF%B8%8F-commands-for-event-runners), you will need to [create the roll on your server][create-role] called `SpellBot Admin` (capitalization matters). Only users on your server that have that role will be able to use those commands.
 
 ### ✋ Commands for Players
 
