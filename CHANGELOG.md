@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support for google analytics tag manager.
 - Adds some notes about the `SpellBot Admin` role and links to Discord
   documentation on role creation to both the readme (thanks to @crookedneighbor) and front page.
+- Added message links when informing the player that they were added to a game so it's easier to
+  find the post. Before you would have had to scroll up in history to find it manually.
 
 ### Changed
 

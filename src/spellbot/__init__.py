@@ -167,6 +167,10 @@ def parse_opts(params: List[str]) -> dict:
     }
 
 
+def post_link(server_xid: int, channel_xid: int, message_xid: int,) -> str:
+    return f"https://discordapp.com/channels/{server_xid}/{channel_xid}/{message_xid}"
+
+
 def is_admin(
     channel: TextChannel, user_or_member: Union[discord.User, discord.Member]
 ) -> bool:
@@ -1060,7 +1064,13 @@ class SpellBot(discord.Client):
             if post:
                 if not use_queue:
                     await message.channel.send(
-                        s("play_found", reply=f"<@{mentionor_xid}>")
+                        s(
+                            "play_found",
+                            reply=f"<@{mentionor_xid}>",
+                            link=post_link(
+                                server.guild_xid, message.channel.id, game.message_xid
+                            ),
+                        )
                     )
                 found_discord_users = []
                 if len(cast(List[User], game.users)) == game.size:
