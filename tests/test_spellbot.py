@@ -1675,8 +1675,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!lfg"))
         await client.on_message(MockMessage(author, channel, "!lfg"))
         assert channel.last_sent_response == (
-            f"Hi <@{author.id}>! You're already waiting in a game."
-            " If you want to, you can leave that game with `!leave` and then try again."
+            f"I found a game for you, <@{author.id}>. You have been signed up for it!"
         )
 
     async def test_on_message_lfg(self, client, channel_maker):
@@ -2027,11 +2026,8 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        assert ADAM.last_sent_response == (
-            f"Sorry <@{ADAM.id}>, I couldn't add you to that game"
-            " because you're already signed up for another game."
-            " You can use `!leave` to leave that game."
-        )
+        assert len(all_games(client)) == 2
+        assert game_embed_for(client, ADAM, False) != game_embed_for(client, GUY, False)
 
         # TODO: Actually test that the embed was edited correctly.
 
