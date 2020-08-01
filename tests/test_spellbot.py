@@ -6,12 +6,20 @@ from datetime import datetime, timedelta
 from os import chdir
 from pathlib import Path
 from subprocess import run
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 from warnings import warn
 
 import pytest
 import pytz
 import toml
+from helpers.constants import (  # type:ignore
+    CLIENT_AUTH,
+    CLIENT_TOKEN,
+    FIXTURES_ROOT,
+    REPO_ROOT,
+    S_SPY,
+    SRC_DIRS,
+)
 from mocks.discord import (  # type: ignore
     AsyncMock,
     MockAttachment,
@@ -67,22 +75,6 @@ class MockDiscordClient:
     async def fetch_channel(self, channel_id):
         return self.get_channel(channel_id)
 
-
-##############################
-# Test Suite Constants
-##############################
-
-CLIENT_TOKEN = "my-token"
-CLIENT_AUTH = "my-auth"
-
-TST_ROOT = Path(__file__).resolve().parent
-FIXTURES_ROOT = TST_ROOT / "fixtures"
-REPO_ROOT = TST_ROOT.parent
-SRC_ROOT = REPO_ROOT / "src"
-
-SRC_DIRS = [REPO_ROOT / "tests", SRC_ROOT / "spellbot", REPO_ROOT / "scripts"]
-
-S_SPY = Mock(wraps=spellbot.s)
 
 ##############################
 # Test Suite Utilities
