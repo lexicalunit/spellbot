@@ -18,3 +18,5 @@ SRC_ROOT = REPO_ROOT / "src"
 SRC_DIRS = [REPO_ROOT / "tests", SRC_ROOT / "spellbot", REPO_ROOT / "scripts"]
 
 S_SPY = Mock(wraps=spellbot.s)
+
+SNAPSHOTS_USED = set()
