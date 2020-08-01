@@ -865,9 +865,10 @@ class SpellBot(discord.Client):
             "💜 You can help keep SpellBot running by supporting me on Ko-fi! "
             "<https://ko-fi.com/Y8Y51VTHZ>"
         )
-        await message.channel.send(
-            s("dm_sent", reply=f"<@{cast(discord.User, message.author).id}>")
-        )
+        if str(message.channel.type) != "private":
+            await message.channel.send(
+                s("dm_sent", reply=f"<@{cast(discord.User, message.author).id}>")
+            )
         for page in paginate(usage):
             await message.author.send(page)
 
