@@ -2121,17 +2121,3 @@ def test_paginate():
         assert len(pages) == 2
         assert all(len(page) <= 2000 for page in pages)
         assert pages == [text[0:2000], f"> {text[2000:]}"]
-
-
-class TestMigrations:
-    def test_alembic(self, tmp_path):
-        from sqlalchemy import create_engine
-
-        from spellbot.data import create_all, reverse_all
-
-        db_file = tmp_path / "spellbot.db"
-        connection_url = f"sqlite:///{db_file}"
-        engine = create_engine(connection_url)
-        connection = engine.connect()
-        create_all(connection, connection_url)
-        reverse_all(connection, connection_url)
