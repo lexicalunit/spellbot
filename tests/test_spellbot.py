@@ -3,12 +3,11 @@ import json
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
-from warnings import warn
 
 import pytest
 import pytz
 from fixtures.client import simulate_user_leaving_server  # type: ignore
-from helpers.constants import CLIENT_TOKEN, FIXTURES_ROOT, REPO_ROOT, S_SPY  # type:ignore
+from helpers.constants import CLIENT_TOKEN, FIXTURES_ROOT, SNAPSHOTS_USED  # type:ignore
 from mocks.discord import (  # type: ignore
     MockAttachment,
     MockChannel,
@@ -33,7 +32,6 @@ from mocks.users import (  # type: ignore
 )
 
 import spellbot
-from spellbot.assets import load_strings
 from spellbot.constants import THUMB_URL
 from spellbot.data import Event, Game, User
 
@@ -121,9 +119,6 @@ def all_events(client):
 @pytest.fixture(autouse=True, scope="session")
 def set_random_seed():
     random.seed(0)
-
-
-SNAPSHOTS_USED = set()
 
 
 @pytest.fixture
@@ -2140,31 +2135,3 @@ class TestMigrations:
         connection = engine.connect()
         create_all(connection, connection_url)
         reverse_all(connection, connection_url)
-
-
-# These tests will fail in isolation, you must run the full test suite for them to pass.
-class TestMeta:
-    # Tracks the usage of string keys over the entire test session.
-    # It can fail for two reasons:
-    #
-    # 1. There's a key in strings.yaml that's not being used at all.
-    # 2. There's a key in strings.yaml that isn't being used in the tests.
-    #
-    # For situation #1 the solution is to remove the key from the config.
-    # As for #2, there should be a new test which utilizes this key.
-    def test_strings(self):
-        """Assues that there are no missing or unused strings data."""
-        used_keys = set(s_call[0][0] for s_call in S_SPY.call_args_list)
-        config_keys = set(load_strings().keys())
-        if "did_you_mean" not in used_keys:
-            warn('strings.yaml key "did_you_mean" is unused in test suite')
-            used_keys.add("did_you_mean")
-        assert config_keys - used_keys == set()
-
-    # Tracks the usage of snapshot files over the entire test session.
-    # When it fails it means you probably need to clear out any unused snapshot files.
-    def test_snapshots(self):
-        """Checks that all of the snapshots files are being used."""
-        snapshots_dir = REPO_ROOT / "tests" / "snapshots"
-        snapshot_files = set(f.name for f in snapshots_dir.glob("*.txt"))
-        assert snapshot_files == SNAPSHOTS_USED
