@@ -11,9 +11,9 @@ event_bad_play_count: Sorry $reply, but the player count must be between 2 and 4
 event_created: Ok $reply, I've created event $event_id! This event will have $count
   games. If everything looks good, next run `${prefix}begin $event_id` to start the
   event.
-event_duplicate_user: '**Error:** The user $name appears in more than one paring in
-  this event file! I first noticed this duplicate on row $row which contains the players:
-  $players. Please resolve this issue and try again.'
+event_duplicate_user: '**Error:** The user $name appears in more than one pairing
+  in this event file! I first noticed this duplicate on row $row which contains the
+  players: $players. Please resolve this issue and try again.'
 event_empty: Hey $reply, no games were created for this event. Please address any
   warnings and try again.
 event_missing_player: '**Warning:** Event file is missing a player name on row $row.
