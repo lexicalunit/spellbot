@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added a cute 404 page image.
 
+### Fixed
+
+- Fixes an issue when exporting games associated with events.
+
 ## [v3.15.1](https://github.com/lexicalunit/spellbot/releases/tag/v3.15.1) - 2020-07-31
 
 ### Changed

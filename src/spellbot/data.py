@@ -67,7 +67,7 @@ class Server(Base):
             "created_at": [],
             "tags": [],
         }
-        for game in self.games:
+        for game in sorted(self.games, key=lambda game: game.id):
             if game.status == "pending":
                 continue
             tags_str = f"{','.join(sorted(tag.name for tag in game.tags))}"
@@ -80,7 +80,7 @@ class Server(Base):
             data["status"].append(game.status)
             data["message"].append(game.message or "")
             data["system"].append(game.system)
-            data["channel_xid"].append(str(game.channel_xid))
+            data["channel_xid"].append(str(game.channel_xid) if game.channel_xid else "")
             data["url"].append(game.url or "")
             data["event_id"].append(str(event_id) if event_id else "")
             data["created_at"].append(str(game.created_at))

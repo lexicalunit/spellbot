@@ -749,45 +749,49 @@ class SpellBot(discord.Client):
 
     async def on_message(self, message: discord.Message) -> None:
         """Behavior when the client gets a message from Discord."""
-        author = cast(discord.User, message.author)
+        try:
+            author = cast(discord.User, message.author)
 
-        # don't respond to any bots
-        if author.bot:
-            return
+            # don't respond to any bots
+            if author.bot:
+                return
 
-        private = str(message.channel.type) == "private"
+            private = str(message.channel.type) == "private"
 
-        # only respond in text channels and to direct messages
-        if not private and str(message.channel.type) != "text":
-            return
+            # only respond in text channels and to direct messages
+            if not private and str(message.channel.type) != "text":
+                return
 
-        # handle confirm/deny invitations over direct message
-        if private:
-            choice = message.content.lstrip()[0:3].rstrip().lower()
-            if choice in ["yes", "no"]:
-                return await self.process_invite_response(message, choice)
+            # handle confirm/deny invitations over direct message
+            if private:
+                choice = message.content.lstrip()[0:3].rstrip().lower()
+                if choice in ["yes", "no"]:
+                    return await self.process_invite_response(message, choice)
 
-        # only respond to command-like messages
-        if not private:
-            rows = self.data.conn.execute(
-                text("SELECT prefix FROM servers WHERE guild_xid = :g"),
-                g=message.channel.guild.id,
-            )
-            prefixes = [row.prefix for row in rows]
-            prefix = prefixes[0] if prefixes else "!"
-        else:
-            prefix = "!"
-        if not message.content.startswith(prefix):
-            return
+            # only respond to command-like messages
+            if not private:
+                rows = self.data.conn.execute(
+                    text("SELECT prefix FROM servers WHERE guild_xid = :g"),
+                    g=message.channel.guild.id,
+                )
+                prefixes = [row.prefix for row in rows]
+                prefix = prefixes[0] if prefixes else "!"
+            else:
+                prefix = "!"
+            if not message.content.startswith(prefix):
+                return
 
-        is_admin = author.permissions_in(message.channel).administrator
-        if not private and not is_admin:
-            async with self.session() as session:
-                server = self.ensure_server_exists(session, message.channel.guild.id)
-                if not server.bot_allowed_in(message.channel.id):
-                    return
+            is_admin = author.permissions_in(message.channel).administrator
+            if not private and not is_admin:
+                async with self.session() as session:
+                    server = self.ensure_server_exists(session, message.channel.guild.id)
+                    if not server.bot_allowed_in(message.channel.id):
+                        return
 
-        await self.process(message, prefix)
+            await self.process(message, prefix)
+        except Exception as e:
+            logging.exception("unhandled exception:", e)
+            raise
 
     async def on_ready(self) -> None:
         """Behavior when the client has successfully connected to Discord."""
@@ -1646,14 +1650,14 @@ class SpellBot(discord.Client):
         server = self.ensure_server_exists(session, message.channel.guild.id)
         export_file = TMP_DIR / f"{message.channel.guild.name}.csv"
         channel_name_cache = {}
+        data = server.games_data()
         with open(export_file, "w") as f, redirect_stdout(f):
             print(  # noqa: T001
-                "id,size,status,message,system,channel_xid,url,event_id,created_at,tags"
+                "id,size,status,system,channel,url,event_id,created_at,tags,message"
             )
-            data = server.games_data()
             for i in range(len(data["id"])):
                 channel_xid = data["channel_xid"][i]
-                if channel_xid not in channel_name_cache:
+                if channel_xid and channel_xid not in channel_name_cache:
                     channel = await self.safe_fetch_channel(int(channel_xid))
                     if channel:
                         name = cast(TextChannel, channel).name
@@ -1666,13 +1670,13 @@ class SpellBot(discord.Client):
                             data["id"][i],
                             data["size"][i],
                             data["status"][i],
-                            data["message"][i],
                             data["system"][i],
-                            channel_name_cache[data["channel_xid"][i]],
+                            channel_name_cache[channel_xid] if channel_xid else "",
                             data["url"][i],
                             data["event_id"][i],
                             data["created_at"][i],
                             data["tags"][i],
+                            data["message"][i],
                         ]
                     )
                 )

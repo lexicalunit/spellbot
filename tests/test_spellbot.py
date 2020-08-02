@@ -2012,18 +2012,35 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        game = all_games(client)[0]
-        created_at = game["created_at"]
+        game_one = all_games(client)[0]
+        game_one_id = game_one["id"]
+        game_one_at = game_one["created_at"]
 
+        # game_two is pending, so it shouldn't show up in the csv export
         await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
+
+        admin_author = an_admin()
+        data = bytes(f"player1,player2\n{GUY.name},{FRIEND.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(admin_author, channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        event = all_events(client)[0]
+        event_id = event["id"]
+
+        await client.on_message(MockMessage(admin_author, channel, f"!begin {event_id}"))
+        game_three = all_games(client)[-1]
+        game_three_id = game_three["id"]
+        game_three_at = game_three["created_at"]
+        game_three_url = game_three["url"]
 
         await client.on_message(MockMessage(an_admin(), channel, "!export"))
         attachment = channel.all_sent_files[0]
-        assert attachment.fp.read() == (
-            str.encode(
-                "id,size,status,message,system,channel_xid,url,event_id,created_at,tags\n"
-                f"{game['id']},2,started,,mtgo,#{channel.name},,,{created_at},\n"
-            )
+        assert attachment.fp.read().decode() == (
+            "id,size,status,system,channel,url,event_id,created_at,tags,message\n"
+            f"{game_one_id},2,started,mtgo,#{channel.name},,,{game_one_at},,\n"
+            f"{game_three_id},2,started,spelltable,,{game_three_url},{event_id},"
+            f"{game_three_at},,\n"
         )
 
     async def test_on_message_play(self, client, channel_maker):
