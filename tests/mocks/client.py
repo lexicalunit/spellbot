@@ -6,7 +6,8 @@ import spellbot
 
 from ..constants import CLIENT_AUTH, CLIENT_TOKEN  # type:ignore
 from ..test_meta import S_SPY  # type:ignore
-from .discord import AsyncMock, MockDM, MockTextChannel  # type: ignore
+from . import AsyncMock
+from .discord import MockDM, MockTextChannel  # type: ignore
 from .users import ADMIN, ALL_USERS, BOT, PUNK, SERVER_MEMBERS  # type: ignore
 
 
