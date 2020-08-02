@@ -1,4 +1,6 @@
-from mocks.discord import MockMember, MockRole  # type: ignore
+from typing import List
+
+from .discord import MockMember, MockRole  # type: ignore
 
 CLIENT_USER = "ADMIN"
 CLIENT_USER_ID = 82226367030108160
@@ -24,4 +26,4 @@ BOT.bot = True
 ADMIN.bot = True
 
 SERVER_MEMBERS = [FRIEND, BUDDY, GUY, DUDE, ADMIN, JR, ADAM, TOM, AMY, JACOB]
-ALL_USERS = []  # users that are on the server, setup in client fixture
+ALL_USERS: List[MockMember] = []  # users that are on the server, setup in client fixture

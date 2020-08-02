@@ -1,11 +1,13 @@
 from unittest.mock import MagicMock
 
 import pytest
-from helpers.constants import CLIENT_AUTH, CLIENT_TOKEN, S_SPY  # type:ignore
-from mocks.discord import AsyncMock, MockDM, MockTextChannel  # type: ignore
-from mocks.users import ADMIN, ALL_USERS, BOT, PUNK, SERVER_MEMBERS  # type: ignore
 
 import spellbot
+
+from ..constants import CLIENT_AUTH, CLIENT_TOKEN  # type:ignore
+from ..test_meta import S_SPY  # type:ignore
+from .discord import AsyncMock, MockDM, MockTextChannel  # type: ignore
+from .users import ADMIN, ALL_USERS, BOT, PUNK, SERVER_MEMBERS  # type: ignore
 
 
 class MockDiscordClient:
@@ -30,6 +32,11 @@ class MockDiscordClient:
     async def fetch_channel(self, channel_id):
         return self.get_channel(channel_id)
 
+    def mock_disconnect_user(self, disconnected_user):
+        """Simulates that the user has left the server."""
+        global ALL_USERS
+        ALL_USERS = [user for user in ALL_USERS if user != disconnected_user]
+
 
 @pytest.fixture
 def patch_discord():
@@ -39,12 +46,6 @@ def patch_discord():
     spellbot.SpellBot.__bases__ = orig
 
 
-def simulate_user_leaving_server(user_to_leave):
-    global ALL_USERS
-    ALL_USERS = [user for user in ALL_USERS if user != user_to_leave]
-
-
-@pytest.mark.usefixtures("patch_discord")
 @pytest.fixture
 def client(monkeypatch, mocker, patch_discord, tmp_path):
     # Define which users are on this Discord server.
@@ -83,17 +84,6 @@ def client(monkeypatch, mocker, patch_discord, tmp_path):
     bot.data.conn.close()
 
 
-@pytest.mark.usefixtures("client")
-@pytest.fixture
-def session(client):
-    """
-    The client creates a session when processing a command,
-    we have to create one ourselves when not in a command context.
-    """
-    return client.data.Session()
-
-
-@pytest.mark.usefixtures("client")
 @pytest.fixture
 def channel_maker(client):
     """Use this fixture to create channels so that we can hook them up to the client."""

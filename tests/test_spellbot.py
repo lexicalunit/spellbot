@@ -6,15 +6,19 @@ from pathlib import Path
 
 import pytest
 import pytz
-from fixtures.client import simulate_user_leaving_server  # type: ignore
-from helpers.constants import CLIENT_TOKEN, FIXTURES_ROOT, SNAPSHOTS_USED  # type:ignore
-from mocks.discord import (  # type: ignore
+
+import spellbot
+from spellbot.constants import THUMB_URL
+from spellbot.data import Event, Game, User
+
+from .constants import CLIENT_TOKEN, TEST_DATA_ROOT  # type:ignore
+from .mocks.discord import (  # type: ignore
     MockAttachment,
     MockChannel,
     MockMessage,
     MockPayload,
 )
-from mocks.users import (  # type: ignore
+from .mocks.users import (  # type: ignore
     ADAM,
     ADMIN,
     ADMIN_ROLE,
@@ -30,10 +34,7 @@ from mocks.users import (  # type: ignore
     SERVER_MEMBERS,
     TOM,
 )
-
-import spellbot
-from spellbot.constants import THUMB_URL
-from spellbot.data import Event, Game, User
+from .test_meta import SNAPSHOTS_USED  # type:ignore
 
 ##############################
 # Test Suite Utilities
@@ -62,7 +63,6 @@ def is_discord_file(obj):
     return (obj.__class__.__name__) == "File"
 
 
-@pytest.mark.usefixtures("client")
 def user_has_game(client, user):
     session = client.data.Session()
     db_user = session.query(User).filter(User.xid == user.id).first()
@@ -71,7 +71,6 @@ def user_has_game(client, user):
     return rvalue
 
 
-@pytest.mark.usefixtures("client")
 def game_json_for(client, user):
     session = client.data.Session()
     db_user = session.query(User).filter(User.xid == user.id).first()
@@ -80,7 +79,6 @@ def game_json_for(client, user):
     return rvalue
 
 
-@pytest.mark.usefixtures("client")
 def game_embed_for(client, user, ready, message=None):
     session = client.data.Session()
     db_user = session.query(User).filter(User.xid == user.id).first()
@@ -93,7 +91,6 @@ def game_embed_for(client, user, ready, message=None):
     return rvalue.to_dict() if rvalue else None
 
 
-@pytest.mark.usefixtures("client")
 def all_games(client):
     session = client.data.Session()
     games = session.query(Game).all()
@@ -102,7 +99,6 @@ def all_games(client):
     return rvalue
 
 
-@pytest.mark.usefixtures("client")
 def all_events(client):
     session = client.data.Session()
     events = session.query(Event).all()
@@ -141,9 +137,6 @@ def snap(snapshot):
 ##############################
 
 
-@pytest.mark.usefixtures("client")
-@pytest.mark.usefixtures("channel_maker")
-@pytest.mark.usefixtures("session")
 @pytest.mark.asyncio
 class TestSpellBot:
     async def test_init(self, client, channel_maker):
@@ -757,7 +750,8 @@ class TestSpellBot:
         assert JR.last_sent_embed == player_response
         assert ADAM.last_sent_embed == player_response
 
-    async def test_ensure_server_exists(self, client, session):
+    async def test_ensure_server_exists(self, client):
+        session = client.data.Session()
         server = client.ensure_server_exists(session, 5)
         session.commit()
         assert json.loads(str(server)) == {
@@ -1155,7 +1149,7 @@ class TestSpellBot:
             f" next run `!begin {event_id}` to start the event."
         )
 
-        simulate_user_leaving_server(AMY)
+        client.mock_disconnect_user(AMY)
 
         await client.on_message(MockMessage(author, channel, f"!begin {event_id}"))
         assert channel.last_sent_response == (
@@ -1658,7 +1652,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
         message = channel.last_sent_message
 
-        simulate_user_leaving_server(GUY)
+        client.mock_disconnect_user(GUY)
 
         payload = MockPayload(
             user_id=ADAM.id,
@@ -1857,7 +1851,7 @@ class TestSpellBot:
 
         assert user_has_game(client, GUY)
 
-        simulate_user_leaving_server(GUY)
+        client.mock_disconnect_user(GUY)
 
         freezer.move_to(NOW + timedelta(days=3))
         await client.cleanup_expired_games()
@@ -2110,31 +2104,30 @@ class TestSpellBot:
 
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JR, True)
 
+    async def test_paginate(self):
+        def subject(text):
+            return [page for page in spellbot.paginate(text)]
 
-def test_paginate():
-    def subject(text):
-        return [page for page in spellbot.paginate(text)]
+        assert subject("") == [""]
+        assert subject("four") == ["four"]
 
-    assert subject("") == [""]
-    assert subject("four") == ["four"]
+        with open(Path(TEST_DATA_ROOT) / "ipsum_2011.txt") as f:
+            text = f.read()
+            pages = subject(text)
+            assert len(pages) == 2
+            assert all(len(page) <= 2000 for page in pages)
+            assert pages == [text[0:1937], text[1937:]]
 
-    with open(Path(FIXTURES_ROOT) / "ipsum_2011.txt") as f:
-        text = f.read()
-        pages = subject(text)
-        assert len(pages) == 2
-        assert all(len(page) <= 2000 for page in pages)
-        assert pages == [text[0:1937], text[1937:]]
+        with open(Path(TEST_DATA_ROOT) / "aaa_2001.txt") as f:
+            text = f.read()
+            pages = subject(text)
+            assert len(pages) == 2
+            assert all(len(page) <= 2000 for page in pages)
+            assert pages == [text[0:2000], text[2000:]]
 
-    with open(Path(FIXTURES_ROOT) / "aaa_2001.txt") as f:
-        text = f.read()
-        pages = subject(text)
-        assert len(pages) == 2
-        assert all(len(page) <= 2000 for page in pages)
-        assert pages == [text[0:2000], text[2000:]]
-
-    with open(Path(FIXTURES_ROOT) / "quotes.txt") as f:
-        text = f.read()
-        pages = subject(text)
-        assert len(pages) == 2
-        assert all(len(page) <= 2000 for page in pages)
-        assert pages == [text[0:2000], f"> {text[2000:]}"]
+        with open(Path(TEST_DATA_ROOT) / "quotes.txt") as f:
+            text = f.read()
+            pages = subject(text)
+            assert len(pages) == 2
+            assert all(len(page) <= 2000 for page in pages)
+            assert pages == [text[0:2000], f"> {text[2000:]}"]
