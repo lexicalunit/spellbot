@@ -2,13 +2,11 @@ import re
 from os import chdir
 from subprocess import run
 
-import pytest
 import toml
-from helpers.constants import REPO_ROOT, SRC_DIRS  # type:ignore
+
+from .constants import REPO_ROOT, SRC_DIRS  # type:ignore
 
 
-@pytest.mark.usefixtures("client")
-@pytest.mark.usefixtures("channel_maker")
 class TestCodebase:
     def test_mypy(self):
         """Checks that the Python codebase passes mypy static analysis checks."""
