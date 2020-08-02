@@ -1,39 +1,27 @@
 import inspect
 import json
 import random
-import re
 from datetime import datetime, timedelta
-from os import chdir
 from pathlib import Path
-from subprocess import run
-from unittest.mock import MagicMock
-from warnings import warn
 
 import pytest
 import pytz
-import toml
-from helpers.constants import (  # type:ignore
-    CLIENT_AUTH,
-    CLIENT_TOKEN,
-    FIXTURES_ROOT,
-    REPO_ROOT,
-    S_SPY,
-    SRC_DIRS,
-)
-from mocks.discord import (  # type: ignore
-    AsyncMock,
+
+import spellbot
+from spellbot.constants import THUMB_URL
+from spellbot.data import Event, Game, User
+
+from .constants import CLIENT_TOKEN, TEST_DATA_ROOT  # type:ignore
+from .mocks.discord import (  # type: ignore
     MockAttachment,
     MockChannel,
-    MockDM,
     MockMessage,
     MockPayload,
-    MockTextChannel,
 )
-from mocks.users import (  # type: ignore
+from .mocks.users import (  # type: ignore
     ADAM,
     ADMIN,
     ADMIN_ROLE,
-    ALL_USERS,
     AMY,
     BOT,
     BUDDY,
@@ -46,35 +34,7 @@ from mocks.users import (  # type: ignore
     SERVER_MEMBERS,
     TOM,
 )
-
-import spellbot
-from spellbot.assets import load_strings
-from spellbot.constants import THUMB_URL
-from spellbot.data import Event, Game, User
-
-
-class MockDiscordClient:
-    def __init__(self, **kwargs):
-        self.user = ADMIN
-        self.channels = []
-
-    def get_user(self, user_id):
-        for user in ALL_USERS:
-            if user.id == user_id:
-                return user
-
-    async def fetch_user(self, user_id):
-        return self.get_user(user_id)
-
-    def get_channel(self, channel_id):
-        for channel in self.channels:
-            if channel.id == channel_id:
-                return channel
-        return None
-
-    async def fetch_channel(self, channel_id):
-        return self.get_channel(channel_id)
-
+from .test_meta import SNAPSHOTS_USED  # type:ignore
 
 ##############################
 # Test Suite Utilities
@@ -152,58 +112,9 @@ def all_events(client):
 ##############################
 
 
-@pytest.fixture
-def patch_discord():
-    orig = spellbot.SpellBot.__bases__
-    spellbot.SpellBot.__bases__ = (MockDiscordClient,)
-    yield
-    spellbot.SpellBot.__bases__ = orig
-
-
 @pytest.fixture(autouse=True, scope="session")
 def set_random_seed():
     random.seed(0)
-
-
-@pytest.fixture
-def client(monkeypatch, mocker, patch_discord, tmp_path):
-    # Define which users are on this Discord server.
-    global ALL_USERS
-    ALL_USERS = SERVER_MEMBERS + [PUNK, BOT]
-
-    # Keep track of strings used in the test suite.
-    monkeypatch.setattr(spellbot, "s", S_SPY)
-
-    # Don't actually begin background tasks during tests.
-    monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())
-
-    # Fallback to using sqlite for tests, but use the environment variable if it's set.
-    (tmp_path / "spellbot.db").touch()
-    connection_string = f"sqlite:///{tmp_path}/spellbot.db"
-    db_url = spellbot.get_db_url("TEST_SPELLBOT_DB_URL", connection_string)
-    bot = spellbot.SpellBot(
-        token=CLIENT_TOKEN, auth=CLIENT_AUTH, db_url=db_url, mock_games=True
-    )
-
-    # Each test should have a clean slate. If we're using sqlite this is ensured
-    # automatically as each test will create its own new spellbot.db file. With other
-    # databases we'll have to manually clean out any existing data before each
-    # test as the previous tests could have left data behind.
-    for table in bot.data.metadata.tables.keys():
-        bot.data.conn.execute(f"DELETE FROM {table};")
-
-    # Make sure that all users have their send calls reset between client tests.
-    for user in ALL_USERS:
-        user.sent = AsyncMock()
-
-    yield bot
-
-    # For sqlite closing the connection when we're done isn't necessary, but for other
-    # databases our test suite can quickly exhaust their connection pools.
-    bot.data.conn.close()
-
-
-SNAPSHOTS_USED = set()
 
 
 @pytest.fixture
@@ -219,42 +130,6 @@ def snap(snapshot):
         SNAPSHOTS_USED.add(snapshot_file)
 
     return match
-
-
-@pytest.fixture
-def session(client):
-    """
-    The client creates a session when processing a command,
-    we have to create one ourselves when not in a command context.
-    """
-    return client.data.Session()
-
-
-@pytest.fixture
-def channel_maker(client):
-    """Use this fixture to create channels so that we can hook them up to the client."""
-
-    class MockChannelFactory:
-        def __init__(self, next_channel_id):
-            self.next_channel_id = next_channel_id
-
-        def text(self, name="a-text-channel", members=SERVER_MEMBERS):
-            channel = MockTextChannel(self.next_channel_id, name, members)
-            client.channels.append(channel)  # not something you can do with a real client
-            self.next_channel_id += 1
-            return channel
-
-        def dm(self):
-            channel = MockDM(self.next_channel_id)
-            self.next_channel_id += 1
-            return channel
-
-        def make(self, channel_type):
-            if channel_type == "dm":
-                return self.dm()
-            return self.text()
-
-    return MockChannelFactory(6500)
 
 
 ##############################
@@ -875,7 +750,8 @@ class TestSpellBot:
         assert JR.last_sent_embed == player_response
         assert ADAM.last_sent_embed == player_response
 
-    async def test_ensure_server_exists(self, client, session):
+    async def test_ensure_server_exists(self, client):
+        session = client.data.Session()
         server = client.ensure_server_exists(session, 5)
         session.commit()
         assert json.loads(str(server)) == {
@@ -1273,9 +1149,7 @@ class TestSpellBot:
             f" next run `!begin {event_id}` to start the event."
         )
 
-        # Simulate AMY leaving this Discord server
-        global ALL_USERS
-        ALL_USERS = [user for user in ALL_USERS if user != AMY]
+        client.mock_disconnect_user(AMY)
 
         await client.on_message(MockMessage(author, channel, f"!begin {event_id}"))
         assert channel.last_sent_response == (
@@ -1778,9 +1652,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
         message = channel.last_sent_message
 
-        # Simulate GUY leaving this Discord server
-        global ALL_USERS
-        ALL_USERS = [user for user in ALL_USERS if user != GUY]
+        client.mock_disconnect_user(GUY)
 
         payload = MockPayload(
             user_id=ADAM.id,
@@ -1979,9 +1851,7 @@ class TestSpellBot:
 
         assert user_has_game(client, GUY)
 
-        # Simulate GUY leaving this Discord server
-        global ALL_USERS
-        ALL_USERS = [user for user in ALL_USERS if user != GUY]
+        client.mock_disconnect_user(GUY)
 
         freezer.move_to(NOW + timedelta(days=3))
         await client.cleanup_expired_games()
@@ -2234,156 +2104,30 @@ class TestSpellBot:
 
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JR, True)
 
+    async def test_paginate(self):
+        def subject(text):
+            return [page for page in spellbot.paginate(text)]
 
-def test_paginate():
-    def subject(text):
-        return [page for page in spellbot.paginate(text)]
+        assert subject("") == [""]
+        assert subject("four") == ["four"]
 
-    assert subject("") == [""]
-    assert subject("four") == ["four"]
+        with open(Path(TEST_DATA_ROOT) / "ipsum_2011.txt") as f:
+            text = f.read()
+            pages = subject(text)
+            assert len(pages) == 2
+            assert all(len(page) <= 2000 for page in pages)
+            assert pages == [text[0:1937], text[1937:]]
 
-    with open(Path(FIXTURES_ROOT) / "ipsum_2011.txt") as f:
-        text = f.read()
-        pages = subject(text)
-        assert len(pages) == 2
-        assert all(len(page) <= 2000 for page in pages)
-        assert pages == [text[0:1937], text[1937:]]
+        with open(Path(TEST_DATA_ROOT) / "aaa_2001.txt") as f:
+            text = f.read()
+            pages = subject(text)
+            assert len(pages) == 2
+            assert all(len(page) <= 2000 for page in pages)
+            assert pages == [text[0:2000], text[2000:]]
 
-    with open(Path(FIXTURES_ROOT) / "aaa_2001.txt") as f:
-        text = f.read()
-        pages = subject(text)
-        assert len(pages) == 2
-        assert all(len(page) <= 2000 for page in pages)
-        assert pages == [text[0:2000], text[2000:]]
-
-    with open(Path(FIXTURES_ROOT) / "quotes.txt") as f:
-        text = f.read()
-        pages = subject(text)
-        assert len(pages) == 2
-        assert all(len(page) <= 2000 for page in pages)
-        assert pages == [text[0:2000], f"> {text[2000:]}"]
-
-
-class TestMigrations:
-    def test_alembic(self, tmp_path):
-        from sqlalchemy import create_engine
-
-        from spellbot.data import create_all, reverse_all
-
-        db_file = tmp_path / "spellbot.db"
-        connection_url = f"sqlite:///{db_file}"
-        engine = create_engine(connection_url)
-        connection = engine.connect()
-        create_all(connection, connection_url)
-        reverse_all(connection, connection_url)
-
-
-class TestCodebase:
-    def test_mypy(self):
-        """Checks that the Python codebase passes mypy static analysis checks."""
-        chdir(REPO_ROOT)
-        cmd = ["mypy", *SRC_DIRS, "--warn-unused-configs"]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
-        proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, f"mypy issues:\n{proc.stdout.decode('utf-8')}"
-
-    def test_flake8(self):
-        """Checks that the Python codebase passes configured flake8 checks."""
-        chdir(REPO_ROOT)
-        cmd = ["flake8", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
-        proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, f"flake8 issues:\n{proc.stdout.decode('utf-8')}"
-
-    def test_black(self):
-        """Checks that the Python codebase passes configured black checks."""
-        chdir(REPO_ROOT)
-        cmd = ["black", "--check", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
-        proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
-
-    def test_isort(self):
-        """Checks that the Python codebase imports are correctly sorted."""
-        chdir(REPO_ROOT)
-        cmd = ["isort", "--df", "-w90", "-c", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
-        proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, f"isort issues:\n{proc.stdout.decode('utf-8')}"
-
-    def test_sort_strings(self):
-        """Checks that the strings data is correctly sorted."""
-        chdir(REPO_ROOT)
-        cmd = ["python", "scripts/sort_strings.py", "--check"]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
-        proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, (
-            f"sort strings issues:\n{proc.stdout.decode('utf-8')}\n\n"
-            "Please run `poetry run scripts/sort_strings.py` to resolve this issue."
-        )
-
-    def test_snapshots_size(self):
-        """Checks that none of the snapshots files are unreasonably small."""
-        snapshots_dir = REPO_ROOT / "tests" / "snapshots"
-        small_snapshots = []
-        for f in snapshots_dir.glob("*.txt"):
-            if f.stat().st_size <= 150:
-                small_snapshots.append(f"- {f.name}")
-        if small_snapshots:
-            offenders = "\n".join(small_snapshots)
-            assert False, (
-                "Very small snapshot files are problematic.\n"
-                "Offending snapshot files:\n"
-                f"{offenders}\n"
-                "Consider refacotring them to avoid using snapshots. Tests that use "
-                "snapshots are harder to reason about when they fail. Whenever possible "
-                "a test with inline data is much easier to reason about and refactor."
-            )
-
-    def test_readme_commands(self, client, channel_maker):
-        """Checks that all commands are documented in our readme."""
-        with open(REPO_ROOT / "README.md") as f:
-            readme = f.read()
-
-        documented = set(re.findall("^- `!([a-z]+)`: .*$", readme, re.MULTILINE))
-        implemented = set(client._commands.values())
-
-        assert sorted(documented) == sorted(implemented)
-
-    def test_pyproject_dependencies(self):
-        """Checks that pyproject.toml dependencies are sorted."""
-        pyproject = toml.load("pyproject.toml")
-
-        dev_deps = list(pyproject["tool"]["poetry"]["dev-dependencies"].keys())
-        assert dev_deps == sorted(dev_deps)
-
-        deps = list(pyproject["tool"]["poetry"]["dependencies"].keys())
-        assert deps == sorted(deps)
-
-
-# These tests will fail in isolation, you must run the full test suite for them to pass.
-class TestMeta:
-    # Tracks the usage of string keys over the entire test session.
-    # It can fail for two reasons:
-    #
-    # 1. There's a key in strings.yaml that's not being used at all.
-    # 2. There's a key in strings.yaml that isn't being used in the tests.
-    #
-    # For situation #1 the solution is to remove the key from the config.
-    # As for #2, there should be a new test which utilizes this key.
-    def test_strings(self):
-        """Assues that there are no missing or unused strings data."""
-        used_keys = set(s_call[0][0] for s_call in S_SPY.call_args_list)
-        config_keys = set(load_strings().keys())
-        if "did_you_mean" not in used_keys:
-            warn('strings.yaml key "did_you_mean" is unused in test suite')
-            used_keys.add("did_you_mean")
-        assert config_keys - used_keys == set()
-
-    # Tracks the usage of snapshot files over the entire test session.
-    # When it fails it means you probably need to clear out any unused snapshot files.
-    def test_snapshots(self):
-        """Checks that all of the snapshots files are being used."""
-        snapshots_dir = REPO_ROOT / "tests" / "snapshots"
-        snapshot_files = set(f.name for f in snapshots_dir.glob("*.txt"))
-        assert snapshot_files == SNAPSHOTS_USED
+        with open(Path(TEST_DATA_ROOT) / "quotes.txt") as f:
+            text = f.read()
+            pages = subject(text)
+            assert len(pages) == 2
+            assert all(len(page) <= 2000 for page in pages)
+            assert pages == [text[0:2000], f"> {text[2000:]}"]
