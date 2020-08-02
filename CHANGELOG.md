@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a clarification about role permissions to the front page.
+
 ### Changed
 
 - Moves AsyncMock to module level.
