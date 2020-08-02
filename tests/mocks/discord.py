@@ -2,10 +2,6 @@ import json
 from contextlib import asynccontextmanager
 from unittest.mock import MagicMock
 
-##############################
-# Discord.py Mocks
-##############################
-
 
 class AsyncMock(MagicMock):
     async def __call__(self, *args, **kwargs):
