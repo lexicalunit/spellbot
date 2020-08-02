@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed a typo in a warning message string.
+
 ### Added
 
 - Adds a clarification about role permissions to the front page.
@@ -145,7 +149,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- Adds logic to handle the error when a user appears in multiple parings in an event.
+- Adds logic to handle the error when a user appears in multiple pairings in an event.
 
 ## [v3.13.1](https://github.com/lexicalunit/spellbot/releases/tag/v3.13.1) - 2020-07-28
 

@@ -918,7 +918,7 @@ class TestSpellBot:
         message = MockMessage(author, channel, comment, attachments=[csv_file])
         await client.on_message(message)
         assert channel.last_sent_response == (
-            f"**Error:** The user {AMY.name} appears in more than one paring in this"
+            f"**Error:** The user {AMY.name} appears in more than one pairing in this"
             " event file! I first noticed this duplicate on row 2 which contains the"
             f' players: "{ADAM.name}", "{AMY.name}". Please resolve this issue and try'
             " again."
