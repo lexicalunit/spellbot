@@ -1,12 +1,13 @@
 from warnings import warn
 
+import pytest
 from helpers.constants import REPO_ROOT, S_SPY, SNAPSHOTS_USED  # type:ignore
 
 from spellbot.assets import load_strings
 
 
 # These tests will fail in isolation, you must run the full test suite for them to pass.
-# The file has a leading z in the test name to ensure it gets run last
+@pytest.mark.last
 class TestMeta:
     # Tracks the usage of string keys over the entire test session.
     # It can fail for two reasons:
@@ -17,7 +18,7 @@ class TestMeta:
     # For situation #1 the solution is to remove the key from the config.
     # As for #2, there should be a new test which utilizes this key.
     def test_strings(self):
-        """Assues that there are no missing or unused strings data."""
+        """Assures that there are no missing or unused strings data."""
         used_keys = set(s_call[0][0] for s_call in S_SPY.call_args_list)
         config_keys = set(load_strings().keys())
         if "did_you_mean" not in used_keys:
