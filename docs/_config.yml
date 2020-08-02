@@ -2,6 +2,8 @@
 title: SpellBot
 description: The Discord bot for SpellTable
 author: "@lexicalunit"
+meta-theme-color: "#5A3EFD"
+meta-site-name: SpellBot IO
 
 # --- List of links in the navigation bar --- #
 navbar-links:
