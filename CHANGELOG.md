@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed and rephrased the Secrets section to an Ergonomics section.
+
 ### Added
 
 - Adds meta theme-color and meta og:site_name to front page.

@@ -73,14 +73,14 @@ These commands will help you configure SpellBot for your server.
   - `prefix`: Set the command prefix for SpellBot in text channels.
   - `expire`: Set how many minutes before games are expired due to inactivity.
 
-### 🤫 Secrets
+### 🛋️ Ergonomics
 
-There's some secret hidden features of SpellBot. For example if you use the
-tags `~mtgo` or `~arena` when creating a game, it will direct players to use
-those systems instead of SpellTable. Ok, I guess that's not secret anymore. But
-you kinda get the idea. Well, you've been warned. Hopefully these features are
-intuitive and helpful 🤞 — and if not,
-[please report bugs and request features][issues] to your heart's content.
+SpellBot will always try and assume useful defaults or try to do the right thing
+when you give it a command. For example if you use the tag <code>~modern</code>
+or other format names when creating a game, it will automatically assume the
+correct number of players for you. Hopefully these features are intuitive and
+helpful 🤞 — and if not, [please report bugs and request features][issues]
+to your heart's content.
 
 ## 🙌 Support Me
 
