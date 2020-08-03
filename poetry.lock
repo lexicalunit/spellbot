@@ -688,7 +688,7 @@ description = "A plugin to enable snapshot testing with pytest."
 name = "pytest-snapshot"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-version = "0.4.1"
+version = "0.4.2"
 
 [package.dependencies]
 packaging = "*"
@@ -966,7 +966,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "80766608bc7e9b569dc0de1350e5e1931bb74fe95923c0bd3f39d1856d6e5a67"
+content-hash = "9f0a98c8e4b50ccbafde22eb2a774676555afc893041b21913bc99d4a755344b"
 python-versions = ">=3.7,<4"
 
 [metadata.files]
@@ -1337,8 +1337,8 @@ pytest-mock = [
     {file = "pytest_mock-3.2.0-py3-none-any.whl", hash = "sha256:5564c7cd2569b603f8451ec77928083054d8896046830ca763ed68f4112d17c7"},
 ]
 pytest-snapshot = [
-    {file = "pytest-snapshot-0.4.1.tar.gz", hash = "sha256:27303acbb354044888286d7a27a9d111a5e50822d989557d40ccc8f0f36209f8"},
-    {file = "pytest_snapshot-0.4.1-py3-none-any.whl", hash = "sha256:0bc57c6a3234eaf1005258e31379795b4b49727c4de7b671585e20d652b7bc60"},
+    {file = "pytest-snapshot-0.4.2.tar.gz", hash = "sha256:b1f8dab3a3acdf15bfb332df1838eab7ff2721b2453cde6a717c7a472f7363dc"},
+    {file = "pytest_snapshot-0.4.2-py3-none-any.whl", hash = "sha256:2698f76bfb7908806d7a8e783ce09f9203972d7be5c1ff5044c409f18e44f0d0"},
 ]
 python-dateutil = [
     {file = "python-dateutil-2.8.1.tar.gz", hash = "sha256:73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c"},
