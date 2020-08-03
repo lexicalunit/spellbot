@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds meta theme-color and meta og:site_name to front page.
+- Adds a note about Administrator permissions to the Commands for Admins section of the front page.
 
 ## [v3.15.4](https://github.com/lexicalunit/spellbot/releases/tag/v3.15.4) - 2020-08-02
 
