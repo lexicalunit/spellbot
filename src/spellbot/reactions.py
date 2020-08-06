@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 async def safe_remove_reaction(
     message: discord.Message, emoji: str, user: discord.User
-) -> None:  # pragma: no cover
+) -> None:
     try:
         await message.remove_reaction(emoji, user)
     except discord.errors.Forbidden:
@@ -22,7 +22,7 @@ async def safe_remove_reaction(
         logger.exception("warning: discord: could not remove reaction", e)
 
 
-async def safe_clear_reactions(message: discord.Message) -> None:  # pragma: no cover
+async def safe_clear_reactions(message: discord.Message) -> None:
     try:
         await message.clear_reactions()
     except discord.errors.Forbidden:
