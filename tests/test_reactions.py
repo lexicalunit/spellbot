@@ -11,9 +11,7 @@ from .mocks.users import FRIEND  # type: ignore
 
 @pytest.mark.asyncio
 class TestReactions:
-    async def test_safe_remove_reaction_removes_reaction_from_message(
-        self, channel_maker
-    ):
+    async def test_safe_remove_reaction_removes_reaction_from_message(self):
         message = MockDiscordMessage()
         with patch.object(
             message, "remove_reaction", wraps=message.remove_reaction
@@ -23,7 +21,7 @@ class TestReactions:
             fake_message.assert_called_with("emoji", FRIEND)
 
     async def test_safe_remove_reaction_sends_message_when_forbidden_exception_is_thrown(
-        self, channel_maker
+        self,
     ):
         message = MockDiscordMessage()
         with patch.object(
@@ -46,7 +44,7 @@ class TestReactions:
                     )
                 )
 
-    async def test_clear_reactions_clears_reactions_from_message(self, channel_maker):
+    async def test_clear_reactions_clears_reactions_from_message(self):
         message = MockDiscordMessage()
         with patch.object(
             message, "clear_reactions", wraps=message.clear_reactions
@@ -56,7 +54,7 @@ class TestReactions:
             fake_message.assert_called()
 
     async def test_clear_reactions_sends_message_when_forbidden_exception_is_thrown(
-        self, channel_maker
+        self, client
     ):
         message = MockDiscordMessage()
         with patch.object(
