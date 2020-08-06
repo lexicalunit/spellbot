@@ -66,6 +66,8 @@ not_a_command: Sorry $reply, there is no "$request" command.
 not_admin: $reply, you do not have admin permissions to run that command.
 play_found: 'I found a game for you, $reply. You have been signed up for it! Go to
   game post: $link'
+reaction_permissions_required: I do not have permission to adjust reactions. A server
+  admin will need to adjust my permissions.
 spellbot_channels: 'Ok $reply, I will now operate within: $channels'
 spellbot_channels_none: 'Sorry $reply, but please provide a list of channels. Like
   #bot-commands, for example.'
