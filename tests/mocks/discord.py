@@ -25,6 +25,7 @@ class MockDiscordMessage:
     def __init__(self):
         global MOCK_DISCORD_MESSAGE_ID_START
         self.id = MOCK_DISCORD_MESSAGE_ID_START
+        self.channel = MockChannel("id", "text")
         MOCK_DISCORD_MESSAGE_ID_START += 1
         self.reactions = []
 
