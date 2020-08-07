@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Changed the site favicon to be a SpellBot icon instead of a SpellTable icon.
 
+### Added
+
+- Adds meta keywords to site.
+
 ## [v3.16.0](https://github.com/lexicalunit/spellbot/releases/tag/v3.16.0) - 2020-08-07
 
 ### Changed
