@@ -112,8 +112,8 @@ need the following text permissions enabled:
 - Add Reactions
 
 As for the SpellTable API authorization token, you'll have to talk to the
-SpellTable developers.  You can join their Discord server by
-[becoming a SpellTable patron][spelltable-patron].
+SpellTable developers. Come join us on the
+[SpellTable Discord server][spelltable-discord].
 
 By default SpellBot will use sqlite3 as its database. You can however choose to
 use another database by providing a [SQLAlchemy Connection URL][db-url]. This
@@ -156,5 +156,5 @@ You can also run SpellBot via docker. See
 [python-badge]:       https://img.shields.io/badge/python-3.7+-blue.svg
 [python]:             https://www.python.org/
 [ready]:              https://user-images.githubusercontent.com/1903876/88854658-796a3000-d1a6-11ea-93b6-63dccae5d637.png
-[spelltable-patron]:  https://www.patreon.com/spelltable?fan_landing=true
+[spelltable-discord]: https://discord.gg/zXzgqMN
 [spelltable]:         https://www.spelltable.com/
