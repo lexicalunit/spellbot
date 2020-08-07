@@ -19,7 +19,7 @@ async def safe_remove_reaction(
         discord.errors.NotFound,
         discord.errors.InvalidArgument,
     ) as e:
-        logger.exception("warning: discord: could not remove reaction", e)
+        logger.exception("warning: discord: could not remove reaction: %s", e)
 
 
 async def safe_clear_reactions(message: discord.Message) -> None:
@@ -28,4 +28,4 @@ async def safe_clear_reactions(message: discord.Message) -> None:
     except discord.errors.Forbidden:
         await message.channel.send(s("reaction_permissions_required"))
     except discord.errors.HTTPException as e:
-        logger.exception("warning: discord: could not clear reactions", e)
+        logger.exception("warning: discord: could not clear reactions: %s", e)

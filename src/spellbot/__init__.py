@@ -299,7 +299,7 @@ class SpellBot(discord.Client):
         try:
             yield session
         except exc.SQLAlchemyError as e:
-            logger.exception("database error:", e)
+            logger.exception("database error: %s", e)
             session.rollback()
             raise
         finally:
@@ -319,7 +319,7 @@ class SpellBot(discord.Client):
             discord.errors.NotFound,
             discord.errors.Forbidden,
         ) as e:
-            logger.exception("warning: discord: could not fetch message", e)
+            logger.exception("warning: discord: could not fetch message: %s", e)
             return None
 
     async def safe_fetch_channel(
@@ -336,7 +336,7 @@ class SpellBot(discord.Client):
             discord.errors.NotFound,
             discord.errors.Forbidden,
         ) as e:
-            logger.exception("warning: discord: could not fetch channel", e)
+            logger.exception("warning: discord: could not fetch channel: %s", e)
             return None
 
     async def safe_fetch_user(
@@ -348,7 +348,7 @@ class SpellBot(discord.Client):
         try:
             return await self.fetch_user(user_xid)
         except (discord.errors.NotFound, discord.errors.HTTPException) as e:
-            logger.exception("warning: discord: could fetch user", e)
+            logger.exception("warning: discord: could fetch user: %s", e)
             return None
 
     async def safe_edit_message(
@@ -361,7 +361,7 @@ class SpellBot(discord.Client):
             discord.errors.Forbidden,
             discord.errors.HTTPException,
         ) as e:
-            logger.exception("warning: discord: could not edit message", e)
+            logger.exception("warning: discord: could not edit message: %s", e)
 
     async def safe_delete_message(
         self, message: discord.Message
@@ -373,7 +373,7 @@ class SpellBot(discord.Client):
             discord.errors.NotFound,
             discord.errors.HTTPException,
         ) as e:
-            logger.exception("warning: discord: could not delete message", e)
+            logger.exception("warning: discord: could not delete message: %s", e)
 
     def _begin_background_tasks(
         self, loop: asyncio.AbstractEventLoop
