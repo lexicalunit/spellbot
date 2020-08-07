@@ -4,7 +4,7 @@ from subprocess import run
 
 import toml
 
-from .constants import REPO_ROOT, SRC_DIRS  # type:ignore
+from .constants import REPO_ROOT, SRC_DIRS
 
 
 class TestCodebase:

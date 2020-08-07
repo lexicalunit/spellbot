@@ -294,7 +294,7 @@ class SpellBot(discord.Client):
         self._begin_background_tasks(loop)
 
     @asynccontextmanager
-    async def session(self) -> AsyncGenerator[Session, None]:  # pragma: no cover
+    async def session(self) -> AsyncGenerator[Session, None]:
         session = self.data.Session()
         try:
             yield session
@@ -770,7 +770,7 @@ class SpellBot(discord.Client):
 
             await self.process(message, prefix)
         except Exception as e:
-            logging.exception("unhandled exception:", e)
+            logging.exception("unhandled exception: %s", e)
             raise
 
     async def on_ready(self) -> None:
