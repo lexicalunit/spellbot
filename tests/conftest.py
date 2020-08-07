@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from .mocks.client import channel_maker, client, patch_discord  # type: ignore
+from .mocks.client import channel_maker, client, patch_discord
 
 # Ensure that TestMeta runs last as those tests require the entire test suite
 # to have finished before they can can start. The other test suites could

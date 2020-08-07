@@ -6,8 +6,8 @@ import pytest
 
 from spellbot.reactions import safe_clear_reactions, safe_remove_reaction
 
-from .mocks.discord import MockDiscordMessage  # type: ignore
-from .mocks.users import FRIEND  # type: ignore
+from .mocks.discord import MockDiscordMessage
+from .mocks.users import FRIEND
 
 
 @pytest.mark.asyncio
