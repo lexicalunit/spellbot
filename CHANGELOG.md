@@ -10,12 +10,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Renamed and rephrased the Secrets section to an Ergonomics section.
+- Changed link from SpellTable Patreon to SpellTable Discord server.
 
 ### Added
 
 - Adds meta theme-color and meta og:site_name to front page.
 - Adds a note about Administrator permissions to the Commands for Admins section of the front page.
 - Spellbot will message in the channel when it does not have permission to adjust reactions.
+- Added more tests to increase coverage.
+- Added a section on the front page to ask for feedback.
 
 ## [v3.15.4](https://github.com/lexicalunit/spellbot/releases/tag/v3.15.4) - 2020-08-02
 
