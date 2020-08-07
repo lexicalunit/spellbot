@@ -11,14 +11,9 @@ import spellbot
 from spellbot.constants import THUMB_URL
 from spellbot.data import Event, Game, User
 
-from .constants import CLIENT_TOKEN, TEST_DATA_ROOT  # type:ignore
-from .mocks.discord import (  # type: ignore
-    MockAttachment,
-    MockChannel,
-    MockMessage,
-    MockPayload,
-)
-from .mocks.users import (  # type: ignore
+from .constants import CLIENT_TOKEN, TEST_DATA_ROOT
+from .mocks.discord import MockAttachment, MockChannel, MockMessage, MockPayload
+from .mocks.users import (
     ADAM,
     ADMIN,
     ADMIN_ROLE,
@@ -34,7 +29,7 @@ from .mocks.users import (  # type: ignore
     SERVER_MEMBERS,
     TOM,
 )
-from .test_meta import SNAPSHOTS_USED  # type:ignore
+from .test_meta import SNAPSHOTS_USED
 
 ##############################
 # Test Suite Utilities
@@ -2103,6 +2098,31 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
 
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JR, True)
+
+    async def test_session_contextmanager(self, client, caplog):
+        try:
+            async with client.session() as session:
+                session.execute("delete from nothing;")
+                assert False
+        except:
+            pass
+
+        assert "database error" in caplog.text
+
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_unhandled_exception(
+        self, client, caplog, monkeypatch, channel_maker, channel_type
+    ):
+        channel = channel_maker.make(channel_type)
+
+        @spellbot.command(allow_dm=True)
+        def mock_help(session, prefix, params, message):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(client, "help", mock_help)
+        with pytest.raises(RuntimeError):
+            await client.on_message(MockMessage(someone(), channel, "!help"))
+        assert "unhandled exception" in caplog.text
 
     async def test_paginate(self):
         def subject(text):

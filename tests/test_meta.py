@@ -5,7 +5,7 @@ from warnings import warn
 import spellbot
 from spellbot.assets import load_strings
 
-from .constants import REPO_ROOT  # type:ignore
+from .constants import REPO_ROOT
 
 S_SPY = Mock(wraps=spellbot.s)
 SNAPSHOTS_USED: Set[str] = set()

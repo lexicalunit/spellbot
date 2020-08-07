@@ -4,11 +4,11 @@ import pytest
 
 import spellbot
 
-from ..constants import CLIENT_AUTH, CLIENT_TOKEN  # type:ignore
-from ..test_meta import S_SPY  # type:ignore
+from ..constants import CLIENT_AUTH, CLIENT_TOKEN
+from ..test_meta import S_SPY
 from . import AsyncMock
-from .discord import MockDM, MockTextChannel  # type: ignore
-from .users import ADMIN, ALL_USERS, BOT, PUNK, SERVER_MEMBERS  # type: ignore
+from .discord import MockDM, MockTextChannel
+from .users import ADMIN, ALL_USERS, BOT, PUNK, SERVER_MEMBERS
 
 
 class MockDiscordClient:
