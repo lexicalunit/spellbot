@@ -55,6 +55,7 @@ def client(monkeypatch, mocker, patch_discord, tmp_path):
 
     # Keep track of strings used in the test suite.
     monkeypatch.setattr(spellbot, "s", S_SPY)
+    monkeypatch.setattr(spellbot.reactions, "s", S_SPY)
 
     # Don't actually begin background tasks during tests.
     monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())

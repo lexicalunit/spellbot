@@ -46,6 +46,7 @@ from spellbot.constants import (
     THUMB_URL,
 )
 from spellbot.data import Channel, Data, Event, Game, Server, Tag, User
+from spellbot.reactions import safe_clear_reactions, safe_remove_reaction
 
 load_dotenv()
 
@@ -298,7 +299,7 @@ class SpellBot(discord.Client):
         try:
             yield session
         except exc.SQLAlchemyError as e:
-            logger.exception("database error:", e)
+            logger.exception("database error: %s", e)
             session.rollback()
             raise
         finally:
@@ -318,7 +319,7 @@ class SpellBot(discord.Client):
             discord.errors.NotFound,
             discord.errors.Forbidden,
         ) as e:
-            logger.exception("warning: discord: could not fetch message", e)
+            logger.exception("warning: discord: could not fetch message: %s", e)
             return None
 
     async def safe_fetch_channel(
@@ -335,7 +336,7 @@ class SpellBot(discord.Client):
             discord.errors.NotFound,
             discord.errors.Forbidden,
         ) as e:
-            logger.exception("warning: discord: could not fetch channel", e)
+            logger.exception("warning: discord: could not fetch channel: %s", e)
             return None
 
     async def safe_fetch_user(
@@ -347,29 +348,8 @@ class SpellBot(discord.Client):
         try:
             return await self.fetch_user(user_xid)
         except (discord.errors.NotFound, discord.errors.HTTPException) as e:
-            logger.exception("warning: discord: could fetch user", e)
+            logger.exception("warning: discord: could fetch user: %s", e)
             return None
-
-    async def safe_remove_reaction(
-        self, message: discord.Message, emoji: str, user: discord.User
-    ) -> None:  # pragma: no cover
-        try:
-            await message.remove_reaction(emoji, user)
-        except (
-            discord.errors.HTTPException,
-            discord.errors.Forbidden,
-            discord.errors.NotFound,
-            discord.errors.InvalidArgument,
-        ) as e:
-            logger.exception("warning: discord: could not remove reaction", e)
-
-    async def safe_clear_reactions(
-        self, message: discord.Message
-    ) -> None:  # pragma: no cover
-        try:
-            await message.clear_reactions()
-        except (discord.errors.HTTPException, discord.errors.Forbidden) as e:
-            logger.exception("warning: discord: could not clear reactions", e)
 
     async def safe_edit_message(
         self, message: discord.Message, *, reason: str = None, **options
@@ -381,7 +361,7 @@ class SpellBot(discord.Client):
             discord.errors.Forbidden,
             discord.errors.HTTPException,
         ) as e:
-            logger.exception("warning: discord: could not edit message", e)
+            logger.exception("warning: discord: could not edit message: %s", e)
 
     async def safe_delete_message(
         self, message: discord.Message
@@ -393,7 +373,7 @@ class SpellBot(discord.Client):
             discord.errors.NotFound,
             discord.errors.HTTPException,
         ) as e:
-            logger.exception("warning: discord: could not delete message", e)
+            logger.exception("warning: discord: could not delete message: %s", e)
 
     def _begin_background_tasks(
         self, loop: asyncio.AbstractEventLoop
@@ -690,7 +670,7 @@ class SpellBot(discord.Client):
             now = datetime.utcnow()
             expires_at = now + timedelta(minutes=server.expire)
 
-            await self.safe_remove_reaction(message, emoji, author)
+            await safe_remove_reaction(message, emoji, author)
 
             if emoji == "➕":
                 if any(user.xid == game_user.xid for game_user in game.users):
@@ -742,7 +722,7 @@ class SpellBot(discord.Client):
                 for discord_user in found_discord_users:
                     await discord_user.send(embed=game.to_embed())
                 await self.safe_edit_message(message, embed=game.to_embed())
-                await self.safe_clear_reactions(message)
+                await safe_clear_reactions(message)
             else:
                 session.commit()
                 await self.safe_edit_message(message, embed=game.to_embed())
@@ -1104,7 +1084,7 @@ class SpellBot(discord.Client):
                     for discord_user in found_discord_users:
                         await discord_user.send(embed=game.to_embed())
                     await self.safe_edit_message(post, embed=game.to_embed())
-                    await self.safe_clear_reactions(post)
+                    await safe_clear_reactions(post)
                 else:
                     session.commit()
                     await self.safe_edit_message(post, embed=game.to_embed())
