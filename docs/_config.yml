@@ -6,6 +6,8 @@ keywords: "magic: the gathering, magic, mtg, edh, commander, spelltable, discord
 font-family: "'Verdana', sans-serif"
 meta-theme-color: "#5A3EFD"
 meta-site-name: SpellBot IO
+site-css:
+  - "/assets/css/spellbot.css"
 
 # --- List of links in the navigation bar --- #
 
