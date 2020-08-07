@@ -1,0 +1,65 @@
+.hero {
+  padding: 1rem;
+  text-align: center;
+}
+
+.add-bot {
+  background-color: rgb(90, 62, 253);
+  border-radius: 3px;
+  border: none;
+  color: rgb(255, 255, 255);
+  cursor: pointer;
+  font-size: large;
+  font-weight: 200;
+  line-height: 1;
+  min-height: 32px;
+  padding: 10px 30px;
+  transition: all 0.3s ease-in-out;
+  user-select: none;
+}
+
+.add-bot:hover {
+  background-color: rgba(90, 62, 253, .90);
+  box-shadow: 0 0 10px rgba(90, 62, 253, .80);
+  transform: scale(1.05, 1.05);
+}
+
+.screenshot {
+  border-radius: 1rem;
+  background: linear-gradient(45deg, rgb(246, 173, 75), rgb(90, 62, 253));
+  padding: .5rem;
+  box-shadow: 10px 10px rgba(113, 128, 150, .20);
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.avatar-img {
+  -webkit-animation: spin 60s linear infinite;
+  -moz-animation: spin 60s linear infinite;
+  animation: spin 60s linear infinite;
+}
+@-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
+@-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
+@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+
+p.note {
+  background: linear-gradient(45deg, rgba(246, 173, 75, .2), rgba(90, 62, 253, .2));
+  border-radius: 1rem;
+  margin: 2rem 1rem;
+  padding: .5rem 1rem .5rem 3rem;
+}
+
+p.note:before {
+  content: "💡";
+  float: left;
+  margin-left: -2rem;
+}
+
+.footer {
+  border-top: 0;
+}
+
+a:focus {
+  text-decoration: none;
+}

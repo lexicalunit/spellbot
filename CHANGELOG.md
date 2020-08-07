@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Changed the site favicon to be a SpellBot icon instead of a SpellTable icon.
+- Moves SpellBot specific CSS changes to the theme into its own file.
 
 ### Added
 
