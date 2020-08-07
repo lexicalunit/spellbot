@@ -1,6 +1,6 @@
 from typing import List
 
-from .discord import MockMember, MockRole  # type: ignore
+from .discord import MockMember, MockRole
 
 CLIENT_USER = "ADMIN"
 CLIENT_USER_ID = 82226367030108160
