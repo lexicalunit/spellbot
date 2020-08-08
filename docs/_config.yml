@@ -3,7 +3,6 @@ title: SpellBot
 description: The Discord bot for SpellTable
 author: "@lexicalunit"
 font-family: "'Verdana', sans-serif"
-meta-site-name: SpellBot IO
 
 # --- List of links in the navigation bar --- #
 
@@ -78,6 +77,9 @@ excerpt_length: 50
 keywords: "magic: the gathering, magic, mtg, edh, commander, spelltable, discord bot, discord, bot"
 
 # --- Colours / background image --- #
+
+# Personalize the colors in your website. Colour values can be any valid CSS colour
+
 navbar-col: "#0d1117"
 navbar-text-col: "#718096"
 navbar-border-col: "#1a202c"
@@ -88,9 +90,6 @@ hover-col: "#ffd160"
 footer-col: "#0d1117"
 footer-text-col: "#718096"
 footer-link-col: "#765bff"
-
-# Personalize the colors in your website. Colour values can be any valid CSS colour
-
 
 # Alternatively, the navbar, footer, and page background can be set to use background images
 # instead of colour
