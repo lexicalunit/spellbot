@@ -43,6 +43,10 @@
 @-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
 @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
 
+.avatar-img-border {
+  box-shadow: none !important;
+}
+
 p.note {
   background: linear-gradient(45deg, rgba(246, 173, 75, .2), rgba(90, 62, 253, .2));
   border-radius: 1rem;
