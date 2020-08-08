@@ -56,6 +56,18 @@ p.note:before {
   margin-left: -2rem;
 }
 
+.avatar-img-border {
+  transition: all 0.3s ease-in-out;
+}
+
+.avatar-img-border:hover {
+  filter: brightness(150%);
+}
+
+a {
+  transition: all 0.3s ease-in-out;
+}
+
 /* overrides for styles from main.css that aren't directly configurable */
 
 footer {
