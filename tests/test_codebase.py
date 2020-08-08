@@ -1,8 +1,10 @@
 import re
-from os import chdir
+import sys
+from os import chdir, sep
 from subprocess import run
 
 import toml
+from git import Repo  # type: ignore
 
 from .constants import REPO_ROOT, SRC_DIRS
 
@@ -88,3 +90,45 @@ class TestCodebase:
 
         deps = list(pyproject["tool"]["poetry"]["dependencies"].keys())
         assert deps == sorted(deps)
+
+    def test_whitespace(self):
+        """Checks for problematic trailing whitespace and missing ending newlines."""
+        repo = Repo(REPO_ROOT)
+
+        def paths(tree, path):
+            for blob in tree.blobs:
+                yield path / blob.name
+            for tree in tree.trees:
+                yield from paths(tree, path / tree.name)
+
+        errors = set()
+        prog = re.compile(r"^.*[ \t]+$")
+
+        def check(path):
+            if path.suffix.lower() in [".ico", ".jpg", ".lock", ".png", ".svg"]:
+                return
+            rels = str(path.relative_to(REPO_ROOT))
+            if rels.startswith(f"tests{sep}snapshots{sep}"):
+                return
+            with open(path) as file:
+                lastline = None
+                key = None
+                for i, line in enumerate(file.readlines()):
+                    key = f"{path.relative_to(REPO_ROOT)}:{i + 1}"
+                    if prog.match(line):
+                        errors.add(f"\t{key} - trailing whitespace")
+                    lastline = line
+                if not rels.endswith("CNAME"):
+                    if lastline and not lastline.endswith("\n"):
+                        errors.add(f"\t{key} - missing endline")
+
+        for path in paths(repo.tree(), REPO_ROOT):
+            check(path)
+        for change in repo.index.diff(None):
+            check(REPO_ROOT / change.a_path)
+
+        if errors:
+            print("Files with trailing whitespace:", file=sys.stderr)  # noqa: T001
+            for error in sorted(errors):
+                print(error, file=sys.stderr)  # noqa: T001
+            assert False, "Trailing whitespace is not allowed."
