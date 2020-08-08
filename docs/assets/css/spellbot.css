@@ -43,10 +43,6 @@
 @-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
 @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
 
-.avatar-img-border {
-  box-shadow: none !important;
-}
-
 p.note {
   background: linear-gradient(45deg, rgba(246, 173, 75, .2), rgba(90, 62, 253, .2));
   border-radius: 1rem;
@@ -60,10 +56,20 @@ p.note:before {
   margin-left: -2rem;
 }
 
-.footer {
-  border-top: 0;
+/* overrides for styles from main.css that aren't directly configurable */
+
+footer {
+  border-top: 0 !important;
 }
 
-a:focus {
-  text-decoration: none;
+a:hover {
+  text-decoration: none !important;
+}
+
+.avatar-img-border {
+  box-shadow: none !important;
+}
+
+*:not(.fas):not(.fab) {
+  font-family: 'Verdana', sans-serif !important;
 }
