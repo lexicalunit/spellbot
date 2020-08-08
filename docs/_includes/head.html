@@ -14,13 +14,11 @@
   <meta name="description" content="{{ page.subtitle }}">
   {% endif %}
 
-  {% if site.meta-theme-color %}
-  <meta name="theme-color" content="{{ site.meta-theme-color }}">
+  {% if site.custom-site-color %}
+  <meta name="theme-color" content="{{ site.custom-site-color }}">
   {% endif %}
 
-  {% if page.keywords %}
-  <meta name="keywords" content="{{ page.keywords }}">
-  {% elsif site.keywords %}
+  {% if site.keywords %}
   <meta name="keywords" content="{{ site.keywords }}">
   {% endif %}
 
