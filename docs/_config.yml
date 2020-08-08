@@ -2,12 +2,8 @@
 title: SpellBot
 description: The Discord bot for SpellTable
 author: "@lexicalunit"
-keywords: "magic: the gathering, magic, mtg, edh, commander, spelltable, discord bot, discord, bot"
 font-family: "'Verdana', sans-serif"
-meta-theme-color: "#5A3EFD"
 meta-site-name: SpellBot IO
-site-css:
-  - "/assets/css/spellbot.css"
 
 # --- List of links in the navigation bar --- #
 
@@ -78,12 +74,15 @@ link-tags: false
 # Excerpt Word Length - Truncates the excerpt to the specified number of words on the index page
 excerpt_length: 50
 
+# Sets the search engine keywords for pages on your site
+keywords: "magic: the gathering, magic, mtg, edh, commander, spelltable, discord bot, discord, bot"
+
 # --- Colours / background image --- #
 navbar-col: "#0d1117"
 navbar-text-col: "#718096"
 navbar-border-col: "#1a202c"
 page-col: "#1a202c"
-page-text-col: "#FFFFFF"
+text-col: "#FFFFFF"
 link-col: "#ffb342"
 hover-col: "#ffd160"
 footer-col: "#0d1117"
@@ -99,6 +98,15 @@ footer-link-col: "#765bff"
 #navbar-img: "/assets/img/bgimage.png"
 #footer-img: "/assets/img/bgimage.png"
 #page-img: "/assets/img/bgimage.png"
+
+# Customize the site coloration for your website. This is used by various applications,
+# for example many mobile browsers will use this color in their user interface elements
+# when users view your website.
+custom-site-color: "#5A3EFD"
+
+# You can also include any number of additional CSS assets in every page on your site
+site-css:
+  - "/assets/css/spellbot.css"
 
 # --- Web Statistics Section --- #
 
