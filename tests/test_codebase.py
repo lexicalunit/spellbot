@@ -93,7 +93,10 @@ class TestCodebase:
 
     def test_whitespace(self):
         """Checks for problematic trailing whitespace and missing ending newlines."""
+        EXCLUDE_EXTS = (".gif", ".ico", ".ics", ".jpg", ".lock", ".svg", ".png")
         repo = Repo(REPO_ROOT)
+        errors = set()
+        prog = re.compile(r"^.*[ \t]+$")
 
         def paths(tree, path):
             for blob in tree.blobs:
@@ -101,11 +104,8 @@ class TestCodebase:
             for tree in tree.trees:
                 yield from paths(tree, path / tree.name)
 
-        errors = set()
-        prog = re.compile(r"^.*[ \t]+$")
-
         def check(path):
-            if path.suffix.lower() in [".ico", ".jpg", ".lock", ".png", ".svg"]:
+            if path.suffix.lower() in EXCLUDE_EXTS:
                 return
             rels = str(path.relative_to(REPO_ROOT))
             if rels.startswith(f"tests{sep}snapshots{sep}"):
