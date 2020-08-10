@@ -68,6 +68,20 @@ a {
   transition: all 0.3s ease-in-out;
 }
 
+.top-gg-widget img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 768px) {
+  .top-gg-widget {
+    position: fixed;
+    bottom: 2em;
+    left: 1em;
+  }
+}
+
 /* overrides for styles from main.css that aren't directly configurable */
 
 footer {
