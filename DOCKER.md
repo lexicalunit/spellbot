@@ -25,3 +25,12 @@ docker run \
 ```
 
 > **Note:** Don't set `SPELLBOT_DB_URL` if you want to use sqlite3.
+
+## Publishing
+
+Publishing to Docker Hub:
+
+```shell
+docker build -t spellbot .
+docker push lexicalunit/spellbot
+```
