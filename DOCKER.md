@@ -3,10 +3,8 @@
 SpellBot can be run directly from docker so that you don't have to worry
 about installing anything or managing your Python environment.
 
-First build your SpellBot docker image.
-
 ```shell
-docker build -t spellbot .
+docker pull lexicalunit/spellbot
 ```
 
 You can now run it via `docker run`. You'll want to pass your
@@ -24,13 +22,4 @@ docker run \
     spellbot
 ```
 
-> **Note:** Don't set `SPELLBOT_DB_URL` if you want to use sqlite3.
-
-## Publishing
-
-Publishing to Docker Hub:
-
-```shell
-docker build -t spellbot .
-docker push lexicalunit/spellbot
-```
+> **Note:** Leave `SPELLBOT_DB_URL` unset if you want to use sqlite3.

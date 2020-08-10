@@ -125,8 +125,9 @@ More usage help can be found by running `spellbot --help`.
 
 ## 🐳 Docker Support
 
-You can also run SpellBot via docker. See
-[our documentation on Docker Support](DOCKER.md) for help.
+You can also run SpellBot via docker. Our image is published to
+[lexicalunit/spellbot][docker-hub]. See [our documentation on Docker Support](DOCKER.md) for help
+with installing and using it.
 
 ---
 
@@ -144,6 +145,7 @@ You can also run SpellBot via docker. See
 [create-role]:        https://support.discord.com/hc/en-us/articles/206029707-How-do-I-set-up-Permissions-
 [db-url]:             https://docs.sqlalchemy.org/en/latest/core/engines.html
 [discord-bot-docs]:   https://discord.com/developers/docs/topics/oauth2#bots
+[docker-hub]:         https://hub.docker.com/r/lexicalunit/spellbot
 [issues]:             https://github.com/lexicalunit/spellbot/issues
 [ko-fi]:              https://ko-fi.com/Y8Y51VTHZ
 [kofi-button]:        https://user-images.githubusercontent.com/1903876/88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
