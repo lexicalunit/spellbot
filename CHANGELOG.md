@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Link to docker hub published image.
 - Online status badge from top.gg.
+- Documentation for beautiful-jekyll.
+- A top.gg widget to the site.
 
 ## [v3.16.1](https://github.com/lexicalunit/spellbot/releases/tag/v3.16.1) - 2020-08-09
 
