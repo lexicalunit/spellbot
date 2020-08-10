@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Removed
 
 - Deleted the crufty about me page.
+- Unused SpellTable logo.
 
 ### Changed
 
 - Changed the site favicon to be a SpellBot icon instead of a SpellTable icon.
 - Moves SpellBot specific CSS changes to the theme into its own file.
+- Cropped SpellBot logo to content.
 
 ### Added
 
