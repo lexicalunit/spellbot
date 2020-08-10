@@ -3,6 +3,7 @@
 # SpellBot
 
 [![build][build-badge]][build]
+[![top][top-badge]][top]
 [![pypi][pypi-badge]][pypi]
 [![codecov][codecov-badge]][codecov]
 [![python][python-badge]][python]
@@ -160,3 +161,5 @@ with installing and using it.
 [ready]:              https://user-images.githubusercontent.com/1903876/88854658-796a3000-d1a6-11ea-93b6-63dccae5d637.png
 [spelltable-discord]: https://discord.gg/zXzgqMN
 [spelltable]:         https://www.spelltable.com/
+[top-badge]:          https://top.gg/api/widget/status/725510263251402832.svg?noavatar=true
+[top]:                https://top.gg/bot/725510263251402832
