@@ -83,6 +83,12 @@ correct number of players for you. Hopefully these features are intuitive and
 helpful 🤞 — and if not, [please report bugs and request features][issues]
 to your heart's content.
 
+### 🎤 Feedback
+
+Thoughts and suggestions? Come join us on the
+[SpellTable Discord server][discord-invite]! Please also feel free
+to [directly report any bugs][issues] that you encounter.
+
 ## 🙌 Support Me
 
 I'm keeping SpellBot running using my own money but if you like the bot and want
@@ -146,6 +152,7 @@ with installing and using it.
 [create-role]:        https://support.discord.com/hc/en-us/articles/206029707-How-do-I-set-up-Permissions-
 [db-url]:             https://docs.sqlalchemy.org/en/latest/core/engines.html
 [discord-bot-docs]:   https://discord.com/developers/docs/topics/oauth2#bots
+[discord-invite]:     https://discord.gg/zXzgqMN
 [docker-hub]:         https://hub.docker.com/r/lexicalunit/spellbot
 [issues]:             https://github.com/lexicalunit/spellbot/issues
 [ko-fi]:              https://ko-fi.com/Y8Y51VTHZ
