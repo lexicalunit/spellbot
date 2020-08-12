@@ -74,7 +74,8 @@ a {
   margin-right: auto;
 }
 
-@media (min-width: 768px) {
+/* prevent any overlap of floating widget with text */
+@media (min-width: 1400px) {
   .top-gg-widget {
     position: fixed;
     bottom: 2em;
