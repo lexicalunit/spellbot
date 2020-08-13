@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Documentation for beautiful-jekyll.
 - A top.gg widget to the site.
 - Feedback section in the README.
+- Added links privacy server setting.
 
 ## [v3.16.1](https://github.com/lexicalunit/spellbot/releases/tag/v3.16.1) - 2020-08-09
 

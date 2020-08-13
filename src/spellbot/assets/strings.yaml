@@ -79,6 +79,10 @@ spellbot_expire: Ok $reply, game expiration time on this server has been set to 
 spellbot_expire_bad: Sorry $reply, but game expiration time should be between 10 and
   60 minutes.
 spellbot_expire_none: Sorry $reply, but please provide a number of minutes.
+spellbot_links: Right on, $reply. From now on SpellTable links will be $setting.
+spellbot_links_bad: Sorry $reply, but $input is not a valid setting. I was expecting
+  either "private" or "public".
+spellbot_links_none: Sorry $reply, but please provide a links privacy setting.
 spellbot_missing_subcommand: Sorry $reply, please provide a subcommand when using
   this command.
 spellbot_prefix: Ok $reply, I will now use "$prefix" as my command prefix on this

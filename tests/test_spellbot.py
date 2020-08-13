@@ -74,10 +74,10 @@ def game_json_for(client, user):
     return rvalue
 
 
-def game_embed_for(client, user, ready, message=None):
+def game_embed_for(client, user, ready, message=None, dm=False):
     session = client.data.Session()
     db_user = session.query(User).filter(User.xid == user.id).first()
-    rvalue = db_user.game.to_embed() if db_user and db_user.game else None
+    rvalue = db_user.game.to_embed(dm) if db_user and db_user.game else None
     session.close()
     if ready:
         assert db_user.game.status != "pending"
@@ -2123,6 +2123,37 @@ class TestSpellBot:
         with pytest.raises(RuntimeError):
             await client.on_message(MockMessage(someone(), channel, "!help"))
         assert "unhandled exception" in caplog.text
+
+    async def test_on_message_spellbot_links_none(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot links"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but please provide a links privacy setting."
+        )
+
+    async def test_on_message_spellbot_links_invalid(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot links foo"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but foo is not a valid setting."
+            ' I was expecting either "private" or "public".'
+        )
+
+    async def test_on_message_spellbot_links(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot links private"))
+        assert channel.last_sent_response == (
+            f"Right on, <@{author.id}>. From now on SpellTable links will be private."
+        )
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!join ~legacy"))
+        assert "http://" in game_embed_for(client, AMY, True, dm=True)["description"]
+        assert "http://" not in game_embed_for(client, AMY, True, dm=False)["description"]
 
     async def test_paginate(self):
         def subject(text):
