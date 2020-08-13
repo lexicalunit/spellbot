@@ -46,6 +46,7 @@ class Server(Base):
     guild_xid = Column(BigInteger, primary_key=True, nullable=False)
     prefix = Column(String(10), nullable=False, default="!")
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
+    links = Column(String(10), nullable=False, server_default=text("'public'"))
     games = relationship("Game", back_populates="server", uselist=True)
     channels = relationship("Channel", back_populates="server", uselist=True)
 
@@ -289,7 +290,8 @@ class Game(Base):
             "tags": [tag.name for tag in self.tags],
         }
 
-    def to_embed(self) -> discord.Embed:
+    def to_embed(self, dm=False) -> discord.Embed:
+        show_link = True if dm else self.server.links == "public"
         if self.status == "pending":
             remaining = int(self.size) - len(cast(List[User], self.users))
             plural = "s" if remaining > 1 else ""
@@ -301,10 +303,15 @@ class Game(Base):
         if self.status == "pending":
             embed.description = "To join/leave this game, react with ➕/➖."
         elif self.system == "spelltable":
-            assert self.url is not None  # TODO: Shouldn't be possible?
-            embed.description = (
-                f"Click the link below to join your SpellTable game.\n<{self.url}>"
-            )
+            if show_link:
+                assert self.url is not None  # TODO: Shouldn't be possible?
+                embed.description = (
+                    f"Click the link below to join your SpellTable game.\n<{self.url}>"
+                )
+            else:
+                embed.description = (
+                    "Please check your Direct Messages for your SpellTable link."
+                )
         elif self.system == "mtgo":
             embed.description = (
                 "Please exchange MTGO contact information and head over there to play!"

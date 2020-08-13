@@ -720,7 +720,7 @@ class SpellBot(discord.Client):
                 game.status = "started"
                 session.commit()
                 for discord_user in found_discord_users:
-                    await discord_user.send(embed=game.to_embed())
+                    await discord_user.send(embed=game.to_embed(dm=True))
                 await self.safe_edit_message(message, embed=game.to_embed())
                 await safe_clear_reactions(message)
             else:
@@ -1082,7 +1082,7 @@ class SpellBot(discord.Client):
                     game.status = "started"
                     session.commit()
                     for discord_user in found_discord_users:
-                        await discord_user.send(embed=game.to_embed())
+                        await discord_user.send(embed=game.to_embed(dm=True))
                     await self.safe_edit_message(post, embed=game.to_embed())
                     await safe_clear_reactions(post)
                 else:
@@ -1111,7 +1111,7 @@ class SpellBot(discord.Client):
             for mentioned_user in mentioned_users:
                 discord_user = await self.safe_fetch_user(mentioned_user.xid)
                 if discord_user:
-                    await discord_user.send(embed=game.to_embed())
+                    await discord_user.send(embed=game.to_embed(dm=True))
                 else:
                     pass  # TODO: Is this even possible? What should we do here...
             return
@@ -1456,7 +1456,7 @@ class SpellBot(discord.Client):
 
             game.url = self.create_game() if game.system == "spelltable" else None
             game.status = "started"
-            response = game.to_embed()
+            response = game.to_embed(dm=True)
             session.commit()
 
             for discord_user in found_discord_users:
@@ -1574,7 +1574,7 @@ class SpellBot(discord.Client):
         session.add(game)
         session.commit()
 
-        player_response = game.to_embed()
+        player_response = game.to_embed(dm=True)
         for player in mentioned_users:
             discord_user = await self.safe_fetch_user(player.xid)
             # TODO: What happens if discord_user is None?
@@ -1673,6 +1673,7 @@ class SpellBot(discord.Client):
         * `config`: Just show the current configuration for this server.
         * `channel <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot's command prefix for text channels.
+        * `links <string>`: Set the privacy level for generated SpellTable links.
         * `expire <number>`: Set the number of minutes before pending games expire.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
@@ -1706,6 +1707,8 @@ class SpellBot(discord.Client):
             await self.spellbot_expire(session, server, params[1:], message)
         elif command == "config":
             await self.spellbot_config(session, server, params[1:], message)
+        elif command == "links":
+            await self.spellbot_links(session, server, params[1:], message)
         else:
             await message.channel.send(
                 s(
@@ -1805,6 +1808,7 @@ class SpellBot(discord.Client):
                 )
             )
             return
+
         prefix_str = params[0][0:10]
         server.prefix = prefix_str
         session.commit()
@@ -1815,7 +1819,43 @@ class SpellBot(discord.Client):
                 prefix=prefix_str,
             )
         )
-        return
+
+    async def spellbot_links(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        if not params:
+            await message.channel.send(
+                s(
+                    "spellbot_links_none",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                )
+            )
+            return
+
+        links_str = params[0].lower()
+        if links_str not in ["private", "public"]:
+            await message.channel.send(
+                s(
+                    "spellbot_links_bad",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    input=params[0],
+                )
+            )
+            return
+
+        server.links = links_str
+        session.commit()
+        await message.channel.send(
+            s(
+                "spellbot_links",
+                reply=f"<@{cast(discord.User, message.author).id}>",
+                setting=links_str,
+            )
+        )
 
     async def spellbot_expire(
         self,
@@ -1832,6 +1872,7 @@ class SpellBot(discord.Client):
                 )
             )
             return
+
         expire = to_int(params[0])
         if not expire or not (0 < expire <= 60):
             await message.channel.send(
@@ -1841,6 +1882,7 @@ class SpellBot(discord.Client):
                 )
             )
             return
+
         server = (
             session.query(Server)
             .filter(Server.guild_xid == message.channel.guild.id)
@@ -1874,6 +1916,7 @@ class SpellBot(discord.Client):
         else:
             channels_str = "all"
         embed.add_field(name="Active channels", value=channels_str)
+        embed.add_field(name="Links", value=server.links.title())
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
         await message.channel.send(embed=embed)
