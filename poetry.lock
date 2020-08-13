@@ -400,7 +400,7 @@ description = "A Python utility / library to sort Python imports."
 name = "isort"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "5.3.2"
+version = "5.4.0"
 
 [package.extras]
 colors = ["colorama (>=0.4.3,<0.5.0)"]
@@ -996,7 +996,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "f3ccab56f10d19679bcebc957f721a5d5c7c4a9b23ab34454478f4fc9da712f4"
+content-hash = "edd82df2eb45b936b01339db212a1991d113607949a0dc4393139d9ff9a88d92"
 python-versions = ">=3.7,<4"
 
 [metadata.files]
@@ -1176,8 +1176,8 @@ ipython-genutils = [
     {file = "ipython_genutils-0.2.0.tar.gz", hash = "sha256:eb2e116e75ecef9d4d228fdc66af54269afa26ab4463042e33785b887c628ba8"},
 ]
 isort = [
-    {file = "isort-5.3.2-py3-none-any.whl", hash = "sha256:5196bd2f5b23dc91215734b1c96c6d28390061d69860a948094c12635d6d64e6"},
-    {file = "isort-5.3.2.tar.gz", hash = "sha256:ba83762132a8661d3525f87a86549712fb7d8da79eeb452e01f327ada9e87920"},
+    {file = "isort-5.4.0-py3-none-any.whl", hash = "sha256:32bd1190ae0a5cc45f10fbe3fb85918b17441f8e51db51e67453972e9acb6c96"},
+    {file = "isort-5.4.0.tar.gz", hash = "sha256:2426f423a77bfb639ec67cf13ef7cb96f3521772b8831f099a777aae0c9ba571"},
 ]
 jedi = [
     {file = "jedi-0.17.2-py2.py3-none-any.whl", hash = "sha256:98cc583fa0f2f8304968199b01b6b4b94f469a1f4a74c1560506ca2a211378b5"},
