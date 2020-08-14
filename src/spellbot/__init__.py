@@ -185,6 +185,15 @@ def is_admin(
     return any(role.name == ADMIN_ROLE for role in roles) if member else False
 
 
+async def check_is_admin(message: discord.Message) -> bool:
+    """Checks if author of message is admin, alert the channel if they are not."""
+    if not is_admin(message.channel, message.author):
+        user_xid = cast(discord.User, message.author).id
+        await message.channel.send(s("not_admin", reply=f"<@{user_xid}>"))
+        return False
+    return True
+
+
 def ensure_application_directories_exist() -> None:
     """Idempotent function to make sure needed application directories are there."""
     TMP_DIR.mkdir(exist_ok=True)
@@ -218,7 +227,9 @@ def paginate(text: str) -> Iterator[str]:
     yield remaining
 
 
-def command(allow_dm: bool = True, aliases: Optional[List[str]] = None) -> Callable:
+def command(
+    allow_dm: bool = True, aliases: Optional[List[str]] = None, admin_only=False
+) -> Callable:
     """Decorator for bot command methods."""
 
     def callable(func: Callable):
@@ -229,6 +240,7 @@ def command(allow_dm: bool = True, aliases: Optional[List[str]] = None) -> Calla
         cast(Any, wrapped).is_command = True
         cast(Any, wrapped).allow_dm = allow_dm
         cast(Any, wrapped).aliases = aliases
+        cast(Any, wrapped).admin_only = admin_only
         return wrapped
 
     return callable
@@ -553,6 +565,8 @@ class SpellBot(discord.Client):
                 await message.author.send(
                     s("no_dm", reply=f"<@{cast(discord.User, message.author).id}>")
                 )
+                return
+            if method.admin_only and not await check_is_admin(message):
                 return
             logger.debug("%s%s (params=%s, message=%s)", prefix, command, params, message)
             async with self.session() as session:
@@ -905,8 +919,8 @@ class SpellBot(discord.Client):
 
         mentions = message.mentions if message.channel.type != "private" else []
 
-        opts = parse_opts(params)
-        size, tag_names, system = opts["size"], opts["tags"], opts["system"]
+        o = parse_opts(params)
+        size, tag_names, system = o["size"], o["tags"], o["system"]
 
         if not size or not (1 < size < 5):
             await message.channel.send(
@@ -963,7 +977,7 @@ class SpellBot(discord.Client):
                 session.commit()
                 await self.try_to_update_game(game_to_update)
                 await message.channel.send(
-                    s("lfg_player_removed_from_queue", player=f"<@{mentioned_user.xid}>",)
+                    s("lfg_player_removed_from_queue", player=f"<@{mentioned_user.xid}>")
                 )
                 return
             elif mentioned_user.waiting:
@@ -985,7 +999,14 @@ class SpellBot(discord.Client):
         if not game:
             seats = 1 + len(mentions) if not use_queue else len(mentions)
             game = Game.find_existing(
-                session, server, message.channel.id, size, seats, tags, system
+                session=session,
+                server=server,
+                channel_xid=message.channel.id,
+                size=size,
+                seats=seats,
+                tags=tags,
+                system=system,
+                power=user.power,
             )
 
         if game:
@@ -1123,7 +1144,7 @@ class SpellBot(discord.Client):
             await post.add_reaction("➕")
             await post.add_reaction("➖")
 
-    @command(allow_dm=False, aliases=["signup"])
+    @command(allow_dm=False, aliases=["signup"], admin_only=True)
     async def queue(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1140,12 +1161,6 @@ class SpellBot(discord.Client):
         with by players.
         & [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...
         """
-        if not is_admin(message.channel, message.author):
-            await message.channel.send(
-                s("not_admin", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
-            return
-
         await self._play_helper(
             session, prefix, params, message, create_new_game=True, use_queue=True
         )
@@ -1188,7 +1203,7 @@ class SpellBot(discord.Client):
             session, prefix, params, message, create_new_game=False, use_queue=False
         )
 
-    @command(allow_dm=False)
+    @command(allow_dm=False, admin_only=True)
     async def event(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1209,11 +1224,6 @@ class SpellBot(discord.Client):
         * Optional: Add up to five tags by using `~tag-name`.
         & <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]
         """
-        if not is_admin(message.channel, message.author):
-            await message.channel.send(
-                s("not_admin", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
-            return
         if not message.attachments:
             await message.channel.send(
                 s("event_no_data", reply=f"<@{cast(discord.User, message.author).id}>")
@@ -1394,7 +1404,7 @@ class SpellBot(discord.Client):
             )
         )
 
-    @command(allow_dm=False)
+    @command(allow_dm=False, admin_only=True)
     async def begin(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1403,12 +1413,6 @@ class SpellBot(discord.Client):
         "SpellBot Admin" role._
         & <event id>
         """
-        if not is_admin(message.channel, message.author):
-            await message.channel.send(
-                s("not_admin", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
-            return
-
         if not params:
             await message.channel.send(
                 s("begin_no_params", reply=f"<@{cast(discord.User, message.author).id}>")
@@ -1472,7 +1476,7 @@ class SpellBot(discord.Client):
                 )
             )
 
-    @command(allow_dm=False)
+    @command(allow_dm=False, admin_only=True)
     async def game(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1486,12 +1490,6 @@ class SpellBot(discord.Client):
         * Optional: Add tags by using `~tag-name` for the tags you want.
         & @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]
         """
-        if not is_admin(message.channel, message.author):
-            await message.channel.send(
-                s("not_admin", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
-            return
-
         opts = parse_opts(params)
         size, tag_names, opt_msg, system = (
             opts["size"],
@@ -1614,19 +1612,13 @@ class SpellBot(discord.Client):
         )
         await self.try_to_update_game(game)
 
-    @command(allow_dm=False)
+    @command(allow_dm=False, admin_only=True)
     async def export(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._
         """
-        if not is_admin(message.channel, message.author):
-            await message.channel.send(
-                s("not_admin", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
-            return
-
         server = self.ensure_server_exists(session, message.channel.guild.id)
         export_file = TMP_DIR / f"{message.channel.guild.name}.csv"
         channel_name_cache = {}
@@ -1662,6 +1654,57 @@ class SpellBot(discord.Client):
                 )
         await message.channel.send("", file=discord.File(export_file))
 
+    @command(allow_dm=True)
+    async def power(
+        self, session: Session, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """
+        Set or unset the power level of the deck you are going to play.
+
+        When you have set a power level, the !lfg and !join commands will try to put
+        you in games with other players of similar power levels.
+        & <none | 1..10>
+        """
+        if not params:
+            await message.channel.send(
+                s("power_invalid", reply=f"<@{cast(discord.User, message.author).id}>")
+            )
+            return
+
+        user = self.ensure_user_exists(session, message.author)
+
+        power = params[0].lower()
+        if power in ["none", "off", "unset", "no", "0"]:
+            user.power = None
+            session.commit()
+            await message.channel.send(
+                s(
+                    "power",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    power="none",
+                )
+            )
+            return
+
+        if not power.isdigit():
+            await message.channel.send(
+                s("power_invalid", reply=f"<@{cast(discord.User, message.author).id}>")
+            )
+            return
+
+        power_i = int(power)
+        if not (1 <= power_i <= 10):
+            await message.channel.send(
+                s("power_invalid", reply=f"<@{cast(discord.User, message.author).id}>")
+            )
+            return
+
+        user.power = power_i
+        session.commit()
+        await message.channel.send(
+            s("power", reply=f"<@{cast(discord.User, message.author).id}>", power=power_i)
+        )
+
     @command(allow_dm=False)
     async def spellbot(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
@@ -1692,10 +1735,7 @@ class SpellBot(discord.Client):
             await self.spellbot_help(session, prefix, params[1:], message)
             return
 
-        if not is_admin(message.channel, message.author):
-            await message.channel.send(
-                s("not_admin", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+        if not await check_is_admin(message):
             return
 
         server = self.ensure_server_exists(session, message.channel.guild.id)
