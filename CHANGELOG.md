@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v3.17.0](https://github.com/lexicalunit/spellbot/releases/tag/v3.17.0) - 2020-08-12
 
+### Changed
+
+- Added `apt-get update` to CI workflow.
+- Using a newer version of Ubuntu for CI.
+
+### Fixed
+
+- Fixed the migrations test so that it actually uses the CI configured database.
+- Fixed some typos in an old migration script.
+
 ### Added
 
 - Link to docker hub published image.
