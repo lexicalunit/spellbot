@@ -391,8 +391,7 @@ class SpellBot(discord.Client):
         self, loop: asyncio.AbstractEventLoop
     ) -> None:  # pragma: no cover
         """Start up any periodic background tasks."""
-        # TODO: Think about how to make this better...
-        # self.cleanup_expired_games_task(loop)
+        self.cleanup_expired_games_task(loop)
 
         # TODO: Make this manually triggered.
         # self.cleanup_started_games_task(loop)
