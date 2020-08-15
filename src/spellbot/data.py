@@ -256,6 +256,8 @@ class Game(Base):
         ]
         if power:
             having_filters.append(between(func.avg(User.power), power - 1, power + 1))
+        else:
+            select_filters.append(User.power == None)
         inner = (
             session.query(Game.id)
             .join(User, isouter=True)

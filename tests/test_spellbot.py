@@ -2255,6 +2255,14 @@ class TestSpellBot:
         assert game_embed_for(client, AMY, False) != game_embed_for(client, JR, False)
         assert len(all_games(client)) == 2
 
+    async def test_on_message_lfg_with_power_vs_none(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(AMY, channel, "!power 5"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+        await client.on_message(MockMessage(JR, channel, "!lfg"))
+        assert game_embed_for(client, AMY, False) != game_embed_for(client, JR, False)
+        assert len(all_games(client)) == 2
+
     async def test_paginate(self):
         def subject(text):
             return [page for page in spellbot.paginate(text)]
