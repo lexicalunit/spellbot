@@ -25,15 +25,15 @@ def upgrade():
 
 def downgrade():
     with op.batch_alter_table("users") as b:
-        b.add_column(sa.Column("queued_at", sa.DATETIME(), nullable=True))
+        b.add_column(sa.Column("queued_at", sa.DateTime(), nullable=True))
     with op.batch_alter_table("games") as b:
-        b.add_column(sa.Column("power", sa.FLOAT(), nullable=True))
+        b.add_column(sa.Column("power", sa.Float(), nullable=True))
     op.create_table(
         "wait_times",
-        sa.Column("id", sa.INTEGER(), nullable=False),
-        sa.Column("guild_xid", sa.BIGINT(), nullable=False),
-        sa.Column("channel_xid", sa.BIGINT(), nullable=False),
-        sa.Column("created_at", sa.DATETIME(), nullable=False),
-        sa.Column("seconds", sa.INTEGER(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("guild_xid", sa.BigInteger(), nullable=False),
+        sa.Column("channel_xid", sa.BigInteger(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("seconds", sa.Integer(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
