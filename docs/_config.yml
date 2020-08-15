@@ -101,9 +101,9 @@ footer-link-col: "#765bff"
 # Suggest a colour for mobile browsers to use as the browser's theme. This is only supported by a few mobile browsers.
 mobile-theme-col: "#5A3EFD"
 
+# For any extra customization, you can include additional CSS files in every page on your site
 site-css:
   - "/assets/css/spellbot.css"
-# For any extra customization, you can include additional CSS files in every page on your site
 
 # --- Web Statistics Section --- #
 
