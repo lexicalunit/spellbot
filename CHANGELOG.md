@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Updated to latest from beautiful-jekyll.
+- Re-enabled cleanup task for expired pending games.
+- When matching a player with power to a pending games, don't consider power-less games.
 
 ## [v3.18.0](https://github.com/lexicalunit/spellbot/releases/tag/v3.18.0) - 2020-08-14
 
