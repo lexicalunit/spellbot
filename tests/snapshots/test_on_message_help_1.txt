@@ -11,6 +11,11 @@
 > 
 > Aliases: `!play`
 
+`!power <none | 1..10>`
+>  Set or unset the power level of the deck you are going to play.
+> 
+> When you have set a power level, the !lfg and !join commands will try to put you in games with other players of similar power levels.
+
 `!queue [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
 >  Add a player to an admin controller play queue. _Requires the "SpellBot Admin" role._
 > 
@@ -25,7 +30,3 @@
 > 
 > The following subcommands are supported:
 > * `config`: Just show the current configuration for this server.
-> * `channel <list>`: Set SpellBot to only respond in the given list of channels.
-> * `prefix <string>`: Set SpellBot's command prefix for text channels.
-> * `links <string>`: Set the privacy level for generated SpellTable links.
-> * `expire <number>`: Set the number of minutes before pending games expire.

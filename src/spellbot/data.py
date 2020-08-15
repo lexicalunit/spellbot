@@ -20,6 +20,7 @@ from sqlalchemy import (
     String,
     Table,
     and_,
+    between,
     create_engine,
     func,
     or_,
@@ -145,6 +146,7 @@ class User(Base):
     cached_name = Column(String(50))
     invited = Column(Boolean, server_default=text("false"), nullable=False)
     invite_confirmed = Column(Boolean, server_default=text("false"), nullable=False)
+    power = Column(Integer, nullable=True)
     game = relationship("Game", back_populates="users")
 
     @property
@@ -152,6 +154,16 @@ class User(Base):
         if self.game and self.game.status in ["pending", "ready"]:
             return True
         return False
+
+    def to_json(self) -> dict:
+        return {
+            "xid": self.xid,
+            "game_id": self.game_id,
+            "cached_name": self.cached_name,
+            "invited": self.invited,
+            "invite_confirmed": self.invite_confirmed,
+            "power": self.power,
+        }
 
 
 class Tag(Base):
@@ -209,9 +221,17 @@ class Game(Base):
     server = relationship("Server", back_populates="games")
     event = relationship("Event", back_populates="games")
 
+    @property
+    def power(self) -> Optional[float]:
+        values: List[int] = [user.power for user in self.users if user.power]
+        if values:
+            return sum(values) / len(values)
+        return None
+
     @classmethod
     def find_existing(
         cls,
+        *,
         session: Session,
         server: Server,
         channel_xid: int,
@@ -219,6 +239,7 @@ class Game(Base):
         seats: int,
         tags: List[Tag],
         system: str,
+        power: Optional[int],
     ) -> Optional[Game]:
         guild_xid = server.guild_xid
         required_tag_ids = set(tag.id for tag in tags)
@@ -233,6 +254,8 @@ class Game(Base):
             func.count(distinct(games_tags.c.tag_id)) == len(required_tag_ids),
             func.count(distinct(User.xid)) <= size - seats,
         ]
+        if power:
+            having_filters.append(between(func.avg(User.power), power - 1, power + 1))
         inner = (
             session.query(Game.id)
             .join(User, isouter=True)
@@ -288,6 +311,7 @@ class Game(Base):
             "message": self.message,
             "message_xid": self.message_xid,
             "tags": [tag.name for tag in self.tags],
+            "power": self.power,
         }
 
     def to_embed(self, dm=False) -> discord.Embed:
@@ -320,14 +344,25 @@ class Game(Base):
             embed.description = (
                 "Please exchange Arena contact information and head over there to play!"
             )
-        if self.users:
-            players = ", ".join(sorted([f"<@{user.xid}>" for user in self.users]))
-            embed.add_field(name="Players", value=players)
         tag_names = None
         if self.tags and len(cast(List[Tag], self.tags)) >= 1:
             sorted_tag_names: List[str] = sorted([tag.name for tag in self.tags])
             tag_names = ", ".join(sorted_tag_names)
             embed.add_field(name="Tags", value=tag_names)
+        power = self.power
+        if power:
+            embed.add_field(name="Average Power Level", value=f"{power:.1f}")
+        if self.users:
+            players = ", ".join(
+                sorted(
+                    [
+                        f"<@{user.xid}>"
+                        + (f" (Power: {user.power})" if user.power else "")
+                        for user in self.users
+                    ]
+                )
+            )
+            embed.add_field(name="Players", value=players, inline=False)
         embed.set_footer(text=f"SpellBot Reference #SB{self.id}")
         embed.color = discord.Color(0x5A3EFD)
         return embed

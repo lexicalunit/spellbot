@@ -74,6 +74,14 @@ def game_json_for(client, user):
     return rvalue
 
 
+def user_json_for(client, user):
+    session = client.data.Session()
+    db_user = session.query(User).filter(User.xid == user.id).first()
+    rvalue = db_user.to_json() if db_user else None
+    session.close()
+    return rvalue
+
+
 def game_embed_for(client, user, ready, message=None, dm=False):
     session = client.data.Session()
     db_user = session.query(User).filter(User.xid == user.id).first()
@@ -1280,7 +1288,7 @@ class TestSpellBot:
             "description": "Please exchange MTGO contact information and head over there"
             " to play!",
             "fields": [
-                {"inline": True, "name": "Players", "value": f"<@{ADAM.id}>, <@{JR.id}>"}
+                {"inline": False, "name": "Players", "value": f"<@{ADAM.id}>, <@{JR.id}>"}
             ],
             "footer": {"text": f"SpellBot Reference #SB{game['id']}"},
             "thumbnail": {"url": THUMB_URL},
@@ -1309,7 +1317,7 @@ class TestSpellBot:
             "description": "Please exchange Arena contact information and head over there"
             " to play!",
             "fields": [
-                {"inline": True, "name": "Players", "value": f"<@{ADAM.id}>, <@{JR.id}>"}
+                {"inline": False, "name": "Players", "value": f"<@{ADAM.id}>, <@{JR.id}>"}
             ],
             "footer": {"text": f"SpellBot Reference #SB{game['id']}"},
             "thumbnail": {"url": THUMB_URL},
@@ -2049,7 +2057,7 @@ class TestSpellBot:
         assert channel.all_sent_embeds[0] == {
             "color": 5914365,
             "description": "To join/leave this game, react with ➕/➖.",
-            "fields": [{"inline": True, "name": "Players", "value": f"<@{AMY.id}>"}],
+            "fields": [{"inline": False, "name": "Players", "value": f"<@{AMY.id}>"}],
             "footer": {"text": f"SpellBot Reference #SB{game_id}"},
             "thumbnail": {"url": THUMB_URL},
             "title": "**Waiting for 1 more player to join...**",
@@ -2154,6 +2162,98 @@ class TestSpellBot:
         await client.on_message(MockMessage(AMY, channel, "!join ~legacy"))
         assert "http://" in game_embed_for(client, AMY, True, dm=True)["description"]
         assert "http://" not in game_embed_for(client, AMY, True, dm=False)["description"]
+
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_power_no_params(self, client, channel_maker, channel_type):
+        author = someone()
+        channel = channel_maker.make(channel_type)
+        await client.on_message(MockMessage(author, channel, "!power"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, please provide a number between"
+            ' 1 to 10 or "none" to unset.'
+        )
+
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_power_bad_param(self, client, channel_maker, channel_type):
+        author = someone()
+        channel = channel_maker.make(channel_type)
+        await client.on_message(MockMessage(author, channel, "!power bottom"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, please provide a number between"
+            ' 1 to 10 or "none" to unset.'
+        )
+
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_power_neg_param(self, client, channel_maker, channel_type):
+        author = someone()
+        channel = channel_maker.make(channel_type)
+        await client.on_message(MockMessage(author, channel, "!power -5"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, please provide a number between"
+            ' 1 to 10 or "none" to unset.'
+        )
+
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_power_high_param(self, client, channel_maker, channel_type):
+        author = someone()
+        channel = channel_maker.make(channel_type)
+        await client.on_message(MockMessage(author, channel, "!power 9000"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, please provide a number between"
+            ' 1 to 10 or "none" to unset.'
+        )
+
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_power(self, client, channel_maker, channel_type):
+        author = someone()
+        channel = channel_maker.make(channel_type)
+        await client.on_message(MockMessage(author, channel, "!power 5"))
+        assert channel.last_sent_response == (
+            f"Ok <@{author.id}>, your power level has been set to 5."
+        )
+        assert user_json_for(client, author)["power"] == 5
+        await client.on_message(MockMessage(author, channel, "!power off"))
+        assert channel.last_sent_response == (
+            f"Ok <@{author.id}>, your power level has been set to none."
+        )
+        assert user_json_for(client, author)["power"] == None
+
+    async def test_on_message_lfg_with_power_similar(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(AMY, channel, "!power 5"))
+        await client.on_message(MockMessage(JR, channel, "!power 4"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+        await client.on_message(MockMessage(JR, channel, "!lfg"))
+        assert game_embed_for(client, AMY, False) == game_embed_for(client, JR, False)
+
+        games = all_games(client)
+        assert len(games) == 1
+        game = games[0]
+        assert game_embed_for(client, AMY, False) == {
+            "color": 5914365,
+            "description": "To join/leave this game, react with ➕/➖.",
+            "fields": [
+                {"inline": True, "name": "Average Power Level", "value": "4.5"},
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": f"<@{AMY.id}> (Power: 5), <@{JR.id}> (Power: 4)",
+                },
+            ],
+            "footer": {"text": f"SpellBot Reference #SB{game['id']}"},
+            "thumbnail": {"url": THUMB_URL},
+            "title": "**Waiting for 2 more players to join...**",
+            "type": "rich",
+        }
+
+    async def test_on_message_lfg_with_power_disjoint(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(AMY, channel, "!power 5"))
+        await client.on_message(MockMessage(JR, channel, "!power 10"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+        await client.on_message(MockMessage(JR, channel, "!lfg"))
+        assert game_embed_for(client, AMY, False) != game_embed_for(client, JR, False)
+        assert len(all_games(client)) == 2
 
     async def test_paginate(self):
         def subject(text):
