@@ -11,3 +11,4 @@ INVITE_LINK = (
     "https://discordapp.com/api/oauth2/authorize"
     "?client_id=725510263251402832&permissions=92224&scope=bot"
 )
+VOTE_LINK = "https://top.gg/bot/725510263251402832/vote"
