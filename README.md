@@ -9,6 +9,7 @@
 [![python][python-badge]][python]
 [![black][black-badge]][black]
 [![mit][mit-badge]][mit]
+[![follow][follow-badge]][follow]
 
 The Discord bot for [SpellTable][spelltable].
 
@@ -156,6 +157,8 @@ with installing and using it.
 [discord-bot-docs]:   https://discord.com/developers/docs/topics/oauth2#bots
 [discord-invite]:     https://discord.gg/zXzgqMN
 [docker-hub]:         https://hub.docker.com/r/lexicalunit/spellbot
+[follow-badge]:       https://img.shields.io/twitter/follow/SpellBotIO?style=social
+[follow]:             https://twitter.com/intent/follow?screen_name=SpellBotIO
 [issues]:             https://github.com/lexicalunit/spellbot/issues
 [ko-fi]:              https://ko-fi.com/Y8Y51VTHZ
 [kofi-button]:        https://user-images.githubusercontent.com/1903876/88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
