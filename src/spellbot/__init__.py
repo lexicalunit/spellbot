@@ -46,6 +46,7 @@ from spellbot.constants import (
     DEFAULT_GAME_SIZE,
     INVITE_LINK,
     THUMB_URL,
+    VOTE_LINK,
 )
 from spellbot.data import Channel, Data, Event, Game, Server, Tag, User
 from spellbot.reactions import safe_clear_reactions, safe_remove_reaction
@@ -862,7 +863,9 @@ class SpellBot(discord.Client):
             " <https://github.com/lexicalunit/spellbot/issues>!\n"
         )
         usage += "\n"
-        usage += f"Add SpellBot to your Discord: <{INVITE_LINK}>\n"
+        usage += f"🔗 Add SpellBot to your Discord: <{INVITE_LINK}>\n"
+        usage += "\n"
+        usage += f"👍 Give SpellBot a vote on top.gg: <{VOTE_LINK}>\n"
         usage += "\n"
         usage += (
             "💜 You can help keep SpellBot running by supporting me on Ko-fi! "
@@ -896,6 +899,8 @@ class SpellBot(discord.Client):
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
             "\n"
             f"[🔗 Add SpellBot to your Discord!]({INVITE_LINK})\n"
+            "\n"
+            f"[👍 Give SpellBot a vote on top.gg!]({VOTE_LINK})\n"
             "\n"
             "💜 Help keep SpellBot running by "
             "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"

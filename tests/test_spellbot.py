@@ -444,6 +444,9 @@ class TestSpellBot:
             "[🔗 Add SpellBot to your Discord!](https://discordapp.com/api/oauth2"
             "/authorize?client_id=725510263251402832&permissions=92224&scope=bot)\n"
             "\n"
+            "[👍 Give SpellBot a vote on top.gg!]"
+            "(https://top.gg/bot/725510263251402832/vote)\n"
+            "\n"
             "💜 Help keep SpellBot running by "
             "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
         )
