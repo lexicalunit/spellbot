@@ -1169,7 +1169,7 @@ class SpellBot(discord.Client):
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
-        Join or create a pending game for players to join.
+        Find or create a pending game for players to join.
 
         The default game size is 4 but you can change it by adding, for example, `size:2`
         to create a two player game.
@@ -1178,7 +1178,7 @@ class SpellBot(discord.Client):
         command. They will be sent invite confirmations and the game won't be posted to
         the channel until they've responded.
 
-        Players will be able to join or leave the game by reacting to the message that
+        Players will be able to enter or leave the game by reacting to the message that
         SpellBot sends with the ➕ and ➖ emoji.
 
         Up to five tags can be given as well to help describe the game expereince that you
@@ -1191,8 +1191,8 @@ class SpellBot(discord.Client):
             session, prefix, params, message, create_new_game=True, use_queue=False
         )
 
-    @command(allow_dm=False, aliases=["find", "search"])
-    async def join(
+    @command(allow_dm=False, aliases=["join", "search"])
+    async def find(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
@@ -1660,7 +1660,7 @@ class SpellBot(discord.Client):
         """
         Set or unset the power level of the deck you are going to play.
 
-        When you have set a power level, the !lfg and !join commands will try to put
+        When you have set a power level, the !lfg and !find commands will try to put
         you in games with other players of similar power levels.
         & <none | 1..10>
         """

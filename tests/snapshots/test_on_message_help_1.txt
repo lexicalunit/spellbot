@@ -1,11 +1,11 @@
 `!lfg [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
->  Join or create a pending game for players to join.
+>  Find or create a pending game for players to join.
 > 
 > The default game size is 4 but you can change it by adding, for example, `size:2` to create a two player game.
 > 
 > You can automatically invite players to the game by @ mentioning them in the command. They will be sent invite confirmations and the game won't be posted to the channel until they've responded.
 > 
-> Players will be able to join or leave the game by reacting to the message that SpellBot sends with the ➕ and ➖ emoji.
+> Players will be able to enter or leave the game by reacting to the message that SpellBot sends with the ➕ and ➖ emoji.
 > 
 > Up to five tags can be given as well to help describe the game expereince that you want. For example you might send `!lfg ~no-combo ~proxy` which will assign the tags `no-combo` and `proxy` to your game. People will be able to see what tags are set on your game when they are looking for games to join.
 > 
@@ -14,7 +14,7 @@
 `!power <none | 1..10>`
 >  Set or unset the power level of the deck you are going to play.
 > 
-> When you have set a power level, the !lfg and !join commands will try to put you in games with other players of similar power levels.
+> When you have set a power level, the !lfg and !find commands will try to put you in games with other players of similar power levels.
 
 `!queue [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
 >  Add a player to an admin controller play queue. _Requires the "SpellBot Admin" role._
