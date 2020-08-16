@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed the HTTP server code.
+- Fixed the order of when to start the hupper reloader in dev mode.
+
+### Added
+
+- Added command line arguments for HTTP port.
+
 ## [v3.19.2](https://github.com/lexicalunit/spellbot/releases/tag/v3.19.2) - 2020-08-15
 
 - Disable HTTP server for now.

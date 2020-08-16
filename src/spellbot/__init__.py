@@ -4,6 +4,7 @@ import inspect
 import logging
 import re
 import sys
+from asyncio.events import AbstractEventLoop
 from contextlib import asynccontextmanager, redirect_stdout
 from datetime import datetime, timedelta
 from functools import wraps
@@ -59,6 +60,7 @@ TMP_DIR = RUNTIME_ROOT / "tmp"
 MIGRATIONS_DIR = SCRIPTS_DIR / "migrations"
 
 DEFAULT_DB_URL = f"sqlite:///{DB_DIR}/spellbot.db"
+DEFAULT_PORT = 5020
 
 logger = logging.getLogger(__name__)
 
@@ -257,6 +259,7 @@ class SpellBot(discord.Client):
         db_url: str = DEFAULT_DB_URL,
         log_level: Union[int, str] = logging.ERROR,
         mock_games: bool = False,
+        loop: AbstractEventLoop = None,
     ):
         coloredlogs.install(
             level=log_level,
@@ -278,8 +281,8 @@ class SpellBot(discord.Client):
                 "critical": {"color": "red"},
             },
         )
-
-        loop = asyncio.get_event_loop()
+        if not loop:
+            loop = asyncio.get_event_loop()
         super().__init__(loop=loop)
         self.token = token
         self.auth = auth
@@ -1969,7 +1972,7 @@ class SpellBot(discord.Client):
 
 
 def get_db_env(fallback: str) -> str:  # pragma: no cover
-    """Returns the database env var from the environment or else the given gallback."""
+    """Returns the database env var from the environment or else the given fallback."""
     value = getenv("SPELLBOT_DB_ENV", fallback)
     return value or fallback
 
@@ -1978,6 +1981,18 @@ def get_db_url(database_env: str, fallback: str) -> str:  # pragma: no cover
     """Returns the database url from the environment or else the given fallback."""
     value = getenv(database_env, fallback)
     return value or fallback
+
+
+def get_port_env(fallback: str) -> str:  # pragma: no cover
+    """Returns the port env var from the environment or else the given fallback."""
+    value = getenv("SPELLBOT_PORT_ENV", fallback)
+    return value or fallback
+
+
+def get_port(port_env: str, fallback: int) -> int:  # pragma: no cover
+    """Returns the port from the environment or else the given fallback."""
+    value = getenv(port_env, fallback)
+    return int(value) or fallback
 
 
 def get_log_level(fallback: str) -> str:  # pragma: no cover
@@ -2018,6 +2033,25 @@ async def ping(request):  # pragma: no cover
         "Can also be set by the environment variable SPELLBOT_DB_ENV."
     ),
 )
+@click.option(
+    "-p",
+    "--port",
+    default=DEFAULT_PORT,
+    help=(
+        "HTTP server port to use; "
+        "you can also set this via the SPELLBOT_PORT environment variable."
+    ),
+)
+@click.option(
+    "--port-env",
+    default="SPELLBOT_PORT",
+    help=(
+        "By default SpellBot looks in the environment variable SPELLBOT_PORT for the "
+        "HTTP port to use. If you need it to look in a different variable "
+        "you can set it with this option. For example Heroku uses PORT."
+        "Can also be set by the environment variable SPELLBOT_PORT_ENV."
+    ),
+)
 @click.version_option(version=__version__)
 @click.option(
     "--dev",
@@ -2036,11 +2070,19 @@ def main(
     verbose: int,
     database_url: str,
     database_env: str,
+    port: int,
+    port_env: str,
     dev: bool,
     mock_games: bool,
 ) -> None:  # pragma: no cover
+    if dev:
+        reloader = hupper.start_reloader("spellbot.main")
+        reloader.watch_files(ASSET_FILES)
+
     database_env = get_db_env(database_env)
     database_url = get_db_url(database_env, database_url)
+    port_env = get_port_env(port_env)
+    port = get_port(port_env, port)
     log_level = get_log_level(log_level)
 
     # We have to make sure that application directories exist
@@ -2061,25 +2103,24 @@ def main(
         )
         sys.exit(1)
 
+    # simple http server to check for uptime
+    loop = asyncio.get_event_loop()
+    app = web.Application()
+    app.router.add_get("/", ping)
+    runner = web.AppRunner(app)
+    loop.run_until_complete(runner.setup())
+    site = web.TCPSite(runner, "localhost", port)
+    loop.run_until_complete(site.start())
+    print(f"SpellBot server running: http://localhost:{port}")  # noqa: T001
+
     client = SpellBot(
         token=token,
         auth=auth,
         db_url=database_url,
         log_level="DEBUG" if verbose else log_level,
         mock_games=mock_games,
+        loop=loop,
     )
-
-    if dev:
-        reloader = hupper.start_reloader("spellbot.main")
-        reloader.watch_files(ASSET_FILES)
-
-    # TODO: Make this work.
-    # simple http server to check for uptime
-    # port = int(os.environ.get("PORT", 80))  # TODO: configurable
-    # app = web.Application()
-    # app.router.add_get("/ping", ping)
-    # web.run_app(app, port=port)
-
     client.run()
 
 
