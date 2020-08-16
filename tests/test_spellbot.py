@@ -244,6 +244,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, dm, "!xeno"))
         assert dm.last_sent_response == (
             f'Sorry <@{author.id}>, there is no "xeno" command.'
+            ' Try "!spellbot help" for usage help.'
         )
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
