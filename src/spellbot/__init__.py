@@ -30,6 +30,7 @@ import discord
 import discord.errors
 import hupper  # type: ignore
 import requests
+from aiohttp import web
 from discord.channel import TextChannel
 from dotenv import load_dotenv
 from sqlalchemy import exc
@@ -1985,6 +1986,10 @@ def get_log_level(fallback: str) -> str:  # pragma: no cover
     return value or fallback
 
 
+async def ping(request):  # pragma: no cover
+    return web.Response(text="ok")
+
+
 @click.command()
 @click.option(
     "-l",
@@ -2067,6 +2072,11 @@ def main(
     if dev:
         reloader = hupper.start_reloader("spellbot.main")
         reloader.watch_files(ASSET_FILES)
+
+    # simple http server to check for uptime
+    app = web.Application()
+    app.router.add_get("/ping", ping)
+    web.run_app(app, port=80)
 
     client.run()
 
