@@ -25,8 +25,12 @@
 > 
 > Aliases: `!signup`
 
+`!report <Game ID> ...`
+>  Report your results on a finished game.
+> 
+> Aliases: `!results`
+
 `!spellbot <subcommand> [subcommand parameters]`
 >  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
 > 
 > The following subcommands are supported:
-> * `config`: Just show the current configuration for this server.
