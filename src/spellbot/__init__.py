@@ -2,7 +2,6 @@ import asyncio
 import csv
 import inspect
 import logging
-import os
 import re
 import sys
 from contextlib import asynccontextmanager, redirect_stdout
@@ -2074,11 +2073,12 @@ def main(
         reloader = hupper.start_reloader("spellbot.main")
         reloader.watch_files(ASSET_FILES)
 
+    # TODO: Make this work.
     # simple http server to check for uptime
-    port = int(os.environ.get("PORT", 80))  # TODO: configurable
-    app = web.Application()
-    app.router.add_get("/ping", ping)
-    web.run_app(app, port=port)
+    # port = int(os.environ.get("PORT", 80))  # TODO: configurable
+    # app = web.Application()
+    # app.router.add_get("/ping", ping)
+    # web.run_app(app, port=port)
 
     client.run()
 
