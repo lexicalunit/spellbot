@@ -272,8 +272,8 @@ assumes that you've named your Heroku application "lexicalunit-spellbot".
 
 ```shell
 docker build -t spellbot .
-heroku container:push worker --app lexicalunit-spellbot
-heroku container:release worker --app lexicalunit-spellbot
+heroku container:push web --app lexicalunit-spellbot
+heroku container:release web --app lexicalunit-spellbot
 ```
 
 [alembic]:          https://alembic.sqlalchemy.org/
