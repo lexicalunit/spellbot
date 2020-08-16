@@ -48,7 +48,7 @@ from spellbot.constants import (
     THUMB_URL,
     VOTE_LINK,
 )
-from spellbot.data import Channel, Data, Event, Game, Server, Tag, User
+from spellbot.data import Channel, Data, Event, Game, Report, Server, Tag, User
 from spellbot.reactions import safe_clear_reactions, safe_remove_reaction
 
 load_dotenv()
@@ -1211,6 +1211,61 @@ class SpellBot(discord.Client):
         """
         await self._play_helper(
             session, prefix, params, message, create_new_game=False, use_queue=False
+        )
+
+    @command(allow_dm=True, aliases=["results"])
+    async def report(
+        self, session: Session, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """
+        Report your results on a finished game.
+        & <Game ID> ...
+        """
+        if len(params) < 2:
+            await message.channel.send(
+                s("report_no_params", reply=f"<@{cast(discord.User, message.author).id}>")
+            )
+            return
+
+        req = params[0]
+        report_str = " ".join(params[1:])
+
+        if len(report_str) >= 255:
+            await message.channel.send(
+                s("report_too_long", reply=f"<@{cast(discord.User, message.author).id}>",)
+            )
+            return
+
+        game: Optional[Game] = None
+        if req.lower().startswith("sb") and req[2:].isdigit():
+            game_id = int(req[2:])
+            game = session.query(Game).filter(Game.id == game_id).one_or_none()
+        elif req.isdigit():
+            game_id = int(req)
+            game = session.query(Game).filter(Game.id == game_id).one_or_none()
+        elif re.match(r"^[\w-]*$", req):  # perhaps it's a spellbot game id
+            game = session.query(Game).filter(Game.url.ilike(f"%{req}")).one_or_none()
+
+        if not game:
+            await message.channel.send(
+                s("report_no_game", reply=f"<@{cast(discord.User, message.author).id}>")
+            )
+            return
+
+        if not game.status == "started":
+            await message.channel.send(
+                s(
+                    "report_not_started",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                )
+            )
+            return
+
+        report = Report(game_id=game.id, report=report_str)
+        session.add(report)
+        session.commit()
+        await message.channel.send(
+            s("report", reply=f"<@{cast(discord.User, message.author).id}>")
         )
 
     @command(allow_dm=False, admin_only=True)
