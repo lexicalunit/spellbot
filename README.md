@@ -43,6 +43,7 @@ Just looking to play some games of Magic? These commands are for you!
 - `!find`: Look for a game to join, but don't create a new one.
 - `!leave`: Leave any games that you've signed up for.
 - `!power`: Set your current power level.
+- `!report`: Report the results of the game you just played.
 
 When you run the `!lfg` command, SpellBot will post a message for sign ups.
 
