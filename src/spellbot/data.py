@@ -220,6 +220,7 @@ class Game(Base):
     tags = relationship("Tag", secondary=games_tags, back_populates="games", uselist=True)
     server = relationship("Server", back_populates="games")
     event = relationship("Event", back_populates="games")
+    reports = relationship("Report", back_populates="game", uselist=True)
 
     @property
     def power(self) -> Optional[float]:
@@ -368,6 +369,16 @@ class Game(Base):
         embed.set_footer(text=f"SpellBot Reference #SB{self.id}")
         embed.color = discord.Color(0x5A3EFD)
         return embed
+
+
+class Report(Base):
+    __tablename__ = "reports"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    game_id = Column(
+        Integer, ForeignKey("games.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    report = Column(String(255), nullable=False)
+    game = relationship("Game", back_populates="reports")
 
 
 def create_all(connection: Connection, db_url: str) -> None:

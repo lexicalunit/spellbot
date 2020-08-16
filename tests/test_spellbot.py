@@ -2267,6 +2267,94 @@ class TestSpellBot:
         assert game_embed_for(client, AMY, False) != game_embed_for(client, JR, False)
         assert len(all_games(client)) == 2
 
+    async def test_on_message_report_no_params(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!report"))
+        assert channel.last_sent_response == (
+            f"<@{author.id}>, please provide the SpellBot game reference ID"
+            " or SpellTable ID followed by your report."
+        )
+
+    async def test_on_message_report_one_param(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!report 1"))
+        assert channel.last_sent_response == (
+            f"<@{author.id}>, please provide the SpellBot game reference ID"
+            " or SpellTable ID followed by your report."
+        )
+
+    async def test_on_message_report_no_game(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!report 1 sup"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, I couldn't find a game with that ID."
+        )
+
+    async def test_on_message_report_bad_id(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!report 1=1 sup"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, I couldn't find a game with that ID."
+        )
+
+    async def test_on_message_report_too_long(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = someone()
+        msg = "foo " * 100
+        await client.on_message(MockMessage(author, channel, f"!report 1 {msg}"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, that report was too long."
+            " Please limit your report to less than 255 characters."
+        )
+
+    async def test_on_message_report_not_started(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = someone()
+        await client.on_message(MockMessage(author, channel, "!lfg"))
+        game = all_games(client)[0]
+        game_id = game["id"]
+        await client.on_message(MockMessage(author, channel, f"!report {game_id} foo"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but that game hasn't even started yet."
+        )
+
+    async def test_on_message_report_by_id(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game ~modern {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+
+        game = all_games(client)[0]
+        game_id = game["id"]
+        await client.on_message(MockMessage(AMY, channel, f"!report {game_id} sup"))
+        assert channel.last_sent_response == f"Thanks for the report, <@{AMY.id}>!"
+        await client.on_message(MockMessage(ADAM, channel, f"!report sb{game_id} word"))
+        assert channel.last_sent_response == f"Thanks for the report, <@{ADAM.id}>!"
+        await client.on_message(MockMessage(GUY, channel, f"!report SB{game_id} what"))
+        assert channel.last_sent_response == f"Thanks for the report, <@{GUY.id}>!"
+
+    async def test_on_message_report_by_url(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game ~modern {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+
+        game = all_games(client)[0]
+        game_url = game["url"]
+        game_id = game_url[game_url.rfind("/") + 1 :]
+        await client.on_message(MockMessage(AMY, channel, f"!report {game_id} sup"))
+        assert channel.last_sent_response == f"Thanks for the report, <@{AMY.id}>!"
+        await client.on_message(MockMessage(ADAM, channel, f"!report a{game_id}z sup"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{ADAM.id}>, I couldn't find a game with that ID."
+        )
+
     async def test_paginate(self):
         def subject(text):
             return [page for page in spellbot.paginate(text)]
