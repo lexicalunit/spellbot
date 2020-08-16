@@ -61,6 +61,7 @@ MIGRATIONS_DIR = SCRIPTS_DIR / "migrations"
 
 DEFAULT_DB_URL = f"sqlite:///{DB_DIR}/spellbot.db"
 DEFAULT_PORT = 5020
+DEFAULT_HOST = "localhost"
 
 logger = logging.getLogger(__name__)
 
@@ -1995,6 +1996,12 @@ def get_port(port_env: str, fallback: int) -> int:  # pragma: no cover
     return int(value) or fallback
 
 
+def get_host(fallback: str) -> str:  # pragma: no cover
+    """Returns the hostname from the environment or else the given fallback."""
+    value = getenv("SPELLBOT_HOST", fallback)
+    return value or fallback
+
+
 def get_log_level(fallback: str) -> str:  # pragma: no cover
     """Returns the log level from the environment or else the given gallback."""
     value = getenv("SPELLBOT_LOG_LEVEL", fallback)
@@ -2052,6 +2059,14 @@ async def ping(request):  # pragma: no cover
         "Can also be set by the environment variable SPELLBOT_PORT_ENV."
     ),
 )
+@click.option(
+    "--host",
+    default=DEFAULT_HOST,
+    help=(
+        "HTTP server hostname to use; "
+        "you can also set this via the SPELLBOT_HOST environment variable."
+    ),
+)
 @click.version_option(version=__version__)
 @click.option(
     "--dev",
@@ -2072,6 +2087,7 @@ def main(
     database_env: str,
     port: int,
     port_env: str,
+    host: str,
     dev: bool,
     mock_games: bool,
 ) -> None:  # pragma: no cover
@@ -2083,6 +2099,7 @@ def main(
     database_url = get_db_url(database_env, database_url)
     port_env = get_port_env(port_env)
     port = get_port(port_env, port)
+    host = get_host(host)
     log_level = get_log_level(log_level)
 
     # We have to make sure that application directories exist
@@ -2109,9 +2126,8 @@ def main(
     app.router.add_get("/", ping)
     runner = web.AppRunner(app)
     loop.run_until_complete(runner.setup())
-    site = web.TCPSite(runner, "localhost", port)
+    site = web.TCPSite(runner, host, port)
     loop.run_until_complete(site.start())
-    print(f"SpellBot server running: http://localhost:{port}")  # noqa: T001
 
     client = SpellBot(
         token=token,
@@ -2121,6 +2137,7 @@ def main(
         mock_games=mock_games,
         loop=loop,
     )
+    logger.info(f"server running: http://{host}:{port}")
     client.run()
 
 
