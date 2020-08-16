@@ -544,6 +544,7 @@ class SpellBot(discord.Client):
                     "not_a_command",
                     reply=f"<@{cast(discord.User, message.author).id}>",
                     request=request,
+                    prefix=prefix,
                 )
             )
             return

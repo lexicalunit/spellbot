@@ -62,7 +62,8 @@ lfg_queue_no_mention: Sorry $reply, but you need to mention at least one player.
 lfg_too_many_mentions: Sorry $reply, but you've mentioned too many players for that
   size game.
 no_dm: Hello $reply! That command only works in text channels.
-not_a_command: Sorry $reply, there is no "$request" command.
+not_a_command: Sorry $reply, there is no "$request" command. Try "${prefix}spellbot
+  help" for usage help.
 not_admin: $reply, you do not have admin permissions to run that command.
 play_found: 'I found a game for you, $reply. You have been signed up for it! Go to
   game post: $link'
