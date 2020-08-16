@@ -4,6 +4,7 @@
 
 [![build][build-badge]][build]
 [![top][top-badge]][top]
+![uptime][uptime-badge]
 [![pypi][pypi-badge]][pypi]
 [![codecov][codecov-badge]][codecov]
 [![python][python-badge]][python]
@@ -175,3 +176,4 @@ with installing and using it.
 [spelltable]:         https://www.spelltable.com/
 [top-badge]:          https://top.gg/api/widget/status/725510263251402832.svg?noavatar=true
 [top]:                https://top.gg/bot/725510263251402832
+[uptime-badge]:       https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
