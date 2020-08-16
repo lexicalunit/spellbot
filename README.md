@@ -38,7 +38,7 @@ being too spammy in text channels.**
 Just looking to play some games of Magic? These commands are for you!
 
 - `!lfg`: Sign up to play Magic: The Gathering!
-- `!join`: Look for a game to join, but don't create a new one.
+- `!find`: Look for a game to join, but don't create a new one.
 - `!leave`: Leave any games that you've signed up for.
 - `!power`: Set your current power level.
 

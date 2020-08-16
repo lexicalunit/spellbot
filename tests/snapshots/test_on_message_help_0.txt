@@ -17,6 +17,11 @@
 `!export`
 >  Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._
 
+`!find`
+>  Works exactly like `!lfg` except that it will NOT create a new game.
+> 
+> Aliases: `!join`, `!search`
+
 `!game @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]`
 >  Create a game between mentioned users. _Requires the "SpellBot Admin" role._
 > 
@@ -28,11 +33,6 @@
 
 `!help`
 >  Sends you this help message.
-
-`!join`
->  Works exactly like `!lfg` except that it will NOT create a new game.
-> 
-> Aliases: `!find`, `!search`
 
 `!leave`
 >  Leave any pending games that you've signed up.
