@@ -378,6 +378,7 @@ class Report(Base):
         Integer, ForeignKey("games.id", ondelete="CASCADE"), nullable=False, index=True
     )
     report = Column(String(255), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     game = relationship("Game", back_populates="reports")
 
 
