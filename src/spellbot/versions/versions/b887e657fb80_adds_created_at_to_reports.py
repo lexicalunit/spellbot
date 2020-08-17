@@ -18,12 +18,19 @@ depends_on = None
 
 
 def upgrade():
-    with op.batch_alter_table("reports") as b:
-        b.add_column(
-            sa.Column(
-                "created_at", sa.DateTime(), nullable=False, default=datetime.utcnow
-            )
-        )
+    op.drop_index(op.f("ix_reports_game_id"), table_name="reports")
+    op.drop_table("reports")
+
+    op.create_table(
+        "reports",
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("game_id", sa.Integer(), nullable=False),
+        sa.Column("report", sa.String(length=255), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False, default=datetime.utcnow),
+        sa.ForeignKeyConstraint(["game_id"], ["games.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_reports_game_id"), "reports", ["game_id"], unique=False)
 
 
 def downgrade():
