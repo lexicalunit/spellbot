@@ -2067,6 +2067,9 @@ class SpellBot(discord.Client):
             channels_str = "all"
         embed.add_field(name="Active channels", value=channels_str)
         embed.add_field(name="Links", value=server.links.title())
+        if server.teams:
+            teams_str = ", ".join(sorted(team.name for team in server.teams))
+            embed.add_field(name="Teams", value=teams_str)
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
         await message.channel.send(embed=embed)
