@@ -181,6 +181,23 @@ class User(Base):
         }
 
 
+class UserTeam(Base):
+    __tablename__ = "user_teams"
+    user_xid = Column(
+        BigInteger,
+        ForeignKey("users.xid", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    guild_xid = Column(
+        BigInteger,
+        ForeignKey("servers.guild_xid", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+
+
 class Tag(Base):
     __tablename__ = "tags"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
