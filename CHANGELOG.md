@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added a link to uptime robot dashboard from README.md.
 - Adds CodeFactor integration and fixes a few issues found by CodeFactor.
+- Adds !spellbot teams command to configure sever teams.
 
 ## [v3.20.1](https://github.com/lexicalunit/spellbot/releases/tag/v3.20.1) - 2020-08-16
 
