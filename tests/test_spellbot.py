@@ -2382,6 +2382,16 @@ class TestSpellBot:
             f"Sorry <@{author.id}>, but please give at least two team names."
         )
 
+    async def test_on_message_spellbot_teams_dupes(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        cmd = "!spellbot teams cats cats dogs dogs cats"
+        await client.on_message(MockMessage(author, channel, cmd))
+        assert channel.last_sent_response == (
+            f"Ok <@{author.id}>, I've set the teams available on this server to:"
+            " cats, dogs."
+        )
+
     async def test_on_message_spellbot_teams(self, client, channel_maker):
         author = an_admin()
         channel = channel_maker.text()
@@ -2389,6 +2399,11 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f"Ok <@{author.id}>, I've set the teams available on this server to:"
             " cats, dogs."
+        )
+        await client.on_message(MockMessage(author, channel, "!spellbot teams ants cows"))
+        assert channel.last_sent_response == (
+            f"Ok <@{author.id}>, I've set the teams available on this server to:"
+            " ants, cows."
         )
 
     async def test_paginate(self):

@@ -2032,7 +2032,8 @@ class SpellBot(discord.Client):
             return
 
         # blow away any existing old teams
-        server.teams = []
+        for team in server.teams:
+            session.delete(team)
         session.commit()
 
         # then create new ones
