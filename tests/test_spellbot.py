@@ -2395,16 +2395,28 @@ class TestSpellBot:
     async def test_on_message_spellbot_teams(self, client, channel_maker):
         author = an_admin()
         channel = channel_maker.text()
+
+        await client.on_message(MockMessage(author, channel, "!spellbot config"))
+        about = channel.last_sent_embed
+        fields = {f["name"]: f["value"] for f in about["fields"]}
+        assert "Teams" not in fields
+
         await client.on_message(MockMessage(author, channel, "!spellbot teams cats dogs"))
         assert channel.last_sent_response == (
             f"Ok <@{author.id}>, I've set the teams available on this server to:"
             " cats, dogs."
         )
+
         await client.on_message(MockMessage(author, channel, "!spellbot teams ants cows"))
         assert channel.last_sent_response == (
             f"Ok <@{author.id}>, I've set the teams available on this server to:"
             " ants, cows."
         )
+
+        await client.on_message(MockMessage(author, channel, "!spellbot config"))
+        about = channel.last_sent_embed
+        fields = {f["name"]: f["value"] for f in about["fields"]}
+        assert fields["Teams"] == "ants, cows"
 
     async def test_paginate(self):
         def subject(text):
