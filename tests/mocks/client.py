@@ -72,8 +72,8 @@ def client(monkeypatch, mocker, patch_discord, tmp_path):
     # automatically as each test will create its own new spellbot.db file. With other
     # databases we'll have to manually clean out any existing data before each
     # test as the previous tests could have left data behind.
-    for table in bot.data.metadata.tables.keys():
-        bot.data.conn.execute(f"DELETE FROM {table};")
+    for table in reversed(bot.data.metadata.sorted_tables):
+        bot.data.conn.execute(table.delete())
 
     # Make sure that all users have their send calls reset between client tests.
     for user in ALL_USERS:

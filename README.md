@@ -7,6 +7,7 @@
 [![uptime][uptime-badge]][uptime]
 [![pypi][pypi-badge]][pypi]
 [![codecov][codecov-badge]][codecov]
+[![CodeFactor][factor-badge]][factor]
 [![python][python-badge]][python]
 [![black][black-badge]][black]
 [![mit][mit-badge]][mit]
@@ -159,6 +160,8 @@ with installing and using it.
 [discord-bot-docs]:   https://discord.com/developers/docs/topics/oauth2#bots
 [discord-invite]:     https://discord.gg/zXzgqMN
 [docker-hub]:         https://hub.docker.com/r/lexicalunit/spellbot
+[factor-badge]:       https://www.codefactor.io/repository/github/lexicalunit/spellbot/badge
+[factor]:             https://www.codefactor.io/repository/github/lexicalunit/spellbot
 [follow-badge]:       https://img.shields.io/twitter/follow/SpellBotIO?style=social
 [follow]:             https://twitter.com/intent/follow?screen_name=SpellBotIO
 [issues]:             https://github.com/lexicalunit/spellbot/issues
