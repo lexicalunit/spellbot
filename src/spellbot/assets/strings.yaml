@@ -104,3 +104,10 @@ spellbot_teams_none: Sorry $reply, but please provide a list of team names.
 spellbot_teams_too_few: Sorry $reply, but please give at least two team names.
 spellbot_unknown_subcommand: Sorry $reply, but the subcommand "$command" is not recognized.
 tags_too_many: Sorry $reply, but you can not use more than 5 tags.
+team: Hey $reply, you've joined the $team team!
+team_gone: Sorry $reply, but the teams on this server have changed and your team no
+  longer exists. Please choose a new team.
+team_none: Sorry $reply, but there aren't any teams on this server.
+team_not_found: 'Sorry $reply, but the teams available on this server are: $teams.'
+team_not_set: Hey $reply, you are not currently a part of a team on this server.
+team_yours: Hey $reply, you are on the $team team.

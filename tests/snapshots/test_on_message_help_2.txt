@@ -5,6 +5,9 @@
 > * `expire <number>`: Set the number of minutes before pending games expire.
 > * `teams <list>`: Sets the teams available on this server.
 > * `help`: Get detailed usage help for SpellBot.
+
+`!team [team-name]`
+>  Set or get your team on this server. To get your team name, run this command with no parameters.
 ---
 Please report any bugs and suggestions at <https://github.com/lexicalunit/spellbot/issues>!
 

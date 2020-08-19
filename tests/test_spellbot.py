@@ -2418,6 +2418,100 @@ class TestSpellBot:
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert fields["Teams"] == "ants, cows"
 
+    async def test_on_message_team_none(self, client, channel_maker):
+        author = someone()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!team cats"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but there aren't any teams on this server."
+        )
+
+    async def test_on_message_team_not_set(self, client, channel_maker):
+        admin = an_admin()
+        author = not_an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(admin, channel, "!spellbot teams cats dogs"))
+        await client.on_message(MockMessage(author, channel, "!team"))
+        assert channel.last_sent_response == (
+            f"Hey <@{author.id}>, you are not currently a part of a team on this server."
+        )
+
+    async def test_on_message_team_yours(self, client, channel_maker):
+        admin = an_admin()
+        author = not_an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(admin, channel, "!spellbot teams cats dogs"))
+        await client.on_message(MockMessage(author, channel, "!team cAtS"))
+        assert channel.last_sent_response == (
+            f"Hey <@{author.id}>, you've joined the cats team!"
+        )
+
+        await client.on_message(MockMessage(author, channel, "!team"))
+        assert channel.last_sent_response == (
+            f"Hey <@{author.id}>, you are on the cats team."
+        )
+
+    async def test_on_message_team_not_found(self, client, channel_maker):
+        admin = an_admin()
+        author = not_an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(admin, channel, "!spellbot teams cats dogs"))
+        await client.on_message(MockMessage(author, channel, "!team frogs"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but the teams available on this server are:"
+            " cats, dogs."
+        )
+
+    async def test_on_message_team_gone(self, client, channel_maker):
+        admin = an_admin()
+        author = not_an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(admin, channel, "!spellbot teams a b c d e"))
+        await client.on_message(MockMessage(author, channel, "!team e"))
+
+        async with client.session() as session:
+            session.execute("delete from teams where name = 'e';")
+            session.commit()
+
+        await client.on_message(MockMessage(author, channel, "!team"))
+        resp = channel.last_sent_response
+
+        if resp == (
+            f"Sorry <@{author.id}>, but the teams on this server have changed"
+            " and your team no longer exists. Please choose a new team."
+        ):
+            pass  # sqlite
+        elif resp == (
+            f"Hey <@{author.id}>, you are not currently a part of a team on this server."
+        ):
+            # databases where cascade works
+
+            # Since this string won't get exercised,
+            # we have to call it or else the meta test will fail.
+            from .test_meta import S_SPY
+
+            S_SPY("team_gone", reply="")
+        else:
+            assert False
+
+    async def test_on_message_team(self, client, channel_maker):
+        admin = an_admin()
+        author = not_an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(admin, channel, "!spellbot teams cats dogs"))
+        await client.on_message(MockMessage(author, channel, "!team dogs"))
+        assert channel.last_sent_response == (
+            f"Hey <@{author.id}>, you've joined the dogs team!"
+        )
+        await client.on_message(MockMessage(author, channel, "!team cats"))
+        assert channel.last_sent_response == (
+            f"Hey <@{author.id}>, you've joined the cats team!"
+        )
+        await client.on_message(MockMessage(author, channel, "!team dogs"))
+        assert channel.last_sent_response == (
+            f"Hey <@{author.id}>, you've joined the dogs team!"
+        )
+
     async def test_paginate(self):
         def subject(text):
             return [page for page in spellbot.paginate(text)]

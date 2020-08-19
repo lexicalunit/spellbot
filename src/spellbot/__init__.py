@@ -48,7 +48,18 @@ from spellbot.constants import (
     THUMB_URL,
     VOTE_LINK,
 )
-from spellbot.data import Channel, Data, Event, Game, Report, Server, Tag, Team, User
+from spellbot.data import (
+    Channel,
+    Data,
+    Event,
+    Game,
+    Report,
+    Server,
+    Tag,
+    Team,
+    User,
+    UserTeam,
+)
 from spellbot.reactions import safe_clear_reactions, safe_remove_reaction
 
 load_dotenv()
@@ -1232,7 +1243,7 @@ class SpellBot(discord.Client):
 
         if len(report_str) >= 255:
             await message.channel.send(
-                s("report_too_long", reply=f"<@{cast(discord.User, message.author).id}>",)
+                s("report_too_long", reply=f"<@{cast(discord.User, message.author).id}>")
             )
             return
 
@@ -1768,6 +1779,94 @@ class SpellBot(discord.Client):
         session.commit()
         await message.channel.send(
             s("power", reply=f"<@{cast(discord.User, message.author).id}>", power=power_i)
+        )
+
+    @command(allow_dm=True)
+    async def team(
+        self, session: Session, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """
+        Set or get your team on this server. To get your team name, run this command with
+        no parameters.
+        & [team-name]
+        """
+        server = self.ensure_server_exists(session, message.channel.guild.id)
+        if not server.teams:
+            await message.channel.send(
+                s("team_none", reply=f"<@{cast(discord.User, message.author).id}>")
+            )
+            return
+
+        user = self.ensure_user_exists(session, message.author)
+        if not params:
+            user_team = (
+                session.query(UserTeam)
+                .filter_by(user_xid=user.xid, guild_xid=server.guild_xid)
+                .one_or_none()
+            )
+
+            if not user_team:
+                await message.channel.send(
+                    s("team_not_set", reply=f"<@{cast(discord.User, message.author).id}>")
+                )
+                return
+
+            team = session.query(Team).filter_by(id=user_team.team_id).one_or_none()
+            if not team:
+                session.delete(user_team)
+                await message.channel.send(
+                    s("team_gone", reply=f"<@{cast(discord.User, message.author).id}>")
+                )
+                return
+
+            await message.channel.send(
+                s(
+                    "team_yours",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    team=team.name,
+                )
+            )
+            return
+
+        team_request = params[0]
+        team_found: Optional[Team] = None
+        for team in server.teams:
+            if team_request.lower() != team.name.lower():
+                continue
+            team_found = team
+            break
+
+        if not team_found:
+            teams = ", ".join(sorted(team.name for team in server.teams))
+            await message.channel.send(
+                s(
+                    "team_not_found",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    teams=teams,
+                ),
+            )
+            return
+
+        user_team = (
+            session.query(UserTeam)
+            .filter_by(user_xid=user.xid, guild_xid=server.guild_xid)
+            .one_or_none()
+        )
+        if user_team:
+            user_team.team_id = team_found.id
+        else:
+            user_team = UserTeam(
+                user_xid=user.xid, guild_xid=server.guild_xid, team_id=team_found.id
+            )
+            session.add(user_team)
+        session.commit()
+
+        await message.channel.send(
+            s(
+                "team",
+                reply=f"<@{cast(discord.User, message.author).id}>",
+                team=team_found.name,
+            ),
         )
 
     @command(allow_dm=False)
