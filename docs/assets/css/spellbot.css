@@ -57,6 +57,7 @@ p.note:before {
 }
 
 .avatar-img-border {
+  box-shadow: none !important;
   transition: all 0.3s ease-in-out;
 }
 
@@ -83,18 +84,12 @@ a {
   }
 }
 
-/* overrides for styles from main.css that aren't directly configurable */
-
 footer {
   border-top: 0 !important;
 }
 
 a:hover {
   text-decoration: none !important;
-}
-
-.avatar-img-border {
-  box-shadow: none !important;
 }
 
 *:not(.fas):not(.fab) {

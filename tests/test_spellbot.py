@@ -2112,13 +2112,15 @@ class TestSpellBot:
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JR, True)
 
     async def test_session_contextmanager(self, client, caplog):
+        exception_thrown = False
         try:
             async with client.session() as session:
                 session.execute("delete from nothing;")
                 assert False
         except:
-            pass
+            exception_thrown = True
 
+        assert exception_thrown
         assert "database error" in caplog.text
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
