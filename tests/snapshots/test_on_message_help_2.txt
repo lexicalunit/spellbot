@@ -3,6 +3,7 @@
 > * `prefix <string>`: Set SpellBot's command prefix for text channels.
 > * `links <string>`: Set the privacy level for generated SpellTable links.
 > * `expire <number>`: Set the number of minutes before pending games expire.
+> * `teams <list>`: Sets the teams available on this server.
 > * `help`: Get detailed usage help for SpellBot.
 ---
 Please report any bugs and suggestions at <https://github.com/lexicalunit/spellbot/issues>!

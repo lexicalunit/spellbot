@@ -48,7 +48,7 @@ from spellbot.constants import (
     THUMB_URL,
     VOTE_LINK,
 )
-from spellbot.data import Channel, Data, Event, Game, Report, Server, Tag, User
+from spellbot.data import Channel, Data, Event, Game, Report, Server, Tag, Team, User
 from spellbot.reactions import safe_clear_reactions, safe_remove_reaction
 
 load_dotenv()
@@ -256,8 +256,8 @@ class SpellBot(discord.Client):
 
     def __init__(
         self,
-        token: str = "",
-        auth: Optional[str] = "",
+        token: Optional[str] = None,
+        auth: Optional[str] = None,
         db_url: str = DEFAULT_DB_URL,
         log_level: Union[int, str] = logging.ERROR,
         mock_games: bool = False,
@@ -286,8 +286,8 @@ class SpellBot(discord.Client):
         if not loop:
             loop = asyncio.get_event_loop()
         super().__init__(loop=loop)
-        self.token = token
-        self.auth = auth
+        self.token = token or ""
+        self.auth = auth or ""
         self.mock_games = mock_games
 
         # We have to make sure that DB_DIR exists before we try to create
@@ -1783,6 +1783,7 @@ class SpellBot(discord.Client):
         * `prefix <string>`: Set SpellBot's command prefix for text channels.
         * `links <string>`: Set the privacy level for generated SpellTable links.
         * `expire <number>`: Set the number of minutes before pending games expire.
+        * `teams <list>`: Sets the teams available on this server.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
@@ -1814,6 +1815,8 @@ class SpellBot(discord.Client):
             await self.spellbot_config(session, server, params[1:], message)
         elif command == "links":
             await self.spellbot_links(session, server, params[1:], message)
+        elif command == "teams":
+            await self.spellbot_teams(session, server, params[1:], message)
         else:
             await message.channel.send(
                 s(
@@ -2000,6 +2003,47 @@ class SpellBot(discord.Client):
                 "spellbot_expire",
                 reply=f"<@{cast(discord.User, message.author).id}>",
                 expire=expire,
+            )
+        )
+
+    async def spellbot_teams(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        if not params:
+            await message.channel.send(
+                s(
+                    "spellbot_teams_none",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                )
+            )
+            return
+
+        if len(params) < 2:
+            await message.channel.send(
+                s(
+                    "spellbot_teams_too_few",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                )
+            )
+            return
+
+        # blow away any existing old teams
+        server.teams = []
+        session.commit()
+
+        # then create new ones
+        server.teams = [Team(name=name) for name in set(params)]
+        session.commit()
+
+        await message.channel.send(
+            s(
+                "spellbot_teams",
+                reply=f"<@{cast(discord.User, message.author).id}>",
+                teams=", ".join(sorted(team.name for team in server.teams)),
             )
         )
 

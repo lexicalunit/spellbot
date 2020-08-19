@@ -50,6 +50,7 @@ class Server(Base):
     links = Column(String(10), nullable=False, server_default=text("'public'"))
     games = relationship("Game", back_populates="server", uselist=True)
     channels = relationship("Channel", back_populates="server", uselist=True)
+    teams = relationship("Team", back_populates="server", uselist=True)
 
     def bot_allowed_in(self, channel_xid: int) -> bool:
         return not self.channels or any(
@@ -96,8 +97,22 @@ class Server(Base):
                 "prefix": self.prefix,
                 "expire": self.expire,
                 "channels": [channel.channel_xid for channel in self.channels],
+                "teams": [team.id for team in self.teams],
             }
         )
+
+
+class Team(Base):
+    __tablename__ = "teams"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    guild_xid = Column(
+        BigInteger,
+        ForeignKey("servers.guild_xid", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name = Column(String(50), nullable=False)
+    server = relationship("Server", back_populates="teams")
 
 
 class Channel(Base):

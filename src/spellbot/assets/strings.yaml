@@ -99,5 +99,8 @@ spellbot_missing_subcommand: Sorry $reply, please provide a subcommand when usin
 spellbot_prefix: Ok $reply, I will now use "$prefix" as my command prefix on this
   server.
 spellbot_prefix_none: Sorry $reply, but please provide a prefix string.
+spellbot_teams: 'Ok $reply, I''ve set the teams available on this server to: ${teams}.'
+spellbot_teams_none: Sorry $reply, but please provide a list of team names.
+spellbot_teams_too_few: Sorry $reply, but please give at least two team names.
 spellbot_unknown_subcommand: Sorry $reply, but the subcommand "$command" is not recognized.
 tags_too_many: Sorry $reply, but you can not use more than 5 tags.

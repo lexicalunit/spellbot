@@ -766,6 +766,7 @@ class TestSpellBot:
             "guild_xid": 5,
             "prefix": "!",
             "expire": 30,
+            "teams": [],
         }
 
     async def test_on_message_event_no_data(self, client, channel_maker):
@@ -2355,6 +2356,39 @@ class TestSpellBot:
         await client.on_message(MockMessage(ADAM, channel, f"!report a{game_id}z sup"))
         assert channel.last_sent_response == (
             f"Sorry <@{ADAM.id}>, I couldn't find a game with that ID."
+        )
+
+    async def test_on_message_spellbot_teams_not_admin(self, client, channel_maker):
+        author = not_an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot teams one two"))
+        assert channel.last_sent_response == (
+            f"<@{author.id}>, you do not have admin permissions to run that command."
+        )
+
+    async def test_on_message_spellbot_teams_no_params(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot teams"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but please provide a list of team names."
+        )
+
+    async def test_on_message_spellbot_teams_too_few(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot teams cats"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but please give at least two team names."
+        )
+
+    async def test_on_message_spellbot_teams(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot teams cats dogs"))
+        assert channel.last_sent_response == (
+            f"Ok <@{author.id}>, I've set the teams available on this server to:"
+            " cats, dogs."
         )
 
     async def test_paginate(self):

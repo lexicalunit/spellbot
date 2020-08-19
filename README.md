@@ -79,6 +79,7 @@ These commands will help you configure SpellBot for your server.
   - `prefix`: Set the command prefix for SpellBot in text channels.
   - `links`: Set the privacy level for generated SpellTable links.
   - `expire`: Set how many minutes before games are expired due to inactivity.
+  - `teams`: Sets the teams available on this server.
 
 ### 🛋️ Ergonomics
 
