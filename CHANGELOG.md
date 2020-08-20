@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Adds CodeFactor integration and fixes a few issues found by CodeFactor.
 - Adds !spellbot teams command to configure sever teams.
 - Adds a !team command for users to get and set their team.
+- Adds report verification for CommandFest style reports.
+- Adds team points to the response of !points when used by an admin.
 
 ## [v3.20.1](https://github.com/lexicalunit/spellbot/releases/tag/v3.20.1) - 2020-08-16
 
