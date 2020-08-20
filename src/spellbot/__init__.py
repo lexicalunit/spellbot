@@ -1842,15 +1842,18 @@ class SpellBot(discord.Client):
         you in games with other players of similar power levels.
         & <none | 1..10>
         """
-        if not params:
+
+        async def send_invalid(prepend) -> None:
             await message.channel.send(
                 s(
                     "power_invalid",
                     reply=f"<@{cast(discord.User, message.author).id}>",
-                    prepend="",
+                    prepend=prepend,
                 )
             )
-            return
+
+        if not params:
+            return await send_invalid("")
 
         user = self.ensure_user_exists(session, message.author)
 
@@ -1858,34 +1861,14 @@ class SpellBot(discord.Client):
         if power in ["none", "off", "unset", "no", "0"]:
             user.power = None
             session.commit()
-            await message.channel.send(
-                s(
-                    "power",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                    power="none",
-                )
-            )
+            await message.add_reaction("✅")
             return
 
         if power == "unlimited":
-            await message.channel.send(
-                s(
-                    "power_invalid",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                    prepend="⚡ ",
-                )
-            )
-            return
+            return await send_invalid("⚡ ")
 
         if not power.isdigit():
-            await message.channel.send(
-                s(
-                    "power_invalid",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                    prepend="",
-                )
-            )
-            return
+            return await send_invalid("")
 
         power_i = int(power)
         if not (1 <= power_i <= 10):
@@ -1896,20 +1879,11 @@ class SpellBot(discord.Client):
                 prepend = "💥 "
             elif power_i == 42:
                 prepend = "🤖 "
-            await message.channel.send(
-                s(
-                    "power_invalid",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                    prepend=prepend,
-                )
-            )
-            return
+            return await send_invalid(prepend)
 
         user.power = power_i
         session.commit()
-        await message.channel.send(
-            s("power", reply=f"<@{cast(discord.User, message.author).id}>", power=power_i)
-        )
+        await message.add_reaction("✅")
 
     @command(allow_dm=True)
     async def team(
