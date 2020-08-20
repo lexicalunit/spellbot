@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated to latest from beautiful-jekyll.
+
 ### Added
 
 - Adds support for reporting on game ids like "#sb1234".
