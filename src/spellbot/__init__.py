@@ -245,7 +245,10 @@ def paginate(text: str) -> Iterator[str]:
 
 
 def command(
-    allow_dm: bool = True, aliases: Optional[List[str]] = None, admin_only=False
+    allow_dm: bool = True,
+    aliases: Optional[List[str]] = None,
+    admin_only=False,
+    help_group=None,
 ) -> Callable:
     """Decorator for bot command methods."""
 
@@ -258,6 +261,7 @@ def command(
         cast(Any, wrapped).allow_dm = allow_dm
         cast(Any, wrapped).aliases = aliases
         cast(Any, wrapped).admin_only = admin_only
+        cast(Any, wrapped).help_group = help_group
         return wrapped
 
     return callable
@@ -816,10 +820,14 @@ class SpellBot(discord.Client):
     # Any method of this class with a name that is decorated by @command is detected as a
     # bot command. These methods should have a signature like:
     #
-    #     @command(allow_dm=True)
-    #     def command_name(self, prefix, params, message)
+    #     @command(allow_dm=True, aliases=["whatever"], admin_only=False, help_group="Hi")
+    #     def command_name(self, session, prefix, params, message)
     #
     # - `allow_dm` indicates if the command is allowed to be used in direct messages.
+    # - `aliases` is a list alternative ways for users to run this command.
+    # - `admin_only` indicates if the command is available only to admins.
+    # - `help_group` is the group name for this command in the usage help response.
+    # - `session` is a database session, you must commit any changes you make.
     # - `prefix` is the command prefix, which is "!" by default.
     # - `params` are any space delimitered parameters also sent with the command.
     # - `message` is the discord.py message object that triggered the command.
@@ -832,7 +840,7 @@ class SpellBot(discord.Client):
     #
     # Where [foo] indicates foo is optional and <bar> indicates bar is required.
 
-    @command(allow_dm=True)
+    @command(allow_dm=True, help_group="Commands for Players")
     async def help(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -840,8 +848,21 @@ class SpellBot(discord.Client):
         Sends you this help message.
         """
         usage = ""
-        for command in sorted(set(self._commands.values())):
-            method = getattr(self, command)
+        command_methods = [
+            getattr(self, command) for command in set(self._commands.values())
+        ]
+
+        def method_sort_key(method):
+            return method.help_group + method.__name__
+
+        help_group: Optional[str] = None
+        for method in sorted(command_methods, key=method_sort_key, reverse=True):
+            if not help_group or method.help_group != help_group:
+                help_group = method.help_group
+                assert help_group
+                bar = "#" * (18 + len(help_group))
+                usage += f"\n```fix\n{bar}\n###      {help_group}      ###\n{bar}\n```"
+
             doc = method.__doc__.split("&")
             cmd_params: List[str] = [param.strip() for param in doc[1:]]
             use, cmd_params_use = doc[0], ", ".join(cmd_params)
@@ -863,7 +884,7 @@ class SpellBot(discord.Client):
                 aliases_s = ", ".join(sorted([f"`{prefix}{m}`" for m in method.aliases]))
                 use += f"\n> \n> Aliases: {aliases_s}"
 
-            title = f"{prefix}{command}"
+            title = f"{prefix}{method.__name__}"
             if cmd_params_use:
                 title = f"{title} {cmd_params_use}"
             usage += f"\n`{title}`"
@@ -888,7 +909,7 @@ class SpellBot(discord.Client):
         for page in paginate(usage):
             await message.author.send(page)
 
-    @command(allow_dm=True)
+    @command(allow_dm=True, help_group="Commands for Players")
     async def about(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1164,7 +1185,12 @@ class SpellBot(discord.Client):
             await post.add_reaction("➕")
             await post.add_reaction("➖")
 
-    @command(allow_dm=False, aliases=["signup"], admin_only=True)
+    @command(
+        allow_dm=False,
+        aliases=["signup"],
+        admin_only=True,
+        help_group="Commands for Admins",
+    )
     async def queue(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1185,7 +1211,7 @@ class SpellBot(discord.Client):
             session, prefix, params, message, create_new_game=True, use_queue=True
         )
 
-    @command(allow_dm=False, aliases=["play"])
+    @command(allow_dm=False, aliases=["play"], help_group="Commands for Players")
     async def lfg(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1212,7 +1238,9 @@ class SpellBot(discord.Client):
             session, prefix, params, message, create_new_game=True, use_queue=False
         )
 
-    @command(allow_dm=False, aliases=["join", "search"])
+    @command(
+        allow_dm=False, aliases=["join", "search"], help_group="Commands for Players"
+    )
     async def find(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1281,7 +1309,7 @@ class SpellBot(discord.Client):
 
         return True
 
-    @command(allow_dm=False, aliases=["results"])
+    @command(allow_dm=False, aliases=["results"], help_group="Commands for Players")
     async def report(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1347,7 +1375,7 @@ class SpellBot(discord.Client):
             s("report", reply=f"<@{cast(discord.User, message.author).id}>")
         )
 
-    @command(allow_dm=False, admin_only=False)
+    @command(allow_dm=False, admin_only=False, help_group="Commands for Players")
     async def points(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1378,7 +1406,7 @@ class SpellBot(discord.Client):
                     )
                 )
 
-    @command(allow_dm=False, admin_only=True)
+    @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def event(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1579,7 +1607,7 @@ class SpellBot(discord.Client):
             )
         )
 
-    @command(allow_dm=False, admin_only=True)
+    @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def begin(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1651,7 +1679,7 @@ class SpellBot(discord.Client):
                 )
             )
 
-    @command(allow_dm=False, admin_only=True)
+    @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def game(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1765,7 +1793,7 @@ class SpellBot(discord.Client):
             )
         )
 
-    @command(allow_dm=True, aliases=["quit", "exit"])
+    @command(allow_dm=True, aliases=["quit", "exit"], help_group="Commands for Players")
     async def leave(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1787,7 +1815,7 @@ class SpellBot(discord.Client):
         )
         await self.try_to_update_game(game)
 
-    @command(allow_dm=False, admin_only=True)
+    @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def export(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1829,7 +1857,7 @@ class SpellBot(discord.Client):
                 )
         await message.channel.send("", file=discord.File(export_file))
 
-    @command(allow_dm=True)
+    @command(allow_dm=True, help_group="Commands for Players")
     async def power(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1883,7 +1911,7 @@ class SpellBot(discord.Client):
         session.commit()
         await message.add_reaction("✅")
 
-    @command(allow_dm=True)
+    @command(allow_dm=True, help_group="Commands for Players")
     async def team(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1971,7 +1999,7 @@ class SpellBot(discord.Client):
             ),
         )
 
-    @command(allow_dm=False)
+    @command(allow_dm=False, help_group="Commands for Admins")
     async def spellbot(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:

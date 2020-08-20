@@ -1,40 +1,57 @@
 
-`!about`
->  Get information about SpellBot.
+```fix
+######################################
+###      Commands for Players      ###
+######################################
+```
+`!team [team-name]`
+>  Set or get your team on this server. To get your team name, run this command with no parameters.
 
-`!begin <event id>`
->  Confirm creation of games for the given event id. _Requires the "SpellBot Admin" role._
-
-`!event <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]`
->  Create many games in batch from an attached CSV data file. _Requires the "SpellBot Admin" role._
+`!report <Game ID> ...`
+>  Report your results on a finished game.
 > 
-> For example, if your event is for a Modern tournement you might attach a CSV file with a comment like `!event Player1Username Player2Username`. This would assume that the players' discord user names are found in the "Player1Username" and "Player2Username" CSV columns. The game size is deduced from the number of column names given, so we know the games created in this example are `size:2`.
-> 
-> Games will not be created immediately. This is to allow you to verify things look ok. This command will also give you directions on how to actually start the games for this event as part of its reply.
-> * Optional: Add a message to DM players with `msg:` followed by whatever.
-> * Optional: Add up to five tags by using `~tag-name`.
+> Aliases: `!results`
 
-`!export`
->  Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._
+`!power <none | 1..10>`
+>  Set or unset the power level of the deck you are going to play.
+> 
+> When you have set a power level, the !lfg and !find commands will try to put you in games with other players of similar power levels.
+
+`!points`
+>  Get your total points on this server.
+
+`!lfg [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
+>  Find or create a pending game for players to join.
+> 
+> The default game size is 4 but you can change it by adding, for example, `size:2` to create a two player game.
+> 
+> You can automatically invite players to the game by @ mentioning them in the command. They will be sent invite confirmations and the game won't be posted to the channel until they've responded.
+> 
+> Players will be able to enter or leave the game by reacting to the message that SpellBot sends with the ➕ and ➖ emoji.
+> 
+> Up to five tags can be given as well to help describe the game expereince that you want. For example you might send `!lfg ~no-combo ~proxy` which will assign the tags `no-combo` and `proxy` to your game. People will be able to see what tags are set on your game when they are looking for games to join.
+> 
+> Aliases: `!play`
+
+`!leave`
+>  Leave any pending games that you've signed up.
+> 
+> Aliases: `!exit`, `!quit`
+
+`!help`
+>  Sends you this help message.
 
 `!find`
 >  Works exactly like `!lfg` except that it will NOT create a new game.
 > 
 > Aliases: `!join`, `!search`
 
-`!game @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]`
->  Create a game between mentioned users. _Requires the "SpellBot Admin" role._
-> 
-> Allows event runners to spin up an ad-hoc game directly between mentioned players.
-> * The user who issues this command is **NOT** added to the game themselves.
-> * You must mention all of the players to be seated in the game.
-> * Optional: Add a message by using `msg:` followed by the message content.
-> * Optional: Add tags by using `~tag-name` for the tags you want.
+`!about`
+>  Get information about SpellBot.
 
-`!help`
->  Sends you this help message.
-
-`!leave`
->  Leave any pending games that you've signed up.
-> 
-> Aliases: `!exit`, `!quit`
+```fix
+#####################################
+###      Commands for Admins      ###
+#####################################
+```
+`!spellbot <subcommand> [subcommand parameters]`
