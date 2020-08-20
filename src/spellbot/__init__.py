@@ -1844,7 +1844,11 @@ class SpellBot(discord.Client):
         """
         if not params:
             await message.channel.send(
-                s("power_invalid", reply=f"<@{cast(discord.User, message.author).id}>")
+                s(
+                    "power_invalid",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    prepend="",
+                )
             )
             return
 
@@ -1863,16 +1867,41 @@ class SpellBot(discord.Client):
             )
             return
 
+        if power == "unlimited":
+            await message.channel.send(
+                s(
+                    "power_invalid",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    prepend="⚡ ",
+                )
+            )
+            return
+
         if not power.isdigit():
             await message.channel.send(
-                s("power_invalid", reply=f"<@{cast(discord.User, message.author).id}>")
+                s(
+                    "power_invalid",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    prepend="",
+                )
             )
             return
 
         power_i = int(power)
         if not (1 <= power_i <= 10):
+            prepend = ""
+            if power_i == 11:
+                prepend = "🤘 "
+            elif power_i == 9000:
+                prepend = "💥 "
+            elif power_i == 42:
+                prepend = "🤖 "
             await message.channel.send(
-                s("power_invalid", reply=f"<@{cast(discord.User, message.author).id}>")
+                s(
+                    "power_invalid",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    prepend=prepend,
+                )
             )
             return
 
