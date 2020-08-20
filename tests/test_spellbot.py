@@ -2202,12 +2202,42 @@ class TestSpellBot:
         )
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_power_unlimited(self, client, channel_maker, channel_type):
+        author = someone()
+        channel = channel_maker.make(channel_type)
+        await client.on_message(MockMessage(author, channel, "!power unlimited"))
+        assert channel.last_sent_response == (
+            f"⚡ Sorry <@{author.id}>, please provide a number between"
+            ' 1 to 10 or "none" to unset.'
+        )
+
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_on_message_power_high_param(self, client, channel_maker, channel_type):
         author = someone()
         channel = channel_maker.make(channel_type)
         await client.on_message(MockMessage(author, channel, "!power 9000"))
         assert channel.last_sent_response == (
-            f"Sorry <@{author.id}>, please provide a number between"
+            f"💥 Sorry <@{author.id}>, please provide a number between"
+            ' 1 to 10 or "none" to unset.'
+        )
+
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_power_eleven(self, client, channel_maker, channel_type):
+        author = someone()
+        channel = channel_maker.make(channel_type)
+        await client.on_message(MockMessage(author, channel, "!power 11"))
+        assert channel.last_sent_response == (
+            f"🤘 Sorry <@{author.id}>, please provide a number between"
+            ' 1 to 10 or "none" to unset.'
+        )
+
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_power_42(self, client, channel_maker, channel_type):
+        author = someone()
+        channel = channel_maker.make(channel_type)
+        await client.on_message(MockMessage(author, channel, "!power 42"))
+        assert channel.last_sent_response == (
+            f"🤖 Sorry <@{author.id}>, please provide a number between"
             ' 1 to 10 or "none" to unset.'
         )
 

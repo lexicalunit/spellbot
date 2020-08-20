@@ -70,8 +70,8 @@ play_found: 'I found a game for you, $reply. You have been signed up for it! Go 
 points: You've got $points points, $reply.
 points_team: Team **${team}** has $points points!
 power: Ok $reply, your power level has been set to $power.
-power_invalid: Sorry $reply, please provide a number between 1 to 10 or "none" to
-  unset.
+power_invalid: ${prepend}Sorry $reply, please provide a number between 1 to 10 or
+  "none" to unset.
 reaction_permissions_required: I do not have permission to adjust reactions. A server
   admin will need to adjust my permissions.
 report: Thanks for the report, $reply!
