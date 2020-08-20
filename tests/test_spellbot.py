@@ -2346,6 +2346,8 @@ class TestSpellBot:
         assert channel.last_sent_response == f"Thanks for the report, <@{ADAM.id}>!"
         await client.on_message(MockMessage(GUY, channel, f"!report SB{game_id} what"))
         assert channel.last_sent_response == f"Thanks for the report, <@{GUY.id}>!"
+        await client.on_message(MockMessage(GUY, channel, f"!report #SB{game_id} what"))
+        assert channel.last_sent_response == f"Thanks for the report, <@{GUY.id}>!"
 
     async def test_on_message_report_by_url(self, client, channel_maker, monkeypatch):
         # this test isn't interested in verifying the report is correct

@@ -1307,7 +1307,10 @@ class SpellBot(discord.Client):
             return
 
         game: Optional[Game] = None
-        if req.lower().startswith("sb") and req[2:].isdigit():
+        if req.lower().startswith("#sb") and req[3:].isdigit():
+            game_id = int(req[3:])
+            game = session.query(Game).filter(Game.id == game_id).one_or_none()
+        elif req.lower().startswith("sb") and req[2:].isdigit():
             game_id = int(req[2:])
             game = session.query(Game).filter(Game.id == game_id).one_or_none()
         elif req.isdigit():
