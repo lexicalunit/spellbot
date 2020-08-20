@@ -1,23 +1,13 @@
-`!lfg [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
->  Find or create a pending game for players to join.
+>  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
 > 
-> The default game size is 4 but you can change it by adding, for example, `size:2` to create a two player game.
-> 
-> You can automatically invite players to the game by @ mentioning them in the command. They will be sent invite confirmations and the game won't be posted to the channel until they've responded.
-> 
-> Players will be able to enter or leave the game by reacting to the message that SpellBot sends with the ➕ and ➖ emoji.
-> 
-> Up to five tags can be given as well to help describe the game expereince that you want. For example you might send `!lfg ~no-combo ~proxy` which will assign the tags `no-combo` and `proxy` to your game. People will be able to see what tags are set on your game when they are looking for games to join.
-> 
-> Aliases: `!play`
-
-`!points`
->  Get your total points on this server.
-
-`!power <none | 1..10>`
->  Set or unset the power level of the deck you are going to play.
-> 
-> When you have set a power level, the !lfg and !find commands will try to put you in games with other players of similar power levels.
+> The following subcommands are supported:
+> * `config`: Just show the current configuration for this server.
+> * `channel <list>`: Set SpellBot to only respond in the given list of channels.
+> * `prefix <string>`: Set SpellBot's command prefix for text channels.
+> * `links <string>`: Set the privacy level for generated SpellTable links.
+> * `expire <number>`: Set the number of minutes before pending games expire.
+> * `teams <list>`: Sets the teams available on this server.
+> * `help`: Get detailed usage help for SpellBot.
 
 `!queue [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
 >  Add a player to an admin controller play queue. _Requires the "SpellBot Admin" role._
@@ -28,12 +18,17 @@
 > 
 > Aliases: `!signup`
 
-`!report <Game ID> ...`
->  Report your results on a finished game.
+`!game @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]`
+>  Create a game between mentioned users. _Requires the "SpellBot Admin" role._
 > 
-> Aliases: `!results`
+> Allows event runners to spin up an ad-hoc game directly between mentioned players.
+> * The user who issues this command is **NOT** added to the game themselves.
+> * You must mention all of the players to be seated in the game.
+> * Optional: Add a message by using `msg:` followed by the message content.
+> * Optional: Add tags by using `~tag-name` for the tags you want.
 
-`!spellbot <subcommand> [subcommand parameters]`
->  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
-> 
-> The following subcommands are supported:
+`!export`
+>  Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._
+
+`!event <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]`
+>  Create many games in batch from an attached CSV data file. _Requires the "SpellBot Admin" role._

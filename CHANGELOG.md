@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds inline documentation for some of the new @command features.
+- Adds ability to group commands together in the help usage.
+
 ## [v3.22.2](https://github.com/lexicalunit/spellbot/releases/tag/v3.22.2) - 2020-08-20
 
 ### Changed
