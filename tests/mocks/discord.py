@@ -300,5 +300,9 @@ class MockMessage:
         self.content = content
         self.mentions = mentions or []
         self.attachments = attachments or []
+        self.reactions = set()
         if isinstance(channel, MockDM):
             channel.recipient = author
+
+    async def add_reaction(self, emoji):
+        self.reactions.add(emoji)
