@@ -263,24 +263,23 @@ class TestSpellBot:
             snap(response)
         assert len(author.all_sent_calls) == 3
 
-    async def test_on_message_help_includes_confirmation_message_in_text_channel(
+    async def test_on_message_help_includes_confirmation_in_text_channel(
         self, client, channel_maker
     ):
         author = someone()
         channel = channel_maker.make("text")
-        await client.on_message(MockMessage(author, channel, "!help"))
-        assert len(channel.all_sent_calls) == 1
-        assert channel.last_sent_response == (
-            f"Right on <@{author.id}>, I'll send you a Direct Message with details."
-        )
+        msg = MockMessage(author, channel, "!help")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
 
-    async def test_on_message_help_does_not_include_confirmation_message_in_dm(
+    async def test_on_message_help_does_not_include_confirmation_in_dm(
         self, client, channel_maker
     ):
         author = someone()
         channel = channel_maker.make("dm")
-        await client.on_message(MockMessage(author, channel, "!help"))
-        assert len(channel.all_sent_calls) == 0
+        msg = MockMessage(author, channel, "!help")
+        await client.on_message(msg)
+        assert "✅" not in msg.reactions
 
     async def test_on_message_spellbot_dm(self, client, channel_maker):
         author = an_admin()
@@ -2016,8 +2015,9 @@ class TestSpellBot:
     async def test_on_message_spellbot_help(self, client, channel_maker):
         author = not_an_admin()
         channel = channel_maker.text()
-        await client.on_message(MockMessage(author, channel, "!spellbot help"))
-        assert len(channel.all_sent_calls) == 1
+        msg = MockMessage(author, channel, "!spellbot help")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
         assert len(author.all_sent_calls) >= 1
 
     async def test_on_message_queue_no_mentions(self, client, channel_maker):

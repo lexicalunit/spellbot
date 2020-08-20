@@ -6,7 +6,6 @@ begin_user_left: '**Warning:** A user left the server since this event was creat
   SpellBot did **NOT** start the game for the players: $players.'
 did_you_mean: 'Sorry $reply, that''s not a command. Did you mean to use one of these
   commands: $possible?'
-dm_sent: Right on $reply, I'll send you a Direct Message with details.
 event_bad_play_count: Sorry $reply, but the player count must be between 2 and 4.
 event_created: Ok $reply, I've created event $event_id! This event will have $count
   games. If everything looks good, next run `${prefix}begin $event_id` to start the
