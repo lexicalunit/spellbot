@@ -884,9 +884,7 @@ class SpellBot(discord.Client):
             "<https://ko-fi.com/Y8Y51VTHZ>"
         )
         if str(message.channel.type) != "private":
-            await message.channel.send(
-                s("dm_sent", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            await message.add_reaction("✅")
         for page in paginate(usage):
             await message.author.send(page)
 
