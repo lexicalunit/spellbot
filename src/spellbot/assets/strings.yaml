@@ -67,18 +67,24 @@ not_a_command: Sorry $reply, there is no "$request" command. Try "${prefix}spell
 not_admin: $reply, you do not have admin permissions to run that command.
 play_found: 'I found a game for you, $reply. You have been signed up for it! Go to
   game post: $link'
+points: You've got $points points, $reply.
+points_team: Team **${team}** has $points points!
 power: Ok $reply, your power level has been set to $power.
 power_invalid: Sorry $reply, please provide a number between 1 to 10 or "none" to
   unset.
 reaction_permissions_required: I do not have permission to adjust reactions. A server
   admin will need to adjust my permissions.
 report: Thanks for the report, $reply!
+report_incomplete: Sorry $reply, but please provide points for all players in that
+  game.
 report_no_game: Sorry $reply, I couldn't find a game with that ID.
 report_no_params: $reply, please provide the SpellBot game reference ID or SpellTable
   ID followed by your report.
 report_not_started: Sorry $reply, but that game hasn't even started yet.
 report_too_long: Sorry $reply, that report was too long. Please limit your report
   to less than 255 characters.
+report_wrong: 'Sorry $reply, to report points please use: `!points GameID @player1
+  Points @player2 Points @player3 Points @player4 Points`.'
 spellbot_channels: 'Ok $reply, I will now operate within: $channels'
 spellbot_channels_none: 'Sorry $reply, but please provide a list of channels. Like
   #bot-commands, for example.'

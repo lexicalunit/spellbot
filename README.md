@@ -46,6 +46,7 @@ Just looking to play some games of Magic? These commands are for you!
 - `!power`: Set your current power level.
 - `!report`: Report the results of the game you just played.
 - `!team`: Join one of the teams available on your server.
+- `!points`: Find out how many points you currently have.
 
 When you run the `!lfg` command, SpellBot will post a message for sign ups.
 

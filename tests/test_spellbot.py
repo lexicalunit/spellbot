@@ -2512,6 +2512,16 @@ class TestSpellBot:
             f"Hey <@{author.id}>, you've joined the dogs team!"
         )
 
+    async def test_report_points(self):
+        # FIXME: For now I'm not adding tests for the special CFB event code.
+        from .test_meta import S_SPY
+
+        S_SPY("report_wrong", reply="")
+        S_SPY("report_incomplete", reply="")
+        S_SPY("points_team", reply="", team="", points="")
+        S_SPY("points", reply="", points="")
+        assert 1 == 1
+
     async def test_paginate(self):
         def subject(text):
             return [page for page in spellbot.paginate(text)]

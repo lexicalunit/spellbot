@@ -11,6 +11,9 @@
 > 
 > Aliases: `!play`
 
+`!points`
+>  Get your total points on this server.
+
 `!power <none | 1..10>`
 >  Set or unset the power level of the deck you are going to play.
 > 

@@ -60,6 +60,11 @@ def client(monkeypatch, mocker, patch_discord, tmp_path):
     # Don't actually begin background tasks during tests.
     monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())
 
+    # TODO: Don't test CommandFest specific code for now...
+    monkeypatch.setattr(
+        spellbot.SpellBot, "_verify_command_fest_report", MagicMock(return_value=True)
+    )
+
     # Fallback to using sqlite for tests, but use the environment variable if it's set.
     (tmp_path / "spellbot.db").touch()
     connection_string = f"sqlite:///{tmp_path}/spellbot.db"
