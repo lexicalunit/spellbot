@@ -114,6 +114,22 @@ class Team(Base):
     name = Column(String(50), nullable=False)
     server = relationship("Server", back_populates="teams")
 
+    @classmethod
+    def points(cls, session: Session, guild_xid: int) -> dict:
+        rows = (
+            session.query(Team.name, func.sum(UserPoints.points))
+            .select_from(User)
+            .join(UserTeam)
+            .join(UserPoints)
+            .join(Team)
+            .group_by(Team.name)
+            .all()
+        )
+        results = {}
+        for row in rows:
+            results[row[0]] = row[1]
+        return results
+
 
 class Channel(Base):
     __tablename__ = "channels"
@@ -170,6 +186,15 @@ class User(Base):
             return True
         return False
 
+    def points(self, guild_xid) -> int:
+        session = Session.object_session(self)
+        results = (
+            session.query(func.sum(UserPoints.points))
+            .filter_by(user_xid=self.xid, guild_xid=guild_xid)
+            .scalar()
+        )
+        return results or 0
+
     def to_json(self) -> dict:
         return {
             "xid": self.xid,
@@ -196,6 +221,29 @@ class UserTeam(Base):
         nullable=False,
     )
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+
+
+class UserPoints(Base):
+    __tablename__ = "user_points"
+    user_xid = Column(
+        BigInteger,
+        ForeignKey("users.xid", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    guild_xid = Column(
+        BigInteger,
+        ForeignKey("servers.guild_xid", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    game_id = Column(
+        Integer,
+        ForeignKey("games.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    points = Column(Integer, nullable=False)
 
 
 class Tag(Base):

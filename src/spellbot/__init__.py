@@ -58,6 +58,7 @@ from spellbot.data import (
     Tag,
     Team,
     User,
+    UserPoints,
     UserTeam,
 )
 from spellbot.reactions import safe_clear_reactions, safe_remove_reaction
@@ -1224,7 +1225,65 @@ class SpellBot(discord.Client):
             session, prefix, params, message, create_new_game=False, use_queue=False
         )
 
-    @command(allow_dm=True, aliases=["results"])
+    async def _verify_command_fest_report(
+        self,
+        session: Session,
+        prefix: str,
+        params: List[str],
+        message: discord.Message,
+        game: Game,
+    ) -> bool:
+        server = self.ensure_server_exists(session, message.channel.guild.id)
+        mentioned_users = []
+        for mentioned in message.mentions:
+            mentioned_user = self.ensure_user_exists(session, mentioned)
+            mentioned_users.append(mentioned_user)
+
+        points = []
+        for param in params[1:]:
+            if param.isdigit():
+                points.append(int(param))
+
+        if len(mentioned_users) != game.size:
+            await message.channel.send(
+                s(
+                    "report_incomplete",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                )
+            )
+            return False
+
+        if len(mentioned_users) == len(points):
+            for mentioned_user, pointage in zip(mentioned_users, points):
+                user_points = (
+                    session.query(UserPoints)
+                    .filter_by(
+                        user_xid=mentioned_user.xid,
+                        guild_xid=server.guild_xid,
+                        game_id=game.id,
+                    )
+                    .one_or_none()
+                )
+                if not user_points:
+                    user_points = UserPoints(
+                        user_xid=mentioned_user.xid,
+                        guild_xid=server.guild_xid,
+                        game_id=game.id,
+                        points=pointage,
+                    )
+                    session.add(user_points)
+                else:
+                    user_points.points = pointage
+            session.commit()
+        else:
+            await message.channel.send(
+                s("report_wrong", reply=f"<@{cast(discord.User, message.author).id}>")
+            )
+            return False
+
+        return True
+
+    @command(allow_dm=False, aliases=["results"])
     async def report(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1272,12 +1331,51 @@ class SpellBot(discord.Client):
             )
             return
 
+        # TODO: This reporting logic is specific to CommandFest, it would be nice
+        #       to refactor this to be more flexible after the event.
+        verified = await self._verify_command_fest_report(
+            session=session, prefix=prefix, params=params, message=message, game=game
+        )
+        if not verified:
+            return
+
         report = Report(game_id=game.id, report=report_str)
         session.add(report)
         session.commit()
         await message.channel.send(
             s("report", reply=f"<@{cast(discord.User, message.author).id}>")
         )
+
+    @command(allow_dm=False, admin_only=False)
+    async def points(
+        self, session: Session, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """
+        Get your total points on this server.
+        """
+        user = self.ensure_user_exists(session, message.author)
+        server = self.ensure_server_exists(session, message.channel.guild.id)
+        points = user.points(server.guild_xid)
+
+        await message.channel.send(
+            s(
+                "points",
+                reply=f"<@{cast(discord.User, message.author).id}>",
+                points=points,
+            )
+        )
+
+        if is_admin(message.channel, message.author):
+            team_points = Team.points(session, message.channel.guild.id)
+            for team, team_points in team_points.items():
+                await message.channel.send(
+                    s(
+                        "points_team",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        team=team,
+                        points=team_points,
+                    )
+                )
 
     @command(allow_dm=False, admin_only=True)
     async def event(

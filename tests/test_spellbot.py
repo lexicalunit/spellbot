@@ -12,6 +12,7 @@ from spellbot.constants import THUMB_URL
 from spellbot.data import Event, Game, User
 
 from .constants import CLIENT_TOKEN, TEST_DATA_ROOT
+from .mocks import AsyncMock
 from .mocks.discord import MockAttachment, MockChannel, MockMessage, MockPayload
 from .mocks.users import (
     ADAM,
@@ -2325,7 +2326,12 @@ class TestSpellBot:
             f"Sorry <@{author.id}>, but that game hasn't even started yet."
         )
 
-    async def test_on_message_report_by_id(self, client, channel_maker):
+    async def test_on_message_report_by_id(self, client, channel_maker, monkeypatch):
+        # this test isn't interested in verifying the report is correct
+        monkeypatch.setattr(
+            client, "_verify_command_fest_report", AsyncMock(return_value=True)
+        )
+
         channel = channel_maker.text()
         mentions = [AMY, ADAM]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
@@ -2341,7 +2347,12 @@ class TestSpellBot:
         await client.on_message(MockMessage(GUY, channel, f"!report SB{game_id} what"))
         assert channel.last_sent_response == f"Thanks for the report, <@{GUY.id}>!"
 
-    async def test_on_message_report_by_url(self, client, channel_maker):
+    async def test_on_message_report_by_url(self, client, channel_maker, monkeypatch):
+        # this test isn't interested in verifying the report is correct
+        monkeypatch.setattr(
+            client, "_verify_command_fest_report", AsyncMock(return_value=True)
+        )
+
         channel = channel_maker.text()
         mentions = [AMY, ADAM]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
@@ -2357,6 +2368,108 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f"Sorry <@{ADAM.id}>, I couldn't find a game with that ID."
         )
+
+    async def test_on_message_report_cfb_incomplete(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game ~modern {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+
+        game = all_games(client)[0]
+        game_url = game["url"]
+        game_id = game_url[game_url.rfind("/") + 1 :]
+        cmd = f"!report {game_id} @{AMY.name} 10"
+        await client.on_message(MockMessage(AMY, channel, cmd, mentions=[AMY]))
+        assert channel.last_sent_response == (
+            f"Sorry <@{AMY.id}>, but please provide points for all players in that game."
+        )
+
+    async def test_on_message_report_cfb_wrong(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game ~modern {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+
+        game = all_games(client)[0]
+        game_url = game["url"]
+        game_id = game_url[game_url.rfind("/") + 1 :]
+        cmd = f"!report {game_id} @{AMY.name} foot @{ADAM.name} leg"
+        await client.on_message(MockMessage(AMY, channel, cmd, mentions=[AMY, ADAM]))
+        assert channel.last_sent_response == (
+            f"Sorry <@{AMY.id}>, to report points please use: `!points GameID"
+            " @player1 Points @player2 Points @player3 Points @player4 Points`."
+        )
+
+    async def test_on_message_report_cfb(self, client, channel_maker):
+        channel = channel_maker.text()
+        admin = an_admin()
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game ~modern {mentions_str}"
+        await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot teams dogs cats"))
+        await client.on_message(MockMessage(AMY, channel, "!team dogs"))
+        await client.on_message(MockMessage(ADAM, channel, "!team dogs"))
+        await client.on_message(MockMessage(GUY, channel, "!team cats"))
+
+        game = all_games(client)[-1]
+        game_url = game["url"]
+        game_id = game_url[game_url.rfind("/") + 1 :]
+        cmd = f"!report {game_id} @{AMY.name} 10 @{ADAM.name} 20"
+        await client.on_message(MockMessage(AMY, channel, cmd, mentions=[AMY, ADAM]))
+        assert channel.last_sent_response == f"Thanks for the report, <@{AMY.id}>!"
+
+        async with client.session() as session:
+            amy_user = session.query(User).filter(User.xid == AMY.id).one_or_none()
+            assert amy_user.points(channel.guild.id) == 10
+
+            adam_user = session.query(User).filter(User.xid == ADAM.id).one_or_none()
+            assert adam_user.points(channel.guild.id) == 20
+
+            guy_user = session.query(User).filter(User.xid == GUY.id).one_or_none()
+            assert guy_user.points(channel.guild.id) == 0
+
+        mentions = [AMY, GUY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game ~modern {mentions_str}"
+        await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
+
+        game = all_games(client)[-1]
+        game_url = game["url"]
+        game_id = game_url[game_url.rfind("/") + 1 :]
+        cmd = f"!report {game_id} @{AMY.name} 5 @{GUY.name} 5"
+        await client.on_message(MockMessage(AMY, channel, cmd, mentions=[AMY, GUY]))
+        assert channel.last_sent_response == f"Thanks for the report, <@{AMY.id}>!"
+
+        cmd = f"!report {game_id} @{AMY.name} 7 @{GUY.name} 5"
+        await client.on_message(MockMessage(AMY, channel, cmd, mentions=[AMY, GUY]))
+        assert channel.last_sent_response == f"Thanks for the report, <@{AMY.id}>!"
+
+        async with client.session() as session:
+            amy_user = session.query(User).filter(User.xid == AMY.id).one_or_none()
+            assert amy_user.points(channel.guild.id) == 17
+
+            adam_user = session.query(User).filter(User.xid == ADAM.id).one_or_none()
+            assert adam_user.points(channel.guild.id) == 20
+
+            guy_user = session.query(User).filter(User.xid == GUY.id).one_or_none()
+            assert guy_user.points(channel.guild.id) == 5
+
+        await client.on_message(MockMessage(AMY, channel, "!points"))
+        assert channel.last_sent_response == f"You've got 17 points, <@{AMY.id}>."
+
+        await client.on_message(MockMessage(ADAM, channel, "!points"))
+        assert channel.last_sent_response == f"You've got 20 points, <@{ADAM.id}>."
+
+        await client.on_message(MockMessage(GUY, channel, "!points"))
+        assert channel.last_sent_response == f"You've got 5 points, <@{GUY.id}>."
+
+        await client.on_message(MockMessage(admin, channel, "!points"))
+        assert "Team **dogs** has 37 points!" in channel.all_sent_responses
+        assert "Team **cats** has 5 points!" in channel.all_sent_responses
 
     async def test_on_message_spellbot_teams_not_admin(self, client, channel_maker):
         author = not_an_admin()
