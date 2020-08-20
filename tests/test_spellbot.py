@@ -2245,15 +2245,12 @@ class TestSpellBot:
     async def test_on_message_power(self, client, channel_maker, channel_type):
         author = someone()
         channel = channel_maker.make(channel_type)
-        await client.on_message(MockMessage(author, channel, "!power 5"))
-        assert channel.last_sent_response == (
-            f"Ok <@{author.id}>, your power level has been set to 5."
-        )
+        msg = MockMessage(author, channel, "!power 5")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
         assert user_json_for(client, author)["power"] == 5
         await client.on_message(MockMessage(author, channel, "!power off"))
-        assert channel.last_sent_response == (
-            f"Ok <@{author.id}>, your power level has been set to none."
-        )
+        assert "✅" in msg.reactions
         assert user_json_for(client, author)["power"] == None
 
     async def test_on_message_lfg_with_power_similar(self, client, channel_maker):
