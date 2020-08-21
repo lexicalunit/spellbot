@@ -125,7 +125,9 @@ class Team(Base):
             .group_by(Team.name)
             .all()
         )
-        results = {}
+        server = session.query(Server).filter(Server.guild_xid == guild_xid).one_or_none()
+        assert server
+        results = {team.name: 0 for team in server.teams}
         for row in rows:
             results[row[0]] = row[1]
         return results
