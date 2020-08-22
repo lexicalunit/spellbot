@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds some logic to make sure that player with power 6 are never placed into a
+  game with average power level 7 or higher, and vice versa.
+
 ## [v3.22.5](https://github.com/lexicalunit/spellbot/releases/tag/v3.22.5) - 2020-08-21
 
 ### Fixed

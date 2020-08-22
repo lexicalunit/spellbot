@@ -340,6 +340,10 @@ class Game(Base):
         ]
         if power:
             having_filters.append(between(func.avg(User.power), power - 1, power + 1))
+            if power >= 7:
+                having_filters.append(func.avg(User.power) >= 7)
+            else:
+                having_filters.append(func.avg(User.power) < 7)
         else:
             select_filters.append(User.power == None)
         inner = (
