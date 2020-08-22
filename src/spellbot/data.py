@@ -122,6 +122,7 @@ class Team(Base):
             .join(UserTeam)
             .join(UserPoints)
             .join(Team)
+            .filter(Team.guild_xid == guild_xid)
             .group_by(Team.name)
             .all()
         )
