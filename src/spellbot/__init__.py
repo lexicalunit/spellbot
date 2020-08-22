@@ -1305,7 +1305,11 @@ class SpellBot(discord.Client):
             session.commit()
         else:
             await message.channel.send(
-                s("report_wrong", reply=f"<@{cast(discord.User, message.author).id}>")
+                s(
+                    "report_wrong",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    prefix=prefix,
+                )
             )
             return False
 
@@ -1993,14 +1997,7 @@ class SpellBot(discord.Client):
             )
             session.add(user_team)
         session.commit()
-
-        await message.channel.send(
-            s(
-                "team",
-                reply=f"<@{cast(discord.User, message.author).id}>",
-                team=team_found.name,
-            ),
-        )
+        await message.add_reaction("✅")
 
     @command(allow_dm=False, help_group="Commands for Admins")
     async def spellbot(
