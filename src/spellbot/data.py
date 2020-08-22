@@ -15,6 +15,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -299,6 +300,7 @@ class Game(Base):
     system = Column(
         String(30), nullable=False, server_default=text("'spelltable'"), index=True
     )
+    game_power = Column(Float, nullable=True)
     users = relationship("User", back_populates="game", uselist=True)
     tags = relationship("Tag", secondary=games_tags, back_populates="games", uselist=True)
     server = relationship("Server", back_populates="games")

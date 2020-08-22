@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added tracking of a game's power level when it is started so we can get stats.
+
 ## [v3.22.6](https://github.com/lexicalunit/spellbot/releases/tag/v3.22.6) - 2020-08-21
 
 ### Added
