@@ -2426,11 +2426,19 @@ class TestSpellBot:
         game = all_games(client)[0]
         game_url = game["url"]
         game_id = game_url[game_url.rfind("/") + 1 :]
+
         cmd = f"!report {game_id} @{AMY.name} 10"
         await client.on_message(MockMessage(AMY, channel, cmd, mentions=[AMY]))
-        assert channel.last_sent_response == (
-            f"Sorry <@{AMY.id}>, but please provide points for all players in that game."
-        )
+
+        cmd = f"!report {game_id} @{ADAM.name} 20"
+        await client.on_message(MockMessage(ADAM, channel, cmd, mentions=[ADAM]))
+
+        async with client.session() as session:
+            amy_user = session.query(User).filter(User.xid == AMY.id).one_or_none()
+            assert amy_user.points(channel.guild.id) == 10
+
+            adam_user = session.query(User).filter(User.xid == ADAM.id).one_or_none()
+            assert adam_user.points(channel.guild.id) == 20
 
     async def test_on_message_report_cfb_wrong(self, client, channel_maker):
         channel = channel_maker.text()
