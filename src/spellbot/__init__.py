@@ -1272,6 +1272,16 @@ class SpellBot(discord.Client):
             if param.isdigit():
                 points.append(int(param))
 
+        if len(mentioned_users) < 1:
+            await message.channel.send(
+                s(
+                    "report_wrong",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    prefix=prefix,
+                )
+            )
+            return False
+
         if len(mentioned_users) == len(points):
             for mentioned_user, pointage in zip(mentioned_users, points):
                 user_points = (

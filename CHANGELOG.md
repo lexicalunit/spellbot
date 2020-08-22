@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added a check that player includes at least one person in their !report.
+
 ## [v3.22.9](https://github.com/lexicalunit/spellbot/releases/tag/v3.22.9) - 2020-08-22
 
 ### Changed
