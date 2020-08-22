@@ -754,6 +754,7 @@ class SpellBot(discord.Client):
             if len(found_discord_users) == game.size:  # game is ready
                 game.url = self.create_game() if game.system == "spelltable" else None
                 game.status = "started"
+                game.game_power = game.power
                 session.commit()
                 for discord_user in found_discord_users:
                     await discord_user.send(embed=game.to_embed(dm=True))
@@ -1142,6 +1143,7 @@ class SpellBot(discord.Client):
                 if len(found_discord_users) == game.size:  # game is ready
                     game.url = self.create_game() if game.system == "spelltable" else None
                     game.status = "started"
+                    game.game_power = game.power
                     session.commit()
                     for discord_user in found_discord_users:
                         await discord_user.send(embed=game.to_embed(dm=True))
@@ -1663,6 +1665,7 @@ class SpellBot(discord.Client):
 
             game.url = self.create_game() if game.system == "spelltable" else None
             game.status = "started"
+            game.game_power = game.power
             response = game.to_embed(dm=True)
             session.commit()
 
