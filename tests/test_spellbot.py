@@ -2445,7 +2445,7 @@ class TestSpellBot:
         cmd = f"!report {game_id} @{AMY.name} foot @{ADAM.name} leg"
         await client.on_message(MockMessage(AMY, channel, cmd, mentions=[AMY, ADAM]))
         assert channel.last_sent_response == (
-            f"Sorry <@{AMY.id}>, to report points please use: `!points GameID"
+            f"Sorry <@{AMY.id}>, to report points please use: `!report GameID"
             " @player1 Points @player2 Points @player3 Points @player4 Points`."
         )
 
@@ -2601,10 +2601,9 @@ class TestSpellBot:
         author = not_an_admin()
         channel = channel_maker.text()
         await client.on_message(MockMessage(admin, channel, "!spellbot teams cats dogs"))
-        await client.on_message(MockMessage(author, channel, "!team cAtS"))
-        assert channel.last_sent_response == (
-            f"Hey <@{author.id}>, you've joined the cats team!"
-        )
+        msg = MockMessage(author, channel, "!team cAtS")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
 
         await client.on_message(MockMessage(author, channel, "!team"))
         assert channel.last_sent_response == (
@@ -2659,18 +2658,15 @@ class TestSpellBot:
         author = not_an_admin()
         channel = channel_maker.text()
         await client.on_message(MockMessage(admin, channel, "!spellbot teams cats dogs"))
-        await client.on_message(MockMessage(author, channel, "!team dogs"))
-        assert channel.last_sent_response == (
-            f"Hey <@{author.id}>, you've joined the dogs team!"
-        )
-        await client.on_message(MockMessage(author, channel, "!team cats"))
-        assert channel.last_sent_response == (
-            f"Hey <@{author.id}>, you've joined the cats team!"
-        )
-        await client.on_message(MockMessage(author, channel, "!team dogs"))
-        assert channel.last_sent_response == (
-            f"Hey <@{author.id}>, you've joined the dogs team!"
-        )
+        msg = MockMessage(author, channel, "!team dogs")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
+        msg = MockMessage(author, channel, "!team cats")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
+        msg = MockMessage(author, channel, "!team dogs")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
 
     async def test_paginate(self):
         def subject(text):

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed incorrect error message to !report command.
+
+### Changed
+
+- Less verbose response to !team command.
+
 ## [v3.22.7](https://github.com/lexicalunit/spellbot/releases/tag/v3.22.7) - 2020-08-22
 
 ### Added
