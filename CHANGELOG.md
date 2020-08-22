@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds special handling for when players do a !powerN command with no space.
+
 ## [v3.22.10](https://github.com/lexicalunit/spellbot/releases/tag/v3.22.10) - 2020-08-22
 
 ### Added
