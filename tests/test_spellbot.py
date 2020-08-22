@@ -2192,6 +2192,14 @@ class TestSpellBot:
         )
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
+    async def test_on_message_power_no_space(self, client, channel_maker, channel_type):
+        author = someone()
+        channel = channel_maker.make(channel_type)
+        msg = MockMessage(author, channel, "!power5")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
+
+    @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_on_message_power_neg_param(self, client, channel_maker, channel_type):
         author = someone()
         channel = channel_maker.make(channel_type)

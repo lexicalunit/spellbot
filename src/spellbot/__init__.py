@@ -555,6 +555,12 @@ class SpellBot(discord.Client):
         params = list(filter(None, params))  # ignore any empty string parameters
         if not request:
             return
+
+        # Special handling for `!powerX`: Tease apart the command request from parameter.
+        if request.startswith("power") and len(request) > 5 and request[5:].isdigit():
+            params.insert(0, request[5:])
+            request = "power"
+
         matching = [
             command
             for alias, command in self._commands.items()
