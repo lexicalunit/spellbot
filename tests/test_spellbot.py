@@ -2440,7 +2440,7 @@ class TestSpellBot:
             adam_user = session.query(User).filter(User.xid == ADAM.id).one_or_none()
             assert adam_user.points(channel.guild.id) == 20
 
-    async def test_on_message_report_cfb_wrong(self, client, channel_maker):
+    async def test_on_message_report_cfb_wrong_points(self, client, channel_maker):
         channel = channel_maker.text()
         mentions = [AMY, ADAM]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
@@ -2452,6 +2452,23 @@ class TestSpellBot:
         game_id = game_url[game_url.rfind("/") + 1 :]
         cmd = f"!report {game_id} @{AMY.name} foot @{ADAM.name} leg"
         await client.on_message(MockMessage(AMY, channel, cmd, mentions=[AMY, ADAM]))
+        assert channel.last_sent_response == (
+            f"Sorry <@{AMY.id}>, to report points please use: `!report GameID"
+            " @player1 Points @player2 Points @player3 Points @player4 Points`."
+        )
+
+    async def test_on_message_report_cfb_wrong_mentions(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game ~modern {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+
+        game = all_games(client)[0]
+        game_url = game["url"]
+        game_id = game_url[game_url.rfind("/") + 1 :]
+        cmd = f"!report {game_id} @{AMY.name} foot @{ADAM.name} leg"
+        await client.on_message(MockMessage(AMY, channel, cmd))
         assert channel.last_sent_response == (
             f"Sorry <@{AMY.id}>, to report points please use: `!report GameID"
             " @player1 Points @player2 Points @player3 Points @player4 Points`."
