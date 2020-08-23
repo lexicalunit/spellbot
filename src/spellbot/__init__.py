@@ -1925,7 +1925,7 @@ class SpellBot(discord.Client):
         session.commit()
         await message.add_reaction("✅")
 
-    @command(allow_dm=True, help_group="Commands for Players")
+    @command(allow_dm=False, help_group="Commands for Players")
     async def team(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
