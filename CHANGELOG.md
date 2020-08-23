@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- The !team command is only be allowed in server channels, not in DMs.
+
 ## [v3.22.11](https://github.com/lexicalunit/spellbot/releases/tag/v3.22.11) - 2020-08-22
 
 ### Added
