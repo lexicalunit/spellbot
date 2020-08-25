@@ -52,12 +52,12 @@ When you run the `!lfg` command, SpellBot will post a message for sign ups.
 
 ![lfg][lfg]
 
-Other users can react to it with the ➕ emoji to be added to the game. When the
+Other users can react to it with the ✋ emoji to be added to the game. When the
 game is ready, SpellBot will update the message with your SpellTable details.
 
 ![ready][ready]
 
-Users can also use the ➖ emoji reaction to leave the game.
+Users can also use the 🚫 emoji reaction to leave the game.
 
 ### 🎟️ Commands for Event Runners
 

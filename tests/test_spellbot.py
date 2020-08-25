@@ -1279,7 +1279,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1308,7 +1308,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1492,7 +1492,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id + 1,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1507,7 +1507,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADMIN.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADMIN,
@@ -1522,7 +1522,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id + 1,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1545,7 +1545,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel_a.id,
             guild_id=channel_a.guild.id,
             member=ADAM,
@@ -1560,7 +1560,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1575,7 +1575,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1595,7 +1595,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1608,7 +1608,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1626,7 +1626,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1643,7 +1643,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1665,7 +1665,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1685,7 +1685,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1696,7 +1696,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➖",
+            emoji="🚫",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1714,7 +1714,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=GUY.id,
             message_id=message.id,
-            emoji="➖",
+            emoji="🚫",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=GUY,
@@ -1729,7 +1729,7 @@ class TestSpellBot:
         assert rvalue == [
             {
                 "color": 5914365,
-                "description": "To join/leave this game, react with ➕/➖.",
+                "description": "To join/leave this game, react with ✋/🚫.",
                 "footer": {"text": f"SpellBot Reference #SB{games[0].id}"},
                 "thumbnail": {"url": THUMB_URL},
                 "title": "**Waiting for 4 more players to join...**",
@@ -1748,7 +1748,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1760,7 +1760,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=AMY.id,
             message_id=message.id,
-            emoji="➖",
+            emoji="🚫",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=AMY,
@@ -1779,7 +1779,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1791,7 +1791,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=AMY.id,
             message_id=message.id,
-            emoji="➖",
+            emoji="🚫",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=AMY,
@@ -1884,7 +1884,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="➕",
+            emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -2062,7 +2062,7 @@ class TestSpellBot:
         game_id = game["id"]
         assert channel.all_sent_embeds[0] == {
             "color": 5914365,
-            "description": "To join/leave this game, react with ➕/➖.",
+            "description": "To join/leave this game, react with ✋/🚫.",
             "fields": [{"inline": False, "name": "Players", "value": f"<@{AMY.id}>"}],
             "footer": {"text": f"SpellBot Reference #SB{game_id}"},
             "thumbnail": {"url": THUMB_URL},
@@ -2274,7 +2274,7 @@ class TestSpellBot:
         game = games[0]
         assert game_embed_for(client, AMY, False) == {
             "color": 5914365,
-            "description": "To join/leave this game, react with ➕/➖.",
+            "description": "To join/leave this game, react with ✋/🚫.",
             "fields": [
                 {"inline": True, "name": "Average Power Level", "value": "4.5"},
                 {

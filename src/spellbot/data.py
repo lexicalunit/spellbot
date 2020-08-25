@@ -417,7 +417,7 @@ class Game(Base):
         embed = discord.Embed(title=title)
         embed.set_thumbnail(url=THUMB_URL)
         if self.status == "pending":
-            embed.description = "To join/leave this game, react with ➕/➖."
+            embed.description = "To join/leave this game, react with ✋/🚫."
         elif self.system == "spelltable":
             if show_link:
                 assert self.url is not None  # TODO: Shouldn't be possible?
