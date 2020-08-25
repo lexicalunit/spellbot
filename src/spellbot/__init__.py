@@ -516,7 +516,7 @@ class SpellBot(discord.Client):
         return cast(Server, server)
 
     async def try_to_delete_message(self, game: Game) -> None:
-        """Attempts to remove a ➕ from the given game message for the given user."""
+        """Attempts to remove a ✋ from the given game message for the given user."""
         if not game.channel_xid:
             return
 
@@ -668,8 +668,8 @@ class SpellBot(discord.Client):
                 post = await cast(TextChannel, channel).send(embed=game.to_embed())
                 game.message_xid = post.id
                 session.commit()
-                await post.add_reaction("➕")
-                await post.add_reaction("➖")
+                await post.add_reaction("✋")
+                await post.add_reaction("🚫")
 
     ##############################
     # Discord Client Behavior
@@ -678,7 +678,7 @@ class SpellBot(discord.Client):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         """Behavior when the client gets a new reaction on a Discord message."""
         emoji = str(payload.emoji)
-        if emoji not in ["➕", "➖"]:
+        if emoji not in ["✋", "🚫"]:
             return
 
         channel = await self.safe_fetch_channel(payload.channel_id)
@@ -714,7 +714,7 @@ class SpellBot(discord.Client):
 
             await safe_remove_reaction(message, emoji, author)
 
-            if emoji == "➕":
+            if emoji == "✋":
                 if any(user.xid == game_user.xid for game_user in game.users):
                     # this author is already in this game, they don't need to be added
                     return
@@ -729,7 +729,7 @@ class SpellBot(discord.Client):
                     session.commit()
                     await self.try_to_update_game(game_to_update)
                 user.game = game
-            else:  # emoji == "➖":
+            else:  # emoji == "🚫":
                 if not any(user.xid == game_user.xid for game_user in game.users):
                     # this author is not in this game, so they can't be removed from it
                     return
@@ -1190,8 +1190,8 @@ class SpellBot(discord.Client):
         game.message_xid = post.id
         session.commit()
         if not use_queue:
-            await post.add_reaction("➕")
-            await post.add_reaction("➖")
+            await post.add_reaction("✋")
+            await post.add_reaction("🚫")
 
     @command(
         allow_dm=False,
@@ -1234,9 +1234,9 @@ class SpellBot(discord.Client):
         the channel until they've responded.
 
         Players will be able to enter or leave the game by reacting to the message that
-        SpellBot sends with the ➕ and ➖ emoji.
+        SpellBot sends with the ✋ and 🚫 emoji.
 
-        Up to five tags can be given as well to help describe the game expereince that you
+        Up to five tags can be given as well to help describe the game experience that you
         want. For example you might send `!lfg ~no-combo ~proxy` which will assign the
         tags `no-combo` and `proxy` to your game. People will be able to see what tags
         are set on your game when they are looking for games to join.
