@@ -40,18 +40,11 @@ game_too_few_mentions: Sorry $reply, you mentioned too few people. I expected $s
   players to be mentioned.
 game_too_many_mentions: Sorry $reply, you mentioned too many people. I expected $size
   players to be mentioned.
-invite_already_confirmed: Hi $reply, just letting you know that your invitation was
-  already confirmed.
-invite_confirmed: Thanks $reply, your invitation has been confirmed!
-invite_denied: Thank you for your response, $reply.
-invite_not_invited: Sorry $reply, but you do not currently have any pending invitations.
 leave: Ok $reply, you've been removed from the pending game that you were signed up
   for.
 leave_already: Sorry $reply, but you we're not in any pending games.
-lfg_invited: Hello $reply! You've been invited to a game by $mention. To confirm or
-  deny please respond with yes or no.
-lfg_mention_already: Sorry $reply, but $mention is already in another pending game
-  and can't be invited.
+lfg_mentions_different_games: Sorry $reply, but the users you mentioned are not all
+  in the same pending game.
 lfg_too_many_mentions: Sorry $reply, but you've mentioned too many players for that
   size game.
 no_dm: Hello $reply! That command only works in text channels.

@@ -12,7 +12,6 @@ import alembic.config  # type: ignore
 import discord
 from sqlalchemy import (
     BigInteger,
-    Boolean,
     Column,
     DateTime,
     Float,
@@ -179,8 +178,6 @@ class User(Base):
         Integer, ForeignKey("games.id", ondelete="SET NULL"), nullable=True, index=True
     )
     cached_name = Column(String(50))
-    invited = Column(Boolean, server_default=text("false"), nullable=False)
-    invite_confirmed = Column(Boolean, server_default=text("false"), nullable=False)
     power = Column(Integer, nullable=True)
     game = relationship("Game", back_populates="users")
 
@@ -204,8 +201,6 @@ class User(Base):
             "xid": self.xid,
             "game_id": self.game_id,
             "cached_name": self.cached_name,
-            "invited": self.invited,
-            "invite_confirmed": self.invite_confirmed,
             "power": self.power,
         }
 
