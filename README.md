@@ -170,14 +170,14 @@ with installing and using it.
 [ko-fi]:              https://ko-fi.com/Y8Y51VTHZ
 [kofi-button]:        https://user-images.githubusercontent.com/1903876/88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
 [lexicalunit]:        http://github.com/lexicalunit
-[lfg]:                https://user-images.githubusercontent.com/1903876/88854660-7a02c680-d1a6-11ea-9f12-75b9cbb439b4.png
+[lfg]:                https://user-images.githubusercontent.com/1903876/91242259-cedd2280-e6fb-11ea-8d30-e7127b6f96e9.png
 [mit-badge]:          https://img.shields.io/badge/License-MIT-yellow.svg
 [mit]:                https://opensource.org/licenses/MIT
 [pypi-badge]:         https://img.shields.io/pypi/v/spellbot
 [pypi]:               https://pypi.org/project/spellbot/
 [python-badge]:       https://img.shields.io/badge/python-3.7+-blue.svg
 [python]:             https://www.python.org/
-[ready]:              https://user-images.githubusercontent.com/1903876/88854658-796a3000-d1a6-11ea-93b6-63dccae5d637.png
+[ready]:              https://user-images.githubusercontent.com/1903876/91242257-cdabf580-e6fb-11ea-86ad-8f1aaf6d34dc.png
 [spelltable-discord]: https://discord.gg/zXzgqMN
 [spelltable]:         https://www.spelltable.com/
 [top-badge]:          https://top.gg/api/widget/status/725510263251402832.svg?noavatar=true
