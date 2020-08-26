@@ -492,13 +492,7 @@ class SpellBot(discord.Client):
         user_xid = cast(Any, user).id  # typing doesn't recognize that id exists
         db_user = session.query(User).filter(User.xid == user_xid).one_or_none()
         if not db_user:
-            db_user = User(
-                xid=user_xid,
-                game_id=None,
-                cached_name=cast(Any, user).name,
-                invited=False,
-                invite_confirmed=False,
-            )
+            db_user = User(xid=user_xid, game_id=None, cached_name=cast(Any, user).name,)
             session.add(db_user)
         else:
             # try to keep this relatively up to date
@@ -600,76 +594,6 @@ class SpellBot(discord.Client):
             async with self.session() as session:
                 await method(session, prefix, params, message)
                 return
-
-    async def process_invite_response(
-        self, message: discord.Message, choice: str
-    ) -> None:
-        async with self.session() as session:
-            user = self.ensure_user_exists(session, message.author)
-
-            if not user.invited:
-                await message.author.send(
-                    s(
-                        "invite_not_invited",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
-                    )
-                )
-                return
-
-            if user.invite_confirmed:
-                await message.author.send(
-                    s(
-                        "invite_already_confirmed",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
-                    )
-                )
-                return
-
-            game = user.game
-
-            # TODO: currently the codebase should always assign a channel_xid to games,
-            # can we update the models to have this column as non-nullable?
-            assert game.channel_xid is not None
-
-            if choice == "yes":
-                user.invite_confirmed = True
-                await message.author.send(
-                    s(
-                        "invite_confirmed",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
-                    )
-                )
-            else:  # choice == "no":
-                user.invited = False
-                user.game_id = None
-                await message.author.send(
-                    s(
-                        "invite_denied",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
-                    )
-                )
-            session.commit()
-
-            if all(
-                not user.invited or (user.invited and user.invite_confirmed)
-                for user in game.users
-            ):
-                channel = await self.safe_fetch_channel(game.channel_xid)
-                if not channel or not hasattr(channel, "send"):
-                    # This shouldn't be possible, if it happens just delete the game.
-                    # TODO: Inform players that their game is being deleted.
-                    err = f"process_invite_response: fetch channel {game.channel_xid}"
-                    logger.error(err)
-                    game.tags = []  # cascade delete tag associations
-                    session.delete(game)
-                    session.commit()
-                    return
-
-                post = await cast(TextChannel, channel).send(embed=game.to_embed())
-                game.message_xid = post.id
-                session.commit()
-                await post.add_reaction("✋")
-                await post.add_reaction("🚫")
 
     ##############################
     # Discord Client Behavior
@@ -784,12 +708,6 @@ class SpellBot(discord.Client):
             # only respond in text channels and to direct messages
             if not private and str(message.channel.type) != "text":
                 return
-
-            # handle confirm/deny invitations over direct message
-            if private:
-                choice = message.content.lstrip()[0:3].rstrip().lower()
-                if choice in ["yes", "no"]:
-                    return await self.process_invite_response(message, choice)
 
             # only respond to command-like messages
             if not private:
@@ -946,6 +864,92 @@ class SpellBot(discord.Client):
         embed.color = discord.Color(0x5A3EFD)
         await message.channel.send(embed=embed)
 
+    async def _validate_size(self, msg: discord.Message, size: Optional[int]) -> bool:
+        if not size or not (1 < size < 5):
+            user_xid = cast(discord.User, msg.author).id
+            await msg.channel.send(s("game_size_bad", reply=f"<@{user_xid}>"))
+            return False
+        return True
+
+    async def _validate_mentions_size(
+        self, msg: discord.Message, mentions: List[Any], size: int
+    ) -> bool:
+        if len(mentions) + 1 >= size:
+            user_xid = cast(discord.User, msg.author).id
+            await msg.channel.send(s("lfg_too_many_mentions", reply=f"<@{user_xid}>"))
+            return False
+        return True
+
+    async def _validate_tags_size(self, msg: discord.Message, tags: List[str]) -> bool:
+        if len(tags) > 5:
+            user_xid = cast(discord.User, msg.author).id
+            await msg.channel.send(s("tags_too_many", reply=f"<@{user_xid}>"))
+            return False
+        return True
+
+    async def _remove_user_from_game(self, session: Session, user: User):
+        """If the user is currently in a game, take them out of it."""
+        if user.waiting:
+            game_to_update = user.game
+            user.game_id = None
+            session.commit()
+            await self.try_to_update_game(game_to_update)
+
+    async def _respond_found_game(
+        self, msg: discord.Message, user: User, game: Game
+    ) -> Optional[discord.Message]:
+        # TODO: games will always have a message_xid even tho it's nullable in the db...
+        assert game.message_xid
+        post = await self.safe_fetch_message(msg.channel, game.message_xid)
+        if not post:
+            return None
+        link = post_link(game.server.guild_xid, msg.channel.id, game.message_xid)
+        resp = s("play_found", reply=f"<@{user.xid}>", link=link)
+        await msg.channel.send(resp)
+        return post
+
+    async def _add_user_to_game(self, session: Session, user: User, game: Game) -> None:
+        now = datetime.utcnow()
+        expires_at = now + timedelta(minutes=game.server.expire)
+        user.game = game
+        user.game.expires_at = expires_at
+        user.game.updated_at = now
+        session.commit()
+
+    async def _post_new_game(
+        self, session: Session, msg: discord.Message, game: Game
+    ) -> discord.Message:
+        post = await msg.channel.send(embed=game.to_embed())
+        game.message_xid = post.id
+        session.commit()
+        await post.add_reaction("✋")
+        await post.add_reaction("🚫")
+        return post
+
+    async def _update_or_start_game(
+        self, session: Session, game: Game, post: discord.Message
+    ) -> None:
+        if len(cast(List[User], game.users)) == game.size:  # game *might* be ready...
+            found_discord_users = []
+            for game_user in game.users:
+                discord_user = await self.safe_fetch_user(game_user.xid)
+                if not discord_user:  # user has left the server since signing up
+                    await self._remove_user_from_game(session, game_user)
+                else:
+                    found_discord_users.append(discord_user)
+            if len(found_discord_users) == game.size:  # game is *definitely* ready!
+                game.url = self.create_game() if game.system == "spelltable" else None
+                game.status = "started"
+                game.game_power = game.power
+                session.commit()
+                for discord_user in found_discord_users:
+                    await discord_user.send(embed=game.to_embed(dm=True))
+                await self.safe_edit_message(post, embed=game.to_embed())
+                await safe_clear_reactions(post)
+                return
+        else:  # game *definitely* isn't ready yet
+            await self.safe_edit_message(post, embed=game.to_embed())
+
     async def _play_helper(
         self,
         session: Session,
@@ -955,199 +959,87 @@ class SpellBot(discord.Client):
         create_new_game: bool,
     ) -> None:
         server = self.ensure_server_exists(session, message.channel.guild.id)
-
         user = self.ensure_user_exists(session, message.author)
-        if user.waiting:
-            game_to_update = user.game
-            user.game_id = None
-            session.commit()
-            await self.try_to_update_game(game_to_update)
-
         mentions = message.mentions if message.channel.type != "private" else []
 
-        o = parse_opts(params)
-        size, tag_names, system = o["size"], o["tags"], o["system"]
+        opts = parse_opts(params)
+        size: Optional[int] = opts["size"]
+        tag_names: List[str] = opts["tags"]
+        system: str = opts["system"]
 
-        if not size or not (1 < size < 5):
-            await message.channel.send(
-                s("game_size_bad", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+        if not await self._validate_size(message, size):
             return
+        assert size  # it's been validated, but pylance can't figure that out
 
-        if len(mentions) + 1 >= size:
-            await message.channel.send(
-                s(
-                    "lfg_too_many_mentions",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                )
-            )
+        if not await self._validate_mentions_size(message, mentions, size):
             return
+        mentioned_users: List[User] = [
+            self.ensure_user_exists(session, mentioned) for mentioned in mentions
+        ]
 
-        if len(tag_names) > 5:
-            await message.channel.send(
-                s("tags_too_many", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+        if not await self._validate_tags_size(message, tag_names):
             return
         tags = Tag.create_many(session, tag_names)
 
-        game: Optional[Game] = None
-        found_existing = False
-        join_existing = False
-
-        mentioned_users: List[User] = []
-        for mentioned in mentions:
-            mentioned_user = self.ensure_user_exists(session, mentioned)
-            if (
-                len(mentions) == 1
-                and mentioned_user.game
-                and mentioned_user.game.status == "pending"
-            ):
-                # this user wants to join up with another player already in a game
-                game = mentioned_user.game
-                found_existing = True
-                join_existing = True
-            elif mentioned_user.waiting:
-                # at least one of the multiple players mentioend is already in a game
-                await message.channel.send(
-                    s(
-                        "lfg_mention_already",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
-                        mention=f"<@{mentioned.id}>",
-                    )
-                )
-                return
-            mentioned_users.append(mentioned_user)
-
-        now = datetime.utcnow()
-        expires_at = now + timedelta(minutes=server.expire)
-        user.invited = False
-
-        if not game:
-            seats = 1 + len(mentions)
-            game = Game.find_existing(
-                session=session,
-                server=server,
-                channel_xid=message.channel.id,
-                size=size,
-                seats=seats,
-                tags=tags,
-                system=system,
-                power=user.power,
-            )
-
-        if game:
-            found_existing = True
-            user.game = game
-            user.game.expires_at = expires_at
-            user.game.updated_at = now
-        else:
-            if not create_new_game:
-                await message.channel.send(
-                    s(
-                        "game_not_found",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
-                    )
-                )
-                return
-
-            game = Game(
-                created_at=now,
-                updated_at=now,
-                expires_at=expires_at,
-                size=size,
-                channel_xid=message.channel.id,
-                system=system,
-                tags=tags,
-                server=server,
-            )
-            user.game = game
-        if not join_existing:
+        if mentioned_users:
+            other = mentioned_users[0]
             for mentioned_user in mentioned_users:
-                mentioned_user.game = game
-                mentioned_user.invited = True
-                mentioned_user.invite_confirmed = False
-        session.commit()
-
-        mentionor = message.author
-        mentionor_xid = cast(Any, mentionor).id  # typing doesn't recognize author.id
-
-        if mentioned_users and not join_existing:
-            for mentioned in mentions:
-                await mentioned.send(
-                    s(
-                        "lfg_invited",
-                        reply=f"<@{mentioned.id}>",
-                        mention=f"<@{mentionor_xid}>",
+                if not mentioned_user.waiting or mentioned_user.game != other.game:
+                    await message.channel.send(
+                        s("lfg_mentions_different_games", reply=f"<@{user.xid}>")
                     )
-                )
-            return  # we can't create the game post until we get confirmations
-
-        if found_existing and game.message_xid:
-            post = await self.safe_fetch_message(message.channel, game.message_xid)
-            if post:
-                await message.channel.send(
-                    s(
-                        "play_found",
-                        reply=f"<@{mentionor_xid}>",
-                        link=post_link(
-                            server.guild_xid, message.channel.id, game.message_xid
-                        ),
-                    )
-                )
-                found_discord_users = []
-                if len(cast(List[User], game.users)) == game.size:
-                    for game_user in game.users:
-                        discord_user = await self.safe_fetch_user(game_user.xid)
-                        if not discord_user:  # user has left the server since signing up
-                            game_user.game_id = None
-                        else:
-                            found_discord_users.append(discord_user)
-
-                if len(found_discord_users) == game.size:  # game is ready
-                    game.url = self.create_game() if game.system == "spelltable" else None
-                    game.status = "started"
-                    game.game_power = game.power
-                    session.commit()
-                    for discord_user in found_discord_users:
-                        await discord_user.send(embed=game.to_embed(dm=True))
-                    await self.safe_edit_message(post, embed=game.to_embed())
-                    await safe_clear_reactions(post)
-                else:
-                    session.commit()
-                    await self.safe_edit_message(post, embed=game.to_embed())
-                return  # Done!
-
-        if game.size == len(mentioned_users):
-            game = Game(
-                created_at=now,
-                updated_at=now,
-                expires_at=expires_at,
-                size=size,
-                channel_xid=message.channel.id,
-                system=system,
-                url=self.create_game(),
-                status="started",
-                tags=tags,
-                server=server,
-                users=mentioned_users,
-            )
-            session.commit()
-            post = await message.channel.send(embed=game.to_embed())
-            game.message_xid = post.id
-            session.commit()
-            for mentioned_user in mentioned_users:
-                discord_user = await self.safe_fetch_user(mentioned_user.xid)
-                if discord_user:
-                    await discord_user.send(embed=game.to_embed(dm=True))
-                else:
-                    pass  # TODO: Is this even possible? What should we do here...
+                    return
+            await self._remove_user_from_game(session, user)
+            await self._add_user_to_game(session, user, other.game)
+            game_post = await self._respond_found_game(message, user, other.game)
+            if not game_post:
+                game_post = await self._post_new_game(session, message, other.game)
+            await self._update_or_start_game(session, other.game, game_post)
             return
 
-        post = await message.channel.send(embed=game.to_embed())
-        game.message_xid = post.id
-        session.commit()
-        await post.add_reaction("✋")
-        await post.add_reaction("🚫")
+        new_game = False
+        game = Game.find_existing(
+            session=session,
+            server=server,
+            channel_xid=message.channel.id,
+            size=size,
+            seats=1,
+            tags=tags,
+            system=system,
+            power=user.power,
+        )
+
+        if not game:
+            if not create_new_game:
+                await message.channel.send(s("game_not_found", reply=f"<@{user.xid}>"))
+                return
+
+            now = datetime.utcnow()
+            expires_at = now + timedelta(minutes=server.expire)
+            new_game = True
+            game = Game(
+                created_at=now,
+                updated_at=now,
+                expires_at=expires_at,
+                size=size,
+                channel_xid=message.channel.id,
+                system=system,
+                tags=tags,
+                server=server,
+            )
+
+        await self._remove_user_from_game(session, user)
+        await self._add_user_to_game(session, user, game)
+
+        post: Optional[discord.Message] = None
+        if new_game:
+            post = await self._post_new_game(session, message, game)
+        else:
+            post = await self._respond_found_game(message, user, game)
+            if not post:  # the post must have been deleted
+                post = await self._post_new_game(session, message, game)
+
+        await self._update_or_start_game(session, game, post)
 
     @command(allow_dm=False, aliases=["play"], help_group="Commands for Players")
     async def lfg(
@@ -1159,9 +1051,8 @@ class SpellBot(discord.Client):
         The default game size is 4 but you can change it by adding, for example, `size:2`
         to create a two player game.
 
-        You can automatically invite players to the game by @ mentioning them in the
-        command. They will be sent invite confirmations and the game won't be posted to
-        the channel until they've responded.
+        You can automatically join players already in a game by @ mentioning them in the
+        command.
 
         Players will be able to enter or leave the game by reacting to the message that
         SpellBot sends with the ✋ and 🚫 emoji.
