@@ -1,6 +1,3 @@
->  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
-> 
-> The following subcommands are supported:
 > * `config`: Just show the current configuration for this server.
 > * `channel <list>`: Set SpellBot to only respond in the given list of channels.
 > * `prefix <string>`: Set SpellBot's command prefix for text channels.
@@ -25,3 +22,6 @@
 >  Create many games in batch from an attached CSV data file. _Requires the "SpellBot Admin" role._
 > 
 > For example, if your event is for a Modern tournement you might attach a CSV file with a comment like `!event Player1Username Player2Username`. This would assume that the players' discord user names are found in the "Player1Username" and "Player2Username" CSV columns. The game size is deduced from the number of column names given, so we know the games created in this example are `size:2`.
+> 
+> Games will not be created immediately. This is to allow you to verify things look ok. This command will also give you directions on how to actually start the games for this event as part of its reply.
+> * Optional: Add a message to DM players with `msg:` followed by whatever.
