@@ -98,6 +98,9 @@ class TestCodebase:
         errors = set()
         prog = re.compile(r"^.*[ \t]+$")
 
+        # Some sources from beautiful-jekyll have persistent whitespace issues.
+        WHITESPACE_EXCEPTIONS = "docs/_includes/head.html"
+
         def paths(tree, path):
             for blob in tree.blobs:
                 yield path / blob.name
@@ -114,8 +117,9 @@ class TestCodebase:
                 lastline = None
                 key = None
                 for i, line in enumerate(file.readlines()):
-                    key = f"{path.relative_to(REPO_ROOT)}:{i + 1}"
-                    if prog.match(line):
+                    rel_path = f"{path.relative_to(REPO_ROOT)}"
+                    key = f"{rel_path}:{i + 1}"
+                    if prog.match(line) and rel_path not in WHITESPACE_EXCEPTIONS:
                         errors.add(f"\t{key} - trailing whitespace")
                     lastline = line
                 if not rels.endswith("CNAME"):

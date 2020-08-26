@@ -5,7 +5,9 @@
       {% include social-networks-links.html %}
       {% if page.footer-extra %}
         <div class="footer-custom-content">
-          {% include {{ page.footer-extra }} %}
+          {% for file in page.footer-extra %}
+            {% include {{ file }} %}
+          {% endfor %}
         </div>
       {% endif %}
       <p class="copyright text-muted">
@@ -28,10 +30,10 @@
       {% endif%}
       </p>
       <!-- Please don't remove this, keep my open source work credited :) -->
-      <p class="theme-by text-muted">
+      {% unless site.remove-ads %}<p class="theme-by text-muted">
         Theme by
         <a href="https://beautifuljekyll.com">beautiful-jekyll</a>
-      </p>
+      </p>{% endunless %}
       </div>
     </div>
   </div>
