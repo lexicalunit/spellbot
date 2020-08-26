@@ -867,8 +867,7 @@ class SpellBot(discord.Client):
             if not help_group or method.help_group != help_group:
                 help_group = method.help_group
                 assert help_group
-                bar = "#" * (18 + len(help_group))
-                usage += f"\n```fix\n{bar}\n###      {help_group}      ###\n{bar}\n```"
+                usage += f"\n**### {help_group} ###**\n"
 
             doc = method.__doc__.split("&")
             cmd_params: List[str] = [param.strip() for param in doc[1:]]
@@ -1804,6 +1803,7 @@ class SpellBot(discord.Client):
     ) -> None:
         """
         Set or unset the power level of the deck you are going to play.
+        **You DO NOT NEED to have a power level set to use SpellBot.**
 
         When you have set a power level, the !lfg and !find commands will try to put
         you in games with other players of similar power levels.

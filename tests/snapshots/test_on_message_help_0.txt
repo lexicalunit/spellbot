@@ -1,9 +1,6 @@
 
-```fix
-######################################
-###      Commands for Players      ###
-######################################
-```
+**### Commands for Players ###**
+
 `!team [team-name]`
 >  Set or get your team on this server. To get your team name, run this command with no parameters.
 
@@ -14,6 +11,7 @@
 
 `!power <none | 1..10>`
 >  Set or unset the power level of the deck you are going to play.
+> **You DO NOT NEED to have a power level set to use SpellBot.**
 > 
 > When you have set a power level, the !lfg and !find commands will try to put you in games with other players of similar power levels.
 
@@ -49,9 +47,9 @@
 `!about`
 >  Get information about SpellBot.
 
-```fix
-#####################################
-###      Commands for Admins      ###
-#####################################
-```
+**### Commands for Admins ###**
+
 `!spellbot <subcommand> [subcommand parameters]`
+>  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
+> 
+> The following subcommands are supported:
