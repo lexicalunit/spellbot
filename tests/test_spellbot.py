@@ -1217,7 +1217,7 @@ class TestSpellBot:
             " for that size game."
         )
 
-    async def test_on_message_lfg_mention_already(self, client, channel_maker):
+    async def test_on_message_lfg_multiple_mentions_invalid(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(AMY, channel, "!lfg"))
 
@@ -1226,8 +1226,24 @@ class TestSpellBot:
         cmd = f"!lfg {mentions_str}"
         await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
         assert channel.last_sent_response == (
-            f"Sorry <@{JR.id}>, but <@{AMY.id}> is already in another"
-            " pending game and can't be invited."
+            f"Sorry <@{JR.id}>, but the users you mentioned are"
+            " not all in the same pending game."
+        )
+
+    async def test_on_message_lfg_multiple_mentions_valid(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+        post = channel.last_sent_message
+        await client.on_message(MockMessage(ADAM, channel, "!lfg"))
+
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!lfg {mentions_str}"
+        await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == (
+            f"I found a game for you, <@{JR.id}>. You have been signed up for it!"
+            " Go to game post: https://discordapp.com/channels/"
+            f"{channel.guild.id}/{channel.id}/{post.id}"
         )
 
     async def test_on_message_lfg_size_too_little(self, client, channel_maker):
@@ -1357,97 +1373,6 @@ class TestSpellBot:
             "name": "Tags",
             "value": "modern",
         } in channel.last_sent_embed["fields"]
-
-    async def test_on_message_lfg_with_invite(self, client, channel_maker):
-        channel = channel_maker.text()
-        mentions = [AMY, ADAM]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        cmd = f"!lfg {mentions_str}"
-        await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
-        assert len(channel.all_sent_calls) == 0
-        assert AMY.last_sent_response == (
-            f"Hello <@{AMY.id}>! You've been invited to a game by <@{JR.id}>."
-            " To confirm or deny please respond with yes or no."
-        )
-        assert ADAM.last_sent_response == (
-            f"Hello <@{ADAM.id}>! You've been invited to a game by <@{JR.id}>."
-            " To confirm or deny please respond with yes or no."
-        )
-
-    async def test_on_message_lfg_with_invite_all_confirmed(self, client, channel_maker):
-        channel = channel_maker.text()
-        dm = channel_maker.dm()
-        mentions = [AMY, ADAM]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        cmd = f"!lfg {mentions_str}"
-        await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
-        assert len(channel.all_sent_calls) == 0
-        assert AMY.last_sent_response == (
-            f"Hello <@{AMY.id}>! You've been invited to a game by <@{JR.id}>."
-            " To confirm or deny please respond with yes or no."
-        )
-        assert ADAM.last_sent_response == (
-            f"Hello <@{ADAM.id}>! You've been invited to a game by <@{JR.id}>."
-            " To confirm or deny please respond with yes or no."
-        )
-
-        await client.on_message(MockMessage(AMY, dm, "yes"))
-        assert AMY.last_sent_response == (
-            f"Thanks <@{AMY.id}>, your invitation has been confirmed!"
-        )
-        assert len(channel.all_sent_calls) == 0
-
-        await client.on_message(MockMessage(AMY, dm, "yes"))
-        assert AMY.last_sent_response == (
-            f"Hi <@{AMY.id}>, just letting you know that your invitation"
-            " was already confirmed."
-        )
-        assert len(channel.all_sent_calls) == 0
-
-        await client.on_message(MockMessage(ADAM, dm, "yes"))
-        assert ADAM.last_sent_response == (
-            f"Thanks <@{ADAM.id}>, your invitation has been confirmed!"
-        )
-
-        assert channel.last_sent_embed == game_embed_for(client, JR, False)
-        assert channel.last_sent_embed == game_embed_for(client, AMY, False)
-        assert channel.last_sent_embed == game_embed_for(client, ADAM, False)
-
-    async def test_on_message_lfg_with_invite_some_confirmed(self, client, channel_maker):
-        channel = channel_maker.text()
-        dm = channel_maker.dm()
-        mentions = [AMY, ADAM]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        cmd = f"!lfg {mentions_str}"
-        await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
-        assert len(channel.all_sent_calls) == 0
-        assert AMY.last_sent_response == (
-            f"Hello <@{AMY.id}>! You've been invited to a game by <@{JR.id}>."
-            " To confirm or deny please respond with yes or no."
-        )
-        assert ADAM.last_sent_response == (
-            f"Hello <@{ADAM.id}>! You've been invited to a game by <@{JR.id}>."
-            " To confirm or deny please respond with yes or no."
-        )
-
-        await client.on_message(MockMessage(AMY, dm, "yes"))
-        assert AMY.last_sent_response == (
-            f"Thanks <@{AMY.id}>, your invitation has been confirmed!"
-        )
-        assert len(channel.all_sent_calls) == 0
-
-        await client.on_message(MockMessage(DUDE, dm, "yes"))
-        assert DUDE.last_sent_response == (
-            f"Sorry <@{DUDE.id}>, but you do not currently have any pending invitations."
-        )
-        assert len(channel.all_sent_calls) == 0
-
-        await client.on_message(MockMessage(ADAM, dm, "no"))
-        assert ADAM.last_sent_response == f"Thank you for your response, <@{ADAM.id}>."
-
-        assert channel.last_sent_embed == game_embed_for(client, JR, False)
-        assert channel.last_sent_embed == game_embed_for(client, AMY, False)
-        assert not user_has_game(client, ADAM)
 
     async def test_on_message_leave(self, client, channel_maker):
         channel = channel_maker.text()
