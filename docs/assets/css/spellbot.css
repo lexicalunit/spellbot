@@ -95,3 +95,7 @@ a:hover {
 *:not(.fas):not(.fab) {
   font-family: 'Verdana', sans-serif !important;
 }
+
+.navbar-brand {
+  display: none !important;
+}

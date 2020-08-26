@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Removed
 
 - Removes the all the invitation code paths, this code needs to be refactored.
+- Removed the navbar brand element from the site navbar.
 
 ### Changed
 
