@@ -65,7 +65,6 @@ These commands are intended to be run by SpellBot Admins and help facilitate
 online events.
 
 - `!game`: Directly create games for the mentioned users.
-- `!queue`: Enter a player into an on-demand queue.
 - `!event`: Create a bunch of games all at once based on some uploaded data.
 - `!begin`: Start an event that you previously created with `!event`.
 - `!export`: Export historical game data for your server.

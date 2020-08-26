@@ -954,12 +954,11 @@ class SpellBot(discord.Client):
         params: List[str],
         message: discord.Message,
         create_new_game: bool,
-        use_queue: bool,
     ) -> None:
         server = self.ensure_server_exists(session, message.channel.guild.id)
 
         user = self.ensure_user_exists(session, message.author)
-        if not use_queue and user.waiting:
+        if user.waiting:
             game_to_update = user.game
             user.game_id = None
             session.commit()
@@ -976,19 +975,10 @@ class SpellBot(discord.Client):
             )
             return
 
-        if not use_queue and len(mentions) + 1 >= size:
+        if len(mentions) + 1 >= size:
             await message.channel.send(
                 s(
                     "lfg_too_many_mentions",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                )
-            )
-            return
-
-        if use_queue and len(mentions) < 1:
-            await message.channel.send(
-                s(
-                    "lfg_queue_no_mention",
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
@@ -1009,8 +999,7 @@ class SpellBot(discord.Client):
         for mentioned in mentions:
             mentioned_user = self.ensure_user_exists(session, mentioned)
             if (
-                not use_queue
-                and len(mentions) == 1
+                len(mentions) == 1
                 and mentioned_user.game
                 and mentioned_user.game.status == "pending"
             ):
@@ -1018,16 +1007,6 @@ class SpellBot(discord.Client):
                 game = mentioned_user.game
                 found_existing = True
                 join_existing = True
-            elif use_queue and mentioned_user.waiting:
-                # admins can pull users out of games
-                game_to_update = mentioned_user.game
-                mentioned_user.game_id = None
-                session.commit()
-                await self.try_to_update_game(game_to_update)
-                await message.channel.send(
-                    s("lfg_player_removed_from_queue", player=f"<@{mentioned_user.xid}>")
-                )
-                return
             elif mentioned_user.waiting:
                 # at least one of the multiple players mentioend is already in a game
                 await message.channel.send(
@@ -1045,7 +1024,7 @@ class SpellBot(discord.Client):
         user.invited = False
 
         if not game:
-            seats = 1 + len(mentions) if not use_queue else len(mentions)
+            seats = 1 + len(mentions)
             game = Game.find_existing(
                 session=session,
                 server=server,
@@ -1059,10 +1038,9 @@ class SpellBot(discord.Client):
 
         if game:
             found_existing = True
-            if not use_queue:
-                user.game = game
-                user.game.expires_at = expires_at
-                user.game.updated_at = now
+            user.game = game
+            user.game.expires_at = expires_at
+            user.game.updated_at = now
         else:
             if not create_new_game:
                 await message.channel.send(
@@ -1083,14 +1061,12 @@ class SpellBot(discord.Client):
                 tags=tags,
                 server=server,
             )
-            if not use_queue:
-                user.game = game
+            user.game = game
         if not join_existing:
             for mentioned_user in mentioned_users:
                 mentioned_user.game = game
-                if not use_queue:
-                    mentioned_user.invited = True
-                    mentioned_user.invite_confirmed = False
+                mentioned_user.invited = True
+                mentioned_user.invite_confirmed = False
         session.commit()
 
         mentionor = message.author
@@ -1098,45 +1074,27 @@ class SpellBot(discord.Client):
 
         if mentioned_users and not join_existing:
             for mentioned in mentions:
-                if not use_queue:
-                    await mentioned.send(
-                        s(
-                            "lfg_invited",
-                            reply=f"<@{mentioned.id}>",
-                            mention=f"<@{mentionor_xid}>",
-                        )
+                await mentioned.send(
+                    s(
+                        "lfg_invited",
+                        reply=f"<@{mentioned.id}>",
+                        mention=f"<@{mentionor_xid}>",
                     )
-                else:
-                    if game.message_xid:
-                        await message.channel.send(
-                            s(
-                                "lfg_player_added_to_queue_with_link",
-                                player=f"<@{mentioned.id}>",
-                                link=post_link(
-                                    server.guild_xid, message.channel.id, game.message_xid
-                                ),
-                            )
-                        )
-                    else:
-                        await message.channel.send(
-                            s("lfg_player_added_to_queue", player=f"<@{mentioned.id}>")
-                        )
-            if not use_queue:
-                return  # we can't create the game post until we get confirmations
+                )
+            return  # we can't create the game post until we get confirmations
 
         if found_existing and game.message_xid:
             post = await self.safe_fetch_message(message.channel, game.message_xid)
             if post:
-                if not use_queue:
-                    await message.channel.send(
-                        s(
-                            "play_found",
-                            reply=f"<@{mentionor_xid}>",
-                            link=post_link(
-                                server.guild_xid, message.channel.id, game.message_xid
-                            ),
-                        )
+                await message.channel.send(
+                    s(
+                        "play_found",
+                        reply=f"<@{mentionor_xid}>",
+                        link=post_link(
+                            server.guild_xid, message.channel.id, game.message_xid
+                        ),
                     )
+                )
                 found_discord_users = []
                 if len(cast(List[User], game.users)) == game.size:
                     for game_user in game.users:
@@ -1160,7 +1118,7 @@ class SpellBot(discord.Client):
                     await self.safe_edit_message(post, embed=game.to_embed())
                 return  # Done!
 
-        if use_queue and game.size == len(mentioned_users):
+        if game.size == len(mentioned_users):
             game = Game(
                 created_at=now,
                 updated_at=now,
@@ -1189,35 +1147,8 @@ class SpellBot(discord.Client):
         post = await message.channel.send(embed=game.to_embed())
         game.message_xid = post.id
         session.commit()
-        if not use_queue:
-            await post.add_reaction("✋")
-            await post.add_reaction("🚫")
-
-    @command(
-        allow_dm=False,
-        aliases=["signup"],
-        admin_only=True,
-        help_group="Commands for Admins",
-    )
-    async def queue(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
-        """
-        Add a player to an admin controller play queue. _Requires the
-        "SpellBot Admin" role._
-
-        This command works in a similar way as !lfg, however it is intended to be used
-        by event runners to add players to a special game queue. For example if they have
-        paid for access to an on-demand event.
-
-        I recommend that you run this command in a channel that players don't have
-        access to view so that the game post that SpellBot makes can't be interacted
-        with by players.
-        & [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...
-        """
-        await self._play_helper(
-            session, prefix, params, message, create_new_game=True, use_queue=True
-        )
+        await post.add_reaction("✋")
+        await post.add_reaction("🚫")
 
     @command(allow_dm=False, aliases=["play"], help_group="Commands for Players")
     async def lfg(
@@ -1242,9 +1173,7 @@ class SpellBot(discord.Client):
         are set on your game when they are looking for games to join.
         & [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...
         """
-        await self._play_helper(
-            session, prefix, params, message, create_new_game=True, use_queue=False
-        )
+        await self._play_helper(session, prefix, params, message, create_new_game=True)
 
     @command(
         allow_dm=False, aliases=["join", "search"], help_group="Commands for Players"
@@ -1255,9 +1184,7 @@ class SpellBot(discord.Client):
         """
         Works exactly like `!lfg` except that it will NOT create a new game.
         """
-        await self._play_helper(
-            session, prefix, params, message, create_new_game=False, use_queue=False
-        )
+        await self._play_helper(session, prefix, params, message, create_new_game=False)
 
     async def _verify_command_fest_report(
         self,
