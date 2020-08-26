@@ -9,15 +9,6 @@
 > * `teams <list>`: Sets the teams available on this server.
 > * `help`: Get detailed usage help for SpellBot.
 
-`!queue [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
->  Add a player to an admin controller play queue. _Requires the "SpellBot Admin" role._
-> 
-> This command works in a similar way as !lfg, however it is intended to be used by event runners to add players to a special game queue. For example if they have paid for access to an on-demand event.
-> 
-> I recommend that you run this command in a channel that players don't have access to view so that the game post that SpellBot makes can't be interacted with by players.
-> 
-> Aliases: `!signup`
-
 `!game @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]`
 >  Create a game between mentioned users. _Requires the "SpellBot Admin" role._
 > 
@@ -32,3 +23,5 @@
 
 `!event <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]`
 >  Create many games in batch from an attached CSV data file. _Requires the "SpellBot Admin" role._
+> 
+> For example, if your event is for a Modern tournement you might attach a CSV file with a comment like `!event Player1Username Player2Username`. This would assume that the players' discord user names are found in the "Player1Username" and "Player2Username" CSV columns. The game size is deduced from the number of column names given, so we know the games created in this example are `size:2`.

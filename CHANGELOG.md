@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Removed the !queue command as it was half-baked. It could come back again
+  but only after some refactoring in the !lfg code and when fully thought out.
+
 ## [v3.22.13](https://github.com/lexicalunit/spellbot/releases/tag/v3.22.13) - 2020-08-25
 
 ### Changed
