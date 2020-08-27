@@ -486,13 +486,13 @@ class SpellBot(discord.Client):
             return cast(str, r.json()["gameUrl"])
 
     def ensure_user_exists(
-        self, session: Session, user: Union[discord.User, discord.Member],
+        self, session: Session, user: Union[discord.User, discord.Member]
     ) -> User:
         """Ensures that the user row exists for the given discord user."""
         user_xid = cast(Any, user).id  # typing doesn't recognize that id exists
         db_user = session.query(User).filter(User.xid == user_xid).one_or_none()
         if not db_user:
-            db_user = User(xid=user_xid, game_id=None, cached_name=cast(Any, user).name,)
+            db_user = User(xid=user_xid, game_id=None, cached_name=cast(Any, user).name)
             session.add(db_user)
         else:
             # try to keep this relatively up to date
@@ -2129,7 +2129,7 @@ class SpellBot(discord.Client):
         await message.channel.send(embed=embed)
 
     async def spellbot_help(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message,
+        self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         await self.help(session, prefix, params, message)
 
