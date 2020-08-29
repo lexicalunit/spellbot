@@ -97,7 +97,7 @@ class Server(Base):
                 "prefix": self.prefix,
                 "expire": self.expire,
                 "channels": [channel.channel_xid for channel in self.channels],
-                "teams": [team.id for team in self.teams],
+                "teams": [team.name for team in self.teams],
             }
         )
 

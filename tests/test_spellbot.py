@@ -9,7 +9,7 @@ import pytz
 
 import spellbot
 from spellbot.constants import THUMB_URL
-from spellbot.data import Event, Game, User
+from spellbot.data import Event, Game, Server, User
 
 from .constants import CLIENT_TOKEN, TEST_DATA_ROOT
 from .mocks import AsyncMock
@@ -107,6 +107,14 @@ def all_events(client):
     session = client.data.Session()
     events = session.query(Event).all()
     rvalue = [json.loads(str(event)) for event in events]
+    session.close()
+    return rvalue
+
+
+def all_servers(client):
+    session = client.data.Session()
+    servers = session.query(Server).all()
+    rvalue = [json.loads(str(server)) for server in servers]
     session.close()
     return rvalue
 
@@ -2396,7 +2404,8 @@ class TestSpellBot:
         channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot teams"))
         assert channel.last_sent_response == (
-            f"Sorry <@{author.id}>, but please provide a list of team names."
+            f"Sorry <@{author.id}>, but please provide a list of team names"
+            " or `none` to erase teams."
         )
 
     async def test_on_message_spellbot_teams_too_few(self, client, channel_maker):
@@ -2404,18 +2413,18 @@ class TestSpellBot:
         channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot teams cats"))
         assert channel.last_sent_response == (
-            f"Sorry <@{author.id}>, but please give at least two team names."
+            f"Sorry <@{author.id}>, but please give at least two team names"
+            " or `none` to erase teams."
         )
 
     async def test_on_message_spellbot_teams_dupes(self, client, channel_maker):
         author = an_admin()
         channel = channel_maker.text()
         cmd = "!spellbot teams cats cats dogs dogs cats"
-        await client.on_message(MockMessage(author, channel, cmd))
-        assert channel.last_sent_response == (
-            f"Ok <@{author.id}>, I've set the teams available on this server to:"
-            " cats, dogs."
-        )
+        msg = MockMessage(author, channel, cmd)
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
+        assert set(all_servers(client)[0]["teams"]) == {"dogs", "cats"}
 
     async def test_on_message_spellbot_teams(self, client, channel_maker):
         author = an_admin()
@@ -2426,22 +2435,25 @@ class TestSpellBot:
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert "Teams" not in fields
 
-        await client.on_message(MockMessage(author, channel, "!spellbot teams cats dogs"))
-        assert channel.last_sent_response == (
-            f"Ok <@{author.id}>, I've set the teams available on this server to:"
-            " cats, dogs."
-        )
+        msg = MockMessage(author, channel, "!spellbot teams cats dogs")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
+        assert set(all_servers(client)[0]["teams"]) == {"dogs", "cats"}
 
-        await client.on_message(MockMessage(author, channel, "!spellbot teams ants cows"))
-        assert channel.last_sent_response == (
-            f"Ok <@{author.id}>, I've set the teams available on this server to:"
-            " ants, cows."
-        )
+        msg = MockMessage(author, channel, "!spellbot teams ants cows")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
+        assert set(all_servers(client)[0]["teams"]) == {"ants", "cows"}
 
         await client.on_message(MockMessage(author, channel, "!spellbot config"))
         about = channel.last_sent_embed
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert fields["Teams"] == "ants, cows"
+
+        msg = MockMessage(author, channel, "!spellbot teams none")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
+        assert set(all_servers(client)[0]["teams"]) == set()
 
     async def test_on_message_team_none(self, client, channel_maker):
         author = someone()
