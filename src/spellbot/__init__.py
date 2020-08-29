@@ -1720,6 +1720,8 @@ class SpellBot(discord.Client):
             user.power = None
             session.commit()
             await message.add_reaction("✅")
+            if user.waiting:
+                await self.try_to_update_game(user.game)
             return
 
         if power == "unlimited":
@@ -1742,6 +1744,8 @@ class SpellBot(discord.Client):
         user.power = power_i
         session.commit()
         await message.add_reaction("✅")
+        if user.waiting:
+            await self.try_to_update_game(user.game)
 
     @command(allow_dm=False, help_group="Commands for Players")
     async def team(
