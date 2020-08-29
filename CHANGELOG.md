@@ -7,23 +7,33 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Update game post when a user's power changes.
+
 ## [v3.25.0](https://github.com/lexicalunit/spellbot/releases/tag/v3.25.0) - 2020-08-26
+
+### Removed
+
+- Removed the navbar brand element from the site navbar.
+
+### Changed
+
+- Update to latest from beautiful-jekyll.
+
+### Added
+
+- Adds whitespace check exclusion for problematic beautiful-jekyll sources.
 
 ## [v3.24.0](https://github.com/lexicalunit/spellbot/releases/tag/v3.24.0) - 2020-08-25
 
 ### Removed
 
 - Removes the all the invitation code paths, this code needs to be refactored.
-- Removed the navbar brand element from the site navbar.
 
 ### Changed
 
 - Updated screenshots.
-- Update to latest from beautiful-jekyll.
-
-### Added
-
-- Adds whitespace check exclusion for problematic beautiful-jekyll sources.
 
 ## [v3.23.0](https://github.com/lexicalunit/spellbot/releases/tag/v3.23.0) - 2020-08-25
 
