@@ -2080,7 +2080,9 @@ class SpellBot(discord.Client):
             )
             return
 
-        if len(params) < 2:
+        erase_all_teams = params[0].lower() == "none"
+
+        if len(params) < 2 and not erase_all_teams:
             await message.channel.send(
                 s(
                     "spellbot_teams_too_few",
@@ -2094,17 +2096,12 @@ class SpellBot(discord.Client):
             session.delete(team)
         session.commit()
 
-        # then create new ones
-        server.teams = [Team(name=name) for name in set(params)]
-        session.commit()
+        if not erase_all_teams:
+            # then create new ones
+            server.teams = [Team(name=name) for name in set(params)]
+            session.commit()
 
-        await message.channel.send(
-            s(
-                "spellbot_teams",
-                reply=f"<@{cast(discord.User, message.author).id}>",
-                teams=", ".join(sorted(team.name for team in server.teams)),
-            )
-        )
+        await message.add_reaction("✅")
 
     async def spellbot_config(
         self,
