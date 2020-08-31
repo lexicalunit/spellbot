@@ -373,8 +373,7 @@ class Game(Base):
             .filter(
                 and_(
                     datetime.utcnow() >= Game.expires_at,
-                    Game.url == None,
-                    Game.status != "ready",
+                    Game.status == "pending",
                 )
             )
             .all(),

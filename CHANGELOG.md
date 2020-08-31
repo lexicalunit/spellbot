@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes a bug where started event games were getting culled with expired games.
+
 ## [v3.25.1](https://github.com/lexicalunit/spellbot/releases/tag/v3.25.1) - 2020-08-29
 
 ### Added
