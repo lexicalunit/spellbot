@@ -18,15 +18,13 @@ class MockAttachment:
         return self.data
 
 
-MOCK_DISCORD_MESSAGE_ID_START = 5000
-
-
 class MockDiscordMessage:
+    MOCK_DISCORD_MESSAGE_ID_START = 5000
+
     def __init__(self):
-        global MOCK_DISCORD_MESSAGE_ID_START
-        self.id = MOCK_DISCORD_MESSAGE_ID_START
+        self.id = MockDiscordMessage.MOCK_DISCORD_MESSAGE_ID_START
         self.channel = MockChannel("id", "text")
-        MOCK_DISCORD_MESSAGE_ID_START += 1
+        MockDiscordMessage.MOCK_DISCORD_MESSAGE_ID_START += 1
         self.reactions = []
         self.delete = AsyncMock()
 
