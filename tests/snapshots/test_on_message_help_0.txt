@@ -6,8 +6,6 @@
 
 `!report <Game ID> ...`
 >  Report your results on a finished game.
-> 
-> Aliases: `!results`
 
 `!power <none | 1..10>`
 >  Set or unset the power level of the deck you are going to play.
@@ -28,21 +26,15 @@
 > Players will be able to enter or leave the game by reacting to the message that SpellBot sends with the ✋ and 🚫 emoji.
 > 
 > Up to five tags can be given as well to help describe the game experience that you want. For example you might send `!lfg ~no-combo ~proxy` which will assign the tags `no-combo` and `proxy` to your game. People will be able to see what tags are set on your game when they are looking for games to join.
-> 
-> Aliases: `!play`
 
 `!leave`
 >  Leave any pending games that you've signed up.
-> 
-> Aliases: `!exit`, `!quit`
 
 `!help`
 >  Sends you this help message.
 
 `!find`
 >  Works exactly like `!lfg` except that it will NOT create a new game.
-> 
-> Aliases: `!join`, `!search`
 
 `!about`
 >  Get information about SpellBot.
@@ -54,3 +46,5 @@
 > 
 > The following subcommands are supported:
 > * `config`: Just show the current configuration for this server.
+> * `channel <list>`: Set SpellBot to only respond in the given list of channels.
+> * `prefix <string>`: Set SpellBot's command prefix for text channels.
