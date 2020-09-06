@@ -1,5 +1,3 @@
-> * `channel <list>`: Set SpellBot to only respond in the given list of channels.
-> * `prefix <string>`: Set SpellBot's command prefix for text channels.
 > * `links <string>`: Set the privacy level for generated SpellTable links.
 > * `expire <number>`: Set the number of minutes before pending games expire.
 > * `teams <list>`: Sets the teams available on this server.
@@ -27,3 +25,5 @@
 > * Optional: Add up to five tags by using `~tag-name`.
 
 `!begin <event id>`
+>  Confirm creation of games for the given event id. _Requires the "SpellBot Admin" role._
+---

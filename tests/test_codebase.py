@@ -77,7 +77,7 @@ class TestCodebase:
             readme = f.read()
 
         documented = set(re.findall("^- `!([a-z]+)`: .*$", readme, re.MULTILINE))
-        implemented = set(client._commands.values())
+        implemented = set(client.commands)
 
         assert sorted(documented) == sorted(implemented)
 
