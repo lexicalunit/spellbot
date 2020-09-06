@@ -40,8 +40,6 @@ game_too_few_mentions: Sorry $reply, you mentioned too few people. I expected $s
   players to be mentioned.
 game_too_many_mentions: Sorry $reply, you mentioned too many people. I expected $size
   players to be mentioned.
-leave: Ok $reply, you've been removed from the pending game that you were signed up
-  for.
 lfg_mentions_different_games: Sorry $reply, but the users you mentioned are not all
   in the same pending game.
 lfg_too_many_mentions: Sorry $reply, but you've mentioned too many players for that

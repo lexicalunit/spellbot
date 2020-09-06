@@ -1384,11 +1384,9 @@ class TestSpellBot:
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg"))
         assert channel.last_sent_embed == game_embed_for(client, author, False)
-        await client.on_message(MockMessage(author, channel, "!leave"))
-        assert channel.last_sent_response == (
-            f"Ok <@{author.id}>, you've been removed from the pending game"
-            " that you were signed up for."
-        )
+        msg = MockMessage(author, channel, "!leave")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
 
         # TODO: Actually test that the embed was edited correctly.
 
