@@ -28,6 +28,7 @@ class MockDiscordMessage:
         self.channel = MockChannel("id", "text")
         MOCK_DISCORD_MESSAGE_ID_START += 1
         self.reactions = []
+        self.delete = AsyncMock()
 
         # edited is a spy for tracking calls to edit(), it doesn't exist on the real obj.
         # There are also helpers for inspecting calls to sent defined on this class of
@@ -39,9 +40,6 @@ class MockDiscordMessage:
 
     async def clear_reactions(self):
         self.reactions = []
-
-    async def delete(self):
-        pass
 
     async def remove_reaction(self, emoji, user):
         done = False

@@ -165,8 +165,8 @@ class TestSpellBot:
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_is_admin(self, client, channel_maker, channel_type):
         channel = channel_maker.make(channel_type)
-        assert spellbot.is_admin(channel, not_an_admin()) == False
-        assert spellbot.is_admin(channel, an_admin()) == True
+        assert not spellbot.is_admin(channel, not_an_admin())
+        assert spellbot.is_admin(channel, an_admin())
 
     async def test_parse_opts(self):
         assert spellbot.parse_opts(["a", "B", "c"]) == {
@@ -217,7 +217,7 @@ class TestSpellBot:
             "system": "spelltable",
         }
 
-        # TODO: Coverage for all functionality of parse_opts could be here, but it is
+        # NOTE: Coverage for all functionality of parse_opts could be here, but it is
         #       actually covered in other places in these tests so, shrug...
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
@@ -637,7 +637,7 @@ class TestSpellBot:
         assert DUDE.last_sent_embed == player_response
 
         assert game_json_for(client, GUY)["tags"] == []
-        assert game_json_for(client, GUY)["message"] == None
+        assert game_json_for(client, GUY)["message"] is None
 
     async def test_on_message_game_with_message(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1383,12 +1383,15 @@ class TestSpellBot:
         channel = channel_maker.text()
         author = someone()
         await client.on_message(MockMessage(author, channel, "!lfg"))
+        message = channel.last_sent_message
         assert channel.last_sent_embed == game_embed_for(client, author, False)
         msg = MockMessage(author, channel, "!leave")
         await client.on_message(msg)
         assert "✅" in msg.reactions
 
-        # TODO: Actually test that the embed was edited correctly.
+        assert message.last_edited_embed["title"] == (
+            "**Waiting for 4 more players to join...**"
+        )
 
     async def test_on_message_leave_already(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1410,7 +1413,7 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        assert game_embed_for(client, ADAM, False) == None
+        assert game_embed_for(client, ADAM, False) is None
 
     async def test_on_raw_reaction_add_bad_channel(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1425,7 +1428,7 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        assert game_embed_for(client, ADAM, False) == None
+        assert game_embed_for(client, ADAM, False) is None
 
     async def test_on_raw_reaction_add_self(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1440,7 +1443,7 @@ class TestSpellBot:
             member=ADMIN,
         )
         await client.on_raw_reaction_add(payload)
-        assert game_embed_for(client, ADMIN, False) == None
+        assert game_embed_for(client, ADMIN, False) is None
 
     async def test_on_raw_reaction_add_bad_message(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1455,7 +1458,7 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        assert game_embed_for(client, ADAM, False) == None
+        assert game_embed_for(client, ADAM, False) is None
 
     async def test_on_raw_reaction_add_plus_unauth_channel(self, client, channel_maker):
         channel_a = channel_maker.text("a")
@@ -1478,7 +1481,7 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        assert game_embed_for(client, ADAM, False) == None
+        assert game_embed_for(client, ADAM, False) is None
 
     async def test_on_raw_reaction_add_plus_not_a_game(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1511,30 +1514,33 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert len(ADAM.all_sent_calls) == 0
 
-        # TODO: Actually test that the embed was edited correctly.
+        assert message.last_edited_embed["title"] == (
+            "**Waiting for 2 more players to join...**"
+        )
 
     async def test_on_raw_reaction_add_plus_already(self, client, channel_maker):
         channel = channel_maker.text()
 
         # first game
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
-        message = channel.last_sent_message
+        message1 = channel.last_sent_message
         payload = MockPayload(
             user_id=ADAM.id,
-            message_id=message.id,
+            message_id=message1.id,
             emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
         )
+        embed1 = channel.last_sent_embed
         await client.on_raw_reaction_add(payload)
 
         # second game
         await client.on_message(MockMessage(JR, channel, "!lfg ~modern"))
-        message = channel.last_sent_message
+        message2 = channel.last_sent_message
         payload = MockPayload(
             user_id=ADAM.id,
-            message_id=message.id,
+            message_id=message2.id,
             emoji="✋",
             channel_id=channel.id,
             guild_id=channel.guild.id,
@@ -1542,9 +1548,10 @@ class TestSpellBot:
         )
         await client.on_raw_reaction_add(payload)
         assert len(all_games(client)) == 2
-        assert game_embed_for(client, ADAM, False) != game_embed_for(client, GUY, False)
+        assert game_embed_for(client, ADAM, True) != game_embed_for(client, GUY, False)
 
-        # TODO: Actually test that the embed was edited correctly.
+        assert message1.last_edited_embed == embed1  # unchanged
+        assert message2.last_edited_embed["title"] == "**Your game is ready!**"
 
     async def test_on_raw_reaction_add_plus(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1561,7 +1568,9 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert "2 more players" in game_embed_for(client, ADAM, False)["title"]
 
-        # TODO: Actually test that the embed was edited correctly.
+        assert message.last_edited_embed["title"] == (
+            "**Waiting for 2 more players to join...**"
+        )
 
     async def test_on_raw_reaction_add_plus_complete(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1580,7 +1589,7 @@ class TestSpellBot:
         assert GUY.last_sent_embed == ready
         assert ADAM.last_sent_embed == ready
 
-        # TODO: Actually test that the embed was edited correctly.
+        assert message.last_edited_embed["title"] == "**Your game is ready!**"
 
     async def test_on_raw_reaction_add_plus_after_disconnect(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1600,7 +1609,18 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert "1 more player" in game_embed_for(client, ADAM, False)["title"]
 
-        # TODO: Actually test that the embed was edited correctly.
+        session = client.data.Session()
+        game = session.query(Game).all()[0]
+        session.close()
+        assert message.last_edited_embed == {
+            "color": 5914365,
+            "description": "To join/leave this game, react with ✋/🚫.",
+            "fields": [{"inline": False, "name": "Players", "value": f"<@{ADAM.id}>"}],
+            "footer": {"text": f"SpellBot Reference #SB{game.id}"},
+            "thumbnail": {"url": THUMB_URL},
+            "title": "**Waiting for 1 more player to join...**",
+            "type": "rich",
+        }
 
     async def test_on_raw_reaction_add_plus_then_minus(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1631,7 +1651,18 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert not user_has_game(client, ADAM)
 
-        # TODO: Actually test that the embed was edited correctly.
+        session = client.data.Session()
+        game = session.query(Game).all()[0]
+        session.close()
+        assert message.last_edited_embed == {
+            "color": 5914365,
+            "description": "To join/leave this game, react with ✋/🚫.",
+            "fields": [{"inline": False, "name": "Players", "value": f"<@{GUY.id}>"}],
+            "footer": {"text": f"SpellBot Reference #SB{game.id}"},
+            "thumbnail": {"url": THUMB_URL},
+            "title": "**Waiting for 3 more players to join...**",
+            "type": "rich",
+        }
 
     async def test_on_raw_reaction_minus_to_empty_game(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1663,8 +1694,14 @@ class TestSpellBot:
                 "type": "rich",
             },
         ]
-
-        # TODO: Actually test that the embed was edited correctly.
+        assert message.last_edited_embed == {
+            "color": 5914365,
+            "description": "To join/leave this game, react with ✋/🚫.",
+            "footer": {"text": f"SpellBot Reference #SB{games[0].id}"},
+            "thumbnail": {"url": THUMB_URL},
+            "title": "**Waiting for 4 more players to join...**",
+            "type": "rich",
+        }
 
     async def test_on_raw_reaction_add_minus_when_not_in_game(
         self, client, channel_maker
@@ -1761,6 +1798,7 @@ class TestSpellBot:
 
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        post = channel.last_sent_message
         assert channel.last_sent_embed == game_embed_for(client, GUY, False)
 
         assert user_has_game(client, GUY)
@@ -1774,7 +1812,7 @@ class TestSpellBot:
             " but I deleted your pending game due to server inactivity."
         )
 
-        # TODO: Actually test that the embed was deleted correctly.
+        post.delete.assert_called()
 
     async def test_game_cleanup_expired_after_left(self, client, freezer, channel_maker):
         NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
@@ -1782,6 +1820,7 @@ class TestSpellBot:
 
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        post = channel.last_sent_message
         assert channel.last_sent_embed == game_embed_for(client, GUY, False)
 
         assert user_has_game(client, GUY)
@@ -1794,7 +1833,7 @@ class TestSpellBot:
         assert not user_has_game(client, GUY)
         assert len(GUY.all_sent_calls) == 0
 
-        # TODO: Actually test that the embed was deleted correctly.
+        post.delete.assert_called()
 
     async def test_on_message_export_non_admin(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1916,7 +1955,7 @@ class TestSpellBot:
             async with client.session() as session:
                 session.execute("delete from nothing;")
                 assert False
-        except:
+        except Exception:
             exception_thrown = True
 
         assert exception_thrown
@@ -2056,7 +2095,7 @@ class TestSpellBot:
         assert user_json_for(client, author)["power"] == 5
         await client.on_message(MockMessage(author, channel, "!power off"))
         assert "✅" in msg.reactions
-        assert user_json_for(client, author)["power"] == None
+        assert user_json_for(client, author)["power"] is None
 
     async def test_on_message_lfg_with_power_similar(self, client, channel_maker):
         channel = channel_maker.text()
