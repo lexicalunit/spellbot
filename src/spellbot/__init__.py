@@ -1659,9 +1659,6 @@ class SpellBot(discord.Client):
             game = user.game
             user.game_id = None
             session.commit()
-            await message.channel.send(
-                s("leave", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
             await self.try_to_update_game(game)
         await message.add_reaction(GREEN_CHECK)
 

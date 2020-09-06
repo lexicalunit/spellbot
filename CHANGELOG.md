@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Removed
 
 - Removes aliases as they were confusing and no one was seeming to use them.
+- Removes unnecessary response from leave command.
 
 ## [v3.25.2](https://github.com/lexicalunit/spellbot/releases/tag/v3.25.2) - 2020-08-31
 
