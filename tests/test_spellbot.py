@@ -368,10 +368,9 @@ class TestSpellBot:
             ' Try using # to mention the channels you want or using "all" if you'
             " want me to operate in all channels."
         )
-        await client.on_message(MockMessage(author, channel, "!leave"))
-        assert channel.last_sent_response == (
-            f"Sorry <@{author.id}>, but you we're not in any pending games."
-        )
+        msg = MockMessage(author, channel, "!leave")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
 
     async def test_on_message_spellbot_channels_with_invalid(self, client, channel_maker):
         channel = channel_maker.text()
@@ -385,10 +384,9 @@ class TestSpellBot:
             " want me to operate in all channels."
         )
 
-        await client.on_message(MockMessage(author, channel, "!leave"))
-        assert channel.last_sent_response == (
-            f"Sorry <@{author.id}>, but you we're not in any pending games."
-        )
+        msg = MockMessage(author, channel, "!leave")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
 
     async def test_on_message_spellbot_channels_no_mention(self, client, channel_maker):
         channel = channel_maker.text()
@@ -402,10 +400,9 @@ class TestSpellBot:
             " want me to operate in all channels."
         )
 
-        await client.on_message(MockMessage(author, channel, "!leave"))
-        assert channel.last_sent_response == (
-            f"Sorry <@{author.id}>, but you we're not in any pending games."
-        )
+        msg = MockMessage(author, channel, "!leave")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
 
     async def test_on_message_spellbot_channels(self, client, channel_maker):
         author = an_admin()
@@ -551,7 +548,7 @@ class TestSpellBot:
     async def test_on_message_game_with_too_many_mentions(self, client, channel_maker):
         channel = channel_maker.text()
         author = an_admin()
-        mentions = [FRIEND, GUY, BUDDY, DUDE, AMY]
+        mentions = [FRIEND, TOM, BUDDY, DUDE, AMY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!game {mentions_str}"
         await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
@@ -1398,10 +1395,9 @@ class TestSpellBot:
     async def test_on_message_leave_already(self, client, channel_maker):
         channel = channel_maker.text()
         author = someone()
-        await client.on_message(MockMessage(author, channel, "!leave"))
-        assert channel.last_sent_response == (
-            f"Sorry <@{author.id}>, but you we're not in any pending games."
-        )
+        msg = MockMessage(author, channel, "!leave")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
 
     async def test_on_raw_reaction_add_irrelevant(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1488,7 +1484,7 @@ class TestSpellBot:
 
     async def test_on_raw_reaction_add_plus_not_a_game(self, client, channel_maker):
         channel = channel_maker.text()
-        await client.on_message(MockMessage(GUY, channel, "!leave"))
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
         payload = MockPayload(
             user_id=ADAM.id,
@@ -1499,7 +1495,7 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        assert message.reactions == []
+        assert game_embed_for(client, ADAM, False) == game_embed_for(client, GUY, False)
 
     async def test_on_raw_reaction_add_plus_twice(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1854,55 +1850,18 @@ class TestSpellBot:
             f"{game_three_at},,\n"
         )
 
-    async def test_on_message_play(self, client, channel_maker):
-        channel = channel_maker.text()
-
-        await client.on_message(MockMessage(ADAM, channel, "!play ~modern"))
-        assert len(all_games(client)) == 1
-
-        await client.on_message(MockMessage(ADAM, channel, "!play ~modern"))
-        assert len(all_games(client)) == 1
-
-        await client.on_message(MockMessage(JR, channel, "!play ~modern ~chaos"))
-        assert len(all_games(client)) == 2
-
-        await client.on_message(MockMessage(AMY, channel, "!play ~modern"))
-        assert len(all_games(client)) == 2
-
-        assert game_embed_for(client, ADAM, False) == game_embed_for(client, AMY, False)
-
-        await client.on_message(MockMessage(TOM, channel, "!play ~modern ~chaos"))
-        assert len(all_games(client)) == 2
-        assert game_embed_for(client, JR, False) == game_embed_for(client, TOM, False)
-
-        await client.on_message(MockMessage(JACOB, channel, "!play"))
-        assert len(all_games(client)) == 3
-
-        await client.on_message(MockMessage(GUY, channel, "!play ~modern ~no-ban-list"))
-        assert len(all_games(client)) == 4
-
-    async def test_on_message_play_full(self, client, channel_maker):
-        channel = channel_maker.text()
-
-        await client.on_message(MockMessage(JR, channel, "!play size:2"))
-        assert len(all_games(client)) == 1
-
-        await client.on_message(MockMessage(TOM, channel, "!play size:2"))
-        assert len(all_games(client)) == 1
-        assert game_embed_for(client, JR, True) == game_embed_for(client, TOM, True)
-
-    async def test_on_message_join_none_found(self, client, channel_maker):
+    async def test_on_message_find_none_found(self, client, channel_maker):
         channel = channel_maker.text()
         author = someone()
-        await client.on_message(MockMessage(author, channel, "!join"))
+        await client.on_message(MockMessage(author, channel, "!find"))
         assert channel.last_sent_response == (
             f"Sorry <@{author.id}>, but I didn't find any games for you to join."
         )
 
-    async def test_on_message_join(self, client, channel_maker):
+    async def test_on_message_find(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(AMY, channel, "!lfg"))
-        await client.on_message(MockMessage(JACOB, channel, "!join"))
+        await client.on_message(MockMessage(JACOB, channel, "!find"))
         assert game_embed_for(client, AMY, False) == game_embed_for(client, JACOB, False)
 
     async def test_on_message_lfg_with_functional_tag(self, client, channel_maker):
@@ -1941,7 +1900,7 @@ class TestSpellBot:
 
         mentions = [AMY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        cmd = f"!join {mentions_str}"
+        cmd = f"!find {mentions_str}"
         await client.on_message(MockMessage(JACOB, channel, cmd, mentions=mentions))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
 
@@ -2007,7 +1966,7 @@ class TestSpellBot:
         )
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!join ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
         assert "http://" in game_embed_for(client, AMY, True, dm=True)["description"]
         assert "http://" not in game_embed_for(client, AMY, True, dm=False)["description"]
 

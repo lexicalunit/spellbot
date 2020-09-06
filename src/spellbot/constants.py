@@ -12,3 +12,5 @@ INVITE_LINK = (
     "?client_id=725510263251402832&permissions=92224&scope=bot"
 )
 VOTE_LINK = "https://top.gg/bot/725510263251402832/vote"
+RED_X = "❌"  # emoji red x
+GREEN_CHECK = "✅"  # emoji green check

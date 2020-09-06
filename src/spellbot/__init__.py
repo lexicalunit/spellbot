@@ -15,7 +15,6 @@ from typing import (
     Any,
     AsyncGenerator,
     Callable,
-    Dict,
     Iterator,
     List,
     Optional,
@@ -44,7 +43,9 @@ from spellbot.constants import (
     ADMIN_ROLE,
     CREATE_ENDPOINT,
     DEFAULT_GAME_SIZE,
+    GREEN_CHECK,
     INVITE_LINK,
+    RED_X,
     THUMB_URL,
     VOTE_LINK,
 )
@@ -246,9 +247,8 @@ def paginate(text: str) -> Iterator[str]:
 
 def command(
     allow_dm: bool = True,
-    aliases: Optional[List[str]] = None,
-    admin_only=False,
-    help_group=None,
+    admin_only: bool = False,
+    help_group: Optional[str] = None,
 ) -> Callable:
     """Decorator for bot command methods."""
 
@@ -259,7 +259,6 @@ def command(
 
         cast(Any, wrapped).is_command = True
         cast(Any, wrapped).allow_dm = allow_dm
-        cast(Any, wrapped).aliases = aliases
         cast(Any, wrapped).admin_only = admin_only
         cast(Any, wrapped).help_group = help_group
         return wrapped
@@ -313,17 +312,11 @@ class SpellBot(discord.Client):
 
         # build a list of commands supported by this bot by fetching @command methods
         members = inspect.getmembers(self, predicate=inspect.ismethod)
-        command_members = [
-            member
+        self._commands = [
+            member[0]
             for member in members
             if hasattr(member[1], "is_command") and member[1].is_command
         ]
-        self._commands: Dict[str, str] = {}
-        for command_member in command_members:
-            self._commands[command_member[0]] = command_member[0]
-            if command_member[1].aliases:
-                for alias in command_member[1].aliases:
-                    self._commands[alias] = command_member[0]
 
         self._begin_background_tasks(loop)
 
@@ -474,6 +467,11 @@ class SpellBot(discord.Client):
                 session.delete(game)
             session.commit()
 
+    @property
+    def commands(self) -> List[str]:
+        """Returns a list of commands supported by this bot."""
+        return self._commands
+
     def run(self) -> None:  # pragma: no cover
         super().run(self.token)
 
@@ -555,11 +553,7 @@ class SpellBot(discord.Client):
             params.insert(0, request[5:])
             request = "power"
 
-        matching = [
-            command
-            for alias, command in self._commands.items()
-            if alias.startswith(request)
-        ]
+        matching = [command for command in self.commands if command.startswith(request)]
         if not matching:
             await message.channel.send(
                 s(
@@ -745,11 +739,10 @@ class SpellBot(discord.Client):
     # Any method of this class with a name that is decorated by @command is detected as a
     # bot command. These methods should have a signature like:
     #
-    #     @command(allow_dm=True, aliases=["whatever"], admin_only=False, help_group="Hi")
+    #     @command(allow_dm=True, admin_only=False, help_group="Hi")
     #     def command_name(self, session, prefix, params, message)
     #
     # - `allow_dm` indicates if the command is allowed to be used in direct messages.
-    # - `aliases` is a list alternative ways for users to run this command.
     # - `admin_only` indicates if the command is available only to admins.
     # - `help_group` is the group name for this command in the usage help response.
     # - `session` is a database session, you must commit any changes you make.
@@ -773,9 +766,7 @@ class SpellBot(discord.Client):
         Sends you this help message.
         """
         usage = ""
-        command_methods = [
-            getattr(self, command) for command in set(self._commands.values())
-        ]
+        command_methods = [getattr(self, command) for command in set(self.commands)]
 
         def method_sort_key(method):
             return method.help_group + method.__name__
@@ -804,9 +795,6 @@ class SpellBot(discord.Client):
             use = transformed
             use = use.replace("\n", "\n> ")
             use = re.sub(r"([^>])\s+$", r"\1", use, flags=re.M)
-            if method.aliases:
-                aliases_s = ", ".join(sorted([f"`{prefix}{m}`" for m in method.aliases]))
-                use += f"\n> \n> Aliases: {aliases_s}"
 
             title = f"{prefix}{method.__name__}"
             if cmd_params_use:
@@ -829,7 +817,7 @@ class SpellBot(discord.Client):
             "<https://ko-fi.com/Y8Y51VTHZ>"
         )
         if str(message.channel.type) != "private":
-            await message.add_reaction("✅")
+            await message.add_reaction(GREEN_CHECK)
         for page in paginate(usage):
             await message.author.send(page)
 
@@ -863,6 +851,7 @@ class SpellBot(discord.Client):
         embed.url = "http://spellbot.io/"
         embed.color = discord.Color(0x5A3EFD)
         await message.channel.send(embed=embed)
+        await message.add_reaction(GREEN_CHECK)
 
     async def _validate_size(self, msg: discord.Message, size: Optional[int]) -> bool:
         if not size or not (1 < size < 5):
@@ -968,16 +957,19 @@ class SpellBot(discord.Client):
         system: str = opts["system"]
 
         if not await self._validate_size(message, size):
+            await message.add_reaction(RED_X)
             return
         assert size  # it's been validated, but pylance can't figure that out
 
         if not await self._validate_mentions_size(message, mentions, size):
+            await message.add_reaction(RED_X)
             return
         mentioned_users: List[User] = [
             self.ensure_user_exists(session, mentioned) for mentioned in mentions
         ]
 
         if not await self._validate_tags_size(message, tag_names):
+            await message.add_reaction(RED_X)
             return
         tags = Tag.create_many(session, tag_names)
 
@@ -988,6 +980,7 @@ class SpellBot(discord.Client):
                     await message.channel.send(
                         s("lfg_mentions_different_games", reply=f"<@{user.xid}>")
                     )
+                    await message.add_reaction(RED_X)
                     return
             await self._remove_user_from_game(session, user)
             await self._add_user_to_game(session, user, other.game)
@@ -995,6 +988,7 @@ class SpellBot(discord.Client):
             if not game_post:
                 game_post = await self._post_new_game(session, message, other.game)
             await self._update_or_start_game(session, other.game, game_post)
+            await message.add_reaction(GREEN_CHECK)
             return
 
         new_game = False
@@ -1012,6 +1006,7 @@ class SpellBot(discord.Client):
         if not game:
             if not create_new_game:
                 await message.channel.send(s("game_not_found", reply=f"<@{user.xid}>"))
+                await message.add_reaction(RED_X)
                 return
 
             now = datetime.utcnow()
@@ -1040,8 +1035,9 @@ class SpellBot(discord.Client):
                 post = await self._post_new_game(session, message, game)
 
         await self._update_or_start_game(session, game, post)
+        await message.add_reaction(GREEN_CHECK)
 
-    @command(allow_dm=False, aliases=["play"], help_group="Commands for Players")
+    @command(allow_dm=False, help_group="Commands for Players")
     async def lfg(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1065,9 +1061,7 @@ class SpellBot(discord.Client):
         """
         await self._play_helper(session, prefix, params, message, create_new_game=True)
 
-    @command(
-        allow_dm=False, aliases=["join", "search"], help_group="Commands for Players"
-    )
+    @command(allow_dm=False, help_group="Commands for Players")
     async def find(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1139,7 +1133,7 @@ class SpellBot(discord.Client):
 
         return True
 
-    @command(allow_dm=False, aliases=["results"], help_group="Commands for Players")
+    @command(allow_dm=False, help_group="Commands for Players")
     async def report(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1151,6 +1145,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s("report_no_params", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         req = params[0]
@@ -1160,6 +1155,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s("report_too_long", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         game: Optional[Game] = None
@@ -1179,6 +1175,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s("report_no_game", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         if not game.status == "started":
@@ -1188,6 +1185,7 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         # TODO: This reporting logic is specific to CommandFest, it would be nice
@@ -1196,6 +1194,7 @@ class SpellBot(discord.Client):
             session=session, prefix=prefix, params=params, message=message, game=game
         )
         if not verified:
+            await message.add_reaction(RED_X)
             return
 
         report = Report(game_id=game.id, report=report_str)
@@ -1204,6 +1203,7 @@ class SpellBot(discord.Client):
         await message.channel.send(
             s("report", reply=f"<@{cast(discord.User, message.author).id}>")
         )
+        await message.add_reaction(GREEN_CHECK)
 
     @command(allow_dm=False, admin_only=False, help_group="Commands for Players")
     async def points(
@@ -1236,6 +1236,8 @@ class SpellBot(discord.Client):
                     )
                 )
 
+        await message.add_reaction(GREEN_CHECK)
+
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def event(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
@@ -1261,11 +1263,13 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s("event_no_data", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
         if not params:
             await message.channel.send(
                 s("event_no_params", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         opts = parse_opts(params)
@@ -1282,6 +1286,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s("tags_too_many", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
         if opt_msg and len(opt_msg) >= 255:
             await message.channel.send(
@@ -1290,6 +1295,7 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
         if not (1 < size <= 4):
             await message.channel.send(
@@ -1298,11 +1304,13 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
         if not attachment.filename.lower().endswith(".csv"):
             await message.channel.send(
                 s("event_not_csv", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         tags = Tag.create_many(session, tag_names)
@@ -1319,6 +1327,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s("event_no_header", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         columns = [header.index(param) for param in params]
@@ -1355,6 +1364,7 @@ class SpellBot(discord.Client):
                             players=players_s,
                         )
                     )
+                    await message.add_reaction(RED_X)
                     return
                 player_discord_user = member_lookup.get(lname)
                 if player_discord_user:
@@ -1423,6 +1433,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s("event_empty", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         session.commit()
@@ -1436,6 +1447,7 @@ class SpellBot(discord.Client):
                 count=count,
             )
         )
+        await message.add_reaction(GREEN_CHECK)
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def begin(
@@ -1450,6 +1462,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s("begin_no_params", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         event_id = to_int(params[0])
@@ -1457,6 +1470,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s("begin_bad_event", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         event = session.query(Event).filter(Event.id == event_id).one_or_none()
@@ -1464,6 +1478,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s("begin_bad_event", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         if event.started:
@@ -1473,6 +1488,7 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         for game in event.games:
@@ -1509,6 +1525,7 @@ class SpellBot(discord.Client):
                     players=players_str,
                 )
             )
+            await message.add_reaction(GREEN_CHECK)
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def game(
@@ -1540,17 +1557,20 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
         if tag_names and len(tag_names) > 5:
             await message.channel.send(
                 s("tags_too_many", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         if not size or not (1 < size <= 4):
             await message.channel.send(
                 s("game_size_bad", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         if len(mentions) > size:
@@ -1561,6 +1581,7 @@ class SpellBot(discord.Client):
                     size=size,
                 )
             )
+            await message.add_reaction(RED_X)
             return
         elif len(mentions) < size:
             await message.channel.send(
@@ -1570,6 +1591,7 @@ class SpellBot(discord.Client):
                     size=size,
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         mentioned_users = []
@@ -1623,8 +1645,9 @@ class SpellBot(discord.Client):
                 players=players_str,
             )
         )
+        await message.add_reaction(GREEN_CHECK)
 
-    @command(allow_dm=True, aliases=["quit", "exit"], help_group="Commands for Players")
+    @command(allow_dm=True, help_group="Commands for Players")
     async def leave(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -1632,19 +1655,15 @@ class SpellBot(discord.Client):
         Leave any pending games that you've signed up.
         """
         user = self.ensure_user_exists(session, message.author)
-        if not user.waiting:
+        if user.waiting:
+            game = user.game
+            user.game_id = None
+            session.commit()
             await message.channel.send(
-                s("leave_already", reply=f"<@{cast(discord.User, message.author).id}>")
+                s("leave", reply=f"<@{cast(discord.User, message.author).id}>")
             )
-            return
-
-        game = user.game
-        user.game_id = None
-        session.commit()
-        await message.channel.send(
-            s("leave", reply=f"<@{cast(discord.User, message.author).id}>")
-        )
-        await self.try_to_update_game(game)
+            await self.try_to_update_game(game)
+        await message.add_reaction(GREEN_CHECK)
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def export(
@@ -1687,6 +1706,7 @@ class SpellBot(discord.Client):
                     )
                 )
         await message.channel.send("", file=discord.File(export_file))
+        await message.add_reaction(GREEN_CHECK)
 
     @command(allow_dm=True, help_group="Commands for Players")
     async def power(
@@ -1709,6 +1729,7 @@ class SpellBot(discord.Client):
                     prepend=prepend,
                 )
             )
+            await message.add_reaction(RED_X)
 
         if not params:
             return await send_invalid("")
@@ -1719,9 +1740,10 @@ class SpellBot(discord.Client):
         if power in ["none", "off", "unset", "no", "0"]:
             user.power = None
             session.commit()
-            await message.add_reaction("✅")
+            await message.add_reaction(GREEN_CHECK)
             if user.waiting:
                 await self.try_to_update_game(user.game)
+            await message.add_reaction(GREEN_CHECK)
             return
 
         if power == "unlimited":
@@ -1743,9 +1765,10 @@ class SpellBot(discord.Client):
 
         user.power = power_i
         session.commit()
-        await message.add_reaction("✅")
+        await message.add_reaction(GREEN_CHECK)
         if user.waiting:
             await self.try_to_update_game(user.game)
+        await message.add_reaction(GREEN_CHECK)
 
     @command(allow_dm=False, help_group="Commands for Players")
     async def team(
@@ -1761,6 +1784,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s("team_none", reply=f"<@{cast(discord.User, message.author).id}>")
             )
+            await message.add_reaction(RED_X)
             return
 
         user = self.ensure_user_exists(session, message.author)
@@ -1775,6 +1799,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s("team_not_set", reply=f"<@{cast(discord.User, message.author).id}>")
                 )
+                await message.add_reaction(RED_X)
                 return
 
             team = session.query(Team).filter_by(id=user_team.team_id).one_or_none()
@@ -1783,6 +1808,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s("team_gone", reply=f"<@{cast(discord.User, message.author).id}>")
                 )
+                await message.add_reaction(RED_X)
                 return
 
             await message.channel.send(
@@ -1792,6 +1818,7 @@ class SpellBot(discord.Client):
                     team=team.name,
                 )
             )
+            await message.add_reaction(GREEN_CHECK)
             return
 
         team_request = params[0]
@@ -1811,6 +1838,7 @@ class SpellBot(discord.Client):
                     teams=teams,
                 ),
             )
+            await message.add_reaction(RED_X)
             return
 
         user_team = (
@@ -1826,7 +1854,7 @@ class SpellBot(discord.Client):
             )
             session.add(user_team)
         session.commit()
-        await message.add_reaction("✅")
+        await message.add_reaction(GREEN_CHECK)
 
     @command(allow_dm=False, help_group="Commands for Admins")
     async def spellbot(
@@ -1852,6 +1880,7 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         command = params[0]
@@ -1860,6 +1889,7 @@ class SpellBot(discord.Client):
             return
 
         if not await check_is_admin(message):
+            await message.add_reaction(RED_X)
             return
 
         server = self.ensure_server_exists(session, message.channel.guild.id)
@@ -1883,6 +1913,7 @@ class SpellBot(discord.Client):
                     command=command,
                 )
             )
+            await message.add_reaction(RED_X)
 
     async def spellbot_channels(
         self,
@@ -1898,6 +1929,7 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         # Blow away the current associations first, otherwise SQLAlchemy will explode.
@@ -1958,6 +1990,7 @@ class SpellBot(discord.Client):
                     channels=channels_str,
                 )
             )
+        await message.add_reaction(GREEN_CHECK)
 
     async def spellbot_prefix(
         self,
@@ -1973,6 +2006,7 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         prefix_str = params[0][0:10]
@@ -1985,6 +2019,7 @@ class SpellBot(discord.Client):
                 prefix=prefix_str,
             )
         )
+        await message.add_reaction(GREEN_CHECK)
 
     async def spellbot_links(
         self,
@@ -2000,6 +2035,7 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         links_str = params[0].lower()
@@ -2011,6 +2047,7 @@ class SpellBot(discord.Client):
                     input=params[0],
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         server.links = links_str
@@ -2022,6 +2059,7 @@ class SpellBot(discord.Client):
                 setting=links_str,
             )
         )
+        await message.add_reaction(GREEN_CHECK)
 
     async def spellbot_expire(
         self,
@@ -2037,6 +2075,7 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         expire = to_int(params[0])
@@ -2047,6 +2086,7 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         server = (
@@ -2063,6 +2103,7 @@ class SpellBot(discord.Client):
                 expire=expire,
             )
         )
+        await message.add_reaction(GREEN_CHECK)
 
     async def spellbot_teams(
         self,
@@ -2078,6 +2119,7 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         erase_all_teams = params[0].lower() == "none"
@@ -2089,6 +2131,7 @@ class SpellBot(discord.Client):
                     reply=f"<@{cast(discord.User, message.author).id}>",
                 )
             )
+            await message.add_reaction(RED_X)
             return
 
         # blow away any existing old teams
@@ -2101,7 +2144,7 @@ class SpellBot(discord.Client):
             server.teams = [Team(name=name) for name in set(params)]
             session.commit()
 
-        await message.add_reaction("✅")
+        await message.add_reaction(GREEN_CHECK)
 
     async def spellbot_config(
         self,
@@ -2128,6 +2171,7 @@ class SpellBot(discord.Client):
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
         await message.channel.send(embed=embed)
+        await message.add_reaction(GREEN_CHECK)
 
     async def spellbot_help(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
