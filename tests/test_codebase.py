@@ -104,8 +104,8 @@ class TestCodebase:
         def paths(tree, path):
             for blob in tree.blobs:
                 yield path / blob.name
-            for tree in tree.trees:
-                yield from paths(tree, path / tree.name)
+            for t in tree.trees:
+                yield from paths(t, path / t.name)
 
         def check(path):
             if path.suffix.lower() in EXCLUDE_EXTS:
