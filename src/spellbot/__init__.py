@@ -223,17 +223,17 @@ def paginate(text: str) -> Iterator[str]:
     breakpoints = ["\n", ".", ",", "-"]
     remaining = text
     while len(remaining) > 2000:
-        breakpoint = 1999
+        bp_pos = 1999
 
         for char in breakpoints:
             index = remaining.rfind(char, 1800, 1999)
             if index != -1:
-                breakpoint = index
+                bp_pos = index
                 break
 
-        message = remaining[0 : breakpoint + 1]
+        message = remaining[0 : bp_pos + 1]
         yield message.rstrip(" >\n")
-        remaining = remaining[breakpoint + 1 :]
+        remaining = remaining[bp_pos + 1 :]
         last_line_end = message.rfind("\n")
         if last_line_end != -1 and len(message) > last_line_end + 1:
             last_line_start = last_line_end + 1
@@ -252,7 +252,7 @@ def command(
 ) -> Callable:
     """Decorator for bot command methods."""
 
-    def callable(func: Callable):
+    def command_callable(func: Callable):
         @wraps(func)
         async def wrapped(*args, **kwargs) -> Any:
             return await func(*args, **kwargs)
@@ -263,7 +263,7 @@ def command(
         cast(Any, wrapped).help_group = help_group
         return wrapped
 
-    return callable
+    return command_callable
 
 
 class SpellBot(discord.Client):
@@ -478,10 +478,10 @@ class SpellBot(discord.Client):
     def create_game(self) -> str:  # pragma: no cover
         if self.mock_games:
             return f"http://exmaple.com/game/{uuid4()}"
-        else:
-            headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
-            r = requests.post(CREATE_ENDPOINT, headers=headers)
-            return cast(str, r.json()["gameUrl"])
+
+        headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
+        r = requests.post(CREATE_ENDPOINT, headers=headers)
+        return cast(str, r.json()["gameUrl"])
 
     def ensure_user_exists(
         self, session: Session, user: Union[discord.User, discord.Member]
@@ -574,20 +574,20 @@ class SpellBot(discord.Client):
                 )
             )
             return
-        else:
-            command = request if request in matching else matching[0]
-            method = getattr(self, command)
-            if not method.allow_dm and str(message.channel.type) == "private":
-                await message.author.send(
-                    s("no_dm", reply=f"<@{cast(discord.User, message.author).id}>")
-                )
-                return
-            if method.admin_only and not await check_is_admin(message):
-                return
-            logger.debug("%s%s (params=%s, message=%s)", prefix, command, params, message)
-            async with self.session() as session:
-                await method(session, prefix, params, message)
-                return
+
+        command = request if request in matching else matching[0]
+        method = getattr(self, command)
+        if not method.allow_dm and str(message.channel.type) == "private":
+            await message.author.send(
+                s("no_dm", reply=f"<@{cast(discord.User, message.author).id}>")
+            )
+            return
+        if method.admin_only and not await check_is_admin(message):
+            return
+        logger.debug("%s%s (params=%s, message=%s)", prefix, command, params, message)
+        async with self.session() as session:
+            await method(session, prefix, params, message)
+            return
 
     ##############################
     # Discord Client Behavior
@@ -1583,7 +1583,8 @@ class SpellBot(discord.Client):
             )
             await message.add_reaction(RED_X)
             return
-        elif len(mentions) < size:
+
+        if len(mentions) < size:
             await message.channel.send(
                 s(
                     "game_too_few_mentions",
