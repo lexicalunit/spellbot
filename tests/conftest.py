@@ -7,7 +7,7 @@ from .mocks.client import channel_maker, client, patch_discord
 # theoretically be run in any order, but this is the order that I prefer.
 SUITE_ORDER = [
     "TestSpellBot",
-    "TestReactions",
+    "TestOperations",
     "TestMigrations",
     "TestCodebase",
     "TestMeta",

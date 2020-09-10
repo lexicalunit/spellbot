@@ -4,14 +4,14 @@ from unittest.mock import Mock, patch
 import discord
 import pytest
 
-from spellbot.reactions import safe_clear_reactions, safe_remove_reaction
+from spellbot.operations import safe_clear_reactions, safe_remove_reaction
 
 from .mocks.discord import MockDiscordMessage
 from .mocks.users import FRIEND
 
 
 @pytest.mark.asyncio
-class TestReactions:
+class TestOperations:
     async def test_safe_remove_reaction_removes_reaction_from_message(self):
         message = MockDiscordMessage()
         with patch.object(
@@ -58,7 +58,7 @@ class TestReactions:
                     cast(discord.Message, message), "emoji", cast(discord.User, FRIEND)
                 )
 
-                assert "warning: discord: could not remove reaction" in caplog.text
+                assert "warning: discord (DM): could not remove reaction" in caplog.text
                 assert "BAD REQUEST" in caplog.text
 
     async def test_clear_reactions_clears_reactions_from_message(self):
@@ -101,5 +101,5 @@ class TestReactions:
             with patch.object(message.channel, "send", wraps=message.channel.send):
                 await safe_clear_reactions(cast(discord.Message, message))
 
-                assert "warning: discord: could not clear reactions" in caplog.text
+                assert "warning: discord (DM): could not clear reactions" in caplog.text
                 assert "BAD REQUEST" in caplog.text
