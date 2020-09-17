@@ -70,6 +70,7 @@ from spellbot.operations import (
     safe_react_error,
     safe_react_ok,
     safe_remove_reaction,
+    safe_send_user,
 )
 
 load_dotenv()
@@ -362,12 +363,13 @@ class SpellBot(discord.Client):
                 for user in game.users:
                     discord_user = await safe_fetch_user(self, user.xid)
                     if discord_user:
-                        await discord_user.send(
+                        await safe_send_user(
+                            discord_user,
                             s(
                                 "expired",
                                 reply=f"<@{discord_user.id}>",
                                 window=game.server.expire,
-                            )
+                            ),
                         )
                     user.game_id = None
                 game.tags = []  # cascade delete tag associations
@@ -507,9 +509,8 @@ class SpellBot(discord.Client):
         command = request if request in matching else matching[0]
         method = getattr(self, command)
         if not method.allow_dm and str(message.channel.type) == "private":
-            await message.author.send(
-                s("no_dm", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            author_user = cast(discord.User, message.author)
+            await safe_send_user(author_user, s("no_dm", reply=f"<@{author_user.id}>"))
             return
         if method.admin_only and not await check_is_admin(message):
             return
@@ -614,7 +615,7 @@ class SpellBot(discord.Client):
                 game.game_power = game.power
                 session.commit()
                 for discord_user in found_discord_users:
-                    await discord_user.send(embed=game.to_embed(dm=True))
+                    await safe_send_user(discord_user, embed=game.to_embed(dm=True))
                 await safe_edit_message(message, embed=game.to_embed())
                 await safe_clear_reactions(message)
             else:
@@ -752,7 +753,7 @@ class SpellBot(discord.Client):
         if str(message.channel.type) != "private":
             await safe_react_ok(message)
         for page in paginate(usage):
-            await message.author.send(page)
+            await safe_send_user(cast(discord.User, message.author), page)
 
     @command(allow_dm=True, help_group="Commands for Players")
     async def about(
@@ -865,7 +866,7 @@ class SpellBot(discord.Client):
                 game.game_power = game.power
                 session.commit()
                 for discord_user in found_discord_users:
-                    await discord_user.send(embed=game.to_embed(dm=True))
+                    await safe_send_user(discord_user, embed=game.to_embed(dm=True))
                 await safe_edit_message(post, embed=game.to_embed())
                 await safe_clear_reactions(post)
                 return
@@ -1447,7 +1448,7 @@ class SpellBot(discord.Client):
             session.commit()
 
             for discord_user in found_discord_users:
-                await discord_user.send(embed=response)
+                await safe_send_user(discord_user, embed=response)
 
             await message.channel.send(
                 s(

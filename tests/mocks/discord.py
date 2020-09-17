@@ -199,6 +199,7 @@ class MockChannel:
     def __init__(self, channel_id, channel_type):
         self.id = channel_id
         self.type = channel_type
+        self.guild = MockGuild(1, "guild", [])
 
         # sent is a spy for tracking calls to send(), it doesn't exist on the real object.
         # There are also helpers for inspecting calls to sent defined on this class of
