@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Cleans up error handling for discord operations.
+
 ## [v4.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v4.0.1) - 2020-09-10
 
 ### Added
