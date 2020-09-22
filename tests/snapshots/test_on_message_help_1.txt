@@ -1,6 +1,7 @@
-> * `links <string>`: Set the privacy level for generated SpellTable links.
+> * `links <private | public>`: Set the privacy for generated SpellTable links.
 > * `expire <number>`: Set the number of minutes before pending games expire.
 > * `teams <list>`: Sets the teams available on this server.
+> * `power <on | off>`: Turns the power command on or off for this server.
 > * `help`: Get detailed usage help for SpellBot.
 
 `!game @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]`
