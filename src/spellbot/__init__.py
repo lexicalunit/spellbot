@@ -1654,6 +1654,9 @@ class SpellBot(discord.Client):
         you in games with other players of similar power levels.
         & <none | 1..10>
         """
+        server = self.ensure_server_exists(session, message.channel.guild.id)
+        if not server.power_enabled:
+            return
 
         async def send_invalid(prepend) -> None:
             await message.channel.send(
@@ -1801,9 +1804,10 @@ class SpellBot(discord.Client):
         * `config`: Just show the current configuration for this server.
         * `channel <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot's command prefix for text channels.
-        * `links <string>`: Set the privacy level for generated SpellTable links.
+        * `links <private | public>`: Set the privacy for generated SpellTable links.
         * `expire <number>`: Set the number of minutes before pending games expire.
         * `teams <list>`: Sets the teams available on this server.
+        * `power <on | off>`: Turns the power command on or off for this server.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
@@ -1839,6 +1843,8 @@ class SpellBot(discord.Client):
             await self.spellbot_links(session, server, params[1:], message)
         elif command == "teams":
             await self.spellbot_teams(session, server, params[1:], message)
+        elif command == "power":
+            await self.spellbot_power(session, server, params[1:], message)
         else:
             await message.channel.send(
                 s(
@@ -2080,6 +2086,40 @@ class SpellBot(discord.Client):
 
         await safe_react_ok(message)
 
+    async def spellbot_power(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        if not params or params[0].lower() not in ["on", "off"]:
+            await message.channel.send(
+                s(
+                    "spellbot_power_bad",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                )
+            )
+            await safe_react_error(message)
+            return
+
+        server = (
+            session.query(Server)
+            .filter(Server.guild_xid == message.channel.guild.id)
+            .one_or_none()
+        )
+        setting = params[0].lower()
+        server.power_enabled = setting == "on"
+        session.commit()
+        await message.channel.send(
+            s(
+                "spellbot_power",
+                reply=f"<@{cast(discord.User, message.author).id}>",
+                setting=setting,
+            )
+        )
+        await safe_react_ok(message)
+
     async def spellbot_config(
         self,
         session: Session,
@@ -2099,6 +2139,7 @@ class SpellBot(discord.Client):
             channels_str = "all"
         embed.add_field(name="Active channels", value=channels_str)
         embed.add_field(name="Links", value=server.links.title())
+        embed.add_field(name="Power", value="On" if server.power_enabled else "Off")
         if server.teams:
             teams_str = ", ".join(sorted(team.name for team in server.teams))
             embed.add_field(name="Teams", value=teams_str)

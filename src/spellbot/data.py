@@ -12,6 +12,7 @@ import alembic.config  # type: ignore
 import discord
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     Column,
     DateTime,
     Float,
@@ -25,6 +26,7 @@ from sqlalchemy import (
     func,
     or_,
     text,
+    true,
 )
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.declarative import declarative_base
@@ -48,6 +50,7 @@ class Server(Base):
     prefix = Column(String(10), nullable=False, default="!")
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
     links = Column(String(10), nullable=False, server_default=text("'public'"))
+    power_enabled = Column(Boolean, nullable=False, server_default=true())
     games = relationship("Game", back_populates="server", uselist=True)
     channels = relationship("Channel", back_populates="server", uselist=True)
     teams = relationship("Team", back_populates="server", uselist=True)
@@ -304,6 +307,8 @@ class Game(Base):
 
     @property
     def power(self) -> Optional[float]:
+        if not self.server.power_enabled:
+            return None
         values: List[int] = [user.power for user in self.users if user.power]
         if values:
             return sum(values) / len(values)
@@ -335,14 +340,15 @@ class Game(Base):
             func.count(distinct(games_tags.c.tag_id)) == len(required_tag_ids),
             func.count(distinct(User.xid)) <= size - seats,
         ]
-        if power:
-            having_filters.append(between(func.avg(User.power), power - 1, power + 1))
-            if power >= 7:
-                having_filters.append(func.avg(User.power) >= 7)
+        if server.power_enabled:
+            if power:
+                having_filters.append(between(func.avg(User.power), power - 1, power + 1))
+                if power >= 7:
+                    having_filters.append(func.avg(User.power) >= 7)
+                else:
+                    having_filters.append(func.avg(User.power) < 7)
             else:
-                having_filters.append(func.avg(User.power) < 7)
-        else:
-            select_filters.append(User.power == None)
+                select_filters.append(User.power == None)
         inner = (
             session.query(Game.id)
             .join(User, isouter=True)
@@ -435,14 +441,18 @@ class Game(Base):
             tag_names = ", ".join(sorted_tag_names)
             embed.add_field(name="Tags", value=tag_names)
         power = self.power
-        if power:
+        if power and self.server.power_enabled:
             embed.add_field(name="Average Power Level", value=f"{power:.1f}")
         if self.users:
             players = ", ".join(
                 sorted(
                     [
                         f"<@{user.xid}>"
-                        + (f" (Power: {user.power})" if user.power else "")
+                        + (
+                            f" (Power: {user.power})"
+                            if (user.power and self.server.power_enabled)
+                            else ""
+                        )
                         for user in self.users
                     ]
                 )

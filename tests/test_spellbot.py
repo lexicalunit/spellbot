@@ -2007,6 +2007,50 @@ class TestSpellBot:
         assert "http://" in game_embed_for(client, AMY, True, dm=True)["description"]
         assert "http://" not in game_embed_for(client, AMY, True, dm=False)["description"]
 
+    async def test_on_message_spellbot_power_none(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot power"))
+        assert channel.last_sent_response == (
+            f'Sorry <@{author.id}>, but please provide a "on" or "off" setting.'
+        )
+
+    async def test_on_message_spellbot_power_invalid(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot power bottom"))
+        assert channel.last_sent_response == (
+            f'Sorry <@{author.id}>, but please provide a "on" or "off" setting.'
+        )
+
+    async def test_on_message_spellbot_power(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        await client.on_message(MockMessage(JACOB, channel, "!power 1"))
+        await client.on_message(MockMessage(AMY, channel, "!power 10"))
+
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot power off"))
+        assert channel.last_sent_response == (
+            f"Ok <@{author.id}>, I've turned the power command off."
+        )
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
+
+        await client.on_message(MockMessage(AMY, channel, "!power 1"))
+
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot power on"))
+        assert channel.last_sent_response == (
+            f"Ok <@{author.id}>, I've turned the power command on."
+        )
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        assert game_embed_for(client, AMY, False) != game_embed_for(client, JACOB, False)
+
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_on_message_power_no_params(self, client, channel_maker, channel_type):
         author = someone()
