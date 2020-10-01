@@ -306,8 +306,11 @@ category = "main"
 description = "Python humanize utilities"
 name = "humanize"
 optional = false
-python-versions = ">=3.5"
-version = "2.6.0"
+python-versions = ">=3.6"
+version = "3.0.0"
+
+[package.dependencies]
+setuptools = "*"
 
 [package.extras]
 tests = ["freezegun", "pytest", "pytest-cov"]
@@ -989,7 +992,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "5797e915cc2e839948013cbd9f5fcb7fc19daf474aad400942f142ae1b582aee"
+content-hash = "704e169b59d678137c78caf556586268300fec9563d88aae82210610c2fdea3d"
 lock-version = "1.0"
 python-versions = ">=3.7,<4"
 
@@ -1143,8 +1146,8 @@ humanfriendly = [
     {file = "humanfriendly-8.2.tar.gz", hash = "sha256:bf52ec91244819c780341a3438d5d7b09f431d3f113a475147ac9b7b167a3d12"},
 ]
 humanize = [
-    {file = "humanize-2.6.0-py3-none-any.whl", hash = "sha256:fd5b32945687443d5b8bc1e02fad027da1d293a9e963b3450122ad98ef534f21"},
-    {file = "humanize-2.6.0.tar.gz", hash = "sha256:8ee358ea6c23de896b9d1925ebe6a8504bb2ba7e98d5ccf4d07ab7f3b28f3819"},
+    {file = "humanize-3.0.0-py3-none-any.whl", hash = "sha256:d9ade5ebbdaa690757ea37aff38ed552955c6ec531aacb0fdfcea2a157f96aad"},
+    {file = "humanize-3.0.0.tar.gz", hash = "sha256:db08acbd8e31954f146467a213a112c4b80a5b8e319e06b76aa184a679bd8b48"},
 ]
 hupper = [
     {file = "hupper-1.10.2-py2.py3-none-any.whl", hash = "sha256:5de835f3b58324af2a8a16f52270c4d1a3d1734c45eed94b77fd622aea737f29"},
