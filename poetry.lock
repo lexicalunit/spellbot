@@ -212,7 +212,7 @@ description = "Faker is a Python package that generates fake data for you."
 name = "faker"
 optional = false
 python-versions = ">=3.5"
-version = "4.1.4"
+version = "4.1.6"
 
 [package.dependencies]
 python-dateutil = ">=2.4"
@@ -992,7 +992,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "73d91021e3498565540eaeaab369397dcf0408c15385aae16f5068f4bada9413"
+content-hash = "fa193cfbb57d836aaf2a715e8427a72f8216be8e7e2dbc7028d9054f48f94a02"
 lock-version = "1.0"
 python-versions = ">=3.7,<4"
 
@@ -1115,8 +1115,8 @@ dunamai = [
     {file = "dunamai-1.3.1.tar.gz", hash = "sha256:879653e60fd0c9667bf48cb563bed668c498be48ce33628b5f140909579ada7b"},
 ]
 faker = [
-    {file = "Faker-4.1.4-py3-none-any.whl", hash = "sha256:186931238bfd5b564fd3dae5491789096f01d16a52a30309e83b407c94f7e174"},
-    {file = "Faker-4.1.4.tar.gz", hash = "sha256:f5a86434c38346a2e7e6c8f3351c8b6de69d1f9e429b13e12f6a28dfdcdff870"},
+    {file = "Faker-4.1.6-py3-none-any.whl", hash = "sha256:078e2473f1283fc6d91d6b2d2d97e6db7ce9e7fb81ed19cef8d37926546010e2"},
+    {file = "Faker-4.1.6.tar.gz", hash = "sha256:df40c0a18144afd23cc537af81cbfac3057575d01b8ad883de898a9db3fb4d29"},
 ]
 filelock = [
     {file = "filelock-3.0.12-py3-none-any.whl", hash = "sha256:929b7d63ec5b7d6b71b0fa5ac14e030b3f70b75747cef1b10da9b879fef15836"},
