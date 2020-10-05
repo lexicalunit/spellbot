@@ -307,7 +307,7 @@ description = "Python humanize utilities"
 name = "humanize"
 optional = false
 python-versions = ">=3.6"
-version = "3.0.0"
+version = "3.0.1"
 
 [package.dependencies]
 setuptools = "*"
@@ -1146,8 +1146,8 @@ humanfriendly = [
     {file = "humanfriendly-8.2.tar.gz", hash = "sha256:bf52ec91244819c780341a3438d5d7b09f431d3f113a475147ac9b7b167a3d12"},
 ]
 humanize = [
-    {file = "humanize-3.0.0-py3-none-any.whl", hash = "sha256:d9ade5ebbdaa690757ea37aff38ed552955c6ec531aacb0fdfcea2a157f96aad"},
-    {file = "humanize-3.0.0.tar.gz", hash = "sha256:db08acbd8e31954f146467a213a112c4b80a5b8e319e06b76aa184a679bd8b48"},
+    {file = "humanize-3.0.1-py3-none-any.whl", hash = "sha256:b67f41ad9689bd8539fe02695385989d8c789019a90c450d3d2f8891e9e4bb32"},
+    {file = "humanize-3.0.1.tar.gz", hash = "sha256:8ff8f292c9bf52bbefdc620410e7defd1c95e7eeb1a5cfc2859aaea4b1877ff5"},
 ]
 hupper = [
     {file = "hupper-1.10.2-py2.py3-none-any.whl", hash = "sha256:5de835f3b58324af2a8a16f52270c4d1a3d1734c45eed94b77fd622aea737f29"},
