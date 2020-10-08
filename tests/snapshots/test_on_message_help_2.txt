@@ -1,6 +1,8 @@
-> Please report any bugs and suggestions at <https://github.com/lexicalunit/spellbot/issues>!
+> >  Confirm creation of games for the given event id. _Requires the "SpellBot Admin" role._
+---
+Please report any bugs and suggestions at <https://github.com/lexicalunit/spellbot/issues>!
 
-🔗 Add SpellBot to your Discord: <https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=92224&scope=bot>
+🔗 Add SpellBot to your Discord: <https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=93264&scope=bot>
 
 👍 Give SpellBot a vote on top.gg: <https://top.gg/bot/725510263251402832/vote>
 
