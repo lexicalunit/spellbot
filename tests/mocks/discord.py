@@ -186,11 +186,23 @@ class MockRole:
         self.name = name
 
 
+def create_voice_channel_side_effect(*args, **kwargs):
+    class MockVoiceChannel:
+        def __init__(self):
+            self.id = 1
+
+    return MockVoiceChannel()
+
+
 class MockGuild:
     def __init__(self, guild_id, name, members):
         self.id = guild_id
         self.name = name
         self.members = members
+
+        self.create_voice_channel = AsyncMock(
+            side_effect=create_voice_channel_side_effect
+        )
 
 
 class MockChannel:

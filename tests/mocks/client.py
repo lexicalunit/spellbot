@@ -7,7 +7,7 @@ import spellbot
 from ..constants import CLIENT_AUTH, CLIENT_TOKEN
 from ..test_meta import S_SPY
 from . import AsyncMock
-from .discord import MockDM, MockTextChannel
+from .discord import MockDM, MockGuild, MockTextChannel
 from .users import ADMIN, ALL_USERS, BOT, PUNK, SERVER_MEMBERS
 
 
@@ -15,6 +15,7 @@ class MockDiscordClient:
     def __init__(self, **kwargs):
         self.user = ADMIN
         self.channels = []
+        self._guild = MockGuild(1, "guild", [])
 
     def get_user(self, user_id):
         for user in ALL_USERS:
@@ -29,6 +30,9 @@ class MockDiscordClient:
             if channel.id == channel_id:
                 return channel
         return None
+
+    def get_guild(self, guild_id):
+        return self._guild
 
     async def fetch_channel(self, channel_id):
         return self.get_channel(channel_id)

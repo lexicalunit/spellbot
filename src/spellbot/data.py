@@ -23,6 +23,7 @@ from sqlalchemy import (
     and_,
     between,
     create_engine,
+    false,
     func,
     or_,
     text,
@@ -51,6 +52,7 @@ class Server(Base):
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
     links = Column(String(10), nullable=False, server_default=text("'public'"))
     power_enabled = Column(Boolean, nullable=False, server_default=true())
+    create_voice = Column(Boolean, nullable=False, server_default=false())
     games = relationship("Game", back_populates="server", uselist=True)
     channels = relationship("Channel", back_populates="server", uselist=True)
     teams = relationship("Team", back_populates="server", uselist=True)
@@ -299,6 +301,7 @@ class Game(Base):
         String(30), nullable=False, server_default=text("'spelltable'"), index=True
     )
     game_power = Column(Float, nullable=True)
+    voice_channel_xid = Column(BigInteger, nullable=True, index=True)
     users = relationship("User", back_populates="game", uselist=True)
     tags = relationship("Tag", secondary=games_tags, back_populates="games", uselist=True)
     server = relationship("Server", back_populates="games")
@@ -402,7 +405,9 @@ class Game(Base):
             "system": self.system,
             "message": self.message,
             "message_xid": self.message_xid,
+            "voice_channel_xid": self.voice_channel_xid,
             "tags": [tag.name for tag in self.tags],
+            "event_id": self.event.id if self.event else None,
             "power": self.power,
         }
 
@@ -434,6 +439,10 @@ class Game(Base):
         else:  # self.system == "arena"
             embed.description = (
                 "Please exchange Arena contact information and head over there to play!"
+            )
+        if self.voice_channel_xid:
+            embed.add_field(
+                name="Voice Channel", value=f"<#{self.voice_channel_xid}>", inline=False
             )
         tag_names = None
         if self.tags and len(cast(List[Tag], self.tags)) >= 1:

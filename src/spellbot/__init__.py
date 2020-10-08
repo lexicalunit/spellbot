@@ -62,6 +62,7 @@ from spellbot.data import (
 )
 from spellbot.operations import (
     safe_clear_reactions,
+    safe_create_voice_channel,
     safe_delete_message,
     safe_edit_message,
     safe_fetch_channel,
@@ -406,13 +407,18 @@ class SpellBot(discord.Client):
     def run(self) -> None:  # pragma: no cover
         super().run(self.token)
 
-    def create_game(self) -> str:  # pragma: no cover
+    def create_spelltable_url(self) -> str:  # pragma: no cover
         if self.mock_games:
             return f"http://exmaple.com/game/{uuid4()}"
 
         headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
         r = requests.post(CREATE_ENDPOINT, headers=headers)
         return cast(str, r.json()["gameUrl"])
+
+    async def make_voice(self, game: Game) -> Optional[int]:
+        return await safe_create_voice_channel(
+            self, game.server.guild_xid, f"Game-SB{game.id}"
+        )
 
     def ensure_user_exists(
         self, session: Session, user: Union[discord.User, discord.Member]
@@ -610,7 +616,11 @@ class SpellBot(discord.Client):
                         found_discord_users.append(discord_user)
 
             if len(found_discord_users) == game.size:  # game is ready
-                game.url = self.create_game() if game.system == "spelltable" else None
+                game.url = (
+                    self.create_spelltable_url() if game.system == "spelltable" else None
+                )
+                if game.server.create_voice:
+                    game.voice_channel_xid = await self.make_voice(game)
                 game.status = "started"
                 game.game_power = game.power
                 session.commit()
@@ -861,7 +871,11 @@ class SpellBot(discord.Client):
                 else:
                     found_discord_users.append(discord_user)
             if len(found_discord_users) == game.size:  # game is *definitely* ready!
-                game.url = self.create_game() if game.system == "spelltable" else None
+                game.url = (
+                    self.create_spelltable_url() if game.system == "spelltable" else None
+                )
+                if game.server.create_voice:
+                    game.voice_channel_xid = await self.make_voice(game)
                 game.status = "started"
                 game.game_power = game.power
                 session.commit()
@@ -1407,7 +1421,9 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        event = session.query(Event).filter(Event.id == event_id).one_or_none()
+        event: Optional[Event] = (
+            session.query(Event).filter(Event.id == event_id).one_or_none()
+        )
         if not event:
             await message.channel.send(
                 s("begin_bad_event", reply=f"<@{cast(discord.User, message.author).id}>")
@@ -1425,10 +1441,10 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        for game in event.games:
+        for game in cast(List[Game], event.games):
             # Can't rely on "<@{xid}>" working because the user could have logged out.
-            sorted_names: List[str] = sorted([user.cached_name for user in game.users])
-            players_str = ", ".join(sorted_names)
+            sorted_names = sorted([user.cached_name for user in game.users])
+            players_str = ", ".join(cast(List[str], sorted_names))
 
             found_discord_users = []
             for game_user in game.users:
@@ -1438,10 +1454,14 @@ class SpellBot(discord.Client):
                     await message.channel.send(warning)
                 else:
                     found_discord_users.append(discord_user)
-            if len(found_discord_users) != len(game.users):
+            if len(found_discord_users) != len(cast(List[User], game.users)):
                 continue
 
-            game.url = self.create_game() if game.system == "spelltable" else None
+            game.url = (
+                self.create_spelltable_url() if game.system == "spelltable" else None
+            )
+            if game.server.create_voice:
+                game.voice_channel_xid = await self.make_voice(game)
             game.status = "started"
             game.game_power = game.power
             response = game.to_embed(dm=True)
@@ -1545,7 +1565,10 @@ class SpellBot(discord.Client):
 
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=server.expire)
-        url = self.create_game() if system == "spelltable" else None
+        url = self.create_spelltable_url() if system == "spelltable" else None
+        # FIXME: Do we create the voice channel in this case?
+        # if game.server.create_voice:
+        #     game.voice_channel_xid = await self.make_voice(game)  # type: ignore
         game = Game(
             channel_xid=message.channel.id,
             created_at=now,
@@ -1808,6 +1831,7 @@ class SpellBot(discord.Client):
         * `expire <number>`: Set the number of minutes before pending games expire.
         * `teams <list>`: Sets the teams available on this server.
         * `power <on | off>`: Turns the power command on or off for this server.
+        * `voice <on | off>`: When on, SpellBot will automatically create voice channels.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
@@ -1845,6 +1869,8 @@ class SpellBot(discord.Client):
             await self.spellbot_teams(session, server, params[1:], message)
         elif command == "power":
             await self.spellbot_power(session, server, params[1:], message)
+        elif command == "voice":
+            await self.spellbot_voice(session, server, params[1:], message)
         else:
             await message.channel.send(
                 s(
@@ -2120,6 +2146,40 @@ class SpellBot(discord.Client):
         )
         await safe_react_ok(message)
 
+    async def spellbot_voice(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        if not params or params[0].lower() not in ["on", "off"]:
+            await message.channel.send(
+                s(
+                    "spellbot_voice_bad",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                )
+            )
+            await safe_react_error(message)
+            return
+
+        server = (
+            session.query(Server)
+            .filter(Server.guild_xid == message.channel.guild.id)
+            .one_or_none()
+        )
+        setting = params[0].lower()
+        server.create_voice = setting == "on"  # type: ignore
+        session.commit()
+        await message.channel.send(
+            s(
+                "spellbot_voice",
+                reply=f"<@{cast(discord.User, message.author).id}>",
+                setting=setting,
+            )
+        )
+        await safe_react_ok(message)
+
     async def spellbot_config(
         self,
         session: Session,
@@ -2140,6 +2200,10 @@ class SpellBot(discord.Client):
         embed.add_field(name="Active channels", value=channels_str)
         embed.add_field(name="Links", value=server.links.title())
         embed.add_field(name="Power", value="On" if server.power_enabled else "Off")
+        embed.add_field(
+            name="Voice Channels",
+            value="On" if server.create_voice else "Off",
+        )
         if server.teams:
             teams_str = ", ".join(sorted(team.name for team in server.teams))
             embed.add_field(name="Teams", value=teams_str)
