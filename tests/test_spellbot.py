@@ -447,7 +447,7 @@ class TestSpellBot:
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
             "\n"
             "[🔗 Add SpellBot to your Discord!](https://discordapp.com/api/oauth2"
-            "/authorize?client_id=725510263251402832&permissions=92224&scope=bot)\n"
+            "/authorize?client_id=725510263251402832&permissions=93264&scope=bot)\n"
             "\n"
             "[👍 Give SpellBot a vote on top.gg!]"
             "(https://top.gg/bot/725510263251402832/vote)\n"
@@ -1856,9 +1856,6 @@ class TestSpellBot:
             member=ADAM,
         )
         await client.on_raw_reaction_add(payload)
-        game_one = all_games(client)[0]
-        game_one_id = game_one["id"]
-        game_one_at = game_one["created_at"]
 
         # game_two is pending, so it shouldn't show up in the csv export
         await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
@@ -1873,19 +1870,34 @@ class TestSpellBot:
         event_id = event["id"]
 
         await client.on_message(MockMessage(admin_author, channel, f"!begin {event_id}"))
-        game_three = all_games(client)[-1]
-        game_three_id = game_three["id"]
-        game_three_at = game_three["created_at"]
-        game_three_url = game_three["url"]
-
         await client.on_message(MockMessage(an_admin(), channel, "!export"))
+
         attachment = channel.all_sent_files[0]
-        assert attachment.fp.read().decode() == (
-            "id,size,status,system,channel,url,event_id,created_at,tags,message\n"
-            f"{game_one_id},2,started,mtgo,#{channel.name},,,{game_one_at},,\n"
-            f"{game_three_id},2,started,spelltable,,{game_three_url},{event_id},"
-            f"{game_three_at},,\n"
-        )
+        data = attachment.fp.read().decode()
+
+        expected = ["id,size,status,system,channel,url,event_id,created_at,tags,message"]
+        for game in all_games(client):
+            if game["status"] == "pending":
+                continue
+            expected.append(
+                ",".join(
+                    [
+                        str(game["id"]) if game["id"] else "",
+                        str(game["size"]) if game["size"] else "",
+                        str(game["status"]) if game["status"] else "",
+                        str(game["system"]) if game["system"] else "",
+                        f"#{channel.name}" if game["channel_xid"] else "",
+                        str(game["url"]) if game["url"] else "",
+                        str(game["event_id"]) if game["event_id"] else "",
+                        str(game["created_at"]) if game["created_at"] else "",
+                        str(game["tags"]) if game["tags"] else "",
+                        str(game["message"]) if game["message"] else "",
+                    ]
+                )
+            )
+        for line in expected:
+            assert line in data
+        assert len(data.split("\n")) == 4
 
     async def test_on_message_find_none_found(self, client, channel_maker):
         channel = channel_maker.text()
@@ -2012,7 +2024,7 @@ class TestSpellBot:
         channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot power"))
         assert channel.last_sent_response == (
-            f'Sorry <@{author.id}>, but please provide a "on" or "off" setting.'
+            f'Sorry <@{author.id}>, but please provide an "on" or "off" setting.'
         )
 
     async def test_on_message_spellbot_power_invalid(self, client, channel_maker):
@@ -2020,7 +2032,7 @@ class TestSpellBot:
         channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot power bottom"))
         assert channel.last_sent_response == (
-            f'Sorry <@{author.id}>, but please provide a "on" or "off" setting.'
+            f'Sorry <@{author.id}>, but please provide an "on" or "off" setting.'
         )
 
     async def test_on_message_spellbot_power(self, client, channel_maker):
@@ -2050,6 +2062,45 @@ class TestSpellBot:
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
         await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
         assert game_embed_for(client, AMY, False) != game_embed_for(client, JACOB, False)
+
+    async def test_on_message_spellbot_voice_none(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot voice"))
+        assert channel.last_sent_response == (
+            f'Sorry <@{author.id}>, but please provide an "on" or "off" setting.'
+        )
+
+    async def test_on_message_spellbot_voice_invalid(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot voice loud"))
+        assert channel.last_sent_response == (
+            f'Sorry <@{author.id}>, but please provide an "on" or "off" setting.'
+        )
+
+    async def test_on_message_spellbot_voice(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot voice off"))
+        assert channel.last_sent_response == (
+            f"Ok <@{author.id}>, I've turned off automatic voice channel creation."
+        )
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
+        assert game_json_for(client, AMY)["voice_channel_xid"] is None
+
+        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
+        assert channel.last_sent_response == (
+            f"Ok <@{author.id}>, I've turned on automatic voice channel creation."
+        )
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
+        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_on_message_power_no_params(self, client, channel_maker, channel_type):

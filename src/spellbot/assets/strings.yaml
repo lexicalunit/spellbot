@@ -83,7 +83,7 @@ spellbot_links_none: Sorry $reply, but please provide a links privacy setting.
 spellbot_missing_subcommand: Sorry $reply, please provide a subcommand when using
   this command.
 spellbot_power: Ok $reply, I've turned the power command $setting.
-spellbot_power_bad: Sorry $reply, but please provide a "on" or "off" setting.
+spellbot_power_bad: Sorry $reply, but please provide an "on" or "off" setting.
 spellbot_prefix: Ok $reply, I will now use "$prefix" as my command prefix on this
   server.
 spellbot_prefix_none: Sorry $reply, but please provide a prefix string.
@@ -92,6 +92,8 @@ spellbot_teams_none: Sorry $reply, but please provide a list of team names or `n
 spellbot_teams_too_few: Sorry $reply, but please give at least two team names or `none`
   to erase teams.
 spellbot_unknown_subcommand: Sorry $reply, but the subcommand "$command" is not recognized.
+spellbot_voice: Ok $reply, I've turned $setting automatic voice channel creation.
+spellbot_voice_bad: Sorry $reply, but please provide an "on" or "off" setting.
 tags_too_many: Sorry $reply, but you can not use more than 5 tags.
 team_gone: Sorry $reply, but the teams on this server have changed and your team no
   longer exists. Please choose a new team.

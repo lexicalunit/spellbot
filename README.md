@@ -81,6 +81,9 @@ These commands will help you configure SpellBot for your server.
   - `links`: Set the privacy level for generated SpellTable links.
   - `expire`: Set how many minutes before games are expired due to inactivity.
   - `teams`: Sets the teams available on this server.
+  - `power`: Turns the power command on or off for this server.
+  - `voice`: When on, SpellBot will automatically create voice channels.
+  - `help`: Get detailed usage help for SpellBot.
 
 ### 🛋️ Ergonomics
 
@@ -121,9 +124,14 @@ Provide your Discord bot token with the environment variable `SPELLBOT_TOKEN`.
 As well as your SpellTable API authorization token via `SPELLTABLE_AUTH`.
 
 You can get [your bot token from Discord][discord-bot-docs]. Your bot will
-need the following text permissions enabled:
+need the following permissions enabled:
 
+- Manage Channels
+- View Channels
 - Send Messages
+- Manage Messages
+- Embed Links
+- Read Message History
 - Add Reactions
 
 As for the SpellTable API authorization token, you'll have to talk to the
@@ -149,7 +157,7 @@ with installing and using it.
 [MIT][mit] © [amy@lexicalunit][lexicalunit] et [al][contributors]
 
 [add-bot-button]:     https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png
-[add-bot]:            https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=92224&scope=bot
+[add-bot]:            https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=93264&scope=bot
 [black-badge]:        https://img.shields.io/badge/code%20style-black-000000.svg
 [black]:              https://github.com/psf/black
 [build-badge]:        https://github.com/lexicalunit/spellbot/workflows/build/badge.svg
