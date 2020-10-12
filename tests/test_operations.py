@@ -7,6 +7,7 @@ import pytest
 from spellbot.constants import GREEN_CHECK, RED_X
 from spellbot.operations import (
     safe_clear_reactions,
+    safe_create_category_channel,
     safe_create_voice_channel,
     safe_delete_channel,
     safe_delete_message,
@@ -427,3 +428,53 @@ class TestOperations:
             in caplog.text
         )
         assert "Missing Permissions" in caplog.text
+
+    async def test_safe_create_category_channel(self, client, monkeypatch):
+        mock_channel = MockTextChannel(1, "general", [])
+        category = await safe_create_category_channel(
+            client, mock_channel.guild.id, "whatever"
+        )
+
+        assert category.id == 2
+
+    async def test_safe_create_category_channel_create_error(
+        self, client, monkeypatch, caplog
+    ):
+        mock_channel = MockTextChannel(1, "general", [])
+        mock_guild = mock_channel.guild
+        mock_guild_id = mock_channel.guild.id
+
+        mock_get_guild = Mock(return_value=mock_guild)
+        monkeypatch.setattr(client, "get_guild", mock_get_guild)
+
+        mock_create_category_channel = AsyncMock()
+        http_response = Mock()
+        http_response.status = 403
+        mock_create_category_channel.side_effect = discord.errors.Forbidden(
+            http_response, "Missing Permissions"
+        )
+        monkeypatch.setattr(
+            mock_guild, "create_category_channel", mock_create_category_channel
+        )
+
+        cateogry = await safe_create_category_channel(
+            client, mock_channel.guild.id, "whatever"
+        )
+
+        assert cateogry is None
+        assert (
+            f"warning: discord (guild {mock_guild_id}): could not create category channel"
+            in caplog.text
+        )
+        assert "Missing Permissions" in caplog.text
+
+    async def test_safe_create_category_channel_guild_error(self, client, monkeypatch):
+        mock_channel = MockTextChannel(1, "general", [])
+        mock_get_guild = Mock(return_value=None)
+        monkeypatch.setattr(client, "get_guild", mock_get_guild)
+
+        category = await safe_create_category_channel(
+            client, mock_channel.guild.id, "whatever"
+        )
+
+        assert category is None

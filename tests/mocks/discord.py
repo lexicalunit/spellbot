@@ -194,6 +194,14 @@ def create_voice_channel_side_effect(*args, **kwargs):
     return MockVoiceChannel()
 
 
+def create_category_channel_side_effect(*args, **kwargs):
+    class MockCategoryChannel:
+        def __init__(self):
+            self.id = 2
+
+    return MockCategoryChannel()
+
+
 class MockGuild:
     def __init__(self, guild_id, name, members):
         self.id = guild_id
@@ -202,6 +210,10 @@ class MockGuild:
 
         self.create_voice_channel = AsyncMock(
             side_effect=create_voice_channel_side_effect
+        )
+
+        self.create_category_channel = AsyncMock(
+            side_effect=create_category_channel_side_effect
         )
 
 
