@@ -338,7 +338,10 @@ class SpellBot(discord.Client):
         self._begin_background_tasks(loop)
 
     async def _metrics(self, request):  # pragma: no cover
-        if request.headers["Authorization"] != self.metrics_auth:
+        if (
+            "Authorization" not in request.headers
+            or request.headers["Authorization"] != self.metrics_auth
+        ):
             return web.Response(status=403)
 
         async with self.session() as session:
