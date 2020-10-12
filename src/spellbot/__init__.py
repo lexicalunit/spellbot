@@ -320,6 +320,12 @@ class SpellBot(discord.Client):
             if hasattr(member[1], "is_command") and member[1].is_command
         ]
 
+        # build a list of admin subcommands supported by this bot
+        members = inspect.getmembers(self, predicate=inspect.ismethod)
+        self._subcommands = [
+            member[0][9:] for member in members if member[0].startswith("spellbot_")
+        ]
+
         self._begin_background_tasks(loop)
 
     @asynccontextmanager
@@ -436,8 +442,13 @@ class SpellBot(discord.Client):
 
     @property
     def commands(self) -> List[str]:
-        """Returns a list of commands supported by this bot."""
+        """Returns the list of commands supported by this bot."""
         return self._commands
+
+    @property
+    def subcommands(self) -> List[str]:
+        """Returns the list of subcommands that can be given to the !spellbot command."""
+        return self._subcommands
 
     def run(self) -> None:  # pragma: no cover
         super().run(self.token)
@@ -1865,7 +1876,7 @@ class SpellBot(discord.Client):
 
         The following subcommands are supported:
         * `config`: Just show the current configuration for this server.
-        * `channel <list>`: Set SpellBot to only respond in the given list of channels.
+        * `channels <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot's command prefix for text channels.
         * `links <private | public>`: Set the privacy for generated SpellTable links.
         * `expire <number>`: Set the number of minutes before pending games expire.

@@ -71,15 +71,60 @@ class TestCodebase:
                 "a test with inline data is much easier to reason about and refactor."
             )
 
-    def test_readme_commands(self, client, channel_maker):
+    def test_readme_commands(self, client):
         """Checks that all commands are documented in our readme."""
         with open(REPO_ROOT / "README.md") as f:
             readme = f.read()
 
-        documented = set(re.findall("^- `!([a-z]+)`: .*$", readme, re.MULTILINE))
+        documented = set(re.findall(r"^- `!([a-z]+)`: .*$", readme, re.MULTILINE))
         implemented = set(client.commands)
 
-        assert sorted(documented) == sorted(implemented)
+        assert documented == implemented
+
+    def test_index_commands(self, client):
+        """Checks that all commands are documented on our webpage."""
+        with open(REPO_ROOT / "docs" / "index.html") as f:
+            index = f.read()
+
+        documented = set(
+            re.findall(r"^ *<li><code>!([a-z]+)</code>: .*$", index, re.MULTILINE)
+        )
+        implemented = set(client.commands)
+
+        assert documented == implemented
+
+    def test_subcommands_documented(self, client):
+        """Checks that all subcommands are documented in the spellbot() docstring."""
+        documented = set(
+            re.findall(
+                r"^ *\* `([a-z]+) ?[^`]*`: .*$", client.spellbot.__doc__, re.MULTILINE
+            )
+        )
+        implemented = set(client.subcommands)
+
+        assert implemented == documented
+
+    def test_readme_subcommands(self, client):
+        """Checks that all subcommands are documented in our readme."""
+        with open(REPO_ROOT / "README.md") as f:
+            readme = f.read()
+
+        documented = set(re.findall(r"^  - `([a-z]+)`: .*$", readme, re.MULTILINE))
+        implemented = set(client.subcommands)
+
+        assert documented == implemented
+
+    def test_index_subcommands(self, client):
+        """Checks that all subcommands are documented on our webpage."""
+        with open(REPO_ROOT / "docs" / "index.html") as f:
+            index = f.read()
+
+        documented = set(
+            re.findall(r"^ *<li><code>([a-z]+)</code>: .*$", index, re.MULTILINE)
+        )
+        implemented = set(client.subcommands)
+
+        assert documented == implemented
 
     def test_pyproject_dependencies(self):
         """Checks that pyproject.toml dependencies are sorted."""

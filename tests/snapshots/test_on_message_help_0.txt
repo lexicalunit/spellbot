@@ -46,5 +46,5 @@
 > 
 > The following subcommands are supported:
 > * `config`: Just show the current configuration for this server.
-> * `channel <list>`: Set SpellBot to only respond in the given list of channels.
+> * `channels <list>`: Set SpellBot to only respond in the given list of channels.
 > * `prefix <string>`: Set SpellBot's command prefix for text channels.
