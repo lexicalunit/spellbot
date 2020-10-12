@@ -63,6 +63,7 @@ from spellbot.data import (
 from spellbot.operations import (
     safe_clear_reactions,
     safe_create_voice_channel,
+    safe_delete_channel,
     safe_delete_message,
     safe_edit_message,
     safe_fetch_channel,
@@ -338,6 +339,7 @@ class SpellBot(discord.Client):
     ) -> None:  # pragma: no cover
         """Start up any periodic background tasks."""
         self.cleanup_expired_games_task(loop)
+        self.cleanup_old_voice_channels_task(loop)
 
         # TODO: Make this manually triggered.
         # self.cleanup_started_games_task(loop)
@@ -357,6 +359,7 @@ class SpellBot(discord.Client):
 
     async def cleanup_expired_games(self) -> None:
         """Culls games older than the given window of minutes."""
+        logger.info("starting expired games cleanup task...")
         async with self.session() as session:
             expired = Game.expired(session)
             for game in expired:
@@ -378,6 +381,36 @@ class SpellBot(discord.Client):
                 session.delete(game)
             session.commit()
 
+    def cleanup_old_voice_channels_task(
+        self, loop: asyncio.AbstractEventLoop
+    ) -> None:  # pragma: no cover
+        """Starts a task that deletes old voice channels."""
+        THIRTY_MINUTES = 1800
+
+        async def task() -> None:
+            while True:
+                await asyncio.sleep(THIRTY_MINUTES)
+                await self.cleanup_old_voice_channels()
+
+        loop.create_task(task())
+
+    async def cleanup_old_voice_channels(self) -> None:
+        """Checks for and deletes any bot created voice channels that are empty."""
+        logger.info("starting old voice channels cleanup task...")
+        async with self.session() as session:
+            for game in Game.voiced(session):
+                assert game.voice_channel_xid
+                chan = await safe_fetch_channel(
+                    self, game.voice_channel_xid, game.guild_xid
+                )
+                if not chan:
+                    game.voice_channel_xid = None  # type: ignore
+                    continue
+                if not chan.members:  # type: ignore
+                    await safe_delete_channel(chan, game.guild_xid)
+                    game.voice_channel_xid = None  # type: ignore
+            session.commit()
+
     def cleanup_started_games_task(
         self, loop: asyncio.AbstractEventLoop
     ) -> None:  # pragma: no cover
@@ -393,6 +426,7 @@ class SpellBot(discord.Client):
 
     async def cleanup_started_games(self) -> None:
         """Culls games older than the given window of minutes."""
+        logger.info("starting started games cleanup task...")
         async with self.session() as session:
             games = session.query(Game).filter(Game.status == "started").all()
             for game in games:
