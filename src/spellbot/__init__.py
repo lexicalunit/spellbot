@@ -1443,7 +1443,10 @@ class SpellBot(discord.Client):
 
         for game in cast(List[Game], event.games):
             # Can't rely on "<@{xid}>" working because the user could have logged out.
-            sorted_names = sorted([user.cached_name for user in game.users])
+            # But if we don't have the cached name, we will just have to fallback to it.
+            sorted_names = sorted(
+                [user.cached_name or f"<@{user.xid}>" for user in game.users]
+            )
             players_str = ", ".join(cast(List[str], sorted_names))
 
             found_discord_users = []
