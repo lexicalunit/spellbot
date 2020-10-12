@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a /metrics endpoint that returns some metrics about the bot.
+
 ## [v4.2.1](https://github.com/lexicalunit/spellbot/releases/tag/v4.2.1) - 2020-10-12
 
 ### Fixed
