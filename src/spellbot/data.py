@@ -53,6 +53,7 @@ class Server(Base):
     links = Column(String(10), nullable=False, server_default=text("'public'"))
     power_enabled = Column(Boolean, nullable=False, server_default=true())
     create_voice = Column(Boolean, nullable=False, server_default=false())
+    voice_category_xid = Column(BigInteger)
     games = relationship("Game", back_populates="server", uselist=True)
     channels = relationship("Channel", back_populates="server", uselist=True)
     teams = relationship("Team", back_populates="server", uselist=True)
