@@ -1,6 +1,7 @@
 import asyncio
 import csv
 import inspect
+import json
 import logging
 import re
 import sys
@@ -31,6 +32,7 @@ import discord.errors
 import hupper  # type: ignore
 import requests
 from aiohttp import web
+from aiohttp.web_app import Application
 from discord.channel import TextChannel
 from dotenv import load_dotenv
 from sqlalchemy import exc
@@ -275,10 +277,12 @@ class SpellBot(discord.Client):
         self,
         token: Optional[str] = None,
         auth: Optional[str] = None,
+        metrics_auth: str = "",
         db_url: str = DEFAULT_DB_URL,
         log_level: Union[int, str] = logging.ERROR,
         mock_games: bool = False,
         loop: AbstractEventLoop = None,
+        app: Application = None,
     ):
         coloredlogs.install(
             level=log_level,
@@ -307,6 +311,11 @@ class SpellBot(discord.Client):
         self.auth = auth or ""
         self.mock_games = mock_games
 
+        # Metrics endpoint is only added if auth key and web app are given.
+        self.metrics_auth = metrics_auth
+        if app and self.metrics_auth:
+            app.router.add_get("/metrics", self._metrics)
+
         # We have to make sure that DB_DIR exists before we try to create
         # the database as part of instantiating the Data object.
         ensure_application_directories_exist()
@@ -327,6 +336,18 @@ class SpellBot(discord.Client):
         ]
 
         self._begin_background_tasks(loop)
+
+    async def _metrics(self, request):  # pragma: no cover
+        if request.headers["Authorization"] != self.metrics_auth:
+            return web.Response(status=403)
+
+        async with self.session() as session:
+            data = {
+                "servers": session.query(Server).count(),
+                "games": session.query(Game).filter(Game.status == "started").count(),
+                "users": session.query(User).count(),
+            }
+            return web.Response(text=json.dumps(data))
 
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[Session, None]:
@@ -2299,6 +2320,12 @@ def get_host(fallback: str) -> str:  # pragma: no cover
     return value or fallback
 
 
+def get_metrics_auth(fallback: str) -> str:  # pragma: no cover
+    """Returns the metrics auth key from the environment or else the given fallback."""
+    value = getenv("SPELLBOT_METRICS_AUTH", fallback)
+    return value or fallback
+
+
 def get_log_level(fallback: str) -> str:  # pragma: no cover
     """Returns the log level from the environment or else the given gallback."""
     value = getenv("SPELLBOT_LOG_LEVEL", fallback)
@@ -2364,6 +2391,14 @@ async def ping(request):  # pragma: no cover
         "you can also set this via the SPELLBOT_HOST environment variable."
     ),
 )
+@click.option(
+    "--metrics-auth",
+    default="",
+    help=(
+        "Metrics endpoint HTTP Authorization header key to use; "
+        "you can also set this via the SPELLBOT_METRICS_AUTH environment variable."
+    ),
+)
 @click.version_option(version=__version__)
 @click.option(
     "--dev",
@@ -2385,6 +2420,7 @@ def main(
     port: int,
     port_env: str,
     host: str,
+    metrics_auth: str,
     dev: bool,
     mock_games: bool,
 ) -> None:  # pragma: no cover
@@ -2397,6 +2433,7 @@ def main(
     port_env = get_port_env(port_env)
     port = get_port(port_env, port)
     host = get_host(host)
+    metrics_auth = get_metrics_auth(metrics_auth)
     log_level = get_log_level(log_level)
 
     # We have to make sure that application directories exist
@@ -2417,24 +2454,28 @@ def main(
         )
         sys.exit(1)
 
-    # simple http server to check for uptime
+    # server for web api
     loop = asyncio.get_event_loop()
     app = web.Application()
     app.router.add_get("/", ping)
-    runner = web.AppRunner(app)
-    loop.run_until_complete(runner.setup())
-    site = web.TCPSite(runner, host, port)
-    loop.run_until_complete(site.start())
 
     client = SpellBot(
         token=token,
         auth=auth,
+        metrics_auth=metrics_auth,
         db_url=database_url,
         log_level="DEBUG" if verbose else log_level,
         mock_games=mock_games,
         loop=loop,
+        app=app,
     )
+
+    runner = web.AppRunner(app)
+    loop.run_until_complete(runner.setup())
+    site = web.TCPSite(runner, host, port)
+    loop.run_until_complete(site.start())
     logger.info(f"server running: http://{host}:{port}")
+
     client.run()
 
 
