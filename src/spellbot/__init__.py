@@ -373,7 +373,8 @@ class SpellBot(discord.Client):
                             ),
                         )
                     user.game_id = None
-                game.tags = []  # cascade delete tag associations
+                # cascade delete tag associations
+                game.tags = []  # type: ignore
                 session.delete(game)
             session.commit()
 
@@ -583,7 +584,7 @@ class SpellBot(discord.Client):
                 ):
                     # this author is already another game, leave that one now
                     game_to_update = user.game
-                    user.game_id = None
+                    user.game_id = None  # type: ignore
                     session.commit()
                     await self.try_to_update_game(game_to_update)
                 user.game = game
@@ -595,7 +596,7 @@ class SpellBot(discord.Client):
                 # update the game and remove the user from the game
                 game.updated_at = now
                 game.expires_at = expires_at
-                user.game_id = None
+                user.game_id = None  # type: ignore
                 session.commit()
 
                 # update the game message
@@ -824,7 +825,7 @@ class SpellBot(discord.Client):
         """If the user is currently in a game, take them out of it."""
         if user.waiting:
             game_to_update = user.game
-            user.game_id = None
+            user.game_id = None  # type: ignore
             session.commit()
             await self.try_to_update_game(game_to_update)
 
@@ -845,8 +846,8 @@ class SpellBot(discord.Client):
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=game.server.expire)
         user.game = game
-        user.game.expires_at = expires_at
-        user.game.updated_at = now
+        user.game.expires_at = expires_at  # type: ignore
+        user.game.updated_at = now  # type: ignore
         session.commit()
 
     async def _post_new_game(
@@ -871,13 +872,14 @@ class SpellBot(discord.Client):
                 else:
                     found_discord_users.append(discord_user)
             if len(found_discord_users) == game.size:  # game is *definitely* ready!
-                game.url = (
+                game_url = (
                     self.create_spelltable_url() if game.system == "spelltable" else None
                 )
+                game.url = game_url  # type: ignore
                 if game.server.create_voice:
-                    game.voice_channel_xid = await self.make_voice(game)
-                game.status = "started"
-                game.game_power = game.power
+                    game.voice_channel_xid = await self.make_voice(game)  # type: ignore
+                game.status = "started"  # type: ignore
+                game.game_power = game.power  # type: ignore
                 session.commit()
                 for discord_user in found_discord_users:
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))
@@ -1341,7 +1343,7 @@ class SpellBot(discord.Client):
             ):
                 if player_user.waiting:
                     game_to_update = player_user.game
-                    player_user.game_id = None
+                    player_user.game_id = None  # type: ignore
                     await self.try_to_update_game(game_to_update)
                 player_user.cached_name = player_discord_user.name
             session.commit()
@@ -1460,13 +1462,14 @@ class SpellBot(discord.Client):
             if len(found_discord_users) != len(cast(List[User], game.users)):
                 continue
 
-            game.url = (
+            game_url = (
                 self.create_spelltable_url() if game.system == "spelltable" else None
             )
+            game.url = game_url  # type: ignore
             if game.server.create_voice:
-                game.voice_channel_xid = await self.make_voice(game)
-            game.status = "started"
-            game.game_power = game.power
+                game.voice_channel_xid = await self.make_voice(game)  # type: ignore
+            game.status = "started"  # type: ignore
+            game.game_power = game.power  # type: ignore
             response = game.to_embed(dm=True)
             session.commit()
 
@@ -1557,7 +1560,7 @@ class SpellBot(discord.Client):
             mentioned_user = self.ensure_user_exists(session, mentioned)
             if mentioned_user.waiting:
                 game_to_update = mentioned_user.game
-                mentioned_user.game_id = None
+                mentioned_user.game_id = None  # type: ignore
                 await self.try_to_update_game(game_to_update)
             mentioned_users.append(mentioned_user)
         session.commit()
@@ -1618,7 +1621,7 @@ class SpellBot(discord.Client):
         user = self.ensure_user_exists(session, message.author)
         if user.waiting:
             game = user.game
-            user.game_id = None
+            user.game_id = None  # type: ignore
             session.commit()
             await self.try_to_update_game(game)
         await safe_react_ok(message)
@@ -1701,7 +1704,7 @@ class SpellBot(discord.Client):
 
         power = params[0].lower()
         if power in ["none", "off", "unset", "no", "0"]:
-            user.power = None
+            user.power = None  # type: ignore
             session.commit()
             await safe_react_ok(message)
             if user.waiting:
@@ -1726,7 +1729,7 @@ class SpellBot(discord.Client):
                 prepend = "🤖 "
             return await send_invalid(prepend)
 
-        user.power = power_i
+        user.power = power_i  # type: ignore
         session.commit()
         await safe_react_ok(message)
         if user.waiting:
@@ -1939,7 +1942,7 @@ class SpellBot(discord.Client):
             session.commit()
 
         if all_channels:
-            server.channels = []
+            server.channels = []  # type: ignore
             session.commit()
             await message.channel.send(
                 s(
@@ -1949,7 +1952,7 @@ class SpellBot(discord.Client):
                 )
             )
         elif channels:
-            server.channels = channels
+            server.channels = channels  # type: ignore
             session.commit()
             channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])
             await message.channel.send(
@@ -1979,7 +1982,7 @@ class SpellBot(discord.Client):
             return
 
         prefix_str = params[0][0:10]
-        server.prefix = prefix_str
+        server.prefix = prefix_str  # type: ignore
         session.commit()
         await message.channel.send(
             s(
@@ -2019,7 +2022,7 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        server.links = links_str
+        server.links = links_str  # type: ignore
         session.commit()
         await message.channel.send(
             s(
@@ -2063,7 +2066,7 @@ class SpellBot(discord.Client):
             .filter(Server.guild_xid == message.channel.guild.id)
             .one_or_none()
         )
-        server.expire = expire
+        server.expire = expire  # type: ignore
         session.commit()
         await message.channel.send(
             s(
@@ -2110,7 +2113,7 @@ class SpellBot(discord.Client):
 
         if not erase_all_teams:
             # then create new ones
-            server.teams = [Team(name=name) for name in set(params)]
+            server.teams = [Team(name=name) for name in set(params)]  # type: ignore
             session.commit()
 
         await safe_react_ok(message)
@@ -2138,7 +2141,7 @@ class SpellBot(discord.Client):
             .one_or_none()
         )
         setting = params[0].lower()
-        server.power_enabled = setting == "on"
+        server.power_enabled = setting == "on"  # type: ignore
         session.commit()
         await message.channel.send(
             s(
