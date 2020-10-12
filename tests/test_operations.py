@@ -7,6 +7,8 @@ import pytest
 from spellbot.constants import GREEN_CHECK, RED_X
 from spellbot.operations import (
     safe_clear_reactions,
+    safe_create_voice_channel,
+    safe_delete_channel,
     safe_delete_message,
     safe_edit_message,
     safe_fetch_channel,
@@ -352,4 +354,76 @@ class TestOperations:
         await safe_send_user(cast(discord.User, FRIEND), content="test")
 
         assert "warning: discord (DM): could not send message to user" in caplog.text
+        assert "Missing Permissions" in caplog.text
+
+    async def test_safe_create_voice_channel(self, client, monkeypatch):
+        mock_channel = MockTextChannel(1, "general", [])
+        cid = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
+
+        assert cid == 1
+
+    async def test_safe_create_voice_channel_create_error(
+        self, client, monkeypatch, caplog
+    ):
+        mock_channel = MockTextChannel(1, "general", [])
+        mock_guild = mock_channel.guild
+        mock_guild_id = mock_channel.guild.id
+
+        mock_get_guild = Mock(return_value=mock_guild)
+        monkeypatch.setattr(client, "get_guild", mock_get_guild)
+
+        mock_create_voice_channel = AsyncMock()
+        http_response = Mock()
+        http_response.status = 403
+        mock_create_voice_channel.side_effect = discord.errors.Forbidden(
+            http_response, "Missing Permissions"
+        )
+        monkeypatch.setattr(mock_guild, "create_voice_channel", mock_create_voice_channel)
+
+        cid = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
+
+        assert cid is None
+        assert (
+            f"warning: discord (guild {mock_guild_id}): could not create voice channel"
+            in caplog.text
+        )
+        assert "Missing Permissions" in caplog.text
+
+    async def test_safe_create_voice_channel_guild_error(self, client, monkeypatch):
+        mock_channel = MockTextChannel(1, "general", [])
+        mock_get_guild = Mock(return_value=None)
+        monkeypatch.setattr(client, "get_guild", mock_get_guild)
+
+        cid = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
+
+        assert cid is None
+
+    async def test_safe_delete_channel(self, client, monkeypatch):
+        mock_channel = MockTextChannel(1, "general", [])
+        await safe_delete_channel(
+            cast(discord.TextChannel, mock_channel), mock_channel.guild.id
+        )
+
+        mock_channel.delete.assert_called_once_with()
+
+    async def test_safe_delete_channel_error(self, client, monkeypatch, caplog):
+        mock_channel = MockTextChannel(1, "general", [])
+        mock_guild_id = mock_channel.guild.id
+
+        mock_delete = AsyncMock()
+        http_response = Mock()
+        http_response.status = 403
+        mock_delete.side_effect = discord.errors.Forbidden(
+            http_response, "Missing Permissions"
+        )
+        monkeypatch.setattr(mock_channel, "delete", mock_delete)
+
+        await safe_delete_channel(
+            cast(discord.TextChannel, mock_channel), mock_channel.guild.id
+        )
+
+        assert (
+            f"warning: discord (guild {mock_guild_id}): could not delete channel"
+            in caplog.text
+        )
         assert "Missing Permissions" in caplog.text

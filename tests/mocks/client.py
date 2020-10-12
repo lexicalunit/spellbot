@@ -7,7 +7,7 @@ import spellbot
 from ..constants import CLIENT_AUTH, CLIENT_TOKEN
 from ..test_meta import S_SPY
 from . import AsyncMock
-from .discord import MockDM, MockGuild, MockTextChannel
+from .discord import MockDM, MockGuild, MockTextChannel, MockVoiceChannel
 from .users import ADMIN, ALL_USERS, BOT, PUNK, SERVER_MEMBERS
 
 
@@ -59,7 +59,7 @@ def client(monkeypatch, mocker, patch_discord, tmp_path):
 
     # Keep track of strings used in the test suite.
     monkeypatch.setattr(spellbot, "s", S_SPY)
-    monkeypatch.setattr(spellbot.operations, "s", S_SPY)
+    monkeypatch.setattr(spellbot.operations, "s", S_SPY)  # type: ignore
 
     # Don't actually begin background tasks during tests.
     monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())
@@ -109,9 +109,16 @@ def channel_maker(client):
             self.next_channel_id += 1
             return channel
 
+        def voice(self, name="a-voice-channel", members=SERVER_MEMBERS):
+            channel = MockVoiceChannel(self.next_channel_id, name, members)
+            self.next_channel_id += 1
+            return channel
+
         def make(self, channel_type):
             if channel_type == "dm":
                 return self.dm()
+            elif channel_type == "voice":
+                return self.voice()
             return self.text()
 
     return MockChannelFactory(6500)

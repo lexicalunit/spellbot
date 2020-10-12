@@ -207,3 +207,19 @@ async def safe_create_voice_channel(
             e,
         )
         return None
+
+
+async def safe_delete_channel(channel: ChannelType, guild_xid: int) -> None:
+    try:
+        await channel.delete()  # type: ignore
+    except (
+        discord.errors.Forbidden,
+        discord.errors.HTTPException,
+        discord.errors.NotFound,
+    ) as e:
+        logger.exception(
+            "warning: discord (guild %s): could not delete channel: %s",
+            guild_xid,
+            e,
+        )
+        return None
