@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Puts created voice channels into a "SpellBot Voice Channels" category.
+
 ### Fixed
 
 - Fixed check for Authorization header to fail with 403 if not present.

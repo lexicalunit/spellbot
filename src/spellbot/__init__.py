@@ -33,7 +33,6 @@ import hupper  # type: ignore
 import requests
 from aiohttp import web
 from aiohttp.web_app import Application
-from discord.channel import TextChannel
 from dotenv import load_dotenv
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
@@ -63,7 +62,9 @@ from spellbot.data import (
     UserTeam,
 )
 from spellbot.operations import (
+    ChannelType,
     safe_clear_reactions,
+    safe_create_category_channel,
     safe_create_voice_channel,
     safe_delete_channel,
     safe_delete_message,
@@ -195,7 +196,7 @@ def post_link(server_xid: int, channel_xid: int, message_xid: int) -> str:
 
 
 def is_admin(
-    channel: TextChannel, user_or_member: Union[discord.User, discord.Member]
+    channel: discord.TextChannel, user_or_member: Union[discord.User, discord.Member]
 ) -> bool:
     """Checks to see if given user or member has the admin role on this server."""
     member = (
@@ -485,9 +486,11 @@ class SpellBot(discord.Client):
         r = requests.post(CREATE_ENDPOINT, headers=headers)
         return cast(str, r.json()["gameUrl"])
 
-    async def make_voice(self, game: Game) -> Optional[int]:
+    async def make_voice(self, session: Session, game: Game) -> Optional[int]:
+        category = await self.ensure_server_voice_category(session, game.server)
+
         return await safe_create_voice_channel(
-            self, game.server.guild_xid, f"Game-SB{game.id}"
+            self, game.server.guild_xid, f"Game-SB{game.id}", category=category
         )
 
     def ensure_user_exists(
@@ -513,6 +516,31 @@ class SpellBot(discord.Client):
             session.add(server)
             session.commit()
         return cast(Server, server)
+
+    async def ensure_server_voice_category(
+        self, session: Session, server: Server
+    ) -> Optional[discord.CategoryChannel]:
+        category: Optional[ChannelType] = None
+
+        if not server.create_voice:
+            return None
+
+        if server.voice_category_xid:
+            category = await safe_fetch_channel(
+                self, server.voice_category_xid, server.guild_xid
+            )
+        if category:
+            return cast(discord.CategoryChannel, category)
+
+        category = await safe_create_category_channel(
+            self, server.guild_xid, "SpellBot Voice Channels"
+        )
+        if category:
+            server.voice_category_xid = category.id  # type: ignore
+            session.commit()
+            return cast(discord.CategoryChannel, category)
+
+        return None
 
     async def try_to_delete_message(self, game: Game) -> None:
         """Attempts to remove a ✋ from the given game message for the given user."""
@@ -690,7 +718,7 @@ class SpellBot(discord.Client):
                     self.create_spelltable_url() if game.system == "spelltable" else None
                 )
                 if game.server.create_voice:
-                    game.voice_channel_xid = await self.make_voice(game)
+                    game.voice_channel_xid = await self.make_voice(session, game)
                 game.status = "started"
                 game.game_power = game.power
                 session.commit()
@@ -946,7 +974,8 @@ class SpellBot(discord.Client):
                 )
                 game.url = game_url  # type: ignore
                 if game.server.create_voice:
-                    game.voice_channel_xid = await self.make_voice(game)  # type: ignore
+                    voice_xid = await self.make_voice(session, game)
+                    game.voice_channel_xid = voice_xid  # type: ignore
                 game.status = "started"  # type: ignore
                 game.game_power = game.power  # type: ignore
                 session.commit()
@@ -1536,7 +1565,8 @@ class SpellBot(discord.Client):
             )
             game.url = game_url  # type: ignore
             if game.server.create_voice:
-                game.voice_channel_xid = await self.make_voice(game)  # type: ignore
+                voice_xid = await self.make_voice(session, game)
+                game.voice_channel_xid = voice_xid  # type: ignore
             game.status = "started"  # type: ignore
             game.game_power = game.power  # type: ignore
             response = game.to_embed(dm=True)
@@ -1643,7 +1673,7 @@ class SpellBot(discord.Client):
         url = self.create_spelltable_url() if system == "spelltable" else None
         # FIXME: Do we create the voice channel in this case?
         # if game.server.create_voice:
-        #     game.voice_channel_xid = await self.make_voice(game)  # type: ignore
+        #     game.voice_channel_xid = await self.make_voice(session, game)
         game = Game(
             channel_xid=message.channel.id,
             created_at=now,
@@ -1717,7 +1747,7 @@ class SpellBot(discord.Client):
                         self, int(channel_xid), message.channel.guild.id
                     )
                     if channel:
-                        name = cast(TextChannel, channel).name
+                        name = cast(discord.TextChannel, channel).name
                         channel_name_cache[channel_xid] = f"#{name}"
                     else:
                         channel_name_cache[channel_xid] = f"<#{channel_xid}>"

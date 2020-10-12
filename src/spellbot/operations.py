@@ -2,7 +2,6 @@ import logging
 from typing import Any, Optional, Union, cast
 
 import discord
-from discord.channel import VoiceChannel
 
 from spellbot.assets import s
 from spellbot.constants import GREEN_CHECK, RED_X
@@ -188,13 +187,18 @@ async def safe_send_user(user: discord.User, *args, **kwargs) -> None:
 
 
 async def safe_create_voice_channel(
-    client: discord.Client, guild_xid: int, name: str
+    client: discord.Client,
+    guild_xid: int,
+    name: str,
+    category: Optional[discord.CategoryChannel] = None,
 ) -> Optional[int]:
     guild = client.get_guild(guild_xid)
     if not guild:
         return None
     try:
-        channel: VoiceChannel = await guild.create_voice_channel(name)
+        channel: discord.VoiceChannel = await guild.create_voice_channel(
+            name, category=category
+        )
         return cast(int, channel.id)
     except (
         discord.errors.Forbidden,
@@ -203,6 +207,27 @@ async def safe_create_voice_channel(
     ) as e:
         logger.exception(
             "warning: discord (guild %s): could not create voice channel: %s",
+            guild_xid,
+            e,
+        )
+        return None
+
+
+async def safe_create_category_channel(
+    client: discord.Client, guild_xid: int, name: str
+) -> Optional[discord.CategoryChannel]:
+    guild = client.get_guild(guild_xid)
+    if not guild:
+        return None
+    try:
+        return await guild.create_category_channel(name)
+    except (
+        discord.errors.Forbidden,
+        discord.errors.HTTPException,
+        discord.errors.InvalidArgument,
+    ) as e:
+        logger.exception(
+            "warning: discord (guild %s): could not create category channel: %s",
             guild_xid,
             e,
         )
