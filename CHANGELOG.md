@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes a small typo in the docstring for the !spellbot command.
+
+### Added
+
+- Adds checks to ensure that the documentation for admin subcommands is synced.
+- Adds checks to ensure that the webpage documentation for is synced.
+
 ### Updated
 
 - Updates some admin documentation on the webpage.
