@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds the ability to automatically create new voice channels for games.
+- Adds automatic task to clean up any unused voice channels that were created.
 
 ## [v4.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v4.1.0) - 2020-09-22
 

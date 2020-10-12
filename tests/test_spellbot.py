@@ -1,8 +1,10 @@
+import asyncio
 import inspect
 import json
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
+from unittest.mock import MagicMock, Mock
 
 import pytest
 import pytz
@@ -151,6 +153,19 @@ def snap(snapshot):
 
 @pytest.mark.asyncio
 class TestSpellBot:
+    async def test_init_default(self, monkeypatch):
+        monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())
+        bot = spellbot.SpellBot()
+
+        assert bot.loop
+
+    async def test_init_with_loop(self, monkeypatch):
+        monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())
+        loop = asyncio.get_event_loop()
+        bot = spellbot.SpellBot(loop=loop)
+
+        assert bot.loop == loop
+
     async def test_init(self, client, channel_maker):
         assert client.token == CLIENT_TOKEN
 
@@ -2100,6 +2115,67 @@ class TestSpellBot:
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
         await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
+        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+
+    async def test_cleanup_voice_channels(self, client, channel_maker, monkeypatch):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
+        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+
+        mock_voice_channel = channel_maker.voice("whatever", [])
+        mock_get_channel = Mock(return_value=mock_voice_channel)
+        monkeypatch.setattr(client, "get_channel", mock_get_channel)
+        await client.cleanup_old_voice_channels()
+
+        mock_voice_channel.delete.assert_called()
+        assert game_json_for(client, AMY)["voice_channel_xid"] is None
+
+    async def test_cleanup_voice_channels_error_fetch_channel(
+        self, client, channel_maker, monkeypatch
+    ):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
+        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+
+        mock_get_channel = Mock(return_value=None)
+        mock_fetch_channel = AsyncMock(return_value=None)
+        monkeypatch.setattr(client, "get_channel", mock_get_channel)
+        monkeypatch.setattr(client, "fetch_channel", mock_fetch_channel)
+
+        await client.cleanup_old_voice_channels()
+
+        mock_get_channel.assert_called()
+        mock_fetch_channel.assert_called()
+        assert game_json_for(client, AMY)["voice_channel_xid"] is None
+
+    async def test_cleanup_voice_channels_in_use(
+        self, client, channel_maker, monkeypatch
+    ):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
+        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+
+        mock_voice_channel = channel_maker.voice("whatever", [AMY, JACOB])
+        mock_get_channel = Mock(return_value=mock_voice_channel)
+        monkeypatch.setattr(client, "get_channel", mock_get_channel)
+        await client.cleanup_old_voice_channels()
+
+        mock_voice_channel.delete.assert_not_called()
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])

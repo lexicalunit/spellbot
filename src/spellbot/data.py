@@ -388,6 +388,12 @@ class Game(Base):
             .all(),
         )
 
+    @classmethod
+    def voiced(cls, session: Session) -> List[Game]:
+        return cast(
+            List[Game], session.query(Game).filter(Game.voice_channel_xid != None).all()
+        )
+
     def __repr__(self) -> str:
         return json.dumps(self.to_json())
 

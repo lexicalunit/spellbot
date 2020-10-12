@@ -212,6 +212,7 @@ class MockChannel:
         self.id = channel_id
         self.type = channel_type
         self.guild = MockGuild(1, "guild", [])
+        self.delete = AsyncMock()
 
         # sent is a spy for tracking calls to send(), it doesn't exist on the real object.
         # There are also helpers for inspecting calls to sent defined on this class of
@@ -289,6 +290,16 @@ class MockTextChannel(MockChannel):
 
     def __init__(self, channel_id, channel_name, members):
         super().__init__(channel_id, "text")
+        self.name = channel_name
+        self.members = members
+        self.guild = MockGuild(500, "Guild Name", members)
+
+
+class MockVoiceChannel(MockChannel):
+    """Don't create this directly, use the channel_maker fixture instead."""
+
+    def __init__(self, channel_id, channel_name, members):
+        super().__init__(channel_id, "voice")
         self.name = channel_name
         self.members = members
         self.guild = MockGuild(500, "Guild Name", members)
