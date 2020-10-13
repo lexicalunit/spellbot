@@ -187,9 +187,14 @@ class MockRole:
 
 
 def create_voice_channel_side_effect(*args, **kwargs):
+    class MockInvite:
+        def __init__(self):
+            self.url = "http://fake-invite-url"
+
     class MockVoiceChannel:
         def __init__(self):
             self.id = 1
+            self.create_invite = AsyncMock(return_value=MockInvite())
 
     return MockVoiceChannel()
 
@@ -315,6 +320,7 @@ class MockVoiceChannel(MockChannel):
         self.name = channel_name
         self.members = members
         self.guild = MockGuild(500, "Guild Name", members)
+        self.create_invite = AsyncMock()
 
 
 class MockDM(MockChannel):

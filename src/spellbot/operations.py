@@ -191,15 +191,12 @@ async def safe_create_voice_channel(
     guild_xid: int,
     name: str,
     category: Optional[discord.CategoryChannel] = None,
-) -> Optional[int]:
+) -> Optional[discord.VoiceChannel]:
     guild = client.get_guild(guild_xid)
     if not guild:
         return None
     try:
-        channel: discord.VoiceChannel = await guild.create_voice_channel(
-            name, category=category
-        )
-        return cast(int, channel.id)
+        return await guild.create_voice_channel(name, category=category)
     except (
         discord.errors.Forbidden,
         discord.errors.HTTPException,
@@ -244,6 +241,21 @@ async def safe_delete_channel(channel: ChannelType, guild_xid: int) -> None:
     ) as e:
         logger.exception(
             "warning: discord (guild %s): could not delete channel: %s",
+            guild_xid,
+            e,
+        )
+        return None
+
+
+async def safe_create_invite(
+    channel: discord.VoiceChannel, guild_xid: int, max_age: int = 0
+) -> Optional[str]:
+    try:
+        invite = await channel.create_invite(max_age=max_age)
+        return cast(str, invite.url)
+    except discord.errors.HTTPException as e:
+        logger.exception(
+            "warning: discord (guild %s): could create channel invite: %s",
             guild_xid,
             e,
         )

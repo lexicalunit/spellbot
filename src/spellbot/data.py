@@ -303,6 +303,7 @@ class Game(Base):
     )
     game_power = Column(Float, nullable=True)
     voice_channel_xid = Column(BigInteger, nullable=True, index=True)
+    voice_channel_invite = Column(String(255))
     users = relationship("User", back_populates="game", uselist=True)
     tags = relationship("Tag", secondary=games_tags, back_populates="games", uselist=True)
     server = relationship("Server", back_populates="games")
@@ -413,6 +414,7 @@ class Game(Base):
             "message": self.message,
             "message_xid": self.message_xid,
             "voice_channel_xid": self.voice_channel_xid,
+            "voice_channel_invite": self.voice_channel_invite,
             "tags": [tag.name for tag in self.tags],
             "event_id": self.event.id if self.event else None,
             "power": self.power,
@@ -428,29 +430,34 @@ class Game(Base):
             title = self.message if self.message else "**Your game is ready!**"
         embed = discord.Embed(title=title)
         embed.set_thumbnail(url=THUMB_URL)
+
+        description = ""
+        if self.voice_channel_invite:
+            if show_link:
+                description = f"Join your voice chat now: {self.voice_channel_invite}\n\n"
         if self.status == "pending":
-            embed.description = "To join/leave this game, react with ✋/🚫."
+            description += "To join/leave this game, react with ✋/🚫."
         elif self.system == "spelltable":
             if show_link:
-                embed.description = (
+                description += (
                     f"Click the link below to join your SpellTable game.\n<{self.url}>"
                 )
             else:
-                embed.description = (
+                description += (
                     "Please check your Direct Messages for your SpellTable link."
                 )
         elif self.system == "mtgo":
-            embed.description = (
+            description += (
                 "Please exchange MTGO contact information and head over there to play!"
             )
         else:  # self.system == "arena"
-            embed.description = (
+            description += (
                 "Please exchange Arena contact information and head over there to play!"
             )
+        embed.description = description
+
         if self.voice_channel_xid:
-            embed.add_field(
-                name="Voice Channel", value=f"<#{self.voice_channel_xid}>", inline=False
-            )
+            embed.add_field(name="Voice Channel", value=f"<#{self.voice_channel_xid}>")
         tag_names = None
         if self.tags and len(cast(List[Tag], self.tags)) >= 1:
             sorted_tag_names: List[str] = sorted([tag.name for tag in self.tags])

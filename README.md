@@ -127,6 +127,7 @@ You can get [your bot token from Discord][discord-bot-docs]. Your bot will
 need the following permissions enabled:
 
 - Manage Channels
+- Create Instant Invite
 - View Channels
 - Send Messages
 - Manage Messages
@@ -157,7 +158,7 @@ with installing and using it.
 [MIT][mit] © [amy@lexicalunit][lexicalunit] et [al][contributors]
 
 [add-bot-button]:     https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png
-[add-bot]:            https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=93264&scope=bot
+[add-bot]:            https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=93265&scope=bot
 [black-badge]:        https://img.shields.io/badge/code%20style-black-000000.svg
 [black]:              https://github.com/psf/black
 [build-badge]:        https://github.com/lexicalunit/spellbot/workflows/build/badge.svg

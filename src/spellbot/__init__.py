@@ -65,6 +65,7 @@ from spellbot.operations import (
     ChannelType,
     safe_clear_reactions,
     safe_create_category_channel,
+    safe_create_invite,
     safe_create_voice_channel,
     safe_delete_channel,
     safe_delete_message,
@@ -436,10 +437,12 @@ class SpellBot(discord.Client):
                 )
                 if not chan:
                     game.voice_channel_xid = None  # type: ignore
+                    game.voice_channel_invite = None  # type: ignore
                     continue
                 if not chan.members:  # type: ignore
                     await safe_delete_channel(chan, game.guild_xid)
                     game.voice_channel_xid = None  # type: ignore
+                    game.voice_channel_invite = None  # type: ignore
             session.commit()
 
     def cleanup_started_games_task(
@@ -486,12 +489,27 @@ class SpellBot(discord.Client):
         r = requests.post(CREATE_ENDPOINT, headers=headers)
         return cast(str, r.json()["gameUrl"])
 
-    async def make_voice(self, session: Session, game: Game) -> Optional[int]:
+    async def setup_voice(self, session: Session, game: Game) -> None:
+        """Adds voice information to the game object. DOES NOT COMMIT!"""
+        if not game.server.create_voice:
+            return
+
         category = await self.ensure_server_voice_category(session, game.server)
 
-        return await safe_create_voice_channel(
+        # if category is None, then we'll simply create a non-categorized channel
+        voice_channel = await safe_create_voice_channel(
             self, game.server.guild_xid, f"Game-SB{game.id}", category=category
         )
+
+        if voice_channel:
+            game.voice_channel_xid = voice_channel.id  # type: ignore
+
+            TEN_MINUTES = 600  # Make this configurable?
+            voice_invite = await safe_create_invite(
+                voice_channel, game.guild_xid, max_age=TEN_MINUTES
+            )
+            if voice_invite:
+                game.voice_channel_invite = voice_invite  # type: ignore
 
     def ensure_user_exists(
         self, session: Session, user: Union[discord.User, discord.Member]
@@ -717,8 +735,7 @@ class SpellBot(discord.Client):
                 game.url = (
                     self.create_spelltable_url() if game.system == "spelltable" else None
                 )
-                if game.server.create_voice:
-                    game.voice_channel_xid = await self.make_voice(session, game)
+                await self.setup_voice(session, game)
                 game.status = "started"
                 game.game_power = game.power
                 session.commit()
@@ -973,9 +990,7 @@ class SpellBot(discord.Client):
                     self.create_spelltable_url() if game.system == "spelltable" else None
                 )
                 game.url = game_url  # type: ignore
-                if game.server.create_voice:
-                    voice_xid = await self.make_voice(session, game)
-                    game.voice_channel_xid = voice_xid  # type: ignore
+                await self.setup_voice(session, game)
                 game.status = "started"  # type: ignore
                 game.game_power = game.power  # type: ignore
                 session.commit()
@@ -1564,9 +1579,7 @@ class SpellBot(discord.Client):
                 self.create_spelltable_url() if game.system == "spelltable" else None
             )
             game.url = game_url  # type: ignore
-            if game.server.create_voice:
-                voice_xid = await self.make_voice(session, game)
-                game.voice_channel_xid = voice_xid  # type: ignore
+            await self.setup_voice(session, game)
             game.status = "started"  # type: ignore
             game.game_power = game.power  # type: ignore
             response = game.to_embed(dm=True)
@@ -1671,9 +1684,7 @@ class SpellBot(discord.Client):
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=server.expire)
         url = self.create_spelltable_url() if system == "spelltable" else None
-        # FIXME: Do we create the voice channel in this case?
-        # if game.server.create_voice:
-        #     game.voice_channel_xid = await self.make_voice(session, game)
+        # NOTE: Don't automatically create a voice channel in this case...
         game = Game(
             channel_xid=message.channel.id,
             created_at=now,
