@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v4.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v4.5.0) - 2020-10-13
+
 ### Added
 
 - Adds some documentation that you can set teams to none to delete them.
