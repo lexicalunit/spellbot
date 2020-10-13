@@ -8,6 +8,7 @@ from spellbot.constants import GREEN_CHECK, RED_X
 from spellbot.operations import (
     safe_clear_reactions,
     safe_create_category_channel,
+    safe_create_invite,
     safe_create_voice_channel,
     safe_delete_channel,
     safe_delete_message,
@@ -22,7 +23,7 @@ from spellbot.operations import (
 )
 
 from .mocks import AsyncMock
-from .mocks.discord import MockDiscordMessage, MockTextChannel
+from .mocks.discord import MockDiscordMessage, MockTextChannel, MockVoiceChannel
 from .mocks.users import FRIEND
 
 
@@ -66,7 +67,7 @@ class TestOperations:
 
     async def test_safe_remove_reaction_error_bad_request(self, mock_message, caplog):
         response = Mock()
-        response.status = 403
+        response.status = 400
         mock_message.remove_reaction.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
@@ -99,7 +100,7 @@ class TestOperations:
 
     async def test_safe_clear_reactions_error_bad_request(self, mock_message, caplog):
         response = Mock()
-        response.status = 403
+        response.status = 400
         mock_message.clear_reactions.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
@@ -130,7 +131,7 @@ class TestOperations:
 
     async def test_safe_react_ok_error_bad_request(self, mock_message, caplog):
         response = Mock()
-        response.status = 403
+        response.status = 400
         mock_message.add_reaction.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
@@ -161,7 +162,7 @@ class TestOperations:
 
     async def test_safe_react_error_error_bad_request(self, mock_message, caplog):
         response = Mock()
-        response.status = 403
+        response.status = 400
         mock_message.add_reaction.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
@@ -311,7 +312,7 @@ class TestOperations:
 
     async def test_safe_edit_message_error_bad_request(self, mock_message, caplog):
         response = Mock()
-        response.status = 403
+        response.status = 400
         mock_message.edit.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
@@ -328,7 +329,7 @@ class TestOperations:
 
     async def test_safe_delete_message_error_bad_request(self, mock_message, caplog):
         response = Mock()
-        response.status = 403
+        response.status = 400
         mock_message.delete.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
@@ -359,9 +360,9 @@ class TestOperations:
 
     async def test_safe_create_voice_channel(self, client, monkeypatch):
         mock_channel = MockTextChannel(1, "general", [])
-        cid = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
+        chan = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
 
-        assert cid == 1
+        assert chan.id == 1
 
     async def test_safe_create_voice_channel_create_error(
         self, client, monkeypatch, caplog
@@ -381,9 +382,9 @@ class TestOperations:
         )
         monkeypatch.setattr(mock_guild, "create_voice_channel", mock_create_voice_channel)
 
-        cid = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
+        chan = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
 
-        assert cid is None
+        assert chan is None
         assert (
             f"warning: discord (guild {mock_guild_id}): could not create voice channel"
             in caplog.text
@@ -395,9 +396,9 @@ class TestOperations:
         mock_get_guild = Mock(return_value=None)
         monkeypatch.setattr(client, "get_guild", mock_get_guild)
 
-        cid = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
+        chan = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
 
-        assert cid is None
+        assert chan is None
 
     async def test_safe_delete_channel(self, client, monkeypatch):
         mock_channel = MockTextChannel(1, "general", [])
@@ -478,3 +479,33 @@ class TestOperations:
         )
 
         assert category is None
+
+    async def test_safe_create_invite(self, client, monkeypatch):
+        mock_channel = MockVoiceChannel(1, "general", [])
+        await safe_create_invite(
+            cast(discord.VoiceChannel, mock_channel), mock_channel.guild.id
+        )
+
+        mock_channel.create_invite.assert_called_once_with(max_age=0)
+
+    async def test_safe_create_invite_error(self, client, monkeypatch, caplog):
+        mock_channel = MockVoiceChannel(1, "general", [])
+        mock_guild_id = mock_channel.guild.id
+
+        mock_create_invite = AsyncMock()
+        http_response = Mock()
+        http_response.status = 400
+        mock_create_invite.side_effect = discord.errors.HTTPException(
+            http_response, "BAD REQUEST"
+        )
+        monkeypatch.setattr(mock_channel, "create_invite", mock_create_invite)
+
+        await safe_create_invite(
+            cast(discord.VoiceChannel, mock_channel), mock_channel.guild.id
+        )
+
+        assert (
+            f"warning: discord (guild {mock_guild_id}): could create channel invite"
+            in caplog.text
+        )
+        assert "BAD REQUEST" in caplog.text
