@@ -462,7 +462,7 @@ class TestSpellBot:
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
             "\n"
             "[🔗 Add SpellBot to your Discord!](https://discordapp.com/api/oauth2"
-            "/authorize?client_id=725510263251402832&permissions=93264&scope=bot)\n"
+            "/authorize?client_id=725510263251402832&permissions=93265&scope=bot)\n"
             "\n"
             "[👍 Give SpellBot a vote on top.gg!]"
             "(https://top.gg/bot/725510263251402832/vote)\n"
