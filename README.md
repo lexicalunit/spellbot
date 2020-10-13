@@ -5,6 +5,7 @@
 [![build][build-badge]][build]
 [![top][top-badge]][top]
 [![uptime][uptime-badge]][uptime]
+[![metrics][metrics-badge]][metrics]
 [![pypi][pypi-badge]][pypi]
 [![codecov][codecov-badge]][codecov]
 [![CodeFactor][factor-badge]][factor]
@@ -193,3 +194,5 @@ with installing and using it.
 [top]:                https://top.gg/bot/725510263251402832
 [uptime-badge]:       https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]:             https://uptimerobot.com/dashboard#785764282
+[metrics-badge]:      https://img.shields.io/badge/metrics-grafana-orange.svg
+[metrics]:            https://lexicalunit.grafana.net/d/4TSUCbcMz/spellbot?orgId=1

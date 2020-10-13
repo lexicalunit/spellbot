@@ -9,10 +9,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v4.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v4.5.0) - 2020-10-13
 
+### Removed
+
+- Removes the /metrics endpoint in favor of using redis for metrics storage.
+
 ### Added
 
 - Adds some documentation that you can set teams to none to delete them.
 - Adds voice channel instant invites when voice channels are turned on.
+- Adds redis metrics support.
 
 ## [v4.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v4.4.0) - 2020-10-12
 
