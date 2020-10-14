@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v4.6.0](https://github.com/lexicalunit/spellbot/releases/tag/v4.6.0) - 2020-10-14
+
 ### Added
 
 - Turn on or off the ability to use tags on your server.
