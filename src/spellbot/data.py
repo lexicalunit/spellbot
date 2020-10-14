@@ -48,6 +48,7 @@ Base = declarative_base()
 class Server(Base):
     __tablename__ = "servers"
     guild_xid = Column(BigInteger, primary_key=True, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     prefix = Column(String(10), nullable=False, default="!")
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
     links = Column(String(10), nullable=False, server_default=text("'public'"))
@@ -181,6 +182,7 @@ class Event(Base):
 class User(Base):
     __tablename__ = "users"
     xid = Column(BigInteger, primary_key=True, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     game_id = Column(
         Integer, ForeignKey("games.id", ondelete="SET NULL"), nullable=True, index=True
     )

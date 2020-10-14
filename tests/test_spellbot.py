@@ -153,16 +153,26 @@ def snap(snapshot):
 
 @pytest.mark.asyncio
 class TestSpellBot:
-    async def test_init_default(self, monkeypatch):
+    async def test_init_default(self, patch_discord, tmp_path, monkeypatch):
+        (tmp_path / "spellbot.db").touch()
+        connection_string = f"sqlite:///{tmp_path}/spellbot.db"
+        db_url = spellbot.get_db_url("TEST_SPELLBOT_DB_URL", connection_string)
+
         monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())
-        bot = spellbot.SpellBot()
+
+        bot = spellbot.SpellBot(db_url=db_url, mock_games=True)
 
         assert bot.loop
 
-    async def test_init_with_loop(self, monkeypatch):
+    async def test_init_with_loop(self, patch_discord, tmp_path, monkeypatch):
+        (tmp_path / "spellbot.db").touch()
+        connection_string = f"sqlite:///{tmp_path}/spellbot.db"
+        db_url = spellbot.get_db_url("TEST_SPELLBOT_DB_URL", connection_string)
+
         monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())
         loop = asyncio.get_event_loop()
-        bot = spellbot.SpellBot(loop=loop)
+
+        bot = spellbot.SpellBot(loop=loop, db_url=db_url, mock_games=True)
 
         assert bot.loop == loop
 
