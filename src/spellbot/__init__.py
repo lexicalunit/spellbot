@@ -375,11 +375,11 @@ class SpellBot(discord.Client):
         self, loop: asyncio.AbstractEventLoop
     ) -> None:  # pragma: no cover
         """Starts a task that culls old games."""
-        THIRTY_SECONDS = 30
+        TWO_MINUTES = 120
 
         async def task() -> None:
             while True:
-                await asyncio.sleep(THIRTY_SECONDS)
+                await asyncio.sleep(TWO_MINUTES)
                 await self.cleanup_expired_games()
 
         loop.create_task(task())
@@ -412,12 +412,12 @@ class SpellBot(discord.Client):
         self, loop: asyncio.AbstractEventLoop
     ) -> None:  # pragma: no cover
         """Starts a task that deletes old voice channels."""
-        THIRTY_MINUTES = 1800
+        TEN_MINUTES = 600
 
         async def task() -> None:
             while True:
-                await asyncio.sleep(THIRTY_MINUTES)
                 await self.cleanup_old_voice_channels()
+                await asyncio.sleep(TEN_MINUTES)
 
         loop.create_task(task())
 
@@ -474,8 +474,8 @@ class SpellBot(discord.Client):
 
         async def task() -> None:
             while True:
-                await asyncio.sleep(ONE_HOUR)
                 await self.update_metrics()
+                await asyncio.sleep(ONE_HOUR)
 
         loop.create_task(task())
 
