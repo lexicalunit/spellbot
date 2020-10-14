@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Check for expired games every 2 minutes instead of 30 seconds.
+- Update metrics on startup instead of after 1 hour of uptime.
+- Clean up voice channels every 10 minutes instead of every 30 minutes.
+
 ## [v4.7.0](https://github.com/lexicalunit/spellbot/releases/tag/v4.7.0) - 2020-10-14
 
 ### Added
