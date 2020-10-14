@@ -346,8 +346,6 @@ class SpellBot(discord.Client):
             member[0][9:] for member in members if member[0].startswith("spellbot_")
         ]
 
-        self._begin_background_tasks(loop)
-
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[Session, None]:
         session = self.data.Session()
@@ -821,6 +819,7 @@ class SpellBot(discord.Client):
     async def on_ready(self) -> None:
         """Behavior when the client has successfully connected to Discord."""
         logger.debug("logged in as %s", self.user)
+        self._begin_background_tasks(self.loop)
 
     ##############################
     # Bot Command Functions
