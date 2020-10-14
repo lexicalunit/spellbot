@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [v4.5.1](https://github.com/lexicalunit/spellbot/releases/tag/v4.5.1) - 2020-10-13
+### Added
 
-## [v4.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v4.5.0) - 2020-10-13
+- More robust redis connection and error handling.
+
+## [v4.5.1](https://github.com/lexicalunit/spellbot/releases/tag/v4.5.1) - 2020-10-13
 
 ### Removed
 
@@ -17,9 +19,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Adds redis metrics support.
+
+## [v4.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v4.5.0) - 2020-10-13
+
+### Added
+
 - Adds some documentation that you can set teams to none to delete them.
 - Adds voice channel instant invites when voice channels are turned on.
-- Adds redis metrics support.
 
 ## [v4.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v4.4.0) - 2020-10-12
 
