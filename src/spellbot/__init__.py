@@ -1050,6 +1050,9 @@ class SpellBot(discord.Client):
         tag_names: List[str] = opts["tags"]
         system: str = opts["system"]
 
+        if not server.tags_enabled:
+            tag_names = []
+
         if not await self._validate_size(message, size):
             await safe_react_error(message)
             return
@@ -1979,6 +1982,7 @@ class SpellBot(discord.Client):
         * `teams <list | none>`: Sets the teams available on this server.
         * `power <on | off>`: Turns the power command on or off for this server.
         * `voice <on | off>`: When on, SpellBot will automatically create voice channels.
+        * `tags <on | off>`: Turn on or off the ability to use tags on your server.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
@@ -2018,6 +2022,8 @@ class SpellBot(discord.Client):
             await self.spellbot_power(session, server, params[1:], message)
         elif command == "voice":
             await self.spellbot_voice(session, server, params[1:], message)
+        elif command == "tags":
+            await self.spellbot_tags(session, server, params[1:], message)
         else:
             await message.channel.send(
                 s(
@@ -2327,6 +2333,40 @@ class SpellBot(discord.Client):
         )
         await safe_react_ok(message)
 
+    async def spellbot_tags(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        if not params or params[0].lower() not in ["on", "off"]:
+            await message.channel.send(
+                s(
+                    "spellbot_tags_bad",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                )
+            )
+            await safe_react_error(message)
+            return
+
+        server = (
+            session.query(Server)
+            .filter(Server.guild_xid == message.channel.guild.id)
+            .one_or_none()
+        )
+        setting = params[0].lower()
+        server.tags_enabled = setting == "on"  # type: ignore
+        session.commit()
+        await message.channel.send(
+            s(
+                "spellbot_tags",
+                reply=f"<@{cast(discord.User, message.author).id}>",
+                setting=setting,
+            )
+        )
+        await safe_react_ok(message)
+
     async def spellbot_config(
         self,
         session: Session,
@@ -2347,6 +2387,7 @@ class SpellBot(discord.Client):
         embed.add_field(name="Active channels", value=channels_str)
         embed.add_field(name="Links", value=server.links.title())
         embed.add_field(name="Power", value="On" if server.power_enabled else "Off")
+        embed.add_field(name="Tags", value="On" if server.tags_enabled else "Off")
         embed.add_field(
             name="Voice Channels",
             value="On" if server.create_voice else "Off",

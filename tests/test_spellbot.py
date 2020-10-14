@@ -548,8 +548,15 @@ class TestSpellBot:
         assert about["footer"]["text"] == f"Config for Guild ID: {channel.guild.id}"
         assert about["thumbnail"]["url"] == THUMB_URL
         fields = {f["name"]: f["value"] for f in about["fields"]}
-        assert fields["Inactivity expiration time"] == "45 minutes"
-        assert fields["Active channels"] == "all"
+        assert fields == {
+            "Active channels": "all",
+            "Command prefix": "$",
+            "Inactivity expiration time": "45 minutes",
+            "Links": "Public",
+            "Power": "On",
+            "Tags": "On",
+            "Voice Channels": "Off",
+        }
 
         foo = channel_maker.text("foo")
         bar = channel_maker.text("bar")
@@ -2711,6 +2718,36 @@ class TestSpellBot:
         msg = MockMessage(author, channel, "!team dogs")
         await client.on_message(msg)
         assert "✅" in msg.reactions
+
+    async def test_on_message_spellbot_tags_none(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot tags"))
+        assert channel.last_sent_response == (
+            f'Sorry <@{author.id}>, but please provide an "on" or "off" setting.'
+        )
+
+    async def test_on_message_spellbot_tags_invalid(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot tags bottom"))
+        assert channel.last_sent_response == (
+            f'Sorry <@{author.id}>, but please provide an "on" or "off" setting.'
+        )
+
+    async def test_on_message_spellbot_tags(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot tags off"))
+        assert channel.last_sent_response == (
+            f"Ok <@{author.id}>, I've turned the ability to use tags off."
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~modern ~fun"))
+
+        game = game_json_for(client, AMY)
+        assert game["size"] == 2
+        assert game["tags"] == []
 
     async def test_paginate(self):
         def subject(text):

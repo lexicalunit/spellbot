@@ -87,6 +87,8 @@ spellbot_power_bad: Sorry $reply, but please provide an "on" or "off" setting.
 spellbot_prefix: Ok $reply, I will now use "$prefix" as my command prefix on this
   server.
 spellbot_prefix_none: Sorry $reply, but please provide a prefix string.
+spellbot_tags: Ok $reply, I've turned the ability to use tags $setting.
+spellbot_tags_bad: Sorry $reply, but please provide an "on" or "off" setting.
 spellbot_teams_none: Sorry $reply, but please provide a list of team names or `none`
   to erase teams.
 spellbot_teams_too_few: Sorry $reply, but please give at least two team names or `none`
