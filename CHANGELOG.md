@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v4.7.1](https://github.com/lexicalunit/spellbot/releases/tag/v4.7.1) - 2020-10-14
+
 ### Changed
 
 - Check for expired games every 2 minutes instead of 30 seconds.
