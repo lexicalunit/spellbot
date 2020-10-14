@@ -34,7 +34,6 @@ import redis
 import requests
 from aiohttp import web
 from dotenv import load_dotenv
-from redis import Redis
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import text
@@ -314,13 +313,19 @@ class SpellBot(discord.Client):
         self.mock_games = mock_games
 
         # Connect to Redis Cloud if we have a URL for it.
-        self.metrics_db: Optional[Redis] = None
+        self.metrics_db: Optional[redis.Redis] = None
         if redis_url:
             url = parse.urlparse(redis_url)
             if url.hostname and url.port:
-                self.metrics_db = redis.Redis(
-                    host=url.hostname, port=url.port, password=url.password
-                )
+                try:
+                    self.metrics_db = redis.Redis(  # type: ignore
+                        host=url.hostname,
+                        port=url.port,
+                        password=url.password,
+                        health_check_interval=30,  # type: ignore
+                    )
+                except redis.exceptions.RedisError as e:
+                    logger.exception("redis error: %s", e)
 
         # We have to make sure that DB_DIR exists before we try to create
         # the database as part of instantiating the Data object.
@@ -480,13 +485,19 @@ class SpellBot(discord.Client):
 
         logger.info("starting update metrics task...")
         async with self.session() as session:
-            self.metrics_db.mset(
-                {
-                    "servers": session.query(Server).count(),
-                    "games": session.query(Game).filter(Game.status == "started").count(),
-                    "users": session.query(User).count(),
-                }
-            )
+            games = session.query(Game).filter(Game.status == "started").count()
+            servers = session.query(Server).count()
+            users = session.query(User).count()
+            try:
+                self.metrics_db.mset(
+                    {
+                        "servers": servers,
+                        "games": games,
+                        "users": users,
+                    }
+                )
+            except redis.exceptions.RedisError as e:
+                logger.exception("redis error: %s", e)
 
     @property
     def commands(self) -> List[str]:
