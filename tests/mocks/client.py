@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -12,10 +12,11 @@ from .users import ADMIN, ALL_USERS, BOT, PUNK, SERVER_MEMBERS
 
 
 class MockDiscordClient:
-    def __init__(self, **kwargs):
+    def __init__(self, loop=Mock(), **kwargs):
         self.user = ADMIN
         self.channels = []
         self._guild = MockGuild(1, "guild", [])
+        self.loop = loop
 
     def get_user(self, user_id):
         for user in ALL_USERS:
