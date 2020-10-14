@@ -84,6 +84,7 @@ These commands will help you configure SpellBot for your server.
   - `teams`: Sets the teams available on this server.
   - `power`: Turns the power command on or off for this server.
   - `voice`: When on, SpellBot will automatically create voice channels.
+  - `tags`: Turn on or off the ability to use tags on your server.
   - `help`: Get detailed usage help for SpellBot.
 
 ### 🛋️ Ergonomics
