@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
@@ -343,6 +343,7 @@ class Game(Base):
             Game.size == size,
             Game.channel_xid == channel_xid,
             Game.system == system,
+            Game.message_xid != None,
         ]
         having_filters = [
             func.count(distinct(games_tags.c.tag_id)) == len(required_tag_ids),
@@ -396,7 +397,15 @@ class Game(Base):
     @classmethod
     def voiced(cls, session: Session) -> List[Game]:
         return cast(
-            List[Game], session.query(Game).filter(Game.voice_channel_xid != None).all()
+            List[Game],
+            session.query(Game)
+            .filter(
+                and_(
+                    Game.voice_channel_xid != None,
+                    datetime.utcnow() - timedelta(minutes=10) >= Game.updated_at,
+                )
+            )
+            .all(),
         )
 
     def __repr__(self) -> str:
