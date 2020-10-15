@@ -2777,6 +2777,48 @@ class TestSpellBot:
         assert game["size"] == 2
         assert game["tags"] == []
 
+    # There is currently an issue with SpellBot where, since commands are handled async,
+    # multiple commands could be processed interleaved at the same time. This problem
+    # was mitigated by the fact that the work that was being done by these commands is
+    # written in such a way as to be idempotent. Still, this means that additional
+    # unnecessary work is something done by the bot. And code must be written in such a
+    # way to ensure the idempotentcy constraint is not violated. This constraint was
+    # violated by the `setup_voice()` method which creates a new voice channel. When two
+    # users both did a `!lfg` command at the same time, triggering a game to be created,
+    # the voice channel was created twice for this game. The fix is to make sure that
+    # the bot doesn't create the channel if it already exists, which it can check before
+    # trying to create the channel. This is not an ideal solution and I can't actually
+    # get the bot to fail in this way in testing. Below was my attempt to see this
+    # issue occur in tests, but something about it is wrong and I'm not sure how to
+    # properly recreate this issue in this test suite at this time.
+    @pytest.mark.skip(reason="this test doesn't properly test the simultaneity problem")
+    async def test_simultaneous_signup(self, client, channel_maker, monkeypatch):
+        from functools import partial
+
+        async def mock_setup_voice(times, session, game):
+            if game.voice_channel_xid:
+                return
+
+            times()
+            await asyncio.sleep(1)
+            game.voice_channel_xid = 1
+
+        times = Mock()
+        monkeypatch.setattr(client, "setup_voice", partial(mock_setup_voice, times))
+
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(an_admin(), channel, "!spellbot voice on"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg size:3"))
+
+        await asyncio.gather(
+            client.on_message(MockMessage(ADAM, channel, "!lfg size:3")),
+            client.on_message(MockMessage(JR, channel, "!lfg size:3")),
+        )
+
+        times.assert_called_once()
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, ADAM, True)
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JR, True)
+
     async def test_paginate(self):
         def subject(text):
             return [page for page in spellbot.paginate(text)]

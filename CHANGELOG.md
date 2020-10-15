@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Workaround a concurrency issue with creating new voice channels.
+
 ## [v4.7.4](https://github.com/lexicalunit/spellbot/releases/tag/v4.7.4) - 2020-10-14
 
 ### Added
