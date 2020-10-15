@@ -319,6 +319,7 @@ class MockVoiceChannel(MockChannel):
         super().__init__(channel_id, "voice")
         self.name = channel_name
         self.members = members
+        self.voice_states = {member.id: member.name for member in members}
         self.guild = MockGuild(500, "Guild Name", members)
         self.create_invite = AsyncMock()
 
