@@ -2134,7 +2134,12 @@ class TestSpellBot:
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
 
-    async def test_cleanup_voice_channels(self, client, channel_maker, monkeypatch):
+    async def test_cleanup_voice_channels(
+        self, client, channel_maker, monkeypatch, freezer
+    ):
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        freezer.move_to(NOW)
+
         channel = channel_maker.text()
         author = an_admin()
         await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
@@ -2147,14 +2152,21 @@ class TestSpellBot:
         mock_voice_channel = channel_maker.voice("whatever", [])
         mock_get_channel = Mock(return_value=mock_voice_channel)
         monkeypatch.setattr(client, "get_channel", mock_get_channel)
-        await client.cleanup_old_voice_channels()
 
+        await client.cleanup_old_voice_channels()
+        mock_voice_channel.delete.assert_not_called()
+
+        freezer.move_to(NOW + timedelta(days=3))
+        await client.cleanup_old_voice_channels()
         mock_voice_channel.delete.assert_called()
         assert game_json_for(client, AMY)["voice_channel_xid"] is None
 
     async def test_cleanup_voice_channels_error_fetch_channel(
-        self, client, channel_maker, monkeypatch
+        self, client, channel_maker, monkeypatch, freezer
     ):
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        freezer.move_to(NOW)
+
         channel = channel_maker.text()
         author = an_admin()
         await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
@@ -2169,6 +2181,7 @@ class TestSpellBot:
         monkeypatch.setattr(client, "get_channel", mock_get_channel)
         monkeypatch.setattr(client, "fetch_channel", mock_fetch_channel)
 
+        freezer.move_to(NOW + timedelta(days=3))
         await client.cleanup_old_voice_channels()
 
         mock_get_channel.assert_called()
@@ -2176,8 +2189,11 @@ class TestSpellBot:
         assert game_json_for(client, AMY)["voice_channel_xid"] is None
 
     async def test_cleanup_voice_channels_in_use(
-        self, client, channel_maker, monkeypatch
+        self, client, channel_maker, monkeypatch, freezer
     ):
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        freezer.move_to(NOW)
+
         channel = channel_maker.text()
         author = an_admin()
         await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
@@ -2190,6 +2206,8 @@ class TestSpellBot:
         mock_voice_channel = channel_maker.voice("whatever", [AMY, JACOB])
         mock_get_channel = Mock(return_value=mock_voice_channel)
         monkeypatch.setattr(client, "get_channel", mock_get_channel)
+
+        freezer.move_to(NOW + timedelta(days=3))
         await client.cleanup_old_voice_channels()
 
         mock_voice_channel.delete.assert_not_called()
