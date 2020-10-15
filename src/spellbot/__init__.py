@@ -521,7 +521,9 @@ class SpellBot(discord.Client):
 
     async def setup_voice(self, session: Session, game: Game) -> None:
         """Adds voice information to the game object. DOES NOT COMMIT!"""
-        if not game.server.create_voice:
+        # NOTE: See the test_simultaneous_signup() test for more details about
+        #       how this function has caused issues in the past.
+        if not game.server.create_voice or game.voice_channel_xid:
             return
 
         category = await self.ensure_server_voice_category(session, game.server)
