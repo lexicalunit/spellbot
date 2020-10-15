@@ -432,7 +432,8 @@ class SpellBot(discord.Client):
                     game.voice_channel_xid = None  # type: ignore
                     game.voice_channel_invite = None  # type: ignore
                     continue
-                if not chan.members:  # type: ignore
+
+                if not chan.voice_states.keys():  # type: ignore
                     await safe_delete_channel(chan, game.guild_xid)
                     game.voice_channel_xid = None  # type: ignore
                     game.voice_channel_invite = None  # type: ignore
