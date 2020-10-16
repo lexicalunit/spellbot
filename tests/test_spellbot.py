@@ -2131,8 +2131,23 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
         await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
-        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
+        amy_embed = game_embed_for(client, AMY, True)
+        assert amy_embed == game_embed_for(client, JACOB, True)
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+        assert "Join your voice chat now" in amy_embed["description"]
+
+    async def test_on_message_spellbot_voice_private(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
+        await client.on_message(MockMessage(author, channel, "!spellbot links private"))
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        amy_embed = game_embed_for(client, AMY, True)
+        assert amy_embed == game_embed_for(client, JACOB, True)
+        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+        assert "Join your voice chat now" not in amy_embed["description"]
 
     async def test_cleanup_voice_channels(
         self, client, channel_maker, monkeypatch, freezer
@@ -2777,20 +2792,26 @@ class TestSpellBot:
         assert game["size"] == 2
         assert game["tags"] == []
 
-    # There is currently an issue with SpellBot where, since commands are handled async,
+    # There was an issue with SpellBot where, since commands are handled async,
     # multiple commands could be processed interleaved at the same time. This problem
     # was mitigated by the fact that the work that was being done by these commands is
     # written in such a way as to be idempotent. Still, this means that additional
-    # unnecessary work is something done by the bot. And code must be written in such a
-    # way to ensure the idempotentcy constraint is not violated. This constraint was
+    # unnecessary work was being done by the bot. And code had to be written in such a
+    # way to ensure the idempotentcy constraint is not violated. This constraint was then
     # violated by the `setup_voice()` method which creates a new voice channel. When two
     # users both did a `!lfg` command at the same time, triggering a game to be created,
-    # the voice channel was created twice for this game. The fix is to make sure that
+    # the voice channel was created twice for this game. The fix was to make sure that
     # the bot doesn't create the channel if it already exists, which it can check before
     # trying to create the channel. This is not an ideal solution and I can't actually
     # get the bot to fail in this way in testing. Below was my attempt to see this
     # issue occur in tests, but something about it is wrong and I'm not sure how to
     # properly recreate this issue in this test suite at this time.
+    #
+    # NOTE: For now this particular issue with game creation has been resolved by using
+    #       an async lock per channel for the critical paths that can create games. This
+    #       note and test has been left in the codebase to document this problem. The
+    #       danger still exists that future code/refactoring could introduce concurrency
+    #       issues like this again. We must be vigilant against them.
     @pytest.mark.skip(reason="this test doesn't properly test the simultaneity problem")
     async def test_simultaneous_signup(self, client, channel_maker, monkeypatch):
         from functools import partial

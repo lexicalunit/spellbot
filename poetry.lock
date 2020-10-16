@@ -206,6 +206,17 @@ python-versions = ">=3.5,<4.0"
 version = "1.3.1"
 
 [[package]]
+category = "main"
+description = "Dictionary with auto-expiring values for caching purposes"
+name = "expiringdict"
+optional = false
+python-versions = "*"
+version = "1.2.1"
+
+[package.extras]
+tests = ["dill", "coverage", "coveralls", "mock", "nose"]
+
+[[package]]
 category = "dev"
 description = "Faker is a Python package that generates fake data for you."
 name = "faker"
@@ -994,7 +1005,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=3.5,<3.7.3 || >3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pytest-cov", "jaraco.test (>=3.2.0)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
 
 [metadata]
-content-hash = "af341f010d5ef44d4ffb4489783dec71739864b03e52190b26dbaa0fbcbd61e3"
+content-hash = "d11e4d6a19c5520157fae702082a7c0329fa5f2403b30508400e930e0830ceeb"
 python-versions = '>=3.7,<4'
 
 [metadata.files]
@@ -1114,6 +1125,9 @@ distlib = [
 dunamai = [
     {file = "dunamai-1.3.1-py3-none-any.whl", hash = "sha256:8eaac70fef958a2cbbff9be5250edff8a815f8f8edb030219d4203da1a978b1c"},
     {file = "dunamai-1.3.1.tar.gz", hash = "sha256:879653e60fd0c9667bf48cb563bed668c498be48ce33628b5f140909579ada7b"},
+]
+expiringdict = [
+    {file = "expiringdict-1.2.1.tar.gz", hash = "sha256:fe2ba427220425c3c8a3d29f6d2e2985bcee323f8bcd4021e68ebefbd90d8250"},
 ]
 faker = [
     {file = "Faker-4.14.0-py3-none-any.whl", hash = "sha256:a7a36c3c657f06bd1e3e3821b9480f2a92017d8a26e150e464ab6b97743cbc92"},

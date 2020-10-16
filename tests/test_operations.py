@@ -347,6 +347,20 @@ class TestOperations:
     async def test_safe_send_user_error(self, client, monkeypatch, caplog):
         mock_send = AsyncMock()
         http_response = Mock()
+        http_response.status = 500
+        mock_send.side_effect = discord.errors.HTTPException(
+            http_response, "Internal Server Error"
+        )
+        monkeypatch.setattr(FRIEND, "send", mock_send)
+
+        await safe_send_user(cast(discord.User, FRIEND), content="test")
+
+        assert "warning: discord (DM): could not send message to user" in caplog.text
+        assert "Internal Server Error" in caplog.text
+
+    async def test_safe_send_user_blocked(self, client, monkeypatch, caplog):
+        mock_send = AsyncMock()
+        http_response = Mock()
         http_response.status = 403
         mock_send.side_effect = discord.errors.Forbidden(
             http_response, "Missing Permissions"
@@ -355,8 +369,8 @@ class TestOperations:
 
         await safe_send_user(cast(discord.User, FRIEND), content="test")
 
-        assert "warning: discord (DM): could not send message to user" in caplog.text
-        assert "Missing Permissions" in caplog.text
+        assert "warning: discord (DM): could not send message to user" not in caplog.text
+        assert "Missing Permissions" not in caplog.text
 
     async def test_safe_create_voice_channel(self, client, monkeypatch):
         mock_channel = MockTextChannel(1, "general", [])

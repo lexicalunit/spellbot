@@ -34,6 +34,7 @@ import redis
 import requests
 from aiohttp import web
 from dotenv import load_dotenv
+from expiringdict import ExpiringDict  # type: ignore
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import text
@@ -311,21 +312,10 @@ class SpellBot(discord.Client):
         self.token = token or ""
         self.auth = auth or ""
         self.mock_games = mock_games
+        self.channel_lock_cache = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
 
         # Connect to Redis Cloud if we have a URL for it.
-        self.metrics_db: Optional[redis.Redis] = None
-        if redis_url:
-            url = parse.urlparse(redis_url)
-            if url.hostname and url.port:
-                try:
-                    self.metrics_db = redis.Redis(  # type: ignore
-                        host=url.hostname,
-                        port=url.port,
-                        password=url.password,
-                        health_check_interval=30,  # type: ignore
-                    )
-                except redis.exceptions.RedisError as e:
-                    logger.exception("redis error: %s", e)
+        self.metrics_db = self._create_metrics_db(redis_url)
 
         # We have to make sure that DB_DIR exists before we try to create
         # the database as part of instantiating the Data object.
@@ -357,6 +347,33 @@ class SpellBot(discord.Client):
             raise
         finally:
             session.close()
+
+    @asynccontextmanager
+    async def channel_lock(self, channel_xid: int) -> AsyncGenerator[None, None]:
+        """Aquire an async lock based on the given channel id."""
+        lock = self.channel_lock_cache.get(channel_xid, asyncio.Lock())
+        self.channel_lock_cache[channel_xid] = lock
+        async with lock:  # type: ignore
+            yield
+
+    def _create_metrics_db(
+        self, redis_url: Optional[str]
+    ) -> Optional[redis.Redis]:  # pragma: no cover
+        if not redis_url:
+            return None
+
+        url = parse.urlparse(redis_url)
+        if url.hostname and url.port:
+            try:
+                return redis.Redis(  # type: ignore
+                    host=url.hostname,
+                    port=url.port,
+                    password=url.password,
+                    health_check_interval=30,  # type: ignore
+                )
+            except redis.exceptions.RedisError as e:
+                logger.exception("redis error: %s", e)
+        return None
 
     def _begin_background_tasks(
         self, loop: asyncio.AbstractEventLoop
@@ -478,7 +495,7 @@ class SpellBot(discord.Client):
 
         loop.create_task(task())
 
-    async def update_metrics(self) -> None:
+    async def update_metrics(self) -> None:  # pragma: no cover
         if not self.metrics_db:
             return
 
@@ -700,7 +717,10 @@ class SpellBot(discord.Client):
         if not message:
             return
 
-        async with self.session() as session:
+        # NOTE: This and the code that handles !lfg/!find commands is behind an async
+        #       channel lock to prevent more than one person per guild per channel
+        #       concurrently interleaving processing within this critical section.
+        async with self.session() as session, self.channel_lock(payload.channel_id):
             assert payload.guild_id is not None
             server = self.ensure_server_exists(session, payload.guild_id)
 
@@ -1043,98 +1063,104 @@ class SpellBot(discord.Client):
         message: discord.Message,
         create_new_game: bool,
     ) -> None:
-        server = self.ensure_server_exists(session, message.channel.guild.id)
-        user = self.ensure_user_exists(session, message.author)
-        mentions = message.mentions if message.channel.type != "private" else []
+        # NOTE: This and the code to handle message reactions is behind an async
+        #       channel lock to prevent more than one person per guild per channel
+        #       concurrently interleaving processing within this critical section.
+        async with self.channel_lock(message.channel.id):
+            server = self.ensure_server_exists(session, message.channel.guild.id)
+            user = self.ensure_user_exists(session, message.author)
+            mentions = message.mentions if message.channel.type != "private" else []
 
-        opts = parse_opts(params)
-        size: Optional[int] = opts["size"]
-        tag_names: List[str] = opts["tags"]
-        system: str = opts["system"]
+            opts = parse_opts(params)
+            size: Optional[int] = opts["size"]
+            tag_names: List[str] = opts["tags"]
+            system: str = opts["system"]
 
-        if not server.tags_enabled:
-            tag_names = []
+            if not server.tags_enabled:
+                tag_names = []
 
-        if not await self._validate_size(message, size):
-            await safe_react_error(message)
-            return
-        assert size  # it's been validated, but pylance can't figure that out
+            if not await self._validate_size(message, size):
+                await safe_react_error(message)
+                return
+            assert size  # it's been validated, but pylance can't figure that out
 
-        if not await self._validate_mentions_size(message, mentions, size):
-            await safe_react_error(message)
-            return
-        mentioned_users: List[User] = [
-            self.ensure_user_exists(session, mentioned) for mentioned in mentions
-        ]
+            if not await self._validate_mentions_size(message, mentions, size):
+                await safe_react_error(message)
+                return
+            mentioned_users: List[User] = [
+                self.ensure_user_exists(session, mentioned) for mentioned in mentions
+            ]
 
-        if not await self._validate_tags_size(message, tag_names):
-            await safe_react_error(message)
-            return
-        tags = Tag.create_many(session, tag_names)
+            if not await self._validate_tags_size(message, tag_names):
+                await safe_react_error(message)
+                return
+            tags = Tag.create_many(session, tag_names)
 
-        if mentioned_users:
-            other = mentioned_users[0]
-            for mentioned_user in mentioned_users:
-                if not mentioned_user.waiting or mentioned_user.game != other.game:
+            if mentioned_users:
+                other = mentioned_users[0]
+                for mentioned_user in mentioned_users:
+                    if not mentioned_user.waiting or mentioned_user.game != other.game:
+                        await message.channel.send(
+                            s("lfg_mentions_different_games", reply=f"<@{user.xid}>")
+                        )
+                        await safe_react_error(message)
+                        return
+                await self._remove_user_from_game(session, user)
+                await self._add_user_to_game(session, user, other.game)
+                game_post = await self._respond_found_game(message, user, other.game)
+                if not game_post:
+                    game_post = await self._post_new_game(session, message, other.game)
+                await self._update_or_start_game(session, other.game, game_post)
+                await safe_react_ok(message)
+                return
+
+            new_game = False
+            game = Game.find_existing(
+                session=session,
+                server=server,
+                channel_xid=message.channel.id,
+                size=size,
+                seats=1,
+                tags=tags,
+                system=system,
+                power=user.power,
+            )
+
+            if not game:
+                if not create_new_game:
                     await message.channel.send(
-                        s("lfg_mentions_different_games", reply=f"<@{user.xid}>")
+                        s("game_not_found", reply=f"<@{user.xid}>")
                     )
                     await safe_react_error(message)
                     return
+
+                now = datetime.utcnow()
+                expires_at = now + timedelta(minutes=server.expire)
+                new_game = True
+                game = Game(
+                    created_at=now,
+                    updated_at=now,
+                    expires_at=expires_at,
+                    size=size,
+                    channel_xid=message.channel.id,
+                    system=system,
+                    tags=tags,
+                    server=server,
+                )
+
             await self._remove_user_from_game(session, user)
-            await self._add_user_to_game(session, user, other.game)
-            game_post = await self._respond_found_game(message, user, other.game)
-            if not game_post:
-                game_post = await self._post_new_game(session, message, other.game)
-            await self._update_or_start_game(session, other.game, game_post)
-            await safe_react_ok(message)
-            return
+            await self._add_user_to_game(session, user, game)
 
-        new_game = False
-        game = Game.find_existing(
-            session=session,
-            server=server,
-            channel_xid=message.channel.id,
-            size=size,
-            seats=1,
-            tags=tags,
-            system=system,
-            power=user.power,
-        )
-
-        if not game:
-            if not create_new_game:
-                await message.channel.send(s("game_not_found", reply=f"<@{user.xid}>"))
-                await safe_react_error(message)
-                return
-
-            now = datetime.utcnow()
-            expires_at = now + timedelta(minutes=server.expire)
-            new_game = True
-            game = Game(
-                created_at=now,
-                updated_at=now,
-                expires_at=expires_at,
-                size=size,
-                channel_xid=message.channel.id,
-                system=system,
-                tags=tags,
-                server=server,
-            )
-
-        await self._remove_user_from_game(session, user)
-        await self._add_user_to_game(session, user, game)
-
-        post: Optional[discord.Message] = None
-        if new_game:
-            post = await self._post_new_game(session, message, game)
-        else:
-            post = await self._respond_found_game(message, user, game)
-            if not post:  # the post must have been deleted
+            post: Optional[discord.Message] = None
+            if new_game:
                 post = await self._post_new_game(session, message, game)
+            else:
+                post = await self._respond_found_game(message, user, game)
+                if not post:  # the post must have been deleted
+                    post = await self._post_new_game(session, message, game)
 
-        await self._update_or_start_game(session, game, post)
-        await safe_react_ok(message)
+            await self._update_or_start_game(session, game, post)
+            await safe_react_ok(message)
 
     @command(allow_dm=False, help_group="Commands for Players")
     async def lfg(
