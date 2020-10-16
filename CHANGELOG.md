@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Removed warning logging for 403 Forbidden errors when sending messages to users.
+  This occurs all the time due to users having DMs blocked except from friends.
+
+### Added
+
+- More tests to get coverage on data and operations back up to 100%.
+
+### Changed
+
+- Async locking was added to ensure that there is no interleaved processing
+  as we handle commands or emoji reactions that can create games. This prevents
+  cases where, for example, multiple voice channels are created for a single
+  game. Or redundant but idempotent processing is done during game creation.
+
 ## [v4.7.5](https://github.com/lexicalunit/spellbot/releases/tag/v4.7.5) - 2020-10-15
 
 ### Fixed
