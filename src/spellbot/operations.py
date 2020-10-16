@@ -174,8 +174,15 @@ async def safe_delete_message(message: discord.Message) -> None:
 async def safe_send_user(user: discord.User, *args, **kwargs) -> None:
     try:
         await user.send(*args, **kwargs)
+    except discord.errors.Forbidden as e:
+        # User may have the bot blocked or they may have DMs only allowed for friends.
+        # Generally speaking, we can safely ignore this sort of error.
+        logger.debug(
+            "warning: discord (DM): could not send message to user (%s): %s",
+            str(user),
+            e,
+        )
     except (
-        discord.errors.Forbidden,
         discord.errors.HTTPException,
         discord.errors.InvalidArgument,
     ) as e:
