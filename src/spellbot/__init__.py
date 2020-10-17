@@ -69,7 +69,6 @@ from spellbot.operations import (
     safe_create_invite,
     safe_create_voice_channel,
     safe_delete_channel,
-    safe_delete_message,
     safe_edit_message,
     safe_fetch_channel,
     safe_fetch_guild,
@@ -647,7 +646,11 @@ class SpellBot(discord.Client):
         if not post:
             return
 
-        await safe_delete_message(post)
+        # NOTE: Deleting the whole post ended up being confusing by invalidating
+        #       hyperlinks to game posts. Instead, let's just empty the post contents.
+        # await safe_delete_message(post)
+        await post.edit(content=s("deleted_game"), embed=None)
+        await safe_clear_reactions(post)
 
     async def try_to_update_game(self, game) -> None:
         """Attempts to update the embed for a game."""
@@ -997,7 +1000,7 @@ class SpellBot(discord.Client):
     async def _validate_mentions_size(
         self, msg: discord.Message, mentions: List[Any], size: int
     ) -> bool:
-        if len(mentions) + 1 >= size:
+        if len(mentions) >= size:
             user_xid = cast(discord.User, msg.author).id
             await msg.channel.send(s("lfg_too_many_mentions", reply=f"<@{user_xid}>"))
             return False
@@ -1081,112 +1084,111 @@ class SpellBot(discord.Client):
         else:  # game *definitely* isn't ready yet
             await safe_edit_message(post, embed=game.to_embed())
 
+    async def _call_attention_to_game(self, msg: discord.Message, game: Game) -> bool:
+        if not game.message_xid:
+            return False
+
+        post = await safe_fetch_message(msg.channel, game.message_xid, game.guild_xid)
+        if not post:
+            return False
+
+        link = post_link(game.server.guild_xid, msg.channel.id, game.message_xid)
+        embed = discord.Embed()
+        embed.set_thumbnail(url=ICO_URL)
+        remaining = int(game.size) - len(cast(List[User], game.users))
+        plural = "s" if remaining > 1 else ""
+        embed.set_author(name=s("call_attn_title", remaining=remaining, plural=plural))
+        embed.description = s("call_attn_desc", link=link)
+        embed.color = discord.Color(0x5A3EFD)
+        await msg.channel.send(embed=embed)
+        return True
+
     async def _play_helper(
         self,
         session: Session,
         prefix: str,
         params: List[str],
         message: discord.Message,
-        create_new_game: bool,
     ) -> None:
-        # NOTE: This and the code to handle message reactions is behind an async
-        #       channel lock to prevent more than one person per guild per channel
-        #       concurrently interleaving processing within this critical section.
-        async with self.channel_lock(message.channel.id):
-            server = self.ensure_server_exists(session, message.channel.guild.id)
-            user = self.ensure_user_exists(session, message.author)
-            mentions = message.mentions if message.channel.type != "private" else []
+        server = self.ensure_server_exists(session, message.channel.guild.id)
+        user = self.ensure_user_exists(session, message.author)
+        mentions = message.mentions if message.channel.type != "private" else []
 
-            opts = parse_opts(params)
-            size: Optional[int] = opts["size"]
-            tag_names: List[str] = opts["tags"]
-            system: str = opts["system"]
+        if user.waiting and user.game.channel_xid == message.channel.id:
+            await self._call_attention_to_game(message, user.game)
+            await safe_react_ok(message)
+            return
 
-            if not server.tags_enabled:
-                tag_names = []
+        opts = parse_opts(params)
+        size: Optional[int] = opts["size"]
+        tag_names: List[str] = opts["tags"]
+        system: str = opts["system"]
 
-            if not await self._validate_size(message, size):
-                await safe_react_error(message)
-                return
-            assert size  # it's been validated, but pylance can't figure that out
+        if not server.tags_enabled:
+            tag_names = []
 
-            if not await self._validate_mentions_size(message, mentions, size):
-                await safe_react_error(message)
-                return
-            mentioned_users: List[User] = [
-                self.ensure_user_exists(session, mentioned) for mentioned in mentions
-            ]
+        if not await self._validate_size(message, size):
+            await safe_react_error(message)
+            return
+        assert size  # it's been validated, but pylance can't figure that out
 
-            if not await self._validate_tags_size(message, tag_names):
-                await safe_react_error(message)
-                return
-            tags = Tag.create_many(session, tag_names)
+        if not await self._validate_mentions_size(message, mentions, size):
+            await safe_react_error(message)
+            return
+        mentioned_users: List[User] = [
+            self.ensure_user_exists(session, mentioned) for mentioned in mentions
+        ]
 
-            if mentioned_users:
-                other = mentioned_users[0]
-                for mentioned_user in mentioned_users:
-                    if not mentioned_user.waiting or mentioned_user.game != other.game:
-                        await message.channel.send(
-                            s("lfg_mentions_different_games", reply=f"<@{user.xid}>")
-                        )
-                        await safe_react_error(message)
-                        return
-                await self._remove_user_from_game(session, user)
-                await self._add_user_to_game(session, user, other.game)
-                game_post = await self._respond_found_game(message, user, other.game)
-                if not game_post:
-                    game_post = await self._post_new_game(session, message, other.game)
-                await self._update_or_start_game(session, other.game, game_post)
-                await safe_react_ok(message)
-                return
+        if not await self._validate_tags_size(message, tag_names):
+            await safe_react_error(message)
+            return
+        tags = Tag.create_many(session, tag_names)
 
-            new_game = False
-            game = Game.find_existing(
-                session=session,
-                server=server,
-                channel_xid=message.channel.id,
+        # you can only add mentioned users to the game if they're not waiting
+        free_users = [u for u in mentioned_users if not u.waiting]
+
+        new_game = False
+        game = Game.find_existing(
+            session=session,
+            server=server,
+            channel_xid=message.channel.id,
+            size=size,
+            seats=1 + len(free_users),
+            tags=tags,
+            system=system,
+            power=user.power,
+        )
+
+        if not game:
+            now = datetime.utcnow()
+            expires_at = now + timedelta(minutes=server.expire)
+            new_game = True
+            game = Game(
+                created_at=now,
+                updated_at=now,
+                expires_at=expires_at,
                 size=size,
-                seats=1,
-                tags=tags,
+                channel_xid=message.channel.id,
                 system=system,
-                power=user.power,
+                tags=tags,
+                server=server,
             )
 
-            if not game:
-                if not create_new_game:
-                    await message.channel.send(
-                        s("game_not_found", reply=f"<@{user.xid}>")
-                    )
-                    await safe_react_error(message)
-                    return
+        await self._remove_user_from_game(session, user)
+        await self._add_user_to_game(session, user, game)
+        for free_user in free_users:
+            await self._add_user_to_game(session, free_user, game)
 
-                now = datetime.utcnow()
-                expires_at = now + timedelta(minutes=server.expire)
-                new_game = True
-                game = Game(
-                    created_at=now,
-                    updated_at=now,
-                    expires_at=expires_at,
-                    size=size,
-                    channel_xid=message.channel.id,
-                    system=system,
-                    tags=tags,
-                    server=server,
-                )
-
-            await self._remove_user_from_game(session, user)
-            await self._add_user_to_game(session, user, game)
-
-            post: Optional[discord.Message] = None
-            if new_game:
+        post: Optional[discord.Message] = None
+        if new_game:
+            post = await self._post_new_game(session, message, game)
+        else:
+            post = await self._respond_found_game(message, user, game)
+            if not post:  # the post must have been deleted
                 post = await self._post_new_game(session, message, game)
-            else:
-                post = await self._respond_found_game(message, user, game)
-                if not post:  # the post must have been deleted
-                    post = await self._post_new_game(session, message, game)
 
-            await self._update_or_start_game(session, game, post)
-            await safe_react_ok(message)
+        await self._update_or_start_game(session, game, post)
+        await safe_react_ok(message)
 
     @command(allow_dm=False, help_group="Commands for Players")
     async def lfg(
@@ -1210,16 +1212,11 @@ class SpellBot(discord.Client):
         are set on your game when they are looking for games to join.
         & [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...
         """
-        await self._play_helper(session, prefix, params, message, create_new_game=True)
-
-    @command(allow_dm=False, help_group="Commands for Players")
-    async def find(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
-        """
-        Works exactly like `!lfg` except that it will NOT create a new game.
-        """
-        await self._play_helper(session, prefix, params, message, create_new_game=False)
+        # NOTE: This and the code to handle message reactions is behind an async
+        #       channel lock to prevent more than one person per guild per channel
+        #       concurrently interleaving processing within this critical section.
+        async with self.channel_lock(message.channel.id):
+            await self._play_helper(session, prefix, params, message)
 
     async def _verify_command_fest_report(
         self,
