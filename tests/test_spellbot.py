@@ -1277,10 +1277,9 @@ class TestSpellBot:
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!lfg {mentions_str}"
         await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
-        assert channel.last_sent_response == (
-            f"I found a game for you, <@{JR.id}>. You have been signed up for it!"
-            " Go to game post: https://discordapp.com/channels/"
-            f"{channel.guild.id}/{channel.id}/{post.id}"
+        assert channel.last_sent_embed["description"] == (
+            "You can [jump to the game post](https://discordapp.com/channels/"
+            f"{channel.guild.id}/{channel.id}/{post.id}) to see it, <@{JR.id}>!"
         )
 
     async def test_on_message_lfg_size_too_little(self, client, channel_maker):
@@ -1313,10 +1312,9 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!lfg"))
         post = channel.last_sent_message
         await client.on_message(MockMessage(author, channel, "!lfg"))
-        assert channel.last_sent_response == (
-            f"I found a game for you, <@{author.id}>. You have been signed up for it!"
-            " Go to game post: https://discordapp.com/channels/"
-            f"{channel.guild.id}/{channel.id}/{post.id}"
+        assert channel.last_sent_embed["description"] == (
+            "You can [jump to the game post](https://discordapp.com/channels/"
+            f"{channel.guild.id}/{channel.id}/{post.id}) to see it, <@{author.id}>!"
         )
 
     async def test_on_message_lfg(self, client, channel_maker):
