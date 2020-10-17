@@ -29,7 +29,6 @@ event_no_params: Sorry $reply, please include the column names from the CSV file
   identify the players' discord names.
 event_not_csv: Sorry $reply, but the file is not a CSV file. Make sure the filename
   ends with ".csv" please.
-expired: My appologies $reply, but I deleted your pending game due to server inactivity.
 game_created: '**Game $id created:**
 
   > Link: <$url>

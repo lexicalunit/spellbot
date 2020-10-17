@@ -402,26 +402,38 @@ class SpellBot(discord.Client):
     async def cleanup_expired_games(self) -> None:
         """Culls games older than the given window of minutes."""
         logger.info("starting expired games cleanup task...")
+
+        to_delete_args = []
         async with self.session() as session:
             expired = Game.expired(session)
             for game in expired:
-                await self.try_to_delete_message(game)
+                if not game.is_expired():
+                    continue
+
+                if game.guild_xid and game.channel_xid and game.message_xid:
+                    to_delete_args.append(
+                        {
+                            "guild_xid": game.guild_xid,
+                            "channel_xid": game.channel_xid,
+                            "message_xid": game.message_xid,
+                        }
+                    )
+
                 for user in game.users:
-                    discord_user = await safe_fetch_user(self, user.xid)
-                    if discord_user:
-                        await safe_send_user(
-                            discord_user,
-                            s(
-                                "expired",
-                                reply=f"<@{discord_user.id}>",
-                                window=game.server.expire,
-                            ),
-                        )
-                    user.game_id = None
+                    # Make sure the user is still waiting and still in the
+                    # game that's being deleted, they could be in a new
+                    # game now due to how async processing works.
+                    if user.waiting and user.game_id == game.id:
+                        user.game_id = None
+
                 # cascade delete tag associations
                 game.tags = []  # type: ignore
                 session.delete(game)
             session.commit()
+
+        for args in to_delete_args:
+            async with self.channel_lock(args["channel_xid"]):
+                await self.try_to_delete_message(**args)
 
     def cleanup_old_voice_channels_task(
         self, loop: asyncio.AbstractEventLoop
@@ -630,26 +642,22 @@ class SpellBot(discord.Client):
 
         return cast(discord.CategoryChannel, category)
 
-    async def try_to_delete_message(self, game: Game) -> None:
+    async def try_to_delete_message(
+        self, guild_xid: int, channel_xid: int, message_xid: int
+    ) -> None:
         """Attempts to remove a ✋ from the given game message for the given user."""
-        if not game.channel_xid:
-            return
-
-        chan = await safe_fetch_channel(self, game.channel_xid, game.guild_xid)
+        chan = await safe_fetch_channel(self, channel_xid, guild_xid)
         if not chan:
             return
 
-        if not game.message_xid:
-            return
-
-        post = await safe_fetch_message(chan, game.message_xid, game.guild_xid)
+        post = await safe_fetch_message(chan, message_xid, guild_xid)
         if not post:
             return
 
         # NOTE: Deleting the whole post ended up being confusing by invalidating
         #       hyperlinks to game posts. Instead, let's just empty the post contents.
         # await safe_delete_message(post)
-        await post.edit(content=s("deleted_game"), embed=None)
+        await safe_edit_message(post, content=s("deleted_game"), embed=None)
         await safe_clear_reactions(post)
 
     async def try_to_update_game(self, game) -> None:
