@@ -1,7 +1,4 @@
-> > * Optional: Add up to five tags by using `~tag-name`.
-
-`!begin <event id>`
->  Confirm creation of games for the given event id. _Requires the "SpellBot Admin" role._
+> >  Confirm creation of games for the given event id. _Requires the "SpellBot Admin" role._
 ---
 Please report any bugs and suggestions at <https://github.com/lexicalunit/spellbot/issues>!
 

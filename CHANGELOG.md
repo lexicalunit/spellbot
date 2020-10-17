@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Don't completely delete expired game posts, just delete their content.
+
+### Added
+
+- Added the ability to @mention other players with lfg to create/find games with them.
+- You can now !lfg when you're in a pending game to "look for N more" players.
+
+### Removed
+
+- Removed the `!find` command as it was confusing and not useful.
+
 ## [v5.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.0.0) - 2020-10-17
 
 - New major version, no code changes.

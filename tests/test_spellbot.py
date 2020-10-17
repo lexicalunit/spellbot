@@ -1245,7 +1245,7 @@ class TestSpellBot:
     async def test_on_message_lfg_too_many_mentions(self, client, channel_maker):
         channel = channel_maker.text()
         author = DUDE
-        mentions = [FRIEND, GUY, BUDDY]
+        mentions = [FRIEND, GUY, BUDDY, AMY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!lfg {mentions_str}"
         await client.on_message(MockMessage(author, channel, cmd, mentions=mentions))
@@ -1254,33 +1254,26 @@ class TestSpellBot:
             " for that size game."
         )
 
-    async def test_on_message_lfg_multiple_mentions_invalid(self, client, channel_maker):
-        channel = channel_maker.text()
-        await client.on_message(MockMessage(AMY, channel, "!lfg"))
-
-        mentions = [AMY, ADAM]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        cmd = f"!lfg {mentions_str}"
-        await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
-        assert channel.last_sent_response == (
-            f"Sorry <@{JR.id}>, but the users you mentioned are"
-            " not all in the same pending game."
-        )
-
     async def test_on_message_lfg_multiple_mentions_valid(self, client, channel_maker):
         channel = channel_maker.text()
-        await client.on_message(MockMessage(AMY, channel, "!lfg"))
-        post = channel.last_sent_message
-        await client.on_message(MockMessage(ADAM, channel, "!lfg"))
 
         mentions = [AMY, ADAM]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!lfg {mentions_str}"
         await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
-        assert channel.last_sent_embed["description"] == (
-            "You can [jump to the game post](https://discordapp.com/channels/"
-            f"{channel.guild.id}/{channel.id}/{post.id}) to see it, <@{JR.id}>!"
-        )
+        assert game_embed_for(client, AMY, False) == game_embed_for(client, ADAM, False)
+        assert game_embed_for(client, AMY, False) == game_embed_for(client, JR, False)
+
+    async def test_on_message_lfg_multiple_mentions_complete(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        mentions = [AMY, ADAM, JACOB]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!lfg {mentions_str}"
+        await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, ADAM, True)
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JR, True)
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
 
     async def test_on_message_lfg_size_too_little(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1313,8 +1306,8 @@ class TestSpellBot:
         post = channel.last_sent_message
         await client.on_message(MockMessage(author, channel, "!lfg"))
         assert channel.last_sent_embed["description"] == (
-            "You can [jump to the game post](https://discordapp.com/channels/"
-            f"{channel.guild.id}/{channel.id}/{post.id}) to see it, <@{author.id}>!"
+            "[Jump to the game post](https://discordapp.com/channels/"
+            f"{channel.guild.id}/{channel.id}/{post.id}) to see it!"
         )
 
     async def test_on_message_lfg(self, client, channel_maker):
@@ -1842,7 +1835,11 @@ class TestSpellBot:
             " but I deleted your pending game due to server inactivity."
         )
 
-        post.delete.assert_called()
+        # post.delete.assert_called()
+        assert post.last_edited_call == {
+            "args": ("Sorry, this game was expired due to inactivity.",),
+            "kwargs": {},
+        }
 
     async def test_game_cleanup_expired_after_left(self, client, freezer, channel_maker):
         NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
@@ -1863,7 +1860,11 @@ class TestSpellBot:
         assert not user_has_game(client, GUY)
         assert len(GUY.all_sent_calls) == 0
 
-        post.delete.assert_called()
+        # post.delete.assert_called()
+        assert post.last_edited_call == {
+            "args": ("Sorry, this game was expired due to inactivity.",),
+            "kwargs": {},
+        }
 
     async def test_on_message_export_non_admin(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1929,20 +1930,6 @@ class TestSpellBot:
             assert line in data
         assert len(data.split("\n")) == 4
 
-    async def test_on_message_find_none_found(self, client, channel_maker):
-        channel = channel_maker.text()
-        author = someone()
-        await client.on_message(MockMessage(author, channel, "!find"))
-        assert channel.last_sent_response == (
-            f"Sorry <@{author.id}>, but I didn't find any games for you to join."
-        )
-
-    async def test_on_message_find(self, client, channel_maker):
-        channel = channel_maker.text()
-        await client.on_message(MockMessage(AMY, channel, "!lfg"))
-        await client.on_message(MockMessage(JACOB, channel, "!find"))
-        assert game_embed_for(client, AMY, False) == game_embed_for(client, JACOB, False)
-
     async def test_on_message_lfg_with_functional_tag(self, client, channel_maker):
         channel = channel_maker.text()
         author = someone()
@@ -1972,16 +1959,6 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f"Sorry <@{author.id}>, but the game size must be between 2 and 4."
         )
-
-    async def test_on_message_join_up_with_someone(self, client, channel_maker):
-        channel = channel_maker.text()
-        await client.on_message(MockMessage(AMY, channel, "!lfg ~modern"))
-
-        mentions = [AMY]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        cmd = f"!find {mentions_str}"
-        await client.on_message(MockMessage(JACOB, channel, cmd, mentions=mentions))
-        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
 
     async def test_on_message_spellbot_help(self, client, channel_maker):
         author = not_an_admin()
@@ -2045,7 +2022,7 @@ class TestSpellBot:
         )
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert "http://" in game_embed_for(client, AMY, True, dm=True)["description"]
         assert "http://" not in game_embed_for(client, AMY, True, dm=False)["description"]
 
@@ -2078,7 +2055,7 @@ class TestSpellBot:
         )
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
 
         await client.on_message(MockMessage(AMY, channel, "!power 1"))
@@ -2090,7 +2067,7 @@ class TestSpellBot:
         )
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, False) != game_embed_for(client, JACOB, False)
 
     async def test_on_message_spellbot_voice_none(self, client, channel_maker):
@@ -2118,7 +2095,7 @@ class TestSpellBot:
         )
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
         assert game_json_for(client, AMY)["voice_channel_xid"] is None
 
@@ -2128,7 +2105,7 @@ class TestSpellBot:
         )
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         amy_embed = game_embed_for(client, AMY, True)
         assert amy_embed == game_embed_for(client, JACOB, True)
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
@@ -2141,7 +2118,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!spellbot links private"))
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         amy_embed = game_embed_for(client, AMY, True)
         assert amy_embed == game_embed_for(client, JACOB, True)
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
@@ -2158,7 +2135,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
 
@@ -2185,7 +2162,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
 
@@ -2212,7 +2189,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!find ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
 
