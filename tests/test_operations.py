@@ -213,6 +213,21 @@ class TestOperations:
         )
         assert "Missing Permissions" in caplog.text
 
+    async def test_safe_fetch_message_error_not_found(self, mock_message, caplog):
+        http_response = Mock()
+        http_response.status = 404
+        mock_message.channel.fetch_message.side_effect = discord.errors.NotFound(
+            http_response, "Not Found"
+        )
+
+        await safe_fetch_message(
+            mock_message.channel, mock_message.id, mock_message.channel.guild.id
+        )
+
+        guild_id = mock_message.channel.guild.id
+        assert f"discord (guild {guild_id}): could not fetch message" not in caplog.text
+        assert "Not Found" not in caplog.text
+
     async def test_safe_fetch_channel_when_cached(self, client, monkeypatch):
         mock_channel = MockTextChannel(1, "general", [])
         mock_get_channel = MagicMock()
@@ -369,7 +384,7 @@ class TestOperations:
 
         await safe_send_user(cast(discord.User, FRIEND), content="test")
 
-        assert "warning: discord (DM): could not send message to user" not in caplog.text
+        assert "discord (DM): could not send message to user" not in caplog.text
         assert "Missing Permissions" not in caplog.text
 
     async def test_safe_create_voice_channel(self, client, monkeypatch):

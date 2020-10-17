@@ -45,6 +45,7 @@ from spellbot.constants import (
     ADMIN_ROLE,
     CREATE_ENDPOINT,
     DEFAULT_GAME_SIZE,
+    ICO_URL,
     INVITE_LINK,
     THUMB_URL,
     VOTE_LINK,
@@ -1005,8 +1006,12 @@ class SpellBot(discord.Client):
         if not post:
             return None
         link = post_link(game.server.guild_xid, msg.channel.id, game.message_xid)
-        resp = s("play_found", reply=f"<@{user.xid}>", link=link)
-        await msg.channel.send(resp)
+        embed = discord.Embed()
+        embed.set_thumbnail(url=ICO_URL)
+        embed.set_author(name=s("play_found_title"))
+        embed.description = s("play_found_desc", reply=f"<@{user.xid}>", link=link)
+        embed.color = discord.Color(0x5A3EFD)
+        await msg.channel.send(embed=embed)
         return post
 
     async def _add_user_to_game(self, session: Session, user: User, game: Game) -> None:

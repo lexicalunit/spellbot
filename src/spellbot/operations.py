@@ -91,10 +91,19 @@ async def safe_fetch_message(
         return None
     try:
         return await channel.fetch_message(message_xid)
+    except discord.errors.NotFound as e:
+        # An admin could have deleted the message. This bot recovers from
+        # this situation by simply creating a new game post. This happens
+        # often enough that having it be a warning log is too verbose.
+        logger.debug(
+            "debug: discord (guild %s): could not fetch message: %s",
+            guild_xid,
+            e,
+        )
+        return None
     except (
         discord.errors.Forbidden,
         discord.errors.HTTPException,
-        discord.errors.NotFound,
     ) as e:
         logger.exception(
             "warning: discord (guild %s): could not fetch message: %s",
@@ -178,7 +187,7 @@ async def safe_send_user(user: discord.User, *args, **kwargs) -> None:
         # User may have the bot blocked or they may have DMs only allowed for friends.
         # Generally speaking, we can safely ignore this sort of error.
         logger.debug(
-            "warning: discord (DM): could not send message to user (%s): %s",
+            "debug: discord (DM): could not send message to user (%s): %s",
             str(user),
             e,
         )
