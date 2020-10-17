@@ -64,7 +64,6 @@ from spellbot.data import (
     UserTeam,
 )
 from spellbot.operations import (
-    ChannelType,
     safe_clear_reactions,
     safe_create_category_channel,
     safe_create_invite,
@@ -73,6 +72,7 @@ from spellbot.operations import (
     safe_delete_message,
     safe_edit_message,
     safe_fetch_channel,
+    safe_fetch_guild,
     safe_fetch_message,
     safe_fetch_user,
     safe_react_error,
@@ -544,7 +544,7 @@ class SpellBot(discord.Client):
         if not game.server.create_voice or game.voice_channel_xid:
             return
 
-        category = await self.ensure_server_voice_category(session, game.server)
+        category = await self.ensure_available_voice_category(game.server)
 
         # if category is None, then we'll simply create a non-categorized channel
         voice_channel = await safe_create_voice_channel(
@@ -585,30 +585,51 @@ class SpellBot(discord.Client):
             session.commit()
         return cast(Server, server)
 
-    async def ensure_server_voice_category(
-        self, session: Session, server: Server
-    ) -> Optional[discord.CategoryChannel]:
-        category: Optional[ChannelType] = None
-
+    async def ensure_available_voice_category(
+        self, server: Server
+    ) -> Optional[discord.CategoryChannel]:  # pragma: no cover
+        # TODO: Test for this need to be written, but for now just ignore it.
         if not server.create_voice:
             return None
 
-        if server.voice_category_xid:
-            category = await safe_fetch_channel(
-                self, server.voice_category_xid, server.guild_xid
+        guild = await safe_fetch_guild(self, server.guild_xid)
+        if not guild:
+            return None
+
+        PREFIX = "SpellBot Voice Channels"
+
+        def category_num(cat: discord.CategoryChannel) -> int:
+            return 0 if cat.name == PREFIX else int(cat.name[24:]) - 1
+
+        def category_name(i: int) -> str:
+            return PREFIX if i == 0 else f"{PREFIX} {i + 1}"
+
+        available: Optional[discord.CategoryChannel] = None
+        full: List[discord.CategoryChannel] = []
+        for i, cat in enumerate(
+            sorted(
+                (c for c in guild.categories if c.name.startswith(PREFIX)),
+                key=category_num,
             )
-        if category:
-            return cast(discord.CategoryChannel, category)
+        ):
+            if i != category_num(cat):
+                break  # there's a missing category, we need to re-create it
+            if len(cat.channels) < 50:
+                available = cat
+                break  # we found an available channel, use it
+            else:
+                full.append(cat)  # keep track of how many full channels there are
+
+        if available:
+            return cast(discord.CategoryChannel, available)
 
         category = await safe_create_category_channel(
-            self, server.guild_xid, "SpellBot Voice Channels"
+            self, server.guild_xid, category_name(len(full))
         )
-        if category:
-            server.voice_category_xid = category.id  # type: ignore
-            session.commit()
-            return cast(discord.CategoryChannel, category)
+        if not category:
+            return None
 
-        return None
+        return cast(discord.CategoryChannel, category)
 
     async def try_to_delete_message(self, game: Game) -> None:
         """Attempts to remove a ✋ from the given game message for the given user."""

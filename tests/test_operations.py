@@ -14,6 +14,7 @@ from spellbot.operations import (
     safe_delete_message,
     safe_edit_message,
     safe_fetch_channel,
+    safe_fetch_guild,
     safe_fetch_message,
     safe_fetch_user,
     safe_react_error,
@@ -23,7 +24,12 @@ from spellbot.operations import (
 )
 
 from .mocks import AsyncMock
-from .mocks.discord import MockDiscordMessage, MockTextChannel, MockVoiceChannel
+from .mocks.discord import (
+    MockDiscordMessage,
+    MockGuild,
+    MockTextChannel,
+    MockVoiceChannel,
+)
 from .mocks.users import FRIEND
 
 
@@ -538,3 +544,52 @@ class TestOperations:
             in caplog.text
         )
         assert "BAD REQUEST" in caplog.text
+
+    async def test_safe_fetch_guild_when_cached(self, client, monkeypatch):
+        mock_guild = MockGuild(1, "general", [])
+        mock_get_guild = MagicMock()
+        mock_get_guild.return_value = mock_guild
+        monkeypatch.setattr(client, "get_guild", mock_get_guild)
+
+        channel = await safe_fetch_guild(client, mock_guild.id)
+
+        assert channel is mock_guild
+        mock_get_guild.assert_called_with(mock_guild.id)
+
+    async def test_safe_fetch_guild_when_not_cached(self, client, monkeypatch):
+        mock_guild = MockGuild(1, "general", [])
+        mock_get_guild = MagicMock()
+        mock_get_guild.return_value = None
+        monkeypatch.setattr(client, "get_guild", mock_get_guild)
+        mock_fetch_guild = AsyncMock()
+        mock_fetch_guild.return_value = mock_guild
+        monkeypatch.setattr(client, "fetch_guild", mock_fetch_guild)
+
+        channel = await safe_fetch_guild(client, mock_guild.id)
+
+        assert channel is mock_guild
+        mock_get_guild.assert_called_with(mock_guild.id)
+        mock_fetch_guild.assert_called_with(mock_guild.id)
+
+    async def test_safe_fetch_guild_when_not_cached_error(
+        self, client, monkeypatch, caplog
+    ):
+        mock_guild = MockGuild(1, "general", [])
+        mock_get_guild = MagicMock()
+        mock_get_guild.return_value = None
+        monkeypatch.setattr(client, "get_guild", mock_get_guild)
+        mock_fetch_guild = AsyncMock()
+        http_response = Mock()
+        http_response.status = 403
+        mock_fetch_guild.side_effect = discord.errors.Forbidden(
+            http_response, "Missing Permissions"
+        )
+        monkeypatch.setattr(client, "fetch_guild", mock_fetch_guild)
+
+        await safe_fetch_guild(client, mock_guild.id)
+
+        guild_id = mock_guild.id
+        assert (
+            f"warning: discord (guild {guild_id}): could not fetch guild" in caplog.text
+        )
+        assert "Missing Permissions" in caplog.text

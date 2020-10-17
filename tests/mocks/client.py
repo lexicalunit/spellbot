@@ -35,6 +35,9 @@ class MockDiscordClient:
     def get_guild(self, guild_id):
         return self._guild
 
+    async def fetch_guild(self, guild_id):
+        return self._guild
+
     async def fetch_channel(self, channel_id):
         return self.get_channel(channel_id)
 
