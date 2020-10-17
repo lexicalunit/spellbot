@@ -4,6 +4,9 @@ begin_event_already_started: Sorry $reply, but that event has already started an
 begin_no_params: $reply, please provide the event ID with that command.
 begin_user_left: '**Warning:** A user left the server since this event was created.
   SpellBot did **NOT** start the game for the players: $players.'
+call_attn_desc: '[Jump to the game post]($link) to see it!'
+call_attn_title: Looking for ${remaining} more player${plural} to join...
+deleted_game: Sorry, this game was expired due to inactivity.
 did_you_mean: 'Sorry $reply, that''s not a command. Did you mean to use one of these
   commands: $possible?'
 event_bad_play_count: Sorry $reply, but the player count must be between 2 and 4.
@@ -34,14 +37,11 @@ game_created: '**Game $id created:**
   > Players notified by DM: $players'
 game_message_too_long: Sorry $reply, but the optional game message must be shorter
   than 255 characters.
-game_not_found: Sorry $reply, but I didn't find any games for you to join.
 game_size_bad: Sorry $reply, but the game size must be between 2 and 4.
 game_too_few_mentions: Sorry $reply, you mentioned too few people. I expected $size
   players to be mentioned.
 game_too_many_mentions: Sorry $reply, you mentioned too many people. I expected $size
   players to be mentioned.
-lfg_mentions_different_games: Sorry $reply, but the users you mentioned are not all
-  in the same pending game.
 lfg_too_many_mentions: Sorry $reply, but you've mentioned too many players for that
   size game.
 no_dm: Hello $reply! That command only works in text channels.

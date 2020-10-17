@@ -1,4 +1,3 @@
-> * `links <private | public>`: Set the privacy for generated SpellTable links.
 > * `expire <number>`: Set the number of minutes before pending games expire.
 > * `teams <list | none>`: Sets the teams available on this server.
 > * `power <on | off>`: Turns the power command on or off for this server.
@@ -25,3 +24,6 @@
 > 
 > Games will not be created immediately. This is to allow you to verify things look ok. This command will also give you directions on how to actually start the games for this event as part of its reply.
 > * Optional: Add a message to DM players with `msg:` followed by whatever.
+> * Optional: Add up to five tags by using `~tag-name`.
+
+`!begin <event id>`
