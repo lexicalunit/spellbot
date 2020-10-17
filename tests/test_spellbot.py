@@ -1830,10 +1830,6 @@ class TestSpellBot:
         await client.cleanup_expired_games()
 
         assert not user_has_game(client, GUY)
-        assert GUY.last_sent_response == (
-            f"My appologies <@{GUY.id}>,"
-            " but I deleted your pending game due to server inactivity."
-        )
 
         # post.delete.assert_called()
         assert post.last_edited_call == {
@@ -2814,6 +2810,23 @@ class TestSpellBot:
         times.assert_called_once()
         assert game_embed_for(client, AMY, True) == game_embed_for(client, ADAM, True)
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JR, True)
+
+    async def test_game_is_expired(self, client, channel_maker, freezer):
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        freezer.move_to(NOW)
+
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+
+        async with client.session() as session:
+            for game in session.query(Game).all():
+                assert not game.is_expired()
+
+        freezer.move_to(NOW + timedelta(days=3))
+
+        async with client.session() as session:
+            for game in session.query(Game).all():
+                assert game.is_expired()
 
     async def test_paginate(self):
         def subject(text):

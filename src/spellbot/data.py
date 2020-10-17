@@ -393,6 +393,15 @@ class Game(Base):
             .all(),
         )
 
+    def is_expired(self) -> bool:
+        if (
+            self.status == "pending"
+            and self.expires_at
+            and datetime.utcnow() >= self.expires_at
+        ):
+            return True
+        return False
+
     @classmethod
     def voiced(cls, session: Session) -> List[Game]:
         return cast(
