@@ -212,6 +212,7 @@ class MockGuild:
         self.id = guild_id
         self.name = name
         self.members = members
+        self.categories = []
 
         self.create_voice_channel = AsyncMock(
             side_effect=create_voice_channel_side_effect

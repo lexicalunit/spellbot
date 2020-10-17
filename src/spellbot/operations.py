@@ -276,3 +276,23 @@ async def safe_create_invite(
             e,
         )
         return None
+
+
+async def safe_fetch_guild(
+    client: discord.Client, guild_xid: int
+) -> Optional[discord.Guild]:
+    guild = client.get_guild(guild_xid)
+    if guild:
+        return guild
+    try:
+        return await client.fetch_guild(guild_xid)
+    except (
+        discord.errors.Forbidden,
+        discord.errors.HTTPException,
+    ) as e:
+        logger.exception(
+            "warning: discord (guild %s): could not fetch guild: %s",
+            guild_xid,
+            e,
+        )
+        return None
