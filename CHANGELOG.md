@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Use a nicer looking embed as the response to a game being found.
+- Message not found warnings logs are now debug logs.
+
 ## [v4.8.0](https://github.com/lexicalunit/spellbot/releases/tag/v4.8.0) - 2020-10-16
 
 ### Removed

@@ -6,6 +6,11 @@ THUMB_URL = (
     "https://raw.githubusercontent.com/lexicalunit/spellbot/master/spellbot.png"
     f"?{datetime.today().strftime('%Y-%m-%d')}"  # workaround over-eager caching
 )
+ICO_URL = (
+    "https://raw.githubusercontent.com/lexicalunit/spellbot/"
+    "c04849b51b79d99abc6ddb7b42bcd2326b663730/spellbot-sm.png"
+    f"?{datetime.today().strftime('%Y-%m-%d')}"  # workaround over-eager caching
+)
 DEFAULT_GAME_SIZE = 4
 INVITE_LINK = (
     "https://discordapp.com/api/oauth2/authorize"
