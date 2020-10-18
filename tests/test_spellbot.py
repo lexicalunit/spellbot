@@ -1637,7 +1637,15 @@ class TestSpellBot:
         session.close()
         assert message.last_edited_embed == {
             "color": 5914365,
-            "description": "To join/leave this game, react with ✋/🚫.",
+            "description": (
+                "To **join this game**, react with ✋\n"
+                "If you need to drop, react with 🚫\n"
+                "\n"
+                "_A SpellTable link will be created when all players have joined._\n"
+                "\n"
+                "Looking for more players to join you? Just run `!lfg` "
+                "again.\n"
+            ),
             "fields": [{"inline": False, "name": "Players", "value": f"<@{ADAM.id}>"}],
             "footer": {"text": f"SpellBot Reference #SB{game.id}"},
             "thumbnail": {"url": THUMB_URL},
@@ -1679,7 +1687,15 @@ class TestSpellBot:
         session.close()
         assert message.last_edited_embed == {
             "color": 5914365,
-            "description": "To join/leave this game, react with ✋/🚫.",
+            "description": (
+                "To **join this game**, react with ✋\n"
+                "If you need to drop, react with 🚫\n"
+                "\n"
+                "_A SpellTable link will be created when all players have joined._\n"
+                "\n"
+                "Looking for more players to join you? Just run `!lfg` "
+                "again.\n"
+            ),
             "fields": [{"inline": False, "name": "Players", "value": f"<@{GUY.id}>"}],
             "footer": {"text": f"SpellBot Reference #SB{game.id}"},
             "thumbnail": {"url": THUMB_URL},
@@ -1710,7 +1726,15 @@ class TestSpellBot:
         assert rvalue == [
             {
                 "color": 5914365,
-                "description": "To join/leave this game, react with ✋/🚫.",
+                "description": (
+                    "To **join this game**, react with ✋\n"
+                    "If you need to drop, react with 🚫\n"
+                    "\n"
+                    "_A SpellTable link will be created when all players have joined._\n"
+                    "\n"
+                    "Looking for more players to join you? Just run `!lfg` "
+                    "again.\n"
+                ),
                 "footer": {"text": f"SpellBot Reference #SB{games[0].id}"},
                 "thumbnail": {"url": THUMB_URL},
                 "title": "**Waiting for 4 more players to join...**",
@@ -1719,7 +1743,15 @@ class TestSpellBot:
         ]
         assert message.last_edited_embed == {
             "color": 5914365,
-            "description": "To join/leave this game, react with ✋/🚫.",
+            "description": (
+                "To **join this game**, react with ✋\n"
+                "If you need to drop, react with 🚫\n"
+                "\n"
+                "_A SpellTable link will be created when all players have joined._\n"
+                "\n"
+                "Looking for more players to join you? Just run `!lfg` "
+                "again.\n"
+            ),
             "footer": {"text": f"SpellBot Reference #SB{games[0].id}"},
             "thumbnail": {"url": THUMB_URL},
             "title": "**Waiting for 4 more players to join...**",
@@ -2302,7 +2334,15 @@ class TestSpellBot:
         game = games[0]
         assert game_embed_for(client, AMY, False) == {
             "color": 5914365,
-            "description": "To join/leave this game, react with ✋/🚫.",
+            "description": (
+                "To **join this game**, react with ✋\n"
+                "If you need to drop, react with 🚫\n"
+                "\n"
+                "_A SpellTable link will be created when all players have joined._\n"
+                "\n"
+                "Looking for more players to join you? Just run `!lfg` "
+                "again.\n"
+            ),
             "fields": [
                 {"inline": True, "name": "Average Power Level", "value": "4.5"},
                 {
