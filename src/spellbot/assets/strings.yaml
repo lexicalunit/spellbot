@@ -65,6 +65,9 @@ report_too_long: Sorry $reply, that report was too long. Please limit your repor
   to less than 255 characters.
 report_wrong: 'Sorry $reply, to report points please use: `${prefix}report GameID
   @player1 Points @player2 Points @player3 Points @player4 Points`.'
+spellbot_avatars: Ok $reply, non-default avatars are now $setting on this server.
+spellbot_avatars_bad: Sorry $reply, but please provide an "optional" or "required"
+  setting.
 spellbot_channels: 'Ok $reply, I will now operate within: $channels'
 spellbot_channels_none: 'Sorry $reply, but please provide a list of channels. Like
   #bot-commands, for example.'

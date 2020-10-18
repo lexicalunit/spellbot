@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds an option to make user avatars required for a server.
+
 ## [v5.2.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.2.1) - 2020-10-18
 
 ### Fixed
 
-- Handle UTF errors in attachment procesing.
+- Handle UTF errors in attachment processing.
 
 ## [v5.2.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.2.0) - 2020-10-17
 
