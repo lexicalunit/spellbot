@@ -441,6 +441,7 @@ class Game(Base):
         }
 
     def to_embed(self, dm=False) -> discord.Embed:
+        prefix = self.server.prefix
         show_link = True if dm else self.server.links == "public"
         if self.status == "pending":
             remaining = int(self.size) - len(cast(List[User], self.users))
@@ -456,7 +457,12 @@ class Game(Base):
             if show_link:
                 description = f"Join your voice chat now: {self.voice_channel_invite}\n\n"
         if self.status == "pending":
-            description += "To join/leave this game, react with ✋/🚫."
+            description += (
+                "To **join this game**, react with ✋\n"
+                "If you need to drop, react with 🚫\n\n"
+                "_A SpellTable link will be created when all players have joined._\n\n"
+                f"Looking for more players to join you? Just run `{prefix}lfg` again.\n"
+            )
         elif self.system == "spelltable":
             if show_link:
                 description += (
