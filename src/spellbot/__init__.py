@@ -688,6 +688,10 @@ class SpellBot(discord.Client):
             params.insert(0, request[5:])
             request = "power"
 
+        # Ignore !help because so many other bots use it, use `!spellbot help` instead.
+        if request.startswith("help"):
+            return
+
         matching = [command for command in self.commands if command.startswith(request)]
         if not matching:
             await message.channel.send(
@@ -903,7 +907,7 @@ class SpellBot(discord.Client):
     #
     # Where [foo] indicates foo is optional and <bar> indicates bar is required.
 
-    @command(allow_dm=True, help_group="Commands for Players")
+    # @command(allow_dm=True, help_group="Commands for Players")
     async def help(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
     ) -> None:
@@ -982,7 +986,7 @@ class SpellBot(discord.Client):
         embed.description = (
             "_The Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
             "\n"
-            f"Use the command `{prefix}help` for usage details. "
+            f"Use the command `{prefix}spellbot help` for usage details. "
             "Having issues with SpellBot? "
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
             "\n"
