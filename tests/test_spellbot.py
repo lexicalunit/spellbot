@@ -184,7 +184,7 @@ class TestSpellBot:
 
     async def test_on_message_non_text(self, client, channel_maker):
         channel = MockChannel(6, "voice")
-        await client.on_message(MockMessage(someone(), channel, "!help"))
+        await client.on_message(MockMessage(someone(), channel, "!spellbot help"))
         channel.sent.assert_not_called()
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
@@ -284,14 +284,13 @@ class TestSpellBot:
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_on_message_from_a_bot(self, client, channel_maker, channel_type):
         channel = channel_maker.make(channel_type)
-        await client.on_message(MockMessage(BOT, channel, "!help"))
+        await client.on_message(MockMessage(BOT, channel, "!spellbot help"))
         assert len(channel.all_sent_calls) == 0
 
-    @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_help(self, client, channel_maker, channel_type, snap):
+    async def test_on_message_help(self, client, channel_maker, snap):
         author = someone()
-        channel = channel_maker.make(channel_type)
-        await client.on_message(MockMessage(author, channel, "!help"))
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot help"))
         for response in author.all_sent_responses:
             snap(response)
         assert len(author.all_sent_calls) == 3
@@ -301,7 +300,7 @@ class TestSpellBot:
     ):
         author = someone()
         channel = channel_maker.make("text")
-        msg = MockMessage(author, channel, "!help")
+        msg = MockMessage(author, channel, "!spellbot help")
         await client.on_message(msg)
         assert "✅" in msg.reactions
 
@@ -310,7 +309,7 @@ class TestSpellBot:
     ):
         author = someone()
         channel = channel_maker.make("dm")
-        msg = MockMessage(author, channel, "!help")
+        msg = MockMessage(author, channel, "!spellbot help")
         await client.on_message(msg)
         assert "✅" not in msg.reactions
 
@@ -448,7 +447,9 @@ class TestSpellBot:
             f" <#{foo.id}>, <#{bar.id}>, <#{baz.id}>"
         )
         assert channel.last_sent_response == resp
-        await client.on_message(MockMessage(author, channel, "!help"))  # bad channel now
+        await client.on_message(
+            MockMessage(author, channel, "!spellbot help")
+        )  # bad channel now
         assert channel.last_sent_response == resp
 
         await client.on_message(MockMessage(author, foo, "!spellbot channels all"))
@@ -468,7 +469,8 @@ class TestSpellBot:
         assert about["description"] == (
             "_The Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
             "\n"
-            "Use the command `!help` for usage details. Having issues with SpellBot? "
+            "Use the command `!spellbot help` for usage details. "
+            "Having issues with SpellBot? "
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
             "\n"
             "[🔗 Add SpellBot to your Discord!](https://discordapp.com/api/oauth2"
@@ -2015,12 +2017,12 @@ class TestSpellBot:
         channel = channel_maker.make(channel_type)
 
         @spellbot.command(allow_dm=True)
-        def mock_help(session, prefix, params, message):
+        def mock_cmd(session, prefix, params, message):
             raise RuntimeError("boom")
 
-        monkeypatch.setattr(client, "help", mock_help)
+        monkeypatch.setattr(client, "spellbot", mock_cmd)
         with pytest.raises(RuntimeError):
-            await client.on_message(MockMessage(someone(), channel, "!help"))
+            await client.on_message(MockMessage(someone(), channel, "!spellbot help"))
         assert "unhandled exception" in caplog.text
 
     async def test_on_message_spellbot_links_none(self, client, channel_maker):

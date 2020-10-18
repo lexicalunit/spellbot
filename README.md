@@ -27,7 +27,7 @@ Discord via the following commands in any of the authorized channels. **Keep in
 mind that sometimes SpellBot will respond to you via Direct Message to avoid
 being too spammy in text channels.**
 
-- `!help`: Provides detailed help about all of the following commands.
+- `!spellbot help`: Provides detailed help about all of the following commands.
 - `!about`: Get information about SpellBot and its creators.
 
 > **Note:** To use the
