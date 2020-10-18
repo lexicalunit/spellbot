@@ -851,17 +851,30 @@ class SpellBot(discord.Client):
             if not private and str(message.channel.type) != "text":
                 return
 
-            # only respond to command-like messages
             if not private:
                 rows = self.data.conn.execute(
-                    text("SELECT prefix FROM servers WHERE guild_xid = :g"),
+                    text(
+                        """
+                        SELECT prefix, allow_default_avatars
+                        FROM servers
+                        WHERE guild_xid = :g
+                    """
+                    ),
                     g=message.channel.guild.id,
                 )
-                prefixes = [row.prefix for row in rows]
-                prefix = prefixes[0] if prefixes else "!"
+                values = [(row.prefix, row.allow_default_avatars) for row in rows]
+                prefix = values[0][0] if values and values[0] else "!"
+                allow_default_avatar = values[0][1] if values and values[0] else True
             else:
                 prefix = "!"
+                allow_default_avatar = True
+
+            # only respond to command-like messages
             if not message.content.startswith(prefix):
+                return
+
+            # only respond to users with avatars if that's enabled for this server
+            if not allow_default_avatar and author.avatar is None:
                 return
 
             is_admin = author.permissions_in(message.channel).administrator
@@ -2053,12 +2066,13 @@ class SpellBot(discord.Client):
         * `config`: Just show the current configuration for this server.
         * `channels <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot's command prefix for text channels.
-        * `links <private | public>`: Set the privacy for generated SpellTable links.
+        * `links <private|public>`: Set the privacy for generated SpellTable links.
         * `expire <number>`: Set the number of minutes before pending games expire.
-        * `teams <list | none>`: Sets the teams available on this server.
-        * `power <on | off>`: Turns the power command on or off for this server.
-        * `voice <on | off>`: When on, SpellBot will automatically create voice channels.
-        * `tags <on | off>`: Turn on or off the ability to use tags on your server.
+        * `teams <list|none>`: Sets the teams available on this server.
+        * `power <on|off>`: Turns the power command on or off for this server.
+        * `voice <on|off>`: When on, SpellBot will automatically create voice channels.
+        * `tags <on|off>`: Turn on or off the ability to use tags on your server.
+        * `avatars <optional|required>`: If required, respond only to users with avatars.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
@@ -2100,6 +2114,8 @@ class SpellBot(discord.Client):
             await self.spellbot_voice(session, server, params[1:], message)
         elif command == "tags":
             await self.spellbot_tags(session, server, params[1:], message)
+        elif command == "avatars":
+            await self.spellbot_avatars(session, server, params[1:], message)
         else:
             await message.channel.send(
                 s(
@@ -2443,6 +2459,40 @@ class SpellBot(discord.Client):
         )
         await safe_react_ok(message)
 
+    async def spellbot_avatars(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        if not params or params[0].lower() not in ["required", "optional"]:
+            await message.channel.send(
+                s(
+                    "spellbot_avatars_bad",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                )
+            )
+            await safe_react_error(message)
+            return
+
+        server = (
+            session.query(Server)
+            .filter(Server.guild_xid == message.channel.guild.id)
+            .one_or_none()
+        )
+        setting = params[0].lower()
+        server.allow_default_avatars = setting == "optional"  # type: ignore
+        session.commit()
+        await message.channel.send(
+            s(
+                "spellbot_avatars",
+                reply=f"<@{cast(discord.User, message.author).id}>",
+                setting=setting,
+            )
+        )
+        await safe_react_ok(message)
+
     async def spellbot_config(
         self,
         session: Session,
@@ -2465,8 +2515,12 @@ class SpellBot(discord.Client):
         embed.add_field(name="Power", value="On" if server.power_enabled else "Off")
         embed.add_field(name="Tags", value="On" if server.tags_enabled else "Off")
         embed.add_field(
-            name="Voice Channels",
+            name="Voice channels",
             value="On" if server.create_voice else "Off",
+        )
+        embed.add_field(
+            name="User avatars",
+            value="Optional" if server.allow_default_avatars else "Required",
         )
         if server.teams:
             teams_str = ", ".join(sorted(team.name for team in server.teams))

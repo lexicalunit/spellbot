@@ -111,6 +111,7 @@ class MockMember:
         self.avatar_url = "http://example.com/avatar.png"
         self.bot = False
         self.admin = admin
+        self.avatar = None
 
         # sent is a spy for tracking calls to send(), it doesn't exist on the real object.
         # There are also helpers for inspecting calls to sent defined on this class of

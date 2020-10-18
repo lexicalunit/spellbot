@@ -34,17 +34,17 @@ if [[ $BRANCH != "master" ]]; then
     exit 1
 fi
 
-# CHANGES="$(git status -su)"
-# if [[ -n "$CHANGES" ]]; then
-#     echo "error: can not publish when there are uncomitted changes" 1>&2
-#     exit 1
-# fi
+CHANGES="$(git status -su)"
+if [[ -n "$CHANGES" ]]; then
+    echo "error: can not publish when there are uncomitted changes" 1>&2
+    exit 1
+fi
 
 # bump the version in pyproject.toml
 run "poetry version '$KIND'"
 
 # run tests to ensure the build is good
-# run "tox"
+run "tox"
 
 # fetch the version from pyproject.toml
 VERSION="$(grep "^version" < pyproject.toml | cut -d= -f2 | sed 's/"//g;s/ //g;s/^/v/;')"
