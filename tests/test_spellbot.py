@@ -858,6 +858,24 @@ class TestSpellBot:
             " Please address any warnings and try again."
         )
 
+    async def test_on_message_event_not_utf(self, client, channel_maker, monkeypatch):
+        channel = channel_maker.text()
+        author = an_admin()
+        data = bytes(f"{AMY.name},{JR.name}", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(author, channel, comment, attachments=[csv_file])
+
+        mock_decode_data = Mock()
+        mock_decode_data.side_effect = UnicodeDecodeError("utf-8", b"f1", 0, 1, "reason")
+        monkeypatch.setattr(client, "decode_data", mock_decode_data)
+
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, "
+            "but that file isn't UTF-8 encoded and I can't read it."
+        )
+
     async def test_on_message_event_no_header(self, client, channel_maker):
         channel = channel_maker.text()
         author = an_admin()

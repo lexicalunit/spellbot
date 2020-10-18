@@ -29,6 +29,7 @@ event_no_params: Sorry $reply, please include the column names from the CSV file
   identify the players' discord names.
 event_not_csv: Sorry $reply, but the file is not a CSV file. Make sure the filename
   ends with ".csv" please.
+event_not_utf: Sorry $reply, but that file isn't UTF-8 encoded and I can't read it.
 game_created: '**Game $id created:**
 
   > Link: <$url>
