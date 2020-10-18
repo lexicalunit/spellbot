@@ -30,9 +30,6 @@
 `!leave`
 >  Leave any pending games that you've signed up.
 
-`!help`
->  Sends you this help message.
-
 `!about`
 >  Get information about SpellBot.
 

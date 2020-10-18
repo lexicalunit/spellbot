@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Removed the `!help` command, use `!spellbot help` instead.
+
 ### Fixed
 
 - Fixed an old invite link to have the correct permissions bits.
@@ -15,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Changed the logic around the expired games deletion background task to be more robust.
 - Added more information to the description of game posts to help users understand.
+- Ignore any `!help` messages, too many other bots use that command.
 
 ## [v5.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.1.0) - 2020-10-17
 
