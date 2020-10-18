@@ -754,7 +754,7 @@ class SpellBot(discord.Client):
         if not message:
             return
 
-        # NOTE: This and the code that handles !lfg/!find commands is behind an async
+        # NOTE: This and the code that handles !lfg commands is behind an async
         #       channel lock to prevent more than one person per guild per channel
         #       concurrently interleaving processing within this critical section.
         async with self.session() as session, self.channel_lock(payload.channel_id):
@@ -762,6 +762,10 @@ class SpellBot(discord.Client):
             server = self.ensure_server_exists(session, payload.guild_id)
 
             if not server.bot_allowed_in(channel.id):
+                return
+
+            if not server.allow_default_avatars and author.avatar is None:
+                await safe_remove_reaction(message, emoji, author)
                 return
 
             game = (
