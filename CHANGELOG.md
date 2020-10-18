@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Changed the logic around the expired games deletion background task to be more robust.
+- Added more information to the description of game posts to help users understand.
 
 ## [v5.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.1.0) - 2020-10-17
 
