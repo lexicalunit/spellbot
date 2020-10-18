@@ -2907,7 +2907,7 @@ class TestSpellBot:
             'an "optional" or "required" setting.'
         )
 
-    async def test_on_message_spellbot_avatars(self, client, channel_maker):
+    async def test_on_message_spellbot_avatars_command(self, client, channel_maker):
         channel = channel_maker.text()
         admin = an_admin()
         await client.on_message(MockMessage(admin, channel, "!spellbot avatars required"))
@@ -2919,6 +2919,32 @@ class TestSpellBot:
         author.avatar = None
         await client.on_message(MockMessage(author, channel, "!lfg"))
         assert not all_games(client)  # bot should have ignored this command
+
+    async def test_on_message_spellbot_avatars_reaction(self, client, channel_maker):
+        channel = channel_maker.text()
+        admin = an_admin()
+        await client.on_message(MockMessage(admin, channel, "!spellbot avatars required"))
+        assert channel.last_sent_response == (
+            f"Ok <@{admin.id}>, non-default avatars are now required on this server."
+        )
+
+        AMY.avatar = True  # type: ignore
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+        game = game_embed_for(client, AMY, False)
+
+        ADAM.avatar = None
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=ADAM.id,
+            message_id=message.id,
+            emoji="✋",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=ADAM,
+        )
+        await client.on_raw_reaction_add(payload)
+
+        assert game_embed_for(client, AMY, False) == game
 
     async def test_paginate(self):
         def subject(text):
