@@ -870,8 +870,8 @@ class SpellBot(discord.Client):
                     server = self.ensure_server_exists(session, message.channel.guild.id)
                     if not server.bot_allowed_in(message.channel.id):
                         return
-
             await self.process(message, prefix)
+
         except Exception as e:
             logging.exception("unhandled exception: %s", e)
             raise
@@ -1398,6 +1398,9 @@ class SpellBot(discord.Client):
 
         await safe_react_ok(message)
 
+    def decode_data(self, bdata):
+        return bdata.decode("utf-8")
+
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def event(
         self, session: Session, prefix: str, params: List[str], message: discord.Message
@@ -1476,7 +1479,17 @@ class SpellBot(discord.Client):
         tags = Tag.create_many(session, tag_names)
 
         bdata = await message.attachments[0].read()
-        sdata = bdata.decode("utf-8")
+        try:
+            sdata = self.decode_data(bdata)
+        except UnicodeDecodeError:
+            await message.channel.send(
+                s(
+                    "event_not_utf",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                )
+            )
+            await safe_react_error(message)
+            return
 
         server = self.ensure_server_exists(session, message.channel.guild.id)
         reader = csv.reader(StringIO(sdata))
