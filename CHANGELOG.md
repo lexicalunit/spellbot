@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a check for if the user is the owner of the guild and if so lets them
+  run administrator commands without needing to have the role.
+- Removes a bunch of `#pragma: no cover` directives to encourage me to add
+  tests for this code. Most of it is not particular critical code that needs
+  to be tested. For example: Fetching environment variables. But tests can and
+  should be written for these things.
+
 ## [v5.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.4.0) - 2020-10-18
 
 ### Added
