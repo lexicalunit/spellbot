@@ -10,6 +10,7 @@ import alembic  # type: ignore
 import alembic.command  # type: ignore
 import alembic.config  # type: ignore
 import discord
+import humanize  # type: ignore
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -22,17 +23,14 @@ from sqlalchemy import (
     Table,
     and_,
     between,
-    create_engine,
-    false,
-    func,
-    or_,
-    text,
-    true,
 )
+from sqlalchemy import cast as sql_cast
+from sqlalchemy import create_engine, false, func, or_, text, true
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
 from sqlalchemy.sql.expression import desc, distinct
+from sqlalchemy.sql.sqltypes import Numeric
 
 from spellbot.constants import THUMB_URL
 
@@ -416,6 +414,40 @@ class Game(Base):
             .all(),
         )
 
+    @classmethod
+    def average_wait_times(cls, session: Session):
+        if "sqlite" in session.bind.dialect.name:
+            avg = func.avg(
+                (func.julianday(Game.updated_at) - func.julianday(Game.created_at))
+                * 1440.0
+            )
+        else:
+            avg = (
+                sql_cast(
+                    func.avg(
+                        text("EXTRACT(EPOCH FROM(games.updated_at - games.created_at))")
+                    ),
+                    Numeric,
+                )
+                / 60.0
+            )
+        return (
+            session.query(
+                Game.guild_xid,
+                Game.channel_xid,
+                avg,
+            )
+            .filter(
+                and_(
+                    # Game.created_at >= datetime.utcnow() - timedelta(hours=1),
+                    Game.status == "started",
+                    Game.channel_xid != None,
+                )
+            )
+            .group_by(Game.guild_xid, Game.channel_xid)
+            .all()
+        )
+
     def __repr__(self) -> str:
         return json.dumps(self.to_json())
 
@@ -440,7 +472,7 @@ class Game(Base):
             "power": self.power,
         }
 
-    def to_embed(self, dm=False) -> discord.Embed:
+    def to_embed(self, dm: bool = False, wait: Optional[float] = None) -> discord.Embed:
         prefix = self.server.prefix
         show_link = True if dm else self.server.links == "public"
         if self.status == "pending":
@@ -492,6 +524,10 @@ class Game(Base):
         power = self.power
         if power and self.server.power_enabled:
             embed.add_field(name="Average Power Level", value=f"{power:.1f}")
+        if wait:
+            delta = timedelta(minutes=wait)
+            mins = humanize.precisedelta(delta, minimum_unit="seconds", format="%0.0f")
+            embed.add_field(name="Average Queue Time", value=mins)
         if self.users:
             players = ", ".join(
                 sorted(
