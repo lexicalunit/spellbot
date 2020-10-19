@@ -567,7 +567,6 @@ class TestSpellBot:
             "Links": "Public",
             "Power": "On",
             "Tags": "On",
-            "User avatars": "Optional",
             "Voice channels": "Off",
         }
 
@@ -2888,63 +2887,6 @@ class TestSpellBot:
         async with client.session() as session:
             for game in session.query(Game).all():
                 assert game.is_expired()
-
-    async def test_on_message_spellbot_avatars_none(self, client, channel_maker):
-        author = an_admin()
-        channel = channel_maker.text()
-        await client.on_message(MockMessage(author, channel, "!spellbot avatars"))
-        assert channel.last_sent_response == (
-            f"Sorry <@{author.id}>, but please provide "
-            'an "optional" or "required" setting.'
-        )
-
-    async def test_on_message_spellbot_avatars_invalid(self, client, channel_maker):
-        author = an_admin()
-        channel = channel_maker.text()
-        await client.on_message(MockMessage(author, channel, "!spellbot avatars go"))
-        assert channel.last_sent_response == (
-            f"Sorry <@{author.id}>, but please provide "
-            'an "optional" or "required" setting.'
-        )
-
-    async def test_on_message_spellbot_avatars_command(self, client, channel_maker):
-        channel = channel_maker.text()
-        admin = an_admin()
-        await client.on_message(MockMessage(admin, channel, "!spellbot avatars required"))
-        assert channel.last_sent_response == (
-            f"Ok <@{admin.id}>, non-default avatars are now required on this server."
-        )
-
-        author = someone()
-        author.avatar = None
-        await client.on_message(MockMessage(author, channel, "!lfg"))
-        assert not all_games(client)  # bot should have ignored this command
-
-    async def test_on_message_spellbot_avatars_reaction(self, client, channel_maker):
-        channel = channel_maker.text()
-        admin = an_admin()
-        await client.on_message(MockMessage(admin, channel, "!spellbot avatars required"))
-        assert channel.last_sent_response == (
-            f"Ok <@{admin.id}>, non-default avatars are now required on this server."
-        )
-
-        AMY.avatar = True  # type: ignore
-        await client.on_message(MockMessage(AMY, channel, "!lfg"))
-        game = game_embed_for(client, AMY, False)
-
-        ADAM.avatar = None
-        message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji="✋",
-            channel_id=channel.id,
-            guild_id=channel.guild.id,
-            member=ADAM,
-        )
-        await client.on_raw_reaction_add(payload)
-
-        assert game_embed_for(client, AMY, False) == game
 
     async def test_paginate(self):
         def subject(text):

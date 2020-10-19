@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Removes the "require avatars" feature for now... the solution to the problem
+  that this feature was meant to solve requires a bit more thought.
+
 ### Fixed
 
 - Fixes a small typo in readme/webpage.
