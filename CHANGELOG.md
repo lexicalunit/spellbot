@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Average wait time notifications for game posts.
+
 ### Removed
 
 - Removes the "require avatars" feature for now... the solution to the problem

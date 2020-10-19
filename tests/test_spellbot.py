@@ -2888,6 +2888,33 @@ class TestSpellBot:
             for game in session.query(Game).all():
                 assert game.is_expired()
 
+    async def test_game_to_embed_with_average_wait_time(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+
+        session = client.data.Session()
+        game = session.query(Game).one_or_none()
+
+        assert {
+            "inline": True,
+            "name": "Average Queue Time",
+            "value": "10 minutes",
+        } in game.to_embed(wait=10).to_dict()["fields"]
+
+        assert {
+            "inline": True,
+            "name": "Average Queue Time",
+            "value": "10 minutes and 30 seconds",
+        } in game.to_embed(wait=10.5).to_dict()["fields"]
+
+        assert {
+            "inline": True,
+            "name": "Average Queue Time",
+            "value": "1 hour and 1 minute",
+        } in game.to_embed(wait=61).to_dict()["fields"]
+
     async def test_paginate(self):
         def subject(text):
             return [page for page in spellbot.paginate(text)]
