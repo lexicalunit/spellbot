@@ -15,6 +15,7 @@ from typing import (
     Any,
     AsyncGenerator,
     Callable,
+    Dict,
     Iterator,
     List,
     Optional,
@@ -313,6 +314,7 @@ class SpellBot(discord.Client):
         self.auth = auth or ""
         self.mock_games = mock_games
         self.channel_lock_cache = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
+        self.average_wait_times: Dict[str, float] = {}
 
         # Connect to Redis Cloud if we have a URL for it.
         self.metrics_db = self._create_metrics_db(redis_url)
@@ -382,6 +384,7 @@ class SpellBot(discord.Client):
         self.cleanup_expired_games_task(loop)
         self.cleanup_old_voice_channels_task(loop)
         self.update_metrics_task(loop)
+        self.update_average_wait_times_task(loop)
 
         # TODO: Make this manually triggered.
         # self.cleanup_started_games_task(loop)
@@ -526,6 +529,30 @@ class SpellBot(discord.Client):
                 )
             except redis.exceptions.RedisError as e:
                 logger.exception("redis error: %s", e)
+
+    def update_average_wait_times_task(
+        self, loop: asyncio.AbstractEventLoop
+    ) -> None:  # pragma: no cover
+        """Starts a task that updates some metrics about average wait time to play."""
+        ONE_HOUR = 3600
+
+        async def task() -> None:
+            while True:
+                await self.update_average_wait_times()
+                await asyncio.sleep(ONE_HOUR)
+
+        loop.create_task(task())
+
+    async def update_average_wait_times(self) -> None:  # pragma: no cover
+        logger.info("starting update average wait times task...")
+        async with self.session() as session:
+            self.average_wait_times = {}
+            avgs = Game.average_wait_times(session)
+            for avg in avgs:
+                self.average_wait_times[f"{avg[0]}-{avg[1]}"] = float(avg[2])
+
+    def average_wait(self, game: Game) -> Optional[float]:
+        return self.average_wait_times.get(f"{game.guild_xid}-{game.channel_xid}")
 
     @property
     def commands(self) -> List[str]:
@@ -673,7 +700,7 @@ class SpellBot(discord.Client):
         if not post:
             return
 
-        await post.edit(embed=game.to_embed())
+        await post.edit(embed=game.to_embed(wait=self.average_wait(game)))
 
     async def process(self, message: discord.Message, prefix: str) -> None:
         """Process a command message."""
@@ -804,7 +831,9 @@ class SpellBot(discord.Client):
                 session.commit()
 
                 # update the game message
-                await safe_edit_message(message, embed=game.to_embed())
+                await safe_edit_message(
+                    message, embed=game.to_embed(wait=self.average_wait(game))
+                )
                 return
 
             game.updated_at = now
@@ -834,7 +863,9 @@ class SpellBot(discord.Client):
                 await safe_clear_reactions(message)
             else:
                 session.commit()
-                await safe_edit_message(message, embed=game.to_embed())
+                await safe_edit_message(
+                    message, embed=game.to_embed(wait=self.average_wait(game))
+                )
 
     async def on_message(self, message: discord.Message) -> None:
         """Behavior when the client gets a message from Discord."""
@@ -1068,7 +1099,7 @@ class SpellBot(discord.Client):
     async def _post_new_game(
         self, session: Session, msg: discord.Message, game: Game
     ) -> discord.Message:
-        post = await msg.channel.send(embed=game.to_embed())
+        post = await msg.channel.send(embed=game.to_embed(wait=self.average_wait(game)))
         game.message_xid = post.id
         session.commit()
         await post.add_reaction("✋")
@@ -1101,7 +1132,9 @@ class SpellBot(discord.Client):
                 await safe_clear_reactions(post)
                 return
         else:  # game *definitely* isn't ready yet
-            await safe_edit_message(post, embed=game.to_embed())
+            await safe_edit_message(
+                post, embed=game.to_embed(wait=self.average_wait(game))
+            )
 
     async def _call_attention_to_game(self, msg: discord.Message, game: Game) -> bool:
         if not game.message_xid:
