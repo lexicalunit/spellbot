@@ -764,10 +764,6 @@ class SpellBot(discord.Client):
             if not server.bot_allowed_in(channel.id):
                 return
 
-            if not server.allow_default_avatars and author.avatar is None:
-                await safe_remove_reaction(message, emoji, author)
-                return
-
             game = (
                 session.query(Game).filter(Game.message_xid == message.id).one_or_none()
             )
@@ -859,26 +855,20 @@ class SpellBot(discord.Client):
                 rows = self.data.conn.execute(
                     text(
                         """
-                        SELECT prefix, allow_default_avatars
+                        SELECT prefix
                         FROM servers
                         WHERE guild_xid = :g
                     """
                     ),
                     g=message.channel.guild.id,
                 )
-                values = [(row.prefix, row.allow_default_avatars) for row in rows]
+                values = [(row.prefix,) for row in rows]
                 prefix = values[0][0] if values and values[0] else "!"
-                allow_default_avatar = values[0][1] if values and values[0] else True
             else:
                 prefix = "!"
-                allow_default_avatar = True
 
             # only respond to command-like messages
             if not message.content.startswith(prefix):
-                return
-
-            # only respond to users with avatars if that's enabled for this server
-            if not allow_default_avatar and author.avatar is None:
                 return
 
             is_admin = author.permissions_in(message.channel).administrator
@@ -2076,7 +2066,6 @@ class SpellBot(discord.Client):
         * `power <on|off>`: Turns the power command on or off for this server.
         * `voice <on|off>`: When on, SpellBot will automatically create voice channels.
         * `tags <on|off>`: Turn on or off the ability to use tags on your server.
-        * `avatars <optional|required>`: If required, respond only to users with avatars.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
@@ -2118,8 +2107,6 @@ class SpellBot(discord.Client):
             await self.spellbot_voice(session, server, params[1:], message)
         elif command == "tags":
             await self.spellbot_tags(session, server, params[1:], message)
-        elif command == "avatars":
-            await self.spellbot_avatars(session, server, params[1:], message)
         else:
             await message.channel.send(
                 s(
@@ -2463,40 +2450,6 @@ class SpellBot(discord.Client):
         )
         await safe_react_ok(message)
 
-    async def spellbot_avatars(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params or params[0].lower() not in ["required", "optional"]:
-            await message.channel.send(
-                s(
-                    "spellbot_avatars_bad",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                )
-            )
-            await safe_react_error(message)
-            return
-
-        server = (
-            session.query(Server)
-            .filter(Server.guild_xid == message.channel.guild.id)
-            .one_or_none()
-        )
-        setting = params[0].lower()
-        server.allow_default_avatars = setting == "optional"  # type: ignore
-        session.commit()
-        await message.channel.send(
-            s(
-                "spellbot_avatars",
-                reply=f"<@{cast(discord.User, message.author).id}>",
-                setting=setting,
-            )
-        )
-        await safe_react_ok(message)
-
     async def spellbot_config(
         self,
         session: Session,
@@ -2521,10 +2474,6 @@ class SpellBot(discord.Client):
         embed.add_field(
             name="Voice channels",
             value="On" if server.create_voice else "Off",
-        )
-        embed.add_field(
-            name="User avatars",
-            value="Optional" if server.allow_default_avatars else "Required",
         )
         if server.teams:
             teams_str = ", ".join(sorted(team.name for team in server.teams))
