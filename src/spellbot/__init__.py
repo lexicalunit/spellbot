@@ -358,9 +358,7 @@ class SpellBot(discord.Client):
         async with lock:  # type: ignore
             yield
 
-    def _create_metrics_db(
-        self, redis_url: Optional[str]
-    ) -> Optional[redis.Redis]:  # pragma: no cover
+    def _create_metrics_db(self, redis_url: Optional[str]) -> Optional[redis.Redis]:
         if not redis_url:
             return None
 
@@ -377,9 +375,7 @@ class SpellBot(discord.Client):
                 logger.exception("redis error: %s", e)
         return None
 
-    def _begin_background_tasks(
-        self, loop: asyncio.AbstractEventLoop
-    ) -> None:  # pragma: no cover
+    def _begin_background_tasks(self, loop: asyncio.AbstractEventLoop) -> None:
         """Start up any periodic background tasks."""
         self.cleanup_expired_games_task(loop)
         self.cleanup_old_voice_channels_task(loop)
@@ -389,9 +385,7 @@ class SpellBot(discord.Client):
         # TODO: Make this manually triggered.
         # self.cleanup_started_games_task(loop)
 
-    def cleanup_expired_games_task(
-        self, loop: asyncio.AbstractEventLoop
-    ) -> None:  # pragma: no cover
+    def cleanup_expired_games_task(self, loop: asyncio.AbstractEventLoop) -> None:
         """Starts a task that culls old games."""
         TWO_MINUTES = 120
 
@@ -438,9 +432,7 @@ class SpellBot(discord.Client):
             async with self.channel_lock(args["channel_xid"]):
                 await self.try_to_delete_message(**args)
 
-    def cleanup_old_voice_channels_task(
-        self, loop: asyncio.AbstractEventLoop
-    ) -> None:  # pragma: no cover
+    def cleanup_old_voice_channels_task(self, loop: asyncio.AbstractEventLoop) -> None:
         """Starts a task that deletes old voice channels."""
         TEN_MINUTES = 600
 
@@ -471,9 +463,7 @@ class SpellBot(discord.Client):
                     game.voice_channel_invite = None  # type: ignore
             session.commit()
 
-    def cleanup_started_games_task(
-        self, loop: asyncio.AbstractEventLoop
-    ) -> None:  # pragma: no cover
+    def cleanup_started_games_task(self, loop: asyncio.AbstractEventLoop) -> None:
         """Starts a task that culls old games."""
         FOUR_HOURS = 14400
 
@@ -494,9 +484,7 @@ class SpellBot(discord.Client):
                 session.delete(game)
             session.commit()
 
-    def update_metrics_task(
-        self, loop: asyncio.AbstractEventLoop
-    ) -> None:  # pragma: no cover
+    def update_metrics_task(self, loop: asyncio.AbstractEventLoop) -> None:
         """Starts a task that updates some metrics about this bot."""
         if not self.metrics_db:
             return
@@ -510,7 +498,7 @@ class SpellBot(discord.Client):
 
         loop.create_task(task())
 
-    async def update_metrics(self) -> None:  # pragma: no cover
+    async def update_metrics(self) -> None:
         if not self.metrics_db:
             return
 
@@ -530,9 +518,7 @@ class SpellBot(discord.Client):
             except redis.exceptions.RedisError as e:
                 logger.exception("redis error: %s", e)
 
-    def update_average_wait_times_task(
-        self, loop: asyncio.AbstractEventLoop
-    ) -> None:  # pragma: no cover
+    def update_average_wait_times_task(self, loop: asyncio.AbstractEventLoop) -> None:
         """Starts a task that updates some metrics about average wait time to play."""
         ONE_HOUR = 3600
 
@@ -543,7 +529,7 @@ class SpellBot(discord.Client):
 
         loop.create_task(task())
 
-    async def update_average_wait_times(self) -> None:  # pragma: no cover
+    async def update_average_wait_times(self) -> None:
         logger.info("starting update average wait times task...")
         async with self.session() as session:
             self.average_wait_times = {}
@@ -564,10 +550,10 @@ class SpellBot(discord.Client):
         """Returns the list of subcommands that can be given to the !spellbot command."""
         return self._subcommands
 
-    def run(self) -> None:  # pragma: no cover
+    def run(self) -> None:
         super().run(self.token)
 
-    def create_spelltable_url(self) -> str:  # pragma: no cover
+    def create_spelltable_url(self) -> str:
         if self.mock_games:
             return f"http://exmaple.com/game/{uuid4()}"
 
@@ -625,8 +611,7 @@ class SpellBot(discord.Client):
 
     async def ensure_available_voice_category(
         self, server: Server
-    ) -> Optional[discord.CategoryChannel]:  # pragma: no cover
-        # TODO: Test for this need to be written, but for now just ignore it.
+    ) -> Optional[discord.CategoryChannel]:
         if not server.create_voice:
             return None
 
@@ -903,7 +888,8 @@ class SpellBot(discord.Client):
                 return
 
             is_admin = author.permissions_in(message.channel).administrator
-            if not private and not is_admin:
+            is_owner = not private and author.id == message.channel.guild.owner_id
+            if not private and not is_admin and not is_owner:
                 async with self.session() as session:
                     server = self.ensure_server_exists(session, message.channel.guild.id)
                     if not server.bot_allowed_in(message.channel.id):
@@ -2522,48 +2508,48 @@ class SpellBot(discord.Client):
         await self.help(session, prefix, params, message)
 
 
-def get_db_env(fallback: str) -> str:  # pragma: no cover
+def get_db_env(fallback: str) -> str:
     """Returns the database env var from the environment or else the given fallback."""
     value = getenv("SPELLBOT_DB_ENV", fallback)
     return value or fallback
 
 
-def get_db_url(database_env: str, fallback: str) -> str:  # pragma: no cover
+def get_db_url(database_env: str, fallback: str) -> str:
     """Returns the database url from the environment or else the given fallback."""
     value = getenv(database_env, fallback)
     return value or fallback
 
 
-def get_port_env(fallback: str) -> str:  # pragma: no cover
+def get_port_env(fallback: str) -> str:
     """Returns the port env var from the environment or else the given fallback."""
     value = getenv("SPELLBOT_PORT_ENV", fallback)
     return value or fallback
 
 
-def get_port(port_env: str, fallback: int) -> int:  # pragma: no cover
+def get_port(port_env: str, fallback: int) -> int:
     """Returns the port from the environment or else the given fallback."""
     value = getenv(port_env, fallback)
     return int(value) or fallback
 
 
-def get_host(fallback: str) -> str:  # pragma: no cover
+def get_host(fallback: str) -> str:
     """Returns the hostname from the environment or else the given fallback."""
     value = getenv("SPELLBOT_HOST", fallback)
     return value or fallback
 
 
-def get_log_level(fallback: str) -> str:  # pragma: no cover
+def get_log_level(fallback: str) -> str:
     """Returns the log level from the environment or else the given gallback."""
     value = getenv("SPELLBOT_LOG_LEVEL", fallback)
     return value or fallback
 
 
-def get_redis_url() -> Optional[str]:  # pragma: no cover
+def get_redis_url() -> Optional[str]:
     """Gets redis cloud url if your REDISCLOUD_URL env var has been set."""
     return getenv("REDISCLOUD_URL", None)
 
 
-async def ping(request):  # pragma: no cover
+async def ping(request):
     return web.Response(text="ok")
 
 
@@ -2645,7 +2631,7 @@ def main(
     host: str,
     dev: bool,
     mock_games: bool,
-) -> None:  # pragma: no cover
+) -> None:
     if dev:
         reloader = hupper.start_reloader("spellbot.main")
         reloader.watch_files(ASSET_FILES)

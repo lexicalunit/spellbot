@@ -9,6 +9,7 @@ ADMIN_ROLE = MockRole("SpellBot Admin")
 PLAYER_ROLE = MockRole("Player Player")
 
 ADMIN = MockMember(CLIENT_USER, CLIENT_USER_ID, roles=[ADMIN_ROLE], admin=True)
+OWNER = MockMember(CLIENT_USER, CLIENT_USER_ID, roles=[], owner=True)
 FRIEND = MockMember("friend", 82169952898900001, roles=[PLAYER_ROLE])
 BUDDY = MockMember("buddy", 82942320688700002, roles=[ADMIN_ROLE, PLAYER_ROLE])
 GUY = MockMember("guy", 82988021019800003)

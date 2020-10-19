@@ -104,13 +104,14 @@ def send_side_effect(*args, **kwargs):
 
 
 class MockMember:
-    def __init__(self, member_name, member_id, roles=[], admin=False):
+    def __init__(self, member_name, member_id, roles=[], admin=False, owner=False):
         self.name = member_name
         self.id = member_id
         self.roles = roles
         self.avatar_url = "http://example.com/avatar.png"
         self.bot = False
         self.admin = admin
+        self.owner = owner
         self.avatar = None
 
         # sent is a spy for tracking calls to send(), it doesn't exist on the real object.
@@ -214,6 +215,7 @@ class MockGuild:
         self.name = name
         self.members = members
         self.categories = []
+        self.owner_id = 0
 
         self.create_voice_channel = AsyncMock(
             side_effect=create_voice_channel_side_effect

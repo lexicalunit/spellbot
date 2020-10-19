@@ -18,7 +18,7 @@ ChannelType = Union[
 ]
 
 
-def _user_or_guild_log_part(message: discord.Message) -> str:  # pragma: no cover
+def _user_or_guild_log_part(message: discord.Message) -> str:
     if hasattr(message, "guild"):
         return f"guild {cast(Any, message.guild).id}"
     return "DM"
