@@ -46,6 +46,8 @@ from spellbot.constants import (
     ADMIN_ROLE,
     CREATE_ENDPOINT,
     DEFAULT_GAME_SIZE,
+    EMOJI_DROP_GAME,
+    EMOJI_JOIN_GAME,
     ICO_URL,
     INVITE_LINK,
     THUMB_URL,
@@ -75,6 +77,7 @@ from spellbot.operations import (
     safe_fetch_guild,
     safe_fetch_message,
     safe_fetch_user,
+    safe_react_emoji,
     safe_react_error,
     safe_react_ok,
     safe_remove_reaction,
@@ -657,7 +660,7 @@ class SpellBot(discord.Client):
     async def try_to_delete_message(
         self, guild_xid: int, channel_xid: int, message_xid: int
     ) -> None:
-        """Attempts to remove a ✋ from the given game message for the given user."""
+        """Try to remove reactions from game post and replace with a "deleted" message."""
         chan = await safe_fetch_channel(self, channel_xid, guild_xid)
         if not chan:
             return
@@ -746,7 +749,7 @@ class SpellBot(discord.Client):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         """Behavior when the client gets a new reaction on a Discord message."""
         emoji = str(payload.emoji)
-        if emoji not in ["✋", "🚫"]:
+        if emoji not in [EMOJI_JOIN_GAME, EMOJI_DROP_GAME]:
             return
 
         channel = await safe_fetch_channel(
@@ -789,7 +792,7 @@ class SpellBot(discord.Client):
 
             await safe_remove_reaction(message, emoji, author)
 
-            if emoji == "✋":
+            if emoji == EMOJI_JOIN_GAME:
                 if any(user.xid == game_user.xid for game_user in game.users):
                     # this author is already in this game, they don't need to be added
                     return
@@ -804,7 +807,7 @@ class SpellBot(discord.Client):
                     session.commit()
                     await self.try_to_update_game(game_to_update)
                 user.game = game
-            else:  # emoji == "🚫":
+            else:  # emoji == EMOJI_DROP_GAME:
                 if not any(user.xid == game_user.xid for game_user in game.users):
                     # this author is not in this game, so they can't be removed from it
                     return
@@ -1088,8 +1091,8 @@ class SpellBot(discord.Client):
         post = await msg.channel.send(embed=game.to_embed(wait=self.average_wait(game)))
         game.message_xid = post.id
         session.commit()
-        await post.add_reaction("✋")
-        await post.add_reaction("🚫")
+        await safe_react_emoji(post, EMOJI_JOIN_GAME)
+        await safe_react_emoji(post, EMOJI_DROP_GAME)
         return post
 
     async def _update_or_start_game(
@@ -1242,7 +1245,7 @@ class SpellBot(discord.Client):
         command.
 
         Players will be able to enter or leave the game by reacting to the message that
-        SpellBot sends with the ✋ and 🚫 emoji.
+        SpellBot sends.
 
         Up to five tags can be given as well to help describe the game experience that you
         want. For example you might send `!lfg ~no-combo ~proxy` which will assign the

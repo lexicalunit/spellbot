@@ -32,7 +32,7 @@ from sqlalchemy.orm import Session, relationship, sessionmaker
 from sqlalchemy.sql.expression import desc, distinct
 from sqlalchemy.sql.sqltypes import Numeric
 
-from spellbot.constants import THUMB_URL
+from spellbot.constants import EMOJI_DROP_GAME, EMOJI_JOIN_GAME, THUMB_URL
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = PACKAGE_ROOT / "assets"
@@ -439,7 +439,7 @@ class Game(Base):
             )
             .filter(
                 and_(
-                    # Game.created_at >= datetime.utcnow() - timedelta(hours=1),
+                    Game.created_at >= datetime.utcnow() - timedelta(hours=1),
                     Game.status == "started",
                     Game.channel_xid != None,
                 )
@@ -490,8 +490,8 @@ class Game(Base):
                 description = f"Join your voice chat now: {self.voice_channel_invite}\n\n"
         if self.status == "pending":
             description += (
-                "To **join this game**, react with ✋\n"
-                "If you need to drop, react with 🚫\n\n"
+                f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
+                f"If you need to drop, react with {EMOJI_DROP_GAME}\n\n"
                 "_A SpellTable link will be created when all players have joined._\n\n"
                 f"Looking for more players to join you? Just run `{prefix}lfg` again.\n"
             )
