@@ -556,13 +556,25 @@ class SpellBot(discord.Client):
     def run(self) -> None:
         super().run(self.token)
 
-    def create_spelltable_url(self) -> str:
+    def create_spelltable_url(self) -> Optional[str]:
         if self.mock_games:
             return f"http://exmaple.com/game/{uuid4()}"
 
         headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
         r = requests.post(CREATE_ENDPOINT, headers=headers)
-        return cast(str, r.json()["gameUrl"])
+        try:
+            return cast(str, r.json()["gameUrl"])
+        except KeyError as e:
+            logger.error(
+                "error: gameUrl missing from SpellTable API response: %s; %s",
+                r.json(),
+                e,
+            )
+        except (ValueError, TypeError) as e:
+            logger.error(
+                "error: non-JSON response from SpellTable API: %s; %s", r.content, e
+            )
+        return None
 
     async def setup_voice(self, session: Session, game: Game) -> None:
         """Adds voice information to the game object. DOES NOT COMMIT!"""
