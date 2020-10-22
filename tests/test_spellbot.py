@@ -10,7 +10,12 @@ import pytest
 import pytz
 
 import spellbot
-from spellbot.constants import EMOJI_DROP_GAME, EMOJI_JOIN_GAME, THUMB_URL
+from spellbot.constants import (
+    CREATE_ENDPOINT,
+    EMOJI_DROP_GAME,
+    EMOJI_JOIN_GAME,
+    THUMB_URL,
+)
 from spellbot.data import Event, Game, Server, User
 
 from .constants import CLIENT_TOKEN, TEST_DATA_ROOT
@@ -2914,6 +2919,22 @@ class TestSpellBot:
             "name": "Average Queue Time",
             "value": "1 hour and 1 minute",
         } in game.to_embed(wait=61).to_dict()["fields"]
+
+    async def test_create_spelltable_url(self, client, requests_mock):
+        client.mock_games = False  # re-enable use of SpellTable API for this test
+        mock_url = "http://example.com/game/id"
+        requests_mock.post(CREATE_ENDPOINT, json={"gameUrl": mock_url})
+        assert client.create_spelltable_url() == mock_url
+
+    async def test_create_spelltable_url_missing_key(self, client, requests_mock):
+        client.mock_games = False  # re-enable use of SpellTable API for this test
+        requests_mock.post(CREATE_ENDPOINT, json={"bogus": None})
+        assert client.create_spelltable_url() is None
+
+    async def test_create_spelltable_url_not_json(self, client, requests_mock):
+        client.mock_games = False  # re-enable use of SpellTable API for this test
+        requests_mock.post(CREATE_ENDPOINT, json="oops!")
+        assert client.create_spelltable_url() is None
 
     async def test_paginate(self):
         def subject(text):

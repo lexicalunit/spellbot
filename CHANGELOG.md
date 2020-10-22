@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Handle unexpected responses from the SpellTable API.
+
 ## [v5.4.2](https://github.com/lexicalunit/spellbot/releases/tag/v5.4.2) - 2020-10-22
 
 ### Changed
