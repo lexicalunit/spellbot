@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, Mock
 import discord
 import pytest
 
-from spellbot.constants import GREEN_CHECK, RED_X
+from spellbot.constants import EMOJI_FAIL, EMOJI_OK
 from spellbot.operations import (
     safe_clear_reactions,
     safe_create_category_channel,
@@ -17,6 +17,7 @@ from spellbot.operations import (
     safe_fetch_guild,
     safe_fetch_message,
     safe_fetch_user,
+    safe_react_emoji,
     safe_react_error,
     safe_react_ok,
     safe_remove_reaction,
@@ -119,7 +120,7 @@ class TestOperations:
     async def test_safe_react_ok(self, mock_message):
         await safe_react_ok(cast(discord.Message, mock_message))
 
-        mock_message.add_reaction.assert_called_with(GREEN_CHECK)
+        mock_message.add_reaction.assert_called_with(EMOJI_OK)
 
     async def test_safe_react_ok_error_forbidden(self, mock_message, client):
         http_response = Mock()
@@ -147,10 +148,22 @@ class TestOperations:
         assert "warning: discord (DM): could not react to message" in caplog.text
         assert "BAD REQUEST" in caplog.text
 
+    async def test_safe_react_ok_error_not_found(self, mock_message, caplog):
+        response = Mock()
+        response.status = 404
+        mock_message.add_reaction.side_effect = discord.errors.NotFound(
+            response, "Not Found"
+        )
+
+        await safe_react_ok(cast(discord.Message, mock_message))
+
+        assert "discord (DM): could not react to message" not in caplog.text
+        assert "Not Found" not in caplog.text
+
     async def test_safe_react_error(self, mock_message):
         await safe_react_error(cast(discord.Message, mock_message))
 
-        mock_message.add_reaction.assert_called_with(RED_X)
+        mock_message.add_reaction.assert_called_with(EMOJI_FAIL)
 
     async def test_safe_react_error_error_forbidden(self, mock_message, client):
         http_response = Mock()
@@ -177,6 +190,61 @@ class TestOperations:
 
         assert "warning: discord (DM): could not react to message" in caplog.text
         assert "BAD REQUEST" in caplog.text
+
+    async def test_safe_react_error_error_not_found(self, mock_message, caplog):
+        response = Mock()
+        response.status = 404
+        mock_message.add_reaction.side_effect = discord.errors.NotFound(
+            response, "Not Found"
+        )
+
+        await safe_react_error(cast(discord.Message, mock_message))
+
+        assert "discord (DM): could not react to message" not in caplog.text
+        assert "Not Found" not in caplog.text
+
+    async def test_safe_react_emoji(self, mock_message):
+        await safe_react_emoji(cast(discord.Message, mock_message), "👍")
+
+        mock_message.add_reaction.assert_called_with("👍")
+
+    async def test_safe_react_emoji_error_forbidden(self, mock_message, client):
+        http_response = Mock()
+        http_response.status = 403
+        mock_message.add_reaction.side_effect = discord.errors.Forbidden(
+            http_response, "Missing Permissions"
+        )
+
+        await safe_react_emoji(cast(discord.Message, mock_message), "👍")
+
+        mock_message.channel.send.assert_called_with(
+            "I do not have permission to adjust reactions."
+            " A server admin will need to adjust my permissions."
+        )
+
+    async def test_safe_react_emoji_error_bad_request(self, mock_message, caplog):
+        response = Mock()
+        response.status = 400
+        mock_message.add_reaction.side_effect = discord.errors.HTTPException(
+            response, "BAD REQUEST"
+        )
+
+        await safe_react_emoji(cast(discord.Message, mock_message), "👍")
+
+        assert "warning: discord (DM): could not react to message" in caplog.text
+        assert "BAD REQUEST" in caplog.text
+
+    async def test_safe_react_emoji_error_not_found(self, mock_message, caplog):
+        response = Mock()
+        response.status = 404
+        mock_message.add_reaction.side_effect = discord.errors.NotFound(
+            response, "Not Found"
+        )
+
+        await safe_react_emoji(cast(discord.Message, mock_message), "👍")
+
+        assert "discord (DM): could not react to message" not in caplog.text
+        assert "Not Found" not in caplog.text
 
     async def test_safe_fetch_message(self, mock_message):
         await safe_fetch_message(
@@ -282,6 +350,27 @@ class TestOperations:
             f"warning: discord (guild {guild_id}): could not fetch channel" in caplog.text
         )
         assert "Missing Permissions" in caplog.text
+
+    async def test_safe_fetch_channel_when_not_cached_missing(
+        self, client, monkeypatch, caplog
+    ):
+        mock_channel = MockTextChannel(1, "general", [])
+        mock_get_channel = MagicMock()
+        mock_get_channel.return_value = None
+        monkeypatch.setattr(client, "get_channel", mock_get_channel)
+        mock_fetch_channel = AsyncMock()
+        http_response = Mock()
+        http_response.status = 404
+        mock_fetch_channel.side_effect = discord.errors.NotFound(
+            http_response, "Not Found"
+        )
+        monkeypatch.setattr(client, "fetch_channel", mock_fetch_channel)
+
+        await safe_fetch_channel(client, mock_channel.id, mock_channel.guild.id)
+
+        guild_id = mock_channel.guild.id
+        assert f"discord (guild {guild_id}): could not fetch channel" not in caplog.text
+        assert "Not Found" not in caplog.text
 
     async def test_safe_fetch_user_when_cached(self, client, monkeypatch):
         mock_get_user = MagicMock()

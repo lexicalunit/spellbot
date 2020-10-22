@@ -10,7 +10,7 @@ import pytest
 import pytz
 
 import spellbot
-from spellbot.constants import THUMB_URL
+from spellbot.constants import EMOJI_DROP_GAME, EMOJI_JOIN_GAME, THUMB_URL
 from spellbot.data import Event, Game, Server, User
 
 from .constants import CLIENT_TOKEN, TEST_DATA_ROOT
@@ -1343,7 +1343,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1372,7 +1372,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1465,7 +1465,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id + 1,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1480,7 +1480,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADMIN.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADMIN,
@@ -1495,7 +1495,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id + 1,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1518,7 +1518,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel_a.id,
             guild_id=channel_a.guild.id,
             member=ADAM,
@@ -1533,7 +1533,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1548,7 +1548,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1570,7 +1570,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message1.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1584,7 +1584,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message2.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1603,7 +1603,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1622,7 +1622,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1644,7 +1644,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1658,8 +1658,8 @@ class TestSpellBot:
         assert message.last_edited_embed == {
             "color": 5914365,
             "description": (
-                "To **join this game**, react with ✋\n"
-                "If you need to drop, react with 🚫\n"
+                f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
+                f"If you need to drop, react with {EMOJI_DROP_GAME}\n"
                 "\n"
                 "_A SpellTable link will be created when all players have joined._\n"
                 "\n"
@@ -1683,7 +1683,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1694,7 +1694,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="🚫",
+            emoji=EMOJI_DROP_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1708,8 +1708,8 @@ class TestSpellBot:
         assert message.last_edited_embed == {
             "color": 5914365,
             "description": (
-                "To **join this game**, react with ✋\n"
-                "If you need to drop, react with 🚫\n"
+                f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
+                f"If you need to drop, react with {EMOJI_DROP_GAME}\n"
                 "\n"
                 "_A SpellTable link will be created when all players have joined._\n"
                 "\n"
@@ -1731,7 +1731,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=GUY.id,
             message_id=message.id,
-            emoji="🚫",
+            emoji=EMOJI_DROP_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=GUY,
@@ -1747,8 +1747,8 @@ class TestSpellBot:
             {
                 "color": 5914365,
                 "description": (
-                    "To **join this game**, react with ✋\n"
-                    "If you need to drop, react with 🚫\n"
+                    f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
+                    f"If you need to drop, react with {EMOJI_DROP_GAME}\n"
                     "\n"
                     "_A SpellTable link will be created when all players have joined._\n"
                     "\n"
@@ -1764,8 +1764,8 @@ class TestSpellBot:
         assert message.last_edited_embed == {
             "color": 5914365,
             "description": (
-                "To **join this game**, react with ✋\n"
-                "If you need to drop, react with 🚫\n"
+                f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
+                f"If you need to drop, react with {EMOJI_DROP_GAME}\n"
                 "\n"
                 "_A SpellTable link will be created when all players have joined._\n"
                 "\n"
@@ -1787,7 +1787,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1799,7 +1799,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=AMY.id,
             message_id=message.id,
-            emoji="🚫",
+            emoji=EMOJI_DROP_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=AMY,
@@ -1818,7 +1818,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -1830,7 +1830,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=AMY.id,
             message_id=message.id,
-            emoji="🚫",
+            emoji=EMOJI_DROP_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=AMY,
@@ -1929,7 +1929,7 @@ class TestSpellBot:
         payload = MockPayload(
             user_id=ADAM.id,
             message_id=message.id,
-            emoji="✋",
+            emoji=EMOJI_JOIN_GAME,
             channel_id=channel.id,
             guild_id=channel.guild.id,
             member=ADAM,
@@ -2355,8 +2355,8 @@ class TestSpellBot:
         assert game_embed_for(client, AMY, False) == {
             "color": 5914365,
             "description": (
-                "To **join this game**, react with ✋\n"
-                "If you need to drop, react with 🚫\n"
+                f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
+                f"If you need to drop, react with {EMOJI_DROP_GAME}\n"
                 "\n"
                 "_A SpellTable link will be created when all players have joined._\n"
                 "\n"

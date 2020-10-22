@@ -4,7 +4,7 @@ from typing import Any, Optional, Union, cast
 import discord
 
 from spellbot.assets import s
-from spellbot.constants import GREEN_CHECK, RED_X
+from spellbot.constants import EMOJI_FAIL, EMOJI_OK
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ ChannelType = Union[
 ]
 
 
-def _user_or_guild_log_part(message: discord.Message) -> str:
+def _user_or_guild_log_part(message: discord.Message) -> str:  # pragma: no cover
     if hasattr(message, "guild"):
         return f"guild {cast(Any, message.guild).id}"
     return "DM"
@@ -56,30 +56,35 @@ async def safe_clear_reactions(message: discord.Message) -> None:
         )
 
 
-async def safe_react_ok(message: discord.Message) -> None:
+async def safe_react_emoji(message: discord.Message, emoji: str) -> None:
     try:
-        await message.add_reaction(GREEN_CHECK)
+        await message.add_reaction(emoji)
     except discord.errors.Forbidden:
         await message.channel.send(s("reaction_permissions_required"))
-    except discord.errors.HTTPException as e:
+    except discord.errors.NotFound as e:
+        # This isn't really an issue we need to warn about in the logs.
+        logger.debug(
+            "debug: discord (%s): could not react to message: %s",
+            _user_or_guild_log_part(message),
+            e,
+        )
+    except (
+        discord.errors.HTTPException,
+        discord.errors.InvalidArgument,
+    ) as e:
         logger.exception(
             "warning: discord (%s): could not react to message: %s",
             _user_or_guild_log_part(message),
             e,
         )
+
+
+async def safe_react_ok(message: discord.Message) -> None:
+    await safe_react_emoji(message, EMOJI_OK)
 
 
 async def safe_react_error(message: discord.Message) -> None:
-    try:
-        await message.add_reaction(RED_X)
-    except discord.errors.Forbidden:
-        await message.channel.send(s("reaction_permissions_required"))
-    except discord.errors.HTTPException as e:
-        logger.exception(
-            "warning: discord (%s): could not react to message: %s",
-            _user_or_guild_log_part(message),
-            e,
-        )
+    await safe_react_emoji(message, EMOJI_FAIL)
 
 
 async def safe_fetch_message(
@@ -89,6 +94,7 @@ async def safe_fetch_message(
         channel, (discord.VoiceChannel, discord.CategoryChannel, discord.StoreChannel)
     ):
         return None
+
     try:
         return await channel.fetch_message(message_xid)
     except discord.errors.NotFound as e:
@@ -100,7 +106,6 @@ async def safe_fetch_message(
             guild_xid,
             e,
         )
-        return None
     except (
         discord.errors.Forbidden,
         discord.errors.HTTPException,
@@ -110,7 +115,7 @@ async def safe_fetch_message(
             guild_xid,
             e,
         )
-        return None
+    return None
 
 
 async def safe_fetch_channel(
@@ -119,8 +124,16 @@ async def safe_fetch_channel(
     channel = client.get_channel(channel_xid)
     if channel:
         return channel
+
     try:
         return await client.fetch_channel(channel_xid)
+    except discord.errors.NotFound as e:
+        # This isn't really an issue we need to warn about in the logs.
+        logger.debug(
+            "debug: discord (guild %s): could not fetch channel: %s",
+            guild_xid,
+            e,
+        )
     except (
         discord.errors.Forbidden,
         discord.errors.HTTPException,
@@ -132,7 +145,7 @@ async def safe_fetch_channel(
             guild_xid,
             e,
         )
-        return None
+    return None
 
 
 async def safe_fetch_user(
@@ -141,11 +154,12 @@ async def safe_fetch_user(
     user = client.get_user(user_xid)
     if user:
         return user
+
     try:
         return await client.fetch_user(user_xid)
     except (discord.errors.NotFound, discord.errors.HTTPException) as e:
         logger.exception("warning: discord: could not fetch user: %s", e)
-        return None
+    return None
 
 
 async def safe_edit_message(
@@ -211,6 +225,7 @@ async def safe_create_voice_channel(
     guild = client.get_guild(guild_xid)
     if not guild:
         return None
+
     try:
         return await guild.create_voice_channel(name, category=category)
     except (
@@ -223,7 +238,7 @@ async def safe_create_voice_channel(
             guild_xid,
             e,
         )
-        return None
+    return None
 
 
 async def safe_create_category_channel(
@@ -232,6 +247,7 @@ async def safe_create_category_channel(
     guild = client.get_guild(guild_xid)
     if not guild:
         return None
+
     try:
         return await guild.create_category_channel(name)
     except (
@@ -244,7 +260,7 @@ async def safe_create_category_channel(
             guild_xid,
             e,
         )
-        return None
+    return None
 
 
 async def safe_delete_channel(channel: ChannelType, guild_xid: int) -> None:
@@ -260,7 +276,6 @@ async def safe_delete_channel(channel: ChannelType, guild_xid: int) -> None:
             guild_xid,
             e,
         )
-        return None
 
 
 async def safe_create_invite(
@@ -275,7 +290,7 @@ async def safe_create_invite(
             guild_xid,
             e,
         )
-        return None
+    return None
 
 
 async def safe_fetch_guild(
@@ -284,6 +299,7 @@ async def safe_fetch_guild(
     guild = client.get_guild(guild_xid)
     if guild:
         return guild
+
     try:
         return await client.fetch_guild(guild_xid)
     except (
@@ -295,4 +311,4 @@ async def safe_fetch_guild(
             guild_xid,
             e,
         )
-        return None
+    return None
