@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Changes some warning errors to debug in the logs.
+- Refactored how emoji reactions work.
+- Average wait times based on games that started within the last hour.
+
 ## [v5.4.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.4.1) - 2020-10-19
 
 ### Added
