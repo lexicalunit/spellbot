@@ -2040,7 +2040,7 @@ class TestSpellBot:
         channel = channel_maker.make(channel_type)
 
         @spellbot.command(allow_dm=True)
-        def mock_cmd(session, prefix, params, message):
+        def mock_cmd(prefix, params, message):
             raise RuntimeError("boom")
 
         monkeypatch.setattr(client, "spellbot", mock_cmd)

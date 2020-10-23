@@ -51,6 +51,7 @@ from spellbot.constants import (
     ICO_URL,
     INVITE_LINK,
     THUMB_URL,
+    VOICE_INVITE_EXPIRE_TIME_S,
     VOTE_LINK,
 )
 from spellbot.data import (
@@ -593,9 +594,8 @@ class SpellBot(discord.Client):
         if voice_channel:
             game.voice_channel_xid = voice_channel.id  # type: ignore
 
-            TEN_MINUTES = 600  # Make this configurable?
             voice_invite = await safe_create_invite(
-                voice_channel, game.guild_xid, max_age=TEN_MINUTES
+                voice_channel, game.guild_xid, max_age=VOICE_INVITE_EXPIRE_TIME_S
             )
             if voice_invite:
                 game.voice_channel_invite = voice_invite  # type: ignore
@@ -750,9 +750,7 @@ class SpellBot(discord.Client):
         if method.admin_only and not await check_is_admin(message):
             return
         logger.debug("%s%s (params=%s, message=%s)", prefix, command, params, message)
-        async with self.session() as session:
-            await method(session, prefix, params, message)
-            return
+        await method(prefix, params, message)
 
     ##############################
     # Discord Client Behavior
@@ -928,12 +926,11 @@ class SpellBot(discord.Client):
     # bot command. These methods should have a signature like:
     #
     #     @command(allow_dm=True, admin_only=False, help_group="Hi")
-    #     def command_name(self, session, prefix, params, message)
+    #     def command_name(self, prefix, params, message)
     #
     # - `allow_dm` indicates if the command is allowed to be used in direct messages.
     # - `admin_only` indicates if the command is available only to admins.
     # - `help_group` is the group name for this command in the usage help response.
-    # - `session` is a database session, you must commit any changes you make.
     # - `prefix` is the command prefix, which is "!" by default.
     # - `params` are any space delimitered parameters also sent with the command.
     # - `message` is the discord.py message object that triggered the command.
@@ -948,7 +945,7 @@ class SpellBot(discord.Client):
 
     # @command(allow_dm=True, help_group="Commands for Players")
     async def help(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Sends you this help message.
@@ -1011,7 +1008,7 @@ class SpellBot(discord.Client):
 
     @command(allow_dm=True, help_group="Commands for Players")
     async def about(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Get information about SpellBot.
@@ -1244,9 +1241,7 @@ class SpellBot(discord.Client):
         await safe_react_ok(message)
 
     @command(allow_dm=False, help_group="Commands for Players")
-    async def lfg(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def lfg(self, prefix: str, params: List[str], message: discord.Message) -> None:
         """
         Find or create a pending game for players to join.
 
@@ -1269,7 +1264,8 @@ class SpellBot(discord.Client):
         #       channel lock to prevent more than one person per guild per channel
         #       concurrently interleaving processing within this critical section.
         async with self.channel_lock(message.channel.id):
-            await self._play_helper(session, prefix, params, message)
+            async with self.session() as session:
+                await self._play_helper(session, prefix, params, message)
 
     async def _verify_command_fest_report(
         self,
@@ -1336,7 +1332,7 @@ class SpellBot(discord.Client):
 
     @command(allow_dm=False, help_group="Commands for Players")
     async def report(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Report your results on a finished game.
@@ -1359,92 +1355,97 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        game: Optional[Game] = None
-        if req.lower().startswith("#sb") and req[3:].isdigit():
-            game_id = int(req[3:])
-            game = session.query(Game).filter(Game.id == game_id).one_or_none()
-        elif req.lower().startswith("sb") and req[2:].isdigit():
-            game_id = int(req[2:])
-            game = session.query(Game).filter(Game.id == game_id).one_or_none()
-        elif req.isdigit():
-            game_id = int(req)
-            game = session.query(Game).filter(Game.id == game_id).one_or_none()
-        elif re.match(r"^[\w-]*$", req):  # perhaps it's a spellbot game id
-            game = session.query(Game).filter(Game.url.ilike(f"%{req}")).one_or_none()
+        async with self.session() as session:
+            game: Optional[Game] = None
+            if req.lower().startswith("#sb") and req[3:].isdigit():
+                game_id = int(req[3:])
+                game = session.query(Game).filter(Game.id == game_id).one_or_none()
+            elif req.lower().startswith("sb") and req[2:].isdigit():
+                game_id = int(req[2:])
+                game = session.query(Game).filter(Game.id == game_id).one_or_none()
+            elif req.isdigit():
+                game_id = int(req)
+                game = session.query(Game).filter(Game.id == game_id).one_or_none()
+            elif re.match(r"^[\w-]*$", req):  # perhaps it's a spellbot game id
+                game = session.query(Game).filter(Game.url.ilike(f"%{req}")).one_or_none()
 
-        if not game:
-            await message.channel.send(
-                s("report_no_game", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
-            await safe_react_error(message)
-            return
-
-        if not game.status == "started":
-            await message.channel.send(
-                s(
-                    "report_not_started",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+            if not game:
+                await message.channel.send(
+                    s(
+                        "report_no_game",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                    )
                 )
+                await safe_react_error(message)
+                return
+
+            if not game.status == "started":
+                await message.channel.send(
+                    s(
+                        "report_not_started",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                    )
+                )
+                await safe_react_error(message)
+                return
+
+            # TODO: This reporting logic is specific to CommandFest, it would be nice
+            #       to refactor this to be more flexible after the event.
+            verified = await self._verify_command_fest_report(
+                session=session, prefix=prefix, params=params, message=message, game=game
             )
-            await safe_react_error(message)
-            return
+            if not verified:
+                await safe_react_error(message)
+                return
 
-        # TODO: This reporting logic is specific to CommandFest, it would be nice
-        #       to refactor this to be more flexible after the event.
-        verified = await self._verify_command_fest_report(
-            session=session, prefix=prefix, params=params, message=message, game=game
-        )
-        if not verified:
-            await safe_react_error(message)
-            return
-
-        report = Report(game_id=game.id, report=report_str)
-        session.add(report)
-        session.commit()
-        await message.channel.send(
-            s("report", reply=f"<@{cast(discord.User, message.author).id}>")
-        )
-        await safe_react_ok(message)
+            report = Report(game_id=game.id, report=report_str)
+            session.add(report)
+            session.commit()
+            await message.channel.send(
+                s("report", reply=f"<@{cast(discord.User, message.author).id}>")
+            )
+            await safe_react_ok(message)
 
     @command(allow_dm=False, admin_only=False, help_group="Commands for Players")
     async def points(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Get your total points on this server.
         """
-        user = self.ensure_user_exists(session, message.author)
-        server = self.ensure_server_exists(session, message.channel.guild.id)
-        points = user.points(server.guild_xid)
+        async with self.session() as session:
+            user = self.ensure_user_exists(session, message.author)
+            server = self.ensure_server_exists(session, message.channel.guild.id)
+            points = user.points(server.guild_xid)
 
-        await message.channel.send(
-            s(
-                "points",
-                reply=f"<@{cast(discord.User, message.author).id}>",
-                points=points,
-            )
-        )
-
-        if is_admin(message.channel, message.author):
-            team_points = Team.points(session, message.channel.guild.id)
-            for team, team_points in team_points.items():
-                await message.channel.send(
-                    s(
-                        "points_team",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
-                        team=team,
-                        points=team_points,
-                    )
+            await message.channel.send(
+                s(
+                    "points",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    points=points,
                 )
+            )
 
-        await safe_react_ok(message)
+            if is_admin(message.channel, message.author):
+                team_points = Team.points(session, message.channel.guild.id)
+                for team, team_points in team_points.items():
+                    await message.channel.send(
+                        s(
+                            "points_team",
+                            reply=f"<@{cast(discord.User, message.author).id}>",
+                            team=team,
+                            points=team_points,
+                        )
+                    )
+
+            await safe_react_ok(message)
 
     def decode_data(self, bdata):
         return bdata.decode("utf-8")
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def event(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Create many games in batch from an attached CSV data file. _Requires the
@@ -1517,155 +1518,160 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        tags = Tag.create_many(session, tag_names)
+        async with self.session() as session:
+            tags = Tag.create_many(session, tag_names)
 
-        bdata = await message.attachments[0].read()
-        try:
-            sdata = self.decode_data(bdata)
-        except UnicodeDecodeError:
+            bdata = await message.attachments[0].read()
+            try:
+                sdata = self.decode_data(bdata)
+            except UnicodeDecodeError:
+                await message.channel.send(
+                    s(
+                        "event_not_utf",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                    )
+                )
+                await safe_react_error(message)
+                return
+
+            server = self.ensure_server_exists(session, message.channel.guild.id)
+            reader = csv.reader(StringIO(sdata))
+            header = [column.lower().strip() for column in next(reader)]
+            params = [param.lower().strip() for param in params]
+
+            if any(param not in header for param in params):
+                await message.channel.send(
+                    s(
+                        "event_no_header",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                    )
+                )
+                await safe_react_error(message)
+                return
+
+            columns = [header.index(param) for param in params]
+
+            event = Event()
+            session.add(event)
+            session.commit()
+
+            players_in_this_event: Set[str] = set()
+            warnings = set()
+
+            members = message.channel.guild.members
+            member_lookup = {member.name.lower().strip(): member for member in members}
+            for i, row in enumerate(reader):
+                csv_row_data = [row[column].strip() for column in columns]
+                players_s = ", ".join([f'"{value}"' for value in csv_row_data])
+                player_lnames = [
+                    re.sub("#.*$", "", value.lower()).lstrip("@")
+                    for value in csv_row_data
+                ]
+
+                if any(not lname for lname in player_lnames):
+                    warning = s("event_missing_player", row=i + 1, players=players_s)
+                    await message.channel.send(warning)
+                    continue
+
+                player_discord_users: List[discord.User] = []
+                for csv_data, lname in zip(csv_row_data, player_lnames):
+                    if lname in players_in_this_event:
+                        await message.channel.send(
+                            s(
+                                "event_duplicate_user",
+                                row=i + 1,
+                                name=csv_data,
+                                players=players_s,
+                            )
+                        )
+                        await safe_react_error(message)
+                        return
+                    player_discord_user = member_lookup.get(lname)
+                    if player_discord_user:
+                        players_in_this_event.add(lname)
+                        player_discord_users.append(player_discord_user)
+                    else:
+                        warnings.add(
+                            s(
+                                "event_missing_user",
+                                row=i + 1,
+                                name=csv_data,
+                                players=players_s,
+                            )
+                        )
+
+                if len(player_discord_users) != size:
+                    continue
+
+                player_users = [
+                    self.ensure_user_exists(session, player_discord_user)
+                    for player_discord_user in player_discord_users
+                ]
+
+                for player_discord_user, player_user in zip(
+                    player_discord_users, player_users
+                ):
+                    if player_user.waiting:
+                        game_to_update = player_user.game
+                        player_user.game_id = None  # type: ignore
+                        await self.try_to_update_game(game_to_update)
+                    player_user.cached_name = player_discord_user.name
+                session.commit()
+
+                now = datetime.utcnow()
+                expires_at = now + timedelta(minutes=server.expire)
+                game = Game(
+                    created_at=now,
+                    expires_at=expires_at,
+                    guild_xid=message.channel.guild.id,
+                    size=size,
+                    updated_at=now,
+                    status="ready",
+                    system=system,
+                    message=opt_msg,
+                    users=player_users,
+                    event=event,
+                    tags=tags,
+                )
+                session.add(game)
+                session.commit()
+
+            def by_row(s: str) -> int:
+                m = re.match("^.*row ([0-9]+).*$", s)
+                # TODO: Hopefully no one adds a strings.yaml warning
+                #       that doesn't fit this exact format!
+                assert m is not None
+                return int(m[1])
+
+            warnings_s = "\n".join(sorted(warnings, key=by_row))
+            if warnings_s:
+                for page in paginate(warnings_s):
+                    await message.channel.send(page)
+
+            if not event.games:
+                session.delete(event)
+                await message.channel.send(
+                    s("event_empty", reply=f"<@{cast(discord.User, message.author).id}>")
+                )
+                await safe_react_error(message)
+                return
+
+            session.commit()
+            count = len([game for game in event.games])
             await message.channel.send(
                 s(
-                    "event_not_utf",
+                    "event_created",
                     reply=f"<@{cast(discord.User, message.author).id}>",
+                    prefix=prefix,
+                    event_id=event.id,
+                    count=count,
                 )
             )
-            await safe_react_error(message)
-            return
-
-        server = self.ensure_server_exists(session, message.channel.guild.id)
-        reader = csv.reader(StringIO(sdata))
-        header = [column.lower().strip() for column in next(reader)]
-        params = [param.lower().strip() for param in params]
-
-        if any(param not in header for param in params):
-            await message.channel.send(
-                s("event_no_header", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
-            await safe_react_error(message)
-            return
-
-        columns = [header.index(param) for param in params]
-
-        event = Event()
-        session.add(event)
-        session.commit()
-
-        players_in_this_event: Set[str] = set()
-        warnings = set()
-
-        members = message.channel.guild.members
-        member_lookup = {member.name.lower().strip(): member for member in members}
-        for i, row in enumerate(reader):
-            csv_row_data = [row[column].strip() for column in columns]
-            players_s = ", ".join([f'"{value}"' for value in csv_row_data])
-            player_lnames = [
-                re.sub("#.*$", "", value.lower()).lstrip("@") for value in csv_row_data
-            ]
-
-            if any(not lname for lname in player_lnames):
-                warning = s("event_missing_player", row=i + 1, players=players_s)
-                await message.channel.send(warning)
-                continue
-
-            player_discord_users: List[discord.User] = []
-            for csv_data, lname in zip(csv_row_data, player_lnames):
-                if lname in players_in_this_event:
-                    await message.channel.send(
-                        s(
-                            "event_duplicate_user",
-                            row=i + 1,
-                            name=csv_data,
-                            players=players_s,
-                        )
-                    )
-                    await safe_react_error(message)
-                    return
-                player_discord_user = member_lookup.get(lname)
-                if player_discord_user:
-                    players_in_this_event.add(lname)
-                    player_discord_users.append(player_discord_user)
-                else:
-                    warnings.add(
-                        s(
-                            "event_missing_user",
-                            row=i + 1,
-                            name=csv_data,
-                            players=players_s,
-                        )
-                    )
-
-            if len(player_discord_users) != size:
-                continue
-
-            player_users = [
-                self.ensure_user_exists(session, player_discord_user)
-                for player_discord_user in player_discord_users
-            ]
-
-            for player_discord_user, player_user in zip(
-                player_discord_users, player_users
-            ):
-                if player_user.waiting:
-                    game_to_update = player_user.game
-                    player_user.game_id = None  # type: ignore
-                    await self.try_to_update_game(game_to_update)
-                player_user.cached_name = player_discord_user.name
-            session.commit()
-
-            now = datetime.utcnow()
-            expires_at = now + timedelta(minutes=server.expire)
-            game = Game(
-                created_at=now,
-                expires_at=expires_at,
-                guild_xid=message.channel.guild.id,
-                size=size,
-                updated_at=now,
-                status="ready",
-                system=system,
-                message=opt_msg,
-                users=player_users,
-                event=event,
-                tags=tags,
-            )
-            session.add(game)
-            session.commit()
-
-        def by_row(s: str) -> int:
-            m = re.match("^.*row ([0-9]+).*$", s)
-            # TODO: Hopefully no one adds a strings.yaml warning
-            #       that doesn't fit this exact format!
-            assert m is not None
-            return int(m[1])
-
-        warnings_s = "\n".join(sorted(warnings, key=by_row))
-        if warnings_s:
-            for page in paginate(warnings_s):
-                await message.channel.send(page)
-
-        if not event.games:
-            session.delete(event)
-            await message.channel.send(
-                s("event_empty", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
-            await safe_react_error(message)
-            return
-
-        session.commit()
-        count = len([game for game in event.games])
-        await message.channel.send(
-            s(
-                "event_created",
-                reply=f"<@{cast(discord.User, message.author).id}>",
-                prefix=prefix,
-                event_id=event.id,
-                count=count,
-            )
-        )
-        await safe_react_ok(message)
+            await safe_react_ok(message)
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def begin(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Confirm creation of games for the given event id. _Requires the
@@ -1687,72 +1693,78 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        event: Optional[Event] = (
-            session.query(Event).filter(Event.id == event_id).one_or_none()
-        )
-        if not event:
-            await message.channel.send(
-                s("begin_bad_event", reply=f"<@{cast(discord.User, message.author).id}>")
+        async with self.session() as session:
+            event: Optional[Event] = (
+                session.query(Event).filter(Event.id == event_id).one_or_none()
             )
-            await safe_react_error(message)
-            return
-
-        if event.started:
-            await message.channel.send(
-                s(
-                    "begin_event_already_started",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+            if not event:
+                await message.channel.send(
+                    s(
+                        "begin_bad_event",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                    )
                 )
-            )
-            await safe_react_error(message)
-            return
+                await safe_react_error(message)
+                return
 
-        for game in cast(List[Game], event.games):
-            # Can't rely on "<@{xid}>" working because the user could have logged out.
-            # But if we don't have the cached name, we will just have to fallback to it.
-            sorted_names = sorted(
-                [user.cached_name or f"<@{user.xid}>" for user in game.users]
-            )
-            players_str = ", ".join(cast(List[str], sorted_names))
-
-            found_discord_users = []
-            for game_user in game.users:
-                discord_user = await safe_fetch_user(self, game_user.xid)
-                if not discord_user:  # game_user has left the server since event created
-                    warning = s("begin_user_left", players=players_str)
-                    await message.channel.send(warning)
-                else:
-                    found_discord_users.append(discord_user)
-            if len(found_discord_users) != len(cast(List[User], game.users)):
-                continue
-
-            game_url = (
-                self.create_spelltable_url() if game.system == "spelltable" else None
-            )
-            game.url = game_url  # type: ignore
-            await self.setup_voice(session, game)
-            game.status = "started"  # type: ignore
-            game.game_power = game.power  # type: ignore
-            response = game.to_embed(dm=True)
-            session.commit()
-
-            for discord_user in found_discord_users:
-                await safe_send_user(discord_user, embed=response)
-
-            await message.channel.send(
-                s(
-                    "game_created",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                    id=game.id,
-                    url=game.url,
-                    players=players_str,
+            if event.started:
+                await message.channel.send(
+                    s(
+                        "begin_event_already_started",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                    )
                 )
-            )
-            await safe_react_ok(message)
+                await safe_react_error(message)
+                return
+
+            for game in cast(List[Game], event.games):
+                # Can't rely on "<@{xid}>" working because the user could have logged out.
+                # But if we don't have the cached name, we just have to fallback to it.
+                sorted_names = sorted(
+                    [user.cached_name or f"<@{user.xid}>" for user in game.users]
+                )
+                players_str = ", ".join(cast(List[str], sorted_names))
+
+                found_discord_users = []
+                for game_user in game.users:
+                    discord_user = await safe_fetch_user(self, game_user.xid)
+                    if (
+                        not discord_user
+                    ):  # game_user has left the server since event created
+                        warning = s("begin_user_left", players=players_str)
+                        await message.channel.send(warning)
+                    else:
+                        found_discord_users.append(discord_user)
+                if len(found_discord_users) != len(cast(List[User], game.users)):
+                    continue
+
+                game_url = (
+                    self.create_spelltable_url() if game.system == "spelltable" else None
+                )
+                game.url = game_url  # type: ignore
+                await self.setup_voice(session, game)
+                game.status = "started"  # type: ignore
+                game.game_power = game.power  # type: ignore
+                response = game.to_embed(dm=True)
+                session.commit()
+
+                for discord_user in found_discord_users:
+                    await safe_send_user(discord_user, embed=response)
+
+                await message.channel.send(
+                    s(
+                        "game_created",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        id=game.id,
+                        url=game.url,
+                        players=players_str,
+                    )
+                )
+                await safe_react_ok(message)
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def game(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Create a game between mentioned users. _Requires the "SpellBot Admin" role._
@@ -1818,123 +1830,128 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        mentioned_users = []
-        for mentioned in mentions:
-            mentioned_user = self.ensure_user_exists(session, mentioned)
-            if mentioned_user.waiting:
-                game_to_update = mentioned_user.game
-                mentioned_user.game_id = None  # type: ignore
-                await self.try_to_update_game(game_to_update)
-            mentioned_users.append(mentioned_user)
-        session.commit()
+        async with self.session() as session:
+            mentioned_users = []
+            for mentioned in mentions:
+                mentioned_user = self.ensure_user_exists(session, mentioned)
+                if mentioned_user.waiting:
+                    game_to_update = mentioned_user.game
+                    mentioned_user.game_id = None  # type: ignore
+                    await self.try_to_update_game(game_to_update)
+                mentioned_users.append(mentioned_user)
+            session.commit()
 
-        tags = Tag.create_many(session, tag_names)
+            tags = Tag.create_many(session, tag_names)
 
-        server = self.ensure_server_exists(session, message.channel.guild.id)
+            server = self.ensure_server_exists(session, message.channel.guild.id)
 
-        now = datetime.utcnow()
-        expires_at = now + timedelta(minutes=server.expire)
-        url = self.create_spelltable_url() if system == "spelltable" else None
-        # NOTE: Don't automatically create a voice channel in this case...
-        game = Game(
-            channel_xid=message.channel.id,
-            created_at=now,
-            expires_at=expires_at,
-            guild_xid=server.guild_xid,
-            size=size,
-            updated_at=now,
-            url=url,
-            status="started",
-            system=system,
-            message=opt_msg,
-            users=mentioned_users,
-            tags=tags,
-        )
-        session.add(game)
-        session.commit()
-
-        player_response = game.to_embed(dm=True)
-        for player in mentioned_users:
-            discord_user = await safe_fetch_user(self, player.xid)
-            # TODO: What happens if discord_user is None?
-            if discord_user:
-                await discord_user.send(embed=player_response)
-
-        players_str = ", ".join(sorted([f"<@{user.xid}>" for user in mentioned_users]))
-        await message.channel.send(
-            s(
-                "game_created",
-                reply=f"<@{cast(discord.User, message.author).id}>",
-                id=game.id,
-                url=game.url,
-                players=players_str,
+            now = datetime.utcnow()
+            expires_at = now + timedelta(minutes=server.expire)
+            url = self.create_spelltable_url() if system == "spelltable" else None
+            # NOTE: Don't automatically create a voice channel in this case...
+            game = Game(
+                channel_xid=message.channel.id,
+                created_at=now,
+                expires_at=expires_at,
+                guild_xid=server.guild_xid,
+                size=size,
+                updated_at=now,
+                url=url,
+                status="started",
+                system=system,
+                message=opt_msg,
+                users=mentioned_users,
+                tags=tags,
             )
-        )
-        await safe_react_ok(message)
+            session.add(game)
+            session.commit()
+
+            player_response = game.to_embed(dm=True)
+            for player in mentioned_users:
+                discord_user = await safe_fetch_user(self, player.xid)
+                # TODO: What happens if discord_user is None?
+                if discord_user:
+                    await discord_user.send(embed=player_response)
+
+            players_str = ", ".join(
+                sorted([f"<@{user.xid}>" for user in mentioned_users])
+            )
+            await message.channel.send(
+                s(
+                    "game_created",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    id=game.id,
+                    url=game.url,
+                    players=players_str,
+                )
+            )
+            await safe_react_ok(message)
 
     @command(allow_dm=True, help_group="Commands for Players")
     async def leave(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Leave any pending games that you've signed up.
         """
-        user = self.ensure_user_exists(session, message.author)
-        if user.waiting:
-            game = user.game
-            user.game_id = None  # type: ignore
-            session.commit()
-            await self.try_to_update_game(game)
-        await safe_react_ok(message)
+        async with self.session() as session:
+            user = self.ensure_user_exists(session, message.author)
+            if user.waiting:
+                game = user.game
+                user.game_id = None  # type: ignore
+                session.commit()
+                await self.try_to_update_game(game)
+            await safe_react_ok(message)
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def export(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._
         """
-        server = self.ensure_server_exists(session, message.channel.guild.id)
-        export_file = TMP_DIR / f"{message.channel.guild.name}.csv"
-        channel_name_cache = {}
-        data = server.games_data()
-        with open(export_file, "w") as f, redirect_stdout(f):
-            print(  # noqa: T001
-                "id,size,status,system,channel,url,event_id,created_at,tags,message"
-            )
-            for i in range(len(data["id"])):
-                channel_xid = data["channel_xid"][i]
-                if channel_xid and channel_xid not in channel_name_cache:
-                    channel = await safe_fetch_channel(
-                        self, int(channel_xid), message.channel.guild.id
-                    )
-                    if channel:
-                        name = cast(discord.TextChannel, channel).name
-                        channel_name_cache[channel_xid] = f"#{name}"
-                    else:
-                        channel_name_cache[channel_xid] = f"<#{channel_xid}>"
+        async with self.session() as session:
+            server = self.ensure_server_exists(session, message.channel.guild.id)
+            export_file = TMP_DIR / f"{message.channel.guild.name}.csv"
+            channel_name_cache = {}
+            data = server.games_data()
+            with open(export_file, "w") as f, redirect_stdout(f):
                 print(  # noqa: T001
-                    ",".join(
-                        [
-                            data["id"][i],
-                            data["size"][i],
-                            data["status"][i],
-                            data["system"][i],
-                            channel_name_cache[channel_xid] if channel_xid else "",
-                            data["url"][i],
-                            data["event_id"][i],
-                            data["created_at"][i],
-                            data["tags"][i],
-                            data["message"][i],
-                        ]
-                    )
+                    "id,size,status,system,channel,url,event_id,created_at,tags,message"
                 )
-        await message.channel.send("", file=discord.File(export_file))
-        await safe_react_ok(message)
+                for i in range(len(data["id"])):
+                    channel_xid = data["channel_xid"][i]
+                    if channel_xid and channel_xid not in channel_name_cache:
+                        channel = await safe_fetch_channel(
+                            self, int(channel_xid), message.channel.guild.id
+                        )
+                        if channel:
+                            name = cast(discord.TextChannel, channel).name
+                            channel_name_cache[channel_xid] = f"#{name}"
+                        else:
+                            channel_name_cache[channel_xid] = f"<#{channel_xid}>"
+                    print(  # noqa: T001
+                        ",".join(
+                            [
+                                data["id"][i],
+                                data["size"][i],
+                                data["status"][i],
+                                data["system"][i],
+                                channel_name_cache[channel_xid] if channel_xid else "",
+                                data["url"][i],
+                                data["event_id"][i],
+                                data["created_at"][i],
+                                data["tags"][i],
+                                data["message"][i],
+                            ]
+                        )
+                    )
+            await message.channel.send("", file=discord.File(export_file))
+            await safe_react_ok(message)
 
     @command(allow_dm=True, help_group="Commands for Players")
     async def power(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Set or unset the power level of the deck you are going to play.
@@ -1944,148 +1961,156 @@ class SpellBot(discord.Client):
         you in games with other players of similar power levels.
         & <none | 1..10>
         """
-        server = self.ensure_server_exists(session, message.channel.guild.id)
-        if not server.power_enabled:
-            return
+        async with self.session() as session:
+            server = self.ensure_server_exists(session, message.channel.guild.id)
+            if not server.power_enabled:
+                return
 
-        async def send_invalid(prepend) -> None:
-            await message.channel.send(
-                s(
-                    "power_invalid",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                    prepend=prepend,
+            async def send_invalid(prepend) -> None:
+                await message.channel.send(
+                    s(
+                        "power_invalid",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        prepend=prepend,
+                    )
                 )
-            )
-            await safe_react_error(message)
+                await safe_react_error(message)
 
-        if not params:
-            return await send_invalid("")
+            if not params:
+                return await send_invalid("")
 
-        user = self.ensure_user_exists(session, message.author)
+            user = self.ensure_user_exists(session, message.author)
 
-        power = params[0].lower()
-        if power in ["none", "off", "unset", "no", "0"]:
-            user.power = None  # type: ignore
+            power = params[0].lower()
+            if power in ["none", "off", "unset", "no", "0"]:
+                user.power = None  # type: ignore
+                session.commit()
+                await safe_react_ok(message)
+                if user.waiting:
+                    await self.try_to_update_game(user.game)
+                await safe_react_ok(message)
+                return
+
+            if power == "unlimited":
+                return await send_invalid("⚡ ")
+
+            if not power.isdigit():
+                return await send_invalid("")
+
+            power_i = int(power)
+            if not (1 <= power_i <= 10):
+                prepend = ""
+                if power_i == 11:
+                    prepend = "🤘 "
+                elif power_i == 9000:
+                    prepend = "💥 "
+                elif power_i == 42:
+                    prepend = "🤖 "
+                return await send_invalid(prepend)
+
+            user.power = power_i  # type: ignore
             session.commit()
             await safe_react_ok(message)
             if user.waiting:
                 await self.try_to_update_game(user.game)
             await safe_react_ok(message)
-            return
-
-        if power == "unlimited":
-            return await send_invalid("⚡ ")
-
-        if not power.isdigit():
-            return await send_invalid("")
-
-        power_i = int(power)
-        if not (1 <= power_i <= 10):
-            prepend = ""
-            if power_i == 11:
-                prepend = "🤘 "
-            elif power_i == 9000:
-                prepend = "💥 "
-            elif power_i == 42:
-                prepend = "🤖 "
-            return await send_invalid(prepend)
-
-        user.power = power_i  # type: ignore
-        session.commit()
-        await safe_react_ok(message)
-        if user.waiting:
-            await self.try_to_update_game(user.game)
-        await safe_react_ok(message)
 
     @command(allow_dm=False, help_group="Commands for Players")
     async def team(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Set or get your team on this server. To get your team name, run this command with
         no parameters.
         & [team-name]
         """
-        server = self.ensure_server_exists(session, message.channel.guild.id)
-        if not server.teams:
-            await message.channel.send(
-                s("team_none", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
-            await safe_react_error(message)
-            return
+        async with self.session() as session:
+            server = self.ensure_server_exists(session, message.channel.guild.id)
+            if not server.teams:
+                await message.channel.send(
+                    s("team_none", reply=f"<@{cast(discord.User, message.author).id}>")
+                )
+                await safe_react_error(message)
+                return
 
-        user = self.ensure_user_exists(session, message.author)
-        if not params:
+            user = self.ensure_user_exists(session, message.author)
+            if not params:
+                user_team = (
+                    session.query(UserTeam)
+                    .filter_by(user_xid=user.xid, guild_xid=server.guild_xid)
+                    .one_or_none()
+                )
+
+                if not user_team:
+                    await message.channel.send(
+                        s(
+                            "team_not_set",
+                            reply=f"<@{cast(discord.User, message.author).id}>",
+                        )
+                    )
+                    await safe_react_error(message)
+                    return
+
+                team = session.query(Team).filter_by(id=user_team.team_id).one_or_none()
+                if not team:
+                    session.delete(user_team)
+                    await message.channel.send(
+                        s(
+                            "team_gone",
+                            reply=f"<@{cast(discord.User, message.author).id}>",
+                        )
+                    )
+                    await safe_react_error(message)
+                    return
+
+                await message.channel.send(
+                    s(
+                        "team_yours",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        team=team.name,
+                    )
+                )
+                await safe_react_ok(message)
+                return
+
+            team_request = params[0]
+            team_found: Optional[Team] = None
+            for team in server.teams:
+                if team_request.lower() != team.name.lower():
+                    continue
+                team_found = team
+                break
+
+            if not team_found:
+                teams = ", ".join(sorted(team.name for team in server.teams))
+                await message.channel.send(
+                    s(
+                        "team_not_found",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        teams=teams,
+                    ),
+                )
+                await safe_react_error(message)
+                return
+
             user_team = (
                 session.query(UserTeam)
                 .filter_by(user_xid=user.xid, guild_xid=server.guild_xid)
                 .one_or_none()
             )
-
-            if not user_team:
-                await message.channel.send(
-                    s("team_not_set", reply=f"<@{cast(discord.User, message.author).id}>")
+            if user_team:
+                user_team.team_id = team_found.id
+            else:
+                user_team = UserTeam(
+                    user_xid=user.xid, guild_xid=server.guild_xid, team_id=team_found.id
                 )
-                await safe_react_error(message)
-                return
-
-            team = session.query(Team).filter_by(id=user_team.team_id).one_or_none()
-            if not team:
-                session.delete(user_team)
-                await message.channel.send(
-                    s("team_gone", reply=f"<@{cast(discord.User, message.author).id}>")
-                )
-                await safe_react_error(message)
-                return
-
-            await message.channel.send(
-                s(
-                    "team_yours",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                    team=team.name,
-                )
-            )
+                session.add(user_team)
+            session.commit()
             await safe_react_ok(message)
-            return
-
-        team_request = params[0]
-        team_found: Optional[Team] = None
-        for team in server.teams:
-            if team_request.lower() != team.name.lower():
-                continue
-            team_found = team
-            break
-
-        if not team_found:
-            teams = ", ".join(sorted(team.name for team in server.teams))
-            await message.channel.send(
-                s(
-                    "team_not_found",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                    teams=teams,
-                ),
-            )
-            await safe_react_error(message)
-            return
-
-        user_team = (
-            session.query(UserTeam)
-            .filter_by(user_xid=user.xid, guild_xid=server.guild_xid)
-            .one_or_none()
-        )
-        if user_team:
-            user_team.team_id = team_found.id
-        else:
-            user_team = UserTeam(
-                user_xid=user.xid, guild_xid=server.guild_xid, team_id=team_found.id
-            )
-            session.add(user_team)
-        session.commit()
-        await safe_react_ok(message)
 
     @command(allow_dm=False, help_group="Commands for Admins")
     async def spellbot(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
         Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
@@ -2115,41 +2140,42 @@ class SpellBot(discord.Client):
 
         command = params[0]
         if command == "help":
-            await self.spellbot_help(session, prefix, params[1:], message)
+            await self.spellbot_help(prefix, params[1:], message)
             return
 
         if not await check_is_admin(message):
             await safe_react_error(message)
             return
 
-        server = self.ensure_server_exists(session, message.channel.guild.id)
-        if command == "channels":
-            await self.spellbot_channels(session, server, params[1:], message)
-        elif command == "prefix":
-            await self.spellbot_prefix(session, server, params[1:], message)
-        elif command == "expire":
-            await self.spellbot_expire(session, server, params[1:], message)
-        elif command == "config":
-            await self.spellbot_config(session, server, params[1:], message)
-        elif command == "links":
-            await self.spellbot_links(session, server, params[1:], message)
-        elif command == "teams":
-            await self.spellbot_teams(session, server, params[1:], message)
-        elif command == "power":
-            await self.spellbot_power(session, server, params[1:], message)
-        elif command == "voice":
-            await self.spellbot_voice(session, server, params[1:], message)
-        elif command == "tags":
-            await self.spellbot_tags(session, server, params[1:], message)
-        else:
-            await message.channel.send(
-                s(
-                    "spellbot_unknown_subcommand",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
-                    command=command,
+        async with self.session() as session:
+            server = self.ensure_server_exists(session, message.channel.guild.id)
+            if command == "channels":
+                await self.spellbot_channels(session, server, params[1:], message)
+            elif command == "prefix":
+                await self.spellbot_prefix(session, server, params[1:], message)
+            elif command == "expire":
+                await self.spellbot_expire(session, server, params[1:], message)
+            elif command == "config":
+                await self.spellbot_config(session, server, params[1:], message)
+            elif command == "links":
+                await self.spellbot_links(session, server, params[1:], message)
+            elif command == "teams":
+                await self.spellbot_teams(session, server, params[1:], message)
+            elif command == "power":
+                await self.spellbot_power(session, server, params[1:], message)
+            elif command == "voice":
+                await self.spellbot_voice(session, server, params[1:], message)
+            elif command == "tags":
+                await self.spellbot_tags(session, server, params[1:], message)
+            else:
+                await message.channel.send(
+                    s(
+                        "spellbot_unknown_subcommand",
+                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        command=command,
+                    )
                 )
-            )
-            await safe_react_error(message)
+                await safe_react_error(message)
 
     async def spellbot_channels(
         self,
@@ -2518,9 +2544,9 @@ class SpellBot(discord.Client):
         await safe_react_ok(message)
 
     async def spellbot_help(
-        self, session: Session, prefix: str, params: List[str], message: discord.Message
+        self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
-        await self.help(session, prefix, params, message)
+        await self.help(prefix, params, message)
 
 
 def get_db_env(fallback: str) -> str:

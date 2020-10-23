@@ -32,7 +32,12 @@ from sqlalchemy.orm import Session, relationship, sessionmaker
 from sqlalchemy.sql.expression import desc, distinct
 from sqlalchemy.sql.sqltypes import Numeric
 
-from spellbot.constants import EMOJI_DROP_GAME, EMOJI_JOIN_GAME, THUMB_URL
+from spellbot.constants import (
+    EMOJI_DROP_GAME,
+    EMOJI_JOIN_GAME,
+    THUMB_URL,
+    VOICE_INVITE_EXPIRE_TIME_S,
+)
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = PACKAGE_ROOT / "assets"
@@ -487,7 +492,10 @@ class Game(Base):
         description = ""
         if self.voice_channel_invite:
             if show_link:
-                description = f"Join your voice chat now: {self.voice_channel_invite}\n\n"
+                description = (
+                    f"Join your voice chat now: {self.voice_channel_invite} (invite"
+                    f" expires in {int(VOICE_INVITE_EXPIRE_TIME_S / 60)} minutes)\n\n"
+                )
         if self.status == "pending":
             description += (
                 f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
