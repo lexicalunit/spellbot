@@ -21,3 +21,5 @@ EMOJI_DROP_GAME = "🚫"
 EMOJI_FAIL = "❌"
 EMOJI_JOIN_GAME = "✋"
 EMOJI_OK = "✅"
+
+VOICE_INVITE_EXPIRE_TIME_S = 600  # ten minutes, make this configurable?

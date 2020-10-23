@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added some information to the game posts about how long till voice invites expire.
+
+### Fixed
+
+- Fixes an issue with session and game-creation locking where multiple users
+  could all `!lfg` at the same time and the bot would treat each of them in
+  sequence because of the game-creation lock, but it's view onto the database
+  for each of those processes would be snapshotted to the same time. This could
+  lead to a user's game seemingly being "stolen" out from under them.
+
 ## [v5.4.3](https://github.com/lexicalunit/spellbot/releases/tag/v5.4.3) - 2020-10-22
 
 ### Fixed
