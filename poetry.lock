@@ -1021,7 +1021,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=3.5,<3.7.3 || >3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pytest-cov", "jaraco.test (>=3.2.0)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
 
 [metadata]
-content-hash = "3f9ab21ae9a25d2109c667ec6547bc8ec125d3d0dc45b8c7199531a8d734de66"
+content-hash = "dd6bbf6c201afa24ec7c4ccc1a35b95040eb9b9ff08ba1263509f4f057f55b26"
 python-versions = '>=3.7,<4'
 
 [metadata.files]

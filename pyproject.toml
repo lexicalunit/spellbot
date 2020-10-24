@@ -69,7 +69,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-aiohttp = "^3.6.0"
+aiohttp = "~3.6.2"
 alembic = "^1.4.3"
 click = "^7.1.2"
 coloredlogs = "^14.0"
