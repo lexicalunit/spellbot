@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Use is_() and isnot() to avoid spurious CodeFactor warnings.
+
 ### Added
 
 - Adds support for a server wide message of the day setting.
