@@ -331,7 +331,7 @@ class Game(Base):
                     )
                 )
                 .group_by("day")
-                .order_by(desc(Game.updated_at))
+                .order_by(desc("day"))
                 .all()
             )
         ]
