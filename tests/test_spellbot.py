@@ -558,6 +558,7 @@ class TestSpellBot:
         channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!spellbot prefix $"))
         await client.on_message(MockMessage(author, channel, "$spellbot expire 45"))
+        await client.on_message(MockMessage(author, channel, "$spellbot smotd Hello!"))
         await client.on_message(MockMessage(author, channel, "$spellbot config"))
 
         about = channel.last_sent_embed
@@ -570,6 +571,7 @@ class TestSpellBot:
             "Command prefix": "$",
             "Inactivity expiration time": "45 minutes",
             "Links": "Public",
+            "MOTD": "Hello!",
             "Power": "On",
             "Tags": "On",
             "Voice channels": "Off",
@@ -2935,6 +2937,53 @@ class TestSpellBot:
         client.mock_games = False  # re-enable use of SpellTable API for this test
         requests_mock.post(CREATE_ENDPOINT, json="oops!")
         assert client.create_spelltable_url() is None
+
+    async def test_on_message_spellbot_smotd(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(
+            MockMessage(admin, channel, "!spellbot smotd Hello to      you! Hi!")
+        )
+        assert channel.last_sent_response == (
+            f"Right on, <@{admin.id}>. "
+            "The server message of the day is now: Hello to you! Hi!"
+        )
+
+        await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+
+        assert "Hello to you! Hi!" in game_embed_for(client, GUY, True)["description"]
+
+    async def test_on_message_spellbot_smotd_none(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot smotd something"))
+        assert channel.last_sent_response == (
+            f"Right on, <@{admin.id}>. The server message of the day is now: something"
+        )
+        await client.on_message(MockMessage(admin, channel, "!spellbot config"))
+        about = channel.last_sent_embed
+        fields = {f["name"]: f["value"] for f in about["fields"]}
+        assert fields["MOTD"] == "something"
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot smotd"))
+        assert channel.last_sent_response == (
+            f"Right on, <@{admin.id}>. The server message of the day is now: "
+        )
+        await client.on_message(MockMessage(admin, channel, "!spellbot config"))
+        about = channel.last_sent_embed
+        fields = {f["name"]: f["value"] for f in about["fields"]}
+        assert "MOTD" not in fields
+
+    async def test_on_message_spellbot_smotd_too_long(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+        motd = "foo" * 100
+        await client.on_message(MockMessage(admin, channel, f"!spellbot smotd {motd}"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{admin.id}>, but that message is too long."
+        )
 
     async def test_paginate(self):
         def subject(text):
