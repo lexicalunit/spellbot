@@ -511,6 +511,7 @@ class SpellBot(discord.Client):
             games = session.query(Game).filter(Game.status == "started").count()
             servers = session.query(Server).count()
             users = session.query(User).count()
+            recent = Game.recent_metrics(session)
             try:
                 self.metrics_db.mset(
                     {
@@ -519,6 +520,7 @@ class SpellBot(discord.Client):
                         "users": users,
                     }
                 )
+                self.metrics_db.mset({f"N{i}": count for i, count in enumerate(recent)})
             except redis.exceptions.RedisError as e:
                 logger.exception("redis error: %s", e)
 
