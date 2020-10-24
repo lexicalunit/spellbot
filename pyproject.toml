@@ -45,7 +45,7 @@ commands =
 
 [tool.poetry]
 name = 'spellbot'
-version = "5.4.5"
+version = "5.4.6"
 license = 'MIT'
 authors = [
     'Amy <amy@lexicalunit.com>'
