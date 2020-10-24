@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Ran into a production issue with SSL because aiohttp released a new version that
+  had broken code due to variable shadowing: https://github.com/aio-libs/aiohttp/issues/5110
+  The next patch version should have a fix but it's been 10 hours and they still
+  having released a new version with the fix. I'm going to pin down all my production
+  dependency versions to a specific version to avoid this in the future.
+
 ## [v5.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.5.0) - 2020-10-24
 
 ### Changed
