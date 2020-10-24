@@ -268,10 +268,17 @@ if you are using sqlite which doesn't support many database features.
 ## Heroku Deployment
 
 For example, you could deploy to Heroku using Docker with the following. This
-assumes that you've named your Heroku application "lexicalunit-spellbot".
+assumes that you've named your Heroku application "lexicalunit-spellbot" and
+have a staging application named "lexicalunit-spellbot-staging".
 
 ```shell
 docker build -t spellbot .
+
+# deploy to staging
+heroku container:push web --app lexicalunit-spellbot-staging
+heroku container:release web --app lexicalunit-spellbot-staging
+
+# deploy to production
 heroku container:push web --app lexicalunit-spellbot
 heroku container:release web --app lexicalunit-spellbot
 ```
