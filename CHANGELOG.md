@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.5.3](https://github.com/lexicalunit/spellbot/releases/tag/v5.5.3) - 2020-10-24
+
 ### Fixed
 
 - Ran into a production issue with SSL because aiohttp released a new version that
