@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.5.0) - 2020-10-24
+
 ### Changed
 
 - Use is_() and isnot() to avoid spurious CodeFactor warnings.
