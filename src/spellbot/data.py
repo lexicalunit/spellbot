@@ -315,6 +315,27 @@ class Game(Base):
     event = relationship("Event", back_populates="games")
     reports = relationship("Report", back_populates="game", uselist=True)
 
+    @classmethod
+    def recent_metrics(cls, session: Session) -> List[int]:
+        return [
+            row[1]
+            for row in (
+                session.query(
+                    func.date(Game.created_at).label("day"),
+                    func.count(Game.id),
+                )
+                .filter(
+                    and_(
+                        Game.status == "started",
+                        Game.created_at >= datetime.utcnow() - timedelta(days=5),
+                    )
+                )
+                .group_by("day")
+                .order_by(desc(Game.updated_at))
+                .all()
+            )
+        ]
+
     @property
     def power(self) -> Optional[float]:
         if not self.server.power_enabled:
