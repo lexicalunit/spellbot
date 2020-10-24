@@ -367,7 +367,7 @@ class Game(Base):
             Game.size == size,
             Game.channel_xid == channel_xid,
             Game.system == system,
-            Game.message_xid != None,
+            Game.message_xid.isnot(None),
         ]
         having_filters = [
             func.count(distinct(games_tags.c.tag_id)) == len(required_tag_ids),
@@ -381,7 +381,7 @@ class Game(Base):
                 else:
                     having_filters.append(func.avg(User.power) < 7)
             else:
-                select_filters.append(User.power == None)
+                select_filters.append(User.power.is_(None))
         inner = (
             session.query(Game.id)
             .join(User, isouter=True)
@@ -434,7 +434,7 @@ class Game(Base):
             session.query(Game)
             .filter(
                 and_(
-                    Game.voice_channel_xid != None,
+                    Game.voice_channel_xid.isnot(None),
                     datetime.utcnow() - timedelta(minutes=10) >= Game.updated_at,
                 )
             )
@@ -468,7 +468,7 @@ class Game(Base):
                 and_(
                     Game.created_at >= datetime.utcnow() - timedelta(hours=1),
                     Game.status == "started",
-                    Game.channel_xid != None,
+                    Game.channel_xid.isnot(None),
                 )
             )
             .group_by(Game.guild_xid, Game.channel_xid)
