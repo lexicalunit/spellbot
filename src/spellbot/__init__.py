@@ -2127,6 +2127,7 @@ class SpellBot(discord.Client):
         * `power <on|off>`: Turns the power command on or off for this server.
         * `voice <on|off>`: When on, SpellBot will automatically create voice channels.
         * `tags <on|off>`: Turn on or off the ability to use tags on your server.
+        * `smotd <your message>`: Set the server message of the day.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
@@ -2169,6 +2170,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_voice(session, server, params[1:], message)
             elif command == "tags":
                 await self.spellbot_tags(session, server, params[1:], message)
+            elif command == "smotd":
+                await self.spellbot_smotd(session, server, params[1:], message)
             else:
                 await message.channel.send(
                     s(
@@ -2353,11 +2356,6 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        server = (
-            session.query(Server)
-            .filter(Server.guild_xid == message.channel.guild.id)
-            .one_or_none()
-        )
         server.expire = expire  # type: ignore
         session.commit()
         await message.channel.send(
@@ -2427,11 +2425,6 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        server = (
-            session.query(Server)
-            .filter(Server.guild_xid == message.channel.guild.id)
-            .one_or_none()
-        )
         setting = params[0].lower()
         server.power_enabled = setting == "on"  # type: ignore
         session.commit()
@@ -2461,11 +2454,6 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        server = (
-            session.query(Server)
-            .filter(Server.guild_xid == message.channel.guild.id)
-            .one_or_none()
-        )
         setting = params[0].lower()
         server.create_voice = setting == "on"  # type: ignore
         session.commit()
@@ -2495,11 +2483,6 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        server = (
-            session.query(Server)
-            .filter(Server.guild_xid == message.channel.guild.id)
-            .one_or_none()
-        )
         setting = params[0].lower()
         server.tags_enabled = setting == "on"  # type: ignore
         session.commit()
@@ -2510,6 +2493,24 @@ class SpellBot(discord.Client):
                 setting=setting,
             )
         )
+        await safe_react_ok(message)
+
+    async def spellbot_smotd(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        motd = " ".join(params)
+        reply = f"<@{cast(discord.User, message.author).id}>"
+        if len(motd) >= 255:
+            await message.channel.send(s("spellbot_smotd_too_long", reply=reply))
+            await safe_react_error(message)
+            return
+        server.smotd = motd  # type: ignore
+        session.commit()
+        await message.channel.send(s("spellbot_smotd", reply=reply, motd=motd))
         await safe_react_ok(message)
 
     async def spellbot_config(
@@ -2540,6 +2541,8 @@ class SpellBot(discord.Client):
         if server.teams:
             teams_str = ", ".join(sorted(team.name for team in server.teams))
             embed.add_field(name="Teams", value=teams_str)
+        if server.smotd:
+            embed.add_field(name="MOTD", value=server.smotd or "", inline=False)
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
         await message.channel.send(embed=embed)

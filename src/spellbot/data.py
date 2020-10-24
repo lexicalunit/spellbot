@@ -58,6 +58,7 @@ class Server(Base):
     power_enabled = Column(Boolean, nullable=False, server_default=true())
     tags_enabled = Column(Boolean, nullable=False, server_default=true())
     create_voice = Column(Boolean, nullable=False, server_default=false())
+    smotd = Column(String(255))
     games = relationship("Game", back_populates="server", uselist=True)
     channels = relationship("Channel", back_populates="server", uselist=True)
     teams = relationship("Team", back_populates="server", uselist=True)
@@ -541,6 +542,8 @@ class Game(Base):
             description += (
                 "Please exchange Arena contact information and head over there to play!"
             )
+        if self.server.smotd:
+            description += f"\n\n{self.server.smotd}"
         embed.description = description
 
         if self.voice_channel_xid:

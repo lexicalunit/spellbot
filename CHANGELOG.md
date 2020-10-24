@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds support for a server wide message of the day setting.
+
 ## [v5.4.6](https://github.com/lexicalunit/spellbot/releases/tag/v5.4.6) - 2020-10-23
 
 ### Fixed
