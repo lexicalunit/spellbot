@@ -196,6 +196,15 @@ async def safe_delete_message(message: discord.Message) -> None:
 
 async def safe_send_user(user: discord.User, *args, **kwargs) -> None:
     try:
+        if not hasattr(user, "send"):
+            # Very rarely we get a ClientUser object here instead of a User. I have
+            # no idea why this happens but a ClientUser does not have a send() method.
+            # For now let's log this and return nothing.
+            logger.warning(
+                "warning: discord (DM): could not send message to ClientUser (%s)",
+                str(user),
+            )
+            return None
         await user.send(*args, **kwargs)
     except discord.errors.Forbidden as e:
         # User may have the bot blocked or they may have DMs only allowed for friends.

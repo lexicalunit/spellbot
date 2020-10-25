@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Adds some notes about using a staging environment on heroku.
 - Privacy settings for MOTD.
+- Adds a warning for a very rare exception that I have observed happening.
 
 ## [v5.5.3](https://github.com/lexicalunit/spellbot/releases/tag/v5.5.3) - 2020-10-24
 
