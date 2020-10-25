@@ -55,6 +55,7 @@ class Server(Base):
     prefix = Column(String(10), nullable=False, default="!")
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
     links = Column(String(10), nullable=False, server_default=text("'public'"))
+    motd = Column(String(10), nullable=False, server_default=text("'both'"))
     power_enabled = Column(Boolean, nullable=False, server_default=true())
     tags_enabled = Column(Boolean, nullable=False, server_default=true())
     create_voice = Column(Boolean, nullable=False, server_default=false())
@@ -501,6 +502,15 @@ class Game(Base):
 
     def to_embed(self, dm: bool = False, wait: Optional[float] = None) -> discord.Embed:
         prefix = self.server.prefix
+        show_motd = (
+            True
+            if self.server.motd == "both"
+            else True
+            if dm and self.server.motd == "private"
+            else True
+            if not dm and self.server.motd == "public"
+            else False
+        )
         show_link = True if dm else self.server.links == "public"
         if self.status == "pending":
             remaining = int(self.size) - len(cast(List[User], self.users))
@@ -542,7 +552,7 @@ class Game(Base):
             description += (
                 "Please exchange Arena contact information and head over there to play!"
             )
-        if self.server.smotd:
+        if self.server.smotd and show_motd:
             description += f"\n\n{self.server.smotd}"
         embed.description = description
 
