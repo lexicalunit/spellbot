@@ -82,6 +82,10 @@ spellbot_links_bad: Sorry $reply, but $input is not a valid setting. I was expec
 spellbot_links_none: Sorry $reply, but please provide a links privacy setting.
 spellbot_missing_subcommand: Sorry $reply, please provide a subcommand when using
   this command.
+spellbot_motd: 'Right on, $reply. This server''s MOTD privacy setting is now: $setting.'
+spellbot_motd_bad: Sorry $reply, but $input is not a valid setting. I was expecting
+  "private", "public", or "both".
+spellbot_motd_none: Sorry $reply, but please provide a MOTD privacy setting.
 spellbot_power: Ok $reply, I've turned the power command $setting.
 spellbot_power_bad: Sorry $reply, but please provide an "on" or "off" setting.
 spellbot_prefix: Ok $reply, I will now use "$prefix" as my command prefix on this

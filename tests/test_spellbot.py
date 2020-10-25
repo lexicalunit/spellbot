@@ -570,8 +570,9 @@ class TestSpellBot:
             "Active channels": "all",
             "Command prefix": "$",
             "Inactivity expiration time": "45 minutes",
-            "Links": "Public",
-            "MOTD": "Hello!",
+            "Links privacy": "Public",
+            "MOTD privacy": "Both",
+            "Server MOTD": "Hello!",
             "Power": "On",
             "Tags": "On",
             "Voice channels": "Off",
@@ -2965,7 +2966,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(admin, channel, "!spellbot config"))
         about = channel.last_sent_embed
         fields = {f["name"]: f["value"] for f in about["fields"]}
-        assert fields["MOTD"] == "something"
+        assert fields["Server MOTD"] == "something"
 
         await client.on_message(MockMessage(admin, channel, "!spellbot smotd"))
         assert channel.last_sent_response == (
@@ -2974,7 +2975,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(admin, channel, "!spellbot config"))
         about = channel.last_sent_embed
         fields = {f["name"]: f["value"] for f in about["fields"]}
-        assert "MOTD" not in fields
+        assert fields["Server MOTD"] == "None"
 
     async def test_on_message_spellbot_smotd_too_long(self, client, channel_maker):
         admin = an_admin()
@@ -2984,6 +2985,53 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f"Sorry <@{admin.id}>, but that message is too long."
         )
+
+    async def test_on_message_spellbot_motd_none(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot motd"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but please provide a MOTD privacy setting."
+        )
+
+    async def test_on_message_spellbot_motd_invalid(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot motd foo"))
+        assert channel.last_sent_response == (
+            f"Sorry <@{author.id}>, but foo is not a valid setting."
+            ' I was expecting "private", "public", or "both".'
+        )
+
+    async def test_on_message_spellbot_motd_private(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        admin = an_admin()
+        await client.on_message(MockMessage(admin, channel, "!spellbot smotd foobar"))
+        await client.on_message(MockMessage(admin, channel, "!spellbot motd private"))
+        assert channel.last_sent_response == (
+            f"Right on, <@{admin.id}>. "
+            "This server's MOTD privacy setting is now: private."
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
+        assert "foobar" in game_embed_for(client, AMY, False, dm=True)["description"]
+        assert "foobar" not in game_embed_for(client, AMY, False, dm=False)["description"]
+
+    async def test_on_message_spellbot_motd_public(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        admin = an_admin()
+        await client.on_message(MockMessage(admin, channel, "!spellbot smotd foobar"))
+        await client.on_message(MockMessage(admin, channel, "!spellbot motd public"))
+        assert channel.last_sent_response == (
+            f"Right on, <@{admin.id}>. "
+            "This server's MOTD privacy setting is now: public."
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
+        assert "foobar" not in game_embed_for(client, AMY, False, dm=True)["description"]
+        assert "foobar" in game_embed_for(client, AMY, False, dm=False)["description"]
 
     async def test_paginate(self):
         def subject(text):

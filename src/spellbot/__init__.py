@@ -2128,6 +2128,7 @@ class SpellBot(discord.Client):
         * `voice <on|off>`: When on, SpellBot will automatically create voice channels.
         * `tags <on|off>`: Turn on or off the ability to use tags on your server.
         * `smotd <your message>`: Set the server message of the day.
+        * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
@@ -2172,6 +2173,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_tags(session, server, params[1:], message)
             elif command == "smotd":
                 await self.spellbot_smotd(session, server, params[1:], message)
+            elif command == "motd":
+                await self.spellbot_motd(session, server, params[1:], message)
             else:
                 await message.channel.send(
                     s(
@@ -2513,6 +2516,46 @@ class SpellBot(discord.Client):
         await message.channel.send(s("spellbot_smotd", reply=reply, motd=motd))
         await safe_react_ok(message)
 
+    async def spellbot_motd(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        if not params:
+            await message.channel.send(
+                s(
+                    "spellbot_motd_none",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                )
+            )
+            await safe_react_error(message)
+            return
+
+        motd_str = params[0].lower()
+        if motd_str not in ["private", "public", "both"]:
+            await message.channel.send(
+                s(
+                    "spellbot_motd_bad",
+                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    input=params[0],
+                )
+            )
+            await safe_react_error(message)
+            return
+
+        server.motd = motd_str  # type: ignore
+        session.commit()
+        await message.channel.send(
+            s(
+                "spellbot_motd",
+                reply=f"<@{cast(discord.User, message.author).id}>",
+                setting=motd_str,
+            )
+        )
+        await safe_react_ok(message)
+
     async def spellbot_config(
         self,
         session: Session,
@@ -2531,7 +2574,8 @@ class SpellBot(discord.Client):
         else:
             channels_str = "all"
         embed.add_field(name="Active channels", value=channels_str)
-        embed.add_field(name="Links", value=server.links.title())
+        embed.add_field(name="Links privacy", value=server.links.title())
+        embed.add_field(name="MOTD privacy", value=str(server.motd).title())
         embed.add_field(name="Power", value="On" if server.power_enabled else "Off")
         embed.add_field(name="Tags", value="On" if server.tags_enabled else "Off")
         embed.add_field(
@@ -2541,8 +2585,7 @@ class SpellBot(discord.Client):
         if server.teams:
             teams_str = ", ".join(sorted(team.name for team in server.teams))
             embed.add_field(name="Teams", value=teams_str)
-        if server.smotd:
-            embed.add_field(name="MOTD", value=server.smotd or "", inline=False)
+        embed.add_field(name="Server MOTD", value=server.smotd or "None", inline=False)
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
         await message.channel.send(embed=embed)
