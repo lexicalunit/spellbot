@@ -23,5 +23,12 @@ def upgrade():
 
 def downgrade():
     with op.batch_alter_table("servers") as b:
-        b.add_column(sa.Column("scope", sa.VARCHAR(length=10), nullable=False))
+        b.add_column(
+            sa.Column(
+                "scope",
+                sa.VARCHAR(length=10),
+                nullable=False,
+                server_default=sa.text("'server'"),
+            )
+        )
         b.add_column(sa.Column("friendly", sa.BOOLEAN(), nullable=True))

@@ -56,7 +56,17 @@ def patch_discord():
 
 
 @pytest.fixture
-def client(monkeypatch, mocker, patch_discord, tmp_path):
+def mock_background_tasks(monkeypatch):
+    """Don't actually run any of the background tasks during tests."""
+    monkeypatch.setattr(
+        spellbot.tasks,  # type: ignore
+        "begin_background_tasks",
+        MagicMock(),
+    )
+
+
+@pytest.fixture
+def client(monkeypatch, mocker, patch_discord, mock_background_tasks, tmp_path):
     # Define which users are on this Discord server.
     global ALL_USERS
     ALL_USERS = SERVER_MEMBERS + [PUNK, BOT]
@@ -64,9 +74,6 @@ def client(monkeypatch, mocker, patch_discord, tmp_path):
     # Keep track of strings used in the test suite.
     monkeypatch.setattr(spellbot, "s", S_SPY)
     monkeypatch.setattr(spellbot.operations, "s", S_SPY)  # type: ignore
-
-    # Don't actually begin background tasks during tests.
-    monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())
 
     # Fallback to using sqlite for tests, but use the environment variable if it's set.
     (tmp_path / "spellbot.db").touch()
