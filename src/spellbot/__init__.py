@@ -72,7 +72,6 @@ from spellbot.operations import (
     safe_create_category_channel,
     safe_create_invite,
     safe_create_voice_channel,
-    safe_delete_channel,
     safe_edit_message,
     safe_fetch_channel,
     safe_fetch_guild,
@@ -84,6 +83,7 @@ from spellbot.operations import (
     safe_remove_reaction,
     safe_send_user,
 )
+from spellbot.tasks import begin_background_tasks
 
 load_dotenv()
 
@@ -378,170 +378,6 @@ class SpellBot(discord.Client):
             except redis.exceptions.RedisError as e:
                 logger.exception("redis error: %s", e)
         return None
-
-    def _begin_background_tasks(self, loop: asyncio.AbstractEventLoop) -> None:
-        """Start up any periodic background tasks."""
-        self.cleanup_expired_games_task(loop)
-        self.cleanup_old_voice_channels_task(loop)
-        self.update_metrics_task(loop)
-        self.update_average_wait_times_task(loop)
-
-        # TODO: Make this manually triggered.
-        # self.cleanup_started_games_task(loop)
-
-    def cleanup_expired_games_task(self, loop: asyncio.AbstractEventLoop) -> None:
-        """Starts a task that culls old games."""
-        TWO_MINUTES = 120
-
-        async def task() -> None:
-            while True:
-                await asyncio.sleep(TWO_MINUTES)
-                await self.cleanup_expired_games()
-
-        loop.create_task(task())
-
-    async def cleanup_expired_games(self) -> None:
-        """Culls games older than the given window of minutes."""
-        logger.info("starting expired games cleanup task...")
-
-        to_delete_args = []
-        async with self.session() as session:
-            expired = Game.expired(session)
-            for game in expired:
-                if not game.is_expired():
-                    continue
-
-                if game.guild_xid and game.channel_xid and game.message_xid:
-                    to_delete_args.append(
-                        {
-                            "guild_xid": game.guild_xid,
-                            "channel_xid": game.channel_xid,
-                            "message_xid": game.message_xid,
-                        }
-                    )
-
-                for user in game.users:
-                    # Make sure the user is still waiting and still in the
-                    # game that's being deleted, they could be in a new
-                    # game now due to how async processing works.
-                    if user.waiting and user.game_id == game.id:
-                        user.game_id = None
-
-                # cascade delete tag associations
-                game.tags = []  # type: ignore
-                session.delete(game)
-            session.commit()
-
-        for args in to_delete_args:
-            async with self.channel_lock(args["channel_xid"]):
-                await self.try_to_delete_message(**args)
-
-    def cleanup_old_voice_channels_task(self, loop: asyncio.AbstractEventLoop) -> None:
-        """Starts a task that deletes old voice channels."""
-        TEN_MINUTES = 600
-
-        async def task() -> None:
-            while True:
-                await self.cleanup_old_voice_channels()
-                await asyncio.sleep(TEN_MINUTES)
-
-        loop.create_task(task())
-
-    async def cleanup_old_voice_channels(self) -> None:
-        """Checks for and deletes any bot created voice channels that are empty."""
-        logger.info("starting old voice channels cleanup task...")
-        async with self.session() as session:
-            for game in Game.voiced(session):
-                assert game.voice_channel_xid
-                chan = await safe_fetch_channel(
-                    self, game.voice_channel_xid, game.guild_xid
-                )
-                if not chan:
-                    game.voice_channel_xid = None  # type: ignore
-                    game.voice_channel_invite = None  # type: ignore
-                    continue
-
-                if not chan.voice_states.keys():  # type: ignore
-                    await safe_delete_channel(chan, game.guild_xid)
-                    game.voice_channel_xid = None  # type: ignore
-                    game.voice_channel_invite = None  # type: ignore
-            session.commit()
-
-    def cleanup_started_games_task(self, loop: asyncio.AbstractEventLoop) -> None:
-        """Starts a task that culls old games."""
-        FOUR_HOURS = 14400
-
-        async def task() -> None:
-            while True:
-                await asyncio.sleep(FOUR_HOURS)
-                await self.cleanup_started_games()
-
-        loop.create_task(task())
-
-    async def cleanup_started_games(self) -> None:
-        """Culls games older than the given window of minutes."""
-        logger.info("starting started games cleanup task...")
-        async with self.session() as session:
-            games = session.query(Game).filter(Game.status == "started").all()
-            for game in games:
-                game.tags = []  # cascade delete tag associations
-                session.delete(game)
-            session.commit()
-
-    def update_metrics_task(self, loop: asyncio.AbstractEventLoop) -> None:
-        """Starts a task that updates some metrics about this bot."""
-        if not self.metrics_db:
-            return
-
-        ONE_HOUR = 3600
-
-        async def task() -> None:
-            while True:
-                await self.update_metrics()
-                await asyncio.sleep(ONE_HOUR)
-
-        loop.create_task(task())
-
-    async def update_metrics(self) -> None:
-        if not self.metrics_db:
-            return
-
-        logger.info("starting update metrics task...")
-        async with self.session() as session:
-            games = session.query(Game).filter(Game.status == "started").count()
-            servers = session.query(Server).count()
-            users = session.query(User).count()
-            recent = Game.recent_metrics(session)
-            try:
-                self.metrics_db.mset(
-                    {
-                        "servers": servers,
-                        "games": games,
-                        "users": users,
-                    }
-                )
-                self.metrics_db.mset({f"N{i}": count for i, count in enumerate(recent)})
-            except redis.exceptions.RedisError as e:
-                logger.exception("redis error: %s", e)
-
-    def update_average_wait_times_task(self, loop: asyncio.AbstractEventLoop) -> None:
-        """Starts a task that updates some metrics about average wait time to play."""
-        ONE_HOUR = 3600
-
-        async def task() -> None:
-            while True:
-                await self.update_average_wait_times()
-                await asyncio.sleep(ONE_HOUR)
-
-        loop.create_task(task())
-
-    async def update_average_wait_times(self) -> None:
-        logger.info("starting update average wait times task...")
-        async with self.session() as session:
-            self.average_wait_times = {}
-            avgs = Game.average_wait_times(session)
-            for avg in avgs:
-                self.average_wait_times[f"{avg[0]}-{avg[1]}"] = float(avg[2])
 
     def average_wait(self, game: Game) -> Optional[float]:
         return self.average_wait_times.get(f"{game.guild_xid}-{game.channel_xid}")
@@ -918,7 +754,7 @@ class SpellBot(discord.Client):
     async def on_ready(self) -> None:
         """Behavior when the client has successfully connected to Discord."""
         logger.debug("logged in as %s", self.user)
-        self._begin_background_tasks(self.loop)
+        begin_background_tasks(self)
 
     ##############################
     # Bot Command Functions
