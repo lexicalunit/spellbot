@@ -4,7 +4,7 @@ import json
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import pytest
 import pytz
@@ -158,23 +158,19 @@ def snap(snapshot):
 
 @pytest.mark.asyncio
 class TestSpellBot:
-    async def test_init_default(self, patch_discord, tmp_path, monkeypatch):
+    async def test_init_default(self, patch_discord, mock_background_tasks, tmp_path):
         (tmp_path / "spellbot.db").touch()
         connection_string = f"sqlite:///{tmp_path}/spellbot.db"
         db_url = spellbot.get_db_url("TEST_SPELLBOT_DB_URL", connection_string)
-
-        monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())
 
         bot = spellbot.SpellBot(db_url=db_url, mock_games=True)
 
         assert bot.loop
 
-    async def test_init_with_loop(self, patch_discord, tmp_path, monkeypatch):
+    async def test_init_with_loop(self, patch_discord, mock_background_tasks, tmp_path):
         (tmp_path / "spellbot.db").touch()
         connection_string = f"sqlite:///{tmp_path}/spellbot.db"
         db_url = spellbot.get_db_url("TEST_SPELLBOT_DB_URL", connection_string)
-
-        monkeypatch.setattr(spellbot.SpellBot, "_begin_background_tasks", MagicMock())
         loop = asyncio.get_event_loop()
 
         bot = spellbot.SpellBot(loop=loop, db_url=db_url, mock_games=True)
@@ -1846,82 +1842,6 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert user_has_game(client, AMY)
 
-    async def test_game_cleanup_started(self, client, freezer, channel_maker):
-        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
-        freezer.move_to(NOW)
-
-        channel = channel_maker.text()
-        mentions = [FRIEND, GUY, BUDDY, DUDE]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        cmd = f"!game {mentions_str}"
-        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
-        game = all_games(client)[0]
-        assert channel.last_sent_response == (
-            f"**Game {game['id']} created:**\n"
-            f"> Link: <{game['url']}>\n"
-            f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
-            f" <@{GUY.id}>, <@{DUDE.id}>"
-        )
-        player_response = game_embed_for(client, FRIEND, True)
-        assert FRIEND.last_sent_embed == player_response
-        assert GUY.last_sent_embed == player_response
-        assert BUDDY.last_sent_embed == player_response
-        assert DUDE.last_sent_embed == player_response
-
-        assert user_has_game(client, FRIEND)
-
-        freezer.move_to(NOW + timedelta(days=3))
-        await client.cleanup_started_games()
-
-        assert not user_has_game(client, FRIEND)
-
-    async def test_game_cleanup_expired(self, client, freezer, channel_maker):
-        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
-        freezer.move_to(NOW)
-
-        channel = channel_maker.text()
-        await client.on_message(MockMessage(GUY, channel, "!lfg"))
-        post = channel.last_sent_message
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-        assert user_has_game(client, GUY)
-
-        freezer.move_to(NOW + timedelta(days=3))
-        await client.cleanup_expired_games()
-
-        assert not user_has_game(client, GUY)
-
-        # post.delete.assert_called()
-        assert post.last_edited_call == {
-            "args": ("Sorry, this game was expired due to inactivity.",),
-            "kwargs": {},
-        }
-
-    async def test_game_cleanup_expired_after_left(self, client, freezer, channel_maker):
-        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
-        freezer.move_to(NOW)
-
-        channel = channel_maker.text()
-        await client.on_message(MockMessage(GUY, channel, "!lfg"))
-        post = channel.last_sent_message
-        assert channel.last_sent_embed == game_embed_for(client, GUY, False)
-
-        assert user_has_game(client, GUY)
-
-        client.mock_disconnect_user(GUY)
-
-        freezer.move_to(NOW + timedelta(days=3))
-        await client.cleanup_expired_games()
-
-        assert not user_has_game(client, GUY)
-        assert len(GUY.all_sent_calls) == 0
-
-        # post.delete.assert_called()
-        assert post.last_edited_call == {
-            "args": ("Sorry, this game was expired due to inactivity.",),
-            "kwargs": {},
-        }
-
     async def test_on_message_export_non_admin(self, client, channel_maker):
         channel = channel_maker.text()
         author = GUY
@@ -2179,85 +2099,6 @@ class TestSpellBot:
         assert amy_embed == game_embed_for(client, JACOB, True)
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
         assert "Join your voice chat now" not in amy_embed["description"]
-
-    async def test_cleanup_voice_channels(
-        self, client, channel_maker, monkeypatch, freezer
-    ):
-        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
-        freezer.move_to(NOW)
-
-        channel = channel_maker.text()
-        author = an_admin()
-        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
-
-        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
-        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
-
-        mock_voice_channel = channel_maker.voice("whatever", [])
-        mock_get_channel = Mock(return_value=mock_voice_channel)
-        monkeypatch.setattr(client, "get_channel", mock_get_channel)
-
-        await client.cleanup_old_voice_channels()
-        mock_voice_channel.delete.assert_not_called()
-
-        freezer.move_to(NOW + timedelta(days=3))
-        await client.cleanup_old_voice_channels()
-        mock_voice_channel.delete.assert_called()
-        assert game_json_for(client, AMY)["voice_channel_xid"] is None
-
-    async def test_cleanup_voice_channels_error_fetch_channel(
-        self, client, channel_maker, monkeypatch, freezer
-    ):
-        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
-        freezer.move_to(NOW)
-
-        channel = channel_maker.text()
-        author = an_admin()
-        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
-
-        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
-        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
-
-        mock_get_channel = Mock(return_value=None)
-        mock_fetch_channel = AsyncMock(return_value=None)
-        monkeypatch.setattr(client, "get_channel", mock_get_channel)
-        monkeypatch.setattr(client, "fetch_channel", mock_fetch_channel)
-
-        freezer.move_to(NOW + timedelta(days=3))
-        await client.cleanup_old_voice_channels()
-
-        mock_get_channel.assert_called()
-        mock_fetch_channel.assert_called()
-        assert game_json_for(client, AMY)["voice_channel_xid"] is None
-
-    async def test_cleanup_voice_channels_in_use(
-        self, client, channel_maker, monkeypatch, freezer
-    ):
-        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
-        freezer.move_to(NOW)
-
-        channel = channel_maker.text()
-        author = an_admin()
-        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
-
-        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
-        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
-        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
-
-        mock_voice_channel = channel_maker.voice("whatever", [AMY, JACOB])
-        mock_get_channel = Mock(return_value=mock_voice_channel)
-        monkeypatch.setattr(client, "get_channel", mock_get_channel)
-
-        freezer.move_to(NOW + timedelta(days=3))
-        await client.cleanup_old_voice_channels()
-
-        mock_voice_channel.delete.assert_not_called()
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_on_message_power_no_params(self, client, channel_maker, channel_type):

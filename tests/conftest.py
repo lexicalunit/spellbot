@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from .mocks.client import channel_maker, client, patch_discord
+from .mocks.client import channel_maker, client, mock_background_tasks, patch_discord
 
 # Ensure that TestMeta runs last as those tests require the entire test suite
 # to have finished before they can can start. The other test suites could
@@ -8,6 +8,7 @@ from .mocks.client import channel_maker, client, patch_discord
 SUITE_ORDER = [
     "TestSpellBot",
     "TestOperations",
+    "TestTasks",
     "TestMigrations",
     "TestCodebase",
     "TestMeta",
