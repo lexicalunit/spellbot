@@ -743,6 +743,10 @@ class SpellBot(discord.Client):
             if not private and not is_admin and not is_owner:
                 async with self.session() as session:
                     server = self.ensure_server_exists(session, message.channel.guild.id)
+                    server_name = str(message.channel.guild)[0:50]
+                    if not server.cached_name or server.cached_name != server_name:
+                        server.cached_name = server_name  # type: ignore
+                        session.commit()
                     if not server.bot_allowed_in(message.channel.id):
                         return
             await self.process(message, prefix)

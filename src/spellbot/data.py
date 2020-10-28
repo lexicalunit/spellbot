@@ -51,6 +51,7 @@ Base = declarative_base()
 class Server(Base):
     __tablename__ = "servers"
     guild_xid = Column(BigInteger, primary_key=True, nullable=False)
+    cached_name = Column(String(50))
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     prefix = Column(String(10), nullable=False, default="!")
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
