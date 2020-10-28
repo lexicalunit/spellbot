@@ -69,6 +69,25 @@ class Server(Base):
             channel.channel_xid == channel_xid for channel in self.channels
         )
 
+    @classmethod
+    def recent_metrics(cls, session: Session) -> dict:
+        data = [
+            row[1]
+            for row in (
+                session.query(
+                    func.date(Server.created_at).label("day"),
+                    func.count(Server.guild_xid),
+                )
+                .filter(
+                    Server.created_at >= datetime.utcnow() - timedelta(days=5),
+                )
+                .group_by("day")
+                .order_by(desc("day"))
+                .all()
+            )
+        ]
+        return {f"servers_{i}": count for i, count in enumerate(data)}
+
     def games_data(self) -> Dict[str, List[str]]:
         data: Dict[str, List[str]] = {
             "id": [],
@@ -194,6 +213,25 @@ class User(Base):
     power = Column(Integer, nullable=True)
     game = relationship("Game", back_populates="users")
 
+    @classmethod
+    def recent_metrics(cls, session: Session) -> dict:
+        data = [
+            row[1]
+            for row in (
+                session.query(
+                    func.date(User.created_at).label("day"),
+                    func.count(User.xid),
+                )
+                .filter(
+                    User.created_at >= datetime.utcnow() - timedelta(days=5),
+                )
+                .group_by("day")
+                .order_by(desc("day"))
+                .all()
+            )
+        ]
+        return {f"users_{i}": count for i, count in enumerate(data)}
+
     @property
     def waiting(self) -> bool:
         if self.game and self.game.status in ["pending", "ready"]:
@@ -318,8 +356,8 @@ class Game(Base):
     reports = relationship("Report", back_populates="game", uselist=True)
 
     @classmethod
-    def recent_metrics(cls, session: Session) -> List[int]:
-        return [
+    def recent_metrics(cls, session: Session) -> dict:
+        data = [
             row[1]
             for row in (
                 session.query(
@@ -337,6 +375,7 @@ class Game(Base):
                 .all()
             )
         ]
+        return {f"games_{i}": count for i, count in enumerate(data)}
 
     @property
     def power(self) -> Optional[float]:
