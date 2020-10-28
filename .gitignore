@@ -6,6 +6,8 @@
 /db
 /tmp
 /.vscode
+/sql/*.csv
+/sql/*.data
 
 ########################################################################
 # https://github.com/github/gitignore/blob/master/Global/Windows.gitignore
