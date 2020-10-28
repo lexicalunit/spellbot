@@ -91,7 +91,14 @@ async def update_metrics(bot: SpellBot) -> None:
         games = session.query(Game).filter(Game.status == "started").count()
         servers = session.query(Server).count()
         users = session.query(User).count()
-        recent = Game.recent_metrics(session)
+        recent_games = Game.recent_metrics(session)
+        recent_users = User.recent_metrics(session)
+        recent_servers = Server.recent_metrics(session)
+        recent_metrics = {
+            **recent_games,
+            **recent_users,
+            **recent_servers,
+        }
         try:
             bot.metrics_db.mset(
                 {
@@ -100,7 +107,8 @@ async def update_metrics(bot: SpellBot) -> None:
                     "users": users,
                 }
             )
-            bot.metrics_db.mset({f"N{i}": count for i, count in enumerate(recent)})
+            if recent_metrics:
+                bot.metrics_db.mset(recent_metrics)
         except redis.exceptions.RedisError as e:
             logger.exception("redis error: %s", e)
 
