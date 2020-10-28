@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.7.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.7.0) - 2020-10-27
+
 ### Added
 
 - Adds name caching for servers.
