@@ -135,6 +135,10 @@ class MockMember:
         return Permissions(self.admin)
 
     @property
+    def mention(self):
+        return f"<@{self.id}>"
+
+    @property
     def last_sent_call(self):
         args, kwargs = self.sent.call_args
         return {"args": args, "kwargs": kwargs}

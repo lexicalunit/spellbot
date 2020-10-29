@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Refactor much of the codebase to use the member mention property.
+
 ### Added
 
 - Adds a bunch of SQL scripts that can generate some interesting data sets.

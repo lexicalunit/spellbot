@@ -614,7 +614,7 @@ class Game(Base):
             players = ", ".join(
                 sorted(
                     [
-                        f"<@{user.xid}>"
+                        f"<@{user.xid}>"  # Support <@!USERID> for server nick?
                         + (
                             f" (Power: {user.power})"
                             if (user.power and self.server.power_enabled)

@@ -218,8 +218,7 @@ def is_admin(
 async def check_is_admin(message: discord.Message) -> bool:
     """Checks if author of message is admin, alert the channel if they are not."""
     if not is_admin(message.channel, message.author):
-        user_xid = cast(discord.User, message.author).id
-        await message.channel.send(s("not_admin", reply=f"<@{user_xid}>"))
+        await message.channel.send(s("not_admin", reply=message.author.mention))
         return False
     return True
 
@@ -562,7 +561,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "not_a_command",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     request=request,
                     prefix=prefix,
                 )
@@ -573,7 +572,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "did_you_mean",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     possible=possible,
                 )
             )
@@ -583,7 +582,7 @@ class SpellBot(discord.Client):
         method = getattr(self, command)
         if not method.allow_dm and str(message.channel.type) == "private":
             author_user = cast(discord.User, message.author)
-            await safe_send_user(author_user, s("no_dm", reply=f"<@{author_user.id}>"))
+            await safe_send_user(author_user, s("no_dm", reply=message.author.mention))
             return
         if method.admin_only and not await check_is_admin(message):
             return
@@ -882,8 +881,7 @@ class SpellBot(discord.Client):
 
     async def _validate_size(self, msg: discord.Message, size: Optional[int]) -> bool:
         if not size or not (1 < size < 5):
-            user_xid = cast(discord.User, msg.author).id
-            await msg.channel.send(s("game_size_bad", reply=f"<@{user_xid}>"))
+            await msg.channel.send(s("game_size_bad", reply=msg.author.mention))
             return False
         return True
 
@@ -891,15 +889,13 @@ class SpellBot(discord.Client):
         self, msg: discord.Message, mentions: List[Any], size: int
     ) -> bool:
         if len(mentions) >= size:
-            user_xid = cast(discord.User, msg.author).id
-            await msg.channel.send(s("lfg_too_many_mentions", reply=f"<@{user_xid}>"))
+            await msg.channel.send(s("lfg_too_many_mentions", reply=msg.author.mention))
             return False
         return True
 
     async def _validate_tags_size(self, msg: discord.Message, tags: List[str]) -> bool:
         if len(tags) > 5:
-            user_xid = cast(discord.User, msg.author).id
-            await msg.channel.send(s("tags_too_many", reply=f"<@{user_xid}>"))
+            await msg.channel.send(s("tags_too_many", reply=msg.author.mention))
             return False
         return True
 
@@ -912,7 +908,7 @@ class SpellBot(discord.Client):
             await self.try_to_update_game(game_to_update)
 
     async def _respond_found_game(
-        self, msg: discord.Message, user: User, game: Game
+        self, msg: discord.Message, user: discord.User, game: Game
     ) -> Optional[discord.Message]:
         # TODO: games will always have a message_xid even tho it's nullable in the db...
         assert game.message_xid
@@ -923,7 +919,7 @@ class SpellBot(discord.Client):
         embed = discord.Embed()
         embed.set_thumbnail(url=ICO_URL)
         embed.set_author(name=s("play_found_title"))
-        embed.description = s("play_found_desc", reply=f"<@{user.xid}>", link=link)
+        embed.description = s("play_found_desc", reply=user.mention, link=link)
         embed.color = discord.Color(0x5A3EFD)
         await msg.channel.send(embed=embed)
         return post
@@ -1075,7 +1071,8 @@ class SpellBot(discord.Client):
         if new_game:
             post = await self._post_new_game(session, message, game)
         else:
-            post = await self._respond_found_game(message, user, game)
+            discord_user = cast(discord.User, message.author)
+            post = await self._respond_found_game(message, discord_user, game)
             if not post:  # the post must have been deleted
                 post = await self._post_new_game(session, message, game)
 
@@ -1132,7 +1129,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "report_wrong",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     prefix=prefix,
                 )
             )
@@ -1164,7 +1161,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "report_wrong",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     prefix=prefix,
                 )
             )
@@ -1182,7 +1179,7 @@ class SpellBot(discord.Client):
         """
         if len(params) < 2:
             await message.channel.send(
-                s("report_no_params", reply=f"<@{cast(discord.User, message.author).id}>")
+                s("report_no_params", reply=message.author.mention)
             )
             await safe_react_error(message)
             return
@@ -1191,9 +1188,7 @@ class SpellBot(discord.Client):
         report_str = " ".join(params[1:])
 
         if len(report_str) >= 255:
-            await message.channel.send(
-                s("report_too_long", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            await message.channel.send(s("report_too_long", reply=message.author.mention))
             await safe_react_error(message)
             return
 
@@ -1215,7 +1210,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "report_no_game",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                     )
                 )
                 await safe_react_error(message)
@@ -1225,7 +1220,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "report_not_started",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                     )
                 )
                 await safe_react_error(message)
@@ -1243,9 +1238,7 @@ class SpellBot(discord.Client):
             report = Report(game_id=game.id, report=report_str)
             session.add(report)
             session.commit()
-            await message.channel.send(
-                s("report", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            await message.channel.send(s("report", reply=message.author.mention))
             await safe_react_ok(message)
 
     @command(allow_dm=False, admin_only=False, help_group="Commands for Players")
@@ -1263,7 +1256,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "points",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     points=points,
                 )
             )
@@ -1274,7 +1267,7 @@ class SpellBot(discord.Client):
                     await message.channel.send(
                         s(
                             "points_team",
-                            reply=f"<@{cast(discord.User, message.author).id}>",
+                            reply=message.author.mention,
                             team=team,
                             points=team_points,
                         )
@@ -1307,15 +1300,11 @@ class SpellBot(discord.Client):
         & <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]
         """
         if not message.attachments:
-            await message.channel.send(
-                s("event_no_data", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            await message.channel.send(s("event_no_data", reply=message.author.mention))
             await safe_react_error(message)
             return
         if not params:
-            await message.channel.send(
-                s("event_no_params", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            await message.channel.send(s("event_no_params", reply=message.author.mention))
             await safe_react_error(message)
             return
 
@@ -1330,16 +1319,14 @@ class SpellBot(discord.Client):
         attachment = message.attachments[0]
 
         if len(tag_names) > 5:
-            await message.channel.send(
-                s("tags_too_many", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            await message.channel.send(s("tags_too_many", reply=message.author.mention))
             await safe_react_error(message)
             return
         if opt_msg and len(opt_msg) >= 255:
             await message.channel.send(
                 s(
                     "game_message_too_long",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -1348,15 +1335,13 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "event_bad_play_count",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
             return
         if not attachment.filename.lower().endswith(".csv"):
-            await message.channel.send(
-                s("event_not_csv", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            await message.channel.send(s("event_not_csv", reply=message.author.mention))
             await safe_react_error(message)
             return
 
@@ -1370,7 +1355,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "event_not_utf",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                     )
                 )
                 await safe_react_error(message)
@@ -1385,7 +1370,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "event_no_header",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                     )
                 )
                 await safe_react_error(message)
@@ -1492,9 +1477,7 @@ class SpellBot(discord.Client):
 
             if not event.games:
                 session.delete(event)
-                await message.channel.send(
-                    s("event_empty", reply=f"<@{cast(discord.User, message.author).id}>")
-                )
+                await message.channel.send(s("event_empty", reply=message.author.mention))
                 await safe_react_error(message)
                 return
 
@@ -1503,7 +1486,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "event_created",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     prefix=prefix,
                     event_id=event.id,
                     count=count,
@@ -1521,17 +1504,13 @@ class SpellBot(discord.Client):
         & <event id>
         """
         if not params:
-            await message.channel.send(
-                s("begin_no_params", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            await message.channel.send(s("begin_no_params", reply=message.author.mention))
             await safe_react_error(message)
             return
 
         event_id = to_int(params[0])
         if not event_id:
-            await message.channel.send(
-                s("begin_bad_event", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            await message.channel.send(s("begin_bad_event", reply=message.author.mention))
             await safe_react_error(message)
             return
 
@@ -1543,7 +1522,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "begin_bad_event",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                     )
                 )
                 await safe_react_error(message)
@@ -1553,7 +1532,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "begin_event_already_started",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                     )
                 )
                 await safe_react_error(message)
@@ -1562,6 +1541,7 @@ class SpellBot(discord.Client):
             for game in cast(List[Game], event.games):
                 # Can't rely on "<@{xid}>" working because the user could have logged out.
                 # But if we don't have the cached name, we just have to fallback to it.
+                # Support <@!USERID> for server nick?
                 sorted_names = sorted(
                     [user.cached_name or f"<@{user.xid}>" for user in game.users]
                 )
@@ -1596,7 +1576,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "game_created",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                         id=game.id,
                         url=game.url,
                         players=players_str,
@@ -1631,22 +1611,18 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "game_message_too_long",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
             return
         if tag_names and len(tag_names) > 5:
-            await message.channel.send(
-                s("tags_too_many", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            await message.channel.send(s("tags_too_many", reply=message.author.mention))
             await safe_react_error(message)
             return
 
         if not size or not (1 < size <= 4):
-            await message.channel.send(
-                s("game_size_bad", reply=f"<@{cast(discord.User, message.author).id}>")
-            )
+            await message.channel.send(s("game_size_bad", reply=message.author.mention))
             await safe_react_error(message)
             return
 
@@ -1654,7 +1630,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "game_too_many_mentions",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     size=size,
                 )
             )
@@ -1665,7 +1641,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "game_too_few_mentions",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     size=size,
                 )
             )
@@ -1716,12 +1692,13 @@ class SpellBot(discord.Client):
                     await discord_user.send(embed=player_response)
 
             players_str = ", ".join(
+                # Support <@!USERID> for server nick?
                 sorted([f"<@{user.xid}>" for user in mentioned_users])
             )
             await message.channel.send(
                 s(
                     "game_created",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     id=game.id,
                     url=game.url,
                     players=players_str,
@@ -1812,7 +1789,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "power_invalid",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                         prepend=prepend,
                     )
                 )
@@ -1869,9 +1846,7 @@ class SpellBot(discord.Client):
         async with self.session() as session:
             server = self.ensure_server_exists(session, message.channel.guild.id)
             if not server.teams:
-                await message.channel.send(
-                    s("team_none", reply=f"<@{cast(discord.User, message.author).id}>")
-                )
+                await message.channel.send(s("team_none", reply=message.author.mention))
                 await safe_react_error(message)
                 return
 
@@ -1887,7 +1862,7 @@ class SpellBot(discord.Client):
                     await message.channel.send(
                         s(
                             "team_not_set",
-                            reply=f"<@{cast(discord.User, message.author).id}>",
+                            reply=message.author.mention,
                         )
                     )
                     await safe_react_error(message)
@@ -1899,7 +1874,7 @@ class SpellBot(discord.Client):
                     await message.channel.send(
                         s(
                             "team_gone",
-                            reply=f"<@{cast(discord.User, message.author).id}>",
+                            reply=message.author.mention,
                         )
                     )
                     await safe_react_error(message)
@@ -1908,7 +1883,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "team_yours",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                         team=team.name,
                     )
                 )
@@ -1928,7 +1903,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "team_not_found",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                         teams=teams,
                     ),
                 )
@@ -1976,7 +1951,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_missing_subcommand",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2019,7 +1994,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "spellbot_unknown_subcommand",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                         command=command,
                     )
                 )
@@ -2036,7 +2011,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_channels_none",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2057,7 +2032,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "spellbot_channels_warn",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                         param=param,
                     )
                 )
@@ -2068,7 +2043,7 @@ class SpellBot(discord.Client):
                 await message.channel.send(
                     s(
                         "spellbot_channels_warn",
-                        reply=f"<@{cast(discord.User, message.author).id}>",
+                        reply=message.author.mention,
                         param=param,
                     )
                 )
@@ -2085,7 +2060,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_channels",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     channels="all channels",
                 )
             )
@@ -2096,7 +2071,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_channels",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     channels=channels_str,
                 )
             )
@@ -2113,7 +2088,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_prefix_none",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2125,7 +2100,7 @@ class SpellBot(discord.Client):
         await message.channel.send(
             s(
                 "spellbot_prefix",
-                reply=f"<@{cast(discord.User, message.author).id}>",
+                reply=message.author.mention,
                 prefix=prefix_str,
             )
         )
@@ -2142,7 +2117,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_links_none",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2153,7 +2128,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_links_bad",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     input=params[0],
                 )
             )
@@ -2165,7 +2140,7 @@ class SpellBot(discord.Client):
         await message.channel.send(
             s(
                 "spellbot_links",
-                reply=f"<@{cast(discord.User, message.author).id}>",
+                reply=message.author.mention,
                 setting=links_str,
             )
         )
@@ -2182,7 +2157,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_expire_none",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2193,7 +2168,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_expire_bad",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2204,7 +2179,7 @@ class SpellBot(discord.Client):
         await message.channel.send(
             s(
                 "spellbot_expire",
-                reply=f"<@{cast(discord.User, message.author).id}>",
+                reply=message.author.mention,
                 expire=expire,
             )
         )
@@ -2221,7 +2196,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_teams_none",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2233,7 +2208,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_teams_too_few",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2262,7 +2237,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_power_bad",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2274,7 +2249,7 @@ class SpellBot(discord.Client):
         await message.channel.send(
             s(
                 "spellbot_power",
-                reply=f"<@{cast(discord.User, message.author).id}>",
+                reply=message.author.mention,
                 setting=setting,
             )
         )
@@ -2291,7 +2266,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_voice_bad",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2303,7 +2278,7 @@ class SpellBot(discord.Client):
         await message.channel.send(
             s(
                 "spellbot_voice",
-                reply=f"<@{cast(discord.User, message.author).id}>",
+                reply=message.author.mention,
                 setting=setting,
             )
         )
@@ -2320,7 +2295,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_tags_bad",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2332,7 +2307,7 @@ class SpellBot(discord.Client):
         await message.channel.send(
             s(
                 "spellbot_tags",
-                reply=f"<@{cast(discord.User, message.author).id}>",
+                reply=message.author.mention,
                 setting=setting,
             )
         )
@@ -2346,7 +2321,7 @@ class SpellBot(discord.Client):
         message: discord.Message,
     ) -> None:
         motd = " ".join(params)
-        reply = f"<@{cast(discord.User, message.author).id}>"
+        reply = message.author.mention
         if len(motd) >= 255:
             await message.channel.send(s("spellbot_smotd_too_long", reply=reply))
             await safe_react_error(message)
@@ -2367,7 +2342,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_motd_none",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                 )
             )
             await safe_react_error(message)
@@ -2378,7 +2353,7 @@ class SpellBot(discord.Client):
             await message.channel.send(
                 s(
                     "spellbot_motd_bad",
-                    reply=f"<@{cast(discord.User, message.author).id}>",
+                    reply=message.author.mention,
                     input=params[0],
                 )
             )
@@ -2390,7 +2365,7 @@ class SpellBot(discord.Client):
         await message.channel.send(
             s(
                 "spellbot_motd",
-                reply=f"<@{cast(discord.User, message.author).id}>",
+                reply=message.author.mention,
                 setting=motd_str,
             )
         )
