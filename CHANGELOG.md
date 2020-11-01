@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Adds a bunch of SQL scripts that can generate some interesting data sets.
 - Adds a script to execute SQL scripts against a database to generate CSV files.
+- Adds exception handling for Discord API Internal Server Errors.
 
 ## [v5.7.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.7.0) - 2020-10-27
 

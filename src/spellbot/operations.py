@@ -32,6 +32,7 @@ async def safe_remove_reaction(
     except discord.errors.Forbidden:
         await message.channel.send(s("reaction_permissions_required"))
     except (
+        discord.errors.DiscordServerError,
         discord.errors.HTTPException,
         discord.errors.InvalidArgument,
         discord.errors.NotFound,
@@ -48,7 +49,10 @@ async def safe_clear_reactions(message: discord.Message) -> None:
         await message.clear_reactions()
     except discord.errors.Forbidden:
         await message.channel.send(s("reaction_permissions_required"))
-    except discord.errors.HTTPException as e:
+    except (
+        discord.errors.DiscordServerError,
+        discord.errors.HTTPException,
+    ) as e:
         logger.exception(
             "warning: discord (%s): could not clear reactions: %s",
             _user_or_guild_log_part(message),
@@ -69,6 +73,7 @@ async def safe_react_emoji(message: discord.Message, emoji: str) -> None:
             e,
         )
     except (
+        discord.errors.DiscordServerError,
         discord.errors.HTTPException,
         discord.errors.InvalidArgument,
     ) as e:
@@ -107,6 +112,7 @@ async def safe_fetch_message(
             e,
         )
     except (
+        discord.errors.DiscordServerError,
         discord.errors.Forbidden,
         discord.errors.HTTPException,
     ) as e:
@@ -135,6 +141,7 @@ async def safe_fetch_channel(
             e,
         )
     except (
+        discord.errors.DiscordServerError,
         discord.errors.Forbidden,
         discord.errors.HTTPException,
         discord.errors.InvalidData,
@@ -168,6 +175,7 @@ async def safe_edit_message(
     try:
         await message.edit(reason=reason, **options)
     except (
+        discord.errors.DiscordServerError,
         discord.errors.Forbidden,
         discord.errors.HTTPException,
         discord.errors.InvalidArgument,
@@ -183,6 +191,7 @@ async def safe_delete_message(message: discord.Message) -> None:
     try:
         await message.delete()
     except (
+        discord.errors.DiscordServerError,
         discord.errors.Forbidden,
         discord.errors.HTTPException,
         discord.errors.NotFound,
@@ -215,6 +224,7 @@ async def safe_send_user(user: discord.User, *args, **kwargs) -> None:
             e,
         )
     except (
+        discord.errors.DiscordServerError,
         discord.errors.HTTPException,
         discord.errors.InvalidArgument,
     ) as e:
@@ -238,6 +248,7 @@ async def safe_create_voice_channel(
     try:
         return await guild.create_voice_channel(name, category=category)
     except (
+        discord.errors.DiscordServerError,
         discord.errors.Forbidden,
         discord.errors.HTTPException,
         discord.errors.InvalidArgument,
@@ -260,6 +271,7 @@ async def safe_create_category_channel(
     try:
         return await guild.create_category_channel(name)
     except (
+        discord.errors.DiscordServerError,
         discord.errors.Forbidden,
         discord.errors.HTTPException,
         discord.errors.InvalidArgument,
@@ -276,6 +288,7 @@ async def safe_delete_channel(channel: ChannelType, guild_xid: int) -> None:
     try:
         await channel.delete()  # type: ignore
     except (
+        discord.errors.DiscordServerError,
         discord.errors.Forbidden,
         discord.errors.HTTPException,
         discord.errors.NotFound,
@@ -293,7 +306,10 @@ async def safe_create_invite(
     try:
         invite = await channel.create_invite(max_age=max_age)
         return cast(str, invite.url)
-    except discord.errors.HTTPException as e:
+    except (
+        discord.errors.DiscordServerError,
+        discord.errors.HTTPException,
+    ) as e:
         logger.exception(
             "warning: discord (guild %s): could create channel invite: %s",
             guild_xid,
@@ -312,6 +328,7 @@ async def safe_fetch_guild(
     try:
         return await client.fetch_guild(guild_xid)
     except (
+        discord.errors.DiscordServerError,
         discord.errors.Forbidden,
         discord.errors.HTTPException,
     ) as e:
