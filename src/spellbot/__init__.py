@@ -44,6 +44,7 @@ from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
 from spellbot.constants import (
     ADMIN_ROLE,
+    CLEAN_S,
     CREATE_ENDPOINT,
     DEFAULT_GAME_SIZE,
     EMOJI_DROP_GAME,
@@ -72,6 +73,7 @@ from spellbot.operations import (
     safe_create_category_channel,
     safe_create_invite,
     safe_create_voice_channel,
+    safe_delete_message,
     safe_edit_message,
     safe_fetch_channel,
     safe_fetch_guild,
@@ -558,7 +560,7 @@ class SpellBot(discord.Client):
 
         matching = [command for command in self.commands if command.startswith(request)]
         if not matching:
-            await message.channel.send(
+            post = await message.channel.send(
                 s(
                     "not_a_command",
                     reply=message.author.mention,
@@ -566,16 +568,18 @@ class SpellBot(discord.Client):
                     prefix=prefix,
                 )
             )
+            self.loop.call_later(CLEAN_S, asyncio.create_task, safe_delete_message(post))
             return
         if len(matching) > 1 and request not in matching:
             possible = ", ".join(f"{prefix}{m}" for m in matching)
-            await message.channel.send(
+            post = await message.channel.send(
                 s(
                     "did_you_mean",
                     reply=message.author.mention,
                     possible=possible,
                 )
             )
+            self.loop.call_later(CLEAN_S, asyncio.create_task, safe_delete_message(post))
             return
 
         command = request if request in matching else matching[0]

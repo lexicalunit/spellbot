@@ -23,3 +23,4 @@ EMOJI_JOIN_GAME = "✋"
 EMOJI_OK = "✅"
 
 VOICE_INVITE_EXPIRE_TIME_S = 600  # ten minutes, make this configurable?
+CLEAN_S = 7  # seconds before temporary messages by the bot get cleaned up, configurable?
