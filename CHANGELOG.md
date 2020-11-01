@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.7.2](https://github.com/lexicalunit/spellbot/releases/tag/v5.7.2) - 2020-11-01
+
 ### Added
 
 - Automatically cleanup usage warnings sent to users after a brief period of time.
