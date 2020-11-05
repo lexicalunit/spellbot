@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - The old `user_teams` table has been refactored into a generic `user_server_settings`
   that can contain any users settings related to a specific server, such as teams
   and verification status. The affected sql scripts have been updated.
+- Use privileged members intents to find members by name.
 
 ## [v5.9.3](https://github.com/lexicalunit/spellbot/releases/tag/v5.9.3) - 2020-11-18
 

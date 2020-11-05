@@ -320,7 +320,9 @@ class SpellBot(discord.Client):
         )
         if not loop:
             loop = asyncio.get_event_loop()
-        super().__init__(loop=loop)
+        intents = discord.Intents().default()
+        intents.members = True
+        super().__init__(loop=loop, intents=intents)
         self.token = token or ""
         self.auth = auth or ""
         self.mock_games = mock_games
@@ -1532,24 +1534,39 @@ class SpellBot(discord.Client):
             players_in_this_event: Set[str] = set()
             warnings = set()
 
-            members = message.channel.guild.members
-            member_lookup = {member.name.lower().strip(): member for member in members}
+            # reset find member cache for each processed !event command
+            FIND_MEMBER_CACHE: Dict[str, discord.User] = {}
+
+            # find users by name using members intents
+            def find_member(lowercase_name) -> Optional[discord.User]:
+                if lowercase_name in FIND_MEMBER_CACHE:
+                    return FIND_MEMBER_CACHE[lowercase_name]
+                found_user = discord.utils.find(
+                    lambda m: m.name.lower() == lowercase_name
+                    or (m.nick is not None and m.nick.lower() == lowercase_name),
+                    message.channel.guild.members,
+                )
+                if found_user:
+                    FIND_MEMBER_CACHE[lowercase_name] = found_user
+                return found_user
+
             for i, row in enumerate(reader):
                 csv_row_data = [row[column].strip() for column in columns]
                 players_s = ", ".join([f'"{value}"' for value in csv_row_data])
-                player_lnames = [
+                player_names = [
                     re.sub("#.*$", "", value.lower()).lstrip("@")
                     for value in csv_row_data
                 ]
 
-                if any(not lname for lname in player_lnames):
-                    warning = s("event_missing_player", row=i + 1, players=players_s)
-                    await safe_send_channel(message.channel, warning)
-                    continue
+                for player_name in player_names:
+                    if not find_member(player_name):
+                        warning = s("event_missing_player", row=i + 1, players=players_s)
+                        await safe_send_channel(message.channel, warning)
+                        continue
 
                 player_discord_users: List[discord.User] = []
-                for csv_data, lname in zip(csv_row_data, player_lnames):
-                    if lname in players_in_this_event:
+                for csv_data, player_name in zip(csv_row_data, player_names):
+                    if player_name in players_in_this_event:
                         await safe_send_channel(
                             message.channel,
                             s(
@@ -1561,9 +1578,9 @@ class SpellBot(discord.Client):
                         )
                         await safe_react_error(message)
                         return
-                    player_discord_user = member_lookup.get(lname)
+                    player_discord_user = find_member(player_name)
                     if player_discord_user:
-                        players_in_this_event.add(lname)
+                        players_in_this_event.add(player_name)
                         player_discord_users.append(player_discord_user)
                     else:
                         warnings.add(

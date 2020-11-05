@@ -106,6 +106,7 @@ def send_side_effect(*args, **kwargs):
 class MockMember:
     def __init__(self, member_name, member_id, roles=[], admin=False, owner=False):
         self.name = member_name
+        self.nick = None
         self.id = member_id
         self.roles = roles
         self.avatar_url = "http://example.com/avatar.png"
