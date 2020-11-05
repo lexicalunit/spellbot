@@ -63,6 +63,9 @@ class Server(Base):
     smotd = Column(String(255))
     games = relationship("Game", back_populates="server", uselist=True)
     channels = relationship("Channel", back_populates="server", uselist=True)
+    channel_settings = relationship(
+        "ChannelSettings", back_populates="server", uselist=True
+    )
     teams = relationship("Team", back_populates="server", uselist=True)
 
     def bot_allowed_in(self, channel_xid: int) -> bool:
@@ -176,6 +179,19 @@ class Channel(Base):
         index=True,
     )
     server = relationship("Server", back_populates="channels")
+
+
+class ChannelSettings(Base):
+    __tablename__ = "channel_settings"
+    channel_xid = Column(BigInteger, primary_key=True, nullable=False)
+    guild_xid = Column(
+        BigInteger,
+        ForeignKey("servers.guild_xid", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    default_size = Column(Integer, nullable=True)
+    server = relationship("Server", back_populates="channel_settings")
 
 
 games_tags = Table(

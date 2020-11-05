@@ -39,6 +39,7 @@ from expiringdict import ExpiringDict  # type: ignore
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import text
+from sqlalchemy.sql.expression import and_
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
@@ -57,6 +58,7 @@ from spellbot.constants import (
 )
 from spellbot.data import (
     Channel,
+    ChannelSettings,
     Data,
     Event,
     Game,
@@ -110,11 +112,11 @@ def to_int(s: str) -> Optional[int]:
         return None
 
 
-def parse_opts(params: List[str]) -> dict:
+def parse_opts(params: List[str], default_size: Optional[int] = None) -> dict:
     tags: List[str] = []
     first_pass: List[str] = []
     second_pass: List[str] = []
-    size: Optional[int] = DEFAULT_GAME_SIZE
+    size: Optional[int] = default_size or DEFAULT_GAME_SIZE
     msg: Optional[str] = None
     skip_next: bool = False
     system: str = "spelltable"
@@ -462,6 +464,28 @@ class SpellBot(discord.Client):
             session.add(server)
             session.commit()
         return cast(Server, server)
+
+    def ensure_channel_settings_exists(
+        self, session: Session, server: Server, channel_xid: int
+    ) -> ChannelSettings:
+        """Ensures that the channel settings row exists for the given guild/channel id."""
+        channel_settings = (
+            session.query(ChannelSettings)
+            .filter(
+                and_(
+                    ChannelSettings.guild_xid == server.guild_xid,
+                    ChannelSettings.channel_xid == channel_xid,
+                )
+            )
+            .one_or_none()
+        )
+        if not channel_settings:
+            channel_settings = ChannelSettings(
+                guild_xid=server.guild_xid, channel_xid=channel_xid
+            )
+            session.add(channel_settings)
+            session.commit()
+        return cast(ChannelSettings, channel_settings)
 
     async def ensure_available_voice_category(
         self, server: Server
@@ -1003,6 +1027,9 @@ class SpellBot(discord.Client):
         message: discord.Message,
     ) -> None:
         server = self.ensure_server_exists(session, message.channel.guild.id)
+        channel_settings = self.ensure_channel_settings_exists(
+            session, server, message.channel.id
+        )
         user = self.ensure_user_exists(session, message.author)
         mentions = message.mentions if message.channel.type != "private" else []
 
@@ -1011,7 +1038,7 @@ class SpellBot(discord.Client):
             await safe_react_ok(message)
             return
 
-        opts = parse_opts(params)
+        opts = parse_opts(params, default_size=channel_settings.default_size)
         size: Optional[int] = opts["size"]
         tag_names: List[str] = opts["tags"]
         system: str = opts["system"]
@@ -1312,44 +1339,53 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        opts = parse_opts(params)
-        params, tag_names, opt_msg, system = (
-            opts["params"],
-            opts["tags"],
-            opts["message"],
-            opts["system"],
-        )
-        size = len(params)
-        attachment = message.attachments[0]
-
-        if len(tag_names) > 5:
-            await message.channel.send(s("tags_too_many", reply=message.author.mention))
-            await safe_react_error(message)
-            return
-        if opt_msg and len(opt_msg) >= 255:
-            await message.channel.send(
-                s(
-                    "game_message_too_long",
-                    reply=message.author.mention,
-                )
-            )
-            await safe_react_error(message)
-            return
-        if not (1 < size <= 4):
-            await message.channel.send(
-                s(
-                    "event_bad_play_count",
-                    reply=message.author.mention,
-                )
-            )
-            await safe_react_error(message)
-            return
-        if not attachment.filename.lower().endswith(".csv"):
-            await message.channel.send(s("event_not_csv", reply=message.author.mention))
-            await safe_react_error(message)
-            return
-
         async with self.session() as session:
+            server = self.ensure_server_exists(session, message.channel.guild.id)
+            channel_settings = self.ensure_channel_settings_exists(
+                session, server, message.channel.id
+            )
+
+            opts = parse_opts(params, default_size=channel_settings.default_size)
+            params, tag_names, opt_msg, system = (
+                opts["params"],
+                opts["tags"],
+                opts["message"],
+                opts["system"],
+            )
+            size = len(params)
+            attachment = message.attachments[0]
+
+            if len(tag_names) > 5:
+                await message.channel.send(
+                    s("tags_too_many", reply=message.author.mention)
+                )
+                await safe_react_error(message)
+                return
+            if opt_msg and len(opt_msg) >= 255:
+                await message.channel.send(
+                    s(
+                        "game_message_too_long",
+                        reply=message.author.mention,
+                    )
+                )
+                await safe_react_error(message)
+                return
+            if not (1 < size <= 4):
+                await message.channel.send(
+                    s(
+                        "event_bad_play_count",
+                        reply=message.author.mention,
+                    )
+                )
+                await safe_react_error(message)
+                return
+            if not attachment.filename.lower().endswith(".csv"):
+                await message.channel.send(
+                    s("event_not_csv", reply=message.author.mention)
+                )
+                await safe_react_error(message)
+                return
+
             tags = Tag.create_many(session, tag_names)
 
             bdata = await message.attachments[0].read()
@@ -1365,7 +1401,6 @@ class SpellBot(discord.Client):
                 await safe_react_error(message)
                 return
 
-            server = self.ensure_server_exists(session, message.channel.guild.id)
             reader = csv.reader(StringIO(sdata))
             header = [column.lower().strip() for column in next(reader)]
             params = [param.lower().strip() for param in params]
@@ -1602,57 +1637,66 @@ class SpellBot(discord.Client):
         * Optional: Add tags by using `~tag-name` for the tags you want.
         & @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]
         """
-        opts = parse_opts(params)
-        size, tag_names, opt_msg, system = (
-            opts["size"],
-            opts["tags"],
-            opts["message"],
-            opts["system"],
-        )
-        mentions = message.mentions if message.channel.type != "private" else []
-
-        if opt_msg and len(opt_msg) >= 255:
-            await message.channel.send(
-                s(
-                    "game_message_too_long",
-                    reply=message.author.mention,
-                )
-            )
-            await safe_react_error(message)
-            return
-        if tag_names and len(tag_names) > 5:
-            await message.channel.send(s("tags_too_many", reply=message.author.mention))
-            await safe_react_error(message)
-            return
-
-        if not size or not (1 < size <= 4):
-            await message.channel.send(s("game_size_bad", reply=message.author.mention))
-            await safe_react_error(message)
-            return
-
-        if len(mentions) > size:
-            await message.channel.send(
-                s(
-                    "game_too_many_mentions",
-                    reply=message.author.mention,
-                    size=size,
-                )
-            )
-            await safe_react_error(message)
-            return
-
-        if len(mentions) < size:
-            await message.channel.send(
-                s(
-                    "game_too_few_mentions",
-                    reply=message.author.mention,
-                    size=size,
-                )
-            )
-            await safe_react_error(message)
-            return
-
         async with self.session() as session:
+            server = self.ensure_server_exists(session, message.channel.guild.id)
+            channel_settings = self.ensure_channel_settings_exists(
+                session, server, message.channel.id
+            )
+
+            opts = parse_opts(params, default_size=channel_settings.default_size)
+            size, tag_names, opt_msg, system = (
+                opts["size"],
+                opts["tags"],
+                opts["message"],
+                opts["system"],
+            )
+            mentions = message.mentions if message.channel.type != "private" else []
+
+            if opt_msg and len(opt_msg) >= 255:
+                await message.channel.send(
+                    s(
+                        "game_message_too_long",
+                        reply=message.author.mention,
+                    )
+                )
+                await safe_react_error(message)
+                return
+            if tag_names and len(tag_names) > 5:
+                await message.channel.send(
+                    s("tags_too_many", reply=message.author.mention)
+                )
+                await safe_react_error(message)
+                return
+
+            if not size or not (1 < size <= 4):
+                await message.channel.send(
+                    s("game_size_bad", reply=message.author.mention)
+                )
+                await safe_react_error(message)
+                return
+
+            if len(mentions) > size:
+                await message.channel.send(
+                    s(
+                        "game_too_many_mentions",
+                        reply=message.author.mention,
+                        size=size,
+                    )
+                )
+                await safe_react_error(message)
+                return
+
+            if len(mentions) < size:
+                await message.channel.send(
+                    s(
+                        "game_too_few_mentions",
+                        reply=message.author.mention,
+                        size=size,
+                    )
+                )
+                await safe_react_error(message)
+                return
+
             mentioned_users = []
             for mentioned in mentions:
                 mentioned_user = self.ensure_user_exists(session, mentioned)
@@ -1664,8 +1708,6 @@ class SpellBot(discord.Client):
             session.commit()
 
             tags = Tag.create_many(session, tag_names)
-
-            server = self.ensure_server_exists(session, message.channel.guild.id)
 
             now = datetime.utcnow()
             expires_at = now + timedelta(minutes=server.expire)
@@ -1948,6 +1990,7 @@ class SpellBot(discord.Client):
         * `tags <on|off>`: Turn on or off the ability to use tags on your server.
         * `smotd <your message>`: Set the server message of the day.
         * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
+        * `size <integer>`: Sets the default game size for a specific channel.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
@@ -1994,6 +2037,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_smotd(session, server, params[1:], message)
             elif command == "motd":
                 await self.spellbot_motd(session, server, params[1:], message)
+            elif command == "size":
+                await self.spellbot_size(session, server, params[1:], message)
             else:
                 await message.channel.send(
                     s(
@@ -2371,6 +2416,48 @@ class SpellBot(discord.Client):
                 "spellbot_motd",
                 reply=message.author.mention,
                 setting=motd_str,
+            )
+        )
+        await safe_react_ok(message)
+
+    async def spellbot_size(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        if not params:
+            await message.channel.send(
+                s(
+                    "spellbot_size_none",
+                    reply=message.author.mention,
+                )
+            )
+            await safe_react_error(message)
+            return
+
+        default_size = to_int(params[0])
+        if not default_size or not (1 < default_size <= 4):
+            await message.channel.send(
+                s(
+                    "spellbot_size_bad",
+                    reply=message.author.mention,
+                )
+            )
+            await safe_react_error(message)
+            return
+
+        channel_settings = self.ensure_channel_settings_exists(
+            session, server, message.channel.id
+        )
+        channel_settings.default_size = default_size  # type: ignore
+        session.commit()
+        await message.channel.send(
+            s(
+                "spellbot_size",
+                reply=message.author.mention,
+                default_size=default_size,
             )
         )
         await safe_react_ok(message)

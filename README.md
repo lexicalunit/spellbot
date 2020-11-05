@@ -86,6 +86,7 @@ These commands will help you configure SpellBot for your server.
   - `tags`: Turn on or off the ability to use tags on your server.
   - `smotd`: Set the server message of the day.
   - `motd`: Set the privacy level for messages of the day.
+  - `size`: Sets the default game size for a specific channel.
   - `help`: Get detailed usage help for SpellBot.
 
 ### 🛋️ Ergonomics
