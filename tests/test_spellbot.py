@@ -2889,6 +2889,43 @@ class TestSpellBot:
         assert "foobar" not in game_embed_for(client, AMY, False, dm=True)["description"]
         assert "foobar" in game_embed_for(client, AMY, False, dm=False)["description"]
 
+    async def test_on_message_spellbot_size_none(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot size"))
+        assert channel.last_sent_response == (
+            f"Sorry {author.mention}, but please provide a number of players."
+        )
+
+    async def test_on_message_spellbot_size_bad(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot size 6"))
+        assert channel.last_sent_response == (
+            f"Sorry {author.mention}, "
+            "but default game size should be between 2 and 4 players."
+        )
+
+        await client.on_message(MockMessage(author, channel, "!spellbot size cute"))
+        assert channel.last_sent_response == (
+            f"Sorry {author.mention}, "
+            "but default game size should be between 2 and 4 players."
+        )
+
+    async def test_on_message_spellbot_size(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot size 3"))
+        assert channel.last_sent_response == (
+            f"Ok {author.mention}, "
+            "the default game size for this channel has been set to 3 players."
+        )
+
+        await client.on_message(MockMessage(someone(), channel, "!lfg"))
+        async with client.session() as session:
+            game = session.query(Game).one_or_none()
+            assert game.size == 3
+
     async def test_paginate(self):
         def subject(text):
             return [page for page in spellbot.paginate(text)]
