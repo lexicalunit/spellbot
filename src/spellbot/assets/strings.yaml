@@ -91,6 +91,10 @@ spellbot_power_bad: Sorry $reply, but please provide an "on" or "off" setting.
 spellbot_prefix: Ok $reply, I will now use "$prefix" as my command prefix on this
   server.
 spellbot_prefix_none: Sorry $reply, but please provide a prefix string.
+spellbot_size: Ok $reply, the default game size for this channel has been set to $default_size
+  players.
+spellbot_size_bad: Sorry $reply, but default game size should be between 2 and 4 players.
+spellbot_size_none: Sorry $reply, but please provide a number of players.
 spellbot_smotd: 'Right on, $reply. The server message of the day is now: $motd'
 spellbot_smotd_too_long: Sorry $reply, but that message is too long.
 spellbot_tags: Ok $reply, I've turned the ability to use tags $setting.
