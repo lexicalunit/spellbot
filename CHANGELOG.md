@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.8.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.8.0) - 2020-11-05
+
 ### Added
 
 - Adds settings for default game size on a per-channel basis.
