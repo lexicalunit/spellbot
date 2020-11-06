@@ -92,7 +92,7 @@ unidecode = "1.1.1"
 [tool.poetry.dev-dependencies]
 black = "^20.8b0"
 coverage = "^5.3"
-faker = "^4.14.1"
+faker = "^4.14.2"
 flake8 = "^3.8.4"
 flake8-print = "^3.1.4"
 gitpython = "^3.1.11"
