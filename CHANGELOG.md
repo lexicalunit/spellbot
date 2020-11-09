@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.8.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.8.1) - 2020-11-08
+
 ### Changed
 
 - Really old voice channels (more than 7 hours old) will be deleted even if
