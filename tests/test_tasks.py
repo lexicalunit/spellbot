@@ -211,6 +211,31 @@ class TestTasks:
         mock_voice_channel.delete.assert_called()
         assert game_json_for(client, AMY)["voice_channel_xid"] is None
 
+    async def test_cleanup_voice_channels_old_but_occupied(
+        self, client, channel_maker, monkeypatch, freezer
+    ):
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        freezer.move_to(NOW)
+
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
+        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+
+        # simulate JACOB sitting in the voice channel for way too long
+        mock_voice_channel = channel_maker.voice("whatever", [JACOB])
+        mock_get_channel = Mock(return_value=mock_voice_channel)
+        monkeypatch.setattr(client, "get_channel", mock_get_channel)
+        freezer.move_to(NOW + timedelta(days=3))
+
+        await cleanup_old_voice_channels(client)
+        mock_voice_channel.delete.assert_called()
+        assert game_json_for(client, AMY)["voice_channel_xid"] is None
+
     async def test_cleanup_voice_channels_error_fetch_channel(
         self, client, channel_maker, monkeypatch, freezer
     ):
@@ -257,7 +282,7 @@ class TestTasks:
         mock_get_channel = Mock(return_value=mock_voice_channel)
         monkeypatch.setattr(client, "get_channel", mock_get_channel)
 
-        freezer.move_to(NOW + timedelta(days=3))
+        freezer.move_to(NOW + timedelta(hours=5))
         await cleanup_old_voice_channels(client)
 
         mock_voice_channel.delete.assert_not_called()
