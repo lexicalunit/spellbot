@@ -593,9 +593,17 @@ class Game(Base):
             )
         elif self.system == "spelltable":
             if show_link:
-                description += (
-                    f"Click the link below to join your SpellTable game.\n<{self.url}>"
-                )
+                if self.url:
+                    description += (
+                        "Click the link below to join your SpellTable game."
+                        f"\n<{self.url}>"
+                    )
+                else:
+                    description += (
+                        "Sorry but SpellBot was unable to create a SpellTable link"
+                        " for this game. Please go to"
+                        " [spelltable.com](https://www.spelltable.com/) to create one.\n"
+                    )
             else:
                 description += (
                     "Please check your Direct Messages for your SpellTable link."
