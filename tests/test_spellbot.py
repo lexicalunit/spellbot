@@ -2926,6 +2926,22 @@ class TestSpellBot:
             game = session.query(Game).one_or_none()
             assert game.size == 3
 
+    async def test_spelltable_link_creation_failure(
+        self, client, channel_maker, monkeypatch
+    ):
+        channel = channel_maker.text()
+
+        mock_create_spelltable_url = Mock(return_value=None)
+        monkeypatch.setattr(client, "create_spelltable_url", mock_create_spelltable_url)
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+        assert game_embed_for(client, AMY, True)["description"] == (
+            "Sorry but SpellBot was unable to create a SpellTable link"
+            " for this game. Please go to"
+            " [spelltable.com](https://www.spelltable.com/) to create one.\n"
+        )
+
     async def test_paginate(self):
         def subject(text):
             return [page for page in spellbot.paginate(text)]
