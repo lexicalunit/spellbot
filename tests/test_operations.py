@@ -21,6 +21,7 @@ from spellbot.operations import (
     safe_react_error,
     safe_react_ok,
     safe_remove_reaction,
+    safe_send_channel,
     safe_send_user,
 )
 
@@ -468,6 +469,17 @@ class TestOperations:
         assert "warning: discord (DM): could not send message to user" in caplog.text
         assert "Internal Server Error" in caplog.text
 
+    async def test_safe_send_user_clientuser(self, client, caplog):
+        clientuser = discord.ClientUser(
+            state=None,
+            data={"username": "foo", "id": 1, "discriminator": 4000, "avatar": None},
+        )
+        await safe_send_user(cast(discord.User, clientuser), content="test")
+
+        assert (
+            "warning: discord (DM): could not send message to ClientUser" in caplog.text
+        )
+
     async def test_safe_send_user_blocked(self, client, monkeypatch, caplog):
         mock_send = AsyncMock()
         http_response = Mock()
@@ -682,3 +694,26 @@ class TestOperations:
             f"warning: discord (guild {guild_id}): could not fetch guild" in caplog.text
         )
         assert "Missing Permissions" in caplog.text
+
+    async def test_safe_send_channel(self, client, channel_maker, monkeypatch):
+        channel = channel_maker.text()
+        await safe_send_channel(cast(discord.TextChannel, channel), content="test")
+
+        assert channel.last_sent_response == "test"
+
+    async def test_safe_send_channel_error(
+        self, client, channel_maker, monkeypatch, caplog
+    ):
+        channel = channel_maker.text()
+        mock_send = AsyncMock()
+        http_response = Mock()
+        http_response.status = 500
+        mock_send.side_effect = discord.errors.HTTPException(
+            http_response, "Internal Server Error"
+        )
+        monkeypatch.setattr(channel, "send", mock_send)
+
+        await safe_send_channel(cast(discord.TextChannel, channel), content="test")
+
+        assert "warning: discord: could not send message to channel" in caplog.text
+        assert "Internal Server Error" in caplog.text

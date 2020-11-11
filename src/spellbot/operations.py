@@ -338,3 +338,25 @@ async def safe_fetch_guild(
             e,
         )
     return None
+
+
+async def safe_send_channel(
+    messageable: Union[discord.TextChannel, discord.DMChannel],
+    content: Optional[str] = None,
+    *,
+    embed: Optional[discord.Embed] = None,
+    file: Optional[discord.File] = None,
+) -> Optional[discord.Message]:
+    try:
+        return await messageable.send(content, embed=embed, file=file)
+    except (
+        discord.errors.DiscordServerError,
+        discord.errors.Forbidden,
+        discord.errors.HTTPException,
+        discord.errors.InvalidArgument,
+    ) as e:
+        logger.exception(
+            "warning: discord: could not send message to channel: %s",
+            e,
+        )
+    return None
