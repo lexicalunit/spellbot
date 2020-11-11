@@ -4,6 +4,7 @@ import json
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Coroutine, List
 from unittest.mock import Mock
 
 import pytest
@@ -259,28 +260,54 @@ class TestSpellBot:
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_on_message_ambiguous_request(
-        self, client, channel_maker, channel_type
+        self, client, channel_maker, channel_type, monkeypatch
     ):
+        deferred_coroutines: List[Coroutine] = []
+
+        def mock_call_later(interval, _, coroutine):
+            deferred_coroutines.append(coroutine)
+
+        monkeypatch.setattr(client.loop, "call_later", mock_call_later)
+
         author = someone()
         channel = channel_maker.make(channel_type)
         msg = MockMessage(author, channel, "!l")
         if hasattr(channel, "recipient"):
             assert channel.recipient == author
         await client.on_message(msg)
+        post = channel.last_sent_message
         assert channel.last_sent_response == (
             f"Sorry {author.mention}, that's not a command."
             " Did you mean to use one of these commands: !leave, !lfg?"
         )
 
+        for coroutine in deferred_coroutines:
+            await coroutine
+        post.delete.assert_called_once()
+
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_invalid_request(self, client, channel_maker, channel_type):
+    async def test_on_message_invalid_request(
+        self, client, channel_maker, channel_type, monkeypatch
+    ):
+        deferred_coroutines: List[Coroutine] = []
+
+        def mock_call_later(interval, _, coroutine):
+            deferred_coroutines.append(coroutine)
+
+        monkeypatch.setattr(client.loop, "call_later", mock_call_later)
+
         dm = channel_maker.make(channel_type)
         author = someone()
         await client.on_message(MockMessage(author, dm, "!xeno"))
+        post = dm.last_sent_message
         assert dm.last_sent_response == (
             f'Sorry {author.mention}, there is no "xeno" command.'
             ' Try "!spellbot help" for usage help.'
         )
+
+        for coroutine in deferred_coroutines:
+            await coroutine
+        post.delete.assert_called_once()
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_on_message_from_a_bot(self, client, channel_maker, channel_type):

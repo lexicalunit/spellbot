@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- More robust error handling when SpellBot tries to send messages to a channel.
+
 ## [v5.8.2](https://github.com/lexicalunit/spellbot/releases/tag/v5.8.2) - 2020-11-10
 
 ### Fixed
