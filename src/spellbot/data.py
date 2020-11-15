@@ -397,7 +397,6 @@ class Game(Base):
     ) -> Iterable[Tuple[datetime, int, int]]:
         filters = [
             Game.status == "started",
-            Game.created_at >= datetime.utcnow() - timedelta(days=5),
             Game.guild_xid == guild_xid,
         ]
         return cast(
