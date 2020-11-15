@@ -6,6 +6,7 @@
 > * `smotd <your message>`: Set the server message of the day.
 > * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
 > * `size <integer>`: Sets the default game size for a specific channel.
+> * `stats`: Gets some statistics about SpellBot usage on your server.
 > * `help`: Get detailed usage help for SpellBot.
 
 `!game @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]`

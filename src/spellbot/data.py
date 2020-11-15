@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, Iterable, List, Optional, Tuple, cast
 
 import alembic  # type: ignore
 import alembic.command  # type: ignore
@@ -373,25 +373,49 @@ class Game(Base):
     reports = relationship("Report", back_populates="game", uselist=True)
 
     @classmethod
-    def recent_metrics(cls, session: Session) -> dict:
-        data = [
-            row[1]
-            for row in (
-                session.query(
-                    func.date(Game.created_at).label("day"),
-                    func.count(Game.id),
-                )
-                .filter(
-                    and_(
-                        Game.status == "started",
-                        Game.created_at >= datetime.utcnow() - timedelta(days=5),
-                    )
-                )
-                .group_by("day")
-                .order_by(desc("day"))
-                .all()
+    def games_per_day(cls, session: Session) -> Iterable[Tuple[datetime, int]]:
+        return cast(
+            Iterable[Tuple[datetime, int]],
+            session.query(
+                func.date(Game.created_at).label("day"),
+                func.count(Game.id),
             )
+            .filter(
+                and_(
+                    Game.status == "started",
+                    Game.created_at >= datetime.utcnow() - timedelta(days=5),
+                )
+            )
+            .group_by("day")
+            .order_by(desc("day"))
+            .all(),
+        )
+
+    @classmethod
+    def games_per_day_per_channel(
+        cls, session: Session, guild_xid: int
+    ) -> Iterable[Tuple[datetime, int, int]]:
+        filters = [
+            Game.status == "started",
+            Game.created_at >= datetime.utcnow() - timedelta(days=5),
+            Game.guild_xid == guild_xid,
         ]
+        return cast(
+            Iterable[Tuple[datetime, int, int]],
+            session.query(
+                func.date(Game.created_at).label("day"),
+                Game.channel_xid,
+                func.count(Game.id),
+            )
+            .filter(and_(*filters))
+            .group_by("day", Game.channel_xid)
+            .order_by(desc("day"), Game.channel_xid)
+            .all(),
+        )
+
+    @classmethod
+    def recent_metrics(cls, session: Session) -> dict:
+        data = [row[1] for row in cls.games_per_day(session)]
         return {f"games_{i}": count for i, count in enumerate(data)}
 
     @property
