@@ -2969,6 +2969,48 @@ class TestSpellBot:
             " [spelltable.com](https://www.spelltable.com/) to create one.\n"
         )
 
+    async def test_on_message_spellbot_stats_non_admin(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = GUY
+        await client.on_message(MockMessage(author, channel, "!spellbot stats"))
+        assert channel.last_sent_response == (
+            f"{author.mention}, you do not have admin permissions to run that command."
+        )
+
+    async def test_on_message_spellbot_stats(self, client, channel_maker, freezer):
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        freezer.move_to(NOW)
+
+        channel1 = channel_maker.text()
+        await client.on_message(MockMessage(JR, channel1, "!lfg size:2"))
+        await client.on_message(MockMessage(ADAM, channel1, "!lfg size:2"))
+
+        channel2 = channel_maker.text()
+        await client.on_message(MockMessage(JR, channel2, "!lfg size:2"))
+        await client.on_message(MockMessage(ADAM, channel2, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel2, "!lfg size:2"))
+        await client.on_message(MockMessage(ADAM, channel2, "!lfg size:2"))
+
+        channel3 = channel_maker.text()
+        await client.on_message(MockMessage(JR, channel3, "!lfg size:2"))
+        await client.on_message(MockMessage(ADAM, channel3, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel3, "!lfg size:2"))
+        await client.on_message(MockMessage(ADAM, channel3, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel3, "!lfg size:2"))
+        await client.on_message(MockMessage(ADAM, channel3, "!lfg size:2"))
+
+        await client.on_message(MockMessage(an_admin(), channel1, "!spellbot stats"))
+
+        attachment = channel1.all_sent_files[0]
+        data = attachment.fp.read().decode()
+
+        assert data == (
+            "date,channel,games\n"
+            "1982-04-24,<#6500>,1\n"
+            "1982-04-24,<#6501>,2\n"
+            "1982-04-24,<#6502>,3\n"
+        )
+
     async def test_paginate(self):
         def subject(text):
             return [page for page in spellbot.paginate(text)]
