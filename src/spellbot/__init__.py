@@ -1790,7 +1790,7 @@ class SpellBot(discord.Client):
                 discord_user = await safe_fetch_user(self, player.xid)
                 # TODO: What happens if discord_user is None?
                 if discord_user:
-                    await safe_send_channel(discord_user, embed=player_response)
+                    await safe_send_user(discord_user, embed=player_response)
 
             players_str = ", ".join(
                 # Support <@!USERID> for server nick?
@@ -2054,6 +2054,7 @@ class SpellBot(discord.Client):
         * `smotd <your message>`: Set the server message of the day.
         * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
         * `size <integer>`: Sets the default game size for a specific channel.
+        * `stats`: Gets some statistics about SpellBot usage on your server.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
@@ -2103,6 +2104,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_motd(session, server, params[1:], message)
             elif command == "size":
                 await self.spellbot_size(session, server, params[1:], message)
+            elif command == "stats":
+                await self.spellbot_stats(session, server, params[1:], message)
             else:
                 await safe_send_channel(
                     message.channel,
@@ -2556,6 +2559,27 @@ class SpellBot(discord.Client):
                 default_size=default_size,
             ),
         )
+        await safe_react_ok(message)
+
+    async def spellbot_stats(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        from itertools import groupby
+        from operator import itemgetter
+
+        export_file = TMP_DIR / f"stats-{message.channel.guild.name}.csv"
+        with open(export_file, "w") as f, redirect_stdout(f):
+            print("date,channel,games")  # noqa: T001
+            stats = Game.games_per_day_per_channel(session, message.channel.guild.id)
+            for day, day_rows in groupby(stats, itemgetter(0)):
+                for channel, row in groupby(day_rows, itemgetter(1)):
+                    count = [*row][0][2]
+                    print(f"{day},<#{channel}>,{count}")  # noqa: T001
+        await safe_send_channel(message.channel, "", file=discord.File(export_file))
         await safe_react_ok(message)
 
     async def spellbot_config(

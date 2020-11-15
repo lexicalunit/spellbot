@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a server stats command that can be expanded on in the future.
+
 ## [v5.8.3](https://github.com/lexicalunit/spellbot/releases/tag/v5.8.3) - 2020-11-10
 
 ### Added
