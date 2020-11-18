@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 import pytz
+import redis
 from sqlalchemy.orm.session import Session
 
 from spellbot.data import Game, Server
@@ -10,6 +11,8 @@ from spellbot.tasks import (
     cleanup_expired_games,
     cleanup_old_voice_channels,
     cleanup_started_games,
+    update_average_wait_times,
+    update_metrics,
 )
 
 from .mocks import AsyncMock
@@ -287,3 +290,60 @@ class TestTasks:
 
         mock_voice_channel.delete.assert_not_called()
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+
+    async def test_update_metrics_with_data(
+        self, client, channel_maker, monkeypatch, freezer
+    ):
+        channel = channel_maker.text()
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        metrics = MagicMock()
+        monkeypatch.setattr(client, "metrics_db", metrics)
+        for day in range(7):
+            freezer.move_to(NOW + timedelta(days=day))
+            for _ in range(day + 1):
+                await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
+                await client.on_message(MockMessage(JACOB, channel, "!lfg size:2"))
+
+        await update_metrics(client)
+
+        metrics.mset.assert_called_with(
+            {
+                "games_0": 7,
+                "games_1": 6,
+                "games_2": 5,
+                "games_3": 4,
+                "games_4": 3,
+                "games_5": 2,
+                "servers_0": 1,
+                "users_0": 2,
+            }
+        )
+
+    async def test_update_metrics_without_data(self, client, monkeypatch):
+        metrics = MagicMock()
+        monkeypatch.setattr(client, "metrics_db", metrics)
+
+        await update_metrics(client)
+
+        metrics.mset.assert_called_with({"games": 0, "servers": 0, "users": 0})
+
+    async def test_update_metrics_redis_error(self, client, monkeypatch, caplog):
+        metrics = Mock()
+        metrics.mset = Mock(side_effect=redis.exceptions.RedisError("network error"))
+        monkeypatch.setattr(client, "metrics_db", metrics)
+
+        await update_metrics(client)
+
+        assert "redis.exceptions.RedisError: network error" in caplog.text
+
+    async def test_update_average_wait_times(self, client, channel_maker, freezer):
+        channel = channel_maker.text()
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        freezer.move_to(NOW)
+        await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
+        freezer.move_to(NOW + timedelta(minutes=10))
+        await client.on_message(MockMessage(JACOB, channel, "!lfg size:2"))
+
+        await update_average_wait_times(client)
+
+        assert client.average_wait_times["500-6500"] == pytest.approx(10)
