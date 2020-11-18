@@ -523,12 +523,12 @@ class Game(Base):
 
     @classmethod
     def average_wait_times(cls, session: Session):
-        if "sqlite" in session.bind.dialect.name:
+        if "sqlite" in session.bind.dialect.name:  # pragma: no cover
             avg = func.avg(
                 (func.julianday(Game.updated_at) - func.julianday(Game.created_at))
                 * 1440.0
             )
-        else:
+        else:  # pragma: no cover
             avg = (
                 sql_cast(
                     func.avg(

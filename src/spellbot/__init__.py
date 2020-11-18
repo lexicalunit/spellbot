@@ -34,6 +34,7 @@ import hupper  # type: ignore
 import redis
 import requests
 from aiohttp import web
+from aiohttp.web_response import Response
 from dotenv import load_dotenv
 from expiringdict import ExpiringDict  # type: ignore
 from sqlalchemy import exc
@@ -368,7 +369,9 @@ class SpellBot(discord.Client):
         async with lock:  # type: ignore
             yield
 
-    def _create_metrics_db(self, redis_url: Optional[str]) -> Optional[redis.Redis]:
+    def _create_metrics_db(
+        self, redis_url: Optional[str]
+    ) -> Optional[redis.Redis]:  # pragma: no cover
         if not redis_url:
             return None
 
@@ -398,7 +401,7 @@ class SpellBot(discord.Client):
         """Returns the list of subcommands that can be given to the !spellbot command."""
         return self._subcommands
 
-    def run(self) -> None:
+    def run(self) -> None:  # pragma: no cover
         super().run(self.token)
 
     def create_spelltable_url(self) -> Optional[str]:
@@ -2664,7 +2667,7 @@ def get_redis_url() -> Optional[str]:
     return getenv("REDISCLOUD_URL", None)
 
 
-async def ping(request):
+async def ping(request) -> Response:
     return web.Response(text="ok")
 
 
@@ -2746,7 +2749,7 @@ def main(
     host: str,
     dev: bool,
     mock_games: bool,
-) -> None:
+) -> None:  # pragma: no cover
     if dev:
         reloader = hupper.start_reloader("spellbot.main")
         reloader.watch_files(ASSET_FILES)
