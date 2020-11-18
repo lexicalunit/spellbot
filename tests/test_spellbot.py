@@ -1,16 +1,27 @@
 import asyncio
 import inspect
 import json
+import os
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Coroutine, List
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 import pytz
 
 import spellbot
+from spellbot import (
+    get_db_env,
+    get_db_url,
+    get_host,
+    get_log_level,
+    get_port,
+    get_port_env,
+    get_redis_url,
+    ping,
+)
 from spellbot.constants import (
     CREATE_ENDPOINT,
     EMOJI_DROP_GAME,
@@ -183,6 +194,34 @@ class TestSpellBot:
 
     async def test_on_ready(self, client, channel_maker):
         await client.on_ready()
+
+    async def test_paginate(self):
+        def subject(text):
+            return [page for page in spellbot.paginate(text)]
+
+        assert subject("") == [""]
+        assert subject("four") == ["four"]
+
+        with open(Path(TEST_DATA_ROOT) / "ipsum_2011.txt") as f:
+            text = f.read()
+            pages = subject(text)
+            assert len(pages) == 2
+            assert all(len(page) <= 2000 for page in pages)
+            assert pages == [text[0:1937], text[1937:]]
+
+        with open(Path(TEST_DATA_ROOT) / "aaa_2001.txt") as f:
+            text = f.read()
+            pages = subject(text)
+            assert len(pages) == 2
+            assert all(len(page) <= 2000 for page in pages)
+            assert pages == [text[0:2000], text[2000:]]
+
+        with open(Path(TEST_DATA_ROOT) / "quotes.txt") as f:
+            text = f.read()
+            pages = subject(text)
+            assert len(pages) == 2
+            assert all(len(page) <= 2000 for page in pages)
+            assert pages == [text[0:2000], f"> {text[2000:]}"]
 
     async def test_on_message_non_text(self, client, channel_maker):
         channel = MockChannel(6, "voice")
@@ -3011,30 +3050,50 @@ class TestSpellBot:
             "1982-04-24,<#6502>,3\n"
         )
 
-    async def test_paginate(self):
-        def subject(text):
-            return [page for page in spellbot.paginate(text)]
+    async def test_get_db_env(self):
+        assert get_db_env("fallback") == "fallback"
 
-        assert subject("") == [""]
-        assert subject("four") == ["four"]
+        os.environ["SPELLBOT_DB_ENV"] = "value"
+        assert get_db_env("fallback") == "value"
 
-        with open(Path(TEST_DATA_ROOT) / "ipsum_2011.txt") as f:
-            text = f.read()
-            pages = subject(text)
-            assert len(pages) == 2
-            assert all(len(page) <= 2000 for page in pages)
-            assert pages == [text[0:1937], text[1937:]]
+    async def test_get_db_url(self):
+        assert get_db_url("MOCK_DB_ENV", "fallback") == "fallback"
 
-        with open(Path(TEST_DATA_ROOT) / "aaa_2001.txt") as f:
-            text = f.read()
-            pages = subject(text)
-            assert len(pages) == 2
-            assert all(len(page) <= 2000 for page in pages)
-            assert pages == [text[0:2000], text[2000:]]
+        os.environ["MOCK_DB_ENV"] = "value"
+        assert get_db_url("MOCK_DB_ENV", "fallback") == "value"
 
-        with open(Path(TEST_DATA_ROOT) / "quotes.txt") as f:
-            text = f.read()
-            pages = subject(text)
-            assert len(pages) == 2
-            assert all(len(page) <= 2000 for page in pages)
-            assert pages == [text[0:2000], f"> {text[2000:]}"]
+    async def test_get_port_env(self):
+        assert get_port_env("fallback") == "fallback"
+
+        os.environ["SPELLBOT_PORT_ENV"] = "value"
+        assert get_port_env("fallback") == "value"
+
+    async def test_get_port(self):
+        assert get_port("MOCK_PORT_ENV", 42) == 42
+
+        os.environ["MOCK_PORT_ENV"] = "9000"
+        assert get_port("MOCK_PORT_ENV", 42) == 9000
+
+    async def test_get_host(self):
+        assert get_host("fallback") == "fallback"
+
+        os.environ["SPELLBOT_HOST"] = "value"
+        assert get_host("fallback") == "value"
+
+    async def test_get_log_level(self):
+        assert get_log_level("fallback") == "fallback"
+
+        os.environ["SPELLBOT_LOG_LEVEL"] = "value"
+        assert get_log_level("fallback") == "value"
+
+    async def test_get_redis_url(self):
+        assert get_redis_url() == None
+
+        os.environ["REDISCLOUD_URL"] = "value"
+        assert get_redis_url() == "value"
+
+    async def test_ping(self):
+        request = MagicMock()
+        response = await ping(request)
+        assert response.status == 200
+        assert response.text == "ok"
