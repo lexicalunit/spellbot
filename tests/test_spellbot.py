@@ -354,13 +354,21 @@ class TestSpellBot:
         await client.on_message(MockMessage(BOT, channel, "!spellbot help"))
         assert len(channel.all_sent_calls) == 0
 
-    async def test_on_message_help(self, client, channel_maker, snap):
-        author = someone()
+    async def test_on_message_spellbot_help(self, client, channel_maker, snap):
+        author = not_an_admin()
         channel = channel_maker.text()
-        await client.on_message(MockMessage(author, channel, "!spellbot help"))
+        msg = MockMessage(author, channel, "!spellbot help")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
         for response in author.all_sent_responses:
             snap(response)
         assert len(author.all_sent_calls) == 3
+
+    async def test_on_message_help(self, client, channel_maker):
+        author = someone()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!help"))
+        assert len(channel.all_sent_calls) == 0
 
     async def test_on_message_help_includes_confirmation_in_text_channel(
         self, client, channel_maker
@@ -2015,14 +2023,6 @@ class TestSpellBot:
             f"Sorry {author.mention}, but the game size must be between 2 and 4."
         )
 
-    async def test_on_message_spellbot_help(self, client, channel_maker):
-        author = not_an_admin()
-        channel = channel_maker.text()
-        msg = MockMessage(author, channel, "!spellbot help")
-        await client.on_message(msg)
-        assert "✅" in msg.reactions
-        assert len(author.all_sent_calls) >= 1
-
     async def test_session_contextmanager(self, client, caplog):
         exception_thrown = False
         try:
@@ -2174,6 +2174,42 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
+        amy_embed = game_embed_for(client, AMY, True)
+        assert amy_embed == game_embed_for(client, JACOB, True)
+        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+        assert "Join your voice chat now" not in amy_embed["description"]
+
+    async def test_game_creation_when_voice_channel_create_error(
+        self, client, channel_maker, monkeypatch
+    ):
+        channel = channel_maker.text()
+        author = an_admin()
+        mock_op = AsyncMock(return_value=None)
+        monkeypatch.setattr(spellbot, "safe_create_voice_channel", mock_op)
+        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
+
+        mock_op.assert_called()
+        amy_embed = game_embed_for(client, AMY, True)
+        assert amy_embed == game_embed_for(client, JACOB, True)
+        assert game_json_for(client, AMY)["voice_channel_xid"] is None
+        assert "Join your voice chat now" not in amy_embed["description"]
+
+    async def test_game_creation_when_voice_invite_create_error(
+        self, client, channel_maker, monkeypatch
+    ):
+        channel = channel_maker.text()
+        author = an_admin()
+        mock_op = AsyncMock(return_value=None)
+        monkeypatch.setattr(spellbot, "safe_create_invite", mock_op)
+        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
+
+        mock_op.assert_called()
         amy_embed = game_embed_for(client, AMY, True)
         assert amy_embed == game_embed_for(client, JACOB, True)
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
@@ -3097,3 +3133,73 @@ class TestSpellBot:
         response = await ping(request)
         assert response.status == 200
         assert response.text == "ok"
+
+    async def test_try_to_update_game_for_unknown_channel(
+        self, client, channel_maker, monkeypatch
+    ):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+        mock_safe_fetch_channel = AsyncMock()
+        monkeypatch.setattr(spellbot, "safe_fetch_channel", mock_safe_fetch_channel)
+        async with client.session() as session:
+            game = session.query(Game).all()[0]
+            game.channel_xid = None
+            session.commit()
+
+            await client.try_to_update_game(game)
+
+        mock_safe_fetch_channel.assert_not_called()
+
+    async def test_try_to_update_game_for_unknown_message(
+        self, client, channel_maker, monkeypatch
+    ):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+        mock_safe_fetch_channel = AsyncMock()
+        monkeypatch.setattr(spellbot, "safe_fetch_channel", mock_safe_fetch_channel)
+        async with client.session() as session:
+            game = session.query(Game).all()[0]
+            game.message_xid = None
+            session.commit()
+
+            await client.try_to_update_game(game)
+
+        mock_safe_fetch_channel.assert_not_called()
+
+    async def test_try_to_update_game_when_channel_not_found(
+        self, client, channel_maker, monkeypatch
+    ):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+        mock_safe_fetch_channel = AsyncMock(return_value=None)
+        monkeypatch.setattr(spellbot, "safe_fetch_channel", mock_safe_fetch_channel)
+        mock_safe_fetch_message = AsyncMock()
+        monkeypatch.setattr(spellbot, "safe_fetch_message", mock_safe_fetch_message)
+        async with client.session() as session:
+            game = session.query(Game).all()[0]
+
+            await client.try_to_update_game(game)
+
+        mock_safe_fetch_message.assert_not_called()
+
+    async def test_try_to_update_game_when_message_not_found(
+        self, client, channel_maker, monkeypatch
+    ):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+        async with client.session() as session:
+            game = session.query(Game).all()[0]
+            mock_to_embed = Mock()
+            monkeypatch.setattr(game, "to_embed", mock_to_embed)
+            mock_safe_fetch_channel = AsyncMock(return_value=True)
+            monkeypatch.setattr(spellbot, "safe_fetch_channel", mock_safe_fetch_channel)
+            mock_safe_fetch_message = AsyncMock(return_value=None)
+            monkeypatch.setattr(spellbot, "safe_fetch_message", mock_safe_fetch_message)
+
+            await client.try_to_update_game(game)
+
+            mock_to_embed.assert_not_called()
