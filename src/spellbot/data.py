@@ -29,7 +29,7 @@ from sqlalchemy import create_engine, false, func, or_, text, true
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
-from sqlalchemy.sql.expression import desc, distinct
+from sqlalchemy.sql.expression import asc, desc, distinct
 from sqlalchemy.sql.sqltypes import Numeric
 
 from spellbot.constants import (
@@ -479,7 +479,7 @@ class Game(Base):
             .filter(and_(Game.id.in_(inner), or_(*tag_filters)))
             .group_by(Game.id)
             .having(having_filters[0])
-            .order_by(desc(Game.updated_at))
+            .order_by(asc(Game.updated_at))
         )
         game: Optional[Game] = outer.first()
         return game

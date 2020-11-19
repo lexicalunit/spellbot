@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Prefer to fill older games over newer games.
+
 ### Added
 
 - Even more tests for higher code coverage.
