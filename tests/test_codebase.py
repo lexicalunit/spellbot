@@ -96,8 +96,9 @@ class TestCodebase:
     def test_subcommands_documented(self, client):
         """Checks that all subcommands are documented in the spellbot() docstring."""
         documented = set(
-            re.findall(
-                r"^ *\* `([a-z]+) ?[^`]*`: .*$", client.spellbot.__doc__, re.MULTILINE
+            found.replace("-", "_")
+            for found in re.findall(
+                r"^ *\* `([a-z-]+) ?[^`]*`: .*$", client.spellbot.__doc__, re.MULTILINE
             )
         )
         implemented = set(client.subcommands)
@@ -109,7 +110,10 @@ class TestCodebase:
         with open(REPO_ROOT / "README.md") as f:
             readme = f.read()
 
-        documented = set(re.findall(r"^  - `([a-z]+)`: .*$", readme, re.MULTILINE))
+        documented = set(
+            found.replace("-", "_")
+            for found in re.findall(r"^  - `([a-z-]+)`: .*$", readme, re.MULTILINE)
+        )
         implemented = set(client.subcommands)
 
         assert documented == implemented
@@ -120,7 +124,10 @@ class TestCodebase:
             index = f.read()
 
         documented = set(
-            re.findall(r"^ *<li><code>([a-z]+)</code>: .*$", index, re.MULTILINE)
+            found.replace("-", "_")
+            for found in re.findall(
+                r"^ *<li><code>([a-z-]+)</code>: .*$", index, re.MULTILINE
+            )
         )
         implemented = set(client.subcommands)
 
