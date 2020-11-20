@@ -251,6 +251,7 @@ class MockChannel:
             content,
             **{param: value for param, value in kwargs.items() if value is not None},
         )
+        self.last_sent_message.channel = self
         self.messages.append(self.last_sent_message)
         return self.last_sent_message
 

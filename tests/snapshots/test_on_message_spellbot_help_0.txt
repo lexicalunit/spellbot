@@ -35,6 +35,12 @@
 
 **### Commands for Admins ###**
 
+`!verify`
+>  Verify a user on your server.
+
+`!unverify`
+>  Unverify a user on your server.
+
 `!spellbot <subcommand> [subcommand parameters]`
 >  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
 > 
@@ -42,4 +48,3 @@
 > * `config`: Just show the current configuration for this server.
 > * `channels <list>`: Set SpellBot to only respond in the given list of channels.
 > * `prefix <string>`: Set SpellBot's command prefix for text channels.
-> * `links <private|public>`: Set the privacy for generated SpellTable links.

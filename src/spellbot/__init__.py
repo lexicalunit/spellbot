@@ -69,7 +69,7 @@ from spellbot.data import (
     Team,
     User,
     UserPoints,
-    UserTeam,
+    UserServerSettings,
 )
 from spellbot.operations import (
     safe_clear_reactions,
@@ -462,6 +462,23 @@ class SpellBot(discord.Client):
         session.commit()
         return cast(User, db_user)
 
+    def ensure_user_settings_exists(
+        self, session: Session, user: User, server: Server
+    ) -> UserServerSettings:
+        """Ensures that a user has server settings for the given user and guild."""
+        user_settings = (
+            session.query(UserServerSettings)
+            .filter_by(user_xid=user.xid, guild_xid=server.guild_xid)
+            .one_or_none()
+        )
+        if not user_settings:
+            user_settings = UserServerSettings(
+                user_xid=user.xid, guild_xid=server.guild_xid
+            )
+            session.add(user_settings)
+            session.commit()
+        return cast(UserServerSettings, user_settings)
+
     def ensure_server_exists(self, session: Session, guild_xid: int) -> Server:
         """Ensures that the server row exists for the given discord guild id."""
         server = session.query(Server).filter(Server.guild_xid == guild_xid).one_or_none()
@@ -664,17 +681,33 @@ class SpellBot(discord.Client):
         async with self.session() as session, self.channel_lock(payload.channel_id):
             assert payload.guild_id is not None
             server = self.ensure_server_exists(session, payload.guild_id)
+            user = self.ensure_user_exists(session, author)
 
             if not server.bot_allowed_in(channel.id):
                 return
+
+            channel_settings = self.ensure_channel_settings_exists(
+                session, server, payload.channel_id
+            )
+            if channel_settings.require_verification:
+                user_settings = self.ensure_user_settings_exists(session, user, server)
+                if not user_settings.verified:
+                    await safe_send_user(
+                        author,
+                        s(
+                            "not_verified",
+                            reply=author.mention,
+                            channel=message.channel.name,
+                        ),
+                    )
+                    await safe_remove_reaction(message, emoji, author)
+                    return
 
             game = (
                 session.query(Game).filter(Game.message_xid == message.id).one_or_none()
             )
             if not game or game.status != "pending":
                 return  # this isn't a post relating to a pending game, just ignore it
-
-            user = self.ensure_user_exists(session, author)
 
             now = datetime.utcnow()
             expires_at = now + timedelta(minutes=server.expire)
@@ -779,9 +812,14 @@ class SpellBot(discord.Client):
             if not message.content.startswith(prefix):
                 return
 
-            is_admin = author.permissions_in(message.channel).administrator
+            has_admin_perms = author.permissions_in(message.channel).administrator
             is_owner = not private and author.id == message.channel.guild.owner_id
-            if not private and not is_admin and not is_owner:
+            if (
+                not private
+                and not has_admin_perms
+                and not is_owner
+                and not is_admin(message.channel, message.author)
+            ):
                 async with self.session() as session:
                     server = self.ensure_server_exists(session, message.channel.guild.id)
                     server_name = str(message.channel.guild)[0:50]
@@ -790,6 +828,27 @@ class SpellBot(discord.Client):
                         session.commit()
                     if not server.bot_allowed_in(message.channel.id):
                         return
+                    channel_settings = self.ensure_channel_settings_exists(
+                        session, server, message.channel.id
+                    )
+                    if channel_settings.require_verification:
+                        user = self.ensure_user_exists(session, message.author)
+                        user_settings = self.ensure_user_settings_exists(
+                            session, user, server
+                        )
+                        if not user_settings.verified:
+                            discord_user = cast(discord.User, message.author)
+                            await safe_send_user(
+                                discord_user,
+                                s(
+                                    "not_verified",
+                                    reply=message.author.mention,
+                                    channel=message.channel.name,
+                                ),
+                            )
+                            await safe_react_error(message)
+                            return
+
             await self.process(message, prefix)
 
         except Exception as e:
@@ -1960,13 +2019,8 @@ class SpellBot(discord.Client):
 
             user = self.ensure_user_exists(session, message.author)
             if not params:
-                user_team = (
-                    session.query(UserTeam)
-                    .filter_by(user_xid=user.xid, guild_xid=server.guild_xid)
-                    .one_or_none()
-                )
-
-                if not user_team:
+                user_settings = self.ensure_user_settings_exists(session, user, server)
+                if user_settings.team_id is None:
                     await safe_send_channel(
                         message.channel,
                         s(
@@ -1977,9 +2031,12 @@ class SpellBot(discord.Client):
                     await safe_react_error(message)
                     return
 
-                team = session.query(Team).filter_by(id=user_team.team_id).one_or_none()
+                team = (
+                    session.query(Team).filter_by(id=user_settings.team_id).one_or_none()
+                )
                 if not team:
-                    session.delete(user_team)
+                    user_settings.team_id = None  # type: ignore
+                    session.commit()
                     await safe_send_channel(
                         message.channel,
                         s(
@@ -2022,20 +2079,44 @@ class SpellBot(discord.Client):
                 await safe_react_error(message)
                 return
 
-            user_team = (
-                session.query(UserTeam)
-                .filter_by(user_xid=user.xid, guild_xid=server.guild_xid)
-                .one_or_none()
-            )
-            if user_team:
-                user_team.team_id = team_found.id
-            else:
-                user_team = UserTeam(
-                    user_xid=user.xid, guild_xid=server.guild_xid, team_id=team_found.id
-                )
-                session.add(user_team)
+            user_settings = self.ensure_user_settings_exists(session, user, server)
+            if user_settings.team_id != team_found.id:
+                user_settings.team_id = team_found.id  # type: ignore
             session.commit()
             await safe_react_ok(message)
+
+    async def _set_verified(
+        self, prefix: str, params: List[str], message: discord.Message, setting: bool
+    ) -> None:
+        if not await check_is_admin(message):
+            await safe_react_error(message)
+            return
+
+        if len(message.mentions) == 0:
+            await safe_react_error(message)
+            return
+        async with self.session() as session:
+            server = self.ensure_server_exists(session, message.channel.guild.id)
+            for mentioned in message.mentions:
+                user = self.ensure_user_exists(session, mentioned)
+                user_settings = self.ensure_user_settings_exists(session, user, server)
+                user_settings.verified = setting  # type: ignore
+            session.commit()
+        await safe_react_ok(message)
+
+    @command(allow_dm=False, help_group="Commands for Admins")
+    async def verify(
+        self, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """Verify a user on your server."""
+        await self._set_verified(prefix, params, message, True)
+
+    @command(allow_dm=False, help_group="Commands for Admins")
+    async def unverify(
+        self, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """Unverify a user on your server."""
+        await self._set_verified(prefix, params, message, False)
 
     @command(allow_dm=False, help_group="Commands for Admins")
     async def spellbot(
@@ -2057,6 +2138,7 @@ class SpellBot(discord.Client):
         * `smotd <your message>`: Set the server message of the day.
         * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
         * `size <integer>`: Sets the default game size for a specific channel.
+        * `toggle-verify`: Toggles user verification on/off for a specific channel.
         * `stats`: Gets some statistics about SpellBot usage on your server.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
@@ -2109,6 +2191,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_size(session, server, params[1:], message)
             elif command == "stats":
                 await self.spellbot_stats(session, server, params[1:], message)
+            elif command == "toggle-verify":
+                await self.spellbot_toggle_verify(session, server, params[1:], message)
             else:
                 await safe_send_channel(
                     message.channel,
@@ -2560,6 +2644,29 @@ class SpellBot(discord.Client):
                 "spellbot_size",
                 reply=message.author.mention,
                 default_size=default_size,
+            ),
+        )
+        await safe_react_ok(message)
+
+    async def spellbot_toggle_verify(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        channel_settings = self.ensure_channel_settings_exists(
+            session, server, message.channel.id
+        )
+        new_setting = not channel_settings.require_verification
+        channel_settings.require_verification = new_setting  # type: ignore
+        session.commit()
+        await safe_send_channel(
+            message.channel,
+            s(
+                "spellbot_toggle_verify",
+                reply=message.author.mention,
+                setting="on" if new_setting else "off",
             ),
         )
         await safe_react_ok(message)
