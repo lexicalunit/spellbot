@@ -1,4 +1,6 @@
-> > Games will not be created immediately. This is to allow you to verify things look ok. This command will also give you directions on how to actually start the games for this event as part of its reply.
+>  The game size is deduced from the number of column names given, so we know the games created in this example are `size:2`.
+> 
+> Games will not be created immediately. This is to allow you to verify things look ok. This command will also give you directions on how to actually start the games for this event as part of its reply.
 > * Optional: Add a message to DM players with `msg:` followed by whatever.
 > * Optional: Add up to five tags by using `~tag-name`.
 

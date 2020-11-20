@@ -28,7 +28,7 @@ from spellbot.constants import (
     EMOJI_JOIN_GAME,
     THUMB_URL,
 )
-from spellbot.data import Event, Game, Server, User
+from spellbot.data import ChannelSettings, Event, Game, Server, User
 
 from .constants import CLIENT_TOKEN, TEST_DATA_ROOT
 from .mocks import AsyncMock
@@ -505,32 +505,33 @@ class TestSpellBot:
         assert "✅" in msg.reactions
 
     async def test_on_message_spellbot_channels(self, client, channel_maker):
-        author = an_admin()
+        admin = an_admin()
+        author = not_an_admin()
         channel = channel_maker.text()
         foo = channel_maker.text("foo")
         bar = channel_maker.text("bar")
         baz = channel_maker.text("baz")
         await client.on_message(
-            MockMessage(author, channel, f"!spellbot channels <#{channel.id}>")
+            MockMessage(admin, channel, f"!spellbot channels <#{channel.id}>")
         )
         assert channel.last_sent_response == (
-            f"Ok {author.mention}, I will now operate within: <#{channel.id}>"
+            f"Ok {admin.mention}, I will now operate within: <#{channel.id}>"
         )
         cmd = f"!spellbot channels <#{foo.id}> <#{bar.id}> <#{baz.id}>"
-        await client.on_message(MockMessage(author, channel, cmd))
+        await client.on_message(MockMessage(admin, channel, cmd))
         resp = (
-            f"Ok {author.mention}, I will now operate within:"
+            f"Ok {admin.mention}, I will now operate within:"
             f" <#{foo.id}>, <#{bar.id}>, <#{baz.id}>"
         )
         assert channel.last_sent_response == resp
         await client.on_message(
             MockMessage(author, channel, "!spellbot help")
         )  # bad channel now
-        assert channel.last_sent_response == resp
+        assert len(author.all_sent_calls) == 0
 
-        await client.on_message(MockMessage(author, foo, "!spellbot channels all"))
+        await client.on_message(MockMessage(admin, foo, "!spellbot channels all"))
         assert foo.last_sent_response == (
-            f"Ok {author.mention}, I will now operate within: all channels"
+            f"Ok {admin.mention}, I will now operate within: all channels"
         )
 
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
@@ -2544,6 +2545,7 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(admin, channel, "!spellbot teams dogs cats"))
         await client.on_message(MockMessage(AMY, channel, "!team dogs"))
+        await client.on_message(MockMessage(AMY, channel, "!team dogs"))
         await client.on_message(MockMessage(ADAM, channel, "!team dogs"))
         await client.on_message(MockMessage(GUY, channel, "!team cats"))
 
@@ -3203,3 +3205,160 @@ class TestSpellBot:
             await client.try_to_update_game(game)
 
             mock_to_embed.assert_not_called()
+
+    async def test_on_message_spellbot_toggle_verify(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+
+        await client.on_message(MockMessage(someone(), channel, "!points"))
+        assert channel.last_sent_response.startswith("You've got 0 points")
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot toggle-verify"))
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, verification is now on for this channel."
+        )
+        async with client.session() as session:
+            settings = session.query(ChannelSettings).all()[0]
+            assert settings.require_verification
+
+        wotnot = someone()
+        await client.on_message(MockMessage(wotnot, channel, "!points"))
+        assert not channel.last_sent_response.startswith("You've got 0 points")
+        assert wotnot.last_sent_response == (
+            f"Hello <@{wotnot.id}>. You are not verified to use SpellBot in "
+            f"{channel.name}. Please speak to a server moderator or administrator to "
+            "get verified."
+        )
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot toggle-verify"))
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, verification is now off for this channel."
+        )
+        async with client.session() as session:
+            settings = session.query(ChannelSettings).all()[0]
+            assert not settings.require_verification
+
+        await client.on_message(MockMessage(someone(), channel, "!points"))
+        assert channel.last_sent_response.startswith("You've got 0 points")
+
+    async def test_on_message_verify_non_admin(self, client, channel_maker):
+        author = not_an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!verify"))
+        assert channel.last_sent_response == (
+            f"<@{author.id}>, you do not have admin permissions to run that command."
+        )
+
+    async def test_on_message_unverify_non_admin(self, client, channel_maker):
+        author = not_an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!unverify"))
+        assert channel.last_sent_response == (
+            f"<@{author.id}>, you do not have admin permissions to run that command."
+        )
+
+    async def test_on_message_verify_none(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(admin, channel, "!verify"))
+        assert len(channel.all_sent_calls) == 0
+
+    async def test_on_message_verify_and_unverify(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(admin, channel, "!spellbot toggle-verify"))
+
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!verify {mentions_str}"
+        await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
+
+        await client.on_message(MockMessage(AMY, channel, "!points"))
+        assert channel.last_sent_response.startswith("You've got 0 points")
+
+        cmd = f"!unverify {mentions_str}"
+        await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
+
+        await client.on_message(MockMessage(AMY, channel, "!points"))
+        assert AMY.last_sent_response == (
+            f"Hello <@{AMY.id}>. You are not verified to use SpellBot in "
+            f"{channel.name}. Please speak to a server moderator or administrator to "
+            "get verified."
+        )
+
+    async def test_on_message_verify_and_unverify_reacts(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+
+        # create a game post
+        await client.on_message(MockMessage(JR, channel, "!lfg"))
+        game_post = channel.last_sent_message
+
+        # then turn of verification
+        await client.on_message(MockMessage(admin, channel, "!spellbot toggle-verify"))
+
+        # then have an unverified user try to react join
+        payload = MockPayload(
+            user_id=AMY.id,
+            message_id=game_post.id,
+            emoji=EMOJI_JOIN_GAME,
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=AMY,
+        )
+        await client.on_raw_reaction_add(payload)
+
+        # unverified user should get a notification about being unverified
+        assert AMY.last_sent_response == (
+            f"Hello <@{AMY.id}>. You are not verified to use SpellBot in "
+            f"{channel.name}. Please speak to a server moderator or administrator to "
+            "get verified."
+        )
+
+        # only JR should have a game
+        assert user_has_game(client, JR)
+        assert not user_has_game(client, AMY)
+
+        # now verify AMY
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!verify {mentions_str}"
+        await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
+
+        # and try again
+        payload = MockPayload(
+            user_id=AMY.id,
+            message_id=game_post.id,
+            emoji=EMOJI_JOIN_GAME,
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=AMY,
+        )
+        await client.on_raw_reaction_add(payload)
+
+        # both should have a game
+        assert user_has_game(client, JR)
+        assert user_has_game(client, AMY)
+
+    async def test_on_react_to_non_game(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        await client.on_message(MockMessage(JR, channel, "!lfg"))
+        message = channel.last_sent_message
+
+        async with client.session() as session:
+            session.execute("delete from games;")
+            session.commit()
+
+        payload = MockPayload(
+            user_id=AMY.id,
+            message_id=message.id,
+            emoji=EMOJI_JOIN_GAME,
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=AMY,
+        )
+        await client.on_raw_reaction_add(payload)
+
+        assert not user_has_game(client, JR)
+        assert not user_has_game(client, AMY)

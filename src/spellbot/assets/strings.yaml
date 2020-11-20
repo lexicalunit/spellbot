@@ -48,6 +48,8 @@ no_dm: Hello $reply! That command only works in text channels.
 not_a_command: Sorry $reply, there is no "$request" command. Try "${prefix}spellbot
   help" for usage help.
 not_admin: $reply, you do not have admin permissions to run that command.
+not_verified: Hello $reply. You are not verified to use SpellBot in $channel. Please
+  speak to a server moderator or administrator to get verified.
 play_found_desc: You can [jump to the game post]($link) to see it, $reply!
 play_found_title: I found a game for you!
 points: You've got $points points, $reply.
@@ -103,6 +105,7 @@ spellbot_teams_none: Sorry $reply, but please provide a list of team names or `n
   to erase teams.
 spellbot_teams_too_few: Sorry $reply, but please give at least two team names or `none`
   to erase teams.
+spellbot_toggle_verify: Ok $reply, verification is now $setting for this channel.
 spellbot_unknown_subcommand: Sorry $reply, but the subcommand "$command" is not recognized.
 spellbot_voice: Ok $reply, I've turned $setting automatic voice channel creation.
 spellbot_voice_bad: Sorry $reply, but please provide an "on" or "off" setting.

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds the `!spellbot toggle-verify` command that toggles the verification
+  requirements for the channel that the command is ran within. Unverified users
+  will be unable to use SpellBot in channels that require verification.
+- Adds a `!verify` command that can be used to verify users mentioned.
+- Adds an `!unverify` command that does the opposite of `!verify`.
+
+### Changed
+
+- The old `user_teams` table has been refactored into a generic `user_server_settings`
+  that can contain any users settings related to a specific server, such as teams
+  and verification status. The affected sql scripts have been updated.
+
 ## [v5.9.3](https://github.com/lexicalunit/spellbot/releases/tag/v5.9.3) - 2020-11-18
 
 ### Changed

@@ -87,8 +87,11 @@ These commands will help you configure SpellBot for your server.
   - `smotd`: Set the server message of the day.
   - `motd`: Set the privacy level for messages of the day.
   - `size`: Sets the default game size for a specific channel.
+  - `toggle-verify`: Toggles requirement of verification for a specific channel.
   - `stats`: Gets some statistics about SpellBot usage on your server.
   - `help`: Get detailed usage help for SpellBot.
+- `!verify`: Allows moderators to verify a user on their server.
+- `!unverify`: Un-verifies a user for this server.
 
 ### 🛋️ Ergonomics
 

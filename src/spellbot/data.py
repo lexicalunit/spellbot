@@ -154,7 +154,7 @@ class Team(Base):
         rows = (
             session.query(Team.name, func.sum(UserPoints.points))
             .select_from(User)
-            .join(UserTeam)
+            .join(UserServerSettings)
             .join(UserPoints)
             .join(Team)
             .filter(Team.guild_xid == guild_xid)
@@ -191,6 +191,7 @@ class ChannelSettings(Base):
         index=True,
     )
     default_size = Column(Integer, nullable=True)
+    require_verification = Column(Boolean, nullable=False, server_default=false())
     server = relationship("Server", back_populates="channel_settings")
 
 
@@ -266,15 +267,16 @@ class User(Base):
 
     def to_json(self) -> dict:
         return {
-            "xid": self.xid,
-            "game_id": self.game_id,
             "cached_name": self.cached_name,
+            "created_at": str(self.created_at),
+            "game_id": self.game_id,
             "power": self.power,
+            "xid": self.xid,
         }
 
 
-class UserTeam(Base):
-    __tablename__ = "user_teams"
+class UserServerSettings(Base):
+    __tablename__ = "user_server_settings"
     user_xid = Column(
         BigInteger,
         ForeignKey("users.xid", ondelete="CASCADE"),
@@ -287,7 +289,8 @@ class UserTeam(Base):
         primary_key=True,
         nullable=False,
     )
-    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=True)
+    verified = Column(Boolean, nullable=True, server_default=false())
 
 
 class UserPoints(Base):
