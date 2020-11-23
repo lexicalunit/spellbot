@@ -2136,6 +2136,7 @@ class SpellBot(discord.Client):
         * `voice <on|off>`: When on, SpellBot will automatically create voice channels.
         * `tags <on|off>`: Turn on or off the ability to use tags on your server.
         * `smotd <your message>`: Set the server message of the day.
+        * `cmotd <your message>`: Set the message of the day for a channel.
         * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
         * `size <integer>`: Sets the default game size for a specific channel.
         * `toggle-verify`: Toggles user verification on/off for a specific channel.
@@ -2185,6 +2186,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_tags(session, server, params[1:], message)
             elif command == "smotd":
                 await self.spellbot_smotd(session, server, params[1:], message)
+            elif command == "cmotd":
+                await self.spellbot_cmotd(session, server, params[1:], message)
             elif command == "motd":
                 await self.spellbot_motd(session, server, params[1:], message)
             elif command == "size":
@@ -2557,6 +2560,32 @@ class SpellBot(discord.Client):
         session.commit()
         await safe_send_channel(
             message.channel, s("spellbot_smotd", reply=reply, motd=motd)
+        )
+        await safe_react_ok(message)
+
+    async def spellbot_cmotd(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        motd = " ".join(params)
+        reply = message.author.mention
+        if len(motd) >= 255:
+            await safe_send_channel(
+                message.channel, s("spellbot_cmotd_too_long", reply=reply)
+            )
+            await safe_react_error(message)
+            return
+
+        channel_settings = self.ensure_channel_settings_exists(
+            session, server, message.channel.id
+        )
+        channel_settings.cmotd = motd  # type: ignore
+        session.commit()
+        await safe_send_channel(
+            message.channel, s("spellbot_cmotd", reply=reply, motd=motd)
         )
         await safe_react_ok(message)
 

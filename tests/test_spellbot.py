@@ -2946,6 +2946,60 @@ class TestSpellBot:
             f"Sorry {admin.mention}, but that message is too long."
         )
 
+    async def test_on_message_spellbot_cmotd(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(
+            MockMessage(admin, channel, "!spellbot cmotd Hello to      you! Hi!")
+        )
+        assert channel.last_sent_response == (
+            f"Right on, {admin.mention}. "
+            "The message of the day for this channel is now: Hello to you! Hi!"
+        )
+
+        await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+
+        assert "Hello to you! Hi!" in game_embed_for(client, GUY, True)["description"]
+
+    async def test_on_message_spellbot_cmotd_none(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot cmotd something"))
+        assert channel.last_sent_response == (
+            f"Right on, {admin.mention}."
+            " The message of the day for this channel is now: something"
+        )
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot cmotd"))
+        assert channel.last_sent_response == (
+            f"Right on, {admin.mention}. The message of the day for this channel is now: "
+        )
+
+    async def test_on_message_spellbot_cmotd_too_long(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+        motd = "foo" * 100
+        await client.on_message(MockMessage(admin, channel, f"!spellbot cmotd {motd}"))
+        assert channel.last_sent_response == (
+            f"Sorry {admin.mention}, but that message is too long."
+        )
+
+    async def test_on_message_spellbot_smotd_and_cmotd(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(
+            MockMessage(admin, channel, "!spellbot cmotd Channel MOTD")
+        )
+        await client.on_message(
+            MockMessage(admin, channel, "!spellbot smotd Server MOTD")
+        )
+        await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+        assert "Channel MOTD" in game_embed_for(client, GUY, True)["description"]
+        assert "Server MOTD" in game_embed_for(client, GUY, True)["description"]
+
     async def test_on_message_spellbot_motd_none(self, client, channel_maker):
         author = an_admin()
         channel = channel_maker.text()

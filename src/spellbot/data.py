@@ -64,7 +64,7 @@ class Server(Base):
     games = relationship("Game", back_populates="server", uselist=True)
     channels = relationship("Channel", back_populates="server", uselist=True)
     channel_settings = relationship(
-        "ChannelSettings", back_populates="server", uselist=True
+        "ChannelSettings", back_populates="server", uselist=True, lazy="dynamic"
     )
     teams = relationship("Team", back_populates="server", uselist=True)
 
@@ -72,6 +72,10 @@ class Server(Base):
         return not self.channels or any(
             channel.channel_xid == channel_xid for channel in self.channels
         )
+
+    def channel_settings_for(self, channel_xid: int) -> Optional[ChannelSettings]:
+        filters = {"channel_xid": channel_xid}
+        return self.channel_settings.filter_by(**filters).one_or_none()  # type: ignore
 
     @classmethod
     def recent_metrics(cls, session: Session) -> dict:
@@ -192,6 +196,7 @@ class ChannelSettings(Base):
     )
     default_size = Column(Integer, nullable=True)
     require_verification = Column(Boolean, nullable=False, server_default=false())
+    cmotd = Column(String(255))
     server = relationship("Server", back_populates="channel_settings")
 
 
@@ -642,8 +647,12 @@ class Game(Base):
             description += (
                 "Please exchange Arena contact information and head over there to play!"
             )
+        if self.channel_xid:
+            channel_settings = self.server.channel_settings_for(self.channel_xid)
+            if channel_settings and channel_settings.cmotd:
+                description += f"\n{channel_settings.cmotd}"
         if self.server.smotd and show_motd:
-            description += f"\n\n{self.server.smotd}"
+            description += f"\n{self.server.smotd}"
         embed.description = description
 
         if self.voice_channel_xid:

@@ -5,6 +5,7 @@
 > * `voice <on|off>`: When on, SpellBot will automatically create voice channels.
 > * `tags <on|off>`: Turn on or off the ability to use tags on your server.
 > * `smotd <your message>`: Set the server message of the day.
+> * `cmotd <your message>`: Set the message of the day for a channel.
 > * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
 > * `size <integer>`: Sets the default game size for a specific channel.
 > * `toggle-verify`: Toggles user verification on/off for a specific channel.
@@ -26,4 +27,4 @@
 `!event <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]`
 >  Create many games in batch from an attached CSV data file. _Requires the "SpellBot Admin" role._
 > 
-> For example, if your event is for a Modern tournement you might attach a CSV file with a comment like `!event Player1Username Player2Username`. This would assume that the players' discord user names are found in the "Player1Username" and "Player2Username" CSV columns.
+> For example, if your event is for a Modern tournement you might attach a CSV file with a comment like `!event Player1Username Player2Username`.
