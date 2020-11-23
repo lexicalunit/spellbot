@@ -9,6 +9,7 @@
 > * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
 > * `size <integer>`: Sets the default game size for a specific channel.
 > * `toggle-verify`: Toggles user verification on/off for a specific channel.
+> * `verify-message`: Set the verification message for a specific channel.
 > * `stats`: Gets some statistics about SpellBot usage on your server.
 > * `help`: Get detailed usage help for SpellBot.
 
@@ -26,5 +27,3 @@
 
 `!event <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]`
 >  Create many games in batch from an attached CSV data file. _Requires the "SpellBot Admin" role._
-> 
-> For example, if your event is for a Modern tournement you might attach a CSV file with a comment like `!event Player1Username Player2Username`.
