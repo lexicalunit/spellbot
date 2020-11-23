@@ -110,6 +110,9 @@ spellbot_teams_too_few: Sorry $reply, but please give at least two team names or
   to erase teams.
 spellbot_toggle_verify: Ok $reply, verification is now $setting for this channel.
 spellbot_unknown_subcommand: Sorry $reply, but the subcommand "$command" is not recognized.
+spellbot_verify_message: 'Right on, $reply. The verification message for this channel
+  is now: $msg'
+spellbot_verify_message_too_long: Sorry $reply, but that message is too long.
 spellbot_voice: Ok $reply, I've turned $setting automatic voice channel creation.
 spellbot_voice_bad: Sorry $reply, but please provide an "on" or "off" setting.
 tags_too_many: Sorry $reply, but you can not use more than 5 tags.

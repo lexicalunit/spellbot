@@ -588,6 +588,21 @@ class SpellBot(discord.Client):
 
         await post.edit(embed=game.to_embed(wait=self.average_wait(game)))
 
+    async def safe_send_not_verified(
+        self,
+        author: discord.User,
+        channel_settings: ChannelSettings,
+        channel_name: str,
+    ) -> None:
+        not_verified_message = s(
+            "not_verified",
+            reply=author.mention,
+            channel=channel_name,
+        )
+        if channel_settings.verify_message:
+            not_verified_message = channel_settings.verify_message
+        await safe_send_user(author, not_verified_message)
+
     async def process(self, message: discord.Message, prefix: str) -> None:
         """Process a command message."""
         tokens = message.content.split(" ")
@@ -692,13 +707,8 @@ class SpellBot(discord.Client):
             if channel_settings.require_verification:
                 user_settings = self.ensure_user_settings_exists(session, user, server)
                 if not user_settings.verified:
-                    await safe_send_user(
-                        author,
-                        s(
-                            "not_verified",
-                            reply=author.mention,
-                            channel=message.channel.name,
-                        ),
+                    await self.safe_send_not_verified(
+                        author, channel_settings, message.channel.name
                     )
                     await safe_remove_reaction(message, emoji, author)
                     return
@@ -838,13 +848,8 @@ class SpellBot(discord.Client):
                         )
                         if not user_settings.verified:
                             discord_user = cast(discord.User, message.author)
-                            await safe_send_user(
-                                discord_user,
-                                s(
-                                    "not_verified",
-                                    reply=message.author.mention,
-                                    channel=message.channel.name,
-                                ),
+                            await self.safe_send_not_verified(
+                                discord_user, channel_settings, message.channel.name
                             )
                             await safe_react_error(message)
                             return
@@ -2140,6 +2145,7 @@ class SpellBot(discord.Client):
         * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
         * `size <integer>`: Sets the default game size for a specific channel.
         * `toggle-verify`: Toggles user verification on/off for a specific channel.
+        * `verify-message`: Set the verification message for a specific channel.
         * `stats`: Gets some statistics about SpellBot usage on your server.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
@@ -2196,6 +2202,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_stats(session, server, params[1:], message)
             elif command == "toggle-verify":
                 await self.spellbot_toggle_verify(session, server, params[1:], message)
+            elif command == "verify-message":
+                await self.spellbot_verify_message(session, server, params[1:], message)
             else:
                 await safe_send_channel(
                     message.channel,
@@ -2697,6 +2705,32 @@ class SpellBot(discord.Client):
                 reply=message.author.mention,
                 setting="on" if new_setting else "off",
             ),
+        )
+        await safe_react_ok(message)
+
+    async def spellbot_verify_message(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        msg = " ".join(params)
+        reply = message.author.mention
+        if len(msg) >= 255:
+            await safe_send_channel(
+                message.channel, s("spellbot_verify_message_too_long", reply=reply)
+            )
+            await safe_react_error(message)
+            return
+
+        channel_settings = self.ensure_channel_settings_exists(
+            session, server, message.channel.id
+        )
+        channel_settings.verify_message = msg  # type: ignore
+        session.commit()
+        await safe_send_channel(
+            message.channel, s("spellbot_verify_message", reply=reply, msg=msg)
         )
         await safe_react_ok(message)
 

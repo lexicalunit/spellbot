@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Adds a `!verify` command that can be used to verify users mentioned.
 - Adds an `!unverify` command that does the opposite of `!verify`.
 - Adds a `!spellbot cmotd` command to set the channel message of the day.
+- Adds a `!spellbot verify-message` command to set the not verified message for a channel.
 
 ### Changed
 
