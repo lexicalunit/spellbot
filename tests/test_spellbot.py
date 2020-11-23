@@ -3416,3 +3416,49 @@ class TestSpellBot:
 
         assert not user_has_game(client, JR)
         assert not user_has_game(client, AMY)
+
+    async def test_on_message_spellbot_verify_message(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(
+            MockMessage(admin, channel, "!spellbot verify-message What the heck?")
+        )
+        assert channel.last_sent_response == (
+            f"Right on, {admin.mention}. "
+            "The verification message for this channel is now: What the heck?"
+        )
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot toggle-verify"))
+        await client.on_message(MockMessage(AMY, channel, "!points"))
+        assert AMY.last_sent_response == "What the heck?"
+
+    async def test_on_message_spellbot_verify_message_none(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+
+        await client.on_message(
+            MockMessage(admin, channel, "!spellbot verify-message something")
+        )
+        assert channel.last_sent_response == (
+            f"Right on, {admin.mention}."
+            " The verification message for this channel is now: something"
+        )
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot verify-message"))
+        assert channel.last_sent_response == (
+            f"Right on, {admin.mention}."
+            " The verification message for this channel is now: "
+        )
+
+    async def test_on_message_spellbot_verify_message_too_long(
+        self, client, channel_maker
+    ):
+        admin = an_admin()
+        channel = channel_maker.text()
+        msg = "foo" * 100
+        await client.on_message(
+            MockMessage(admin, channel, f"!spellbot verify-message {msg}")
+        )
+        assert channel.last_sent_response == (
+            f"Sorry {admin.mention}, but that message is too long."
+        )

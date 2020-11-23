@@ -197,6 +197,7 @@ class ChannelSettings(Base):
     default_size = Column(Integer, nullable=True)
     require_verification = Column(Boolean, nullable=False, server_default=false())
     cmotd = Column(String(255))
+    verify_message = Column(String(255))
     server = relationship("Server", back_populates="channel_settings")
 
 
