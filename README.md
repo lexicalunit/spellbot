@@ -85,6 +85,7 @@ These commands will help you configure SpellBot for your server.
   - `voice`: When on, SpellBot will automatically create voice channels.
   - `tags`: Turn on or off the ability to use tags on your server.
   - `smotd`: Set the server message of the day.
+  - `cmotd`: Set the message of the day for the channel where you run it.
   - `motd`: Set the privacy level for messages of the day.
   - `size`: Sets the default game size for a specific channel.
   - `toggle-verify`: Toggles requirement of verification for a specific channel.
