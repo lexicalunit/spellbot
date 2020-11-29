@@ -3462,3 +3462,27 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f"Sorry {admin.mention}, but that message is too long."
         )
+
+    async def test_on_message_spellbot_power_7_break(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        await client.on_message(MockMessage(BUDDY, channel, "!power 5"))
+        await client.on_message(MockMessage(BUDDY, channel, "!lfg"))
+
+        await client.on_message(MockMessage(AMY, channel, "!power 6"))
+        await client.on_message(MockMessage(JACOB, channel, "!power 6"))
+
+        mentions = [JACOB]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!lfg {mentions_str}"
+        await client.on_message(MockMessage(AMY, channel, cmd, mentions=mentions))
+
+        await client.on_message(MockMessage(GUY, channel, "!power 7"))
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+
+        assert game_embed_for(client, AMY, False) == game_embed_for(client, JACOB, False)
+        assert game_embed_for(client, AMY, False) == game_embed_for(client, BUDDY, False)
+        assert game_embed_for(client, AMY, False) != game_embed_for(client, GUY, False)
+
+        async with client.session() as session:
+            assert len(session.query(Game).all()) == 2
