@@ -1,3 +1,8 @@
+# Welcome to Beautiful Jekyll!
+# This config file is meant for settings that affect your entire website. When you first
+# set up your website you should go through all these settings and edit them, but after
+# the initial set up you won't need to come back to this file often.
+
 # --- Required options --- #
 
 # Name of website
@@ -36,14 +41,15 @@ social-network-links:
   email: "amy@lexicalunit.com"
   github: lexicalunit
   twitter: SpellBotIO
-  rss: true
+#  facebook: deanattali
+#  patreon: DeanAttali
+#  youtube: c/daattali
 #  reddit: yourname
 #  linkedin: daattali
 #  xing: yourname
 #  stackoverflow: "3943160/daattali"
 #  snapchat: deanat78
 #  instagram: deanat78
-#  youtube: user/deanat78
 #  spotify: yourname
 #  telephone: +14159998888
 #  steam: deanat78
@@ -57,7 +63,7 @@ social-network-links:
 
 # If you want to show a link to an RSS in the footer, add the site description here.
 # If you don't want to show an RSS link, remove the following line.
-rss-description: The Discord bot for SpellTable
+# rss-description: The Discord bot for SpellTable
 
 # --- General options --- #
 
@@ -74,6 +80,12 @@ url-pretty: "SpellBot.io"
 
 # Excerpt word length - Truncate the excerpt of each post on the feed page to the specified number of words
 excerpt_length: 50
+
+# Whether or not to show an excerpt for every blog post in the feed page
+feed_show_excerpt: true
+
+# Whether or not to show a list of tags below each post preview in the feed page
+feed_show_tags: true
 
 # The keywords to associate with your website, for SEO purposes
 keywords: "magic: the gathering, magic, mtg, edh, commander, spelltable, discord bot, discord, bot"
@@ -104,9 +116,13 @@ font-family: "'Verdana', sans-serif"
 # Suggest a colour for mobile browsers to use as the browser's theme. This is only supported by a few mobile browsers.
 mobile-theme-col: "#5A3EFD"
 
-# For any extra customization, you can include additional CSS files in every page on your site. List any custom CSS files here
+# For any extra visual customization, you can include additional CSS files in every page on your site. List any custom CSS files here
 site-css:
   - "/assets/css/spellbot.css"
+
+# If you have common JavaScript files that should be included in every page, list them here
+site-js:
+ - "/assets/js/spellbot.js"
 
 # --- Web Analytics Section --- #
 
@@ -167,7 +183,6 @@ date_format: "%B %-d, %Y"
 # Facebook App ID
 #fb_app_id: ""
 
-
 # --- You don't need to touch anything below here (but you can if you want) --- #
 
 # Output options (more information on Jekyll's site)
@@ -190,13 +205,11 @@ defaults:
       layout: "post"
       comments: false  # add comments to all blog posts
       social-share: false # add social media sharing buttons to all blog posts
-      readtime: false # add estimated reading time on all blog posts
   -
     scope:
-      path: "" # all files
+      path: "" # any file that's not a post will be a "page" layout by default
     values:
       layout: "page"
-      show-avatar: true
 
 # Exclude these files from production site
 exclude:
