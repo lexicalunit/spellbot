@@ -9,6 +9,7 @@
 [![pypi][pypi-badge]][pypi]
 [![codecov][codecov-badge]][codecov]
 [![CodeFactor][factor-badge]][factor]
+[![CodeQL][codeql-badge]][security]
 [![python][python-badge]][python]
 [![black][black-badge]][black]
 [![mit][mit-badge]][mit]
@@ -175,6 +176,7 @@ with installing and using it.
 [build]:              https://github.com/lexicalunit/spellbot/actions
 [codecov-badge]:      https://codecov.io/gh/lexicalunit/spellbot/branch/master/graph/badge.svg
 [codecov]:            https://codecov.io/gh/lexicalunit/spellbot
+[codeql-badge]:       https://github.com/lexicalunit/spellbot/workflows/CodeQL/badge.svg
 [contributors]:       https://github.com/lexicalunit/spellbot/graphs/contributors
 [create-role]:        https://support.discord.com/hc/en-us/articles/206029707-How-do-I-set-up-Permissions-
 [db-url]:             https://docs.sqlalchemy.org/en/latest/core/engines.html
@@ -190,6 +192,8 @@ with installing and using it.
 [kofi-button]:        https://user-images.githubusercontent.com/1903876/88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
 [lexicalunit]:        http://github.com/lexicalunit
 [lfg]:                https://user-images.githubusercontent.com/1903876/91242259-cedd2280-e6fb-11ea-8d30-e7127b6f96e9.png
+[metrics-badge]:      https://img.shields.io/badge/metrics-grafana-orange.svg
+[metrics]:            https://lexicalunit.grafana.net/d/4TSUCbcMz/spellbot?orgId=1
 [mit-badge]:          https://img.shields.io/badge/License-MIT-yellow.svg
 [mit]:                https://opensource.org/licenses/MIT
 [pypi-badge]:         https://img.shields.io/pypi/v/spellbot
@@ -197,11 +201,10 @@ with installing and using it.
 [python-badge]:       https://img.shields.io/badge/python-3.7+-blue.svg
 [python]:             https://www.python.org/
 [ready]:              https://user-images.githubusercontent.com/1903876/91242257-cdabf580-e6fb-11ea-86ad-8f1aaf6d34dc.png
+[security]:           https://github.com/lexicalunit/spellbot/security
 [spelltable-discord]: https://discord.gg/zXzgqMN
 [spelltable]:         https://www.spelltable.com/
 [top-badge]:          https://top.gg/api/widget/status/725510263251402832.svg?noavatar=true
 [top]:                https://top.gg/bot/725510263251402832
 [uptime-badge]:       https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]:             https://uptimerobot.com/dashboard#785764282
-[metrics-badge]:      https://img.shields.io/badge/metrics-grafana-orange.svg
-[metrics]:            https://lexicalunit.grafana.net/d/4TSUCbcMz/spellbot?orgId=1

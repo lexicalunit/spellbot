@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds GraphQL, security alerts, security policy, and badge.
+
 ### Changed
 
 - Moves top.gg widget to navbar.
