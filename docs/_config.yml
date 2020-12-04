@@ -36,7 +36,7 @@ social-network-links:
   email: "amy@lexicalunit.com"
   github: lexicalunit
   twitter: SpellBotIO
-  rss: true
+#  rss: true
 #  reddit: yourname
 #  linkedin: daattali
 #  xing: yourname
@@ -57,7 +57,7 @@ social-network-links:
 
 # If you want to show a link to an RSS in the footer, add the site description here.
 # If you don't want to show an RSS link, remove the following line.
-rss-description: The Discord bot for SpellTable
+# rss-description: The Discord bot for SpellTable
 
 # --- General options --- #
 
