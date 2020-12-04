@@ -69,21 +69,6 @@ a {
   transition: all 0.3s ease-in-out;
 }
 
-.top-gg-widget img {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* prevent any overlap of floating widget with text */
-@media (min-width: 1400px) {
-  .top-gg-widget {
-    position: fixed;
-    bottom: 2em;
-    left: 1em;
-  }
-}
-
 footer {
   border-top: 0 !important;
 }
@@ -98,4 +83,13 @@ a:hover {
 
 .navbar-brand {
   display: none !important;
+}
+
+.nav-item img {
+  box-shadow: none !important;
+  transition: all 0.3s ease-in-out;
+}
+
+.nav-item img:hover {
+  filter: brightness(150%);
 }
