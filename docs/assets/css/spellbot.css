@@ -93,3 +93,8 @@ a:hover {
 .nav-item img:hover {
   filter: brightness(150%);
 }
+
+code {
+  font-size: 1em !important;
+  background-color: transparent !important;
+}

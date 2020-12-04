@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Moves top.gg widget to navbar.
+- Update to latest from beautiful-jekyll.
 
 ## [v5.10.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.10.0) - 2020-11-23
 
