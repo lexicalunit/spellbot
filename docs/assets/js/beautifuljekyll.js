@@ -25,6 +25,9 @@ var BeautifulJekyllJS = {
       $(".navbar").removeClass("top-nav-expanded");
     });
 
+    // Add bot status badge to navbar
+    $('#main-navbar .navbar-nav').append('<li class="nav-item"><a class="nav-link" href="https://top.gg/bot/725510263251402832"><img src="https://top.gg/api/widget/status/725510263251402832.svg?noavatar=true" alt="SpellBot" /></a></li>')
+
     // show the big header image
     BeautifulJekyllJS.initImgs();
   },
