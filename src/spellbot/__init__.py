@@ -2152,6 +2152,7 @@ class SpellBot(discord.Client):
         * `channels <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot's command prefix for text channels.
         * `links <private|public>`: Set the privacy for generated SpellTable links.
+        * `spectate <on|off>`: Add a spectator link to the posts SpellBot makes.
         * `expire <number>`: Set the number of minutes before pending games expire.
         * `teams <list|none>`: Sets the teams available on this server.
         * `power <on|off>`: Turns the power command on or off for this server.
@@ -2199,6 +2200,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_config(session, server, params[1:], message)
             elif command == "links":
                 await self.spellbot_links(session, server, params[1:], message)
+            elif command == "spectate":
+                await self.spellbot_spectate(session, server, params[1:], message)
             elif command == "teams":
                 await self.spellbot_teams(session, server, params[1:], message)
             elif command == "power":
@@ -2384,6 +2387,37 @@ class SpellBot(discord.Client):
                 "spellbot_links",
                 reply=message.author.mention,
                 setting=links_str,
+            ),
+        )
+        await safe_react_ok(message)
+
+    async def spellbot_spectate(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        if not params or params[0].lower() not in ["on", "off"]:
+            await safe_send_channel(
+                message.channel,
+                s(
+                    "spellbot_spectate_bad",
+                    reply=message.author.mention,
+                ),
+            )
+            await safe_react_error(message)
+            return
+
+        setting = params[0].lower()
+        server.show_spectate_link = setting == "on"  # type: ignore
+        session.commit()
+        await safe_send_channel(
+            message.channel,
+            s(
+                "spellbot_spectate",
+                reply=message.author.mention,
+                setting=setting,
             ),
         )
         await safe_react_ok(message)
@@ -2791,6 +2825,9 @@ class SpellBot(discord.Client):
             channels_str = "all"
         embed.add_field(name="Active channels", value=channels_str)
         embed.add_field(name="Links privacy", value=server.links.title())
+        embed.add_field(
+            name="Spectator links", value="On" if server.show_spectate_link else "Off"
+        )
         embed.add_field(name="MOTD privacy", value=str(server.motd).title())
         embed.add_field(name="Power", value="On" if server.power_enabled else "Off")
         embed.add_field(name="Tags", value="On" if server.tags_enabled else "Off")

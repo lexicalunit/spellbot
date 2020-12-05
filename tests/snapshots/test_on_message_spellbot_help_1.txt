@@ -1,4 +1,5 @@
 > * `links <private|public>`: Set the privacy for generated SpellTable links.
+> * `spectate <on|off>`: Add a spectator link to the posts SpellBot makes.
 > * `expire <number>`: Set the number of minutes before pending games expire.
 > * `teams <list|none>`: Sets the teams available on this server.
 > * `power <on|off>`: Turns the power command on or off for this server.

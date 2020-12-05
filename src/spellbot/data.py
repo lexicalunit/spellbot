@@ -56,6 +56,7 @@ class Server(Base):
     prefix = Column(String(10), nullable=False, default="!")
     expire = Column(Integer, nullable=False, server_default=text("30"))  # minutes
     links = Column(String(10), nullable=False, server_default=text("'public'"))
+    show_spectate_link = Column(Boolean, nullable=False, server_default=false())
     motd = Column(String(10), nullable=False, server_default=text("'both'"))
     power_enabled = Column(Boolean, nullable=False, server_default=true())
     tags_enabled = Column(Boolean, nullable=False, server_default=true())
@@ -135,6 +136,7 @@ class Server(Base):
                 "guild_xid": self.guild_xid,
                 "prefix": self.prefix,
                 "expire": self.expire,
+                "show_spectate_link": self.show_spectate_link,
                 "channels": [channel.channel_xid for channel in self.channels],
                 "teams": [team.name for team in self.teams],
             }
@@ -630,6 +632,11 @@ class Game(Base):
                         "Click the link below to join your SpellTable game."
                         f"\n<{self.url}>"
                     )
+                    if self.server.show_spectate_link:
+                        description += (
+                            "\nOr spectate on the game with the following link."
+                            f"\n<{self.url}?spectate>"
+                        )
                 else:
                     description += (
                         "Sorry but SpellBot was unable to create a SpellTable link"
