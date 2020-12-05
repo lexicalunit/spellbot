@@ -32,7 +32,9 @@ event_not_csv: Sorry $reply, but the file is not a CSV file. Make sure the filen
 event_not_utf: Sorry $reply, but that file isn't UTF-8 encoded and I can't read it.
 game_created: '**Game $id created:**
 
-  > Link: <$url>
+  > Game: <$url>
+
+  > Spectate: <${url}?spectate>
 
   > Players notified by DM: $players'
 game_message_too_long: Sorry $reply, but the optional game message must be shorter
