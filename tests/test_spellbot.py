@@ -649,6 +649,7 @@ class TestSpellBot:
             "Links privacy": "Public",
             "MOTD privacy": "Both",
             "Server MOTD": "Hello!",
+            "Spectator links": "Off",
             "Power": "On",
             "Tags": "On",
             "Voice channels": "Off",
@@ -888,6 +889,7 @@ class TestSpellBot:
             "channels": [],
             "guild_xid": 5,
             "prefix": "!",
+            "show_spectate_link": False,
             "expire": 30,
             "teams": [],
         }
@@ -3486,3 +3488,37 @@ class TestSpellBot:
 
         async with client.session() as session:
             assert len(session.query(Game).all()) == 2
+
+    async def test_on_message_spellbot_spectate_none(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot spectate"))
+        assert channel.last_sent_response == (
+            f'Sorry {author.mention}, but please provide an "on" or "off" setting.'
+        )
+
+    async def test_on_message_spellbot_spectate_invalid(self, client, channel_maker):
+        author = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!spellbot spectate it"))
+        assert channel.last_sent_response == (
+            f'Sorry {author.mention}, but please provide an "on" or "off" setting.'
+        )
+
+    async def test_on_message_spellbot_spectate(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot spectate off"))
+        assert channel.last_sent_response == (
+            f"Ok {author.mention}, I've turned the show spectator link setting off."
+        )
+        await client.on_message(MockMessage(author, channel, "!spellbot spectate on"))
+        assert channel.last_sent_response == (
+            f"Ok {author.mention}, I've turned the show spectator link setting on."
+        )
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
+        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
+        assert "spectate on the game" in game_embed_for(client, AMY, True)["description"]

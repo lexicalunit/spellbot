@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds GraphQL, security alerts, security policy, and badge.
+- Allow servers to turn on a setting for showing spectator links.
 
 ### Changed
 
