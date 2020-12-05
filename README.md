@@ -80,6 +80,7 @@ These commands will help you configure SpellBot for your server.
   - `channels`: Set the channels SpellBot is allowed to operate within.
   - `prefix`: Set the command prefix for SpellBot in text channels.
   - `links`: Set the privacy level for generated SpellTable links.
+  - `spectate`: Add a spectator link to the posts SpellBot makes.
   - `expire`: Set how many minutes before games are expired due to inactivity.
   - `teams`: Sets the teams available on this server.
   - `power`: Turns the power command on or off for this server.
