@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Also show spectator link in even orchestration commands.
+
 ## [v5.11.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.11.0) - 2020-12-04
 
 ### Removed

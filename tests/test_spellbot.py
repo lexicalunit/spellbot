@@ -745,7 +745,8 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: <{game['url']}>\n"
+            f"> Game: <{game['url']}>\n"
+            f"> Spectate: <{game['url']}?spectate>\n"
             f"> Players notified by DM: {FRIEND.mention}, {BUDDY.mention},"
             f" {GUY.mention}, {DUDE.mention}"
         )
@@ -768,7 +769,8 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: <{game['url']}>\n"
+            f"> Game: <{game['url']}>\n"
+            f"> Spectate: <{game['url']}?spectate>\n"
             f"> Players notified by DM: {FRIEND.mention}, {BUDDY.mention},"
             f" {GUY.mention}, {DUDE.mention}"
         )
@@ -791,7 +793,8 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: <{game['url']}>\n"
+            f"> Game: <{game['url']}>\n"
+            f"> Spectate: <{game['url']}?spectate>\n"
             f"> Players notified by DM: {FRIEND.mention}, {BUDDY.mention},"
             f" {GUY.mention}, {DUDE.mention}"
         )
@@ -812,7 +815,8 @@ class TestSpellBot:
         game = all_games(client)[1]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: <{game['url']}>\n"
+            f"> Game: <{game['url']}>\n"
+            f"> Spectate: <{game['url']}?spectate>\n"
             f"> Players notified by DM: {AMY.mention}, {ADAM.mention}"
         )
         player_response = game_embed_for(client, ADAM, True, message=message)
@@ -832,7 +836,8 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: <{game['url']}>\n"
+            f"> Game: <{game['url']}>\n"
+            f"> Spectate: <{game['url']}?spectate>\n"
             f"> Players notified by DM: {FRIEND.mention}, {BUDDY.mention},"
             f" {GUY.mention}, {DUDE.mention}"
         )
@@ -854,7 +859,8 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: <{game['url']}>\n"
+            f"> Game: <{game['url']}>\n"
+            f"> Spectate: <{game['url']}?spectate>\n"
             f"> Players notified by DM: {FRIEND.mention}, {BUDDY.mention},"
             f" {GUY.mention}, {DUDE.mention}"
         )
@@ -871,7 +877,8 @@ class TestSpellBot:
         game = all_games(client)[1]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: <{game['url']}>\n"
+            f"> Game: <{game['url']}>\n"
+            f"> Spectate: <{game['url']}?spectate>\n"
             f"> Players notified by DM: {AMY.mention}, {ADAM.mention},"
             f" {JR.mention}, {FRIEND.mention}"
         )
@@ -1249,7 +1256,8 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: <{game['url']}>\n"
+            f"> Game: <{game['url']}>\n"
+            f"> Spectate: <{game['url']}?spectate>\n"
             f"> Players notified by DM: {AMY.name}, {JR.name}"
         )
         player_response = game_embed_for(client, AMY, True)
@@ -1277,7 +1285,8 @@ class TestSpellBot:
         game = all_games(client)[0]
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
-            f"> Link: <{game['url']}>\n"
+            f"> Game: <{game['url']}>\n"
+            f"> Spectate: <{game['url']}?spectate>\n"
             f"> Players notified by DM: {AMY.name}, {JR.name}"
         )
         player_response = game_embed_for(client, AMY, True, message=opt)
