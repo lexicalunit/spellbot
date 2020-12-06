@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds cached_name to channel settings.
+- Adds created_at and updated_at to channel settings.
+
 ## [v5.12.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.12.0) - 2020-12-05
 
 ### Added

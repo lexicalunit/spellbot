@@ -492,7 +492,7 @@ class SpellBot(discord.Client):
         return cast(Server, server)
 
     def ensure_channel_settings_exists(
-        self, session: Session, server: Server, channel_xid: int
+        self, session: Session, server: Server, channel_xid: int, channel_name: str
     ) -> ChannelSettings:
         """Ensures that the channel settings row exists for the given guild/channel id."""
         channel_settings = (
@@ -507,10 +507,15 @@ class SpellBot(discord.Client):
         )
         if not channel_settings:
             channel_settings = ChannelSettings(
-                guild_xid=server.guild_xid, channel_xid=channel_xid
+                guild_xid=server.guild_xid,
+                channel_xid=channel_xid,
+                cached_name=channel_name,
             )
             session.add(channel_settings)
-            session.commit()
+        else:
+            channel_settings.cached_name = channel_name
+            channel_settings.updated_at = datetime.utcnow()
+        session.commit()
         return cast(ChannelSettings, channel_settings)
 
     async def ensure_available_voice_category(
@@ -705,7 +710,7 @@ class SpellBot(discord.Client):
                 return
 
             channel_settings = self.ensure_channel_settings_exists(
-                session, server, payload.channel_id
+                session, server, payload.channel_id, message.channel.name
             )
             if channel_settings.require_verification:
                 user_settings = self.ensure_user_settings_exists(session, user, server)
@@ -842,7 +847,7 @@ class SpellBot(discord.Client):
                     if not server.bot_allowed_in(message.channel.id):
                         return
                     channel_settings = self.ensure_channel_settings_exists(
-                        session, server, message.channel.id
+                        session, server, message.channel.id, message.channel.name
                     )
                     if channel_settings.require_verification:
                         user = self.ensure_user_exists(session, message.author)
@@ -1120,7 +1125,7 @@ class SpellBot(discord.Client):
     ) -> None:
         server = self.ensure_server_exists(session, message.channel.guild.id)
         channel_settings = self.ensure_channel_settings_exists(
-            session, server, message.channel.id
+            session, server, message.channel.id, message.channel.name
         )
         user = self.ensure_user_exists(session, message.author)
         mentions = message.mentions if message.channel.type != "private" else []
@@ -1449,7 +1454,7 @@ class SpellBot(discord.Client):
         async with self.session() as session:
             server = self.ensure_server_exists(session, message.channel.guild.id)
             channel_settings = self.ensure_channel_settings_exists(
-                session, server, message.channel.id
+                session, server, message.channel.id, message.channel.name
             )
 
             opts = parse_opts(params, default_size=channel_settings.default_size)
@@ -1777,7 +1782,7 @@ class SpellBot(discord.Client):
         async with self.session() as session:
             server = self.ensure_server_exists(session, message.channel.guild.id)
             channel_settings = self.ensure_channel_settings_exists(
-                session, server, message.channel.id
+                session, server, message.channel.id, message.channel.name
             )
 
             opts = parse_opts(params, default_size=channel_settings.default_size)
@@ -2640,7 +2645,7 @@ class SpellBot(discord.Client):
             return
 
         channel_settings = self.ensure_channel_settings_exists(
-            session, server, message.channel.id
+            session, server, message.channel.id, message.channel.name
         )
         channel_settings.cmotd = motd  # type: ignore
         session.commit()
@@ -2723,7 +2728,7 @@ class SpellBot(discord.Client):
             return
 
         channel_settings = self.ensure_channel_settings_exists(
-            session, server, message.channel.id
+            session, server, message.channel.id, message.channel.name
         )
         channel_settings.default_size = default_size  # type: ignore
         session.commit()
@@ -2745,7 +2750,7 @@ class SpellBot(discord.Client):
         message: discord.Message,
     ) -> None:
         channel_settings = self.ensure_channel_settings_exists(
-            session, server, message.channel.id
+            session, server, message.channel.id, message.channel.name
         )
         new_setting = not channel_settings.require_verification
         channel_settings.require_verification = new_setting  # type: ignore
@@ -2777,7 +2782,7 @@ class SpellBot(discord.Client):
             return
 
         channel_settings = self.ensure_channel_settings_exists(
-            session, server, message.channel.id
+            session, server, message.channel.id, message.channel.name
         )
         channel_settings.verify_message = msg  # type: ignore
         session.commit()
