@@ -953,8 +953,8 @@ class SpellBot(discord.Client):
         usage += f"👍 Give SpellBot a vote on top.gg: <{VOTE_LINK}>\n"
         usage += "\n"
         usage += (
-            "💜 You can help keep SpellBot running by supporting me on Ko-fi! "
-            "<https://ko-fi.com/Y8Y51VTHZ>"
+            "💜 You can help keep SpellBot running by becoming a patron! "
+            "<https://www.patreon.com/lexicalunit>"
         )
         if str(message.channel.type) != "private":
             await safe_react_ok(message)
@@ -986,7 +986,7 @@ class SpellBot(discord.Client):
             f"[👍 Give SpellBot a vote on top.gg!]({VOTE_LINK})\n"
             "\n"
             "💜 Help keep SpellBot running by "
-            "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
+            "[becoming a patron!](https://www.patreon.com/lexicalunit)"
         )
         embed.url = "http://spellbot.io/"
         embed.color = discord.Color(0x5A3EFD)
