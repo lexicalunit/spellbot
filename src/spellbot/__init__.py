@@ -461,6 +461,7 @@ class SpellBot(discord.Client):
         else:
             # try to keep this relatively up to date
             db_user.name = cast(Any, user).name
+            db_user.updated_at = datetime.utcnow()
         session.commit()
         return cast(User, db_user)
 
