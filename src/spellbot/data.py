@@ -196,6 +196,9 @@ class ChannelSettings(Base):
         nullable=False,
         index=True,
     )
+    cached_name = Column(String(50))
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     default_size = Column(Integer, nullable=True)
     require_verification = Column(Boolean, nullable=False, server_default=false())
     cmotd = Column(String(255))

@@ -5,8 +5,6 @@ Revises: a1d4bbcc2831
 Create Date: 2020-12-05 17:52:47.113798
 
 """
-from datetime import datetime
-
 import sqlalchemy as sa
 from alembic import op
 
@@ -20,10 +18,10 @@ depends_on = None
 def upgrade():
     conn = op.get_bind()
 
-    # existing users will have an updated_at set to now
+    # existing users will have an updated_at set its created_at
     with op.batch_alter_table("users") as b:
         b.add_column(sa.Column("updated_at", sa.DateTime(), nullable=True))
-    conn.execute(sa.text("UPDATE users SET updated_at = :now"), now=datetime.utcnow())
+    conn.execute(sa.text("UPDATE users SET updated_at = created_at"))
     with op.batch_alter_table("users") as b:
         b.alter_column("updated_at", nullable=False)
 
