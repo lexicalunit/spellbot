@@ -13,13 +13,12 @@
 [![python][python-badge]][python]
 [![black][black-badge]][black]
 [![mit][mit-badge]][mit]
+[![patreon][patreon-button]][patreon]
 [![follow][follow-badge]][follow]
 
 The Discord bot for [SpellTable][spelltable].
 
 [![add-bot][add-bot-button]][add-bot]
-
-[![ko-fi][kofi-button]][ko-fi]
 
 ## 🤖 Using SpellBot
 
@@ -115,7 +114,7 @@ to [directly report any bugs][issues] that you encounter.
 ## 🙌 Support Me
 
 I'm keeping SpellBot running using my own money but if you like the bot and want
-to help me out, please consider donating to [my Ko-fi][ko-fi].
+to help me out, please consider [becoming a patron][patreon].
 
 ## ❤️ Contributing
 
@@ -189,8 +188,8 @@ with installing and using it.
 [follow-badge]:       https://img.shields.io/twitter/follow/SpellBotIO?style=social
 [follow]:             https://twitter.com/intent/follow?screen_name=SpellBotIO
 [issues]:             https://github.com/lexicalunit/spellbot/issues
-[ko-fi]:              https://ko-fi.com/Y8Y51VTHZ
-[kofi-button]:        https://user-images.githubusercontent.com/1903876/88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
+[patreon]:            https://www.patreon.com/lexicalunit
+[patreon-button]:     https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dlexicalunit%26type%3Dpatrons88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
 [lexicalunit]:        http://github.com/lexicalunit
 [lfg]:                https://user-images.githubusercontent.com/1903876/91242259-cedd2280-e6fb-11ea-8d30-e7127b6f96e9.png
 [metrics-badge]:      https://img.shields.io/badge/metrics-grafana-orange.svg

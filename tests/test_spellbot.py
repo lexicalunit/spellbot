@@ -557,7 +557,7 @@ class TestSpellBot:
             "(https://top.gg/bot/725510263251402832/vote)\n"
             "\n"
             "💜 Help keep SpellBot running by "
-            "[supporting me on Ko-fi!](https://ko-fi.com/Y8Y51VTHZ)"
+            "[becoming a patron!](https://www.patreon.com/lexicalunit)"
         )
         assert about["thumbnail"]["url"] == THUMB_URL
 
