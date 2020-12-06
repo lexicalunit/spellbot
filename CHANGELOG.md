@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a last updated at column to user model.
+
+### Fixed
+
+- Update some Beautiful Jekyll CSS to work better across browsers.
+
 ## [v5.11.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.11.1) - 2020-12-04
 
 ### Fixed
