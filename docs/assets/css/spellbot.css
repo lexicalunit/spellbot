@@ -19,9 +19,7 @@
 }
 
 .add-bot:hover {
-  background-color: rgba(90, 62, 253, .90);
-  box-shadow: 0 0 10px rgba(90, 62, 253, .80);
-  transform: scale(1.05, 1.05);
+  filter: brightness(150%);
 }
 
 .screenshot {
