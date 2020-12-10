@@ -64,6 +64,9 @@ class Server(Base):
     smotd = Column(String(255))
     games = relationship("Game", back_populates="server", uselist=True)
     channels = relationship("Channel", back_populates="server", uselist=True)
+    auto_verify_channels = relationship(
+        "AutoVerifyChannel", back_populates="server", uselist=True
+    )
     channel_settings = relationship(
         "ChannelSettings", back_populates="server", uselist=True, lazy="dynamic"
     )
@@ -185,6 +188,18 @@ class Channel(Base):
         index=True,
     )
     server = relationship("Server", back_populates="channels")
+
+
+class AutoVerifyChannel(Base):
+    __tablename__ = "auto_verify_channels"
+    channel_xid = Column(BigInteger, primary_key=True, nullable=False)
+    guild_xid = Column(
+        BigInteger,
+        ForeignKey("servers.guild_xid", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    server = relationship("Server", back_populates="auto_verify_channels")
 
 
 class ChannelSettings(Base):

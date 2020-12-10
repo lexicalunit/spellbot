@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds ability to set auto-verification channels.
+
 ### Changed
 
 - Change hover transition for add bot button on site.
