@@ -828,28 +828,31 @@ class SpellBot(discord.Client):
                 prefix = "!"
 
             # auto-verify this user if this channel does auto-verification
-            rows = self.data.conn.execute(
-                text(
+            if not private:
+                rows = self.data.conn.execute(
+                    text(
+                        """
+                        SELECT COUNT(1)
+                        FROM auto_verify_channels
+                        WHERE guild_xid = :g AND channel_xid = :c
                     """
-                    SELECT COUNT(1)
-                    FROM auto_verify_channels
-                    WHERE guild_xid = :g AND channel_xid = :c
-                """
-                ),
-                g=message.channel.guild.id,
-                c=message.channel.id,
-            )
-            does_auto_verify = [row for row in rows][0][0]
-            if does_auto_verify:
-                async with self.session() as session:
-                    server = self.ensure_server_exists(session, message.channel.guild.id)
-                    user = self.ensure_user_exists(session, message.author)
-                    user_settings = self.ensure_user_settings_exists(
-                        session, user, server
-                    )
-                    if not user_settings.verified:
-                        user_settings.verified = True  # type: ignore
-                        session.commit()
+                    ),
+                    g=message.channel.guild.id,
+                    c=message.channel.id,
+                )
+                does_auto_verify = [row for row in rows][0][0]
+                if does_auto_verify:
+                    async with self.session() as session:
+                        server = self.ensure_server_exists(
+                            session, message.channel.guild.id
+                        )
+                        user = self.ensure_user_exists(session, message.author)
+                        user_settings = self.ensure_user_settings_exists(
+                            session, user, server
+                        )
+                        if not user_settings.verified:
+                            user_settings.verified = True  # type: ignore
+                            session.commit()
 
             # only respond to command-like messages
             if not message.content.startswith(prefix):
