@@ -3531,3 +3531,132 @@ class TestSpellBot:
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
         assert "spectate on the game" in game_embed_for(client, AMY, True)["description"]
+
+    async def test_on_message_spellbot_auto_verify_none(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot auto-verify"))
+        assert channel.last_sent_response == (
+            f"Sorry {author.mention}, but please provide a list of channels."
+            " Like #bot-commands, for example."
+        )
+
+    async def test_on_message_spellbot_auto_verify_all_bad(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot auto-verify foo"))
+        assert channel.last_sent_response == (
+            f'Sorry {author.mention}, but "foo" is not a valid channel. Try using # to'
+            ' mention the channels you want or using "all" if you want me to auto verify'
+            " in all channels."
+        )
+
+    async def test_on_message_spellbot_auto_verify_one_bad_one_good(
+        self, client, channel_maker
+    ):
+        channel = channel_maker.text()
+        author = an_admin()
+        cmd = f"!spellbot auto-verify foo <#{channel.id}>"
+        await client.on_message(MockMessage(author, channel, cmd))
+        assert len(channel.all_sent_responses) == 2
+        assert channel.all_sent_responses[0] == (
+            f'Sorry {author.mention}, but "foo" is not a valid channel. Try using # to'
+            ' mention the channels you want or using "all" if you want me to auto verify'
+            " in all channels."
+        )
+        assert channel.all_sent_responses[1] == (
+            f"Ok {author.mention}, I will now auto verify users within: <#{channel.id}>"
+        )
+
+    async def test_on_message_spellbot_auto_verify_with_bad_ref(
+        self, client, channel_maker
+    ):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(
+            MockMessage(author, channel, f"!spellbot auto-verify <#{channel.id + 1}>")
+        )
+        assert channel.last_sent_response == (
+            f'Sorry {author.mention}, but "<#{channel.id + 1}>" is not a valid channel.'
+            ' Try using # to mention the channels you want or using "all" if you'
+            " want me to auto verify in all channels."
+        )
+        msg = MockMessage(author, channel, "!leave")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
+
+    async def test_on_message_spellbot_auto_verify_with_invalid(
+        self, client, channel_maker
+    ):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(
+            MockMessage(author, channel, f"!spellbot auto-verify #{channel.id}")
+        )
+        assert channel.last_sent_response == (
+            f'Sorry {author.mention}, but "#{channel.id}" is not a valid channel.'
+            ' Try using # to mention the channels you want or using "all" if you'
+            " want me to auto verify in all channels."
+        )
+
+        msg = MockMessage(author, channel, "!leave")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
+
+    async def test_on_message_spellbot_auto_verify_no_mention(
+        self, client, channel_maker
+    ):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(
+            MockMessage(author, channel, f"!spellbot auto-verify #{channel.name}")
+        )
+        assert channel.last_sent_response == (
+            f'Sorry {author.mention}, but "#{channel.name}" is not a valid channel.'
+            ' Try using # to mention the channels you want or using "all" if you'
+            " want me to auto verify in all channels."
+        )
+
+        msg = MockMessage(author, channel, "!leave")
+        await client.on_message(msg)
+        assert "✅" in msg.reactions
+
+    async def test_on_message_spellbot_auto_verify(self, client, channel_maker):
+        admin = an_admin()
+        author = not_an_admin()
+        channel = channel_maker.text()
+        foo = channel_maker.text("foo")
+        bar = channel_maker.text("bar")
+        baz = channel_maker.text("baz")
+        await client.on_message(
+            MockMessage(admin, channel, f"!spellbot auto-verify <#{channel.id}>")
+        )
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I will now auto verify users within: <#{channel.id}>"
+        )
+        cmd = f"!spellbot auto-verify <#{foo.id}> <#{bar.id}> <#{baz.id}>"
+        await client.on_message(MockMessage(admin, channel, cmd))
+        resp = (
+            f"Ok {admin.mention}, I will now auto verify users within:"
+            f" <#{foo.id}>, <#{bar.id}>, <#{baz.id}>"
+        )
+        assert channel.last_sent_response == resp
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot toggle-verify"))
+
+        await client.on_message(MockMessage(author, channel, "!points"))
+        assert author.last_sent_response == (
+            f"Hello <@{author.id}>. You are not verified to use SpellBot in "
+            f"{channel.name}. Please speak to a server moderator or administrator to "
+            "get verified."
+        )
+
+        await client.on_message(MockMessage(author, foo, "whatever"))
+
+        await client.on_message(MockMessage(author, channel, "!points"))
+        assert channel.last_sent_response == f"You've got 0 points, <@{author.id}>."
+
+        await client.on_message(MockMessage(admin, foo, "!spellbot auto-verify all"))
+        assert foo.last_sent_response == (
+            f"Ok {admin.mention}, I will now auto verify users within: all channels"
+        )

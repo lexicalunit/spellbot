@@ -58,6 +58,7 @@ from spellbot.constants import (
     VOTE_LINK,
 )
 from spellbot.data import (
+    AutoVerifyChannel,
     Channel,
     ChannelSettings,
     Data,
@@ -825,6 +826,30 @@ class SpellBot(discord.Client):
                 prefix = values[0][0] if values and values[0] else "!"
             else:
                 prefix = "!"
+
+            # auto-verify this user if this channel does auto-verification
+            rows = self.data.conn.execute(
+                text(
+                    """
+                    SELECT COUNT(1)
+                    FROM auto_verify_channels
+                    WHERE guild_xid = :g AND channel_xid = :c
+                """
+                ),
+                g=message.channel.guild.id,
+                c=message.channel.id,
+            )
+            does_auto_verify = [row for row in rows][0][0]
+            if does_auto_verify:
+                async with self.session() as session:
+                    server = self.ensure_server_exists(session, message.channel.guild.id)
+                    user = self.ensure_user_exists(session, message.author)
+                    user_settings = self.ensure_user_settings_exists(
+                        session, user, server
+                    )
+                    if not user_settings.verified:
+                        user_settings.verified = True  # type: ignore
+                        session.commit()
 
             # only respond to command-like messages
             if not message.content.startswith(prefix):
@@ -2169,6 +2194,7 @@ class SpellBot(discord.Client):
         * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
         * `size <integer>`: Sets the default game size for a specific channel.
         * `toggle-verify`: Toggles user verification on/off for a specific channel.
+        * `auto-verify`: Set the channels that will trigger user auto verification.
         * `verify-message`: Set the verification message for a specific channel.
         * `stats`: Gets some statistics about SpellBot usage on your server.
         * `help`: Get detailed usage help for SpellBot.
@@ -2228,6 +2254,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_stats(session, server, params[1:], message)
             elif command == "toggle-verify":
                 await self.spellbot_toggle_verify(session, server, params[1:], message)
+            elif command == "auto-verify":
+                await self.spellbot_auto_verify(session, server, params[1:], message)
             elif command == "verify-message":
                 await self.spellbot_verify_message(session, server, params[1:], message)
             else:
@@ -2763,6 +2791,90 @@ class SpellBot(discord.Client):
                 setting="on" if new_setting else "off",
             ),
         )
+        await safe_react_ok(message)
+
+    async def spellbot_auto_verify(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        if not params:
+            await safe_send_channel(
+                message.channel,
+                s(
+                    "spellbot_auto_verify_none",
+                    reply=message.author.mention,
+                ),
+            )
+            await safe_react_error(message)
+            return
+
+        # Blow away the current associations first, otherwise SQLAlchemy will explode.
+        session.query(AutoVerifyChannel).filter_by(guild_xid=server.guild_xid).delete()
+
+        all_channels = False
+        channels = []
+        for param in params:
+            if param.lower() == "all":
+                all_channels = True
+                break
+
+            m = re.match("<#([0-9]+)>", param)
+            if not m:
+                await safe_send_channel(
+                    message.channel,
+                    s(
+                        "spellbot_auto_verify_warn",
+                        reply=message.author.mention,
+                        param=param,
+                    ),
+                )
+                continue
+
+            discord_channel = await safe_fetch_channel(self, int(m[1]), server.guild_xid)
+            if not discord_channel:
+                await safe_send_channel(
+                    message.channel,
+                    s(
+                        "spellbot_auto_verify_warn",
+                        reply=message.author.mention,
+                        param=param,
+                    ),
+                )
+                continue
+
+            channel = AutoVerifyChannel(
+                channel_xid=discord_channel.id, guild_xid=server.guild_xid
+            )
+            session.add(channel)
+            channels.append(channel)
+            session.commit()
+
+        if all_channels:
+            server.auto_verify_channels = []  # type: ignore
+            session.commit()
+            await safe_send_channel(
+                message.channel,
+                s(
+                    "spellbot_auto_verify",
+                    reply=message.author.mention,
+                    channels="all channels",
+                ),
+            )
+        elif channels:
+            server.auto_verify_channels = channels  # type: ignore
+            session.commit()
+            channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])
+            await safe_send_channel(
+                message.channel,
+                s(
+                    "spellbot_auto_verify",
+                    reply=message.author.mention,
+                    channels=channels_str,
+                ),
+            )
         await safe_react_ok(message)
 
     async def spellbot_verify_message(

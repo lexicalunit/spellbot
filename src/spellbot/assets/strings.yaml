@@ -69,6 +69,12 @@ report_too_long: Sorry $reply, that report was too long. Please limit your repor
   to less than 255 characters.
 report_wrong: 'Sorry $reply, to report points please use: `${prefix}report GameID
   @player1 Points @player2 Points @player3 Points @player4 Points`.'
+spellbot_auto_verify: 'Ok $reply, I will now auto verify users within: $channels'
+spellbot_auto_verify_none: 'Sorry $reply, but please provide a list of channels. Like
+  #bot-commands, for example.'
+spellbot_auto_verify_warn: 'Sorry $reply, but "$param" is not a valid channel. Try
+  using # to mention the channels you want or using "all" if you want me to auto verify
+  in all channels.'
 spellbot_channels: 'Ok $reply, I will now operate within: $channels'
 spellbot_channels_none: 'Sorry $reply, but please provide a list of channels. Like
   #bot-commands, for example.'
