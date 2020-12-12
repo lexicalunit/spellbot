@@ -23,12 +23,13 @@ addopts = """
 legacy_tox_ini = """
 [tox]
 isolated_build = true
-envlist = py{37,38}
+envlist = py{37,38,39}
 
 [gh-actions]
 python =
     3.7: py37
     3.8: py38
+    3.9: py39
 
 [testenv]
 whitelist_externals = poetry
@@ -63,6 +64,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
 ]
 packages = [
     { include = "spellbot", from = "src" }
