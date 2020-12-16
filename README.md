@@ -199,7 +199,7 @@ with installing and using it.
 [mit]:                https://opensource.org/licenses/MIT
 [pypi-badge]:         https://img.shields.io/pypi/v/spellbot
 [pypi]:               https://pypi.org/project/spellbot/
-[python-badge]:       https://img.shields.io/badge/python-3.7+-blue.svg
+[python-badge]:       https://img.shields.io/badge/python-3.8+-blue.svg
 [python]:             https://www.python.org/
 [ready]:              https://user-images.githubusercontent.com/1903876/91242257-cdabf580-e6fb-11ea-86ad-8f1aaf6d34dc.png
 [security]:           https://github.com/lexicalunit/spellbot/security

@@ -1,6 +1,6 @@
 # Contributing
 
-This bot is developed for Python 3.7+ and it is built on top of the
+This bot is a Python based Discord bot built on top of the
 [`discord.py`](https://github.com/Rapptz/discord.py) library.
 
 It uses [`poetry`](usage) to manage dependencies. To install development
@@ -88,10 +88,10 @@ git clone https://github.com/momo-lab/xxenv-latest.git "$(pyenv root)"/plugins/x
 # for each python environment in the tox configuration, create it using pyenv
 # this step takes a while, but you will only need to do this setup once
 tox -l | while read -r py; do
-    # translate a tox env name like "py37" into a number like "37"
+    # translate a tox env name like "py38" into a number like "38"
     number="$(echo "$py" | sed "s/^py//")"
 
-    # translate a number like "37" into a python version like "3.7"
+    # translate a number like "38" into a python version like "3.8"
     version="${number:0:1}.${number:1:1}"
 
     # install the latest python interpreter for that version
@@ -106,9 +106,9 @@ The above script, **at the time of this writing**, amounts to running the
 following three commands:
 
 ```shell
-pyenv install 3.7.6
-pyenv install 3.8.1
-pyenv local 3.7.6 3.8.1
+pyenv install 3.8.6
+pyenv install 3.9.0
+pyenv local 3.8.6 3.9.0
 ```
 
 But over time newer versions of python will become available and the above
@@ -127,17 +127,17 @@ tox
 ```
 
 Or a specific set of tests and environment. For example all tests pertaining to
-users using the `py37` environment:
+users using the `py38` environment:
 
 ```shell
-tox -e py37 -- -k user
+tox -e py38 -- -k user
 ```
 
 After running the _full test suite_ you can view code coverage reports in the
 `coverage` directory broken out by python environment.
 
 ```shell
-open coverage/py37/index.html
+open coverage/py38/index.html
 ```
 
 ## Running tests against different databases
@@ -244,6 +244,40 @@ After publishing you can view the package at its
 [pypi.org project page](https://pypi.org/project/spellbot/) to see that
 everything looks good.
 
+## Deployment Process
+
+There are two different deployable components included in this repository:
+
+- SpellBot - The Discord bot itself.
+- SpellDash - The frontend administrative service for SpellBot.
+
+Below is a script for deploying each of these services to Heroku. First
+set `APP` to the name of your Heroku application. Then choose the
+component you want to deploy by selecting its corresponding Dockerfile.
+
+```shell
+# You have to be logged into the Heroku container registry
+docker login
+heroku login
+heroku container:login
+
+APP="<the name of your heroku app>"
+DOCKERFILE="<Dockerfile.bot or Dockerfile.dash or Dockerfile.api>"
+
+docker build \
+    -t "registry.heroku.com/$APP/web" \
+    -f "$DOCKERFILE" \
+    # If you're building the Dashboard, see DOCKER.md for the
+    # required list of build-arg parameters that you must pass here.
+    # Other components do not have any build-arg parameters.
+    [--build-arg ...] \
+    .
+
+docker push "registry.heroku.com/$APP/web"
+
+heroku container:release web --app $APP
+```
+
 ## Database migrations
 
 We use [alembic][alembic] for database migrations. It can detect changes you've
@@ -264,32 +298,6 @@ directory with a name like `REVISIONID_some_description_of_your_changes.py`.
 You may have to edit this script manually to ensure that it is correct as
 the autogenerate facility of `alembic revision` is not perfect, especially
 if you are using sqlite which doesn't support many database features.
-
-## Heroku Deployment
-
-For example, you could deploy to Heroku using Docker with the following. This
-assumes that you've named your Heroku application "lexicalunit-spellbot" and
-have a staging application named "lexicalunit-spellbot-staging".
-
-```shell
-# You have to be logged into the Heroku container registry
-docker login
-heroku login
-heroku container:login
-
-# build the image
-docker build -t spellbot .
-
-# deploy to staging
-docker tag spellbot "registry.heroku.com/lexicalunit-spellbot-staging/web"
-docker push "registry.heroku.com/lexicalunit-spellbot-staging/web"
-heroku container:release web --app lexicalunit-spellbot-staging
-
-# deploy to production
-docker tag spellbot "registry.heroku.com/lexicalunit-spellbot/web"
-docker push "registry.heroku.com/lexicalunit-spellbot/web"
-heroku container:release web --app lexicalunit-spellbot
-```
 
 [alembic]:          https://alembic.sqlalchemy.org/
 [black]:            https://github.com/psf/black

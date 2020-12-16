@@ -8,4 +8,9 @@ TEST_DATA_ROOT = TST_ROOT / "_test_data"  # some static files used by tests
 REPO_ROOT = TST_ROOT.parent
 SRC_ROOT = REPO_ROOT / "src"
 
-SRC_DIRS = [REPO_ROOT / "tests", SRC_ROOT / "spellbot", REPO_ROOT / "scripts"]
+SRC_DIRS = [
+    REPO_ROOT / "scripts",
+    REPO_ROOT / "tests",
+    SRC_ROOT / "spellapi",
+    SRC_ROOT / "spellbot",
+]

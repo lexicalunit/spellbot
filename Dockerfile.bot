@@ -1,6 +1,7 @@
 FROM python:3.9 as builder
 
-COPY . /spellbot
+COPY src /spellbot/src
+COPY LICENSE.md README.md pyproject.toml poetry.lock /spellbot/
 
 RUN pip wheel --wheel-dir python-wheels /spellbot
 
