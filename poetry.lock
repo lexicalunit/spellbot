@@ -196,7 +196,7 @@ python-versions = "*"
 
 [[package]]
 name = "dunamai"
-version = "1.5.0"
+version = "1.5.1"
 description = "Dynamic version generation"
 category = "main"
 optional = false
@@ -993,7 +993,7 @@ testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<4"
-content-hash = "d30e8561246384d05ab6bc9b9d61ae6489d885157428bfa79c82d05b575514d5"
+content-hash = "b771b8abda86373938bff63d5462c1dbedf4667c43f2c9b2d6e403d34046530b"
 
 [metadata.files]
 aiohttp = [
@@ -1111,8 +1111,8 @@ distlib = [
     {file = "distlib-0.3.1.zip", hash = "sha256:edf6116872c863e1aa9d5bb7cb5e05a022c519a4594dc703843343a9ddd9bff1"},
 ]
 dunamai = [
-    {file = "dunamai-1.5.0-py3-none-any.whl", hash = "sha256:1f256e09537986a8b413ee0de9e7f1f264608407429fe17031b71c733b197ce4"},
-    {file = "dunamai-1.5.0.tar.gz", hash = "sha256:0424b86ae37a6f23c480adb985b89866b71b3d9bde221bbd119060eef48315ed"},
+    {file = "dunamai-1.5.1-py3-none-any.whl", hash = "sha256:e13804ffa98e7b06075187874cd614572de2f29d150895273e1d71f5064f16a0"},
+    {file = "dunamai-1.5.1.tar.gz", hash = "sha256:131690655a22171eaabd06f43b5932d7434d57d8d6f418ce9af97ee04bae9ea7"},
 ]
 expiringdict = [
     {file = "expiringdict-1.2.1.tar.gz", hash = "sha256:fe2ba427220425c3c8a3d29f6d2e2985bcee323f8bcd4021e68ebefbd90d8250"},
