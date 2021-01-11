@@ -109,7 +109,7 @@ pytest-snapshot = "^0.4.2"
 requests = "^2.25.1"
 requests-mock = "^1.8.0"
 sqlalchemy-stubs = "^0.3"
-tox = "^3.20.1"
+tox = "^3.21.0"
 
 [tool.poetry.scripts]
 spellbot = 'spellbot:main'
