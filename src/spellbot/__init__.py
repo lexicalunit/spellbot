@@ -461,8 +461,8 @@ class SpellBot(discord.Client):
             session.add(db_user)
         else:
             # try to keep this relatively up to date
-            db_user.name = cast(Any, user).name
-            db_user.updated_at = datetime.utcnow()
+            db_user.name = cast(Any, user).name  # type: ignore
+            db_user.updated_at = datetime.utcnow()  # type: ignore
         session.commit()
         return cast(User, db_user)
 
@@ -784,7 +784,7 @@ class SpellBot(discord.Client):
                 )
                 await self.setup_voice(session, game)
                 game.status = "started"
-                game.game_power = game.power
+                game.game_power = game.power  # type: ignore
                 session.commit()
                 for discord_user in found_discord_users:
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))

@@ -108,7 +108,7 @@ pytest-mock = "^3.5.1"
 pytest-snapshot = "^0.4.2"
 requests = "^2.25.1"
 requests-mock = "^1.8.0"
-sqlalchemy-stubs = "^0.3"
+sqlalchemy-stubs = "^0.4"
 tox = "^3.21.1"
 
 [tool.poetry.scripts]
