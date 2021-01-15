@@ -278,7 +278,7 @@ heroku login
 heroku container:login
 
 # build the image
-docker built -t spellbot .
+docker build -t spellbot .
 
 # deploy to staging
 docker tag spellbot "registry.heroku.com/lexicalunit-spellbot-staging/web"
@@ -290,9 +290,6 @@ docker tag spellbot "registry.heroku.com/lexicalunit-spellbot/web"
 docker push "registry.heroku.com/lexicalunit-spellbot/web"
 heroku container:release web --app lexicalunit-spellbot
 ```
-
-
-
 
 [alembic]:          https://alembic.sqlalchemy.org/
 [black]:            https://github.com/psf/black

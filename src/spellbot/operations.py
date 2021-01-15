@@ -284,9 +284,10 @@ async def safe_create_category_channel(
     return None
 
 
-async def safe_delete_channel(channel: ChannelType, guild_xid: int) -> None:
+async def safe_delete_channel(channel: ChannelType, guild_xid: int) -> bool:
     try:
         await channel.delete()  # type: ignore
+        return True
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,
@@ -298,6 +299,7 @@ async def safe_delete_channel(channel: ChannelType, guild_xid: int) -> None:
             guild_xid,
             e,
         )
+    return False
 
 
 async def safe_create_invite(
