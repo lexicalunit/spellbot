@@ -2001,9 +2001,10 @@ class SpellBot(discord.Client):
         & <none | 1..10>
         """
         async with self.session() as session:
-            server = self.ensure_server_exists(session, message.channel.guild.id)
-            if not server.power_enabled:
-                return
+            if str(message.channel.type) != "private":
+                server = self.ensure_server_exists(session, message.channel.guild.id)
+                if not server.power_enabled:
+                    return
 
             async def send_invalid(prepend) -> None:
                 await safe_send_channel(
