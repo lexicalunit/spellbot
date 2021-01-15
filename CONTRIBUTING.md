@@ -277,13 +277,16 @@ docker login
 heroku login
 heroku container:login
 
+# build the image
+docker built -t spellbot .
+
 # deploy to staging
-docker build -t "registry.heroku.com/lexicalunit-spellbot-staging/web" .
+docker tag spellbot "registry.heroku.com/lexicalunit-spellbot-staging/web"
 docker push "registry.heroku.com/lexicalunit-spellbot-staging/web"
 heroku container:release web --app lexicalunit-spellbot-staging
 
 # deploy to production
-docker build -t "registry.heroku.com/lexicalunit-spellbot/web" .
+docker tag spellbot "registry.heroku.com/lexicalunit-spellbot/web"
 docker push "registry.heroku.com/lexicalunit-spellbot/web"
 heroku container:release web --app lexicalunit-spellbot
 ```
