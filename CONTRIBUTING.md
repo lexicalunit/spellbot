@@ -272,16 +272,24 @@ assumes that you've named your Heroku application "lexicalunit-spellbot" and
 have a staging application named "lexicalunit-spellbot-staging".
 
 ```shell
-docker build -t spellbot .
+# You have to be logged into the Heroku container registry
+docker login
+heroku login
+heroku container:login
 
 # deploy to staging
-heroku container:push web --app lexicalunit-spellbot-staging
+docker build -t "registry.heroku.com/lexicalunit-spellbot-staging/web" .
+docker push "registry.heroku.com/lexicalunit-spellbot-staging/web"
 heroku container:release web --app lexicalunit-spellbot-staging
 
 # deploy to production
-heroku container:push web --app lexicalunit-spellbot
+docker build -t "registry.heroku.com/lexicalunit-spellbot/web" .
+docker push "registry.heroku.com/lexicalunit-spellbot/web"
 heroku container:release web --app lexicalunit-spellbot
 ```
+
+
+
 
 [alembic]:          https://alembic.sqlalchemy.org/
 [black]:            https://github.com/psf/black
