@@ -129,11 +129,12 @@ class MockMember:
         return self.last_sent_message
 
     def permissions_in(self, channel):
-        class Permissions:
+        class MockPermissions:
             def __init__(self, administrator):
                 self.administrator = administrator
+                self.value = 268528731
 
-        return Permissions(self.admin)
+        return MockPermissions(self.admin)
 
     @property
     def mention(self):
@@ -221,6 +222,7 @@ class MockGuild:
         self.members = members
         self.categories = []
         self.owner_id = 0
+        self.me = MockMember("bot", 0, [], True, True)
 
         self.create_voice_channel = AsyncMock(
             side_effect=create_voice_channel_side_effect

@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes a bug in !power command use in DM.
+
 ### Changed
 
 - Lots of dependencies have been updated to their latest -- Thanks dependabot!
 - Updated some documentation about deployment.
+- Adds some more logging to voice channel deletes.
+- Adds a .dockerignore file to speed up docker builds.
 
 ## [v5.14.3](https://github.com/lexicalunit/spellbot/releases/tag/v5.14.3) - 2020-12-16
 
