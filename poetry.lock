@@ -246,7 +246,7 @@ python-versions = "*"
 
 [[package]]
 name = "dunamai"
-version = "1.5.3"
+version = "1.5.4"
 description = "Dynamic version generation"
 category = "main"
 optional = false
@@ -1220,7 +1220,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4"
-content-hash = "f3ae564c5e08f3500df139e59732c95241e3d1dc5ed0f114a0d63828ae6db6a1"
+content-hash = "94816c81fb68010194a22ea0d3ffdd0c311735eb2990588ec5aeae6bf3c53c75"
 
 [metadata.files]
 aiofiles = [
@@ -1414,8 +1414,8 @@ distlib = [
     {file = "distlib-0.3.1.zip", hash = "sha256:edf6116872c863e1aa9d5bb7cb5e05a022c519a4594dc703843343a9ddd9bff1"},
 ]
 dunamai = [
-    {file = "dunamai-1.5.3-py3-none-any.whl", hash = "sha256:60089b0dc8e05632919314631e04e892ef83927433147013cc8e4f6c10460bfa"},
-    {file = "dunamai-1.5.3.tar.gz", hash = "sha256:636fee977e2d57913ac247270dde2976f2fc676fefb5353b533c1b18f7ef6d83"},
+    {file = "dunamai-1.5.4-py3-none-any.whl", hash = "sha256:0edbc8c37484b2db7c54b70de88c2b6ce866890440fc4bea6470cb1b88b75058"},
+    {file = "dunamai-1.5.4.tar.gz", hash = "sha256:82eb8dbdad6734a6ad475a2e8d0d5167fde7b0ae0d9529da0042129ca3736523"},
 ]
 ecdsa = [
     {file = "ecdsa-0.14.1-py2.py3-none-any.whl", hash = "sha256:e108a5fe92c67639abae3260e43561af914e7fd0d27bae6d2ec1312ae7934dfe"},
