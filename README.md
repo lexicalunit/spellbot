@@ -47,6 +47,8 @@ Just looking to play some games of Magic? These commands are for you!
 - `!report`: Report the results of the game you just played.
 - `!team`: Join one of the teams available on your server.
 - `!points`: Find out how many points you currently have.
+- `!block`: Block other users from joining your games.
+- `!unblock`: Unblock previously blocked users.
 
 When you run the `!lfg` command, SpellBot will post a message for sign ups.
 

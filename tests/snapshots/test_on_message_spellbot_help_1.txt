@@ -1,3 +1,5 @@
+> * `channels <list>`: Set SpellBot to only respond in the given list of channels.
+> * `prefix <string>`: Set SpellBot's command prefix for text channels.
 > * `links <private|public>`: Set the privacy for generated SpellTable links.
 > * `spectate <on|off>`: Add a spectator link to the posts SpellBot makes.
 > * `expire <number>`: Set the number of minutes before pending games expire.
@@ -26,6 +28,3 @@
 
 `!export`
 >  Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._
-
-`!event <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]`
->  Create many games in batch from an attached CSV data file. _Requires the "SpellBot Admin" role._

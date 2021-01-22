@@ -4,6 +4,8 @@ begin_event_already_started: Sorry $reply, but that event has already started an
 begin_no_params: $reply, please provide the event ID with that command.
 begin_user_left: '**Warning:** A user left the server since this event was created.
   SpellBot did **NOT** start the game for the players: $players.'
+block: 'Ok $reply, I have blocked the following users for you: $blocked'
+block_no_params: Sorry $reply, please mention who you want to block with that command.
 call_attn_desc: '[Jump to the game post]($link) to see it!'
 call_attn_title: Looking for ${remaining} more player${plural} to join...
 deleted_game: Sorry, this game was expired due to inactivity.
@@ -132,3 +134,6 @@ team_none: Sorry $reply, but there aren't any teams on this server.
 team_not_found: 'Sorry $reply, but the teams available on this server are: $teams.'
 team_not_set: Hey $reply, you are not currently a part of a team on this server.
 team_yours: Hey $reply, you are on the $team team.
+unblock: 'Ok $reply, I have unblocked the following users for you: $unblocked'
+unblock_no_params: Sorry $reply, please mention who you want to unblock with that
+  command.

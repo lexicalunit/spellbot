@@ -21,14 +21,12 @@ def upgrade():
             sa.Column(
                 "invite_confirmed",
                 sa.Boolean(),
-                server_default=sa.text("false"),
+                server_default=sa.false(),
                 nullable=False,
             ),
         )
         b.add_column(
-            sa.Column(
-                "invited", sa.Boolean(), server_default=sa.text("false"), nullable=False
-            ),
+            sa.Column("invited", sa.Boolean(), server_default=sa.false(), nullable=False),
         )
 
 

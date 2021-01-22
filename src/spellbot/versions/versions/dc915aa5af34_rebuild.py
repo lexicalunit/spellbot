@@ -21,7 +21,7 @@ def upgrade():
         sa.Column("guild_xid", sa.BigInteger(), nullable=False),
         sa.Column("prefix", sa.String(length=10), nullable=False),
         sa.Column("scope", sa.String(length=10), nullable=False),
-        sa.Column("expire", sa.Integer(), server_default=sa.text("(30)"), nullable=False),
+        sa.Column("expire", sa.Integer(), server_default=sa.text("30"), nullable=False),
         sa.PrimaryKeyConstraint("guild_xid"),
     )
     op.create_table(
