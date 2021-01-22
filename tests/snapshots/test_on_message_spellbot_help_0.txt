@@ -1,6 +1,9 @@
 
 **### Commands for Players ###**
 
+`!unblock <@player-1> <player-2> ...`
+>  Unblock previously blocked users.
+
 `!team [team-name]`
 >  Set or get your team on this server. To get your team name, run this command with no parameters.
 
@@ -30,6 +33,9 @@
 `!leave`
 >  Leave any pending games that you've signed up.
 
+`!block <@player-1> <player-2> ...`
+>  Block other users from joining your games.
+
 `!about`
 >  Get information about SpellBot.
 
@@ -46,5 +52,3 @@
 > 
 > The following subcommands are supported:
 > * `config`: Just show the current configuration for this server.
-> * `channels <list>`: Set SpellBot to only respond in the given list of channels.
-> * `prefix <string>`: Set SpellBot's command prefix for text channels.

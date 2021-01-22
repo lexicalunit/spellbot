@@ -4,6 +4,7 @@ source = src/spellbot
 omit =
     src/spellbot/_version.py
     src/spellbot/versions/env.py
+    src/spellbot/debug.py
 
 [report]
 ignore_errors = True

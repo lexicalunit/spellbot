@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds an initial WIP version of the SpellBot Dashboard.
+- Adds !block and !unblock commands for users.
 
 ## [v5.14.4](https://github.com/lexicalunit/spellbot/releases/tag/v5.14.4) - 2021-01-15
 

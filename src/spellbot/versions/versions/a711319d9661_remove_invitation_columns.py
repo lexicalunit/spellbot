@@ -24,15 +24,13 @@ def upgrade():
 def downgrade():
     with op.batch_alter_table("users") as b:
         b.add_column(
-            sa.Column(
-                "invited", sa.BOOLEAN(), server_default=sa.text("(false)"), nullable=False
-            ),
+            sa.Column("invited", sa.BOOLEAN(), server_default=sa.false(), nullable=False),
         )
         b.add_column(
             sa.Column(
                 "invite_confirmed",
                 sa.BOOLEAN(),
-                server_default=sa.text("(false)"),
+                server_default=sa.false(),
                 nullable=False,
             ),
         )

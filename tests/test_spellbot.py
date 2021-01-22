@@ -3660,3 +3660,170 @@ class TestSpellBot:
         assert foo.last_sent_response == (
             f"Ok {admin.mention}, I will now auto verify users within: all channels"
         )
+
+    async def test_on_message_block_no_params(self, client, channel_maker):
+        channel = channel_maker.text()
+        msg = MockMessage(AMY, channel, "!block")
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Sorry <@{AMY.id}>, please mention who you want to block with that command."
+        )
+
+    async def test_on_message_block(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [JACOB]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!block {mentions_str}"
+        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Ok <@{AMY.id}>, I have blocked the following users for you: @{JACOB.name}"
+        )
+
+    async def test_on_message_block_twice(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [JACOB]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!block {mentions_str}"
+        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Ok <@{AMY.id}>, I have blocked the following users for you: @{JACOB.name}"
+        )
+
+        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Ok <@{AMY.id}>, I have blocked the following users for you: @{JACOB.name}"
+        )
+
+    async def test_on_message_block_self(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!block {mentions_str}"
+        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Sorry <@{AMY.id}>, please mention who you want to block with that command."
+        )
+
+    async def test_on_message_block_multiple(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [JACOB, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!block {mentions_str}"
+        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Ok <@{AMY.id}>, I have blocked the following users for you:"
+            f" @{JACOB.name}, @{ADAM.name}"
+        )
+
+    async def test_on_message_unblock_no_params(self, client, channel_maker):
+        channel = channel_maker.text()
+        msg = MockMessage(AMY, channel, "!unblock")
+
+        await client.on_message(msg)
+
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Sorry <@{AMY.id}>, "
+            "please mention who you want to unblock with that command."
+        )
+
+    async def test_on_message_unblock(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [JACOB]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!unblock {mentions_str}"
+        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+
+        await client.on_message(msg)
+
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Ok <@{AMY.id}>, I have unblocked the following users for you: @{JACOB.name}"
+        )
+
+    async def test_on_message_unblock_multiple(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [JACOB, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!unblock {mentions_str}"
+        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+
+        await client.on_message(msg)
+
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Ok <@{AMY.id}>, I have unblocked the following users for you: "
+            f"@{JACOB.name}, @{ADAM.name}"
+        )
+
+    async def test_on_message_block_lfg_blocked(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [JACOB]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!block {mentions_str}"
+        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Ok <@{AMY.id}>, I have blocked the following users for you: @{JACOB.name}"
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+        await client.on_message(MockMessage(JACOB, channel, "!lfg"))
+
+        assert game_embed_for(client, AMY, False) != game_embed_for(client, JACOB, False)
+
+    async def test_on_message_block_lfg_blocked_by(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [JACOB]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!block {mentions_str}"
+        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Ok <@{AMY.id}>, I have blocked the following users for you: @{JACOB.name}"
+        )
+
+        await client.on_message(MockMessage(JACOB, channel, "!lfg"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+
+        assert game_embed_for(client, AMY, False) != game_embed_for(client, JACOB, False)
+
+    async def test_on_message_block_reaction(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [JACOB]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!block {mentions_str}"
+        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Ok <@{AMY.id}>, I have blocked the following users for you: @{JACOB.name}"
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+        message = channel.last_sent_message
+        payload = MockPayload(
+            user_id=JACOB.id,
+            message_id=message.id,
+            emoji=EMOJI_JOIN_GAME,
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+            member=JACOB,
+        )
+        await client.on_raw_reaction_add(payload)
+
+        assert game_embed_for(client, AMY, False) != game_embed_for(client, JACOB, False)
+        assert game_embed_for(client, JACOB, False) is None

@@ -71,6 +71,7 @@ from spellbot.data import (
     User,
     UserPoints,
     UserServerSettings,
+    users_blocks,
 )
 from spellbot.operations import (
     safe_clear_reactions,
@@ -737,6 +738,8 @@ class SpellBot(discord.Client):
                 if any(user.xid == game_user.xid for game_user in game.users):
                     # this author is already in this game, they don't need to be added
                     return
+                if user.blocked(game):
+                    return
                 if (
                     user.game
                     and user.game.id != game.id
@@ -1203,6 +1206,11 @@ class SpellBot(discord.Client):
             power=user.power,
         )
 
+        # check if anyone in this game has the other blocked,
+        # if so don't put this user into this existing game
+        if game and user.blocked(game):
+            game = None
+
         if not game:
             now = datetime.utcnow()
             expires_at = now + timedelta(minutes=server.expire)
@@ -1262,6 +1270,101 @@ class SpellBot(discord.Client):
         async with self.channel_lock(message.channel.id):
             async with self.session() as session:
                 await self._play_helper(session, prefix, params, message)
+
+    def _upsert_user_block(self, session: Session, user: User, blocked: User) -> None:
+        data = {"user_xid": user.xid, "blocked_user_xid": blocked.xid}
+        if "postgres" in session.bind.dialect.name:
+            from sqlalchemy.dialects.postgresql import insert
+
+            stmt = insert(users_blocks).values(data)
+            session.execute(stmt.on_conflict_do_nothing(constraint="uix_1"))
+        else:
+            # The type: ignore used here is a workaround to a mypy issue,
+            # more details here: https://github.com/python/mypy/issues/1153
+            from sqlalchemy import insert  # type: ignore
+
+            filters = [
+                users_blocks.c.user_xid == user.xid,
+                users_blocks.c.blocked_user_xid == blocked.xid,
+            ]
+            query = session.query(users_blocks).filter(and_(*filters))
+            exists = session.query(query.exists()).scalar()
+            if not exists:
+                session.execute(insert(users_blocks).values(data))
+
+    @command(allow_dm=False, help_group="Commands for Players")
+    async def block(
+        self, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """
+        Block other users from joining your games.
+        & <@player-1> <player-2> ...
+        """
+        author = message.author
+        author_user = cast(discord.User, author)
+        reply = author.mention
+        guild_xid = message.channel.guild.id
+        mentions = [m for m in message.mentions if m.id != author_user.id]
+
+        await safe_delete_message(message)  # delete ASAP to avoid drama
+
+        if len(mentions) == 0:
+            await safe_send_user(author_user, s("block_no_params", reply=reply))
+            return
+
+        async with self.session() as session:
+            server = self.ensure_server_exists(session, guild_xid)
+            user = self.ensure_user_exists(session, author)
+            self.ensure_user_settings_exists(session, user, server)
+            for mentioned in mentions:
+                blocked_user = self.ensure_user_exists(session, mentioned)
+                self.ensure_user_settings_exists(session, blocked_user, server)
+                self._upsert_user_block(session, user, blocked_user)
+            session.commit()
+
+        mentions_str = ", ".join([f"@{user.name}" for user in mentions])
+        await safe_send_user(author_user, s("block", reply=reply, blocked=mentions_str))
+
+    @command(allow_dm=False, help_group="Commands for Players")
+    async def unblock(
+        self, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """
+        Unblock previously blocked users.
+        & <@player-1> <player-2> ...
+        """
+        author = message.author
+        author_user = cast(discord.User, author)
+        reply = author.mention
+        guild_xid = message.channel.guild.id
+        mentions = message.mentions
+
+        await safe_delete_message(message)  # delete ASAP to avoid drama
+
+        if len(mentions) == 0:
+            await safe_send_user(author_user, s("unblock_no_params", reply=reply))
+            return
+
+        async with self.session() as session:
+            server = self.ensure_server_exists(session, guild_xid)
+            user = self.ensure_user_exists(session, author)
+            self.ensure_user_settings_exists(session, user, server)
+            for mentioned in mentions:
+                blocked_user = self.ensure_user_exists(session, mentioned)
+                self.ensure_user_settings_exists(session, blocked_user, server)
+                filters = [
+                    users_blocks.c.user_xid == user.xid,
+                    users_blocks.c.blocked_user_xid == blocked_user.xid,
+                ]
+                session.query(users_blocks).filter(and_(*filters)).delete(
+                    synchronize_session=False
+                )
+            session.commit()
+
+        mentions_str = ", ".join([f"@{user.name}" for user in mentions])
+        await safe_send_user(
+            author_user, s("unblock", reply=reply, unblocked=mentions_str)
+        )
 
     async def _verify_command_fest_report(
         self,
