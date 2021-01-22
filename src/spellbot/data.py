@@ -30,6 +30,7 @@ from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
 from sqlalchemy.sql.expression import asc, desc, distinct
+from sqlalchemy.sql.schema import UniqueConstraint
 from sqlalchemy.sql.sqltypes import Numeric
 
 from spellbot.constants import (
@@ -246,6 +247,29 @@ class Event(Base):
         return json.dumps({"id": self.id})
 
 
+users_blocks = Table(
+    "users_blocks",
+    Base.metadata,
+    Column(
+        "user_xid",
+        BigInteger,
+        ForeignKey("users.xid", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        index=True,
+    ),
+    Column(
+        "blocked_user_xid",
+        BigInteger,
+        ForeignKey("users.xid", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        index=True,
+    ),
+    UniqueConstraint("user_xid", "blocked_user_xid", name="uix_1"),
+)
+
+
 class User(Base):
     __tablename__ = "users"
     xid = Column(BigInteger, primary_key=True, nullable=False)
@@ -257,6 +281,31 @@ class User(Base):
     cached_name = Column(String(50))
     power = Column(Integer, nullable=True)
     game = relationship("Game", back_populates="users")
+
+    blocks = relationship(
+        "User",
+        secondary=users_blocks,
+        primaryjoin=xid == users_blocks.c.user_xid,
+        secondaryjoin=xid == users_blocks.c.blocked_user_xid,
+        backref="blocked_by",
+    )
+
+    def blocked(self, game: Game) -> bool:
+        session = Session.object_session(self)
+        other_user_xids = [u.xid for u in game.users]
+        query = session.query(users_blocks).filter(
+            or_(
+                and_(
+                    users_blocks.c.user_xid == self.xid,
+                    users_blocks.c.blocked_user_xid.in_(other_user_xids),
+                ),
+                and_(
+                    users_blocks.c.blocked_user_xid == self.xid,
+                    users_blocks.c.user_xid.in_(other_user_xids),
+                ),
+            )
+        )
+        return cast(bool, session.query(query.exists()).scalar())
 
     @classmethod
     def recent_metrics(cls, session: Session) -> dict:

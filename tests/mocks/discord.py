@@ -354,6 +354,7 @@ class MockMessage:
         self.reactions = set()
         if isinstance(channel, MockDM):
             channel.recipient = author
+        self.delete = AsyncMock()
 
     async def add_reaction(self, emoji):
         self.reactions.add(emoji)
