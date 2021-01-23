@@ -4,7 +4,7 @@ import { useSelector } from "react-redux"
 import { Redirect, useLocation } from "react-router-dom"
 import {
   discordTokenSelector,
-  discordUsernameSelector,
+  loggedInSelector,
   setDiscordToken,
   useAppDispatch,
 } from "state"
@@ -13,7 +13,7 @@ function Login(): React.ReactElement {
   const dispatch = useAppDispatch()
   const location = useLocation()
   const discordToken = useSelector(discordTokenSelector)
-  const discordUsername = useSelector(discordUsernameSelector)
+  const loggedIn = useSelector(loggedInSelector)
 
   if (!discordToken) {
     const params = new URLSearchParams(location.hash)
@@ -21,7 +21,7 @@ function Login(): React.ReactElement {
     if (accessToken) dispatch(setDiscordToken(accessToken))
   }
 
-  if (discordUsername) {
+  if (loggedIn) {
     return <Redirect to="/" />
   }
 

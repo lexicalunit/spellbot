@@ -5,17 +5,42 @@ import {
   createSlice,
   MiddlewareArray,
 } from "@reduxjs/toolkit"
-import SpellAPIClient, { Guild } from "clients/spellapi"
+import SpellAPIClient, { Guild, GuildResponse } from "clients/spellapi"
 import { useDispatch } from "react-redux"
 import reduxThunk from "redux-thunk"
 import { getCookie, removeCookie, setCookie } from "tools"
 
 // Actions
+export type BakendLoginArgs = {
+  discordToken: string
+}
+
 export const backendLogin = createAsyncThunk(
   "backendLogin",
-  async (discordToken: string, thunk) => {
+  async (args: BakendLoginArgs, thunk) => {
+    const { discordToken } = args
     const client = new SpellAPIClient(discordToken)
     const response = await client.login()
+    if (response.status !== 200) {
+      return thunk.rejectWithValue(
+        `error ${response.status}: could not login to backend`
+      )
+    }
+    return response.data
+  }
+)
+
+export type BackendGuildArgs = {
+  discordToken: string
+  guildId: string
+}
+
+export const backendGuild = createAsyncThunk(
+  "backendGuild",
+  async (args: BackendGuildArgs, thunk) => {
+    const { discordToken, guildId } = args
+    const client = new SpellAPIClient(discordToken)
+    const response = await client.guild(guildId)
     if (response.status !== 200) {
       return thunk.rejectWithValue(
         `error ${response.status}: could not login to backend`
@@ -54,10 +79,15 @@ const discordSlice = createSlice({
 export type SessionState = {
   username: string | undefined
   guilds: Guild[]
+  guildDisplay: GuildResponse | undefined
 }
 
 const sessionInitialState = (() => {
-  const initialState: SessionState = { username: undefined, guilds: [] }
+  const initialState: SessionState = {
+    username: undefined,
+    guilds: [],
+    guildDisplay: undefined,
+  }
   return initialState
 })()
 
@@ -67,9 +97,16 @@ const sessionSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder.addCase(backendLogin.fulfilled, (state, action) => {
-      console.log("backendLogin.fulfilled", action)
       state.username = action.payload.username
       state.guilds = action.payload.guilds
+    })
+
+    builder.addCase(backendGuild.fulfilled, (state, action) => {
+      state.guildDisplay = action.payload
+    })
+
+    builder.addCase(backendGuild.rejected, (state) => {
+      state.guildDisplay = undefined
     })
   },
 })
@@ -135,6 +172,9 @@ export const guildSelector = (guildId: string) => {
     return state.session.guilds.find((guild: Guild) => guild.id === guildId)
   }
 }
+export const guildDisplaySelector = (
+  state: AppState
+): GuildResponse | undefined => state.session.guildDisplay
 export const loggedInSelector = (state: AppState): boolean => {
   return !!state.session.username && !!state.discord.token
 }

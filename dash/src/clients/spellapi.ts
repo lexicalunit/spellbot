@@ -10,6 +10,19 @@ export type LoginResponse = {
   guilds: Guild[]
 }
 
+export type GuildResponse = {
+  serverPrefix: string
+  expireTimeMinutes: string
+  privateLinks: boolean
+  showSpectateLink: boolean
+  motdVisibilty: string
+  powerEnabled: boolean
+  tagsEnabled: boolean
+  voiceEnabled: boolean
+  serverMotd: string
+  gamesPlayed: number
+}
+
 class SpellAPIClient {
   discordAccessToken: string
 
@@ -28,8 +41,8 @@ class SpellAPIClient {
     return axios.post(endpoint, body, this.config)
   }
 
-  async test(): Promise<AxiosResponse> {
-    return axios.get("/api/test", this.config)
+  async guild(guildId: string): Promise<AxiosResponse<GuildResponse>> {
+    return axios.get(`/api/guild/${guildId}`, this.config)
   }
 }
 
