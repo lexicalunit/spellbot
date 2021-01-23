@@ -3667,15 +3667,28 @@ class TestSpellBot:
         await client.on_message(msg)
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (
-            f"Sorry <@{AMY.id}>, please mention who you want to block with that command."
+            f"Sorry <@{AMY.id}>, please say who you want to block with that command."
         )
 
-    async def test_on_message_block(self, client, channel_maker):
+    async def test_on_message_block_mentions(self, client, channel_maker):
         channel = channel_maker.text()
         mentions = [JACOB]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!block {mentions_str}"
         msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Sorry <@{AMY.id}>, please do not mention users, "
+            "just copy their name without an @."
+        )
+
+    async def test_on_message_block(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [JACOB]
+        mentions_str = " ".join([f"{user.name}" for user in mentions])
+        cmd = f"!block {mentions_str}"
+        msg = MockMessage(AMY, channel, cmd)
         await client.on_message(msg)
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (
@@ -3685,16 +3698,16 @@ class TestSpellBot:
     async def test_on_message_block_twice(self, client, channel_maker):
         channel = channel_maker.text()
         mentions = [JACOB]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        mentions_str = " ".join([f"{user.name}" for user in mentions])
         cmd = f"!block {mentions_str}"
-        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        msg = MockMessage(AMY, channel, cmd)
         await client.on_message(msg)
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (
             f"Ok <@{AMY.id}>, I have blocked the following users for you: @{JACOB.name}"
         )
 
-        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        msg = MockMessage(AMY, channel, cmd)
         await client.on_message(msg)
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (
@@ -3704,21 +3717,21 @@ class TestSpellBot:
     async def test_on_message_block_self(self, client, channel_maker):
         channel = channel_maker.text()
         mentions = [AMY]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        mentions_str = " ".join([f"{user.name}" for user in mentions])
         cmd = f"!block {mentions_str}"
-        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        msg = MockMessage(AMY, channel, cmd)
         await client.on_message(msg)
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (
-            f"Sorry <@{AMY.id}>, please mention who you want to block with that command."
+            f"Sorry <@{AMY.id}>, please say who you want to block with that command."
         )
 
     async def test_on_message_block_multiple(self, client, channel_maker):
         channel = channel_maker.text()
         mentions = [JACOB, ADAM]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        mentions_str = " ".join([f"{user.name}" for user in mentions])
         cmd = f"!block {mentions_str}"
-        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        msg = MockMessage(AMY, channel, cmd)
         await client.on_message(msg)
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (
@@ -3734,16 +3747,30 @@ class TestSpellBot:
 
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (
-            f"Sorry <@{AMY.id}>, "
-            "please mention who you want to unblock with that command."
+            f"Sorry <@{AMY.id}>, " "please say who you want to unblock with that command."
         )
 
-    async def test_on_message_unblock(self, client, channel_maker):
+    async def test_on_message_unblock_mentions(self, client, channel_maker):
         channel = channel_maker.text()
         mentions = [JACOB]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!unblock {mentions_str}"
         msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+
+        await client.on_message(msg)
+
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Sorry <@{AMY.id}>, please do not mention users, "
+            "just copy their name without an @."
+        )
+
+    async def test_on_message_unblock(self, client, channel_maker):
+        channel = channel_maker.text()
+        mentions = [JACOB]
+        mentions_str = " ".join([f"{user.name}" for user in mentions])
+        cmd = f"!unblock {mentions_str}"
+        msg = MockMessage(AMY, channel, cmd)
 
         await client.on_message(msg)
 
@@ -3755,9 +3782,9 @@ class TestSpellBot:
     async def test_on_message_unblock_multiple(self, client, channel_maker):
         channel = channel_maker.text()
         mentions = [JACOB, ADAM]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        mentions_str = " ".join([f"{user.name}" for user in mentions])
         cmd = f"!unblock {mentions_str}"
-        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        msg = MockMessage(AMY, channel, cmd)
 
         await client.on_message(msg)
 
@@ -3770,9 +3797,9 @@ class TestSpellBot:
     async def test_on_message_block_lfg_blocked(self, client, channel_maker):
         channel = channel_maker.text()
         mentions = [JACOB]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        mentions_str = " ".join([f"{user.name}" for user in mentions])
         cmd = f"!block {mentions_str}"
-        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        msg = MockMessage(AMY, channel, cmd)
         await client.on_message(msg)
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (
@@ -3787,9 +3814,9 @@ class TestSpellBot:
     async def test_on_message_block_lfg_blocked_by(self, client, channel_maker):
         channel = channel_maker.text()
         mentions = [JACOB]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        mentions_str = " ".join([f"{user.name}" for user in mentions])
         cmd = f"!block {mentions_str}"
-        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        msg = MockMessage(AMY, channel, cmd)
         await client.on_message(msg)
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (
@@ -3804,9 +3831,9 @@ class TestSpellBot:
     async def test_on_message_block_reaction(self, client, channel_maker):
         channel = channel_maker.text()
         mentions = [JACOB]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        mentions_str = " ".join([f"{user.name}" for user in mentions])
         cmd = f"!block {mentions_str}"
-        msg = MockMessage(AMY, channel, cmd, mentions=mentions)
+        msg = MockMessage(AMY, channel, cmd)
         await client.on_message(msg)
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (

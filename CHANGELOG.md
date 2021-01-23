@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Adds ninja blocks so you don't notify the user that you're blocking.
+
 ## [v5.15.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.15.0) - 2021-01-22
 
 ### Added
