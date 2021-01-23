@@ -9,7 +9,7 @@ from typing import AsyncGenerator, Optional
 import aiohttp
 import aioredis  # type: ignore
 import coloredlogs  # type: ignore
-import hupper  # type: ignore
+import hupper
 import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -20,6 +20,7 @@ from fastapi_cache.backends.redis import RedisBackend  # type: ignore
 from fastapi_cache.coder import Coder  # type: ignore
 from fastapi_cache.decorator import cache  # type: ignore
 from jose import jwt  # type: ignore
+from jose.exceptions import JOSEError  # type: ignore
 from pydantic import BaseModel
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
@@ -27,7 +28,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from spellbot import DEFAULT_DB_URL, get_db_env, get_db_url, get_redis_url
-from spellbot.data import Data, Game
+from spellbot.data import Data, Game, Server
 
 logger = logging.getLogger(__name__)
 SpellBotData = None
@@ -82,6 +83,10 @@ class UnauthorizedResponse(BaseModel):
     detail = "Unauthorized"
 
 
+class NotFoundResponse(BaseModel):
+    detail = "Not Found"
+
+
 # TODO: Factor this out to a library that both spellbot and spellapi can use.
 @asynccontextmanager
 async def new_session(data: Data) -> AsyncGenerator[Session, None]:
@@ -94,11 +99,6 @@ async def new_session(data: Data) -> AsyncGenerator[Session, None]:
         raise
     finally:
         session.close()
-
-
-async def count_games():
-    async with new_session(SpellBotData) as session:
-        print(session.query(Game).count())  # noqa: T001
 
 
 def can_admin(guild: dict) -> bool:
@@ -128,7 +128,6 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
                    response header.""",
 )
 async def login(params: LoginParams):
-    logger.info("making /login request")
     headers = {
         "Authorization": f"Bearer {params.discord_access_token}",
         "accept": "application/json",
@@ -172,15 +171,49 @@ async def login(params: LoginParams):
         return response
 
 
-@api.get("/test")
-async def test(request: Request):
-    pp("cookies:")
-    pp(request.cookies)
-    pp("body:")
-    pp(request.body)
-    pp("headers: ")
-    pp(request.headers)
-    return dict(hello="world")
+@api.get(
+    "/guild/{guild_id}",
+    responses={
+        401: {"model": UnauthorizedResponse},
+        404: {"model": NotFoundResponse},
+    },
+    description="""Validates the given Discord access token and logs into the SpellAPI.
+                   A JWT token for subsequent API calls will be provided as a set-cookie
+                   response header.""",
+)
+async def guild(guild_id: str, request: Request):
+    try:
+        token = request.cookies.get("token")
+        if not token:
+            raise HTTPException(status_code=401)
+        user_session = jwt.decode(token, SPELLAPI_SECRET_KEY, algorithms=[ALGORITHM])
+        guilds = user_session.get("guilds") or []
+        if all(guild_id != guild_data.get("id") for guild_data in guilds):
+            raise HTTPException(status_code=401)
+    except JOSEError:
+        raise HTTPException(status_code=401)
+
+    async with new_session(SpellBotData) as session:
+        server = session.query(Server).filter_by(guild_xid=guild_id).one_or_none()
+        games = (
+            session.query(Game).filter_by(guild_xid=guild_id, status="started").count()
+        )
+        if not server:
+            raise HTTPException(status_code=404)
+        return JSONResponse(
+            {
+                "serverPrefix": server.prefix,
+                "expireTimeMinutes": server.expire,
+                "privateLinks": server.links == "private",
+                "showSpectateLink": server.show_spectate_link,
+                "motdVisibilty": server.motd,
+                "powerEnabled": server.power_enabled,
+                "tagsEnabled": server.tags_enabled,
+                "voiceEnabled": server.create_voice,
+                "serverMotd": server.smotd,
+                "gamesPlayed": games,
+            }
+        )
 
 
 def setup_logging():
