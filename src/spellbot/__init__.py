@@ -266,6 +266,29 @@ def paginate(text: str) -> Iterator[str]:
     yield remaining
 
 
+def create_member_finder(message: discord.Message):
+    class MemberFinder:
+        def __init__(self, message: discord.Message):
+            self.members = message.channel.guild.members
+            self.FIND_MEMBER_CACHE: Dict[str, discord.User] = {}
+
+        # find users by name using members intents
+        def find(self, query: str) -> Optional[discord.User]:
+            lowercase_name = re.sub("#.*$", "", query.lower()).lstrip("@")
+            if lowercase_name in self.FIND_MEMBER_CACHE:
+                return self.FIND_MEMBER_CACHE[lowercase_name]
+            found_user = discord.utils.find(
+                lambda m: m.name.lower() == lowercase_name
+                or (m.nick is not None and m.nick.lower() == lowercase_name),
+                self.members,
+            )
+            if found_user:
+                self.FIND_MEMBER_CACHE[lowercase_name] = found_user
+            return found_user
+
+    return MemberFinder(message)
+
+
 def command(
     allow_dm: bool = True,
     admin_only: bool = False,
@@ -1298,31 +1321,44 @@ class SpellBot(discord.Client):
     ) -> None:
         """
         Block other users from joining your games.
-        & <@player-1> <player-2> ...
+        & <player-1> <player-2> ...
         """
         author = message.author
         author_user = cast(discord.User, author)
         reply = author.mention
         guild_xid = message.channel.guild.id
-        mentions = [m for m in message.mentions if m.id != author_user.id]
+        mentions = message.mentions
+        finder = create_member_finder(message)
 
         await safe_delete_message(message)  # delete ASAP to avoid drama
 
-        if len(mentions) == 0:
+        if len(mentions) != 0:
+            await safe_send_user(author_user, s("block_mentions", reply=reply))
+            return
+
+        if len(params) == 0:
             await safe_send_user(author_user, s("block_no_params", reply=reply))
             return
 
+        found: List[discord.User] = []
         async with self.session() as session:
             server = self.ensure_server_exists(session, guild_xid)
             user = self.ensure_user_exists(session, author)
             self.ensure_user_settings_exists(session, user, server)
-            for mentioned in mentions:
-                blocked_user = self.ensure_user_exists(session, mentioned)
-                self.ensure_user_settings_exists(session, blocked_user, server)
-                self._upsert_user_block(session, user, blocked_user)
+            for param in params:
+                mentioned = finder.find(param)
+                if mentioned and mentioned.id != author_user.id:
+                    found.append(mentioned)
+                    blocked_user = self.ensure_user_exists(session, mentioned)
+                    self.ensure_user_settings_exists(session, blocked_user, server)
+                    self._upsert_user_block(session, user, blocked_user)
             session.commit()
 
-        mentions_str = ", ".join([f"@{user.name}" for user in mentions])
+        if not found:
+            await safe_send_user(author_user, s("block_no_params", reply=reply))
+            return
+
+        mentions_str = ", ".join([f"@{user.name}" for user in found])
         await safe_send_user(author_user, s("block", reply=reply, blocked=mentions_str))
 
     @command(allow_dm=False, help_group="Commands for Players")
@@ -1331,37 +1367,46 @@ class SpellBot(discord.Client):
     ) -> None:
         """
         Unblock previously blocked users.
-        & <@player-1> <player-2> ...
+        & <player-1> <player-2> ...
         """
         author = message.author
         author_user = cast(discord.User, author)
         reply = author.mention
         guild_xid = message.channel.guild.id
         mentions = message.mentions
+        finder = create_member_finder(message)
 
         await safe_delete_message(message)  # delete ASAP to avoid drama
 
-        if len(mentions) == 0:
+        if len(mentions) != 0:
+            await safe_send_user(author_user, s("unblock_mentions", reply=reply))
+            return
+
+        if len(params) == 0:
             await safe_send_user(author_user, s("unblock_no_params", reply=reply))
             return
 
+        found: List[discord.User] = []
         async with self.session() as session:
             server = self.ensure_server_exists(session, guild_xid)
             user = self.ensure_user_exists(session, author)
             self.ensure_user_settings_exists(session, user, server)
-            for mentioned in mentions:
-                blocked_user = self.ensure_user_exists(session, mentioned)
-                self.ensure_user_settings_exists(session, blocked_user, server)
-                filters = [
-                    users_blocks.c.user_xid == user.xid,
-                    users_blocks.c.blocked_user_xid == blocked_user.xid,
-                ]
-                session.query(users_blocks).filter(and_(*filters)).delete(
-                    synchronize_session=False
-                )
+            for param in params:
+                mentioned = finder.find(param)
+                if mentioned:
+                    found.append(mentioned)
+                    blocked_user = self.ensure_user_exists(session, mentioned)
+                    self.ensure_user_settings_exists(session, blocked_user, server)
+                    filters = [
+                        users_blocks.c.user_xid == user.xid,
+                        users_blocks.c.blocked_user_xid == blocked_user.xid,
+                    ]
+                    session.query(users_blocks).filter(and_(*filters)).delete(
+                        synchronize_session=False
+                    )
             session.commit()
 
-        mentions_str = ", ".join([f"@{user.name}" for user in mentions])
+        mentions_str = ", ".join([f"@{user.name}" for user in found])
         await safe_send_user(
             author_user, s("unblock", reply=reply, unblocked=mentions_str)
         )
@@ -1671,21 +1716,7 @@ class SpellBot(discord.Client):
             players_in_this_event: Set[str] = set()
             warnings = set()
 
-            # reset find member cache for each processed !event command
-            FIND_MEMBER_CACHE: Dict[str, discord.User] = {}
-
-            # find users by name using members intents
-            def find_member(lowercase_name) -> Optional[discord.User]:
-                if lowercase_name in FIND_MEMBER_CACHE:
-                    return FIND_MEMBER_CACHE[lowercase_name]
-                found_user = discord.utils.find(
-                    lambda m: m.name.lower() == lowercase_name
-                    or (m.nick is not None and m.nick.lower() == lowercase_name),
-                    message.channel.guild.members,
-                )
-                if found_user:
-                    FIND_MEMBER_CACHE[lowercase_name] = found_user
-                return found_user
+            finder = create_member_finder(message)
 
             for i, row in enumerate(reader):
                 csv_row_data = [row[column].strip() for column in columns]
@@ -1696,7 +1727,7 @@ class SpellBot(discord.Client):
                 ]
 
                 for player_name in player_names:
-                    if not find_member(player_name):
+                    if not finder.find(player_name):
                         warning = s("event_missing_player", row=i + 1, players=players_s)
                         await safe_send_channel(message.channel, warning)
                         continue
@@ -1715,7 +1746,7 @@ class SpellBot(discord.Client):
                         )
                         await safe_react_error(message)
                         return
-                    player_discord_user = find_member(player_name)
+                    player_discord_user = finder.find(player_name)
                     if player_discord_user:
                         players_in_this_event.add(player_name)
                         player_discord_users.append(player_discord_user)

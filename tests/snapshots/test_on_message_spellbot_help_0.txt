@@ -1,7 +1,7 @@
 
 **### Commands for Players ###**
 
-`!unblock <@player-1> <player-2> ...`
+`!unblock <player-1> <player-2> ...`
 >  Unblock previously blocked users.
 
 `!team [team-name]`
@@ -33,7 +33,7 @@
 `!leave`
 >  Leave any pending games that you've signed up.
 
-`!block <@player-1> <player-2> ...`
+`!block <player-1> <player-2> ...`
 >  Block other users from joining your games.
 
 `!about`
