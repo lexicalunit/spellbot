@@ -21,11 +21,9 @@ function App(): React.ReactElement {
   const loggedIn = useSelector(loggedInSelector)
   const discordToken = useSelector(discordTokenSelector)
 
-  console.log("loggedIn:", loggedIn)
-
   useEffect(() => {
     if (!discordToken || loggedIn) return
-    dispatch(backendLogin(discordToken))
+    dispatch(backendLogin({ discordToken }))
   }, [discordToken, loggedIn, dispatch])
 
   const routes = [<Route path="/login" component={Login} />]
