@@ -53,7 +53,8 @@ def downgrade():
         """
         INSERT INTO user_teams (user_xid, guild_xid, team_id)
         SELECT user_xid, guild_xid, team_id
-        FROM user_server_settings;
+        FROM user_server_settings
+        WHERE team_id IS NOT NULL;
     """
     )
     op.drop_table("user_server_settings")

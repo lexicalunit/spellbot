@@ -11,10 +11,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Fixed the forwarding of environment variables in supervisord config.
 - Fixed the API setup code path since subapps don't trigger events in fast api.
+- Fixed the interaction between auto-verify channels and verification-required.
 
 ### Added
 
 - Added a server logout to expire the http-only cookie.
+- Introduces a logger tool for PlayEDH, just for debugging reasons.
 
 ### Changed
 
