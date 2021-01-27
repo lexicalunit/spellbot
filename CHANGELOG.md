@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed the forwarding of environment variables in supervisord config.
+- Fixed the API setup code path since subapps don't trigger events in fast api.
+
+### Added
+
+- Added a server logout to expire the http-only cookie.
+
+### Changed
+
+- Slightly better help message for some admin commands.
+
 ## [v5.15.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.15.1) - 2021-01-22
 
 ### Changed

@@ -50,6 +50,25 @@ export const backendGuild = createAsyncThunk(
   }
 )
 
+export type BackendLogoutArgs = {
+  discordToken: string
+}
+
+export const backendLogout = createAsyncThunk(
+  "backendLogout",
+  async (args: BackendLogoutArgs, thunk) => {
+    const { discordToken } = args
+    const client = new SpellAPIClient(discordToken)
+    const response = await client.logout()
+    if (response.status !== 200) {
+      return thunk.rejectWithValue(
+        `error ${response.status}: could not login to backend`
+      )
+    }
+    return response.data
+  }
+)
+
 // Discord Slice
 export type DiscordState = {
   token: string | undefined
@@ -106,6 +125,12 @@ const sessionSlice = createSlice({
     })
 
     builder.addCase(backendGuild.rejected, (state) => {
+      state.guildDisplay = undefined
+    })
+
+    builder.addCase(backendLogout.fulfilled, (state) => {
+      state.username = undefined
+      state.guilds = []
       state.guildDisplay = undefined
     })
   },

@@ -2332,8 +2332,8 @@ class SpellBot(discord.Client):
         * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
         * `size <integer>`: Sets the default game size for a specific channel.
         * `toggle-verify`: Toggles user verification on/off for a specific channel.
-        * `auto-verify`: Set the channels that will trigger user auto verification.
-        * `verify-message`: Set the verification message for a specific channel.
+        * `auto-verify <list|all>`: Set the channels that trigger user auto verification.
+        * `verify-message <your message>`: Set the verification message for this channel.
         * `stats`: Gets some statistics about SpellBot usage on your server.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
