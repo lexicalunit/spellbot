@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Added a server logout to expire the http-only cookie.
+- Introduces a logger tool for PlayEDH, just for debugging reasons.
 
 ### Changed
 

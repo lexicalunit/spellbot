@@ -116,6 +116,13 @@ def to_int(s: str) -> Optional[int]:
         return None
 
 
+def playedh_log(message: discord.Message, s: str) -> None:  # pragma: no cover
+    """Useful to introduce PlayEDH specific debug logging."""
+    if message.channel.guild.id != 304276578005942272:
+        return
+    logger.error(f"playedh: {message.channel.name}: {s}")
+
+
 def parse_opts(params: List[str], default_size: Optional[int] = None) -> dict:
     tags: List[str] = []
     first_pass: List[str] = []
