@@ -44,6 +44,11 @@ class SpellAPIClient {
   async guild(guildId: string): Promise<AxiosResponse<GuildResponse>> {
     return axios.get(`/api/guild/${guildId}`, this.config)
   }
+
+  async logout(): Promise<AxiosResponse> {
+    const endpoint = "/api/logout"
+    return axios.post(endpoint, this.config)
+  }
 }
 
 export default SpellAPIClient

@@ -2,7 +2,13 @@ import React from "react"
 import Button from "react-bootstrap/Button"
 import { useSelector } from "react-redux"
 import { useHistory } from "react-router-dom"
-import { clearState, loggedInSelector, useAppDispatch } from "state"
+import {
+  backendLogout,
+  clearState,
+  discordTokenSelector,
+  loggedInSelector,
+  useAppDispatch,
+} from "state"
 
 const AUTH_BASE_ENDPOINT = "https://discord.com/oauth2/authorize"
 const AUTH_PARAMS = new URLSearchParams({
@@ -17,11 +23,12 @@ function LoginButton(): React.ReactElement {
   const history = useHistory()
   const dispatch = useAppDispatch()
   const loggedIn = useSelector(loggedInSelector)
+  const discordToken = useSelector(discordTokenSelector)
 
   const login = () => window.location.assign(AUTH_URI)
   const logout = () => {
+    if (discordToken) dispatch(backendLogout({ discordToken }))
     dispatch(clearState())
-    history.push("/")
   }
   const click = () => (loggedIn ? logout() : login())
   const label = loggedIn ? "Logout" : "Login"
