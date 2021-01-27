@@ -858,15 +858,24 @@ class SpellBot(discord.Client):
                 rows = self.data.conn.execute(
                     text(
                         """
-                        SELECT COUNT(1)
-                        FROM auto_verify_channels
-                        WHERE guild_xid = :g AND channel_xid = :c
+                        SELECT
+                            CASE channel_xid
+                            WHEN :c THEN
+                                1
+                            ELSE
+                                0
+                            END
+                        FROM
+                            auto_verify_channels
+                        WHERE
+                            guild_xid = :g
                     """
                     ),
                     g=message.channel.guild.id,
                     c=message.channel.id,
                 )
-                does_auto_verify = [row for row in rows][0][0]
+                items = [row for row in rows]
+                does_auto_verify = (len(items) == 0) or (any(item[0] for item in items))
                 if does_auto_verify:
                     async with self.session() as session:
                         server = self.ensure_server_exists(
@@ -3078,7 +3087,7 @@ class SpellBot(discord.Client):
         if channels:
             channels_str = ", ".join(f"<#{channel.channel_xid}>" for channel in channels)
         else:
-            channels_str = "all"
+            channels_str = "All"
         embed.add_field(name="Active channels", value=channels_str)
         embed.add_field(name="Links privacy", value=server.links.title())
         embed.add_field(
@@ -3091,6 +3100,16 @@ class SpellBot(discord.Client):
             name="Voice channels",
             value="On" if server.create_voice else "Off",
         )
+        av_channels = sorted(
+            server.auto_verify_channels, key=lambda channel: channel.channel_xid
+        )
+        if av_channels:
+            av_channels_str = ", ".join(
+                f"<#{channel.channel_xid}>" for channel in av_channels
+            )
+        else:
+            av_channels_str = "All"
+        embed.add_field(name="Auto verify channels", value=av_channels_str)
         if server.teams:
             teams_str = ", ".join(sorted(team.name for team in server.teams))
             embed.add_field(name="Teams", value=teams_str)

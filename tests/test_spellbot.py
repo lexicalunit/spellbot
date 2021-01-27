@@ -28,7 +28,7 @@ from spellbot.constants import (
     EMOJI_JOIN_GAME,
     THUMB_URL,
 )
-from spellbot.data import ChannelSettings, Event, Game, Server, User
+from spellbot.data import ChannelSettings, Event, Game, Server, User, UserServerSettings
 
 from .constants import CLIENT_TOKEN, TEST_DATA_ROOT
 from .mocks import AsyncMock
@@ -643,14 +643,15 @@ class TestSpellBot:
         assert about["thumbnail"]["url"] == THUMB_URL
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert fields == {
-            "Active channels": "all",
+            "Active channels": "All",
+            "Auto verify channels": "All",
             "Command prefix": "$",
             "Inactivity expiration time": "45 minutes",
             "Links privacy": "Public",
             "MOTD privacy": "Both",
+            "Power": "On",
             "Server MOTD": "Hello!",
             "Spectator links": "Off",
-            "Power": "On",
             "Tags": "On",
             "Voice channels": "Off",
         }
@@ -3275,9 +3276,11 @@ class TestSpellBot:
         admin = an_admin()
         channel = channel_maker.text()
 
+        # At first things work just like normal.
         await client.on_message(MockMessage(someone(), channel, "!points"))
         assert channel.last_sent_response.startswith("You've got 0 points")
 
+        # Then we turn on verification for this channel.
         await client.on_message(MockMessage(admin, channel, "!spellbot toggle-verify"))
         assert channel.last_sent_response == (
             f"Ok {admin.mention}, verification is now on for this channel."
@@ -3286,11 +3289,30 @@ class TestSpellBot:
             settings = session.query(ChannelSettings).all()[0]
             assert settings.require_verification
 
-        wotnot = someone()
-        await client.on_message(MockMessage(wotnot, channel, "!points"))
-        assert not channel.last_sent_response.startswith("You've got 0 points")
-        assert wotnot.last_sent_response == (
-            f"Hello <@{wotnot.id}>. You are not verified to use SpellBot in "
+        # Even after verification is required, things still work normally
+        # because ALL channels are considered auto-verification channels.
+        await client.on_message(MockMessage(AMY, channel, "!points"))
+        assert channel.last_sent_response.startswith("You've got 0 points")
+        async with client.session() as session:
+            user_settings = session.query(UserServerSettings).all()[0]
+            assert user_settings.verified
+
+        # Now let's set an auto-verification channel specifically.
+        another_channel = channel_maker.text()
+        cmd = f"!spellbot auto-verify <#{another_channel.id}>"
+        await client.on_message(MockMessage(admin, another_channel, cmd))
+
+        # Now try again with AMY since she's already been verified.
+        await client.on_message(MockMessage(AMY, channel, "!points"))
+        assert channel.last_sent_response.startswith("You've got 0 points")
+
+        # But when we try with another users, they should be unverified.
+        await client.on_message(MockMessage(ADAM, channel, "!team cat"))
+        # Check that SpellBot didn't respond to the !team cat command in the channel.
+        assert channel.last_sent_response.startswith("You've got 0 points")
+        # Instead, it should have messaged ADAM to tell him that he's not verified.
+        assert ADAM.last_sent_response == (
+            f"Hello <@{ADAM.id}>. You are not verified to use SpellBot in "
             f"{channel.name}. Please speak to a server moderator or administrator to "
             "get verified."
         )
@@ -3303,8 +3325,9 @@ class TestSpellBot:
             settings = session.query(ChannelSettings).all()[0]
             assert not settings.require_verification
 
-        await client.on_message(MockMessage(someone(), channel, "!points"))
-        assert channel.last_sent_response.startswith("You've got 0 points")
+        # Now we should respond to ADAM's message.
+        await client.on_message(MockMessage(ADAM, channel, "!team cat"))
+        assert channel.last_sent_response.startswith("Sorry")
 
     async def test_on_message_verify_non_admin(self, client, channel_maker):
         author = not_an_admin()
@@ -3330,6 +3353,13 @@ class TestSpellBot:
 
     async def test_on_message_verify_and_unverify(self, client, channel_maker):
         admin = an_admin()
+
+        # First set up a random auto-verification channel to
+        # prevent "All" channels from being auto-verification channels.
+        another_channel = channel_maker.text()
+        cmd = f"!spellbot auto-verify <#{another_channel.id}>"
+        await client.on_message(MockMessage(admin, another_channel, cmd))
+
         channel = channel_maker.text()
         await client.on_message(MockMessage(admin, channel, "!spellbot toggle-verify"))
 
@@ -3430,6 +3460,13 @@ class TestSpellBot:
 
     async def test_on_message_spellbot_verify_message(self, client, channel_maker):
         admin = an_admin()
+
+        # First set up a random auto-verification channel to
+        # prevent "All" channels from being auto-verification channels.
+        another_channel = channel_maker.text()
+        cmd = f"!spellbot auto-verify <#{another_channel.id}>"
+        await client.on_message(MockMessage(admin, another_channel, cmd))
+
         channel = channel_maker.text()
         await client.on_message(
             MockMessage(admin, channel, "!spellbot verify-message What the heck?")
