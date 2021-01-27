@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Slightly better help message for some admin commands.
+- Updates a number of dependencies -- Thanks dependabot!
 
 ## [v5.15.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.15.1) - 2021-01-22
 
