@@ -3,13 +3,12 @@ import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from os import getenv
-from pprint import pprint as pp
 from typing import AsyncGenerator, Optional
 
 import aiohttp
 import aioredis  # type: ignore
 import coloredlogs  # type: ignore
-import hupper
+import hupper  # type: ignore
 import uvicorn  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -120,6 +119,18 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
     return encoded_jwt
 
 
+@api.post("/logout")
+async def logout():
+    response = JSONResponse({})
+    response.set_cookie(
+        "token",
+        value="",
+        httponly=True,
+        max_age=0,
+    )
+    return response
+
+
 @api.post(
     "/login",
     responses={401: {"model": UnauthorizedResponse}},
@@ -138,7 +149,10 @@ async def login(params: LoginParams):
             "https://discord.com/api/users/@me/guilds",
         ) as resp:
             if resp.status != 200:
-                raise HTTPException(status_code=401)
+                raise HTTPException(
+                    status_code=401,
+                    detail=f"{resp.status} code from discord.com/api/users/@me/guilds",
+                )
             guilds = [
                 {
                     "id": guild["id"],
@@ -152,7 +166,10 @@ async def login(params: LoginParams):
             "https://discord.com/api/users/@me",
         ) as resp:
             if resp.status != 200:
-                raise HTTPException(status_code=401)
+                raise HTTPException(
+                    status_code=401,
+                    detail=f"{resp.status} code from discord.com/api/users/@me",
+                )
             me_data = await resp.json()
             username = me_data["username"]
 
@@ -243,10 +260,13 @@ def setup_logging():
     )
 
 
-@api.on_event("startup")
-async def startup():
-    setup_logging()
+app = FastAPI()
 
+
+@app.on_event("startup")
+async def startup():
+    setup_env()
+    setup_logging()
     redis_url = get_redis_url()
     if redis_url:
         redis = await aioredis.create_redis_pool(redis_url, encoding="utf8")
@@ -255,7 +275,6 @@ async def startup():
         FastAPICache.init(InMemoryBackend(), prefix="fastapi-cache")
 
 
-app = FastAPI()
 app.mount("/api", api)
 
 # Setup some CORS for development mode (TODO: Make this only happen in dev mode?)
@@ -269,15 +288,18 @@ app.add_middleware(
 )
 
 
-def main():
-    hupper.start_reloader("spellapi.main")
-    # TODO: Identify other things that could change and require a reload...
+def setup_env():
 
     # TODO: Factor out all this config/setup to a library that both spellbot and api use.
     database_env = get_db_env("SPELLBOT_DB_URL")
     database_url = get_db_url(database_env, DEFAULT_DB_URL)
     global SpellBotData
     SpellBotData = Data(database_url)
+
+
+def main():
+    hupper.start_reloader("spellapi.main")
+    # TODO: Identify other things that could change and require a reload...
 
     # TODO: Use https://github.com/abersheeran/asgi-ratelimit to rate limit API calls?
     uvicorn.run(app, port=getenv("PORT", 5000))
