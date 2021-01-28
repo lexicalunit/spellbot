@@ -54,6 +54,7 @@ from spellbot.constants import (
     ICO_URL,
     INVITE_LINK,
     THUMB_URL,
+    VOICE_CATEGORY_PREFIX,
     VOICE_INVITE_EXPIRE_TIME_S,
     VOTE_LINK,
 )
@@ -458,14 +459,16 @@ class SpellBot(discord.Client):
             )
         return None
 
-    async def setup_voice(self, session: Session, game: Game) -> None:
+    async def setup_voice(
+        self, session: Session, game: Game, prefix: str = VOICE_CATEGORY_PREFIX
+    ) -> None:
         """Adds voice information to the game object. DOES NOT COMMIT!"""
         # NOTE: See the test_simultaneous_signup() test for more details about
         #       how this function has caused issues in the past.
         if not game.server.create_voice or game.voice_channel_xid:
             return
 
-        category = await self.ensure_available_voice_category(game.server)
+        category = await self.ensure_available_voice_category(game.server, prefix)
 
         # if category is None, then we'll simply create a non-categorized channel
         voice_channel = await safe_create_voice_channel(
@@ -551,7 +554,7 @@ class SpellBot(discord.Client):
         return cast(ChannelSettings, channel_settings)
 
     async def ensure_available_voice_category(
-        self, server: Server
+        self, server: Server, prefix: str
     ) -> Optional[discord.CategoryChannel]:
         if not server.create_voice:
             return None
@@ -560,19 +563,17 @@ class SpellBot(discord.Client):
         if not guild:
             return None
 
-        PREFIX = "SpellBot Voice Channels"
-
         def category_num(cat: discord.CategoryChannel) -> int:
-            return 0 if cat.name == PREFIX else int(cat.name[24:]) - 1
+            return 0 if cat.name == prefix else int(cat.name[24:]) - 1
 
         def category_name(i: int) -> str:
-            return PREFIX if i == 0 else f"{PREFIX} {i + 1}"
+            return prefix if i == 0 else f"{prefix} {i + 1}"
 
         available: Optional[discord.CategoryChannel] = None
         full: List[discord.CategoryChannel] = []
         for i, cat in enumerate(
             sorted(
-                (c for c in guild.categories if c.name.startswith(PREFIX)),
+                (c for c in guild.categories if c.name.startswith(prefix)),
                 key=category_num,
             )
         ):
@@ -2035,12 +2036,11 @@ class SpellBot(discord.Client):
             now = datetime.utcnow()
             expires_at = now + timedelta(minutes=server.expire)
             url = self.create_spelltable_url() if system == "spelltable" else None
-            # NOTE: Don't automatically create a voice channel in this case...
             game = Game(
                 channel_xid=message.channel.id,
                 created_at=now,
                 expires_at=expires_at,
-                guild_xid=server.guild_xid,
+                server=server,
                 size=size,
                 updated_at=now,
                 url=url,
@@ -2053,6 +2053,11 @@ class SpellBot(discord.Client):
             session.add(game)
             session.commit()
 
+            if server.create_voice:
+                category_prefix = server.voice_category_prefix or VOICE_CATEGORY_PREFIX
+                await self.setup_voice(session, game, prefix=category_prefix)
+                session.commit()
+
             player_response = game.to_embed(dm=True)
             for player in mentioned_users:
                 discord_user = await safe_fetch_user(self, player.xid)
@@ -2064,16 +2069,20 @@ class SpellBot(discord.Client):
                 # Support <@!USERID> for server nick?
                 sorted([f"<@{user.xid}>" for user in mentioned_users])
             )
-            await safe_send_channel(
-                message.channel,
-                s(
-                    "game_created",
-                    reply=message.author.mention,
-                    id=game.id,
-                    url=game.url,
-                    players=players_str,
-                ),
-            )
+            resp_args = {
+                "reply": message.author.mention,
+                "id": game.id,
+                "url": game.url,
+                "voice": game.voice_channel_invite,
+                "players": players_str,
+            }
+            if server.create_voice:
+                await safe_send_channel(
+                    message.channel, s("game_created_with_voice", **resp_args)
+                )
+            else:
+                del resp_args["voice"]
+                await safe_send_channel(message.channel, s("game_created", **resp_args))
             await safe_react_ok(message)
 
     @command(allow_dm=True, help_group="Commands for Players")
@@ -2350,6 +2359,7 @@ class SpellBot(discord.Client):
         * `toggle-verify`: Toggles user verification on/off for a specific channel.
         * `auto-verify <list|all>`: Set the channels that trigger user auto verification.
         * `verify-message <your message>`: Set the verification message for this channel.
+        * `voice-category <string>`: Set category for voice channels created by !game.
         * `stats`: Gets some statistics about SpellBot usage on your server.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
@@ -2398,6 +2408,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_tags(session, server, params[1:], message)
             elif command == "smotd":
                 await self.spellbot_smotd(session, server, params[1:], message)
+            elif command == "voice-category":
+                await self.spellbot_voice_category(session, server, params[1:], message)
             elif command == "cmotd":
                 await self.spellbot_cmotd(session, server, params[1:], message)
             elif command == "motd":
@@ -2810,6 +2822,31 @@ class SpellBot(discord.Client):
         )
         await safe_react_ok(message)
 
+    async def spellbot_voice_category(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        category_prefix = " ".join(params)
+        reply = message.author.mention
+        if len(category_prefix) >= 40:
+            await safe_send_channel(
+                message.channel, s("spellbot_voice_category_too_long", reply=reply)
+            )
+            await safe_react_error(message)
+            return
+        if not category_prefix:
+            category_prefix = VOICE_CATEGORY_PREFIX
+        server.voice_category_prefix = category_prefix  # type: ignore
+        session.commit()
+        await safe_send_channel(
+            message.channel,
+            s("spellbot_voice_category", reply=reply, category=category_prefix),
+        )
+        await safe_react_ok(message)
+
     async def spellbot_cmotd(
         self,
         session: Session,
@@ -3121,6 +3158,11 @@ class SpellBot(discord.Client):
             teams_str = ", ".join(sorted(team.name for team in server.teams))
             embed.add_field(name="Teams", value=teams_str)
         embed.add_field(name="Server MOTD", value=server.smotd or "None", inline=False)
+        embed.add_field(
+            name="Admin created voice category prefix",
+            value=server.voice_category_prefix or VOICE_CATEGORY_PREFIX,
+            inline=False,
+        )
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
         await safe_send_channel(message.channel, embed=embed)

@@ -27,6 +27,7 @@ from spellbot.constants import (
     EMOJI_DROP_GAME,
     EMOJI_JOIN_GAME,
     THUMB_URL,
+    VOICE_CATEGORY_PREFIX,
 )
 from spellbot.data import ChannelSettings, Event, Game, Server, User, UserServerSettings
 
@@ -654,6 +655,7 @@ class TestSpellBot:
             "Spectator links": "Off",
             "Tags": "On",
             "Voice channels": "Off",
+            "Admin created voice category prefix": VOICE_CATEGORY_PREFIX,
         }
 
         foo = channel_maker.text("foo")
@@ -747,6 +749,37 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
             f"> Game: <{game['url']}>\n"
+            f"> Spectate: <{game['url']}?spectate>\n"
+            f"> Players notified by DM: {FRIEND.mention}, {BUDDY.mention},"
+            f" {GUY.mention}, {DUDE.mention}"
+        )
+        player_response = game_embed_for(client, FRIEND, True)
+        assert FRIEND.last_sent_embed == player_response
+        assert GUY.last_sent_embed == player_response
+        assert BUDDY.last_sent_embed == player_response
+        assert DUDE.last_sent_embed == player_response
+
+        assert game_json_for(client, GUY)["tags"] == []
+        assert game_json_for(client, GUY)["message"] is None
+
+    async def test_on_message_game_with_voice(self, client, channel_maker):
+        channel = channel_maker.text()
+        admin = an_admin()
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot voice on"))
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned on automatic voice channel creation."
+        )
+
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        game = all_games(client)[0]
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> Game: <{game['url']}>\n"
+            f"> Voice: <{game['voice_channel_invite']}>\n"
             f"> Spectate: <{game['url']}?spectate>\n"
             f"> Players notified by DM: {FRIEND.mention}, {BUDDY.mention},"
             f" {GUY.mention}, {DUDE.mention}"
@@ -3891,3 +3924,88 @@ class TestSpellBot:
 
         assert game_embed_for(client, AMY, False) != game_embed_for(client, JACOB, False)
         assert game_embed_for(client, JACOB, False) is None
+
+    async def test_on_message_spellbot_voice_category(
+        self, client, channel_maker, monkeypatch
+    ):
+        admin = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(
+            MockMessage(admin, channel, "!spellbot voice-category This   is a test")
+        )
+        assert channel.last_sent_response == (
+            f"Right on, {admin.mention}. The voice channels that the game command creates"
+            " will be put into a category named: This is a test"
+        )
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot voice on"))
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned on automatic voice channel creation."
+        )
+
+        # setup a check that the bot attempts to create the category channel
+        mock_op = AsyncMock(return_value=None)
+        monkeypatch.setattr(spellbot, "safe_create_category_channel", mock_op)
+
+        mentions = [FRIEND, GUY, BUDDY, DUDE]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+        game = all_games(client)[0]
+        assert channel.last_sent_response == (
+            f"**Game {game['id']} created:**\n"
+            f"> Game: <{game['url']}>\n"
+            f"> Voice: <{game['voice_channel_invite']}>\n"
+            f"> Spectate: <{game['url']}?spectate>\n"
+            f"> Players notified by DM: {FRIEND.mention}, {BUDDY.mention},"
+            f" {GUY.mention}, {DUDE.mention}"
+        )
+        player_response = game_embed_for(client, FRIEND, True)
+        assert FRIEND.last_sent_embed == player_response
+        assert GUY.last_sent_embed == player_response
+        assert BUDDY.last_sent_embed == player_response
+        assert DUDE.last_sent_embed == player_response
+
+        assert game_json_for(client, GUY)["tags"] == []
+        assert game_json_for(client, GUY)["message"] is None
+
+        mock_op.assert_called_once_with(client, channel.guild.id, "This is a test")
+
+    async def test_on_message_spellbot_voice_category_none(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+
+        await client.on_message(
+            MockMessage(admin, channel, "!spellbot voice-category something")
+        )
+        assert channel.last_sent_response == (
+            f"Right on, {admin.mention}. The voice channels that the game command"
+            " creates will be put into a category named: something"
+        )
+        await client.on_message(MockMessage(admin, channel, "!spellbot config"))
+        about = channel.last_sent_embed
+        fields = {f["name"]: f["value"] for f in about["fields"]}
+        assert fields["Admin created voice category prefix"] == "something"
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot voice-category"))
+        assert channel.last_sent_response == (
+            f"Right on, {admin.mention}. The voice channels that the game command"
+            f" creates will be put into a category named: {VOICE_CATEGORY_PREFIX}"
+        )
+        await client.on_message(MockMessage(admin, channel, "!spellbot config"))
+        about = channel.last_sent_embed
+        fields = {f["name"]: f["value"] for f in about["fields"]}
+        assert fields["Admin created voice category prefix"] == VOICE_CATEGORY_PREFIX
+
+    async def test_on_message_spellbot_voice_category_too_long(
+        self, client, channel_maker
+    ):
+        admin = an_admin()
+        channel = channel_maker.text()
+        cat = "f" * 50
+        await client.on_message(
+            MockMessage(admin, channel, f"!spellbot voice-category {cat}")
+        )
+        assert channel.last_sent_response == (
+            f"Sorry {admin.mention}, but that category name is too long."
+        )

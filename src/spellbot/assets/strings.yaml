@@ -41,6 +41,15 @@ game_created: '**Game $id created:**
   > Spectate: <${url}?spectate>
 
   > Players notified by DM: $players'
+game_created_with_voice: '**Game $id created:**
+
+  > Game: <$url>
+
+  > Voice: <$voice>
+
+  > Spectate: <${url}?spectate>
+
+  > Players notified by DM: $players'
 game_message_too_long: Sorry $reply, but the optional game message must be shorter
   than 255 characters.
 game_size_bad: Sorry $reply, but the game size must be between 2 and 4.
@@ -129,6 +138,9 @@ spellbot_verify_message: 'Right on, $reply. The verification message for this ch
 spellbot_verify_message_too_long: Sorry $reply, but that message is too long.
 spellbot_voice: Ok $reply, I've turned $setting automatic voice channel creation.
 spellbot_voice_bad: Sorry $reply, but please provide an "on" or "off" setting.
+spellbot_voice_category: 'Right on, $reply. The voice channels that the game command
+  creates will be put into a category named: $category'
+spellbot_voice_category_too_long: Sorry $reply, but that category name is too long.
 tags_too_many: Sorry $reply, but you can not use more than 5 tags.
 team_gone: Sorry $reply, but the teams on this server have changed and your team no
   longer exists. Please choose a new team.

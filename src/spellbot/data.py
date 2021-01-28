@@ -63,6 +63,7 @@ class Server(Base):
     tags_enabled = Column(Boolean, nullable=False, server_default=true())
     create_voice = Column(Boolean, nullable=False, server_default=false())
     smotd = Column(String(255))
+    voice_category_prefix = Column(String(40))
     games = relationship("Game", back_populates="server", uselist=True)
     channels = relationship("Channel", back_populates="server", uselist=True)
     auto_verify_channels = relationship(

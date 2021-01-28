@@ -14,6 +14,7 @@
 > * `toggle-verify`: Toggles user verification on/off for a specific channel.
 > * `auto-verify <list|all>`: Set the channels that trigger user auto verification.
 > * `verify-message <your message>`: Set the verification message for this channel.
+> * `voice-category <string>`: Set category for voice channels created by !game.
 > * `stats`: Gets some statistics about SpellBot usage on your server.
 > * `help`: Get detailed usage help for SpellBot.
 
@@ -27,4 +28,3 @@
 > * Optional: Add tags by using `~tag-name` for the tags you want.
 
 `!export`
->  Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._
