@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- The `!game` command will now create voice channels if that's enabled for the server.
+  And the new `!spellbot voice-category` command will define the category channel
+  that these created voice channels will be put into. The default is to use the
+  same category as the voice channels that are created by `!lfg`.
+
 ## [v5.16.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.16.0) - 2021-01-27
 
 ### Fixed
