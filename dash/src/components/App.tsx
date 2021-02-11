@@ -48,7 +48,6 @@ function App(): React.ReactElement {
           {routes}
         </AnimatedSwitch>
       </div>
-      {/* <Footer /> */}
     </>
   )
 }

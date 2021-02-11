@@ -123,7 +123,7 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
 async def logout():
     response = JSONResponse({})
     response.set_cookie(
-        "token",
+        "sessionToken",
         value="",
         httponly=True,
         max_age=0,
@@ -179,11 +179,11 @@ async def login(params: LoginParams):
         token = jsonable_encoder(access_token)
         response = JSONResponse(data)
         response.set_cookie(
-            "token",
+            "sessionToken",
             value=token,
             httponly=True,
-            max_age=1800,
-            expires=1800,
+            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            expires=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
         return response
 
@@ -200,7 +200,7 @@ async def login(params: LoginParams):
 )
 async def guild(guild_id: str, request: Request):
     try:
-        token = request.cookies.get("token")
+        token = request.cookies.get("sessionToken")
         if not token:
             raise HTTPException(status_code=401)
         user_session = jwt.decode(token, SPELLAPI_SECRET_KEY, algorithms=[ALGORITHM])
@@ -234,9 +234,9 @@ async def guild(guild_id: str, request: Request):
 
 
 def setup_logging():
-    logging.getLogger("uvicorn").handlers.clear()
-    logging.getLogger("uvicorn.error").handlers.clear()
-    logging.getLogger("uvicorn.access").handlers.clear()
+    # logging.getLogger("uvicorn").handlers.clear()
+    # logging.getLogger("uvicorn.error").handlers.clear()
+    # logging.getLogger("uvicorn.access").handlers.clear()
 
     coloredlogs.install(
         level=logging.INFO,
