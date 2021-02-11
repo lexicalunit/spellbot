@@ -29,6 +29,7 @@ function LoginButton(): React.ReactElement {
   const logout = () => {
     if (discordToken) dispatch(backendLogout({ discordToken }))
     dispatch(clearState())
+    history.push("/")
   }
   const click = () => (loggedIn ? logout() : login())
   const label = loggedIn ? "Logout" : "Login"

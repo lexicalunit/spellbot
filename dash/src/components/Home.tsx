@@ -27,7 +27,7 @@ function Home(): React.ReactElement {
         following guilds to view its dashboard.
       </p>
       <ul className="list-type1">
-        {guilds.map((guild) => {
+        {guilds?.map((guild) => {
           return (
             <li key={guild.id}>
               <Link to={`/guild/${guild.id}`}>{guild.name}</Link>
