@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.17.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.17.1) - 2021-02-13
+
 ### Fixed
 
 - Fixes a bug if you set the server prefix to something that a command starts with.
