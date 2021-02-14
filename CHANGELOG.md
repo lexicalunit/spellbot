@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes a bug if you set the server prefix to something that a command starts with.
+
 ### Changed
 
 - Lots of dashboard cleanup including improvements to styles and login/logout flow.

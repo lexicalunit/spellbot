@@ -647,7 +647,7 @@ class SpellBot(discord.Client):
     async def process(self, message: discord.Message, prefix: str) -> None:
         """Process a command message."""
         tokens = message.content.split(" ")
-        request, params = tokens[0].lstrip(prefix).lower(), tokens[1:]
+        request, params = tokens[0][len(prefix) :].lower(), tokens[1:]
         params = list(filter(None, params))  # ignore any empty string parameters
         if not request:
             return
