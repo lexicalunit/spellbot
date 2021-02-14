@@ -291,8 +291,8 @@ class TestSpellBot:
     async def test_on_message_no_request(self, client, channel_maker, channel_type):
         channel = channel_maker.make(channel_type)
         await client.on_message(MockMessage(someone(), channel, "!"))
-        await client.on_message(MockMessage(someone(), channel, "!!"))
-        await client.on_message(MockMessage(someone(), channel, "!!!"))
+        await client.on_message(MockMessage(someone(), channel, "s!"))
+        await client.on_message(MockMessage(someone(), channel, "s!!"))
         await client.on_message(MockMessage(someone(), channel, "!   "))
         await client.on_message(MockMessage(someone(), channel, "!   !"))
         await client.on_message(MockMessage(someone(), channel, " !   !"))
