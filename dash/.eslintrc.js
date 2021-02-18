@@ -9,6 +9,9 @@ module.exports = {
     'prettier/@typescript-eslint',
     'plugin:prettier/recommended'
   ],
+  settings: {
+    jest: { version: 26 }
+  },
   plugins: ['react', '@typescript-eslint', 'jest'],
   env: {
     browser: true,
