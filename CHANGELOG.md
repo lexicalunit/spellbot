@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.18.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.18.0) - 2021-02-19
+
 ### Added
 
 - Added ability to mention specific channels in `!spellbot tags` command to
