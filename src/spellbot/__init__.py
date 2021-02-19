@@ -72,6 +72,7 @@ from spellbot.data import (
     User,
     UserPoints,
     UserServerSettings,
+    WatchedUser,
     users_blocks,
 )
 from spellbot.operations import (
@@ -452,6 +453,45 @@ class SpellBot(discord.Client):
 
     def run(self) -> None:  # pragma: no cover
         super().run(self.token)
+
+    async def send_watch_list_notifications(self, session: Session, game: Game) -> None:
+        if not game.channel_xid or not game.message_xid:
+            return
+
+        watched = (
+            session.query(WatchedUser)
+            .filter(
+                and_(
+                    WatchedUser.guild_xid == game.guild_xid,
+                    WatchedUser.user_xid.in_([user.xid for user in game.users]),
+                )
+            )
+            .all()
+        )
+        if not watched:
+            return
+
+        guild = await safe_fetch_guild(self, game.guild_xid)
+        if not guild:
+            return
+
+        mod_role: Optional[discord.Role] = None
+        for role in guild.roles:
+            if role.name == "Moderators":
+                mod_role = role
+                break
+        if not mod_role:
+            return
+
+        link = post_link(game.guild_xid, game.channel_xid, game.message_xid)
+        notification_message = s(
+            "watched_user_notification",
+            game_id=game.id,
+            users=", ".join(f"<@{w.user_xid}>" for w in watched),
+            link=link,
+        )
+        for mod in mod_role.members:
+            await safe_send_user(mod, notification_message)
 
     def create_spelltable_url(self) -> Optional[str]:
         if self.mock_games:
@@ -838,6 +878,7 @@ class SpellBot(discord.Client):
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))
                 await safe_edit_message(message, embed=game.to_embed())
                 await safe_clear_reactions(message)
+                await self.send_watch_list_notifications(session, game)
             else:
                 session.commit()
                 wait = await self.average_wait(session, game)
@@ -1174,6 +1215,7 @@ class SpellBot(discord.Client):
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))
                 await safe_edit_message(post, embed=game.to_embed())
                 await safe_clear_reactions(post)
+                await self.send_watch_list_notifications(session, game)
                 return
         else:  # game *definitely* isn't ready yet
             wait = await self.average_wait(session, game)
@@ -1959,6 +2001,7 @@ class SpellBot(discord.Client):
                     ),
                 )
                 await safe_react_ok(message)
+                await self.send_watch_list_notifications(session, game)
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
     async def game(
@@ -2349,6 +2392,48 @@ class SpellBot(discord.Client):
     ) -> None:
         """Unverify a user on your server."""
         await self._set_verified(prefix, params, message, False)
+
+    async def _set_watched(
+        self, prefix: str, params: List[str], message: discord.Message, setting: bool
+    ) -> None:
+        if not await check_is_admin(message):
+            await safe_react_error(message)
+            return
+
+        if len(message.mentions) == 0:
+            await safe_react_error(message)
+            return
+        async with self.session() as session:
+            server = self.ensure_server_exists(session, message.channel.guild.id)
+            for mentioned in message.mentions:
+                user = self.ensure_user_exists(session, mentioned)
+                watched_user_q = session.query(WatchedUser).filter_by(
+                    user_xid=user.xid, guild_xid=server.guild_xid
+                )
+                watched_user = watched_user_q.first()
+                if watched_user and not setting:
+                    watched_user_q.delete()
+                if not watched_user and setting:
+                    watched_user = WatchedUser(
+                        user_xid=user.xid, guild_xid=server.guild_xid
+                    )
+                    session.add(watched_user)
+            session.commit()
+        await safe_react_ok(message)
+
+    @command(allow_dm=False, help_group="Commands for Admins")
+    async def watch(
+        self, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """Watch a user on your server."""
+        await self._set_watched(prefix, params, message, True)
+
+    @command(allow_dm=False, help_group="Commands for Admins")
+    async def unwatch(
+        self, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """Unwatch a user on your server."""
+        await self._set_watched(prefix, params, message, False)
 
     @command(allow_dm=False, help_group="Commands for Admins")
     async def spellbot(

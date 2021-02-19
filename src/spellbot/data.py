@@ -373,6 +373,22 @@ class UserServerSettings(Base):
     verified = Column(Boolean, nullable=True, server_default=false())
 
 
+class WatchedUser(Base):
+    __tablename__ = "watched_users"
+    user_xid = Column(
+        BigInteger,
+        ForeignKey("users.xid", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    guild_xid = Column(
+        BigInteger,
+        ForeignKey("servers.guild_xid", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+
+
 class UserPoints(Base):
     __tablename__ = "user_points"
     user_xid = Column(

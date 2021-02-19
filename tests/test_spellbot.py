@@ -47,6 +47,8 @@ from .mocks.users import (
     GUY,
     JACOB,
     JR,
+    MODERATORS_ROLE,
+    PLAYER_ROLE,
     PUNK,
     SERVER_MEMBERS,
     TOM,
@@ -4190,3 +4192,91 @@ class TestSpellBot:
         await update_average_wait_times(client)
         wait = await client.average_wait(session, game)
         assert wait is not None
+
+    async def test_on_message_watch_non_admin(self, client, channel_maker):
+        author = not_an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!watch"))
+        assert channel.last_sent_response == (
+            f"<@{author.id}>, you do not have admin permissions to run that command."
+        )
+
+    async def test_on_message_unwatch_non_admin(self, client, channel_maker):
+        author = not_an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(author, channel, "!unwatch"))
+        assert channel.last_sent_response == (
+            f"<@{author.id}>, you do not have admin permissions to run that command."
+        )
+
+    async def test_on_message_watch_none(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(admin, channel, "!watch"))
+        assert len(channel.all_sent_calls) == 0
+
+    async def test_on_message_unwatch_none(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(admin, channel, "!unwatch"))
+        assert len(channel.all_sent_calls) == 0
+
+    async def test_on_message_watch(self, client, channel_maker, monkeypatch):
+        admin = an_admin()
+        channel = channel_maker.text()
+        channel.guild.roles = [
+            ADMIN_ROLE,
+            MODERATORS_ROLE,
+            PLAYER_ROLE,
+        ]
+
+        mock_guild = channel.guild
+        mock_get_guild = MagicMock()
+        mock_get_guild.return_value = mock_guild
+        monkeypatch.setattr(client, "get_guild", mock_get_guild)
+
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!watch {mentions_str}"
+        await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
+        message = channel.last_sent_message
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+        game = all_games(client)[0]
+
+        notif = (
+            f"Watched users (<@{AMY.id}>) just hopped into game {game['id']}."
+            " Go to post: https://discordapp.com/channels/"
+            f"{channel.guild.id}/{channel.id}/{message.id}"
+        )
+        for mod in MODERATORS_ROLE.members:
+            assert mod.last_sent_response == notif
+
+    async def test_on_message_unwatch(self, client, channel_maker, monkeypatch):
+        admin = an_admin()
+        channel = channel_maker.text()
+        channel.guild.roles = [
+            ADMIN_ROLE,
+            MODERATORS_ROLE,
+            PLAYER_ROLE,
+        ]
+
+        mock_guild = channel.guild
+        mock_get_guild = MagicMock()
+        mock_get_guild.return_value = mock_guild
+        monkeypatch.setattr(client, "get_guild", mock_get_guild)
+
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!watch {mentions_str}"
+        await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
+
+        cmd = f"!unwatch {mentions_str}"
+        await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+
+        for mod in MODERATORS_ROLE.members:
+            assert len(mod.all_sent_calls) == 0

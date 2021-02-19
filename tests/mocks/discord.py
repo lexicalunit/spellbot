@@ -115,6 +115,9 @@ class MockMember:
         self.owner = owner
         self.avatar = None
 
+        for role in roles:
+            role.members.add(self)
+
         # sent is a spy for tracking calls to send(), it doesn't exist on the real object.
         # There are also helpers for inspecting calls to sent defined on this class of
         # the form `last_sent_XXX` and `all_sent_XXX` to make our lives easier.
@@ -190,8 +193,9 @@ class MockMember:
 
 
 class MockRole:
-    def __init__(self, name):
+    def __init__(self, name, members=None):
         self.name = name
+        self.members = set(members or [])
 
 
 def create_voice_channel_side_effect(*args, **kwargs):
@@ -223,6 +227,7 @@ class MockGuild:
         self.categories = []
         self.owner_id = 0
         self.me = MockMember("bot", 0, [], True, True)
+        self.roles = []
 
         self.create_voice_channel = AsyncMock(
             side_effect=create_voice_channel_side_effect

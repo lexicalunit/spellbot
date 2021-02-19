@@ -100,6 +100,8 @@ These commands will help you configure SpellBot for your server.
   - `help`: Get detailed usage help for SpellBot.
 - `!verify`: Allows moderators to verify a user on their server.
 - `!unverify`: Un-verifies a user for this server.
+- `!watch`: Allows moderators to watch a user on their server.
+- `!unwatch`: Un-watches a user for this server.
 
 ### 🛋️ Ergonomics
 

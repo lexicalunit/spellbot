@@ -1,3 +1,4 @@
+> * `config`: Just show the current configuration for this server.
 > * `channels <list>`: Set SpellBot to only respond in the given list of channels.
 > * `prefix <string>`: Set SpellBot's command prefix for text channels.
 > * `links <private|public>`: Set the privacy for generated SpellTable links.
@@ -25,4 +26,3 @@
 > Allows event runners to spin up an ad-hoc game directly between mentioned players.
 > * The user who issues this command is **NOT** added to the game themselves.
 > * You must mention all of the players to be seated in the game.
-> * Optional: Add a message by using `msg:` followed by the message content.
