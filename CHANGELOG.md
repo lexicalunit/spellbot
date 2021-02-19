@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.19.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.19.0) - 2021-02-19
+
 ### Added
 
 - Added a new `!spellbot queue-time` command that allows admins to enable/disable
