@@ -424,7 +424,20 @@ class SpellBot(discord.Client):
                 logger.exception("redis error: %s", e)
         return None
 
-    def average_wait(self, game: Game) -> Optional[float]:
+    async def average_wait(self, session: Session, game: Game) -> Optional[float]:
+        server = self.ensure_server_exists(session, game.guild_xid)
+        if game.channel_xid is None:  # pragma: no cover
+            return None
+        channel_settings = self.ensure_channel_settings_exists(
+            session, server, game.channel_xid, ""
+        )
+        queue_time_enabled = (
+            channel_settings.queue_time_enabled
+            if channel_settings.queue_time_enabled is not None
+            else server.queue_time_enabled
+        )
+        if not queue_time_enabled:
+            return None
         return self.average_wait_times.get(f"{game.guild_xid}-{game.channel_xid}")
 
     @property
@@ -615,7 +628,7 @@ class SpellBot(discord.Client):
         await safe_edit_message(post, content=s("deleted_game"), embed=None)
         await safe_clear_reactions(post)
 
-    async def try_to_update_game(self, game) -> None:
+    async def try_to_update_game(self, session: Session, game: Game) -> None:
         """Attempts to update the embed for a game."""
         if not game.channel_xid or not game.message_xid:
             return
@@ -628,7 +641,8 @@ class SpellBot(discord.Client):
         if not post:
             return
 
-        await post.edit(embed=game.to_embed(wait=self.average_wait(game)))
+        wait = await self.average_wait(session, game)
+        await post.edit(embed=game.to_embed(wait=wait))
 
     async def safe_send_not_verified(
         self,
@@ -781,7 +795,7 @@ class SpellBot(discord.Client):
                     game_to_update = user.game
                     user.game_id = None  # type: ignore
                     session.commit()
-                    await self.try_to_update_game(game_to_update)
+                    await self.try_to_update_game(session, game_to_update)
                 user.game = game
             else:  # emoji == EMOJI_DROP_GAME:
                 if not any(user.xid == game_user.xid for game_user in game.users):
@@ -795,9 +809,8 @@ class SpellBot(discord.Client):
                 session.commit()
 
                 # update the game message
-                await safe_edit_message(
-                    message, embed=game.to_embed(wait=self.average_wait(game))
-                )
+                wait = await self.average_wait(session, game)
+                await safe_edit_message(message, embed=game.to_embed(wait=wait))
                 return
 
             game.updated_at = now
@@ -827,9 +840,8 @@ class SpellBot(discord.Client):
                 await safe_clear_reactions(message)
             else:
                 session.commit()
-                await safe_edit_message(
-                    message, embed=game.to_embed(wait=self.average_wait(game))
-                )
+                wait = await self.average_wait(session, game)
+                await safe_edit_message(message, embed=game.to_embed(wait=wait))
 
     async def on_message(self, message: discord.Message) -> None:
         """Behavior when the client gets a message from Discord."""
@@ -1097,7 +1109,7 @@ class SpellBot(discord.Client):
             game_to_update = user.game
             user.game_id = None  # type: ignore
             session.commit()
-            await self.try_to_update_game(game_to_update)
+            await self.try_to_update_game(session, game_to_update)
 
     async def _respond_found_game(
         self, msg: discord.Message, user: discord.User, game: Game
@@ -1127,9 +1139,8 @@ class SpellBot(discord.Client):
     async def _post_new_game(
         self, session: Session, msg: discord.Message, game: Game
     ) -> Optional[discord.Message]:
-        post = await safe_send_channel(
-            msg.channel, embed=game.to_embed(wait=self.average_wait(game))
-        )
+        wait = await self.average_wait(session, game)
+        post = await safe_send_channel(msg.channel, embed=game.to_embed(wait=wait))
         if not post:
             return None
 
@@ -1165,9 +1176,8 @@ class SpellBot(discord.Client):
                 await safe_clear_reactions(post)
                 return
         else:  # game *definitely* isn't ready yet
-            await safe_edit_message(
-                post, embed=game.to_embed(wait=self.average_wait(game))
-            )
+            wait = await self.average_wait(session, game)
+            await safe_edit_message(post, embed=game.to_embed(wait=wait))
 
     async def _call_attention_to_game(self, msg: discord.Message, game: Game) -> bool:
         if not game.message_xid:
@@ -1797,7 +1807,7 @@ class SpellBot(discord.Client):
                     if player_user.waiting:
                         game_to_update = player_user.game
                         player_user.game_id = None  # type: ignore
-                        await self.try_to_update_game(game_to_update)
+                        await self.try_to_update_game(session, game_to_update)
                     player_user.cached_name = player_discord_user.name
                 session.commit()
 
@@ -2033,7 +2043,7 @@ class SpellBot(discord.Client):
                 if mentioned_user.waiting:
                     game_to_update = mentioned_user.game
                     mentioned_user.game_id = None  # type: ignore
-                    await self.try_to_update_game(game_to_update)
+                    await self.try_to_update_game(session, game_to_update)
                 mentioned_users.append(mentioned_user)
             session.commit()
 
@@ -2104,7 +2114,7 @@ class SpellBot(discord.Client):
                 game = user.game
                 user.game_id = None  # type: ignore
                 session.commit()
-                await self.try_to_update_game(game)
+                await self.try_to_update_game(session, game)
             await safe_react_ok(message)
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
@@ -2193,7 +2203,7 @@ class SpellBot(discord.Client):
                 session.commit()
                 await safe_react_ok(message)
                 if user.waiting:
-                    await self.try_to_update_game(user.game)
+                    await self.try_to_update_game(session, user.game)
                 await safe_react_ok(message)
                 return
 
@@ -2218,7 +2228,7 @@ class SpellBot(discord.Client):
             session.commit()
             await safe_react_ok(message)
             if user.waiting:
-                await self.try_to_update_game(user.game)
+                await self.try_to_update_game(session, user.game)
             await safe_react_ok(message)
 
     @command(allow_dm=False, help_group="Commands for Players")
@@ -2358,6 +2368,7 @@ class SpellBot(discord.Client):
         * `power <on|off>`: Turns the power command on or off for this server.
         * `voice <on|off>`: When on, SpellBot will automatically create voice channels.
         * `tags [channels] <on|off>`: Turn on or off the ability to use tags.
+        * `queue-time [channels] <on|off>`: Turn on or off average queue time details.
         * `smotd <your message>`: Set the server message of the day.
         * `cmotd <your message>`: Set the message of the day for a channel.
         * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
@@ -2412,6 +2423,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_voice(session, server, params[1:], message)
             elif command == "tags":
                 await self.spellbot_tags(session, server, params[1:], message)
+            elif command == "queue-time":
+                await self.spellbot_queue_time(session, server, params[1:], message)
             elif command == "smotd":
                 await self.spellbot_smotd(session, server, params[1:], message)
             elif command == "voice-category":
@@ -2810,6 +2823,47 @@ class SpellBot(discord.Client):
                     "spellbot_tags_server",
                     reply=message.author.mention,
                     setting="on" if tags_enabled else "off",
+                ),
+            )
+
+        session.commit()
+        await safe_react_ok(message)
+
+    async def spellbot_queue_time(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        queue_time_enabled = not any(param.lower() == "off" for param in params)
+        channel_mentions: list[MentionableChannelType] = cast(
+            list, message.channel_mentions
+        )
+
+        if message.channel_mentions:
+            for mention in channel_mentions:
+                channel_settings = self.ensure_channel_settings_exists(
+                    session, server, mention.id, mention.name
+                )
+                channel_settings.queue_time_enabled = queue_time_enabled  # type: ignore
+            await safe_send_channel(
+                message.channel,
+                s(
+                    "spellbot_queue_time_channels",
+                    reply=message.author.mention,
+                    channels=", ".join(f"<#{m.id}>" for m in channel_mentions),
+                    setting="on" if queue_time_enabled else "off",
+                ),
+            )
+        else:
+            server.queue_time_enabled = queue_time_enabled  # type: ignore
+            await safe_send_channel(
+                message.channel,
+                s(
+                    "spellbot_queue_time_server",
+                    reply=message.author.mention,
+                    setting="on" if queue_time_enabled else "off",
                 ),
             )
 

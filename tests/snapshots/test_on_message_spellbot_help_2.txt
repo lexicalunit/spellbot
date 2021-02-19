@@ -1,4 +1,7 @@
-> >  Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._
+> > * Optional: Add tags by using `~tag-name` for the tags you want.
+
+`!export`
+>  Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._
 
 `!event <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]`
 >  Create many games in batch from an attached CSV data file. _Requires the "SpellBot Admin" role._

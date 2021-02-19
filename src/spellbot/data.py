@@ -61,6 +61,7 @@ class Server(Base):
     motd = Column(String(10), nullable=False, server_default=text("'both'"))
     power_enabled = Column(Boolean, nullable=False, server_default=true())
     tags_enabled = Column(Boolean, nullable=False, server_default=true())
+    queue_time_enabled = Column(Boolean, nullable=False, server_default=true())
     create_voice = Column(Boolean, nullable=False, server_default=false())
     smotd = Column(String(255))
     voice_category_prefix = Column(String(40))
@@ -220,7 +221,8 @@ class ChannelSettings(Base):
     require_verification = Column(Boolean, nullable=False, server_default=false())
     cmotd = Column(String(255))
     verify_message = Column(String(255))
-    tags_enabled = Column(Boolean, nullable=True)  # allow override on the server setting
+    tags_enabled = Column(Boolean, nullable=True)  # overrides server setting
+    queue_time_enabled = Column(Boolean, nullable=True)  # overrides server setting
     server = relationship("Server", back_populates="channel_settings")
 
 
