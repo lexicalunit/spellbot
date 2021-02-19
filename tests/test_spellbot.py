@@ -2806,35 +2806,98 @@ class TestSpellBot:
         await client.on_message(msg)
         assert "✅" in msg.reactions
 
-    async def test_on_message_spellbot_tags_none(self, client, channel_maker):
-        author = an_admin()
+    async def test_on_message_spellbot_tags_server(self, client, channel_maker):
         channel = channel_maker.text()
-        await client.on_message(MockMessage(author, channel, "!spellbot tags"))
-        assert channel.last_sent_response == (
-            f'Sorry {author.mention}, but please provide an "on" or "off" setting.'
-        )
+        admin = an_admin()
 
-    async def test_on_message_spellbot_tags_invalid(self, client, channel_maker):
-        author = an_admin()
-        channel = channel_maker.text()
-        await client.on_message(MockMessage(author, channel, "!spellbot tags bottom"))
+        await client.on_message(MockMessage(admin, channel, "!spellbot tags off"))
         assert channel.last_sent_response == (
-            f'Sorry {author.mention}, but please provide an "on" or "off" setting.'
-        )
-
-    async def test_on_message_spellbot_tags(self, client, channel_maker):
-        channel = channel_maker.text()
-        author = an_admin()
-        await client.on_message(MockMessage(author, channel, "!spellbot tags off"))
-        assert channel.last_sent_response == (
-            f"Ok {author.mention}, I've turned the ability to use tags off."
+            f"Ok {admin.mention}, I've turned the ability to use tags off."
         )
 
         await client.on_message(MockMessage(AMY, channel, "!lfg ~modern ~fun"))
-
         game = game_json_for(client, AMY)
         assert game["size"] == 2
         assert game["tags"] == []
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot tags on"))
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned the ability to use tags on."
+        )
+
+        await client.on_message(MockMessage(JR, channel, "!lfg ~modern ~fun"))
+        game = game_json_for(client, JR)
+        assert game["size"] == 2
+        assert set(game["tags"]) == {"modern", "fun"}
+
+    async def test_on_message_spellbot_tags_channels_when_server_on(
+        self, client, channel_maker
+    ):
+        channel = channel_maker.text()
+        admin = an_admin()
+
+        cmd = "!spellbot tags <#{channel.id}> off"
+        channel_mentions = [channel]
+        msg = MockMessage(admin, channel, cmd, channel_mentions=channel_mentions)
+        await client.on_message(msg)
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned the ability to use tags off"
+            f" for the channels: <#{channel.id}>."
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~modern ~fun"))
+        game = game_json_for(client, AMY)
+        assert game["size"] == 2
+        assert game["tags"] == []
+
+        cmd = "!spellbot tags <#{channel.id}> on"
+        channel_mentions = [channel]
+        msg = MockMessage(admin, channel, cmd, channel_mentions=channel_mentions)
+        await client.on_message(msg)
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned the ability to use tags on"
+            f" for the channels: <#{channel.id}>."
+        )
+
+        await client.on_message(MockMessage(JR, channel, "!lfg ~modern ~fun"))
+        game = game_json_for(client, JR)
+        assert game["size"] == 2
+        assert set(game["tags"]) == {"modern", "fun"}
+
+    async def test_on_message_spellbot_tags_channels_when_server_off(
+        self, client, channel_maker
+    ):
+        channel = channel_maker.text()
+        admin = an_admin()
+        await client.on_message(MockMessage(admin, channel, "!spellbot tags off"))
+
+        cmd = "!spellbot tags <#{channel.id}> off"
+        channel_mentions = [channel]
+        msg = MockMessage(admin, channel, cmd, channel_mentions=channel_mentions)
+        await client.on_message(msg)
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned the ability to use tags off"
+            f" for the channels: <#{channel.id}>."
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~modern ~fun"))
+        game = game_json_for(client, AMY)
+        assert game["size"] == 2
+        assert game["tags"] == []
+
+        cmd = "!spellbot tags <#{channel.id}> on"
+        channel_mentions = [channel]
+        msg = MockMessage(admin, channel, cmd, channel_mentions=channel_mentions)
+        await client.on_message(msg)
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned the ability to use tags on"
+            f" for the channels: <#{channel.id}>."
+        )
+
+        await client.on_message(MockMessage(JR, channel, "!lfg ~modern ~fun"))
+        game = game_json_for(client, JR)
+        assert game["size"] == 2
+        assert set(game["tags"]) == {"modern", "fun"}
 
     # There was an issue with SpellBot where, since commands are handled async,
     # multiple commands could be processed interleaved at the same time. This problem

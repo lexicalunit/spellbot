@@ -75,6 +75,7 @@ from spellbot.data import (
     users_blocks,
 )
 from spellbot.operations import (
+    MentionableChannelType,
     safe_clear_reactions,
     safe_create_category_channel,
     safe_create_invite,
@@ -1211,7 +1212,12 @@ class SpellBot(discord.Client):
         tag_names: List[str] = opts["tags"]
         system: str = opts["system"]
 
-        if not server.tags_enabled:
+        tags_enabled = (
+            channel_settings.tags_enabled
+            if channel_settings.tags_enabled is not None
+            else server.tags_enabled
+        )
+        if not tags_enabled:
             tag_names = []
 
         if not await self._validate_size(message, size):
@@ -2351,7 +2357,7 @@ class SpellBot(discord.Client):
         * `teams <list|none>`: Sets the teams available on this server.
         * `power <on|off>`: Turns the power command on or off for this server.
         * `voice <on|off>`: When on, SpellBot will automatically create voice channels.
-        * `tags <on|off>`: Turn on or off the ability to use tags on your server.
+        * `tags [channels] <on|off>`: Turn on or off the ability to use tags.
         * `smotd <your message>`: Set the server message of the day.
         * `cmotd <your message>`: Set the message of the day for a channel.
         * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
@@ -2776,28 +2782,38 @@ class SpellBot(discord.Client):
         params: List[str],
         message: discord.Message,
     ) -> None:
-        if not params or params[0].lower() not in ["on", "off"]:
+        tags_enabled = not any(param.lower() == "off" for param in params)
+        channel_mentions: list[MentionableChannelType] = cast(
+            list, message.channel_mentions
+        )
+
+        if message.channel_mentions:
+            for mention in channel_mentions:
+                channel_settings = self.ensure_channel_settings_exists(
+                    session, server, mention.id, mention.name
+                )
+                channel_settings.tags_enabled = tags_enabled  # type: ignore
             await safe_send_channel(
                 message.channel,
                 s(
-                    "spellbot_tags_bad",
+                    "spellbot_tags_channels",
                     reply=message.author.mention,
+                    channels=", ".join(f"<#{m.id}>" for m in channel_mentions),
+                    setting="on" if tags_enabled else "off",
                 ),
             )
-            await safe_react_error(message)
-            return
+        else:
+            server.tags_enabled = tags_enabled  # type: ignore
+            await safe_send_channel(
+                message.channel,
+                s(
+                    "spellbot_tags_server",
+                    reply=message.author.mention,
+                    setting="on" if tags_enabled else "off",
+                ),
+            )
 
-        setting = params[0].lower()
-        server.tags_enabled = setting == "on"  # type: ignore
         session.commit()
-        await safe_send_channel(
-            message.channel,
-            s(
-                "spellbot_tags",
-                reply=message.author.mention,
-                setting=setting,
-            ),
-        )
         await safe_react_ok(message)
 
     async def spellbot_smotd(

@@ -125,8 +125,9 @@ spellbot_smotd: 'Right on, $reply. The server message of the day is now: $motd'
 spellbot_smotd_too_long: Sorry $reply, but that message is too long.
 spellbot_spectate: Ok $reply, I've turned the show spectator link setting $setting.
 spellbot_spectate_bad: Sorry $reply, but please provide an "on" or "off" setting.
-spellbot_tags: Ok $reply, I've turned the ability to use tags $setting.
-spellbot_tags_bad: Sorry $reply, but please provide an "on" or "off" setting.
+spellbot_tags_channels: 'Ok $reply, I''ve turned the ability to use tags $setting
+  for the channels: $channels.'
+spellbot_tags_server: Ok $reply, I've turned the ability to use tags $setting.
 spellbot_teams_none: Sorry $reply, but please provide a list of team names or `none`
   to erase teams.
 spellbot_teams_too_few: Sorry $reply, but please give at least two team names or `none`

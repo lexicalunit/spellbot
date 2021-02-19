@@ -6,7 +6,7 @@
 > * `teams <list|none>`: Sets the teams available on this server.
 > * `power <on|off>`: Turns the power command on or off for this server.
 > * `voice <on|off>`: When on, SpellBot will automatically create voice channels.
-> * `tags <on|off>`: Turn on or off the ability to use tags on your server.
+> * `tags [channels] <on|off>`: Turn on or off the ability to use tags.
 > * `smotd <your message>`: Set the server message of the day.
 > * `cmotd <your message>`: Set the message of the day for a channel.
 > * `motd <private|public|both>`: Set the visibility of MOTD in game posts.
