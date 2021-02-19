@@ -86,7 +86,7 @@ These commands will help you configure SpellBot for your server.
   - `teams`: Sets the teams available on this server.
   - `power`: Turns the power command on or off for this server.
   - `voice`: When on, SpellBot will automatically create voice channels.
-  - `tags`: Turn on or off the ability to use tags on your server.
+  - `tags`: Turn on or off the ability to use tags. Optionally mention specific channels.
   - `smotd`: Set the server message of the day.
   - `cmotd`: Set the message of the day for the channel where you run it.
   - `motd`: Set the privacy level for messages of the day.

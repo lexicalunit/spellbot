@@ -220,6 +220,7 @@ class ChannelSettings(Base):
     require_verification = Column(Boolean, nullable=False, server_default=false())
     cmotd = Column(String(255))
     verify_message = Column(String(255))
+    tags_enabled = Column(Boolean, nullable=True)  # allow override on the server setting
     server = relationship("Server", back_populates="channel_settings")
 
 

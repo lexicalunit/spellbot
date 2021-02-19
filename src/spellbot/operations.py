@@ -17,6 +17,14 @@ ChannelType = Union[
     discord.VoiceChannel,
 ]
 
+MentionableChannelType = Union[
+    discord.CategoryChannel,
+    discord.GroupChannel,
+    discord.StoreChannel,
+    discord.TextChannel,
+    discord.VoiceChannel,
+]
+
 
 def _user_or_guild_log_part(message: discord.Message) -> str:  # pragma: no cover
     if hasattr(message, "guild"):
