@@ -117,6 +117,9 @@ spellbot_power_bad: Sorry $reply, but please provide an "on" or "off" setting.
 spellbot_prefix: Ok $reply, I will now use "$prefix" as my command prefix on this
   server.
 spellbot_prefix_none: Sorry $reply, but please provide a prefix string.
+spellbot_queue_time_channels: 'Ok $reply, I''ve turned average queue time details
+  $setting for the channels: $channels.'
+spellbot_queue_time_server: Ok $reply, I've turned average queue time details $setting.
 spellbot_size: Ok $reply, the default game size for this channel has been set to $default_size
   players.
 spellbot_size_bad: Sorry $reply, but default game size should be between 2 and 4 players.
