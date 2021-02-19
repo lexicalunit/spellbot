@@ -30,6 +30,7 @@ from spellbot.constants import (
     VOICE_CATEGORY_PREFIX,
 )
 from spellbot.data import ChannelSettings, Event, Game, Server, User, UserServerSettings
+from spellbot.tasks import update_average_wait_times
 
 from .constants import CLIENT_TOKEN, TEST_DATA_ROOT
 from .mocks import AsyncMock
@@ -3311,7 +3312,7 @@ class TestSpellBot:
             game.channel_xid = None
             session.commit()
 
-            await client.try_to_update_game(game)
+            await client.try_to_update_game(session, game)
 
         mock_safe_fetch_channel.assert_not_called()
 
@@ -3328,7 +3329,7 @@ class TestSpellBot:
             game.message_xid = None
             session.commit()
 
-            await client.try_to_update_game(game)
+            await client.try_to_update_game(session, game)
 
         mock_safe_fetch_channel.assert_not_called()
 
@@ -3345,7 +3346,7 @@ class TestSpellBot:
         async with client.session() as session:
             game = session.query(Game).all()[0]
 
-            await client.try_to_update_game(game)
+            await client.try_to_update_game(session, game)
 
         mock_safe_fetch_message.assert_not_called()
 
@@ -3364,7 +3365,7 @@ class TestSpellBot:
             mock_safe_fetch_message = AsyncMock(return_value=None)
             monkeypatch.setattr(spellbot, "safe_fetch_message", mock_safe_fetch_message)
 
-            await client.try_to_update_game(game)
+            await client.try_to_update_game(session, game)
 
             mock_to_embed.assert_not_called()
 
@@ -4072,3 +4073,120 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f"Sorry {admin.mention}, but that category name is too long."
         )
+
+    async def test_on_message_spellbot_queue_time_server(self, client, channel_maker):
+        channel = channel_maker.text()
+        admin = an_admin()
+        session = client.data.Session()
+
+        # ensure there's some data for average queue times to be calculated
+        await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+        ignored_game = session.query(Game).one_or_none()
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot queue-time off"))
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned average queue time details off."
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+        game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
+        await update_average_wait_times(client)
+        wait = await client.average_wait(session, game)
+        assert wait is None
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot queue-time on"))
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned average queue time details on."
+        )
+
+        await client.on_message(MockMessage(JR, channel, "!lfg"))
+        game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
+        await update_average_wait_times(client)
+        wait = await client.average_wait(session, game)
+        assert wait is not None
+
+    async def test_on_message_spellbot_queue_time_channels_when_server_on(
+        self, client, channel_maker
+    ):
+        channel = channel_maker.text()
+        admin = an_admin()
+        session = client.data.Session()
+
+        # ensure there's some data for average queue times to be calculated
+        await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+        ignored_game = session.query(Game).one_or_none()
+
+        cmd = "!spellbot queue-time <#{channel.id}> off"
+        channel_mentions = [channel]
+        msg = MockMessage(admin, channel, cmd, channel_mentions=channel_mentions)
+        await client.on_message(msg)
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned average queue time details off"
+            f" for the channels: <#{channel.id}>."
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+        game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
+        await update_average_wait_times(client)
+        wait = await client.average_wait(session, game)
+        assert wait is None
+
+        cmd = "!spellbot queue-time <#{channel.id}> on"
+        channel_mentions = [channel]
+        msg = MockMessage(admin, channel, cmd, channel_mentions=channel_mentions)
+        await client.on_message(msg)
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned average queue time details on"
+            f" for the channels: <#{channel.id}>."
+        )
+
+        await client.on_message(MockMessage(JR, channel, "!lfg"))
+        game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
+        await update_average_wait_times(client)
+        wait = await client.average_wait(session, game)
+        assert wait is not None
+
+    async def test_on_message_spellbot_queue_time_channels_when_server_off(
+        self, client, channel_maker
+    ):
+        channel = channel_maker.text()
+        admin = an_admin()
+        await client.on_message(MockMessage(admin, channel, "!spellbot queue-time off"))
+        session = client.data.Session()
+
+        # ensure there's some data for average queue times to be calculated
+        await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
+        await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
+        ignored_game = session.query(Game).one_or_none()
+
+        cmd = "!spellbot queue-time <#{channel.id}> off"
+        channel_mentions = [channel]
+        msg = MockMessage(admin, channel, cmd, channel_mentions=channel_mentions)
+        await client.on_message(msg)
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned average queue time details off"
+            f" for the channels: <#{channel.id}>."
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg"))
+        game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
+        await update_average_wait_times(client)
+        wait = await client.average_wait(session, game)
+        assert wait is None
+
+        cmd = "!spellbot queue-time <#{channel.id}> on"
+        channel_mentions = [channel]
+        msg = MockMessage(admin, channel, cmd, channel_mentions=channel_mentions)
+        await client.on_message(msg)
+        assert channel.last_sent_response == (
+            f"Ok {admin.mention}, I've turned average queue time details on"
+            f" for the channels: <#{channel.id}>."
+        )
+
+        await client.on_message(MockMessage(JR, channel, "!lfg"))
+        game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
+        await update_average_wait_times(client)
+        wait = await client.average_wait(session, game)
+        assert wait is not None
