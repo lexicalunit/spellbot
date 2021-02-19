@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added ability to mention specific channels in `!spellbot tags` command to
+  allow overrides for specific channels.
+
 ## [v5.17.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.17.1) - 2021-02-13
 
 ### Fixed

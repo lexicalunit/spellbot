@@ -345,11 +345,20 @@ class MockDM(MockChannel):
 
 
 class MockMessage:
-    def __init__(self, author, channel, content, mentions=None, attachments=None):
+    def __init__(
+        self,
+        author,
+        channel,
+        content,
+        mentions=None,
+        channel_mentions=None,
+        attachments=None,
+    ):
         self.author = author
         self.channel = channel
         self.content = content
         self.mentions = mentions or []
+        self.channel_mentions = channel_mentions or []
         self.attachments = attachments or []
         self.reactions = set()
         if isinstance(channel, MockDM):
