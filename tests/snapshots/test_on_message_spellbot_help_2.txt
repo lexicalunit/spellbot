@@ -1,4 +1,5 @@
-> > * Optional: Add tags by using `~tag-name` for the tags you want.
+> > * Optional: Add a message by using `msg:` followed by the message content.
+> * Optional: Add tags by using `~tag-name` for the tags you want.
 
 `!export`
 >  Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._

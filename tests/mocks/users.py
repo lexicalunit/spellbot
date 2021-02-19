@@ -6,14 +6,17 @@ CLIENT_USER = "ADMIN"
 CLIENT_USER_ID = 82226367030108160
 
 ADMIN_ROLE = MockRole("SpellBot Admin")
-PLAYER_ROLE = MockRole("Player Player")
+MODERATORS_ROLE = MockRole("Moderators")
+PLAYER_ROLE = MockRole("Player")
 
 ADMIN = MockMember(CLIENT_USER, CLIENT_USER_ID, roles=[ADMIN_ROLE], admin=True)
 OWNER = MockMember(CLIENT_USER, CLIENT_USER_ID, roles=[], owner=True)
 FRIEND = MockMember("friend", 82169952898900001, roles=[PLAYER_ROLE])
-BUDDY = MockMember("buddy", 82942320688700002, roles=[ADMIN_ROLE, PLAYER_ROLE])
+BUDDY = MockMember(
+    "buddy", 82942320688700002, roles=[ADMIN_ROLE, PLAYER_ROLE, MODERATORS_ROLE]
+)
 GUY = MockMember("guy", 82988021019800003)
-DUDE = MockMember("dude", 82988761019800004, roles=[ADMIN_ROLE])
+DUDE = MockMember("dude", 82988761019800004, roles=[ADMIN_ROLE, MODERATORS_ROLE])
 
 JR = MockMember("J.R.", 72988021019800005)
 ADAM = MockMember("Adam", 62988021019800006)

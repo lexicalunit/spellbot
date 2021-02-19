@@ -156,3 +156,5 @@ unblock: 'Ok $reply, I have unblocked the following users for you: $unblocked'
 unblock_mentions: Sorry $reply, please do not mention users, just copy their name
   without an @.
 unblock_no_params: Sorry $reply, please say who you want to unblock with that command.
+watched_user_notification: 'Watched users ($users) just hopped into game $game_id.
+  Go to post: $link'

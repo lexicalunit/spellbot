@@ -41,8 +41,14 @@
 
 **### Commands for Admins ###**
 
+`!watch`
+>  Watch a user on your server.
+
 `!verify`
 >  Verify a user on your server.
+
+`!unwatch`
+>  Unwatch a user on your server.
 
 `!unverify`
 >  Unverify a user on your server.
@@ -51,4 +57,3 @@
 >  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
 > 
 > The following subcommands are supported:
-> * `config`: Just show the current configuration for this server.
