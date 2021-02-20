@@ -37,6 +37,8 @@ from aiohttp import web
 from aiohttp.web_response import Response
 from dotenv import load_dotenv
 from expiringdict import ExpiringDict  # type: ignore
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import text
@@ -124,6 +126,26 @@ def playedh_log(message: discord.Message, s: str) -> None:  # pragma: no cover
     if message.channel.guild.id != 304276578005942272:
         return
     logger.error(f"playedh: {message.channel.name}: {s}")
+
+
+def requests_retry_session(
+    retries=3,
+    backoff_factor=0.3,
+    status_forcelist=(500, 502, 504),
+    session=None,
+):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
 
 
 def parse_opts(params: List[str], default_size: Optional[int] = None) -> dict:
@@ -498,7 +520,7 @@ class SpellBot(discord.Client):
             return f"http://exmaple.com/game/{uuid4()}"
 
         headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
-        r = requests.post(CREATE_ENDPOINT, headers=headers)
+        r = requests_retry_session().post(CREATE_ENDPOINT, headers=headers)
         try:
             return cast(str, r.json()["gameUrl"])
         except KeyError as e:
