@@ -17,6 +17,7 @@ class MockDiscordClient:
         self.channels = []
         self._guild = MockGuild(1, "guild", [])
         self.loop = loop
+        self.guilds = [self._guild]
 
     def get_user(self, user_id):
         for user in ALL_USERS:

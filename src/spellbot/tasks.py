@@ -104,6 +104,7 @@ async def update_metrics(bot: SpellBot) -> None:
 
     logger.info("starting update metrics task...")
     async with bot.session() as session:
+        active = len(bot.guilds)
         games = session.query(Game).filter(Game.status == "started").count()
         servers = session.query(Server).count()
         users = session.query(User).count()
@@ -121,6 +122,7 @@ async def update_metrics(bot: SpellBot) -> None:
                     "servers": servers,
                     "games": games,
                     "users": users,
+                    "active": active,
                 }
             )
             if recent_metrics:

@@ -326,7 +326,9 @@ class TestTasks:
 
         await update_metrics(client)
 
-        metrics.mset.assert_called_with({"games": 0, "servers": 0, "users": 0})
+        metrics.mset.assert_called_with(
+            {"games": 0, "servers": 0, "users": 0, "active": 1}
+        )
 
     async def test_update_metrics_redis_error(self, client, monkeypatch, caplog):
         metrics = Mock()

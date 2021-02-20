@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added an active guilds metric.
+
 ## [v5.20.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.20.1) - 2021-02-19
 
 ### Changed
