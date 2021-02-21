@@ -1289,7 +1289,7 @@ class SpellBot(discord.Client):
         size: Optional[int] = opts["size"]
         tag_names: List[str] = opts["tags"]
         system: str = opts["system"]
-        note = " ".join(p for p in opts["params"] if not p.startswith("@"))
+        note = " ".join(p for p in opts["params"] if not p.startswith("<@"))
 
         tags_enabled = (
             channel_settings.tags_enabled
