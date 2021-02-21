@@ -4280,3 +4280,12 @@ class TestSpellBot:
 
         for mod in MODERATORS_ROLE.members:
             assert len(mod.all_sent_calls) == 0
+
+    async def test_on_message_spellbot_lfg_with_note(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg low"))
+        assert game_json_for(client, AMY)["note"] == "low"  # creation note
+
+        await client.on_message(MockMessage(JR, channel, "!lfg high"))
+        assert game_json_for(client, JR)["note"] == "low"  # can't be changed

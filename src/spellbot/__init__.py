@@ -1289,6 +1289,7 @@ class SpellBot(discord.Client):
         size: Optional[int] = opts["size"]
         tag_names: List[str] = opts["tags"]
         system: str = opts["system"]
+        note = " ".join(opts["params"])
 
         tags_enabled = (
             channel_settings.tags_enabled
@@ -1348,6 +1349,7 @@ class SpellBot(discord.Client):
                 system=system,
                 tags=tags,
                 server=server,
+                note=note,
             )
 
         await self._remove_user_from_game(session, user)
