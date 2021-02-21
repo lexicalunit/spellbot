@@ -452,7 +452,7 @@ class SpellBot(discord.Client):
         if game.channel_xid is None:  # pragma: no cover
             return None
         channel_settings = self.ensure_channel_settings_exists(
-            session, server, game.channel_xid, ""
+            session, server, game.channel_xid
         )
         queue_time_enabled = (
             channel_settings.queue_time_enabled
@@ -607,7 +607,11 @@ class SpellBot(discord.Client):
         return cast(Server, server)
 
     def ensure_channel_settings_exists(
-        self, session: Session, server: Server, channel_xid: int, channel_name: str
+        self,
+        session: Session,
+        server: Server,
+        channel_xid: int,
+        channel_name: Optional[str] = None,
     ) -> ChannelSettings:
         """Ensures that the channel settings row exists for the given guild/channel id."""
         channel_settings = (
@@ -628,8 +632,9 @@ class SpellBot(discord.Client):
             )
             session.add(channel_settings)
         else:
-            channel_settings.cached_name = channel_name
-            channel_settings.updated_at = datetime.utcnow()
+            if channel_name is not None and channel_name != "":
+                channel_settings.cached_name = channel_name  # type: ignore
+            channel_settings.updated_at = datetime.utcnow()  # type: ignore
         session.commit()
         return cast(ChannelSettings, channel_settings)
 
