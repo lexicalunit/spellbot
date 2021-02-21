@@ -455,6 +455,7 @@ class Game(Base):
         String(30), nullable=False, server_default=text("'pending'"), index=True
     )
     message = Column(String(255))
+    note = Column(String(255))
     event_id = Column(
         Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True, index=True
     )
@@ -670,6 +671,7 @@ class Game(Base):
             "status": self.status,
             "system": self.system,
             "message": self.message,
+            "note": self.note,
             "message_xid": self.message_xid,
             "voice_channel_xid": self.voice_channel_xid,
             "voice_channel_invite": self.voice_channel_invite,
@@ -780,6 +782,10 @@ class Game(Base):
                 )
             )
             embed.add_field(name="Players", value=players, inline=False)
+
+        if self.note:
+            embed.add_field(name="Note", value=self.note, inline=False)
+
         embed.set_footer(text=f"SpellBot Reference #SB{self.id}")
         embed.color = discord.Color(0x5A3EFD)
         return embed

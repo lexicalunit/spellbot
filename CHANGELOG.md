@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Pick up extra useless parameters to !lfg and use them as a creation note.
+
 ## [v5.20.2](https://github.com/lexicalunit/spellbot/releases/tag/v5.20.2) - 2021-02-20
 
 ### Added
