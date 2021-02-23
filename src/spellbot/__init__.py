@@ -509,7 +509,7 @@ class SpellBot(discord.Client):
         notification_message = s(
             "watched_user_notification",
             game_id=game.id,
-            users=", ".join(f"<@{w.user_xid}>" for w in watched),
+            users=", ".join(f"<@{w.user_xid}> ({w.note})" for w in watched),
             link=link,
         )
         for mod in mod_role.members:
@@ -2436,6 +2436,9 @@ class SpellBot(discord.Client):
         if len(message.mentions) == 0:
             await safe_react_error(message)
             return
+
+        note = " ".join(p for p in params if not p.startswith("@"))
+
         async with self.session() as session:
             server = self.ensure_server_exists(session, message.channel.guild.id)
             for mentioned in message.mentions:
@@ -2446,9 +2449,11 @@ class SpellBot(discord.Client):
                 watched_user = watched_user_q.first()
                 if watched_user and not setting:
                     watched_user_q.delete()
+                if watched_user and setting:
+                    watched_user.note = note  # type: ignore
                 if not watched_user and setting:
                     watched_user = WatchedUser(
-                        user_xid=user.xid, guild_xid=server.guild_xid
+                        user_xid=user.xid, guild_xid=server.guild_xid, note=note
                     )
                     session.add(watched_user)
             session.commit()
