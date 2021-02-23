@@ -4237,7 +4237,7 @@ class TestSpellBot:
 
         mentions = [AMY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
-        cmd = f"!watch {mentions_str}"
+        cmd = f"!watch {mentions_str} this is a note"
         await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
 
         await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
@@ -4246,8 +4246,8 @@ class TestSpellBot:
         game = all_games(client)[0]
 
         notif = (
-            f"Watched users (<@{AMY.id}>) just hopped into game {game['id']}."
-            " Go to post: https://discordapp.com/channels/"
+            f"Watched users just hopped into game {game['id']}: <@{AMY.id}>"
+            " (this is a note). Go to post: https://discordapp.com/channels/"
             f"{channel.guild.id}/{channel.id}/{message.id}"
         )
         for mod in MODERATORS_ROLE.members:
