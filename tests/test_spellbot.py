@@ -4236,7 +4236,7 @@ class TestSpellBot:
         monkeypatch.setattr(client, "get_guild", mock_get_guild)
 
         mentions = [AMY]
-        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        mentions_str = " ".join([f"<@{user.name}>" for user in mentions])
         cmd = f"!watch {mentions_str} this is a note"
         await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
 
