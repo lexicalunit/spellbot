@@ -387,6 +387,7 @@ class WatchedUser(Base):
         primary_key=True,
         nullable=False,
     )
+    note = Column(String(255))
 
 
 class UserPoints(Base):
