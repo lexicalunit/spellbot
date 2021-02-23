@@ -2437,7 +2437,9 @@ class SpellBot(discord.Client):
             await safe_react_error(message)
             return
 
-        note = " ".join(p for p in params if not p.startswith("@"))
+        note = " ".join(
+            p for p in params if not p.startswith("<@") and not p.startswith("@")
+        )
 
         async with self.session() as session:
             server = self.ensure_server_exists(session, message.channel.guild.id)
