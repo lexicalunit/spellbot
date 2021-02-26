@@ -825,6 +825,10 @@ class SpellBot(discord.Client):
             server = self.ensure_server_exists(session, payload.guild_id)
             user = self.ensure_user_exists(session, author)
 
+            if user.banned:
+                await safe_remove_reaction(message, emoji, author)
+                return
+
             if not server.bot_allowed_in(channel.id):
                 return
 
@@ -986,37 +990,41 @@ class SpellBot(discord.Client):
             if not message.content.startswith(prefix):
                 return
 
-            has_admin_perms = author.permissions_in(message.channel).administrator
-            is_owner = not private and author.id == message.channel.guild.owner_id
-            if (
-                not private
-                and not has_admin_perms
-                and not is_owner
-                and not is_admin(message.channel, message.author)
-            ):
-                async with self.session() as session:
+            async with self.session() as session:
+                user = self.ensure_user_exists(session, message.author)
+                if user.banned:
+                    return
+
+                if not private:
                     server = self.ensure_server_exists(session, message.channel.guild.id)
                     server_name = str(message.channel.guild)[0:50]
                     if not server.cached_name or server.cached_name != server_name:
                         server.cached_name = server_name  # type: ignore
                         session.commit()
-                    if not server.bot_allowed_in(message.channel.id):
-                        return
-                    channel_settings = self.ensure_channel_settings_exists(
-                        session, server, message.channel.id, message.channel.name
+                    user_settings = self.ensure_user_settings_exists(
+                        session, user, server
                     )
-                    if channel_settings.require_verification:
-                        user = self.ensure_user_exists(session, message.author)
-                        user_settings = self.ensure_user_settings_exists(
-                            session, user, server
-                        )
-                        if not user_settings.verified:
-                            discord_user = cast(discord.User, message.author)
-                            await self.safe_send_not_verified(
-                                discord_user, channel_settings, message.channel.name
-                            )
-                            await safe_react_error(message)
+
+                    has_admin_perms = author.permissions_in(message.channel).administrator
+                    is_owner = author.id == message.channel.guild.owner_id
+                    if (
+                        not has_admin_perms
+                        and not is_owner
+                        and not is_admin(message.channel, message.author)
+                    ):
+                        if not server.bot_allowed_in(message.channel.id):
                             return
+                        channel_settings = self.ensure_channel_settings_exists(
+                            session, server, message.channel.id, message.channel.name
+                        )
+                        if channel_settings.require_verification:
+                            if not user_settings.verified:
+                                discord_user = cast(discord.User, message.author)
+                                await self.safe_send_not_verified(
+                                    discord_user, channel_settings, message.channel.name
+                                )
+                                await safe_react_error(message)
+                                return
 
             await self.process(message, prefix)
 
