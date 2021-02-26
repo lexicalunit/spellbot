@@ -284,6 +284,7 @@ class User(Base):
     )
     cached_name = Column(String(50))
     power = Column(Integer, nullable=True)
+    banned = Column(Boolean, nullable=False, server_default=false())
     game = relationship("Game", back_populates="users")
 
     blocks = relationship(
