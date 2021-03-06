@@ -136,6 +136,9 @@ class MockMember:
             def __init__(self, administrator):
                 self.administrator = administrator
                 self.value = 268528731
+                self.read_messages = True
+                self.add_reactions = True
+                self.manage_messages = True
 
         return MockPermissions(self.admin)
 

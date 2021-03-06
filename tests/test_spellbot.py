@@ -4289,3 +4289,35 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(JR, channel, "!lfg high"))
         assert game_json_for(client, JR)["note"] == "low"  # can't be changed
+
+    async def test_on_message_spellbot_config_permissions_warnings(
+        self, client, channel_maker, monkeypatch
+    ):
+        author = an_admin()
+        channel = channel_maker.text()
+
+        class BadPermissions:
+            def __init__(self):
+                self.read_messages = False
+                self.add_reactions = False
+                self.manage_messages = False
+
+        bad_permissions = BadPermissions()
+        mock_permissions_in = MagicMock(return_value=bad_permissions)
+
+        monkeypatch.setattr(client.user, "permissions_in", mock_permissions_in)
+        monkeypatch.setattr(channel.guild, "me", client.user)
+        await client.on_message(MockMessage(author, channel, "!spellbot config"))
+
+        assert (
+            f"Warning! I do not have permissions to read messages in <#{channel.id}>."
+            in channel.all_sent_responses
+        )
+        assert (
+            f"Warning! I do not have permissions to manage messages in <#{channel.id}>."
+            in channel.all_sent_responses
+        )
+        assert (
+            f"Warning! I do not have permissions to react to messages in <#{channel.id}>."
+            in channel.all_sent_responses
+        )

@@ -3371,6 +3371,40 @@ class SpellBot(discord.Client):
         await safe_send_channel(message.channel, embed=embed)
         await safe_react_ok(message)
 
+        async def warn_about_permissions(channel: discord.TextChannel, options=None):
+            if channel is None:
+                return
+            if options is None:
+                options = {
+                    "read_messages",
+                    "manage_messages",
+                    "add_reactions",
+                }
+            perms = message.channel.guild.me.permissions_in(channel)
+            for perm in options:
+                if not getattr(perms, perm):
+                    await safe_send_channel(
+                        message.channel,
+                        s(
+                            f"warning_permissions_no_{perm}",
+                            channel=f"<#{channel.id}>",
+                        ),
+                    )
+
+        await warn_about_permissions(message.channel)
+
+        for chan in channels:
+            channel = await safe_fetch_channel(self, chan.channel_xid, server.guild_xid)
+            if channel is None or not isinstance(channel, discord.TextChannel):
+                continue
+            await warn_about_permissions(channel)
+
+        for chan in av_channels:  # type: ignore
+            channel = await safe_fetch_channel(self, chan.channel_xid, server.guild_xid)
+            if channel is None or not isinstance(channel, discord.TextChannel):
+                continue
+            await warn_about_permissions(channel, {"read_messages"})
+
     async def spellbot_help(
         self, prefix: str, params: List[str], message: discord.Message
     ) -> None:

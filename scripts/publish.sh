@@ -16,14 +16,13 @@ run() {
     return $?
 }
 
-
 if echo "$*" | grep -Eq -- '--help\b|-h\b' || [[ -z $1 ]]; then
     usage
 fi
 
 KIND="$1"
 
-if [[ "$KIND" != "major" && "$KIND" != "minor" && "$KIND" != "patch" ]]; then
+if [[ $KIND != "major" && $KIND != "minor" && $KIND != "patch" ]]; then
     usage
 fi
 
@@ -35,7 +34,7 @@ if [[ $BRANCH != "master" ]]; then
 fi
 
 CHANGES="$(git status -su)"
-if [[ -n "$CHANGES" ]]; then
+if [[ -n $CHANGES ]]; then
     echo "error: can not publish when there are uncomitted changes" 1>&2
     exit 1
 fi
@@ -44,10 +43,11 @@ fi
 run "poetry version '$KIND'"
 
 # run tests to ensure the build is good
-run "tox"
+# This is valuable, but let's lean on CI instead.
+# run "tox"
 
 # fetch the version from pyproject.toml
-VERSION="$(grep "^version" < pyproject.toml | cut -d= -f2 | sed 's/"//g;s/ //g;s/^/v/;')"
+VERSION="$(grep "^version" <pyproject.toml | cut -d= -f2 | sed 's/"//g;s/ //g;s/^/v/;')"
 
 # promote unreleased changes in the changelog
 OLD_CHANGELOG="$REPO_ROOT/CHANGELOG.md"
@@ -65,15 +65,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 EOF
 
 BODY_STARTED="false"
-while IFS= read -r line
-do
-    if [[ "$BODY_STARTED" == "false" ]]; then
+while IFS= read -r line; do
+    if [[ $BODY_STARTED == "false" ]]; then
         if [[ $line == *"[Unreleased]"* ]]; then
             BODY_STARTED="true"
-            echo "## [$VERSION](https://github.com/lexicalunit/spellbot/releases/tag/$VERSION) - $(date +'%Y-%m-%d')" >> "$NEW_CHANGELOG"
+            echo "## [$VERSION](https://github.com/lexicalunit/spellbot/releases/tag/$VERSION) - $(date +'%Y-%m-%d')" >>"$NEW_CHANGELOG"
         fi
     else
-        echo "$line" >> "$NEW_CHANGELOG"
+        echo "$line" >>"$NEW_CHANGELOG"
     fi
 done <"$OLD_CHANGELOG"
 run "mv '$NEW_CHANGELOG' '$OLD_CHANGELOG'"

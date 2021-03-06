@@ -156,5 +156,11 @@ unblock: 'Ok $reply, I have unblocked the following users for you: $unblocked'
 unblock_mentions: Sorry $reply, please do not mention users, just copy their name
   without an @.
 unblock_no_params: Sorry $reply, please say who you want to unblock with that command.
+warning_permissions_no_add_reactions: Warning! I do not have permissions to react
+  to messages in $channel.
+warning_permissions_no_manage_messages: Warning! I do not have permissions to manage
+  messages in $channel.
+warning_permissions_no_read_messages: Warning! I do not have permissions to read messages
+  in $channel.
 watched_user_notification: 'Watched users just hopped into game $game_id: $users.
   Go to post: $link'
