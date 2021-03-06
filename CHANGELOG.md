@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added permissions error detection to the output of `!spellbot config`.
+
 ## [v5.23.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.23.0) - 2021-02-25
 
 ### Added
@@ -364,7 +368,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- Use is_() and isnot() to avoid spurious CodeFactor warnings.
+- Use is\_() and isnot() to avoid spurious CodeFactor warnings.
 
 ### Added
 
