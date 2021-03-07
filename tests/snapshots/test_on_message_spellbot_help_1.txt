@@ -15,6 +15,7 @@
 > * `size <integer>`: Sets the default game size for a specific channel.
 > * `toggle-verify`: Toggles user verification on/off for a specific channel.
 > * `auto-verify <list|all>`: Set the channels that trigger user auto verification.
+> * `unverified-only <list>`: Set the channels that are only for unverified users.
 > * `verify-message <your message>`: Set the verification message for this channel.
 > * `voice-category <string>`: Set category for voice channels created by !game.
 > * `stats`: Gets some statistics about SpellBot usage on your server.
@@ -25,4 +26,3 @@
 > 
 > Allows event runners to spin up an ad-hoc game directly between mentioned players.
 > * The user who issues this command is **NOT** added to the game themselves.
-> * You must mention all of the players to be seated in the game.

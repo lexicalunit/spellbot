@@ -137,6 +137,10 @@ spellbot_teams_too_few: Sorry $reply, but please give at least two team names or
   to erase teams.
 spellbot_toggle_verify: Ok $reply, verification is now $setting for this channel.
 spellbot_unknown_subcommand: Sorry $reply, but the subcommand "$command" is not recognized.
+spellbot_unverified_only: 'Ok $reply, I will now only allow unverified users within:
+  $channels'
+spellbot_unverified_only_warn: 'Sorry $reply, but "$param" is not a valid channel.
+  Try using # to mention the channels you want.'
 spellbot_verify_message: 'Right on, $reply. The verification message for this channel
   is now: $msg'
 spellbot_verify_message_too_long: Sorry $reply, but that message is too long.

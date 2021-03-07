@@ -1,4 +1,5 @@
-> > * Optional: Add a message by using `msg:` followed by the message content.
+> > * You must mention all of the players to be seated in the game.
+> * Optional: Add a message by using `msg:` followed by the message content.
 > * Optional: Add tags by using `~tag-name` for the tags you want.
 
 `!export`

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds unverified-only channels for use by unverified users (and admins).
+- New command to set unverified-only channels is `!spellbot unverified-only`.
+
 ## [v5.24.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.24.0) - 2021-03-06
 
 ### Added

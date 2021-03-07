@@ -94,6 +94,7 @@ These commands will help you configure SpellBot for your server.
   - `size`: Sets the default game size for a specific channel.
   - `toggle-verify`: Toggles requirement of verification for a specific channel.
   - `auto-verify`: Set the channels that will trigger user auto verification.
+  - `unverified-only`: Set the channels that are only for unverified users.
   - `verify-message`: Set the verification message for a specific channel.
   - `voice-category`: Set category for voice channels created by !game.
   - `stats`: Gets some statistics about SpellBot usage on your server.

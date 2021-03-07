@@ -70,6 +70,9 @@ class Server(Base):
     auto_verify_channels = relationship(
         "AutoVerifyChannel", back_populates="server", uselist=True
     )
+    unverified_only_channels = relationship(
+        "UnverifiedOnlyChannel", back_populates="server", uselist=True
+    )
     channel_settings = relationship(
         "ChannelSettings", back_populates="server", uselist=True, lazy="dynamic"
     )
@@ -203,6 +206,18 @@ class AutoVerifyChannel(Base):
         index=True,
     )
     server = relationship("Server", back_populates="auto_verify_channels")
+
+
+class UnverifiedOnlyChannel(Base):
+    __tablename__ = "unverified_only_channels"
+    channel_xid = Column(BigInteger, primary_key=True, nullable=False)
+    guild_xid = Column(
+        BigInteger,
+        ForeignKey("servers.guild_xid", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    server = relationship("Server", back_populates="unverified_only_channels")
 
 
 class ChannelSettings(Base):
