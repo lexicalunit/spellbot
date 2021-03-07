@@ -647,7 +647,9 @@ class TestSpellBot:
         assert about["thumbnail"]["url"] == THUMB_URL
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert fields == {
+            "Unverified only channels": "None",
             "Active channels": "All",
+            "Admin created voice category prefix": VOICE_CATEGORY_PREFIX,
             "Auto verify channels": "All",
             "Command prefix": "$",
             "Inactivity expiration time": "45 minutes",
@@ -658,7 +660,6 @@ class TestSpellBot:
             "Spectator links": "Off",
             "Tags": "On",
             "Voice channels": "Off",
-            "Admin created voice category prefix": VOICE_CATEGORY_PREFIX,
         }
 
         foo = channel_maker.text("foo")
@@ -4320,4 +4321,65 @@ class TestSpellBot:
         assert (
             f"Warning! I do not have permissions to react to messages in <#{channel.id}>."
             in channel.all_sent_responses
+        )
+
+    async def test_on_message_unverified_only(self, client, channel_maker):
+        admin = an_admin()
+        user = not_an_admin()
+        channel = channel_maker.text()
+
+        # First set up a random auto-verification channel to
+        # prevent "All" channels from being auto-verification channels.
+        another_channel = channel_maker.text()
+        cmd = f"!spellbot auto-verify <#{another_channel.id}>"
+        await client.on_message(MockMessage(admin, another_channel, cmd))
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot config"))
+        config = channel.last_sent_embed
+        fields = {f["name"]: f["value"] for f in config["fields"]}
+        assert fields["Unverified only channels"] == "None"
+
+        await client.on_message(
+            MockMessage(admin, channel, f"!spellbot unverified-only <#{channel.id}>")
+        )
+        await client.on_message(MockMessage(admin, channel, "!spellbot config"))
+        config = channel.last_sent_embed
+        fields = {f["name"]: f["value"] for f in config["fields"]}
+        assert fields["Unverified only channels"] == f"<#{channel.id}>"
+
+        await client.on_message(MockMessage(user, channel, "!before"))
+        assert 'there is no "before" command' in channel.last_sent_response
+
+        mentions = [user]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!verify {mentions_str}"
+        await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
+
+        await client.on_message(MockMessage(user, channel, "!after"))
+        assert 'there is no "after" command' not in channel.last_sent_response
+
+        mentions = [user]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!unverify {mentions_str}"
+        await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
+
+        await client.on_message(MockMessage(user, channel, "!again"))
+        assert 'there is no "again" command' in channel.last_sent_response
+
+        await client.on_message(MockMessage(admin, channel, "!spellbot unverified-only"))
+        await client.on_message(MockMessage(admin, channel, "!spellbot config"))
+        config = channel.last_sent_embed
+        fields = {f["name"]: f["value"] for f in config["fields"]}
+        assert fields["Unverified only channels"] == "None"
+
+    async def test_on_message_unverified_only_not_a_channel(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+
+        await client.on_message(
+            MockMessage(admin, channel, "!spellbot unverified-only peet")
+        )
+        assert channel.last_sent_response == (
+            f'Sorry <@{admin.id}>, but "peet" is not a valid channel.'
+            " Try using # to mention the channels you want."
         )

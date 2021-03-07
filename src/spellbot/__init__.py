@@ -71,6 +71,7 @@ from spellbot.data import (
     Server,
     Tag,
     Team,
+    UnverifiedOnlyChannel,
     User,
     UserPoints,
     UserServerSettings,
@@ -986,6 +987,61 @@ class SpellBot(discord.Client):
                             user_settings.verified = True  # type: ignore
                             session.commit()
 
+            has_admin_perms = (
+                not private and author.permissions_in(message.channel).administrator
+            )
+            is_owner = not private and (author.id == message.channel.guild.owner_id)
+            is_mod = not private and any(r.name == "Moderators" for r in author.roles)
+            is_mentor = not private and any(r.name == "Mentors" for r in author.roles)
+
+            # delete message if user verified and this is an unverified only channel
+            if (
+                not private
+                # and not has_admin_perms
+                # and not is_owner
+                and not is_mod
+                and not is_mentor
+            ):
+                rows = self.data.conn.execute(
+                    text(
+                        """
+                        SELECT
+                            CASE channel_xid
+                            WHEN :c THEN
+                                1
+                            ELSE
+                                0
+                            END
+                        FROM
+                            unverified_only_channels
+                        WHERE
+                            guild_xid = :g
+                    """
+                    ),
+                    g=message.channel.guild.id,
+                    c=message.channel.id,
+                )
+                items = [row for row in rows]
+                is_unverified_only = any(item[0] for item in items)
+                if is_unverified_only:
+                    async with self.session() as session:
+                        server = self.ensure_server_exists(
+                            session, message.channel.guild.id
+                        )
+                        user = self.ensure_user_exists(session, message.author)
+                        user_settings = self.ensure_user_settings_exists(
+                            session, user, server
+                        )
+
+                        if user_settings.verified:
+                            # # Check we don't prevent Moderators and Mentors
+                            # # from being able to freely chat in this channel.
+                            # discord_user = safe_fetch_user(self, author.id)
+                            # discord_user.role
+
+                            await safe_delete_message(message)
+                            return
+
             # only respond to command-like messages
             if not message.content.startswith(prefix):
                 return
@@ -1005,8 +1061,6 @@ class SpellBot(discord.Client):
                         session, user, server
                     )
 
-                    has_admin_perms = author.permissions_in(message.channel).administrator
-                    is_owner = author.id == message.channel.guild.owner_id
                     if (
                         not has_admin_perms
                         and not is_owner
@@ -2508,6 +2562,7 @@ class SpellBot(discord.Client):
         * `size <integer>`: Sets the default game size for a specific channel.
         * `toggle-verify`: Toggles user verification on/off for a specific channel.
         * `auto-verify <list|all>`: Set the channels that trigger user auto verification.
+        * `unverified-only <list>`: Set the channels that are only for unverified users.
         * `verify-message <your message>`: Set the verification message for this channel.
         * `voice-category <string>`: Set category for voice channels created by !game.
         * `stats`: Gets some statistics about SpellBot usage on your server.
@@ -2574,6 +2629,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_toggle_verify(session, server, params[1:], message)
             elif command == "auto-verify":
                 await self.spellbot_auto_verify(session, server, params[1:], message)
+            elif command == "unverified-only":
+                await self.spellbot_unverified_only(session, server, params[1:], message)
             elif command == "verify-message":
                 await self.spellbot_verify_message(session, server, params[1:], message)
             else:
@@ -3271,6 +3328,64 @@ class SpellBot(discord.Client):
             )
         await safe_react_ok(message)
 
+    async def spellbot_unverified_only(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        # Blow away the current associations first, otherwise SQLAlchemy will explode.
+        session.query(UnverifiedOnlyChannel).filter_by(
+            guild_xid=server.guild_xid
+        ).delete()
+
+        channels = []
+        for param in params:
+            m = re.match("<#([0-9]+)>", param)
+            if not m:
+                await safe_send_channel(
+                    message.channel,
+                    s(
+                        "spellbot_unverified_only_warn",
+                        reply=message.author.mention,
+                        param=param,
+                    ),
+                )
+                return
+
+            discord_channel = await safe_fetch_channel(self, int(m[1]), server.guild_xid)
+            if not discord_channel:
+                await safe_send_channel(
+                    message.channel,
+                    s(
+                        "spellbot_unverified_only_warn",
+                        reply=message.author.mention,
+                        param=param,
+                    ),
+                )
+                return
+
+            channel = UnverifiedOnlyChannel(
+                channel_xid=discord_channel.id, guild_xid=server.guild_xid
+            )
+            session.add(channel)
+            channels.append(channel)
+            session.commit()
+
+        server.unverified_only_channels = channels  # type: ignore
+        session.commit()
+        channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])
+        await safe_send_channel(
+            message.channel,
+            s(
+                "spellbot_unverified_only",
+                reply=message.author.mention,
+                channels=channels_str,
+            ),
+        )
+        await safe_react_ok(message)
+
     async def spellbot_verify_message(
         self,
         session: Session,
@@ -3357,6 +3472,16 @@ class SpellBot(discord.Client):
         else:
             av_channels_str = "All"
         embed.add_field(name="Auto verify channels", value=av_channels_str)
+        uo_channels = sorted(
+            server.unverified_only_channels, key=lambda channel: channel.channel_xid
+        )
+        if uo_channels:
+            uo_channels_str = ", ".join(
+                f"<#{channel.channel_xid}>" for channel in uo_channels
+            )
+        else:
+            uo_channels_str = "None"
+        embed.add_field(name="Unverified only channels", value=uo_channels_str)
         if server.teams:
             teams_str = ", ".join(sorted(team.name for team in server.teams))
             embed.add_field(name="Teams", value=teams_str)
