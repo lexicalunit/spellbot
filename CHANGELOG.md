@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.25.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.25.0) - 2021-03-06
+
 ### Added
 
 - Adds unverified-only channels for use by unverified users (and admins).
