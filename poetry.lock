@@ -276,7 +276,7 @@ tests = ["dill", "coverage", "coveralls", "mock", "nose"]
 
 [[package]]
 name = "faker"
-version = "6.5.2"
+version = "6.6.0"
 description = "Faker is a Python package that generates fake data for you."
 category = "dev"
 optional = false
@@ -1220,7 +1220,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4"
-content-hash = "fc5254c3125076e5e69cad14f172e808afd91bbf044ac3d26c5a4867439a4686"
+content-hash = "e32fbfefb30e92c9160e0401d1e7715dfd4dbda27bffa53c2bafff30104cb0ce"
 
 [metadata.files]
 aiofiles = [
@@ -1430,8 +1430,8 @@ expiringdict = [
     {file = "expiringdict-1.2.1.tar.gz", hash = "sha256:fe2ba427220425c3c8a3d29f6d2e2985bcee323f8bcd4021e68ebefbd90d8250"},
 ]
 faker = [
-    {file = "Faker-6.5.2-py3-none-any.whl", hash = "sha256:ee86c3140e1d1651b76a7aab637c7da068660f33937143e7063c663f4cec45ab"},
-    {file = "Faker-6.5.2.tar.gz", hash = "sha256:97fb6748031569a65265d38d85370b3c3970f4333b40430d52a60b37dea97877"},
+    {file = "Faker-6.6.0-py3-none-any.whl", hash = "sha256:38bd2ff0afb7d9956fed477a2cd1007a7012b401a9ffd3de5fb909d739880582"},
+    {file = "Faker-6.6.0.tar.gz", hash = "sha256:0a68a539b236a614157581a135c82a27024a66dc96b9a491883fe583ae3689f9"},
 ]
 fastapi = [
     {file = "fastapi-0.63.0-py3-none-any.whl", hash = "sha256:98d8ea9591d8512fdadf255d2a8fa56515cdd8624dca4af369da73727409508e"},
