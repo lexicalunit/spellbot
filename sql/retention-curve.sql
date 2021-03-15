@@ -1,6 +1,6 @@
 -- https://www.holistics.io/blog/calculate-cohort-retention-analysis-with-sql/
 
--- (user_id, cohort_month), each
+-- (cohort_month, user_id), each
 WITH cohort_items AS (
     SELECT
         date_trunc('month', U.created_at)::date AS cohort_month,
@@ -27,7 +27,7 @@ user_activities AS (
         2
 ),
 
--- (cohort_month, size)
+-- (cohort_month, num_users)
 cohort_size AS (
     SELECT
         cohort_month,
@@ -40,7 +40,7 @@ cohort_size AS (
         1
 ),
 
--- (cohort_month, month_number, cnt)
+-- (cohort_month, month_number, num_users)
 B AS (
     SELECT
         C.cohort_month,
@@ -51,18 +51,25 @@ B AS (
         LEFT JOIN cohort_items C ON A.user_id = C.user_id
     GROUP BY
         1,
-        2)
+        2
+),
+
+-- (cohort_month, total_users, month_number, remaining_users)
+retention AS (
     SELECT
         B.cohort_month,
         S.num_users AS total_users,
         B.month_number,
         -- B.num_users::float * 100 / S.num_users AS percentage
-        B.num_users AS remianing_users
+        B.num_users AS remaining_users
     FROM
         B
     LEFT JOIN cohort_size S ON B.cohort_month = S.cohort_month
-WHERE
-    B.cohort_month IS NOT NULL
-ORDER BY
-    1,
-    3;
+    WHERE
+        B.cohort_month IS NOT NULL
+    ORDER BY
+        1,
+        3
+)
+
+SELECT * FROM retention;
