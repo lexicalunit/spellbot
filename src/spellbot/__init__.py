@@ -789,7 +789,11 @@ class SpellBot(discord.Client):
         if method.admin_only and not await check_is_admin(message):
             return
         logger.debug("%s%s (params=%s, message=%s)", prefix, command, params, message)
-        await method(prefix, params, message)
+        if command in ["block", "unblock"]:
+            # take one big parameter, including all spaces
+            await method(prefix, [" ".join(tokens[1:])], message)
+        else:
+            await method(prefix, params, message)
 
     ##############################
     # Discord Client Behavior
@@ -1490,8 +1494,8 @@ class SpellBot(discord.Client):
         self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
-        Block other users from joining your games.
-        & <player-1> <player-2> ...
+        Block a user, by name, from joining your games. Do NOT use a mention.
+        & <user name>
         """
         author = message.author
         author_user = cast(discord.User, author)
@@ -1506,38 +1510,44 @@ class SpellBot(discord.Client):
             await safe_send_user(author_user, s("block_mentions", reply=reply))
             return
 
-        if len(params) == 0:
+        if len(params) == 0 or not params[0]:
             await safe_send_user(author_user, s("block_no_params", reply=reply))
             return
 
-        found: List[discord.User] = []
+        block_name = params[0]
+        found_user: Optional[discord.User] = None
+
         async with self.session() as session:
             server = self.ensure_server_exists(session, guild_xid)
             user = self.ensure_user_exists(session, author)
             self.ensure_user_settings_exists(session, user, server)
-            for param in params:
-                mentioned = finder.find(param)
-                if mentioned and mentioned.id != author_user.id:
-                    found.append(mentioned)
-                    blocked_user = self.ensure_user_exists(session, mentioned)
-                    self.ensure_user_settings_exists(session, blocked_user, server)
-                    self._upsert_user_block(session, user, blocked_user)
+            mentioned = finder.find(block_name)
+            if mentioned and mentioned.id == author_user.id:
+                await safe_send_user(author_user, s("block_no_params", reply=reply))
+                return
+            if mentioned:
+                found_user = mentioned
+                blocked_user = self.ensure_user_exists(session, mentioned)
+                self.ensure_user_settings_exists(session, blocked_user, server)
+                self._upsert_user_block(session, user, blocked_user)
             session.commit()
 
-        if not found:
-            await safe_send_user(author_user, s("block_no_params", reply=reply))
+        if not found_user:
+            await safe_send_user(
+                author_user, s("block_not_found", reply=reply, name=block_name)
+            )
             return
 
-        mentions_str = ", ".join([f"@{user.name}" for user in found])
-        await safe_send_user(author_user, s("block", reply=reply, blocked=mentions_str))
+        mention_str = f"@{found_user.name}"
+        await safe_send_user(author_user, s("block", reply=reply, blocked=mention_str))
 
     @command(allow_dm=False, help_group="Commands for Players")
     async def unblock(
         self, prefix: str, params: List[str], message: discord.Message
     ) -> None:
         """
-        Unblock previously blocked users.
-        & <player-1> <player-2> ...
+        Unblock a previously blocked user by name. Do NOT use a mention.
+        & <user name>
         """
         author = message.author
         author_user = cast(discord.User, author)
@@ -1552,34 +1562,39 @@ class SpellBot(discord.Client):
             await safe_send_user(author_user, s("unblock_mentions", reply=reply))
             return
 
-        if len(params) == 0:
+        if len(params) == 0 or not params[0]:
             await safe_send_user(author_user, s("unblock_no_params", reply=reply))
             return
 
-        found: List[discord.User] = []
+        unblock_name = params[0]
+        found_user: Optional[discord.User] = None
+
         async with self.session() as session:
             server = self.ensure_server_exists(session, guild_xid)
             user = self.ensure_user_exists(session, author)
             self.ensure_user_settings_exists(session, user, server)
-            for param in params:
-                mentioned = finder.find(param)
-                if mentioned:
-                    found.append(mentioned)
-                    blocked_user = self.ensure_user_exists(session, mentioned)
-                    self.ensure_user_settings_exists(session, blocked_user, server)
-                    filters = [
-                        users_blocks.c.user_xid == user.xid,
-                        users_blocks.c.blocked_user_xid == blocked_user.xid,
-                    ]
-                    session.query(users_blocks).filter(and_(*filters)).delete(
-                        synchronize_session=False
-                    )
+            mentioned = finder.find(unblock_name)
+            if mentioned:
+                found_user = mentioned
+                blocked_user = self.ensure_user_exists(session, mentioned)
+                self.ensure_user_settings_exists(session, blocked_user, server)
+                filters = [
+                    users_blocks.c.user_xid == user.xid,
+                    users_blocks.c.blocked_user_xid == blocked_user.xid,
+                ]
+                session.query(users_blocks).filter(and_(*filters)).delete(
+                    synchronize_session=False
+                )
             session.commit()
 
-        mentions_str = ", ".join([f"@{user.name}" for user in found])
-        await safe_send_user(
-            author_user, s("unblock", reply=reply, unblocked=mentions_str)
-        )
+        if not found_user:
+            await safe_send_user(
+                author_user, s("unblock_not_found", reply=reply, name=unblock_name)
+            )
+            return
+
+        mention_s = f"@{found_user.name}"
+        await safe_send_user(author_user, s("unblock", reply=reply, unblocked=mention_s))
 
     async def _verify_command_fest_report(
         self,
