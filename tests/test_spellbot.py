@@ -3832,6 +3832,17 @@ class TestSpellBot:
             f"Ok <@{AMY.id}>, I have blocked the following users for you: @{JACOB.name}"
         )
 
+    async def test_on_message_block_not_found(self, client, channel_maker):
+        channel = channel_maker.text()
+        cmd = "!block some non-random letters"
+        msg = MockMessage(AMY, channel, cmd)
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Sorry <@{AMY.id}>, I didn't find a user on that server"
+            ' with the name "some non-random letters".'
+        )
+
     async def test_on_message_block_twice(self, client, channel_maker):
         channel = channel_maker.text()
         mentions = [JACOB]
@@ -3863,19 +3874,6 @@ class TestSpellBot:
             f"Sorry <@{AMY.id}>, please say who you want to block with that command."
         )
 
-    async def test_on_message_block_multiple(self, client, channel_maker):
-        channel = channel_maker.text()
-        mentions = [JACOB, ADAM]
-        mentions_str = " ".join([f"{user.name}" for user in mentions])
-        cmd = f"!block {mentions_str}"
-        msg = MockMessage(AMY, channel, cmd)
-        await client.on_message(msg)
-        assert msg.delete.call_count == 1
-        assert AMY.last_sent_response == (
-            f"Ok <@{AMY.id}>, I have blocked the following users for you:"
-            f" @{JACOB.name}, @{ADAM.name}"
-        )
-
     async def test_on_message_unblock_no_params(self, client, channel_maker):
         channel = channel_maker.text()
         msg = MockMessage(AMY, channel, "!unblock")
@@ -3885,6 +3883,17 @@ class TestSpellBot:
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (
             f"Sorry <@{AMY.id}>, " "please say who you want to unblock with that command."
+        )
+
+    async def test_on_message_unblock_not_found(self, client, channel_maker):
+        channel = channel_maker.text()
+        cmd = "!unblock some non-random letters"
+        msg = MockMessage(AMY, channel, cmd)
+        await client.on_message(msg)
+        assert msg.delete.call_count == 1
+        assert AMY.last_sent_response == (
+            f"Sorry <@{AMY.id}>, I didn't find a user on that server"
+            ' with the name "some non-random letters".'
         )
 
     async def test_on_message_unblock_mentions(self, client, channel_maker):
@@ -3914,21 +3923,6 @@ class TestSpellBot:
         assert msg.delete.call_count == 1
         assert AMY.last_sent_response == (
             f"Ok <@{AMY.id}>, I have unblocked the following users for you: @{JACOB.name}"
-        )
-
-    async def test_on_message_unblock_multiple(self, client, channel_maker):
-        channel = channel_maker.text()
-        mentions = [JACOB, ADAM]
-        mentions_str = " ".join([f"{user.name}" for user in mentions])
-        cmd = f"!unblock {mentions_str}"
-        msg = MockMessage(AMY, channel, cmd)
-
-        await client.on_message(msg)
-
-        assert msg.delete.call_count == 1
-        assert AMY.last_sent_response == (
-            f"Ok <@{AMY.id}>, I have unblocked the following users for you: "
-            f"@{JACOB.name}, @{ADAM.name}"
         )
 
     async def test_on_message_block_lfg_blocked(self, client, channel_maker):

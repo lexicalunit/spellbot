@@ -1,8 +1,8 @@
 
 **### Commands for Players ###**
 
-`!unblock <player-1> <player-2> ...`
->  Unblock previously blocked users.
+`!unblock <user name>`
+>  Unblock a previously blocked user by name. Do NOT use a mention.
 
 `!team [team-name]`
 >  Set or get your team on this server. To get your team name, run this command with no parameters.
@@ -33,8 +33,8 @@
 `!leave`
 >  Leave any pending games that you've signed up.
 
-`!block <player-1> <player-2> ...`
->  Block other users from joining your games.
+`!block <user name>`
+>  Block a user, by name, from joining your games. Do NOT use a mention.
 
 `!about`
 >  Get information about SpellBot.
