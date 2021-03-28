@@ -354,11 +354,8 @@ class User(Base):
 
     def points(self, guild_xid) -> int:
         session = Session.object_session(self)
-        results = (
-            session.query(func.sum(UserPoints.points))
-            .filter_by(user_xid=self.xid, guild_xid=guild_xid)
-            .scalar()
-        )
+        filters = and_(UserPoints.user_xid == self.xid, UserPoints.guild_xid == guild_xid)
+        results = session.query(func.sum(UserPoints.points)).filter(filters).scalar()
         return results or 0
 
     def to_json(self) -> dict:
