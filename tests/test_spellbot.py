@@ -2545,10 +2545,10 @@ class TestSpellBot:
 
         async with client.session() as session:
             amy_user = session.query(User).filter(User.xid == AMY.id).one_or_none()
-            assert amy_user.points(channel.guild.id) == 10
+            assert amy_user and amy_user.points(channel.guild.id) == 10
 
             adam_user = session.query(User).filter(User.xid == ADAM.id).one_or_none()
-            assert adam_user.points(channel.guild.id) == 20
+            assert adam_user and adam_user.points(channel.guild.id) == 20
 
     async def test_on_message_report_cfb_wrong_points(self, client, channel_maker):
         channel = channel_maker.text()
