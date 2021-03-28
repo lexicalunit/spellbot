@@ -3681,6 +3681,9 @@ def main(
 
     database_env = get_db_env(database_env)
     database_url = get_db_url(database_env, database_url)
+    if database_url.startswith("postgres://"):
+        # SQLAlchemy 1.4.x removed support for the postgres:// URI scheme
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
     port_env = get_port_env(port_env)
     port = get_port(port_env, port)
     host = get_host(host)
