@@ -1,13 +1,13 @@
 [tool.black]
-line-length = 90
 include = '\.pyi?$'
+line-length = 90
 
 [tool.isort]
-multi_line_output = 3
-include_trailing_comma = true
-use_parentheses = true
-line_length = 90
 ensure_newline_before_comments = true
+include_trailing_comma = true
+line_length = 90
+multi_line_output = 3
+use_parentheses = true
 
 [tool.pylint]
 max-line-length = 90
@@ -44,35 +44,35 @@ commands =
 """
 
 [tool.poetry]
-name = 'spellbot'
-version = "5.25.1"
-license = 'MIT'
 authors = [
-    'Amy <amy@lexicalunit.com>'
+  'Amy <amy@lexicalunit.com>',
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: End Users/Desktop",
+  "Topic :: Communications :: Chat",
+  "Topic :: Games/Entertainment :: Board Games",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+]
+description = 'The Discord bot for SpellTable'
+homepage = 'http://spellbot.io/'
+keywords = ['discord', 'magic', 'bot', 'mtg', 'SpellTable']
+license = 'MIT'
+name = 'spellbot'
+packages = [
+  {include = "spellbot", from = "src"},
+  {include = "spellapi", from = "src"},
 ]
 readme = 'README.md'
-description = 'The Discord bot for SpellTable'
-keywords=['discord', 'magic', 'bot', 'mtg', 'SpellTable']
 repository = 'https://github.com/lexicalunit/spellbot'
-homepage = 'http://spellbot.io/'
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: End Users/Desktop",
-    "Topic :: Communications :: Chat",
-    "Topic :: Games/Entertainment :: Board Games",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-]
-packages = [
-    { include = "spellbot", from = "src" },
-    { include = "spellapi", from = "src" }
-]
+version = "5.25.1"
 
 [tool.poetry.dependencies]
-aiofiles = "^0.6.0"
+aiofiles = "0.6.0"
 aiohttp = "3.6.3"
-aioredis = "^1.3.1"
+aioredis = "1.3.1"
 alembic = "1.5.7"
 click = "7.1.2"
 coloredlogs = "15.0"
@@ -80,29 +80,29 @@ coloredlogs = "15.0"
 dunamai = "1.5.4"
 expiringdict = "1.2.1"
 fastapi = ">=0.62,<0.64"
-fastapi-cache2 = "^0.1.2"
-httpx = ">=0.16.1,<0.18.0"
-humanize = "3.2.0"
+fastapi-cache2 = "0.1.3.4"
+httpx = "=0.17.1"
+humanize = "3.3.0"
 hupper = "1.10.2"
-itsdangerous = "^1.1.0"
+itsdangerous = "1.1.0"
 psycopg2-binary = "2.8.6"
 python = '>=3.8,<4'
 python-dateutil = "2.8.1"
-python-dotenv = "0.15.0"
-python-jose = {extras = ["cryptography"], version = "^3.2.0"}
+python-dotenv = "0.16.0"
+python-jose = {extras = ["cryptography"], version = "3.2.0"}
 pytz = "2021.1"
 pyyaml = "5.4.1"
 redis = "3.5.3"
 requests = "2.25.1"
 sqlalchemy = "1.3.23"
 unidecode = "1.2.0"
-uvicorn = "^0.13.1"
+uvicorn = "0.13.4"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b0"
 coverage = "^5.5"
-faker = "^6.6.0"
-flake8 = "^3.8.4"
+faker = "^6.6.3"
+flake8 = "^3.9.0"
 flake8-print = "^4.0.0"
 gitpython = "^3.1.14"
 ipython = "^7.21.0"
@@ -119,9 +119,9 @@ sqlalchemy-stubs = "^0.4"
 tox = "^3.23.0"
 
 [tool.poetry.scripts]
-spellbot = 'spellbot:main'
 spellapi = 'spellapi:main'
+spellbot = 'spellbot:main'
 
 [build-system]
-requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+requires = ["poetry>=0.12"]
