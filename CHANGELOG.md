@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.26.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.26.0) - 2021-03-29
+
 ### Added
 
 - Adds some event metrics instrumentation to discover if a feature is being used.
