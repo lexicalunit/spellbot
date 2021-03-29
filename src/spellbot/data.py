@@ -832,6 +832,16 @@ def reverse_all(connection: Connection, db_url: str) -> None:
     alembic.command.downgrade(config, "base")
 
 
+class Metric(Base):
+    __tablename__ = "metrics"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    kind = Column(String(50), index=True)
+    guild_xid = Column(BigInteger, index=True)
+    channel_xid = Column(BigInteger, index=True)
+    user_xid = Column(BigInteger, index=True)
+
+
 class Data:
     """Persistent and in-memory store for user data."""
 

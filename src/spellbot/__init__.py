@@ -67,6 +67,7 @@ from spellbot.data import (
     Data,
     Event,
     Game,
+    Metric,
     Report,
     Server,
     Tag,
@@ -859,6 +860,15 @@ class SpellBot(discord.Client):
             expires_at = now + timedelta(minutes=server.expire)
 
             await safe_remove_reaction(message, emoji, author)
+
+            session.add(
+                Metric(
+                    kind="user_reaction",
+                    guild_xid=payload.guild_id,
+                    channel_xid=payload.channel_id,
+                    user_xid=author.id,
+                )
+            )
 
             if emoji == EMOJI_JOIN_GAME:
                 if any(user.xid == game_user.xid for game_user in game.users):
