@@ -450,6 +450,22 @@ class Tag(Base):
         return tags
 
 
+class Play(Base):
+    __tablename__ = "plays"
+    user_xid = Column(
+        BigInteger,
+        ForeignKey("users.xid", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    game_id = Column(
+        Integer,
+        ForeignKey("games.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+
+
 class Game(Base):
     __tablename__ = "games"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
