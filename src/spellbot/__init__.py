@@ -68,6 +68,7 @@ from spellbot.data import (
     Event,
     Game,
     Metric,
+    Play,
     Report,
     Server,
     Tag,
@@ -924,6 +925,9 @@ class SpellBot(discord.Client):
                 game.status = "started"
                 game.game_power = game.power  # type: ignore
                 session.commit()
+                for game_user in game.users:
+                    session.add(Play(user_xid=game_user.xid, game_id=game.id))
+                session.commit()
                 for discord_user in found_discord_users:
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))
                 await safe_edit_message(message, embed=game.to_embed())
@@ -1317,6 +1321,9 @@ class SpellBot(discord.Client):
                 await self.setup_voice(session, game)
                 game.status = "started"  # type: ignore
                 game.game_power = game.power  # type: ignore
+                session.commit()
+                for game_user in game.users:
+                    session.add(Play(user_xid=game_user.xid, game_id=game.id))
                 session.commit()
                 for discord_user in found_discord_users:
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))
@@ -2105,6 +2112,9 @@ class SpellBot(discord.Client):
                 game.status = "started"  # type: ignore
                 game.game_power = game.power  # type: ignore
                 response = game.to_embed(dm=True)
+                session.commit()
+                for game_user in game.users:
+                    session.add(Play(user_xid=game_user.xid, game_id=game.id))
                 session.commit()
 
                 for discord_user in found_discord_users:
