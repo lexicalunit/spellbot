@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds record keeping for historical game plays for users.
+
 ## [v5.26.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.26.0) - 2021-03-29
 
 ### Added
