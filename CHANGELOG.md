@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Fixes postgres URI scheme for the API backend.
+- Handle case where watched user note is too long.
 
 ## [v5.27.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.27.0) - 2021-03-29
 
