@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.27.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.27.1) - 2021-03-31
+
 ### Fixed
 
 - Fixes postgres URI scheme for the API backend.
