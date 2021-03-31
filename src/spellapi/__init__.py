@@ -289,10 +289,12 @@ app.add_middleware(
 
 
 def setup_env():
-
     # TODO: Factor out all this config/setup to a library that both spellbot and api use.
     database_env = get_db_env("SPELLBOT_DB_URL")
     database_url = get_db_url(database_env, DEFAULT_DB_URL)
+    if database_url.startswith("postgres://"):
+        # SQLAlchemy 1.4.x removed support for the postgres:// URI scheme
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
     global SpellBotData
     SpellBotData = Data(database_url)
 
