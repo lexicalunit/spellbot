@@ -2241,6 +2241,8 @@ class SpellBot(discord.Client):
             )
             session.add(game)
             session.commit()
+            for game_user in game.users:
+                session.add(Play(user_xid=game_user.xid, game_id=game.id))
 
             if server.create_voice:
                 category_prefix = server.voice_category_prefix or VOICE_CATEGORY_PREFIX
