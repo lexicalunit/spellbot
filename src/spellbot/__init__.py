@@ -2537,6 +2537,17 @@ class SpellBot(discord.Client):
         note = " ".join(
             p for p in params if not p.startswith("<@") and not p.startswith("@")
         )
+        if len(note) >= 255:
+            await safe_send_channel(
+                message.channel,
+                s(
+                    "watched_user_note_too_long",
+                    reply=message.author.mention,
+                    command=command,
+                ),
+            )
+            await safe_react_error(message)
+            return
 
         async with self.session() as session:
             server = self.ensure_server_exists(session, message.channel.guild.id)

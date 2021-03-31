@@ -4216,6 +4216,19 @@ class TestSpellBot:
         await client.on_message(MockMessage(admin, channel, "!unwatch"))
         assert len(channel.all_sent_calls) == 0
 
+    async def test_on_message_watch_note_too_long(self, client, channel_maker):
+        admin = an_admin()
+        channel = channel_maker.text()
+        mentions = [AMY]
+        mentions_str = " ".join([f"<@{user.name}>" for user in mentions])
+        note = "foo " * 100
+        cmd = f"!watch {mentions_str} {note}"
+        await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
+        assert channel.last_sent_response == (
+            f"Sorry {admin.mention}, that note is too long."
+            " Please use less than 255 characters."
+        )
+
     async def test_on_message_watch(self, client, channel_maker, monkeypatch):
         admin = an_admin()
         channel = channel_maker.text()
