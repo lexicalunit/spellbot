@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.27.3](https://github.com/lexicalunit/spellbot/releases/tag/v5.27.3) - 2021-04-08
+
 ### Changed
 
 - Using caret-style version numbers in pyproject.toml to let dependabot know
