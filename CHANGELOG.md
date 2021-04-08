@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.27.2](https://github.com/lexicalunit/spellbot/releases/tag/v5.27.2) - 2021-04-07
+
 ### Added
 
 - Updating to the latest version of discord.py
