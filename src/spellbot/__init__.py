@@ -101,7 +101,8 @@ from spellbot.operations import (
 )
 from spellbot.tasks import begin_background_tasks
 
-load_dotenv()
+if not getenv("PYTEST_CURRENT_TEST") and "pytest" not in sys.modules:
+    load_dotenv()
 
 # Application Paths
 RUNTIME_ROOT = Path(".")
