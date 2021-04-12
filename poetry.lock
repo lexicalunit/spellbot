@@ -463,7 +463,7 @@ pyreadline = {version = "*", markers = "sys_platform == \"win32\""}
 
 [[package]]
 name = "humanize"
-version = "3.3.0"
+version = "3.4.0"
 description = "Python humanize utilities"
 category = "main"
 optional = false
@@ -1244,7 +1244,7 @@ multidict = ">=4.0"
 
 [metadata]
 lock-version = "1.1"
-python-versions = '>=3.8,<4'
+python-versions = ">=3.8,<4"
 content-hash = "f29fa0d82dbdd57bbf6ba416f187ab4b70006d3a7dba03970b5fabc6b91562d4"
 
 [metadata.files]
@@ -1617,8 +1617,8 @@ humanfriendly = [
     {file = "humanfriendly-9.1.tar.gz", hash = "sha256:066562956639ab21ff2676d1fda0b5987e985c534fc76700a19bd54bcb81121d"},
 ]
 humanize = [
-    {file = "humanize-3.3.0-py3-none-any.whl", hash = "sha256:0ebeb71e0b8f5d1cbb2f8b19cc0f5f6e6abfcdb8e3d152424b20effbab68ace5"},
-    {file = "humanize-3.3.0.tar.gz", hash = "sha256:8bf7abd672b867f38b8b04593829b85b9b6199a61ef6586bf3629cc06458ff35"},
+    {file = "humanize-3.4.0-py3-none-any.whl", hash = "sha256:d292736d81da462b84b78eee0c9bba26bdbfa10112e302c4fcddb6621d2a08dd"},
+    {file = "humanize-3.4.0.tar.gz", hash = "sha256:096b9ae6d1d56321d3d81f17117c2068179d7b4f7f73ba4baf302726923b48ec"},
 ]
 hupper = [
     {file = "hupper-1.10.2-py2.py3-none-any.whl", hash = "sha256:5de835f3b58324af2a8a16f52270c4d1a3d1734c45eed94b77fd622aea737f29"},
