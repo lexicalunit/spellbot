@@ -27,6 +27,7 @@ from sqlalchemy import (
 from sqlalchemy import cast as sql_cast
 from sqlalchemy import create_engine, false, func, or_, text, true
 from sqlalchemy.engine.base import Connection
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
 from sqlalchemy.sql.expression import asc, desc, distinct
@@ -863,7 +864,11 @@ class Data:
 
     def __init__(self, db_url: str):
         self.db_url = db_url
-        self.engine = create_engine(db_url, echo=False)
+        if "postgres" in self.db_url:
+            db_url = db_url.replace(":", "+asyncpg:", 1)
+            self.engine = create_async_engine(db_url, echo=False)
+        else:
+            self.engine = create_engine(db_url, echo=False)
         self.conn = self.engine.connect()
         create_all(self.conn, db_url)
         self.Session = sessionmaker(bind=self.engine)
