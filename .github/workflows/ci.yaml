@@ -32,7 +32,7 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: [3.8, 3.9]
-        database-url: ["", "postgresql://postgres:postgres@localhost:5432/postgres"]
+        database-url: ["postgresql://postgres:postgres@localhost:5432/postgres"]
 
     steps:
     - name: Cancel Previous Runs

@@ -140,7 +140,7 @@ async def safe_fetch_channel(
         return channel
 
     try:
-        return await client.fetch_channel(channel_xid)
+        return await client.fetch_channel(channel_xid)  # type: ignore
     except discord.errors.NotFound as e:
         # This isn't really an issue we need to warn about in the logs.
         logger.debug(

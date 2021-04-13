@@ -27,8 +27,10 @@ from sqlalchemy import (
 from sqlalchemy import cast as sql_cast
 from sqlalchemy import create_engine, false, func, or_, text, true
 from sqlalchemy.engine.base import Connection
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine  # type: ignore
+from sqlalchemy.future import select  # type: ignore
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session, relationship, sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.sql.expression import asc, desc, distinct
 from sqlalchemy.sql.schema import UniqueConstraint
 from sqlalchemy.sql.sqltypes import Numeric
@@ -65,18 +67,20 @@ class Server(Base):
     create_voice = Column(Boolean, nullable=False, server_default=false())
     smotd = Column(String(255))
     voice_category_prefix = Column(String(40))
-    games = relationship("Game", back_populates="server", uselist=True)
-    channels = relationship("Channel", back_populates="server", uselist=True)
+    games = relationship("Game", back_populates="server", uselist=True, lazy="selectin")
+    channels = relationship(
+        "Channel", back_populates="server", uselist=True, lazy="selectin"
+    )
     auto_verify_channels = relationship(
-        "AutoVerifyChannel", back_populates="server", uselist=True
+        "AutoVerifyChannel", back_populates="server", uselist=True, lazy="selectin"
     )
     unverified_only_channels = relationship(
-        "UnverifiedOnlyChannel", back_populates="server", uselist=True
+        "UnverifiedOnlyChannel", back_populates="server", uselist=True, lazy="selectin"
     )
     channel_settings = relationship(
-        "ChannelSettings", back_populates="server", uselist=True, lazy="dynamic"
+        "ChannelSettings", back_populates="server", uselist=True, lazy="selectin"
     )
-    teams = relationship("Team", back_populates="server", uselist=True)
+    teams = relationship("Team", back_populates="server", uselist=True, lazy="selectin")
 
     def bot_allowed_in(self, channel_xid: int) -> bool:
         return not self.channels or any(
@@ -84,24 +88,28 @@ class Server(Base):
         )
 
     def channel_settings_for(self, channel_xid: int) -> Optional[ChannelSettings]:
-        filters = {"channel_xid": channel_xid}
-        return self.channel_settings.filter_by(**filters).one_or_none()  # type: ignore
+        return next(
+            (s for s in self.channel_settings if s.channel_xid == channel_xid), None
+        )
 
     @classmethod
-    def recent_metrics(cls, session: Session) -> dict:
+    async def recent_metrics(cls, session: AsyncSession) -> dict:
         data = [
             row[1]
             for row in (
-                session.query(
-                    func.date(Server.created_at).label("day"),
-                    func.count(Server.guild_xid),
-                )
-                .filter(
-                    Server.created_at >= datetime.utcnow() - timedelta(days=5),
-                )
-                .group_by("day")
-                .order_by(desc("day"))
-                .all()
+                (
+                    await session.execute(
+                        select(
+                            func.date(Server.created_at).label("day"),
+                            func.count(Server.guild_xid),
+                        )
+                        .filter(
+                            Server.created_at >= datetime.utcnow() - timedelta(days=5),
+                        )
+                        .group_by("day")
+                        .order_by(desc("day"))
+                    )
+                ).all()
             )
         ]
         return {f"servers_{i}": count for i, count in enumerate(data)}
@@ -146,8 +154,8 @@ class Server(Base):
                 "prefix": self.prefix,
                 "expire": self.expire,
                 "show_spectate_link": self.show_spectate_link,
-                "channels": [channel.channel_xid for channel in self.channels],
-                "teams": [team.name for team in self.teams],
+                # "channels": [channel.channel_xid for channel in self.channels],
+                # "teams": [team.name for team in self.teams],
             }
         )
 
@@ -162,12 +170,12 @@ class Team(Base):
         index=True,
     )
     name = Column(String(50), nullable=False)
-    server = relationship("Server", back_populates="teams")
+    server = relationship("Server", back_populates="teams", lazy="selectin")
 
     @classmethod
-    def points(cls, session: Session, guild_xid: int) -> dict:
+    async def points(cls, session: AsyncSession, guild_xid: int) -> dict:
         rows = (
-            session.query(Team.name, func.sum(UserPoints.points))
+            await session.query(Team.name, func.sum(UserPoints.points))
             .select_from(User)
             .join(UserServerSettings)
             .join(UserPoints)
@@ -176,7 +184,11 @@ class Team(Base):
             .group_by(Team.name)
             .all()
         )
-        server = session.query(Server).filter(Server.guild_xid == guild_xid).one_or_none()
+        server = (
+            await session.query(Server)
+            .filter(Server.guild_xid == guild_xid)
+            .one_or_none()
+        )
         assert server
         results = {team.name: 0 for team in server.teams}
         for row in rows:
@@ -193,7 +205,7 @@ class Channel(Base):
         nullable=False,
         index=True,
     )
-    server = relationship("Server", back_populates="channels")
+    server = relationship("Server", back_populates="channels", lazy="selectin")
 
 
 class AutoVerifyChannel(Base):
@@ -205,7 +217,9 @@ class AutoVerifyChannel(Base):
         nullable=False,
         index=True,
     )
-    server = relationship("Server", back_populates="auto_verify_channels")
+    server = relationship(
+        "Server", back_populates="auto_verify_channels", lazy="selectin"
+    )
 
 
 class UnverifiedOnlyChannel(Base):
@@ -217,7 +231,9 @@ class UnverifiedOnlyChannel(Base):
         nullable=False,
         index=True,
     )
-    server = relationship("Server", back_populates="unverified_only_channels")
+    server = relationship(
+        "Server", back_populates="unverified_only_channels", lazy="selectin"
+    )
 
 
 class ChannelSettings(Base):
@@ -238,7 +254,7 @@ class ChannelSettings(Base):
     verify_message = Column(String(255))
     tags_enabled = Column(Boolean, nullable=True)  # overrides server setting
     queue_time_enabled = Column(Boolean, nullable=True)  # overrides server setting
-    server = relationship("Server", back_populates="channel_settings")
+    server = relationship("Server", back_populates="channel_settings", lazy="selectin")
 
 
 games_tags = Table(
@@ -256,7 +272,7 @@ games_tags = Table(
 class Event(Base):
     __tablename__ = "events"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    games = relationship("Game", back_populates="event", uselist=True)
+    games = relationship("Game", back_populates="event", uselist=True, lazy="selectin")
 
     @property
     def started(self) -> bool:
@@ -300,7 +316,7 @@ class User(Base):
     cached_name = Column(String(50))
     power = Column(Integer, nullable=True)
     banned = Column(Boolean, nullable=False, server_default=false())
-    game = relationship("Game", back_populates="users")
+    game = relationship("Game", back_populates="users", lazy="selectin")
 
     blocks = relationship(
         "User",
@@ -308,12 +324,13 @@ class User(Base):
         primaryjoin=xid == users_blocks.c.user_xid,
         secondaryjoin=xid == users_blocks.c.blocked_user_xid,
         backref="blocked_by",
+        lazy="selectin",
     )
 
-    def blocked(self, game: Game) -> bool:
-        session = Session.object_session(self)
+    async def blocked(self, session: AsyncSession, game: Game) -> bool:
         other_user_xids = [u.xid for u in game.users]
-        query = session.query(users_blocks).filter(
+
+        query = select(users_blocks).filter(
             or_(
                 and_(
                     users_blocks.c.user_xid == self.xid,
@@ -325,14 +342,16 @@ class User(Base):
                 ),
             )
         )
-        return cast(bool, session.query(query.exists()).scalar())
+
+        result = await session.execute(query)
+        return result.scalar() is not None
 
     @classmethod
-    def recent_metrics(cls, session: Session) -> dict:
+    async def recent_metrics(cls, session: AsyncSession) -> dict:
         data = [
             row[1]
             for row in (
-                session.query(
+                await session.query(
                     func.date(User.created_at).label("day"),
                     func.count(User.xid),
                 )
@@ -352,10 +371,11 @@ class User(Base):
             return True
         return False
 
-    def points(self, guild_xid) -> int:
-        session = Session.object_session(self)
+    async def points(self, session: AsyncSession, guild_xid: int) -> int:
         filters = and_(UserPoints.user_xid == self.xid, UserPoints.guild_xid == guild_xid)
-        results = session.query(func.sum(UserPoints.points)).filter(filters).scalar()
+        results = (
+            await session.query(func.sum(UserPoints.points)).filter(filters).scalar()
+        )
         return results or 0
 
     def to_json(self) -> dict:
@@ -383,7 +403,8 @@ class UserServerSettings(Base):
         nullable=False,
     )
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=True)
-    verified = Column(Boolean, nullable=True, server_default=false())
+    # verified = Column(Boolean, nullable=True, server_default=false())
+    verified = Column(Boolean, nullable=True, default=False, server_default=false())
 
 
 class WatchedUser(Base):
@@ -431,22 +452,22 @@ class Tag(Base):
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     name = Column(String(50), nullable=False)
     games = relationship(
-        "Game", secondary=games_tags, back_populates="tags", uselist=True
+        "Game", secondary=games_tags, back_populates="tags", uselist=True, lazy="selectin"
     )
 
     @classmethod
-    def create_many(cls, session: Session, tag_names: List[str]) -> List[Tag]:
+    async def create_many(cls, session: AsyncSession, tag_names: List[str]) -> List[Tag]:
         created_at_least_one = False
         tags = []
         for tag_name in tag_names:
-            tag = session.query(Tag).filter_by(name=tag_name).one_or_none()
+            tag = await session.query(Tag).filter_by(name=tag_name).one_or_none()
             if not tag:
                 created_at_least_one = True
                 tag = Tag(name=tag_name)
                 session.add(tag)
             tags.append(tag)
         if created_at_least_one:
-            session.commit()
+            await session.commit()
         return tags
 
 
@@ -496,17 +517,19 @@ class Game(Base):
     game_power = Column(Float, nullable=True)
     voice_channel_xid = Column(BigInteger, nullable=True, index=True)
     voice_channel_invite = Column(String(255))
-    users = relationship("User", back_populates="game", uselist=True)
-    tags = relationship("Tag", secondary=games_tags, back_populates="games", uselist=True)
-    server = relationship("Server", back_populates="games")
-    event = relationship("Event", back_populates="games")
-    reports = relationship("Report", back_populates="game", uselist=True)
+    users = relationship("User", back_populates="game", uselist=True, lazy="selectin")
+    tags = relationship(
+        "Tag", secondary=games_tags, back_populates="games", uselist=True, lazy="selectin"
+    )
+    server = relationship("Server", back_populates="games", lazy="selectin")
+    event = relationship("Event", back_populates="games", lazy="selectin")
+    reports = relationship("Report", back_populates="game", uselist=True, lazy="selectin")
 
     @classmethod
-    def games_per_day(cls, session: Session) -> Iterable[Tuple[datetime, int]]:
+    async def games_per_day(cls, session: AsyncSession) -> Iterable[Tuple[datetime, int]]:
         return cast(
             Iterable[Tuple[datetime, int]],
-            session.query(
+            await session.query(
                 func.date(Game.created_at).label("day"),
                 func.count(Game.id),
             )
@@ -522,8 +545,8 @@ class Game(Base):
         )
 
     @classmethod
-    def games_per_day_per_channel(
-        cls, session: Session, guild_xid: int
+    async def games_per_day_per_channel(
+        cls, session: AsyncSession, guild_xid: int
     ) -> Iterable[Tuple[datetime, int, int]]:
         filters = [
             Game.status == "started",
@@ -531,7 +554,7 @@ class Game(Base):
         ]
         return cast(
             Iterable[Tuple[datetime, int, int]],
-            session.query(
+            await session.query(
                 func.date(Game.created_at).label("day"),
                 Game.channel_xid,
                 func.count(Game.id),
@@ -543,8 +566,8 @@ class Game(Base):
         )
 
     @classmethod
-    def recent_metrics(cls, session: Session) -> dict:
-        data = [row[1] for row in cls.games_per_day(session)]
+    async def recent_metrics(cls, session: AsyncSession) -> dict:
+        data = [row[1] for row in await cls.games_per_day(session)]
         return {f"games_{i}": count for i, count in enumerate(data)}
 
     @property
@@ -557,10 +580,10 @@ class Game(Base):
         return None
 
     @classmethod
-    def find_existing(
+    async def find_existing(
         cls,
         *,
-        session: Session,
+        session: AsyncSession,
         server: Server,
         channel_xid: int,
         size: int,
@@ -593,39 +616,46 @@ class Game(Base):
             else:
                 select_filters.append(User.power.is_(None))
         inner = (
-            session.query(Game.id)
-            .join(User, isouter=True)
-            .join(games_tags, isouter=True)
-            .filter(and_(*select_filters))
-            .group_by(Game.id)
-            .having(and_(*having_filters))
+            (
+                await session.execute(
+                    select(Game.id)
+                    .select_from(Game)
+                    .join(User, isouter=True)
+                    .join(games_tags, isouter=True)
+                    .filter(and_(*select_filters))
+                    .group_by(Game.id)
+                    .having(and_(*having_filters))
+                )
+            )
+            .scalars()
+            .all()
         )
         tag_filters = []
         for tid in required_tag_ids:
             tag_filters.append(games_tags.c.tag_id == tid)
-        outer = (
-            session.query(Game)
+        outer = await session.execute(
+            select(Game)
             .join(games_tags, isouter=True)
             .filter(and_(Game.id.in_(inner), or_(*tag_filters)))
             .group_by(Game.id)
             .having(having_filters[0])
             .order_by(asc(Game.updated_at))
         )
-        game: Optional[Game] = outer.first()
+        game: Optional[Game] = outer.first()[Game]
         return game
 
     @classmethod
-    def expired(cls, session: Session) -> List[Game]:
+    async def expired(cls, session: AsyncSession) -> List[Game]:
         return cast(
             List[Game],
-            session.query(Game)
-            .filter(
-                and_(
-                    datetime.utcnow() >= Game.expires_at,
-                    Game.status == "pending",
+            await session.execute(
+                select(Game).filter(
+                    and_(
+                        datetime.utcnow() >= Game.expires_at,
+                        Game.status == "pending",
+                    )
                 )
-            )
-            .all(),
+            ).all(),
         )
 
     def is_expired(self) -> bool:
@@ -638,38 +668,38 @@ class Game(Base):
         return False
 
     @classmethod
-    def voiced(cls, session: Session) -> List[Game]:
+    async def voiced(cls, session: AsyncSession) -> List[Game]:
         return cast(
             List[Game],
-            session.query(Game)
-            .filter(
-                and_(
-                    Game.voice_channel_xid.isnot(None),
-                    datetime.utcnow() - timedelta(minutes=10) >= Game.updated_at,
+            await session.execute(
+                select(Game).filter(
+                    and_(
+                        Game.voice_channel_xid.isnot(None),
+                        datetime.utcnow() - timedelta(minutes=10) >= Game.updated_at,
+                    )
                 )
-            )
-            .all(),
+            ).all(),
         )
 
     @classmethod
-    def average_wait_times(cls, session: Session):
-        if "sqlite" in session.bind.dialect.name:  # pragma: no cover
-            avg = func.avg(
-                (func.julianday(Game.updated_at) - func.julianday(Game.created_at))
-                * 1440.0
+    async def average_wait_times(cls, session: AsyncSession):
+        # if "sqlite" in session.bind.dialect.name:  # pragma: no cover
+        #     avg = func.avg(
+        #         (func.julianday(Game.updated_at) - func.julianday(Game.created_at))
+        #         * 1440.0
+        #     )
+        # else:  # pragma: no cover
+        avg = (
+            sql_cast(
+                func.avg(
+                    text("EXTRACT(EPOCH FROM(games.updated_at - games.created_at))")
+                ),
+                Numeric,
             )
-        else:  # pragma: no cover
-            avg = (
-                sql_cast(
-                    func.avg(
-                        text("EXTRACT(EPOCH FROM(games.updated_at - games.created_at))")
-                    ),
-                    Numeric,
-                )
-                / 60.0
-            )
+            / 60.0
+        )
         return (
-            session.query(
+            await session.query(
                 Game.guild_xid,
                 Game.channel_xid,
                 avg,
@@ -742,7 +772,7 @@ class Game(Base):
             description += (
                 f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
                 f"If you need to drop, react with {EMOJI_DROP_GAME}\n\n"
-                "_A SpellTable link will be created when all players have joined._\n\n"
+                "_A SpellTable link will be created when all players have selectin._\n\n"
                 f"Looking for more players to join you? Just run `{prefix}lfg` again.\n"
             )
         elif self.system == "spelltable":
@@ -829,7 +859,7 @@ class Report(Base):
     )
     report = Column(String(255), nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    game = relationship("Game", back_populates="reports")
+    game = relationship("Game", back_populates="reports", lazy="selectin")
 
 
 def create_all(connection: Connection, db_url: str) -> None:
@@ -862,9 +892,23 @@ class Data:
     """Persistent and in-memory store for user data."""
 
     def __init__(self, db_url: str):
+        assert "postgres" in db_url, "SpellBot only supports postgresql database"
+
         self.db_url = db_url
-        self.engine = create_engine(db_url, echo=False)
-        self.conn = self.engine.connect()
-        create_all(self.conn, db_url)
-        self.Session = sessionmaker(bind=self.engine)
         self.metadata = Base.metadata
+
+        # init database tables
+        sync_engine = create_engine(self.db_url, echo=False)
+        sync_conn = sync_engine.connect()
+        create_all(sync_conn, self.db_url)
+        sync_conn.close()
+
+        # setup app async connection
+        self.db_url = self.db_url.replace(":", "+asyncpg:", 1)
+        self.engine = create_async_engine(
+            self.db_url, future=True, echo=False, connect_args={"ssl": "disable"}
+        )
+        self.conn = self.engine.connect()
+        self.Session = sessionmaker(
+            bind=self.engine, expire_on_commit=False, future=True, class_=AsyncSession
+        )

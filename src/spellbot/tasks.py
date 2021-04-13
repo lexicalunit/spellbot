@@ -152,16 +152,16 @@ BACKROUND_TASK_SPECS = [
 
 def begin_background_tasks(bot: SpellBot) -> None:
     """Start up any periodic background tasks."""
-    for task_spec in BACKROUND_TASK_SPECS:
+    # for task_spec in BACKROUND_TASK_SPECS:
 
-        def task_context(spec: dict) -> None:
-            INTERVAL = spec["interval"]
+    #     def task_context(spec: dict) -> None:
+    #         INTERVAL = spec["interval"]
 
-            async def task_runner() -> None:
-                while True:
-                    await spec["function"](bot)
-                    await asyncio.sleep(INTERVAL)
+    #         async def task_runner() -> None:
+    #             while True:
+    #                 await spec["function"](bot)
+    #                 await asyncio.sleep(INTERVAL)
 
-            bot.loop.create_task(task_runner())
+    #         bot.loop.create_task(task_runner())
 
-        task_context(task_spec)
+    #     task_context(task_spec)
