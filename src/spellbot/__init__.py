@@ -943,11 +943,6 @@ class SpellBot(discord.Client):
         """Behavior when the client gets a message from Discord."""
         try:
             author = cast(discord.User, message.author)
-
-            # don't respond to any bots
-            if author.bot:
-                return
-
             private = str(message.channel.type) == "private"
 
             # only respond in text channels and to direct messages
