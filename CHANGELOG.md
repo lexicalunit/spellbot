@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Allow bots to message SpellBot.
+- Updates sqlalchemy.
 
 ## [v5.27.3](https://github.com/lexicalunit/spellbot/releases/tag/v5.27.3) - 2021-04-08
 
