@@ -868,7 +868,7 @@ dev = ["pre-commit", "tox", "pytest-asyncio"]
 
 [[package]]
 name = "pytest-snapshot"
-version = "0.5.0"
+version = "0.6.1"
 description = "A plugin to enable snapshot testing with pytest."
 category = "dev"
 optional = false
@@ -1245,7 +1245,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4"
-content-hash = "59d3273e123213c6e2f9d50aef36706207b73a7b2e421f4da2d7f72b06465746"
+content-hash = "d43b5bb200137caf971c06f3059a93ed371a706cfba3c13b40f6990e5a66743d"
 
 [metadata.files]
 aiofiles = [
@@ -1935,8 +1935,8 @@ pytest-mock = [
     {file = "pytest_mock-3.5.1-py3-none-any.whl", hash = "sha256:379b391cfad22422ea2e252bdfc008edd08509029bcde3c25b2c0bd741e0424e"},
 ]
 pytest-snapshot = [
-    {file = "pytest-snapshot-0.5.0.tar.gz", hash = "sha256:77d736073598a6224825eef8b8e0c760812a61410af2180cb070b27eb79f257d"},
-    {file = "pytest_snapshot-0.5.0-py3-none-any.whl", hash = "sha256:2b4e5cdd8f88bae4190ff6105df9c412976f1591d776e656a12e8303f21769c0"},
+    {file = "pytest-snapshot-0.6.1.tar.gz", hash = "sha256:ee8e9af118ff55ed13bf8e8b520714c52665ae44f6228563a600a08d62839b54"},
+    {file = "pytest_snapshot-0.6.1-py3-none-any.whl", hash = "sha256:aeea97b66a4c38733b18be72ee246000bab918338fa50b63946c34768fe0cb21"},
 ]
 python-dateutil = [
     {file = "python-dateutil-2.8.1.tar.gz", hash = "sha256:73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c"},
