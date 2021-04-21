@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.28.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.28.1) - 2021-04-20
+
 ### Fixed
 
 - Fixes a bug in how has_admin_perms is calculated.
