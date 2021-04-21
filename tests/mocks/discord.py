@@ -240,6 +240,9 @@ class MockGuild:
             side_effect=create_category_channel_side_effect
         )
 
+    def get_member(self, member_id):
+        return next((member for member in self.members if member.id == member_id), None)
+
 
 class MockChannel:
     """Don't create this directly, use the channel_maker fixture instead."""
@@ -363,6 +366,7 @@ class MockMessage:
         attachments=None,
     ):
         self.author = author
+        self.guild = channel.guild
         self.channel = channel
         self.content = content
         self.mentions = mentions or []
