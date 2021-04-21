@@ -18,6 +18,7 @@
 > * `unverified-only <list>`: Set the channels that are only for unverified users.
 > * `verify-message <your message>`: Set the verification message for this channel.
 > * `voice-category <string>`: Set category for voice channels created by !game.
+> * `awards`: Attach a config file to award users who have played enough games.
 > * `stats`: Gets some statistics about SpellBot usage on your server.
 > * `help`: Get detailed usage help for SpellBot.
 
@@ -25,4 +26,3 @@
 >  Create a game between mentioned users. _Requires the "SpellBot Admin" role._
 > 
 > Allows event runners to spin up an ad-hoc game directly between mentioned players.
-> * The user who issues this command is **NOT** added to the game themselves.

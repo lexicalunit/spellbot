@@ -466,6 +466,15 @@ class Play(Base):
     )
 
 
+class Award(Base):
+    __tablename__ = "awards"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    guild_xid = Column(BigInteger, nullable=False)
+    count = Column(Integer, nullable=False)
+    role = Column(String(60), nullable=False)
+    message = Column(String(255), nullable=False)
+
+
 class Game(Base):
     __tablename__ = "games"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)

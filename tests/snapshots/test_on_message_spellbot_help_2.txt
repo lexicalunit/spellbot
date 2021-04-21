@@ -1,4 +1,5 @@
-> > * You must mention all of the players to be seated in the game.
+> > * The user who issues this command is **NOT** added to the game themselves.
+> * You must mention all of the players to be seated in the game.
 > * Optional: Add a message by using `msg:` followed by the message content.
 > * Optional: Add tags by using `~tag-name` for the tags you want.
 
@@ -19,7 +20,7 @@
 ---
 Please report any bugs and suggestions at <https://github.com/lexicalunit/spellbot/issues>!
 
-🔗 Add SpellBot to your Discord: <https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=93265&scope=bot>
+🔗 Add SpellBot to your Discord: <https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=268528721&scope=bot>
 
 👍 Give SpellBot a vote on top.gg: <https://top.gg/bot/725510263251402832/vote>
 
