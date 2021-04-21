@@ -2,6 +2,7 @@ import asyncio
 import csv
 import inspect
 import logging
+import math
 import re
 import sys
 from asyncio.events import AbstractEventLoop
@@ -62,6 +63,7 @@ from spellbot.constants import (
 )
 from spellbot.data import (
     AutoVerifyChannel,
+    Award,
     Channel,
     ChannelSettings,
     Data,
@@ -2609,6 +2611,7 @@ class SpellBot(discord.Client):
         * `unverified-only <list>`: Set the channels that are only for unverified users.
         * `verify-message <your message>`: Set the verification message for this channel.
         * `voice-category <string>`: Set category for voice channels created by !game.
+        * `awards`: Attach a config file to award users who have played enough games.
         * `stats`: Gets some statistics about SpellBot usage on your server.
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
@@ -2661,6 +2664,8 @@ class SpellBot(discord.Client):
                 await self.spellbot_smotd(session, server, params[1:], message)
             elif command == "voice-category":
                 await self.spellbot_voice_category(session, server, params[1:], message)
+            elif command == "awards":
+                await self.spellbot_awards(session, server, params[1:], message)
             elif command == "cmotd":
                 await self.spellbot_cmotd(session, server, params[1:], message)
             elif command == "motd":
@@ -3454,6 +3459,81 @@ class SpellBot(discord.Client):
         await safe_send_channel(
             message.channel, s("spellbot_verify_message", reply=reply, msg=msg)
         )
+        await safe_react_ok(message)
+
+    async def spellbot_awards(
+        self,
+        session: Session,
+        server: Server,
+        params: List[str],
+        message: discord.Message,
+    ) -> None:
+        reply = message.author.mention
+        if not message.attachments:
+            await safe_send_channel(
+                message.channel,
+                s("spellbot_awards_no_data", reply=message.author.mention),
+            )
+            await safe_react_error(message)
+            return
+
+        bdata = await message.attachments[0].read()
+        try:
+            sdata = self.decode_data(bdata)
+        except UnicodeDecodeError:
+            await safe_send_channel(
+                message.channel,
+                s(
+                    "spellbot_awards_not_utf",
+                    reply=message.author.mention,
+                ),
+            )
+            await safe_react_error(message)
+            return
+
+        reader = csv.reader(StringIO(sdata))
+        awards = []
+        for i, row in enumerate(reader):
+            if len(row) != 3:
+                await safe_send_channel(
+                    message.channel, s("spellbot_awards_bad_row", i=i + 1, reply=reply)
+                )
+                await safe_react_error(message)
+                return
+
+            count_str, role, msg = row
+            count: int = int(count_str)
+            if count <= 0 or math.isinf(count) or math.isnan(count):
+                await safe_send_channel(
+                    message.channel, s("spellbot_awards_bad_count", i=i + 1, reply=reply)
+                )
+                await safe_react_error(message)
+                return
+            if len(msg) < 5 or len(msg) >= 255:
+                await safe_send_channel(
+                    message.channel,
+                    s("spellbot_awards_message_bad_size", i=i + 1, reply=reply),
+                )
+                await safe_react_error(message)
+                return
+            if len(role) < 1 or len(role) >= 60:
+                await safe_send_channel(
+                    message.channel,
+                    s("spellbot_awards_role_too_long", i=i + 1, reply=reply),
+                )
+                await safe_react_error(message)
+                return
+
+            awards.append(
+                Award(guild_xid=server.guild_xid, count=count, role=role, message=msg)
+            )
+
+        # Blow away the current awards first
+        session.query(Award).filter_by(guild_xid=server.guild_xid).delete()
+        session.commit()
+
+        session.add_all(awards)
+        session.commit()
         await safe_react_ok(message)
 
     async def spellbot_stats(

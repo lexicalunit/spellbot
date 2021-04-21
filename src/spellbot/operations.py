@@ -370,3 +370,17 @@ async def safe_send_channel(
             e,
         )
     return None
+
+
+async def safe_add_role(member: discord.Member, role: discord.Role) -> None:
+    try:
+        await member.add_roles(role)
+    except (
+        discord.errors.Forbidden,
+        discord.errors.HTTPException,
+    ) as e:
+        logger.exception(
+            "warning: discord (DM): could add role to member (%s): %s",
+            str(member),
+            e,
+        )

@@ -76,7 +76,7 @@ online events.
 These commands will help you configure SpellBot for your server.
 
 - `!spellbot`: This command allows admins to configure SpellBot for their
-               server. It supports the following subcommands:
+  server. It supports the following subcommands:
   - `config`: Just show the current configuration for this server.
   - `channels`: Set the channels SpellBot is allowed to operate within.
   - `prefix`: Set the command prefix for SpellBot in text channels.
@@ -97,6 +97,7 @@ These commands will help you configure SpellBot for your server.
   - `unverified-only`: Set the channels that are only for unverified users.
   - `verify-message`: Set the verification message for a specific channel.
   - `voice-category`: Set category for voice channels created by !game.
+  - `awards`: Coming Soon - Attach a config file to award users who have played enough games.
   - `stats`: Gets some statistics about SpellBot usage on your server.
   - `help`: Get detailed usage help for SpellBot.
 - `!verify`: Allows moderators to verify a user on their server.
@@ -176,43 +177,43 @@ with installing and using it.
 
 [MIT][mit] © [amy@lexicalunit][lexicalunit] et [al][contributors]
 
-[add-bot-button]:     https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png
-[add-bot]:            https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=93265&scope=bot
-[black-badge]:        https://img.shields.io/badge/code%20style-black-000000.svg
-[black]:              https://github.com/psf/black
-[build-badge]:        https://github.com/lexicalunit/spellbot/workflows/build/badge.svg
-[build]:              https://github.com/lexicalunit/spellbot/actions
-[codecov-badge]:      https://codecov.io/gh/lexicalunit/spellbot/branch/master/graph/badge.svg
-[codecov]:            https://codecov.io/gh/lexicalunit/spellbot
-[codeql-badge]:       https://github.com/lexicalunit/spellbot/workflows/CodeQL/badge.svg
-[contributors]:       https://github.com/lexicalunit/spellbot/graphs/contributors
-[create-role]:        https://support.discord.com/hc/en-us/articles/206029707-How-do-I-set-up-Permissions-
-[db-url]:             https://docs.sqlalchemy.org/en/latest/core/engines.html
-[discord-bot-docs]:   https://discord.com/developers/docs/topics/oauth2#bots
-[discord-invite]:     https://discord.gg/zXzgqMN
-[docker-hub]:         https://hub.docker.com/r/lexicalunit/spellbot
-[factor-badge]:       https://www.codefactor.io/repository/github/lexicalunit/spellbot/badge
-[factor]:             https://www.codefactor.io/repository/github/lexicalunit/spellbot
-[follow-badge]:       https://img.shields.io/twitter/follow/SpellBotIO?style=social
-[follow]:             https://twitter.com/intent/follow?screen_name=SpellBotIO
-[issues]:             https://github.com/lexicalunit/spellbot/issues
-[patreon]:            https://www.patreon.com/lexicalunit
-[patreon-button]:     https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dlexicalunit%26type%3Dpatrons88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
-[lexicalunit]:        http://github.com/lexicalunit
-[lfg]:                https://user-images.githubusercontent.com/1903876/91242259-cedd2280-e6fb-11ea-8d30-e7127b6f96e9.png
-[metrics-badge]:      https://img.shields.io/badge/metrics-grafana-orange.svg
-[metrics]:            https://lexicalunit.grafana.net/d/4TSUCbcMz/spellbot?orgId=1
-[mit-badge]:          https://img.shields.io/badge/License-MIT-yellow.svg
-[mit]:                https://opensource.org/licenses/MIT
-[pypi-badge]:         https://img.shields.io/pypi/v/spellbot
-[pypi]:               https://pypi.org/project/spellbot/
-[python-badge]:       https://img.shields.io/badge/python-3.8+-blue.svg
-[python]:             https://www.python.org/
-[ready]:              https://user-images.githubusercontent.com/1903876/91242257-cdabf580-e6fb-11ea-86ad-8f1aaf6d34dc.png
-[security]:           https://github.com/lexicalunit/spellbot/security
+[add-bot-button]: https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png
+[add-bot]: https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=268528721&scope=bot
+[black-badge]: https://img.shields.io/badge/code%20style-black-000000.svg
+[black]: https://github.com/psf/black
+[build-badge]: https://github.com/lexicalunit/spellbot/workflows/build/badge.svg
+[build]: https://github.com/lexicalunit/spellbot/actions
+[codecov-badge]: https://codecov.io/gh/lexicalunit/spellbot/branch/master/graph/badge.svg
+[codecov]: https://codecov.io/gh/lexicalunit/spellbot
+[codeql-badge]: https://github.com/lexicalunit/spellbot/workflows/CodeQL/badge.svg
+[contributors]: https://github.com/lexicalunit/spellbot/graphs/contributors
+[create-role]: https://support.discord.com/hc/en-us/articles/206029707-How-do-I-set-up-Permissions-
+[db-url]: https://docs.sqlalchemy.org/en/latest/core/engines.html
+[discord-bot-docs]: https://discord.com/developers/docs/topics/oauth2#bots
+[discord-invite]: https://discord.gg/zXzgqMN
+[docker-hub]: https://hub.docker.com/r/lexicalunit/spellbot
+[factor-badge]: https://www.codefactor.io/repository/github/lexicalunit/spellbot/badge
+[factor]: https://www.codefactor.io/repository/github/lexicalunit/spellbot
+[follow-badge]: https://img.shields.io/twitter/follow/SpellBotIO?style=social
+[follow]: https://twitter.com/intent/follow?screen_name=SpellBotIO
+[issues]: https://github.com/lexicalunit/spellbot/issues
+[patreon]: https://www.patreon.com/lexicalunit
+[patreon-button]: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dlexicalunit%26type%3Dpatrons88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
+[lexicalunit]: http://github.com/lexicalunit
+[lfg]: https://user-images.githubusercontent.com/1903876/91242259-cedd2280-e6fb-11ea-8d30-e7127b6f96e9.png
+[metrics-badge]: https://img.shields.io/badge/metrics-grafana-orange.svg
+[metrics]: https://lexicalunit.grafana.net/d/4TSUCbcMz/spellbot?orgId=1
+[mit-badge]: https://img.shields.io/badge/License-MIT-yellow.svg
+[mit]: https://opensource.org/licenses/MIT
+[pypi-badge]: https://img.shields.io/pypi/v/spellbot
+[pypi]: https://pypi.org/project/spellbot/
+[python-badge]: https://img.shields.io/badge/python-3.8+-blue.svg
+[python]: https://www.python.org/
+[ready]: https://user-images.githubusercontent.com/1903876/91242257-cdabf580-e6fb-11ea-86ad-8f1aaf6d34dc.png
+[security]: https://github.com/lexicalunit/spellbot/security
 [spelltable-discord]: https://discord.gg/zXzgqMN
-[spelltable]:         https://www.spelltable.com/
-[top-badge]:          https://top.gg/api/widget/status/725510263251402832.svg?noavatar=true
-[top]:                https://top.gg/bot/725510263251402832
-[uptime-badge]:       https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
-[uptime]:             https://uptimerobot.com/dashboard#785764282
+[spelltable]: https://www.spelltable.com/
+[top-badge]: https://top.gg/api/widget/status/725510263251402832.svg?noavatar=true
+[top]: https://top.gg/bot/725510263251402832
+[uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
+[uptime]: https://uptimerobot.com/dashboard#785764282

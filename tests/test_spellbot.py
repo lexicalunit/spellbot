@@ -29,7 +29,15 @@ from spellbot.constants import (
     THUMB_URL,
     VOICE_CATEGORY_PREFIX,
 )
-from spellbot.data import ChannelSettings, Event, Game, Server, User, UserServerSettings
+from spellbot.data import (
+    Award,
+    ChannelSettings,
+    Event,
+    Game,
+    Server,
+    User,
+    UserServerSettings,
+)
 from spellbot.tasks import update_average_wait_times
 
 from .constants import CLIENT_TOKEN, TEST_DATA_ROOT
@@ -555,7 +563,7 @@ class TestSpellBot:
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
             "\n"
             "[🔗 Add SpellBot to your Discord!](https://discordapp.com/api/oauth2"
-            "/authorize?client_id=725510263251402832&permissions=93265&scope=bot)\n"
+            "/authorize?client_id=725510263251402832&permissions=268528721&scope=bot)\n"
             "\n"
             "[👍 Give SpellBot a vote on top.gg!]"
             "(https://top.gg/bot/725510263251402832/vote)\n"
@@ -4389,4 +4397,110 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f'Sorry <@{admin.id}>, but "peet" is not a valid channel.'
             " Try using # to mention the channels you want."
+        )
+
+    async def test_on_message_spellbot_awards_no_data(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot awards"))
+        assert channel.last_sent_response == (
+            f"Sorry {author.mention}, but you must include an attachment containing"
+            " award data with this command. There should be 3 columns: game count,"
+            " role name, message."
+        )
+
+    async def test_on_message_spellbot_awards_not_utf(
+        self, client, channel_maker, monkeypatch
+    ):
+        channel = channel_maker.text()
+        author = an_admin()
+        data = bytes("1,role 1,message 1", "utf-8")
+        csv_file = MockAttachment("awards.csv", data)
+        comment = "!spellbot awards"
+        message = MockMessage(author, channel, comment, attachments=[csv_file])
+
+        mock_decode_data = Mock()
+        mock_decode_data.side_effect = UnicodeDecodeError("utf-8", b"f1", 0, 1, "reason")
+        monkeypatch.setattr(client, "decode_data", mock_decode_data)
+
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            f"Sorry {author.mention}, "
+            "but that file isn't UTF-8 encoded and I can't read it."
+        )
+
+    async def test_on_message_spellbot_awards(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        data = bytes(
+            "1,role 1,message 1\n2,role 2,message 2\n3,role 3,message 3\n", "utf-8"
+        )
+        csv_file = MockAttachment("awards.csv", data)
+        comment = "!spellbot awards"
+        message = MockMessage(author, channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+
+        async with client.session() as session:
+            award = session.query(Award).filter(Award.count == 1).one_or_none()
+            assert award.role == "role 1"
+            assert award.message == "message 1"
+
+            award = session.query(Award).filter(Award.count == 2).one_or_none()
+            assert award.role == "role 2"
+            assert award.message == "message 2"
+
+            award = session.query(Award).filter(Award.count == 3).one_or_none()
+            assert award.role == "role 3"
+            assert award.message == "message 3"
+
+    async def test_on_message_spellbot_awards_bad_row(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        data = bytes("1,role 1,message 1\n2,role 2\n", "utf-8")
+        csv_file = MockAttachment("awards.csv", data)
+        comment = "!spellbot awards"
+        message = MockMessage(author, channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            f"Sorry {author.mention}, but there's not three columns of data on row 2."
+        )
+
+    async def test_on_message_spellbot_awards_bad_count(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        data = bytes("1,role 1,message 1\n-2,role 2, message 2\n", "utf-8")
+        csv_file = MockAttachment("awards.csv", data)
+        comment = "!spellbot awards"
+        message = MockMessage(author, channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            f"Sorry {author.mention}, but there's a bad count number on row 2."
+        )
+
+    async def test_on_message_spellbot_awards_bad_message(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        long_message = "foo " * 100
+        data = bytes(f"1,role 1,message 1\n2,role 2, {long_message}\n", "utf-8")
+        csv_file = MockAttachment("awards.csv", data)
+        comment = "!spellbot awards"
+        message = MockMessage(author, channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            f"Sorry {author.mention}, the message is too short or too long on row 2."
+            " Please use between 5 and 255 characters."
+        )
+
+    async def test_on_message_spellbot_awards_bad_role(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        long_role = "f " * 100
+        data = bytes(f"1,role 1,message 1\n2,{long_role}, message 2\n", "utf-8")
+        csv_file = MockAttachment("awards.csv", data)
+        comment = "!spellbot awards"
+        message = MockMessage(author, channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            f"Sorry {author.mention}, but the role name on row 2 is"
+            " too short or too long."
         )
