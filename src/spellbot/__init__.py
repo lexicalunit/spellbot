@@ -944,7 +944,6 @@ class SpellBot(discord.Client):
     async def on_message(self, message: discord.Message) -> None:
         """Behavior when the client gets a message from Discord."""
         try:
-            author = cast(discord.User, message.author)
             private = str(message.channel.type) == "private"
 
             # only respond in text channels and to direct messages
@@ -1003,13 +1002,26 @@ class SpellBot(discord.Client):
                             user_settings.verified = True  # type: ignore
                             session.commit()
 
-            has_admin_perms = (
-                not private
-                and message.author.permissions_in(message.channel).administrator
-            )
-            is_owner = not private and (author.id == message.channel.guild.owner_id)
-            is_mod = not private and any(r.name == "Moderators" for r in author.roles)
-            is_mentor = not private and any(r.name == "Mentors" for r in author.roles)
+            has_admin_perms: bool = False
+            is_owner: bool = False
+            is_mod: bool = False
+            is_mentor: bool = False
+
+            if private:
+                has_admin_perms = False
+                is_owner = False
+                is_mod = False
+                is_mentor = False
+            else:
+                if message.guild is not None and message.channel is not None:
+                    member = message.guild.get_member(message.author.id)  # type: ignore
+                    if member is not None:
+                        is_owner = member.id == message.channel.guild.owner_id
+                        is_mod = any(r.name == "Moderators" for r in member.roles)
+                        is_mentor = any(r.name == "Moderators" for r in member.roles)
+                        perms = member.permissions_in(message.channel)
+                        if perms is not None:
+                            has_admin_perms = perms.administrator
 
             # delete message if user verified and this is an unverified only channel
             if (
