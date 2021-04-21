@@ -1004,7 +1004,8 @@ class SpellBot(discord.Client):
                             session.commit()
 
             has_admin_perms = (
-                not private and author.permissions_in(message.channel).administrator
+                not private
+                and message.author.permissions_in(message.channel).administrator
             )
             is_owner = not private and (author.id == message.channel.guild.owner_id)
             is_mod = not private and any(r.name == "Moderators" for r in author.roles)
