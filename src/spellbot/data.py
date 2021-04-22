@@ -471,8 +471,30 @@ class Award(Base):
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     guild_xid = Column(BigInteger, nullable=False)
     count = Column(Integer, nullable=False)
+    repeating = Column(Boolean, nullable=False, default=False, server_default=false())
     role = Column(String(60), nullable=False)
     message = Column(String(255), nullable=False)
+
+
+class UserAward(Base):
+    __tablename__ = "user_awards"
+    user_xid = Column(
+        "user_xid",
+        BigInteger,
+        ForeignKey("users.xid", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        index=True,
+    )
+    guild_xid = Column(
+        BigInteger,
+        ForeignKey("servers.guild_xid", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        index=True,
+    )
+    current_award_id = Column(Integer, nullable=True)
+    plays = Column(Integer, nullable=False, default=0, server_default=text("0"))
 
 
 class Game(Base):
