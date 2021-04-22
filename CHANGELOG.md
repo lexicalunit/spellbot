@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- The implementation and API for roles and permissions in discord.py is absolute horseshit.
+
 ### Added
 
 - Adds repeating awards, use % in front of the play count to indicate repeating award.
