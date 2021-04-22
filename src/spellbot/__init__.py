@@ -77,6 +77,7 @@ from spellbot.data import (
     Team,
     UnverifiedOnlyChannel,
     User,
+    UserAward,
     UserPoints,
     UserServerSettings,
     WatchedUser,
@@ -586,6 +587,23 @@ class SpellBot(discord.Client):
         session.commit()
         return cast(User, db_user)
 
+    def ensure_user_award_exists(
+        self, session: Session, user_xid: int, guild_xid: int
+    ) -> UserAward:
+        """Ensures that the user award row exists for the given ids."""
+        user_award = (
+            session.query(UserAward)
+            .filter(
+                and_(UserAward.user_xid == user_xid, UserAward.guild_xid == guild_xid)
+            )
+            .one_or_none()
+        )
+        if not user_award:
+            user_award = UserAward(user_xid=user_xid, guild_xid=guild_xid)
+            session.add(user_award)
+            session.commit()
+        return cast(UserAward, user_award)
+
     def ensure_user_settings_exists(
         self, session: Session, user: User, server: Server
     ) -> UserServerSettings:
@@ -930,6 +948,11 @@ class SpellBot(discord.Client):
                 session.commit()
                 for game_user in game.users:
                     session.add(Play(user_xid=game_user.xid, game_id=game.id))
+                    user_award = self.ensure_user_award_exists(
+                        session, game_user.xid, game.guild_xid
+                    )
+                    plays = user_award.plays or 0
+                    user_award.plays = plays + 1  # type: ignore
                 session.commit()
                 for discord_user in found_discord_users:
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))
@@ -1335,6 +1358,11 @@ class SpellBot(discord.Client):
                 session.commit()
                 for game_user in game.users:
                     session.add(Play(user_xid=game_user.xid, game_id=game.id))
+                    user_award = self.ensure_user_award_exists(
+                        session, game_user.xid, game.guild_xid
+                    )
+                    plays = user_award.plays or 0
+                    user_award.plays = plays + 1  # type: ignore
                 session.commit()
                 for discord_user in found_discord_users:
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))
@@ -3514,7 +3542,11 @@ class SpellBot(discord.Client):
                 await safe_react_error(message)
                 return
 
+            repeating = False
             count_str, role, msg = row
+            if count_str.startswith("%"):
+                repeating = True
+                count_str = count_str[1:]
             count: int = int(count_str)
             if count <= 0 or math.isinf(count) or math.isnan(count):
                 await safe_send_channel(
@@ -3538,7 +3570,13 @@ class SpellBot(discord.Client):
                 return
 
             awards.append(
-                Award(guild_xid=server.guild_xid, count=count, role=role, message=msg)
+                Award(
+                    guild_xid=server.guild_xid,
+                    count=count,
+                    repeating=repeating,
+                    role=role,
+                    message=msg,
+                )
             )
 
         # Blow away the current awards first
