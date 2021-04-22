@@ -258,6 +258,8 @@ def is_admin(
         if hasattr(user_or_member, "roles")
         else channel.guild.get_member(cast(discord.User, user_or_member).id)
     )
+    if not member or not hasattr(member, "roles"):
+        return False
     roles = cast(List[discord.Role], cast(discord.Member, member).roles)
     return any(role.name == ADMIN_ROLE for role in roles) if member else False
 
@@ -1030,21 +1032,19 @@ class SpellBot(discord.Client):
             is_mod: bool = False
             is_mentor: bool = False
 
-            if private:
-                has_admin_perms = False
-                is_owner = False
-                is_mod = False
-                is_mentor = False
-            else:
-                if message.guild is not None and message.channel is not None:
-                    member = message.guild.get_member(message.author.id)  # type: ignore
-                    if member is not None:
-                        is_owner = member.id == message.channel.guild.owner_id
-                        is_mod = any(r.name == "Moderators" for r in member.roles)
-                        is_mentor = any(r.name == "Moderators" for r in member.roles)
-                        perms = member.permissions_in(message.channel)
-                        if perms is not None:
-                            has_admin_perms = perms.administrator
+            if not private and message.channel and message.channel.guild:
+                guild = message.channel.guild
+                if hasattr(guild, "get_member"):
+                    member = guild.get_member(message.author.id)  # type: ignore
+                    if member:
+                        is_owner = member.id == guild.owner_id
+                        if hasattr(member, "roles"):
+                            is_mod = any(r.name == "Moderators" for r in member.roles)
+                            is_mentor = any(r.name == "Mentors" for r in member.roles)
+                        if hasattr(member, "permissions_in"):
+                            perms = member.permissions_in(message.channel)
+                            if perms:
+                                has_admin_perms = perms.administrator
 
             # delete message if user verified and this is an unverified only channel
             if (
