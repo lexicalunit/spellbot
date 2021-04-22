@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v5.28.3](https://github.com/lexicalunit/spellbot/releases/tag/v5.28.3) - 2021-04-21
+
 ### Fixed
 
 - The implementation and API for roles and permissions in discord.py is absolute horseshit.
