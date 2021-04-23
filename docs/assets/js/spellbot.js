@@ -1,6 +1,8 @@
 var SpellBotJS = {
   init : function() {
-    $('#main-navbar .navbar-nav').append('<li class="nav-item"><a class="nav-link" href="https://top.gg/bot/725510263251402832"><img src="https://top.gg/api/widget/status/725510263251402832.svg?noavatar=true" alt="SpellBot" /></a></li>');
+    const link = $('#main-navbar .navbar-nav .nav-item:last-child .nav-link')
+    link.href = 'https://top.gg/bot/725510263251402832';
+    link.html('<img src="https://top.gg/api/widget/status/725510263251402832.svg?noavatar=true" alt="" width="123" height="20" />')
   },
 };
 
