@@ -25,8 +25,8 @@
 .screenshot {
   border-radius: 1rem;
   background: linear-gradient(45deg, rgb(246, 173, 75), rgb(90, 62, 253));
-  padding: .5rem;
-  box-shadow: 10px 10px rgba(113, 128, 150, .20);
+  padding: 0.5rem;
+  box-shadow: 10px 10px rgba(113, 128, 150, 0.2);
   display: block;
   margin-left: auto;
   margin-right: auto;
@@ -37,15 +37,32 @@
   -moz-animation: spin 60s linear infinite;
   animation: spin 60s linear infinite;
 }
-@-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
-@-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
-@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+@-moz-keyframes spin {
+  100% {
+    -moz-transform: rotate(360deg);
+  }
+}
+@-webkit-keyframes spin {
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+@keyframes spin {
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
 
 p.note {
-  background: linear-gradient(45deg, rgba(246, 173, 75, .2), rgba(90, 62, 253, .2));
+  background: linear-gradient(
+    45deg,
+    rgba(246, 173, 75, 0.2),
+    rgba(90, 62, 253, 0.2)
+  );
   border-radius: 1rem;
   margin: 2rem 1rem;
-  padding: .5rem 1rem .5rem 3rem;
+  padding: 0.5rem 1rem 0.5rem 3rem;
 }
 
 p.note:before {
@@ -76,7 +93,7 @@ a:hover {
 }
 
 *:not(.fas):not(.fab) {
-  font-family: 'Verdana', sans-serif !important;
+  font-family: "Verdana", sans-serif !important;
 }
 
 .navbar-brand {
@@ -95,4 +112,17 @@ a:hover {
 code {
   font-size: 1em !important;
   background-color: transparent !important;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+#main-navbar .navbar-nav .nav-item:last-child img {
+  animation: fadeIn ease-in 2s;
 }
