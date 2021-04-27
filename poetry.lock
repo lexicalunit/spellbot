@@ -246,7 +246,7 @@ python-versions = "*"
 
 [[package]]
 name = "dunamai"
-version = "1.5.4"
+version = "1.5.5"
 description = "Dynamic version generation"
 category = "main"
 optional = false
@@ -1466,8 +1466,8 @@ distlib = [
     {file = "distlib-0.3.1.zip", hash = "sha256:edf6116872c863e1aa9d5bb7cb5e05a022c519a4594dc703843343a9ddd9bff1"},
 ]
 dunamai = [
-    {file = "dunamai-1.5.4-py3-none-any.whl", hash = "sha256:0edbc8c37484b2db7c54b70de88c2b6ce866890440fc4bea6470cb1b88b75058"},
-    {file = "dunamai-1.5.4.tar.gz", hash = "sha256:82eb8dbdad6734a6ad475a2e8d0d5167fde7b0ae0d9529da0042129ca3736523"},
+    {file = "dunamai-1.5.5-py3-none-any.whl", hash = "sha256:525ac30db6ca4f8e48b9f198c2e8fbc2a9ce3ea189768361c621ea635212ee49"},
+    {file = "dunamai-1.5.5.tar.gz", hash = "sha256:32f30db71e8fd1adeb42fac45c04433680e47a28298447cd30304e0bba95a7dd"},
 ]
 ecdsa = [
     {file = "ecdsa-0.14.1-py2.py3-none-any.whl", hash = "sha256:e108a5fe92c67639abae3260e43561af914e7fd0d27bae6d2ec1312ae7934dfe"},
