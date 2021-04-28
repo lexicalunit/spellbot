@@ -24,5 +24,5 @@ EMOJI_OK = "✅"
 
 VOICE_CATEGORY_PREFIX = "SpellBot Voice Channels"
 
-VOICE_INVITE_EXPIRE_TIME_S = 600  # ten minutes, make this configurable?
+VOICE_INVITE_EXPIRE_TIME_S = 86400  # 1 day, make this configurable?
 CLEAN_S = 7  # seconds before temporary messages by the bot get cleaned up, configurable?
