@@ -6,6 +6,7 @@ import pytz
 import redis
 from sqlalchemy.orm.session import Session
 
+from spellbot.constants import REALLY_OLD_GAMES_HOURS
 from spellbot.data import Game, Server
 from spellbot.tasks import (
     cleanup_expired_games,
@@ -286,7 +287,7 @@ class TestTasks:
         mock_get_channel = Mock(return_value=mock_voice_channel)
         monkeypatch.setattr(client, "get_channel", mock_get_channel)
 
-        freezer.move_to(NOW + timedelta(hours=5))
+        freezer.move_to(NOW + timedelta(hours=REALLY_OLD_GAMES_HOURS - 1))
         await cleanup_old_voice_channels(client)
 
         mock_voice_channel.delete.assert_not_called()

@@ -75,12 +75,16 @@ class TestOperations:
         mock_message.remove_reaction.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
+        mock_guild_id = mock_message.channel.guild.id
 
         await safe_remove_reaction(
             cast(discord.Message, mock_message), "emoji", cast(discord.User, FRIEND)
         )
 
-        assert "warning: discord (DM): could not remove reaction" in caplog.text
+        assert (
+            f"warning: discord (guild {mock_guild_id}): could not remove reaction"
+            in caplog.text
+        )
         assert "BAD REQUEST" in caplog.text
 
     async def test_safe_clear_reactions(self, mock_message):
@@ -107,10 +111,14 @@ class TestOperations:
         mock_message.clear_reactions.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
+        mock_guild_id = mock_message.channel.guild.id
 
         await safe_clear_reactions(cast(discord.Message, mock_message))
 
-        assert "warning: discord (DM): could not clear reactions" in caplog.text
+        assert (
+            f"warning: discord (guild {mock_guild_id}): could not clear reactions"
+            in caplog.text
+        )
         assert "BAD REQUEST" in caplog.text
 
     async def test_safe_react_ok(self, mock_message):
@@ -135,10 +143,14 @@ class TestOperations:
         mock_message.add_reaction.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
+        mock_guild_id = mock_message.channel.guild.id
 
         await safe_react_ok(cast(discord.Message, mock_message))
 
-        assert "warning: discord (DM): could not react to message" in caplog.text
+        assert (
+            f"warning: discord (guild {mock_guild_id}): could not react to message"
+            in caplog.text
+        )
         assert "BAD REQUEST" in caplog.text
 
     async def test_safe_react_ok_error_not_found(self, mock_message, caplog):
@@ -147,10 +159,13 @@ class TestOperations:
         mock_message.add_reaction.side_effect = discord.errors.NotFound(
             response, "Not Found"
         )
+        mock_guild_id = mock_message.channel.guild.id
 
         await safe_react_ok(cast(discord.Message, mock_message))
 
-        assert "discord (DM): could not react to message" in caplog.text
+        assert (
+            f"discord (guild {mock_guild_id}): could not react to message" in caplog.text
+        )
         assert "Not Found" in caplog.text
 
     async def test_safe_react_error(self, mock_message):
@@ -177,10 +192,14 @@ class TestOperations:
         mock_message.add_reaction.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
+        mock_guild_id = mock_message.channel.guild.id
 
         await safe_react_error(cast(discord.Message, mock_message))
 
-        assert "warning: discord (DM): could not react to message" in caplog.text
+        assert (
+            f"warning: discord (guild {mock_guild_id}): could not react to message"
+            in caplog.text
+        )
         assert "BAD REQUEST" in caplog.text
 
     async def test_safe_react_error_error_not_found(self, mock_message, caplog):
@@ -189,10 +208,13 @@ class TestOperations:
         mock_message.add_reaction.side_effect = discord.errors.NotFound(
             response, "Not Found"
         )
+        mock_guild_id = mock_message.channel.guild.id
 
         await safe_react_error(cast(discord.Message, mock_message))
 
-        assert "discord (DM): could not react to message" in caplog.text
+        assert (
+            f"discord (guild {mock_guild_id}): could not react to message" in caplog.text
+        )
         assert "Not Found" in caplog.text
 
     async def test_safe_react_emoji(self, mock_message):
@@ -219,10 +241,14 @@ class TestOperations:
         mock_message.add_reaction.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
+        mock_guild_id = mock_message.channel.guild.id
 
         await safe_react_emoji(cast(discord.Message, mock_message), "👍")
 
-        assert "warning: discord (DM): could not react to message" in caplog.text
+        assert (
+            f"warning: discord (guild {mock_guild_id}): could not react to message"
+            in caplog.text
+        )
         assert "BAD REQUEST" in caplog.text
 
     async def test_safe_react_emoji_error_not_found(self, mock_message, caplog):
@@ -231,10 +257,13 @@ class TestOperations:
         mock_message.add_reaction.side_effect = discord.errors.NotFound(
             response, "Not Found"
         )
+        mock_guild_id = mock_message.channel.guild.id
 
         await safe_react_emoji(cast(discord.Message, mock_message), "👍")
 
-        assert "discord (DM): could not react to message" in caplog.text
+        assert (
+            f"discord (guild {mock_guild_id}): could not react to message" in caplog.text
+        )
         assert "Not Found" in caplog.text
 
     async def test_safe_fetch_message(self, mock_message):
@@ -417,10 +446,14 @@ class TestOperations:
         mock_message.edit.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
+        mock_guild_id = mock_message.channel.guild.id
 
         await safe_edit_message(cast(discord.Message, mock_message))
 
-        assert "warning: discord (DM): could not edit message" in caplog.text
+        assert (
+            f"warning: discord (guild {mock_guild_id}): could not edit message"
+            in caplog.text
+        )
         assert "BAD REQUEST" in caplog.text
 
     async def test_safe_delete_message(self, mock_message):
@@ -434,10 +467,14 @@ class TestOperations:
         mock_message.delete.side_effect = discord.errors.HTTPException(
             response, "BAD REQUEST"
         )
+        mock_guild_id = mock_message.channel.guild.id
 
         await safe_delete_message(cast(discord.Message, mock_message))
 
-        assert "warning: discord (DM): could not delete message" in caplog.text
+        assert (
+            f"warning: discord (guild {mock_guild_id}): could not delete message"
+            in caplog.text
+        )
         assert "BAD REQUEST" in caplog.text
 
     async def test_safe_send_user(self, client, monkeypatch):

@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 
 import redis
 
+from spellbot.constants import REALLY_OLD_GAMES_HOURS
+
 if TYPE_CHECKING:  # pragma: no cover
     from spellbot import SpellBot
 
@@ -67,7 +69,8 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
 
             empty_or_really_old = (
                 not chan.voice_states.keys()  # type: ignore
-                or datetime.utcnow() >= game.updated_at + timedelta(hours=7)
+                or datetime.utcnow()
+                >= game.updated_at + timedelta(hours=REALLY_OLD_GAMES_HOURS)
             )
             if empty_or_really_old:
                 success = await safe_delete_channel(chan, game.guild_xid)
@@ -93,7 +96,8 @@ async def cleanup_started_games(bot: SpellBot) -> None:
     async with bot.session() as session:
         games = session.query(Game).filter(Game.status == "started").all()
         for game in games:
-            game.tags = []  # cascade delete tag associations
+            # cascade delete tag associations
+            game.tags = []  # type: ignore
             session.delete(game)
         session.commit()
 

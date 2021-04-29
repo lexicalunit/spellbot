@@ -26,6 +26,7 @@ class MockDiscordMessage:
     def __init__(self):
         self.id = MockDiscordMessage.MOCK_DISCORD_MESSAGE_ID_START
         self.channel = MockChannel("id", "text")
+        self.guild = self.channel.guild
         MockDiscordMessage.MOCK_DISCORD_MESSAGE_ID_START += 1
         self.reactions = []
         self.delete = AsyncMock()
@@ -263,7 +264,7 @@ class MockChannel:
             self.type = ChannelType.private
         else:
             raise RuntimeError(f"unknown channel type: {channel_type}")
-        self.guild = MockGuild(1, "guild", [])
+        self.guild = MockGuild(500, "guild", [])
         self.delete = AsyncMock()
 
         # sent is a spy for tracking calls to send(), it doesn't exist on the real object.

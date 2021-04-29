@@ -39,11 +39,11 @@ from aiohttp.web_response import Response
 from dotenv import load_dotenv
 from expiringdict import ExpiringDict  # type: ignore
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from requests.packages.urllib3.util.retry import Retry  # type: ignore
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import text
-from sqlalchemy.sql.expression import and_
+from sqlalchemy.sql.expression import and_, or_
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
@@ -85,6 +85,7 @@ from spellbot.data import (
 )
 from spellbot.operations import (
     MentionableChannelType,
+    safe_add_role,
     safe_clear_reactions,
     safe_create_category_channel,
     safe_create_invite,
@@ -961,8 +962,8 @@ class SpellBot(discord.Client):
                     return
 
                 # update the game and remove the user from the game
-                game.updated_at = now
-                game.expires_at = expires_at
+                game.updated_at = now  # type: ignore
+                game.expires_at = expires_at  # type: ignore
                 user.game_id = None  # type: ignore
                 session.commit()
 
@@ -971,8 +972,8 @@ class SpellBot(discord.Client):
                 await safe_edit_message(message, embed=game.to_embed(wait=wait))
                 return
 
-            game.updated_at = now
-            game.expires_at = expires_at
+            game.updated_at = now  # type: ignore
+            game.expires_at = expires_at  # type: ignore
             session.commit()
 
             found_discord_users = []
@@ -985,23 +986,22 @@ class SpellBot(discord.Client):
                         found_discord_users.append(discord_user)
 
             if len(found_discord_users) == game.size:  # game is ready
-                game.url = (
+                game.url = (  # type: ignore
                     self.create_spelltable_url() if game.system == "spelltable" else None
                 )
                 await self.setup_voice(session, game)
-                game.status = "started"
+                game.status = "started"  # type: ignore
                 game.game_power = game.power  # type: ignore
                 session.commit()
                 for game_user in game.users:
                     session.add(Play(user_xid=game_user.xid, game_id=game.id))
-                    user_award = self.ensure_user_award_exists(
-                        session, game_user.xid, game.guild_xid
-                    )
-                    plays = user_award.plays or 0
-                    user_award.plays = plays + 1  # type: ignore
                 session.commit()
                 for discord_user in found_discord_users:
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))
+                    await self._handle_awards(
+                        session, cast(discord.Guild, message.guild), discord_user
+                    )
+                session.commit()
                 await safe_edit_message(message, embed=game.to_embed())
                 await safe_clear_reactions(message)
                 await self.send_watch_list_notifications(session, game)
@@ -1376,8 +1376,31 @@ class SpellBot(discord.Client):
         await safe_react_emoji(post, EMOJI_DROP_GAME)
         return post
 
+    async def _handle_awards(
+        self, session: Session, guild: discord.Guild, user: discord.User
+    ) -> None:
+        award_q = session.query(Award).filter(Award.guild_xid == guild.id)
+        user_award = self.ensure_user_award_exists(session, user.id, guild.id)
+        plays = (user_award.plays or 0) + 1
+        user_award.plays = plays  # type: ignore
+        if plays > 0:
+            next_award = award_q.filter(
+                or_(
+                    Award.count == plays,
+                    and_(
+                        plays % Award.count == 0,
+                        Award.repeating == True,
+                    ),
+                )
+            ).one_or_none()
+            if next_award and (
+                (user_award.current_award_id != next_award.id)
+                or (user_award.current_award_id == next_award.id and next_award.repeating)
+            ):
+                await safe_add_role(user, guild, next_award.role)
+
     async def _update_or_start_game(
-        self, session: Session, game: Game, post: discord.Message
+        self, session: Session, game: Game, post: discord.Message, guild: discord.Guild
     ) -> None:
         if len(cast(List[User], game.users)) == game.size:  # game *might* be ready...
             found_discord_users = []
@@ -1398,14 +1421,11 @@ class SpellBot(discord.Client):
                 session.commit()
                 for game_user in game.users:
                     session.add(Play(user_xid=game_user.xid, game_id=game.id))
-                    user_award = self.ensure_user_award_exists(
-                        session, game_user.xid, game.guild_xid
-                    )
-                    plays = user_award.plays or 0
-                    user_award.plays = plays + 1  # type: ignore
                 session.commit()
                 for discord_user in found_discord_users:
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))
+                    await self._handle_awards(session, guild, discord_user)
+                session.commit()
                 await safe_edit_message(post, embed=game.to_embed())
                 await safe_clear_reactions(post)
                 await self.send_watch_list_notifications(session, game)
@@ -1541,7 +1561,9 @@ class SpellBot(discord.Client):
                 post = await self._post_new_game(session, message, game)
 
         if post:
-            await self._update_or_start_game(session, game, post)
+            await self._update_or_start_game(
+                session, game, post, cast(discord.Guild, message.guild)
+            )
             await safe_react_ok(message)
 
     @command(allow_dm=False, help_group="Commands for Players")
@@ -2204,6 +2226,10 @@ class SpellBot(discord.Client):
 
                 for discord_user in found_discord_users:
                     await safe_send_user(discord_user, embed=response)
+                    await self._handle_awards(
+                        session, cast(discord.Guild, message.guild), discord_user
+                    )
+                session.commit()
 
                 await safe_send_channel(
                     message,
