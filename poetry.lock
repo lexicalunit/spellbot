@@ -982,7 +982,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)", "win-inet-pton"]
 
 [[package]]
 name = "requests-mock"
-version = "1.8.0"
+version = "1.9.1"
 description = "Mock out responses from the requests package"
 category = "dev"
 optional = false
@@ -1244,7 +1244,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4"
-content-hash = "c01fdac229082a96425c56bdb40669a41c0e84f6978b615ac35e0c4e188b3708"
+content-hash = "b0296653e6654d33c655286fa95e19c13636a194db004ccf765a0a30c65d4e1b"
 
 [metadata.files]
 aiofiles = [
@@ -2044,8 +2044,8 @@ requests = [
     {file = "requests-2.25.1.tar.gz", hash = "sha256:27973dd4a904a4f13b263a19c866c13b92a39ed1c964655f025f3f8d3d75b804"},
 ]
 requests-mock = [
-    {file = "requests-mock-1.8.0.tar.gz", hash = "sha256:e68f46844e4cee9d447150343c9ae875f99fa8037c6dcf5f15bf1fe9ab43d226"},
-    {file = "requests_mock-1.8.0-py2.py3-none-any.whl", hash = "sha256:11215c6f4df72702aa357f205cf1e537cffd7392b3e787b58239bde5fb3db53b"},
+    {file = "requests-mock-1.9.1.tar.gz", hash = "sha256:154903e7646b8215fbdccc6898c32a77b87d2fbafad2f43e99d6d7987dc86953"},
+    {file = "requests_mock-1.9.1-py2.py3-none-any.whl", hash = "sha256:705c03efff5c4e38a00eb203e71e9b4381fbce9679870bda3ac533b61a0b8b9d"},
 ]
 rfc3986 = [
     {file = "rfc3986-1.4.0-py2.py3-none-any.whl", hash = "sha256:af9147e9aceda37c91a05f4deb128d4b4b49d6b199775fd2d2927768abdc8f50"},
