@@ -72,6 +72,17 @@ def bot_can_read(channel: discord.TextChannel) -> bool:
     return True
 
 
+def bot_can_role(guild: discord.Guild) -> bool:
+    requirements = {
+        "manage_roles",
+    }
+    perms = guild.me.guild_permissions
+    for req in requirements:
+        if not hasattr(perms, req) or not getattr(perms, req):
+            return False
+    return True
+
+
 async def safe_remove_reaction(
     message: discord.Message, emoji: str, user: discord.User
 ) -> None:
@@ -406,15 +417,48 @@ async def safe_send_channel(
     return None
 
 
-async def safe_add_role(member: discord.Member, role: discord.Role) -> None:
+async def safe_add_role(
+    user_or_member: Union[discord.User, discord.Member], guild: discord.Guild, role: str
+) -> None:
     try:
-        await member.add_roles(role)
+        member = cast(
+            Optional[discord.Member],
+            (
+                user_or_member
+                if hasattr(user_or_member, "roles")
+                else guild.get_member(cast(discord.User, user_or_member).id)
+            ),
+        )
+        if not member or not hasattr(member, "roles"):
+            logger.warning(
+                "warning: discord (guild %s): add role: could not find member: %s",
+                guild.id,
+                str(user_or_member),
+            )
+            return
+        discord_role = discord.utils.find(lambda m: m.name == role, guild.roles)
+        if not discord_role:
+            logger.warning(
+                "warning: discord (guild %s): add role: could not find role: %s",
+                guild.id,
+                str(role),
+            )
+            return
+        if not bot_can_role(guild):
+            logger.warning(
+                "warning: discord (guild %s): add role: no permissions to add role: %s",
+                guild.id,
+                str(role),
+            )
+            return
+        await member.add_roles(discord_role)
     except (
         discord.errors.Forbidden,
         discord.errors.HTTPException,
     ) as e:
         logger.exception(
-            "warning: discord (DM): could add role to member (%s): %s",
-            str(member),
+            "warning: discord (guild %s): could not add role to member (%s): %s",
+            guild.id,
+            str(user_or_member),
             e,
         )
