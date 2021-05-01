@@ -2051,6 +2051,7 @@ class SpellBot(discord.Client):
 
             if not event.games:
                 session.delete(event)
+                session.commit()
                 await safe_send_channel(
                     message.channel, s("event_empty", reply=message.author.mention)
                 )
@@ -2754,6 +2755,7 @@ class SpellBot(discord.Client):
 
         # Blow away the current associations first, otherwise SQLAlchemy will explode.
         session.query(Channel).filter_by(guild_xid=server.guild_xid).delete()
+        session.commit()
 
         all_channels = False
         channels = []
