@@ -814,7 +814,7 @@ class Game(Base):
             description += f"\n{self.server.smotd}"
         embed.description = description
 
-        if self.voice_channel_xid:
+        if self.voice_channel_xid and show_link:
             embed.add_field(name="Voice Channel", value=f"<#{self.voice_channel_xid}>")
         tag_names = None
         if self.tags and len(cast(List[Tag], self.tags)) >= 1:
