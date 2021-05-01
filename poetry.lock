@@ -276,7 +276,7 @@ tests = ["dill", "coverage", "coveralls", "mock", "nose"]
 
 [[package]]
 name = "faker"
-version = "8.1.1"
+version = "8.1.2"
 description = "Faker is a Python package that generates fake data for you."
 category = "dev"
 optional = false
@@ -890,7 +890,7 @@ six = ">=1.5"
 
 [[package]]
 name = "python-dotenv"
-version = "0.17.0"
+version = "0.17.1"
 description = "Read key-value pairs from a .env file and set them as environment variables"
 category = "main"
 optional = false
@@ -1244,7 +1244,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4"
-content-hash = "8d0c6fe6cb14ecb83068e638eb45efc6f4dc6b2dfe20756e67e39be7b6b10ac4"
+content-hash = "7e8217d6ceeeba04d4445119783cd9c3a561bc3bb443c72c3c63be6bd12539e8"
 
 [metadata.files]
 aiofiles = [
@@ -1477,8 +1477,8 @@ expiringdict = [
     {file = "expiringdict-1.2.1.tar.gz", hash = "sha256:fe2ba427220425c3c8a3d29f6d2e2985bcee323f8bcd4021e68ebefbd90d8250"},
 ]
 faker = [
-    {file = "Faker-8.1.1-py3-none-any.whl", hash = "sha256:1cc03528930fd26570077b05bd02da0625eb87b7ba192ea5c448284beb77149b"},
-    {file = "Faker-8.1.1.tar.gz", hash = "sha256:14edeced0492f1516df2e8c73bd9cc02307ad89bf2b46c2c3b46b2f595ae6d24"},
+    {file = "Faker-8.1.2-py3-none-any.whl", hash = "sha256:156854f36d4086bb21ff85a79b4d6a6403a240cd2c17a33a44b8ea4ff4e957c2"},
+    {file = "Faker-8.1.2.tar.gz", hash = "sha256:a2ed065342e91a7672407325848cd5728d5e5eb4928d0a1c478fd4f0dd97d1f7"},
 ]
 fastapi = [
     {file = "fastapi-0.63.0-py3-none-any.whl", hash = "sha256:98d8ea9591d8512fdadf255d2a8fa56515cdd8624dca4af369da73727409508e"},
@@ -1943,8 +1943,8 @@ python-dateutil = [
     {file = "python_dateutil-2.8.1-py2.py3-none-any.whl", hash = "sha256:75bb3f31ea686f1197762692a9ee6a7550b59fc6ca3a1f4b5d7e32fb98e2da2a"},
 ]
 python-dotenv = [
-    {file = "python-dotenv-0.17.0.tar.gz", hash = "sha256:471b782da0af10da1a80341e8438fca5fadeba2881c54360d5fd8d03d03a4f4a"},
-    {file = "python_dotenv-0.17.0-py2.py3-none-any.whl", hash = "sha256:49782a97c9d641e8a09ae1d9af0856cc587c8d2474919342d5104d85be9890b2"},
+    {file = "python-dotenv-0.17.1.tar.gz", hash = "sha256:b1ae5e9643d5ed987fc57cc2583021e38db531946518130777734f9589b3141f"},
+    {file = "python_dotenv-0.17.1-py2.py3-none-any.whl", hash = "sha256:00aa34e92d992e9f8383730816359647f358f4a3be1ba45e5a5cefd27ee91544"},
 ]
 python-editor = [
     {file = "python-editor-1.0.4.tar.gz", hash = "sha256:51fda6bcc5ddbbb7063b2af7509e43bd84bfc32a4ff71349ec7847713882327b"},
