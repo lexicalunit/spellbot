@@ -1405,7 +1405,14 @@ class SpellBot(discord.Client):
             session, server, message.channel.id, message.channel.name
         )
         user = self.ensure_user_exists(session, message.author)
-        mentions = message.mentions if message.channel.type != "private" else []
+        mentions: List[discord.Member] = (
+            message.mentions if message.channel.type != "private" else []
+        )
+        mentions = [
+            mention
+            for mention in mentions
+            if message.channel.permissions_for(mention).read_messages
+        ]
 
         if user.waiting and user.game.channel_xid == message.channel.id:
             await self._call_attention_to_game(message, user.game)

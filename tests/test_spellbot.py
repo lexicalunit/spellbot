@@ -4504,3 +4504,28 @@ class TestSpellBot:
             f"Sorry {author.mention}, but the role name on row 2 is"
             " too short or too long."
         )
+
+    async def test_on_message_lfg_mention_without_permissions(
+        self, client, channel_maker, monkeypatch
+    ):
+        channel = channel_maker.text()
+
+        mentions = [AMY, ADAM, JACOB]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!lfg {mentions_str}"
+
+        class MockPermissions:
+            def __init__(self, read_messages):
+                self.read_messages = read_messages
+
+        def mock_permissions_for(member):
+            if member == JACOB:
+                return MockPermissions(False)
+            return MockPermissions(True)
+
+        monkeypatch.setattr(channel, "permissions_for", mock_permissions_for)
+
+        await client.on_message(MockMessage(JR, channel, cmd, mentions=mentions))
+        assert game_embed_for(client, AMY, False) == game_embed_for(client, ADAM, False)
+        assert game_embed_for(client, AMY, False) == game_embed_for(client, JR, False)
+        assert not game_embed_for(client, JACOB, False)

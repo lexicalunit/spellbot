@@ -334,6 +334,13 @@ class MockTextChannel(MockChannel):
         self.members = members
         self.guild = MockGuild(500, "Guild Name", members)
 
+    def permissions_for(self, member):
+        class MockPermissions:
+            def __init__(self):
+                self.read_messages = True
+
+        return MockPermissions()
+
 
 class MockVoiceChannel(MockChannel):
     """Don't create this directly, use the channel_maker fixture instead."""
