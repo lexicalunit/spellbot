@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- When a user is mentioned, make sure they're allowed read messages in that channel.
+
 ## [v5.28.6](https://github.com/lexicalunit/spellbot/releases/tag/v5.28.6) - 2021-04-30
 
 ### Fixed
