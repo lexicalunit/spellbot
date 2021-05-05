@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Don't ignore any API errors as too many of these leads to API rate limiting.
+- Check for permissions before trying to react with emojis.
+
 ## [v5.28.7](https://github.com/lexicalunit/spellbot/releases/tag/v5.28.7) - 2021-05-02
 
 ### Fixed
