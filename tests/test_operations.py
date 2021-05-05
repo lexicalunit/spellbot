@@ -57,12 +57,9 @@ class TestOperations:
 
         mock_message.remove_reaction.assert_called_with("emoji", FRIEND)
 
-    async def test_safe_remove_reaction_error_forbidden(self, mock_message):
-        http_response = Mock()
-        http_response.status = 403
-        mock_message.remove_reaction.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
+    async def test_safe_remove_reaction_error_forbidden(self, mock_message, monkeypatch):
+        mock_perms = Mock(return_value={})
+        monkeypatch.setattr(mock_message.channel.guild.me, "permissions_in", mock_perms)
 
         await safe_remove_reaction(
             cast(discord.Message, mock_message), "emoji", cast(discord.User, FRIEND)
@@ -92,12 +89,11 @@ class TestOperations:
 
         mock_message.clear_reactions.assert_called()
 
-    async def test_safe_clear_reactions_error_forbidden(self, mock_message, client):
-        http_response = Mock()
-        http_response.status = 403
-        mock_message.clear_reactions.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
+    async def test_safe_clear_reactions_error_forbidden(
+        self, mock_message, client, monkeypatch
+    ):
+        mock_perms = Mock(return_value={})
+        monkeypatch.setattr(mock_message.channel.guild.me, "permissions_in", mock_perms)
 
         await safe_clear_reactions(cast(discord.Message, mock_message))
 
@@ -123,12 +119,9 @@ class TestOperations:
 
         mock_message.add_reaction.assert_called_with(EMOJI_OK)
 
-    async def test_safe_react_ok_error_forbidden(self, mock_message, client):
-        http_response = Mock()
-        http_response.status = 403
-        mock_message.add_reaction.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
+    async def test_safe_react_ok_error_forbidden(self, mock_message, client, monkeypatch):
+        mock_perms = Mock(return_value={})
+        monkeypatch.setattr(mock_message.channel.guild.me, "permissions_in", mock_perms)
 
         await safe_react_ok(cast(discord.Message, mock_message))
 
@@ -158,20 +151,19 @@ class TestOperations:
 
         await safe_react_ok(cast(discord.Message, mock_message))
 
-        assert "discord (DM): could not react to message" not in caplog.text
-        assert "Not Found" not in caplog.text
+        assert "discord (DM): could not react to message" in caplog.text
+        assert "Not Found" in caplog.text
 
     async def test_safe_react_error(self, mock_message):
         await safe_react_error(cast(discord.Message, mock_message))
 
         mock_message.add_reaction.assert_called_with(EMOJI_FAIL)
 
-    async def test_safe_react_error_error_forbidden(self, mock_message, client):
-        http_response = Mock()
-        http_response.status = 403
-        mock_message.add_reaction.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
+    async def test_safe_react_error_error_forbidden(
+        self, mock_message, client, monkeypatch
+    ):
+        mock_perms = Mock(return_value={})
+        monkeypatch.setattr(mock_message.channel.guild.me, "permissions_in", mock_perms)
 
         await safe_react_error(cast(discord.Message, mock_message))
 
@@ -201,20 +193,19 @@ class TestOperations:
 
         await safe_react_error(cast(discord.Message, mock_message))
 
-        assert "discord (DM): could not react to message" not in caplog.text
-        assert "Not Found" not in caplog.text
+        assert "discord (DM): could not react to message" in caplog.text
+        assert "Not Found" in caplog.text
 
     async def test_safe_react_emoji(self, mock_message):
         await safe_react_emoji(cast(discord.Message, mock_message), "👍")
 
         mock_message.add_reaction.assert_called_with("👍")
 
-    async def test_safe_react_emoji_error_forbidden(self, mock_message, client):
-        http_response = Mock()
-        http_response.status = 403
-        mock_message.add_reaction.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
+    async def test_safe_react_emoji_error_forbidden(
+        self, mock_message, client, monkeypatch
+    ):
+        mock_perms = Mock(return_value={})
+        monkeypatch.setattr(mock_message.channel.guild.me, "permissions_in", mock_perms)
 
         await safe_react_emoji(cast(discord.Message, mock_message), "👍")
 
@@ -244,8 +235,8 @@ class TestOperations:
 
         await safe_react_emoji(cast(discord.Message, mock_message), "👍")
 
-        assert "discord (DM): could not react to message" not in caplog.text
-        assert "Not Found" not in caplog.text
+        assert "discord (DM): could not react to message" in caplog.text
+        assert "Not Found" in caplog.text
 
     async def test_safe_fetch_message(self, mock_message):
         await safe_fetch_message(
@@ -300,8 +291,8 @@ class TestOperations:
         )
 
         guild_id = mock_message.channel.guild.id
-        assert f"discord (guild {guild_id}): could not fetch message" not in caplog.text
-        assert "Not Found" not in caplog.text
+        assert f"discord (guild {guild_id}): could not fetch message" in caplog.text
+        assert "Not Found" in caplog.text
 
     async def test_safe_fetch_channel_when_cached(self, client, monkeypatch):
         mock_channel = MockTextChannel(1, "general", [])
@@ -370,8 +361,8 @@ class TestOperations:
         await safe_fetch_channel(client, mock_channel.id, mock_channel.guild.id)
 
         guild_id = mock_channel.guild.id
-        assert f"discord (guild {guild_id}): could not fetch channel" not in caplog.text
-        assert "Not Found" not in caplog.text
+        assert f"discord (guild {guild_id}): could not fetch channel" in caplog.text
+        assert "Not Found" in caplog.text
 
     async def test_safe_fetch_user_when_cached(self, client, monkeypatch):
         mock_get_user = MagicMock()
@@ -491,8 +482,8 @@ class TestOperations:
 
         await safe_send_user(cast(discord.User, FRIEND), content="test")
 
-        assert "discord (DM): could not send message to user" not in caplog.text
-        assert "Missing Permissions" not in caplog.text
+        assert "discord (DM): could not send message to user" in caplog.text
+        assert "Missing Permissions" in caplog.text
 
     async def test_safe_create_voice_channel(self, client, monkeypatch):
         mock_channel = MockTextChannel(1, "general", [])

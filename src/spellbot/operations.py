@@ -36,14 +36,17 @@ async def safe_remove_reaction(
     message: discord.Message, emoji: str, user: discord.User
 ) -> None:
     try:
+        perms = message.channel.guild.me.permissions_in(message.channel)
+        if not hasattr(perms, "add_reactions") or not getattr(perms, "add_reactions"):
+            await message.channel.send(s("reaction_permissions_required"))
+            return
         await message.remove_reaction(emoji, user)
-    except discord.errors.Forbidden:
-        await message.channel.send(s("reaction_permissions_required"))
     except (
         discord.errors.DiscordServerError,
         discord.errors.HTTPException,
         discord.errors.InvalidArgument,
         discord.errors.NotFound,
+        discord.errors.Forbidden,
     ) as e:
         logger.exception(
             "warning: discord (%s): could not remove reaction: %s",
@@ -54,12 +57,15 @@ async def safe_remove_reaction(
 
 async def safe_clear_reactions(message: discord.Message) -> None:
     try:
+        perms = message.channel.guild.me.permissions_in(message.channel)
+        if not hasattr(perms, "add_reactions") or not getattr(perms, "add_reactions"):
+            await message.channel.send(s("reaction_permissions_required"))
+            return
         await message.clear_reactions()
-    except discord.errors.Forbidden:
-        await message.channel.send(s("reaction_permissions_required"))
     except (
         discord.errors.DiscordServerError,
         discord.errors.HTTPException,
+        discord.errors.Forbidden,
     ) as e:
         logger.exception(
             "warning: discord (%s): could not clear reactions: %s",
@@ -70,20 +76,17 @@ async def safe_clear_reactions(message: discord.Message) -> None:
 
 async def safe_react_emoji(message: discord.Message, emoji: str) -> None:
     try:
+        perms = message.channel.guild.me.permissions_in(message.channel)
+        if not hasattr(perms, "add_reactions") or not getattr(perms, "add_reactions"):
+            await message.channel.send(s("reaction_permissions_required"))
+            return
         await message.add_reaction(emoji)
-    except discord.errors.Forbidden:
-        await message.channel.send(s("reaction_permissions_required"))
-    except discord.errors.NotFound as e:
-        # This isn't really an issue we need to warn about in the logs.
-        logger.debug(
-            "debug: discord (%s): could not react to message: %s",
-            _user_or_guild_log_part(message),
-            e,
-        )
     except (
         discord.errors.DiscordServerError,
         discord.errors.HTTPException,
         discord.errors.InvalidArgument,
+        discord.errors.Forbidden,
+        discord.errors.NotFound,
     ) as e:
         logger.exception(
             "warning: discord (%s): could not react to message: %s",
@@ -110,19 +113,11 @@ async def safe_fetch_message(
 
     try:
         return await channel.fetch_message(message_xid)
-    except discord.errors.NotFound as e:
-        # An admin could have deleted the message. This bot recovers from
-        # this situation by simply creating a new game post. This happens
-        # often enough that having it be a warning log is too verbose.
-        logger.debug(
-            "debug: discord (guild %s): could not fetch message: %s",
-            guild_xid,
-            e,
-        )
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,
         discord.errors.HTTPException,
+        discord.errors.NotFound,
     ) as e:
         logger.exception(
             "warning: discord (guild %s): could not fetch message: %s",
@@ -141,13 +136,6 @@ async def safe_fetch_channel(
 
     try:
         return await client.fetch_channel(channel_xid)
-    except discord.errors.NotFound as e:
-        # This isn't really an issue we need to warn about in the logs.
-        logger.debug(
-            "debug: discord (guild %s): could not fetch channel: %s",
-            guild_xid,
-            e,
-        )
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,
@@ -225,9 +213,10 @@ async def safe_send_user(user: discord.User, *args, **kwargs) -> None:
         await user.send(*args, **kwargs)
     except discord.errors.Forbidden as e:
         # User may have the bot blocked or they may have DMs only allowed for friends.
-        # Generally speaking, we can safely ignore this sort of error.
-        logger.debug(
-            "debug: discord (DM): could not send message to user (%s): %s",
+        # Generally speaking, we can safely ignore this sort of error. However, too
+        # many failed API requests can cause our bot to be flagged and rate limited.
+        logger.warning(
+            "warning: discord (DM): could not send message to user (%s): %s",
             str(user),
             e,
         )
