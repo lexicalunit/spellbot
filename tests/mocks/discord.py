@@ -1,6 +1,8 @@
 import json
 from contextlib import asynccontextmanager
 
+from discord import ChannelType
+
 from . import AsyncMock
 
 
@@ -251,7 +253,16 @@ class MockChannel:
 
     def __init__(self, channel_id, channel_type):
         self.id = channel_id
-        self.type = channel_type
+        if channel_type == "text":
+            self.type = ChannelType.text
+        elif channel_type == "voice":
+            self.type = ChannelType.voice
+        elif channel_type == "category":
+            self.type = ChannelType.category
+        elif channel_type == "private":
+            self.type = ChannelType.private
+        else:
+            raise RuntimeError(f"unknown channel type: {channel_type}")
         self.guild = MockGuild(1, "guild", [])
         self.delete = AsyncMock()
 

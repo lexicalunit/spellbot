@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Adds stringent permissions checking to code that fetches messages.
+
 ## [v5.29.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.29.1) - 2021-05-06
 
 ### Changed
