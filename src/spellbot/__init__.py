@@ -518,6 +518,7 @@ class SpellBot(discord.Client):
             game_id=game.id,
             users=", ".join(f"<@{w.user_xid}> ({w.note})" for w in watched),
             link=link,
+            game=game.url,
         )
         for mod in mod_role.members:
             await safe_send_user(mod, notification_message)

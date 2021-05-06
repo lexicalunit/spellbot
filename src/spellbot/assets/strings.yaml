@@ -186,4 +186,7 @@ warning_permissions_no_read_messages: Warning! I do not have permissions to read
 watched_user_note_too_long: Sorry $reply, that note is too long. Please use less than
   255 characters.
 watched_user_notification: 'Watched users just hopped into game $game_id: $users.
-  Go to post: $link'
+
+  Go to post: $link
+
+  Go to game: $game?spectate'
