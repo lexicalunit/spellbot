@@ -179,6 +179,8 @@ warning_permissions_no_add_reactions: Warning! I do not have permissions to reac
   to messages in $channel.
 warning_permissions_no_manage_messages: Warning! I do not have permissions to manage
   messages in $channel.
+warning_permissions_no_read_message_history: Warning! I do not have permissions to
+  read message history in $channel.
 warning_permissions_no_read_messages: Warning! I do not have permissions to read messages
   in $channel.
 watched_user_note_too_long: Sorry $reply, that note is too long. Please use less than
