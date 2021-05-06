@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Slightly more graceful handling of send DM failure when our bot is blocked.
+
 ## [v5.29.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.29.0) - 2021-05-06
 
 ### Added

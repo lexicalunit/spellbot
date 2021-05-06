@@ -25,6 +25,9 @@ MentionableChannelType = Union[
     discord.VoiceChannel,
 ]
 
+# Discord API error code indicating that we can not send messages to this user.
+CANT_SEND_CODE = 50007
+
 
 def _user_or_guild_log_part(message: discord.Message) -> str:  # pragma: no cover
     if hasattr(message, "guild"):
@@ -222,36 +225,39 @@ async def safe_delete_message(message: discord.Message) -> None:
 
 
 async def safe_send_user(user: discord.User, *args, **kwargs) -> None:
+    if not hasattr(user, "send"):
+        # Very rarely we get a ClientUser object here instead of a User? I have
+        # no idea why this happens but a ClientUser does not have a send() method.
+        # For now let's just log this I guess.
+        logger.warning(
+            "warning: discord (DM): could not send message to ClientUser (%s)",
+            str(user),
+        )
+        return
+
+    def log_exception(e):
+        logger.exception(
+            "error: discord (DM): could not send message to user (%s): %s",
+            str(user),
+            e,
+        )
+
     try:
-        if not hasattr(user, "send"):
-            # Very rarely we get a ClientUser object here instead of a User. I have
-            # no idea why this happens but a ClientUser does not have a send() method.
-            # For now let's log this and return nothing.
-            logger.warning(
-                "warning: discord (DM): could not send message to ClientUser (%s)",
-                str(user),
-            )
-            return None
         await user.send(*args, **kwargs)
-    except discord.errors.Forbidden as e:
+    except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
         # User may have the bot blocked or they may have DMs only allowed for friends.
         # Generally speaking, we can safely ignore this sort of error. However, too
         # many failed API requests can cause our bot to be flagged and rate limited.
-        logger.warning(
-            "warning: discord (DM): could not send message to user (%s): %s",
-            str(user),
-            e,
-        )
-    except (
-        discord.errors.DiscordServerError,
-        discord.errors.HTTPException,
-        discord.errors.InvalidArgument,
-    ) as e:
-        logger.exception(
-            "warning: discord (DM): could not send message to user (%s): %s",
-            str(user),
-            e,
-        )
+        # It's not clear what can be done to avoid this though.
+        if isinstance(e, discord.errors.Forbidden) or e.code == CANT_SEND_CODE:
+            logger.warning(
+                "warning: discord (DM): can not send messages to user %s",
+                str(user),
+            )
+        else:
+            log_exception(e)
+    except (discord.errors.DiscordServerError, discord.errors.InvalidArgument) as e:
+        log_exception(e)
 
 
 async def safe_create_voice_channel(
