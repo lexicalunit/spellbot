@@ -60,6 +60,18 @@ def bot_can_send(message: discord.Message) -> bool:
     return True
 
 
+def bot_can_read(channel: discord.TextChannel) -> bool:
+    requirements = {
+        "read_messages",
+        "read_message_history",
+    }
+    perms = channel.guild.me.permissions_in(channel)
+    for req in requirements:
+        if not hasattr(perms, req) or not getattr(perms, req):
+            return False
+    return True
+
+
 async def safe_remove_reaction(
     message: discord.Message, emoji: str, user: discord.User
 ) -> None:
@@ -131,13 +143,15 @@ async def safe_react_error(message: discord.Message) -> None:
 async def safe_fetch_message(
     channel: ChannelType, message_xid: int, guild_xid: int
 ) -> Optional[discord.Message]:
-    if isinstance(
-        channel, (discord.VoiceChannel, discord.CategoryChannel, discord.StoreChannel)
-    ):
+    if channel.type != discord.ChannelType.text:
+        return None
+
+    text_channel = cast(discord.TextChannel, channel)
+    if not bot_can_read(text_channel):
         return None
 
     try:
-        return await channel.fetch_message(message_xid)
+        return await text_channel.fetch_message(message_xid)
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,
