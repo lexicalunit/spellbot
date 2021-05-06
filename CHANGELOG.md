@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Adds stringent permissions checking to code that fetches messages.
+- Adds game's spelltable url to watched user notification.
 
 ## [v5.29.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.29.1) - 2021-05-06
 

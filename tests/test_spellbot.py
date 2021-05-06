@@ -4263,8 +4263,10 @@ class TestSpellBot:
 
         notif = (
             f"Watched users just hopped into game {game['id']}: <@{AMY.id}>"
-            " (this is a note). Go to post: https://discordapp.com/channels/"
-            f"{channel.guild.id}/{channel.id}/{message.id}"
+            " (this is a note).\n"
+            "Go to post: https://discordapp.com/channels/"
+            f"{channel.guild.id}/{channel.id}/{message.id}\n"
+            f"Go to game: {game['url']}?spectate"
         )
         for mod in MODERATORS_ROLE.members:
             assert mod.last_sent_response == notif
