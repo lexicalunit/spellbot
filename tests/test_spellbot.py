@@ -4314,6 +4314,7 @@ class TestSpellBot:
 
         class BadPermissions:
             def __init__(self):
+                self.read_message_history = False
                 self.read_messages = False
                 self.add_reactions = False
                 self.manage_messages = False
@@ -4325,6 +4326,10 @@ class TestSpellBot:
         monkeypatch.setattr(channel.guild, "me", client.user)
         await client.on_message(MockMessage(author, channel, "!spellbot config"))
 
+        assert (
+            "Warning! I do not have permissions to"
+            f" read message history in <#{channel.id}>." in channel.all_sent_responses
+        )
         assert (
             f"Warning! I do not have permissions to read messages in <#{channel.id}>."
             in channel.all_sent_responses

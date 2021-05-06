@@ -3686,8 +3686,9 @@ class SpellBot(discord.Client):
             if options is None:
                 options = {
                     "read_messages",
-                    "manage_messages",
+                    "read_message_history",
                     "add_reactions",
+                    "manage_messages",
                 }
             perms = message.channel.guild.me.permissions_in(channel)
             for perm in options:

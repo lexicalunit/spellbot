@@ -32,12 +32,25 @@ def _user_or_guild_log_part(message: discord.Message) -> str:  # pragma: no cove
     return "DM"
 
 
+def bot_can_react(message: discord.Message) -> bool:
+    requirements = {
+        "read_messages",
+        "read_message_history",
+        "add_reactions",
+        "manage_messages",
+    }
+    perms = message.channel.guild.me.permissions_in(message.channel)
+    for req in requirements:
+        if not hasattr(perms, req) or not getattr(perms, req):
+            return False
+    return True
+
+
 async def safe_remove_reaction(
     message: discord.Message, emoji: str, user: discord.User
 ) -> None:
     try:
-        perms = message.channel.guild.me.permissions_in(message.channel)
-        if not hasattr(perms, "add_reactions") or not getattr(perms, "add_reactions"):
+        if not bot_can_react(message):
             await message.channel.send(s("reaction_permissions_required"))
             return
         await message.remove_reaction(emoji, user)
@@ -57,8 +70,7 @@ async def safe_remove_reaction(
 
 async def safe_clear_reactions(message: discord.Message) -> None:
     try:
-        perms = message.channel.guild.me.permissions_in(message.channel)
-        if not hasattr(perms, "add_reactions") or not getattr(perms, "add_reactions"):
+        if not bot_can_react(message):
             await message.channel.send(s("reaction_permissions_required"))
             return
         await message.clear_reactions()
@@ -76,8 +88,7 @@ async def safe_clear_reactions(message: discord.Message) -> None:
 
 async def safe_react_emoji(message: discord.Message, emoji: str) -> None:
     try:
-        perms = message.channel.guild.me.permissions_in(message.channel)
-        if not hasattr(perms, "add_reactions") or not getattr(perms, "add_reactions"):
+        if not bot_can_react(message):
             await message.channel.send(s("reaction_permissions_required"))
             return
         await message.add_reaction(emoji)
