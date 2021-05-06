@@ -137,6 +137,7 @@ class MockMember:
                 self.administrator = administrator
                 self.value = 268528731
                 self.read_messages = True
+                self.send_messages = True
                 self.add_reactions = True
                 self.manage_messages = True
                 self.read_message_history = True
@@ -339,6 +340,10 @@ class MockTextChannel(MockChannel):
         class MockPermissions:
             def __init__(self):
                 self.read_messages = True
+                self.send_messages = True
+                self.add_reactions = True
+                self.manage_messages = True
+                self.read_message_history = True
 
         return MockPermissions()
 

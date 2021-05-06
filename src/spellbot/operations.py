@@ -46,6 +46,17 @@ def bot_can_react(message: discord.Message) -> bool:
     return True
 
 
+def bot_can_send(message: discord.Message) -> bool:
+    requirements = {
+        "send_messages",
+    }
+    perms = message.channel.guild.me.permissions_in(message.channel)
+    for req in requirements:
+        if not hasattr(perms, req) or not getattr(perms, req):
+            return False
+    return True
+
+
 async def safe_remove_reaction(
     message: discord.Message, emoji: str, user: discord.User
 ) -> None:
@@ -351,14 +362,17 @@ async def safe_fetch_guild(
 
 
 async def safe_send_channel(
-    messageable: Union[discord.TextChannel, discord.DMChannel],
+    message: discord.Message,
     content: Optional[str] = None,
     *,
     embed: Optional[discord.Embed] = None,
     file: Optional[discord.File] = None,
 ) -> Optional[discord.Message]:
     try:
-        return await messageable.send(content, embed=embed, file=file)
+        if not bot_can_send(message):
+            return None
+
+        return await message.channel.send(content, embed=embed, file=file)
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,

@@ -4318,6 +4318,7 @@ class TestSpellBot:
                 self.read_messages = False
                 self.add_reactions = False
                 self.manage_messages = False
+                self.send_messages = True
 
         bad_permissions = BadPermissions()
         mock_permissions_in = MagicMock(return_value=bad_permissions)

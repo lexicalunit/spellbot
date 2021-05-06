@@ -267,9 +267,7 @@ def is_admin(
 async def check_is_admin(message: discord.Message) -> bool:
     """Checks if author of message is admin, alert the channel if they are not."""
     if not is_admin(message.channel, message.author):
-        await safe_send_channel(
-            message.channel, s("not_admin", reply=message.author.mention)
-        )
+        await safe_send_channel(message, s("not_admin", reply=message.author.mention))
         return False
     return True
 
@@ -776,7 +774,7 @@ class SpellBot(discord.Client):
         matching = [command for command in self.commands if command.startswith(request)]
         if not matching:
             post = await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "not_a_command",
                     reply=message.author.mention,
@@ -792,7 +790,7 @@ class SpellBot(discord.Client):
         if len(matching) > 1 and request not in matching:
             possible = ", ".join(f"{prefix}{m}" for m in matching)
             post = await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "did_you_mean",
                     reply=message.author.mention,
@@ -1260,14 +1258,12 @@ class SpellBot(discord.Client):
         )
         embed.url = "http://spellbot.io/"
         embed.color = discord.Color(0x5A3EFD)
-        await safe_send_channel(message.channel, embed=embed)
+        await safe_send_channel(message, embed=embed)
         await safe_react_ok(message)
 
     async def _validate_size(self, msg: discord.Message, size: Optional[int]) -> bool:
         if not size or not (1 < size < 5):
-            await safe_send_channel(
-                msg.channel, s("game_size_bad", reply=msg.author.mention)
-            )
+            await safe_send_channel(msg, s("game_size_bad", reply=msg.author.mention))
             return False
         return True
 
@@ -1276,16 +1272,14 @@ class SpellBot(discord.Client):
     ) -> bool:
         if len(mentions) >= size:
             await safe_send_channel(
-                msg.channel, s("lfg_too_many_mentions", reply=msg.author.mention)
+                msg, s("lfg_too_many_mentions", reply=msg.author.mention)
             )
             return False
         return True
 
     async def _validate_tags_size(self, msg: discord.Message, tags: List[str]) -> bool:
         if len(tags) > 5:
-            await safe_send_channel(
-                msg.channel, s("tags_too_many", reply=msg.author.mention)
-            )
+            await safe_send_channel(msg, s("tags_too_many", reply=msg.author.mention))
             return False
         return True
 
@@ -1311,7 +1305,7 @@ class SpellBot(discord.Client):
         embed.set_author(name=s("play_found_title"))
         embed.description = s("play_found_desc", reply=user.mention, link=link)
         embed.color = discord.Color(0x5A3EFD)
-        await safe_send_channel(msg.channel, embed=embed)
+        await safe_send_channel(msg, embed=embed)
         return post
 
     async def _add_user_to_game(self, session: Session, user: User, game: Game) -> None:
@@ -1326,7 +1320,7 @@ class SpellBot(discord.Client):
         self, session: Session, msg: discord.Message, game: Game
     ) -> Optional[discord.Message]:
         wait = await self.average_wait(session, game)
-        post = await safe_send_channel(msg.channel, embed=game.to_embed(wait=wait))
+        post = await safe_send_channel(msg, embed=game.to_embed(wait=wait))
         if not post:
             return None
 
@@ -1390,7 +1384,7 @@ class SpellBot(discord.Client):
         embed.set_author(name=s("call_attn_title", remaining=remaining, plural=plural))
         embed.description = s("call_attn_desc", link=link)
         embed.color = discord.Color(0x5A3EFD)
-        await safe_send_channel(msg.channel, embed=embed)
+        await safe_send_channel(msg, embed=embed)
         return True
 
     async def _play_helper(
@@ -1680,7 +1674,7 @@ class SpellBot(discord.Client):
 
         if len(mentioned_users) < 1:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "report_wrong",
                     reply=message.author.mention,
@@ -1713,7 +1707,7 @@ class SpellBot(discord.Client):
             session.commit()
         else:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "report_wrong",
                     reply=message.author.mention,
@@ -1734,7 +1728,7 @@ class SpellBot(discord.Client):
         """
         if len(params) < 2:
             await safe_send_channel(
-                message.channel, s("report_no_params", reply=message.author.mention)
+                message, s("report_no_params", reply=message.author.mention)
             )
             await safe_react_error(message)
             return
@@ -1744,7 +1738,7 @@ class SpellBot(discord.Client):
 
         if len(report_str) >= 255:
             await safe_send_channel(
-                message.channel, s("report_too_long", reply=message.author.mention)
+                message, s("report_too_long", reply=message.author.mention)
             )
             await safe_react_error(message)
             return
@@ -1765,7 +1759,7 @@ class SpellBot(discord.Client):
 
             if not game:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "report_no_game",
                         reply=message.author.mention,
@@ -1776,7 +1770,7 @@ class SpellBot(discord.Client):
 
             if not game.status == "started":
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "report_not_started",
                         reply=message.author.mention,
@@ -1797,9 +1791,7 @@ class SpellBot(discord.Client):
             report = Report(game_id=game.id, report=report_str)
             session.add(report)
             session.commit()
-            await safe_send_channel(
-                message.channel, s("report", reply=message.author.mention)
-            )
+            await safe_send_channel(message, s("report", reply=message.author.mention))
             await safe_react_ok(message)
 
     @command(allow_dm=False, admin_only=False, help_group="Commands for Players")
@@ -1815,7 +1807,7 @@ class SpellBot(discord.Client):
             points = user.points(server.guild_xid)
 
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "points",
                     reply=message.author.mention,
@@ -1827,7 +1819,7 @@ class SpellBot(discord.Client):
                 team_points = Team.points(session, message.channel.guild.id)
                 for team, team_points in team_points.items():
                     await safe_send_channel(
-                        message.channel,
+                        message,
                         s(
                             "points_team",
                             reply=message.author.mention,
@@ -1864,13 +1856,13 @@ class SpellBot(discord.Client):
         """
         if not message.attachments:
             await safe_send_channel(
-                message.channel, s("event_no_data", reply=message.author.mention)
+                message, s("event_no_data", reply=message.author.mention)
             )
             await safe_react_error(message)
             return
         if not params:
             await safe_send_channel(
-                message.channel, s("event_no_params", reply=message.author.mention)
+                message, s("event_no_params", reply=message.author.mention)
             )
             await safe_react_error(message)
             return
@@ -1893,13 +1885,13 @@ class SpellBot(discord.Client):
 
             if len(tag_names) > 5:
                 await safe_send_channel(
-                    message.channel, s("tags_too_many", reply=message.author.mention)
+                    message, s("tags_too_many", reply=message.author.mention)
                 )
                 await safe_react_error(message)
                 return
             if opt_msg and len(opt_msg) >= 255:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "game_message_too_long",
                         reply=message.author.mention,
@@ -1909,7 +1901,7 @@ class SpellBot(discord.Client):
                 return
             if not (1 < size <= 4):
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "event_bad_play_count",
                         reply=message.author.mention,
@@ -1919,7 +1911,7 @@ class SpellBot(discord.Client):
                 return
             if not attachment.filename.lower().endswith(".csv"):
                 await safe_send_channel(
-                    message.channel, s("event_not_csv", reply=message.author.mention)
+                    message, s("event_not_csv", reply=message.author.mention)
                 )
                 await safe_react_error(message)
                 return
@@ -1931,7 +1923,7 @@ class SpellBot(discord.Client):
                 sdata = self.decode_data(bdata)
             except UnicodeDecodeError:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "event_not_utf",
                         reply=message.author.mention,
@@ -1946,7 +1938,7 @@ class SpellBot(discord.Client):
 
             if any(param not in header for param in params):
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "event_no_header",
                         reply=message.author.mention,
@@ -1977,14 +1969,14 @@ class SpellBot(discord.Client):
                 for player_name in player_names:
                     if not finder.find(player_name):
                         warning = s("event_missing_player", row=i + 1, players=players_s)
-                        await safe_send_channel(message.channel, warning)
+                        await safe_send_channel(message, warning)
                         continue
 
                 player_discord_users: List[discord.User] = []
                 for csv_data, player_name in zip(csv_row_data, player_names):
                     if player_name in players_in_this_event:
                         await safe_send_channel(
-                            message.channel,
+                            message,
                             s(
                                 "event_duplicate_user",
                                 row=i + 1,
@@ -2054,13 +2046,13 @@ class SpellBot(discord.Client):
             warnings_s = "\n".join(sorted(warnings, key=by_row))
             if warnings_s:
                 for page in paginate(warnings_s):
-                    await safe_send_channel(message.channel, page)
+                    await safe_send_channel(message, page)
 
             if not event.games:
                 session.delete(event)
                 session.commit()
                 await safe_send_channel(
-                    message.channel, s("event_empty", reply=message.author.mention)
+                    message, s("event_empty", reply=message.author.mention)
                 )
                 await safe_react_error(message)
                 return
@@ -2068,7 +2060,7 @@ class SpellBot(discord.Client):
             session.commit()
             count = len([game for game in event.games])
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "event_created",
                     reply=message.author.mention,
@@ -2090,7 +2082,7 @@ class SpellBot(discord.Client):
         """
         if not params:
             await safe_send_channel(
-                message.channel, s("begin_no_params", reply=message.author.mention)
+                message, s("begin_no_params", reply=message.author.mention)
             )
             await safe_react_error(message)
             return
@@ -2098,7 +2090,7 @@ class SpellBot(discord.Client):
         event_id = to_int(params[0])
         if not event_id:
             await safe_send_channel(
-                message.channel, s("begin_bad_event", reply=message.author.mention)
+                message, s("begin_bad_event", reply=message.author.mention)
             )
             await safe_react_error(message)
             return
@@ -2109,7 +2101,7 @@ class SpellBot(discord.Client):
             )
             if not event:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "begin_bad_event",
                         reply=message.author.mention,
@@ -2120,7 +2112,7 @@ class SpellBot(discord.Client):
 
             if event.started:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "begin_event_already_started",
                         reply=message.author.mention,
@@ -2145,7 +2137,7 @@ class SpellBot(discord.Client):
                         not discord_user
                     ):  # game_user has left the server since event created
                         warning = s("begin_user_left", players=players_str)
-                        await safe_send_channel(message.channel, warning)
+                        await safe_send_channel(message, warning)
                     else:
                         found_discord_users.append(discord_user)
                 if len(found_discord_users) != len(cast(List[User], game.users)):
@@ -2168,7 +2160,7 @@ class SpellBot(discord.Client):
                     await safe_send_user(discord_user, embed=response)
 
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "game_created",
                         reply=message.author.mention,
@@ -2211,7 +2203,7 @@ class SpellBot(discord.Client):
 
             if opt_msg and len(opt_msg) >= 255:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "game_message_too_long",
                         reply=message.author.mention,
@@ -2221,21 +2213,21 @@ class SpellBot(discord.Client):
                 return
             if tag_names and len(tag_names) > 5:
                 await safe_send_channel(
-                    message.channel, s("tags_too_many", reply=message.author.mention)
+                    message, s("tags_too_many", reply=message.author.mention)
                 )
                 await safe_react_error(message)
                 return
 
             if not size or not (1 < size <= 4):
                 await safe_send_channel(
-                    message.channel, s("game_size_bad", reply=message.author.mention)
+                    message, s("game_size_bad", reply=message.author.mention)
                 )
                 await safe_react_error(message)
                 return
 
             if len(mentions) > size:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "game_too_many_mentions",
                         reply=message.author.mention,
@@ -2247,7 +2239,7 @@ class SpellBot(discord.Client):
 
             if len(mentions) < size:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "game_too_few_mentions",
                         reply=message.author.mention,
@@ -2316,11 +2308,11 @@ class SpellBot(discord.Client):
             }
             if server.create_voice:
                 await safe_send_channel(
-                    message.channel, s("game_created_with_voice", **resp_args)
+                    message, s("game_created_with_voice", **resp_args)
                 )
             else:
                 del resp_args["voice"]
-                await safe_send_channel(message.channel, s("game_created", **resp_args))
+                await safe_send_channel(message, s("game_created", **resp_args))
             await safe_react_ok(message)
 
     @command(allow_dm=True, help_group="Commands for Players")
@@ -2382,7 +2374,7 @@ class SpellBot(discord.Client):
                             ]
                         )
                     )
-            await safe_send_channel(message.channel, "", file=discord.File(export_file))
+            await safe_send_channel(message, "", file=discord.File(export_file))
             await safe_react_ok(message)
 
     @command(allow_dm=True, help_group="Commands for Players")
@@ -2405,7 +2397,7 @@ class SpellBot(discord.Client):
 
             async def send_invalid(prepend) -> None:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "power_invalid",
                         reply=message.author.mention,
@@ -2466,7 +2458,7 @@ class SpellBot(discord.Client):
             server = self.ensure_server_exists(session, message.channel.guild.id)
             if not server.teams:
                 await safe_send_channel(
-                    message.channel, s("team_none", reply=message.author.mention)
+                    message, s("team_none", reply=message.author.mention)
                 )
                 await safe_react_error(message)
                 return
@@ -2476,7 +2468,7 @@ class SpellBot(discord.Client):
                 user_settings = self.ensure_user_settings_exists(session, user, server)
                 if user_settings.team_id is None:
                     await safe_send_channel(
-                        message.channel,
+                        message,
                         s(
                             "team_not_set",
                             reply=message.author.mention,
@@ -2492,7 +2484,7 @@ class SpellBot(discord.Client):
                     user_settings.team_id = None  # type: ignore
                     session.commit()
                     await safe_send_channel(
-                        message.channel,
+                        message,
                         s(
                             "team_gone",
                             reply=message.author.mention,
@@ -2502,7 +2494,7 @@ class SpellBot(discord.Client):
                     return
 
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "team_yours",
                         reply=message.author.mention,
@@ -2523,7 +2515,7 @@ class SpellBot(discord.Client):
             if not team_found:
                 teams = ", ".join(sorted(team.name for team in server.teams))
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "team_not_found",
                         reply=message.author.mention,
@@ -2588,7 +2580,7 @@ class SpellBot(discord.Client):
         )
         if len(note) >= 255:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "watched_user_note_too_long",
                     reply=message.author.mention,
@@ -2667,7 +2659,7 @@ class SpellBot(discord.Client):
         """
         if not params:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_missing_subcommand",
                     reply=message.author.mention,
@@ -2733,7 +2725,7 @@ class SpellBot(discord.Client):
                 await self.spellbot_verify_message(session, server, params[1:], message)
             else:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "spellbot_unknown_subcommand",
                         reply=message.author.mention,
@@ -2751,7 +2743,7 @@ class SpellBot(discord.Client):
     ) -> None:
         if not params:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_channels_none",
                     reply=message.author.mention,
@@ -2774,7 +2766,7 @@ class SpellBot(discord.Client):
             m = re.match("<#([0-9]+)>", param)
             if not m:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "spellbot_channels_warn",
                         reply=message.author.mention,
@@ -2786,7 +2778,7 @@ class SpellBot(discord.Client):
             discord_channel = await safe_fetch_channel(self, int(m[1]), server.guild_xid)
             if not discord_channel:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "spellbot_channels_warn",
                         reply=message.author.mention,
@@ -2804,7 +2796,7 @@ class SpellBot(discord.Client):
             server.channels = []  # type: ignore
             session.commit()
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_channels",
                     reply=message.author.mention,
@@ -2816,7 +2808,7 @@ class SpellBot(discord.Client):
             session.commit()
             channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_channels",
                     reply=message.author.mention,
@@ -2834,7 +2826,7 @@ class SpellBot(discord.Client):
     ) -> None:
         if not params:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_prefix_none",
                     reply=message.author.mention,
@@ -2847,7 +2839,7 @@ class SpellBot(discord.Client):
         server.prefix = prefix_str  # type: ignore
         session.commit()
         await safe_send_channel(
-            message.channel,
+            message,
             s(
                 "spellbot_prefix",
                 reply=message.author.mention,
@@ -2865,7 +2857,7 @@ class SpellBot(discord.Client):
     ) -> None:
         if not params:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_links_none",
                     reply=message.author.mention,
@@ -2877,7 +2869,7 @@ class SpellBot(discord.Client):
         links_str = params[0].lower()
         if links_str not in ["private", "public"]:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_links_bad",
                     reply=message.author.mention,
@@ -2890,7 +2882,7 @@ class SpellBot(discord.Client):
         server.links = links_str  # type: ignore
         session.commit()
         await safe_send_channel(
-            message.channel,
+            message,
             s(
                 "spellbot_links",
                 reply=message.author.mention,
@@ -2908,7 +2900,7 @@ class SpellBot(discord.Client):
     ) -> None:
         if not params or params[0].lower() not in ["on", "off"]:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_spectate_bad",
                     reply=message.author.mention,
@@ -2921,7 +2913,7 @@ class SpellBot(discord.Client):
         server.show_spectate_link = setting == "on"  # type: ignore
         session.commit()
         await safe_send_channel(
-            message.channel,
+            message,
             s(
                 "spellbot_spectate",
                 reply=message.author.mention,
@@ -2939,7 +2931,7 @@ class SpellBot(discord.Client):
     ) -> None:
         if not params:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_expire_none",
                     reply=message.author.mention,
@@ -2951,7 +2943,7 @@ class SpellBot(discord.Client):
         expire = to_int(params[0])
         if not expire or not (0 < expire <= 60):
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_expire_bad",
                     reply=message.author.mention,
@@ -2963,7 +2955,7 @@ class SpellBot(discord.Client):
         server.expire = expire  # type: ignore
         session.commit()
         await safe_send_channel(
-            message.channel,
+            message,
             s(
                 "spellbot_expire",
                 reply=message.author.mention,
@@ -2981,7 +2973,7 @@ class SpellBot(discord.Client):
     ) -> None:
         if not params:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_teams_none",
                     reply=message.author.mention,
@@ -2994,7 +2986,7 @@ class SpellBot(discord.Client):
 
         if len(params) < 2 and not erase_all_teams:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_teams_too_few",
                     reply=message.author.mention,
@@ -3024,7 +3016,7 @@ class SpellBot(discord.Client):
     ) -> None:
         if not params or params[0].lower() not in ["on", "off"]:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_power_bad",
                     reply=message.author.mention,
@@ -3037,7 +3029,7 @@ class SpellBot(discord.Client):
         server.power_enabled = setting == "on"  # type: ignore
         session.commit()
         await safe_send_channel(
-            message.channel,
+            message,
             s(
                 "spellbot_power",
                 reply=message.author.mention,
@@ -3055,7 +3047,7 @@ class SpellBot(discord.Client):
     ) -> None:
         if not params or params[0].lower() not in ["on", "off"]:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_voice_bad",
                     reply=message.author.mention,
@@ -3068,7 +3060,7 @@ class SpellBot(discord.Client):
         server.create_voice = setting == "on"  # type: ignore
         session.commit()
         await safe_send_channel(
-            message.channel,
+            message,
             s(
                 "spellbot_voice",
                 reply=message.author.mention,
@@ -3096,7 +3088,7 @@ class SpellBot(discord.Client):
                 )
                 channel_settings.tags_enabled = tags_enabled  # type: ignore
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_tags_channels",
                     reply=message.author.mention,
@@ -3107,7 +3099,7 @@ class SpellBot(discord.Client):
         else:
             server.tags_enabled = tags_enabled  # type: ignore
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_tags_server",
                     reply=message.author.mention,
@@ -3137,7 +3129,7 @@ class SpellBot(discord.Client):
                 )
                 channel_settings.queue_time_enabled = queue_time_enabled  # type: ignore
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_queue_time_channels",
                     reply=message.author.mention,
@@ -3148,7 +3140,7 @@ class SpellBot(discord.Client):
         else:
             server.queue_time_enabled = queue_time_enabled  # type: ignore
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_queue_time_server",
                     reply=message.author.mention,
@@ -3169,16 +3161,12 @@ class SpellBot(discord.Client):
         motd = " ".join(params)
         reply = message.author.mention
         if len(motd) >= 255:
-            await safe_send_channel(
-                message.channel, s("spellbot_smotd_too_long", reply=reply)
-            )
+            await safe_send_channel(message, s("spellbot_smotd_too_long", reply=reply))
             await safe_react_error(message)
             return
         server.smotd = motd  # type: ignore
         session.commit()
-        await safe_send_channel(
-            message.channel, s("spellbot_smotd", reply=reply, motd=motd)
-        )
+        await safe_send_channel(message, s("spellbot_smotd", reply=reply, motd=motd))
         await safe_react_ok(message)
 
     async def spellbot_voice_category(
@@ -3192,7 +3180,7 @@ class SpellBot(discord.Client):
         reply = message.author.mention
         if len(category_prefix) >= 40:
             await safe_send_channel(
-                message.channel, s("spellbot_voice_category_too_long", reply=reply)
+                message, s("spellbot_voice_category_too_long", reply=reply)
             )
             await safe_react_error(message)
             return
@@ -3201,7 +3189,7 @@ class SpellBot(discord.Client):
         server.voice_category_prefix = category_prefix  # type: ignore
         session.commit()
         await safe_send_channel(
-            message.channel,
+            message,
             s("spellbot_voice_category", reply=reply, category=category_prefix),
         )
         await safe_react_ok(message)
@@ -3216,9 +3204,7 @@ class SpellBot(discord.Client):
         motd = " ".join(params)
         reply = message.author.mention
         if len(motd) >= 255:
-            await safe_send_channel(
-                message.channel, s("spellbot_cmotd_too_long", reply=reply)
-            )
+            await safe_send_channel(message, s("spellbot_cmotd_too_long", reply=reply))
             await safe_react_error(message)
             return
 
@@ -3227,9 +3213,7 @@ class SpellBot(discord.Client):
         )
         channel_settings.cmotd = motd  # type: ignore
         session.commit()
-        await safe_send_channel(
-            message.channel, s("spellbot_cmotd", reply=reply, motd=motd)
-        )
+        await safe_send_channel(message, s("spellbot_cmotd", reply=reply, motd=motd))
         await safe_react_ok(message)
 
     async def spellbot_motd(
@@ -3241,7 +3225,7 @@ class SpellBot(discord.Client):
     ) -> None:
         if not params:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_motd_none",
                     reply=message.author.mention,
@@ -3253,7 +3237,7 @@ class SpellBot(discord.Client):
         motd_str = params[0].lower()
         if motd_str not in ["private", "public", "both"]:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_motd_bad",
                     reply=message.author.mention,
@@ -3266,7 +3250,7 @@ class SpellBot(discord.Client):
         server.motd = motd_str  # type: ignore
         session.commit()
         await safe_send_channel(
-            message.channel,
+            message,
             s(
                 "spellbot_motd",
                 reply=message.author.mention,
@@ -3284,7 +3268,7 @@ class SpellBot(discord.Client):
     ) -> None:
         if not params:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_size_none",
                     reply=message.author.mention,
@@ -3296,7 +3280,7 @@ class SpellBot(discord.Client):
         default_size = to_int(params[0])
         if not default_size or not (1 < default_size <= 4):
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_size_bad",
                     reply=message.author.mention,
@@ -3311,7 +3295,7 @@ class SpellBot(discord.Client):
         channel_settings.default_size = default_size  # type: ignore
         session.commit()
         await safe_send_channel(
-            message.channel,
+            message,
             s(
                 "spellbot_size",
                 reply=message.author.mention,
@@ -3334,7 +3318,7 @@ class SpellBot(discord.Client):
         channel_settings.require_verification = new_setting  # type: ignore
         session.commit()
         await safe_send_channel(
-            message.channel,
+            message,
             s(
                 "spellbot_toggle_verify",
                 reply=message.author.mention,
@@ -3352,7 +3336,7 @@ class SpellBot(discord.Client):
     ) -> None:
         if not params:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_auto_verify_none",
                     reply=message.author.mention,
@@ -3374,7 +3358,7 @@ class SpellBot(discord.Client):
             m = re.match("<#([0-9]+)>", param)
             if not m:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "spellbot_auto_verify_warn",
                         reply=message.author.mention,
@@ -3386,7 +3370,7 @@ class SpellBot(discord.Client):
             discord_channel = await safe_fetch_channel(self, int(m[1]), server.guild_xid)
             if not discord_channel:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "spellbot_auto_verify_warn",
                         reply=message.author.mention,
@@ -3406,7 +3390,7 @@ class SpellBot(discord.Client):
             server.auto_verify_channels = []  # type: ignore
             session.commit()
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_auto_verify",
                     reply=message.author.mention,
@@ -3418,7 +3402,7 @@ class SpellBot(discord.Client):
             session.commit()
             channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_auto_verify",
                     reply=message.author.mention,
@@ -3444,7 +3428,7 @@ class SpellBot(discord.Client):
             m = re.match("<#([0-9]+)>", param)
             if not m:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "spellbot_unverified_only_warn",
                         reply=message.author.mention,
@@ -3456,7 +3440,7 @@ class SpellBot(discord.Client):
             discord_channel = await safe_fetch_channel(self, int(m[1]), server.guild_xid)
             if not discord_channel:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s(
                         "spellbot_unverified_only_warn",
                         reply=message.author.mention,
@@ -3476,7 +3460,7 @@ class SpellBot(discord.Client):
         session.commit()
         channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])
         await safe_send_channel(
-            message.channel,
+            message,
             s(
                 "spellbot_unverified_only",
                 reply=message.author.mention,
@@ -3496,7 +3480,7 @@ class SpellBot(discord.Client):
         reply = message.author.mention
         if len(msg) >= 255:
             await safe_send_channel(
-                message.channel, s("spellbot_verify_message_too_long", reply=reply)
+                message, s("spellbot_verify_message_too_long", reply=reply)
             )
             await safe_react_error(message)
             return
@@ -3507,7 +3491,7 @@ class SpellBot(discord.Client):
         channel_settings.verify_message = msg  # type: ignore
         session.commit()
         await safe_send_channel(
-            message.channel, s("spellbot_verify_message", reply=reply, msg=msg)
+            message, s("spellbot_verify_message", reply=reply, msg=msg)
         )
         await safe_react_ok(message)
 
@@ -3521,7 +3505,7 @@ class SpellBot(discord.Client):
         reply = message.author.mention
         if not message.attachments:
             await safe_send_channel(
-                message.channel,
+                message,
                 s("spellbot_awards_no_data", reply=message.author.mention),
             )
             await safe_react_error(message)
@@ -3532,7 +3516,7 @@ class SpellBot(discord.Client):
             sdata = self.decode_data(bdata)
         except UnicodeDecodeError:
             await safe_send_channel(
-                message.channel,
+                message,
                 s(
                     "spellbot_awards_not_utf",
                     reply=message.author.mention,
@@ -3546,7 +3530,7 @@ class SpellBot(discord.Client):
         for i, row in enumerate(reader):
             if len(row) != 3:
                 await safe_send_channel(
-                    message.channel, s("spellbot_awards_bad_row", i=i + 1, reply=reply)
+                    message, s("spellbot_awards_bad_row", i=i + 1, reply=reply)
                 )
                 await safe_react_error(message)
                 return
@@ -3559,20 +3543,20 @@ class SpellBot(discord.Client):
             count: int = int(count_str)
             if count <= 0 or math.isinf(count) or math.isnan(count):
                 await safe_send_channel(
-                    message.channel, s("spellbot_awards_bad_count", i=i + 1, reply=reply)
+                    message, s("spellbot_awards_bad_count", i=i + 1, reply=reply)
                 )
                 await safe_react_error(message)
                 return
             if len(msg) < 5 or len(msg) >= 255:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s("spellbot_awards_message_bad_size", i=i + 1, reply=reply),
                 )
                 await safe_react_error(message)
                 return
             if len(role) < 1 or len(role) >= 60:
                 await safe_send_channel(
-                    message.channel,
+                    message,
                     s("spellbot_awards_role_too_long", i=i + 1, reply=reply),
                 )
                 await safe_react_error(message)
@@ -3614,7 +3598,7 @@ class SpellBot(discord.Client):
                 for channel, row in groupby(day_rows, itemgetter(1)):
                     count = [*row][0][2]
                     print(f"{day},<#{channel}>,{count}")  # noqa: T001
-        await safe_send_channel(message.channel, "", file=discord.File(export_file))
+        await safe_send_channel(message, "", file=discord.File(export_file))
         await safe_react_ok(message)
 
     async def spellbot_config(
@@ -3677,7 +3661,7 @@ class SpellBot(discord.Client):
         )
         embed.color = discord.Color(0x5A3EFD)
         embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
-        await safe_send_channel(message.channel, embed=embed)
+        await safe_send_channel(message, embed=embed)
         await safe_react_ok(message)
 
         async def warn_about_permissions(channel: discord.TextChannel, options=None):
@@ -3694,7 +3678,7 @@ class SpellBot(discord.Client):
             for perm in options:
                 if not getattr(perms, perm):
                     await safe_send_channel(
-                        message.channel,
+                        message,
                         s(
                             f"warning_permissions_no_{perm}",
                             channel=f"<#{channel.id}>",
