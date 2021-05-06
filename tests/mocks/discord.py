@@ -139,6 +139,7 @@ class MockMember:
                 self.read_messages = True
                 self.add_reactions = True
                 self.manage_messages = True
+                self.read_message_history = True
 
         return MockPermissions(self.admin)
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Even more stringent permissions checking to make emoji reaciton code more robust.
+
 ## [v5.28.8](https://github.com/lexicalunit/spellbot/releases/tag/v5.28.8) - 2021-05-05
 
 ### Changed
