@@ -822,6 +822,51 @@ class SpellBot(discord.Client):
     # Discord Client Behavior
     ##############################
 
+    async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel) -> None:
+        """Delete any games associated with the deleted channel."""
+        if not hasattr(channel, "id"):
+            return
+
+        channel_xid: int = getattr(channel, "id")
+        async with self.session() as session:
+            games = session.query(Game).filter(Game.channel_xid == channel_xid).all()
+            found_at_least_one = False
+
+            for game in games:
+                found_at_least_one = True
+                for user in game.users:
+                    # Make sure the user is still waiting and still in the
+                    # game that's being deleted, they could be in a new
+                    # game now due to how async processing works.
+                    if user.waiting and user.game_id == game.id:
+                        user.game_id = None
+
+                # cascade delete tag associations
+                game.tags = []  # type: ignore
+                session.delete(game)
+
+            if found_at_least_one:
+                session.commit()
+
+    async def on_message_delete(self, msg: discord.Message) -> None:
+        """Delete any game associated with the deleted message."""
+        async with self.session() as session:
+            game = session.query(Game).filter(Game.message_xid == msg.id).one_or_none()
+            if not game:
+                return
+
+            for user in game.users:
+                # Make sure the user is still waiting and still in the
+                # game that's being deleted, they could be in a new
+                # game now due to how async processing works.
+                if user.waiting and user.game_id == game.id:
+                    user.game_id = None
+
+            # cascade delete tag associations
+            game.tags = []  # type: ignore
+            session.delete(game)
+            session.commit()
+
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         """Behavior when the client gets a new reaction on a Discord message."""
         emoji = str(payload.emoji)
