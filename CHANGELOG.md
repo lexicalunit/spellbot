@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes the !plays command so that it can work when you have plays in multiple servers.
+
 ## [v5.31.0](https://github.com/lexicalunit/spellbot/releases/tag/v5.31.0) - 2021-05-08
 
 ### Added
