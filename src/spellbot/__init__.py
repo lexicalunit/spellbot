@@ -1593,6 +1593,30 @@ class SpellBot(discord.Client):
             async with self.session() as session:
                 await self._play_helper(session, prefix, params, message)
 
+    @command(allow_dm=False, help_group="Commands for Players")
+    async def plays(
+        self, prefix: str, params: List[str], message: discord.Message
+    ) -> None:
+        """
+        Show how many games you've played on this server.
+        """
+        async with self.session() as session:
+            user = self.ensure_user_exists(session, message.author)
+            award = (
+                session.query(UserAward)
+                .filter(UserAward.user_xid == user.xid)
+                .one_or_none()
+            )
+            count = award.plays if award else 0
+            await safe_send_channel(
+                message,
+                s(
+                    "plays",
+                    reply=message.author.mention,
+                    count=count,
+                ),
+            )
+
     def _upsert_user_block(self, session: Session, user: User, blocked: User) -> None:
         data = {"user_xid": user.xid, "blocked_user_xid": blocked.xid}
         if "postgres" in session.bind.dialect.name:
