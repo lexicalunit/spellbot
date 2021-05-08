@@ -1,4 +1,5 @@
-> > * The user who issues this command is **NOT** added to the game themselves.
+> > Allows event runners to spin up an ad-hoc game directly between mentioned players.
+> * The user who issues this command is **NOT** added to the game themselves.
 > * You must mention all of the players to be seated in the game.
 > * Optional: Add a message by using `msg:` followed by the message content.
 > * Optional: Add tags by using `~tag-name` for the tags you want.
