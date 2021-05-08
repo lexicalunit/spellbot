@@ -1397,7 +1397,9 @@ class SpellBot(discord.Client):
                 (user_award.current_award_id != next_award.id)
                 or (user_award.current_award_id == next_award.id and next_award.repeating)
             ):
+                user_award.current_award_id = next_award.id  # type: ignore
                 await safe_add_role(user, guild, next_award.role)
+                await safe_send_user(user, next_award.message)
 
     async def _update_or_start_game(
         self, session: Session, game: Game, post: discord.Message, guild: discord.Guild
