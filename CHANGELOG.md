@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes a bug where awards were not being given properly for games played.
+
 ## [v5.31.1](https://github.com/lexicalunit/spellbot/releases/tag/v5.31.1) - 2021-05-08
 
 ### Fixed
