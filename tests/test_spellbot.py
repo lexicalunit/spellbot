@@ -4537,3 +4537,43 @@ class TestSpellBot:
         assert game_embed_for(client, AMY, False) == game_embed_for(client, ADAM, False)
         assert game_embed_for(client, AMY, False) == game_embed_for(client, JR, False)
         assert not game_embed_for(client, JACOB, False)
+
+    async def test_on_message_plays(self, client, channel_maker):
+        channel = channel_maker.text()
+
+        await client.on_message(MockMessage(AMY, channel, "!plays"))
+        assert channel.last_sent_response == (
+            f"You've played 0 games on this server, {AMY.mention}."
+        )
+        await client.on_message(MockMessage(JR, channel, "!plays"))
+        assert channel.last_sent_response == (
+            f"You've played 0 games on this server, {JR.mention}."
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~modern"))
+        await client.on_message(MockMessage(JR, channel, "!lfg ~modern"))
+
+        await client.on_message(MockMessage(AMY, channel, "!plays"))
+        assert channel.last_sent_response == (
+            f"You've played 1 games on this server, {AMY.mention}."
+        )
+        await client.on_message(MockMessage(JR, channel, "!plays"))
+        assert channel.last_sent_response == (
+            f"You've played 1 games on this server, {JR.mention}."
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~modern"))
+        await client.on_message(MockMessage(ADAM, channel, "!lfg ~modern"))
+
+        await client.on_message(MockMessage(AMY, channel, "!plays"))
+        assert channel.last_sent_response == (
+            f"You've played 2 games on this server, {AMY.mention}."
+        )
+        await client.on_message(MockMessage(JR, channel, "!plays"))
+        assert channel.last_sent_response == (
+            f"You've played 1 games on this server, {JR.mention}."
+        )
+        await client.on_message(MockMessage(ADAM, channel, "!plays"))
+        assert channel.last_sent_response == (
+            f"You've played 1 games on this server, {ADAM.mention}."
+        )

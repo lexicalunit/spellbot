@@ -47,6 +47,7 @@ Just looking to play some games of Magic? These commands are for you!
 - `!report`: Report the results of the game you just played.
 - `!team`: Join one of the teams available on your server.
 - `!points`: Find out how many points you currently have.
+- `!plays`: Find out how many games you've played.
 - `!block`: Block other users from joining your games.
 - `!unblock`: Unblock previously blocked users.
 

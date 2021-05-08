@@ -19,6 +19,9 @@
 `!points`
 >  Get your total points on this server.
 
+`!plays`
+>  Show how many games you've played on this server.
+
 `!lfg [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
 >  Find or create a pending game for players to join.
 > 
@@ -54,6 +57,3 @@
 >  Unverify a user on your server.
 
 `!spellbot <subcommand> [subcommand parameters]`
->  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
-> 
-> The following subcommands are supported:

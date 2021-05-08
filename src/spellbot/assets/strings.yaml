@@ -68,6 +68,7 @@ not_verified: Hello $reply. You are not verified to use SpellBot in $channel. Pl
   speak to a server moderator or administrator to get verified.
 play_found_desc: You can [jump to the game post]($link) to see it, $reply!
 play_found_title: I found a game for you!
+plays: You've played $count games on this server, $reply.
 points: You've got $points points, $reply.
 points_team: Team **${team}** has $points points!
 power_invalid: ${prepend}Sorry $reply, please provide a number between 1 to 10 or
