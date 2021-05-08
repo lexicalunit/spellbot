@@ -1601,10 +1601,16 @@ class SpellBot(discord.Client):
         Show how many games you've played on this server.
         """
         async with self.session() as session:
+            guild_xid = message.channel.guild.id
             user = self.ensure_user_exists(session, message.author)
             award = (
                 session.query(UserAward)
-                .filter(UserAward.user_xid == user.xid)
+                .filter(
+                    and_(
+                        UserAward.user_xid == user.xid,
+                        UserAward.guild_xid == guild_xid,
+                    )
+                )
                 .one_or_none()
             )
             count = award.plays if award else 0
