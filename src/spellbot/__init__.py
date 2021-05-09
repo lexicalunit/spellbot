@@ -807,7 +807,7 @@ class SpellBot(discord.Client):
 
         command = request if request in matching else matching[0]
         method = getattr(self, command)
-        if not method.allow_dm and str(message.channel.type) == "private":
+        if not method.allow_dm and message.channel.type == discord.ChannelType.private:
             author_user = cast(discord.User, message.author)
             await safe_send_user(author_user, s("no_dm", reply=message.author.mention))
             return
@@ -878,7 +878,7 @@ class SpellBot(discord.Client):
         channel = await safe_fetch_channel(
             self, payload.channel_id, payload.guild_id or 0
         )
-        if not channel or str(channel.type) != "text":
+        if not channel or channel.type != discord.ChannelType.text:
             return
 
         # From the docs: payload.member is available if `event_type` is `REACTION_ADD`.
@@ -1013,10 +1013,10 @@ class SpellBot(discord.Client):
     async def on_message(self, message: discord.Message) -> None:
         """Behavior when the client gets a message from Discord."""
         try:
-            private = str(message.channel.type) == "private"
+            private = message.channel.type == discord.ChannelType.private
 
             # only respond in text channels and to direct messages
-            if not private and str(message.channel.type) != "text":
+            if not private and message.channel.type != discord.ChannelType.text:
                 return
 
             if not private:
@@ -1270,7 +1270,7 @@ class SpellBot(discord.Client):
             "💜 You can help keep SpellBot running by becoming a patron! "
             "<https://www.patreon.com/lexicalunit>"
         )
-        if str(message.channel.type) != "private":
+        if message.channel.type != discord.ChannelType.private:
             await safe_react_ok(message)
         for page in paginate(usage):
             await safe_send_user(cast(discord.User, message.author), page)
@@ -1468,7 +1468,9 @@ class SpellBot(discord.Client):
         )
         user = self.ensure_user_exists(session, message.author)
         mentions: List[discord.Member] = (
-            message.mentions if message.channel.type != "private" else []
+            message.mentions
+            if message.channel.type != discord.ChannelType.private
+            else []
         )
         mentions = [
             mention
@@ -2303,7 +2305,11 @@ class SpellBot(discord.Client):
                 opts["message"],
                 opts["system"],
             )
-            mentions = message.mentions if message.channel.type != "private" else []
+            mentions = (
+                message.mentions
+                if message.channel.type != discord.ChannelType.private
+                else []
+            )
 
             if opt_msg and len(opt_msg) >= 255:
                 await safe_send_channel(
@@ -2494,7 +2500,7 @@ class SpellBot(discord.Client):
         & <none | 1..10>
         """
         async with self.session() as session:
-            if str(message.channel.type) != "private":
+            if message.channel.type != discord.ChannelType.private:
                 server = self.ensure_server_exists(session, message.channel.guild.id)
                 if not server.power_enabled:
                     return

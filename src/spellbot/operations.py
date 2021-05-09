@@ -36,6 +36,8 @@ def _user_or_guild_log_part(message: discord.Message) -> str:  # pragma: no cove
 
 
 def bot_can_react(message: discord.Message) -> bool:
+    if message.channel.type == discord.ChannelType.private:
+        return True
     requirements = {
         "read_messages",
         "read_message_history",
@@ -50,7 +52,7 @@ def bot_can_react(message: discord.Message) -> bool:
 
 
 def bot_can_send(message: discord.Message) -> bool:
-    if message.channel.type == "private":
+    if message.channel.type == discord.ChannelType.private:
         return True
     requirements = {"send_messages"}
     perms = message.channel.guild.me.permissions_in(message.channel)
@@ -61,6 +63,8 @@ def bot_can_send(message: discord.Message) -> bool:
 
 
 def bot_can_read(channel: discord.TextChannel) -> bool:
+    if channel.type == discord.ChannelType.private:
+        return True
     requirements = {
         "read_messages",
         "read_message_history",
