@@ -50,9 +50,9 @@ def bot_can_react(message: discord.Message) -> bool:
 
 
 def bot_can_send(message: discord.Message) -> bool:
-    requirements = {
-        "send_messages",
-    }
+    if message.channel.type == "private":
+        return True
+    requirements = {"send_messages"}
     perms = message.channel.guild.me.permissions_in(message.channel)
     for req in requirements:
         if not hasattr(perms, req) or not getattr(perms, req):
