@@ -3,8 +3,8 @@
 set -eu
 
 usage() {
-    echo "usage: ${0##*/} <stage|prod> <api|bot|dash> [-h|--help]" 1>&2
-    echo "Deploys to heroku." 1>&2
+    echo "usage: ${0##*/} [-h|--help] [-n] <stage|prod> <api|bot|dash>" 1>&2
+    echo "Deploys to heroku. Use -n to build only, no deploy." 1>&2
     exit 1
 }
 
@@ -16,13 +16,21 @@ run() {
     return $?
 }
 
-
 if echo "$*" | grep -Eq -- '--help\b|-h\b' || [[ -z $1 ]]; then
     usage
 fi
 
+DEPLOY="yes"
+while getopts "n" opt; do
+    case "$opt" in
+    n) DEPLOY="no" ;;
+    *) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+
 ENV="$1"
-if [[ "$ENV" != "stage" && "$ENV" != "prod" ]]; then
+if [[ $ENV != "stage" && $ENV != "prod" ]]; then
     usage
 fi
 
@@ -33,32 +41,27 @@ DOCKERFILE="Dockerfile"
 
 PART="$2"
 case $PART in
-    api)
-        APP="$APP-spellapi"
-        DOCKERFILE="$DOCKERFILE.api"
-        ;;
+bot)
+    APP="$APP-spellbot"
+    DOCKERFILE="$DOCKERFILE.bot"
+    ;;
 
-    bot)
-        APP="$APP-spellbot"
-        DOCKERFILE="$DOCKERFILE.bot"
-        ;;
+dash)
+    APP="$APP-spelldash"
+    DOCKERFILE="$DOCKERFILE.dash"
+    ;;
 
-    dash)
-        APP="$APP-spelldash"
-        DOCKERFILE="$DOCKERFILE.dash"
-        ;;
-
-    *)
-        usage
-        ;;
+*)
+    usage
+    ;;
 esac
 
-if [[ "$ENV" == "stage" ]]; then
+if [[ $ENV == "stage" ]]; then
     APP="$APP-staging"
     REDIRECT_URI="${REDIRECT_URI}-staging"
     SPELLAPI_BASE_URI="${SPELLAPI_BASE_URI}-staging"
     CLIENT_ID="769702807166386208"
-elif [[ "$ENV" == "prod" ]]; then
+elif [[ $ENV == "prod" ]]; then
     CLIENT_ID="725510263251402832"
 fi
 
@@ -75,5 +78,8 @@ run $'docker build \
     --build-arg REACT_APP_SPELLAPI_BASE_URI="'$SPELLAPI_BASE_URI'" \
     --build-arg NODE_ENV="'$NODE_ENV'" \
     .'
-run "docker push $TAG"
-run "heroku container:release web --app $APP"
+
+if [[ $DEPLOY == "yes" ]]; then
+    run "docker push $TAG"
+    run "heroku container:release web --app $APP"
+fi

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Cleaning up the deploy.sh script a bit.
+
 ### Added
 
 - Adds a couple more indexes on the games table to speed up some slow queries.
