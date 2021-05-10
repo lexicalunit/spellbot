@@ -3,7 +3,7 @@ FROM python:3.9 as builder
 COPY src /spellbot/src
 COPY LICENSE.md README.md pyproject.toml poetry.lock /spellbot/
 
-RUN pip wheel --wheel-dir python-wheels /spellbot
+RUN pip wheel --use-feature=in-tree-build --wheel-dir python-wheels /spellbot
 
 FROM python:3.9-slim
 

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adding a separate build script to avoid accidental deploys.
+- Adds `--use-feature=in-tree-build` to python builds to avoid deprecation warning.
+
 ## [v5.31.6](https://github.com/lexicalunit/spellbot/releases/tag/v5.31.6) - 2021-05-10
 
 ### Changed

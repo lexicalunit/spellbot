@@ -4,7 +4,7 @@ set -eu
 
 usage() {
     echo "usage: ${0##*/} [-h|--help] <stage|prod> <api|bot|dash>" 1>&2
-    echo "Deploys to heroku." 1>&2
+    echo "Builds container images." 1>&2
     exit 1
 }
 
@@ -69,5 +69,3 @@ run $'docker build \
     --build-arg REACT_APP_SPELLAPI_BASE_URI="'$SPELLAPI_BASE_URI'" \
     --build-arg NODE_ENV="'$NODE_ENV'" \
     .'
-run "docker push $TAG"
-run "heroku container:release web --app $APP"
