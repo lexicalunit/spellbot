@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a couple more indexes on the games table to speed up some slow queries.
+
 ## [v5.31.5](https://github.com/lexicalunit/spellbot/releases/tag/v5.31.5) - 2021-05-09
 
 ### Changed
