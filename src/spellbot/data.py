@@ -500,7 +500,7 @@ class UserAward(Base):
 class Game(Base):
     __tablename__ = "games"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, index=True)
     expires_at = Column(DateTime)
     size = Column(Integer, nullable=False, index=True)
@@ -520,7 +520,7 @@ class Game(Base):
     event_id = Column(
         Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    message_xid = Column(BigInteger)
+    message_xid = Column(BigInteger, index=True)
     system = Column(
         String(30), nullable=False, server_default=text("'spelltable'"), index=True
     )
