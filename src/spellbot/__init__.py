@@ -814,11 +814,12 @@ class SpellBot(discord.Client):
         if method.admin_only and not await check_is_admin(message):
             return
         logger.debug("%s%s (params=%s, message=%s)", prefix, command, params, message)
+
+        # these commands need to take one big parameter, including all spaces
         if command in ["block", "unblock"]:
-            # take one big parameter, including all spaces
-            await method(prefix, [" ".join(tokens[1:])], message)
-        else:
-            await method(prefix, params, message)
+            params = [" ".join(tokens[1:])]
+
+        await method(prefix, params, message)
 
     ##############################
     # Discord Client Behavior
@@ -1354,13 +1355,12 @@ class SpellBot(discord.Client):
         await safe_send_channel(msg, embed=embed)
         return post
 
-    async def _add_user_to_game(self, session: Session, user: User, game: Game) -> None:
+    def _add_user_to_game(self, user: User, game: Game) -> None:
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=game.server.expire)
         user.game = game
         user.game.expires_at = expires_at  # type: ignore
         user.game.updated_at = now  # type: ignore
-        session.commit()
 
     async def _post_new_game(
         self, session: Session, msg: discord.Message, game: Game
@@ -1500,9 +1500,11 @@ class SpellBot(discord.Client):
         if not await self._validate_size(message, size):
             await safe_react_error(message)
             return
-        assert size  # it's been validated, but pylance can't figure that out
 
-        if not await self._validate_mentions_size(message, mentions, size):
+        assert size  # it's been validated, but pylance can't figure that out
+        valid_size: int = size
+
+        if not await self._validate_mentions_size(message, mentions, valid_size):
             await safe_react_error(message)
             return
         mentioned_users: List[User] = [
@@ -1522,7 +1524,7 @@ class SpellBot(discord.Client):
             session=session,
             server=server,
             channel_xid=message.channel.id,
-            size=size,
+            size=valid_size,
             seats=1 + len(free_users),
             tags=tags,
             system=system,
@@ -1542,7 +1544,7 @@ class SpellBot(discord.Client):
                 created_at=now,
                 updated_at=now,
                 expires_at=expires_at,
-                size=size,
+                size=valid_size,
                 channel_xid=message.channel.id,
                 system=system,
                 tags=tags,
@@ -1551,9 +1553,11 @@ class SpellBot(discord.Client):
             )
 
         await self._remove_user_from_game(session, user)
-        await self._add_user_to_game(session, user, game)
+
+        self._add_user_to_game(user, game)
         for free_user in free_users:
-            await self._add_user_to_game(session, free_user, game)
+            self._add_user_to_game(free_user, game)
+        session.commit()
 
         post: Optional[discord.Message] = None
         if new_game:
