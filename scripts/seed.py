@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Connection, Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from spellbot.data import Channel, Game, Server, Tag, User, games_tags
+from spellbot.data import Game, Server, Tag, User, games_tags
 
 url: str = sys.argv[1]
 fake = Faker("en_US")
@@ -27,14 +27,6 @@ session.commit()
 n_servers = 200
 servers = [Server(guild_xid=i) for i in range(1, n_servers)]
 session.bulk_save_objects(servers)
-session.commit()
-
-n_channels = 10 * n_servers
-channels = [
-    Channel(channel_xid=i, guild_xid=fake.random_int(min=1, max=n_servers - 1))
-    for i in range(1, n_channels)
-]
-session.bulk_save_objects(channels)
 session.commit()
 
 now = datetime.utcnow()
