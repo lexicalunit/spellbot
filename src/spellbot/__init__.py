@@ -6,6 +6,7 @@ import math
 import re
 import sys
 from asyncio.events import AbstractEventLoop
+from collections import defaultdict
 from contextlib import asynccontextmanager, redirect_stdout
 from datetime import datetime, timedelta
 from functools import wraps
@@ -16,6 +17,7 @@ from typing import (
     Any,
     AsyncGenerator,
     Callable,
+    DefaultDict,
     Dict,
     Iterator,
     List,
@@ -37,12 +39,13 @@ import requests
 from aiohttp import web
 from aiohttp.web_response import Response
 from dotenv import load_dotenv
+from easy_profile import SessionProfiler  # type: ignore
+from easy_profile.reporters import StreamReporter  # type: ignore
 from expiringdict import ExpiringDict  # type: ignore
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry  # type: ignore
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
-from sqlalchemy.sql import text
 from sqlalchemy.sql.expression import and_, or_
 
 from spellbot._version import __version__
@@ -52,6 +55,7 @@ from spellbot.constants import (
     CLEAN_S,
     CREATE_ENDPOINT,
     DEFAULT_GAME_SIZE,
+    DEFAULT_PREFIX,
     EMOJI_DROP_GAME,
     EMOJI_JOIN_GAME,
     ICO_URL,
@@ -64,7 +68,6 @@ from spellbot.constants import (
 from spellbot.data import (
     AutoVerifyChannel,
     Award,
-    Channel,
     ChannelSettings,
     Data,
     Event,
@@ -108,6 +111,8 @@ from spellbot.tasks import begin_background_tasks
 if not getenv("PYTEST_CURRENT_TEST") and "pytest" not in sys.modules:
     load_dotenv()
 
+SPELLBOT_PROFILE = getenv("SPELLBOT_PROFILE") or False
+
 # Application Paths
 RUNTIME_ROOT = Path(".")
 SCRIPTS_DIR = RUNTIME_ROOT / "scripts"
@@ -120,6 +125,7 @@ DEFAULT_PORT = 5020
 DEFAULT_HOST = "localhost"
 
 logger = logging.getLogger(__name__)
+reporter = StreamReporter()
 
 
 def to_int(s: str) -> Optional[int]:
@@ -350,6 +356,30 @@ def command(
     return command_callable
 
 
+class Context:
+    """Command Context"""
+
+    def __init__(
+        self,
+        message: discord.Message,
+        prefix: str,
+        session: Session,
+        user: User,
+        server: Optional[Server],
+        user_settings: Optional[UserServerSettings],
+        channel_settings: Optional[ChannelSettings],
+        params: Optional[List[str]] = None,
+    ):
+        self.message = message
+        self.prefix = prefix
+        self.session = session
+        self.user = user
+        self.server = server
+        self.user_settings = user_settings
+        self.channel_settings = channel_settings
+        self.params = params or []
+
+
 class SpellBot(discord.Client):
     """Discord SpellTable Bot"""
 
@@ -393,6 +423,13 @@ class SpellBot(discord.Client):
         self.mock_games = mock_games
         self.channel_lock_cache = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
         self.average_wait_times: Dict[str, float] = {}
+
+        # Caching some data so that we don't have to hit the DB on every message.
+        self.prefixes: DefaultDict[int, str] = defaultdict(lambda: DEFAULT_PREFIX)
+        self.auto_verify_channels: DefaultDict[int, Set[int]] = defaultdict(lambda: set())
+        self.unverified_only_channels: DefaultDict[int, Set[int]] = defaultdict(
+            lambda: set()
+        )
 
         # Connect to Redis Cloud if we have a URL for it.
         self.metrics_db = self._create_metrics_db(redis_url)
@@ -455,17 +492,15 @@ class SpellBot(discord.Client):
                 logger.exception("redis error: %s", e)
         return None
 
-    async def average_wait(self, session: Session, game: Game) -> Optional[float]:
-        server = self.ensure_server_exists(session, game.guild_xid)
+    async def average_wait(self, ctx: Context, game: Game) -> Optional[float]:
         if game.channel_xid is None:  # pragma: no cover
             return None
-        channel_settings = self.ensure_channel_settings_exists(
-            session, server, game.channel_xid
-        )
+        assert ctx.server
+        assert ctx.channel_settings
         queue_time_enabled = (
-            channel_settings.queue_time_enabled
-            if channel_settings.queue_time_enabled is not None
-            else server.queue_time_enabled
+            ctx.channel_settings.queue_time_enabled
+            if ctx.channel_settings.queue_time_enabled is not None
+            else ctx.server.queue_time_enabled
         )
         if not queue_time_enabled:
             return None
@@ -582,12 +617,17 @@ class SpellBot(discord.Client):
         if not db_user:
             db_user = User(xid=user_xid, game_id=None, cached_name=cast(Any, user).name)
             session.add(db_user)
+            session.commit()
         else:
             # try to keep this relatively up to date
-            db_user.name = cast(Any, user).name  # type: ignore
-            db_user.updated_at = datetime.utcnow()  # type: ignore
-        session.commit()
+            if cast(Any, user).name != db_user.cached_name:
+                db_user.name = cast(Any, user).name  # type: ignore
+                session.commit()
         return cast(User, db_user)
+
+    def track_user_activity(self, session: Session, user: User) -> None:
+        user.updated_at = datetime.utcnow()  # type: ignore
+        session.commit()
 
     def ensure_user_award_exists(
         self, session: Session, user_xid: int, guild_xid: int
@@ -725,7 +765,7 @@ class SpellBot(discord.Client):
         await safe_edit_message(post, content=s("deleted_game"), embed=None)
         await safe_clear_reactions(post)
 
-    async def try_to_update_game(self, session: Session, game: Game) -> None:
+    async def try_to_update_game(self, ctx: Context, game: Game) -> None:
         """Attempts to update the embed for a game."""
         if not game.channel_xid or not game.message_xid:
             return
@@ -738,7 +778,7 @@ class SpellBot(discord.Client):
         if not post:
             return
 
-        wait = await self.average_wait(session, game)
+        wait = await self.average_wait(ctx, game)
         await post.edit(embed=game.to_embed(wait=wait))
 
     async def safe_send_not_verified(
@@ -756,10 +796,10 @@ class SpellBot(discord.Client):
             not_verified_message = channel_settings.verify_message
         await safe_send_user(author, not_verified_message)
 
-    async def process(self, message: discord.Message, prefix: str) -> None:
+    async def process(self, ctx: Context) -> None:
         """Process a command message."""
-        tokens = message.content.split(" ")
-        request, params = tokens[0][len(prefix) :].lower(), tokens[1:]
+        tokens = ctx.message.content.split(" ")
+        request, params = tokens[0][len(ctx.prefix) :].lower(), tokens[1:]
         params = list(filter(None, params))  # ignore any empty string parameters
         if not request:
             return
@@ -776,12 +816,12 @@ class SpellBot(discord.Client):
         matching = [command for command in self.commands if command.startswith(request)]
         if not matching:
             post = await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "not_a_command",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                     request=request,
-                    prefix=prefix,
+                    prefix=ctx.prefix,
                 ),
             )
             if post:
@@ -790,12 +830,12 @@ class SpellBot(discord.Client):
                 )
             return
         if len(matching) > 1 and request not in matching:
-            possible = ", ".join(f"{prefix}{m}" for m in matching)
+            possible = ", ".join(f"{ctx.prefix}{m}" for m in matching)
             post = await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "did_you_mean",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                     possible=possible,
                 ),
             )
@@ -807,19 +847,27 @@ class SpellBot(discord.Client):
 
         command = request if request in matching else matching[0]
         method = getattr(self, command)
-        if not method.allow_dm and message.channel.type == discord.ChannelType.private:
-            author_user = cast(discord.User, message.author)
-            await safe_send_user(author_user, s("no_dm", reply=message.author.mention))
+        if (
+            not method.allow_dm
+            and ctx.message.channel.type == discord.ChannelType.private
+        ):
+            author_user = cast(discord.User, ctx.message.author)
+            await safe_send_user(
+                author_user, s("no_dm", reply=ctx.message.author.mention)
+            )
             return
-        if method.admin_only and not await check_is_admin(message):
+        if method.admin_only and not await check_is_admin(ctx.message):
             return
-        logger.debug("%s%s (params=%s, message=%s)", prefix, command, params, message)
+        logger.debug(
+            "%s%s (params=%s, message=%s)", ctx.prefix, command, params, ctx.message
+        )
 
         # these commands need to take one big parameter, including all spaces
         if command in ["block", "unblock"]:
             params = [" ".join(tokens[1:])]
 
-        await method(prefix, params, message)
+        ctx.params = params
+        await method(ctx)
 
     ##############################
     # Discord Client Behavior
@@ -905,12 +953,21 @@ class SpellBot(discord.Client):
                 await safe_remove_reaction(message, emoji, author)
                 return
 
-            if not server.bot_allowed_in(channel.id):
-                return
-
+            user_settings = self.ensure_user_settings_exists(session, user, server)
             channel_settings = self.ensure_channel_settings_exists(
                 session, server, payload.channel_id, message.channel.name
             )
+
+            ctx = Context(
+                message=message,
+                prefix="!",
+                session=session,
+                user=user,
+                server=server,
+                user_settings=user_settings,
+                channel_settings=channel_settings,
+            )
+
             if channel_settings.require_verification:
                 user_settings = self.ensure_user_settings_exists(session, user, server)
                 if not user_settings.verified:
@@ -955,7 +1012,7 @@ class SpellBot(discord.Client):
                     game_to_update = user.game
                     user.game_id = None  # type: ignore
                     session.commit()
-                    await self.try_to_update_game(session, game_to_update)
+                    await self.try_to_update_game(ctx, game_to_update)
                 user.game = game
             else:  # emoji == EMOJI_DROP_GAME:
                 if not any(user.xid == game_user.xid for game_user in game.users):
@@ -969,7 +1026,7 @@ class SpellBot(discord.Client):
                 session.commit()
 
                 # update the game message
-                wait = await self.average_wait(session, game)
+                wait = await self.average_wait(ctx, game)
                 await safe_edit_message(message, embed=game.to_embed(wait=wait))
                 return
 
@@ -983,6 +1040,7 @@ class SpellBot(discord.Client):
                     discord_user = await safe_fetch_user(self, game_user.xid)
                     if not discord_user:  # user has left the server since signing up
                         game_user.game_id = None
+                        session.commit()
                     else:
                         found_discord_users.append(discord_user)
 
@@ -1008,148 +1066,72 @@ class SpellBot(discord.Client):
                 await self.send_watch_list_notifications(session, game)
             else:
                 session.commit()
-                wait = await self.average_wait(session, game)
+                wait = await self.average_wait(ctx, game)
                 await safe_edit_message(message, embed=game.to_embed(wait=wait))
 
     async def on_message(self, message: discord.Message) -> None:
         """Behavior when the client gets a message from Discord."""
+        author_xid: int = message.author.id  # type: ignore
+
+        # ignore myself
+        if author_xid == self.user.id:
+            return
+
+        private: bool = message.channel.type == discord.ChannelType.private
+
+        # ignore everything except text channels and direct messages
+        if not private and message.channel.type != discord.ChannelType.text:
+            return
+
+        guild_xid: Optional[int] = None if private else message.channel.guild.id
+        channel_xid: Optional[int] = None if private else message.channel.id
+        prefix: str = DEFAULT_PREFIX
+        if not private:
+            assert guild_xid
+            prefix = self.prefixes[guild_xid]
+
+        # gather permissions and role information about the author
+        has_admin_perms: bool = False
+        is_owner: bool = False
+        is_mod: bool = False
+        is_mentor: bool = False
+        if not private and message.channel and message.channel.guild:
+            guild = message.channel.guild
+            if hasattr(guild, "get_member"):
+                member = guild.get_member(message.author.id)  # type: ignore
+                if member:
+                    is_owner = member.id == guild.owner_id
+                    if hasattr(member, "roles"):
+                        is_mod = any(r.name == "Moderators" for r in member.roles)
+                        is_mentor = any(r.name == "Mentors" for r in member.roles)
+                    if hasattr(member, "permissions_in"):
+                        perms = member.permissions_in(message.channel)
+                        if perms:
+                            has_admin_perms = perms.administrator
+
+        profiler: Optional[SessionProfiler] = None
+        if SPELLBOT_PROFILE:
+            profiler = SessionProfiler()
+            profiler.begin()
+
         try:
-            private = message.channel.type == discord.ChannelType.private
-
-            # only respond in text channels and to direct messages
-            if not private and message.channel.type != discord.ChannelType.text:
-                return
-
-            if not private:
-                rows = self.data.conn.execute(
-                    text(
-                        """
-                        SELECT prefix
-                        FROM servers
-                        WHERE guild_xid = :g
-                    """
-                    ),
-                    g=message.channel.guild.id,
-                )
-                values = [(row.prefix,) for row in rows]
-                prefix = values[0][0] if values and values[0] else "!"
-            else:
-                prefix = "!"
-
-            # auto-verify this user if this channel does auto-verification
-            if not private:
-                rows = self.data.conn.execute(
-                    text(
-                        """
-                        SELECT
-                            CASE channel_xid
-                            WHEN :c THEN
-                                1
-                            ELSE
-                                0
-                            END
-                        FROM
-                            auto_verify_channels
-                        WHERE
-                            guild_xid = :g
-                    """
-                    ),
-                    g=message.channel.guild.id,
-                    c=message.channel.id,
-                )
-                items = [row for row in rows]
-                does_auto_verify = (len(items) == 0) or (any(item[0] for item in items))
-                if does_auto_verify:
-                    async with self.session() as session:
-                        server = self.ensure_server_exists(
-                            session, message.channel.guild.id
-                        )
-                        user = self.ensure_user_exists(session, message.author)
-                        user_settings = self.ensure_user_settings_exists(
-                            session, user, server
-                        )
-                        if not user_settings.verified:
-                            user_settings.verified = True  # type: ignore
-                            session.commit()
-
-            has_admin_perms: bool = False
-            is_owner: bool = False
-            is_mod: bool = False
-            is_mentor: bool = False
-
-            if not private and message.channel and message.channel.guild:
-                guild = message.channel.guild
-                if hasattr(guild, "get_member"):
-                    member = guild.get_member(message.author.id)  # type: ignore
-                    if member:
-                        is_owner = member.id == guild.owner_id
-                        if hasattr(member, "roles"):
-                            is_mod = any(r.name == "Moderators" for r in member.roles)
-                            is_mentor = any(r.name == "Mentors" for r in member.roles)
-                        if hasattr(member, "permissions_in"):
-                            perms = member.permissions_in(message.channel)
-                            if perms:
-                                has_admin_perms = perms.administrator
-
-            # delete message if user verified and this is an unverified only channel
-            if (
-                not private
-                # and not has_admin_perms
-                # and not is_owner
-                and not is_mod
-                and not is_mentor
-            ):
-                rows = self.data.conn.execute(
-                    text(
-                        """
-                        SELECT
-                            CASE channel_xid
-                            WHEN :c THEN
-                                1
-                            ELSE
-                                0
-                            END
-                        FROM
-                            unverified_only_channels
-                        WHERE
-                            guild_xid = :g
-                    """
-                    ),
-                    g=message.channel.guild.id,
-                    c=message.channel.id,
-                )
-                items = [row for row in rows]
-                is_unverified_only = any(item[0] for item in items)
-                if is_unverified_only:
-                    async with self.session() as session:
-                        server = self.ensure_server_exists(
-                            session, message.channel.guild.id
-                        )
-                        user = self.ensure_user_exists(session, message.author)
-                        user_settings = self.ensure_user_settings_exists(
-                            session, user, server
-                        )
-
-                        if user_settings.verified:
-                            # # Check we don't prevent Moderators and Mentors
-                            # # from being able to freely chat in this channel.
-                            # discord_user = safe_fetch_user(self, author.id)
-                            # discord_user.role
-
-                            await safe_delete_message(message)
-                            return
-
-            # only respond to command-like messages
-            if not message.content.startswith(prefix):
-                return
-
             async with self.session() as session:
-                user = self.ensure_user_exists(session, message.author)
+                # immediately create user
+                user: User = self.ensure_user_exists(session, message.author)
+
+                # ignore users that are banned from using SpellBot
                 if user.banned:
                     return
 
+                server: Optional[Server] = None
+                user_settings: Optional[UserServerSettings] = None
+                channel_settings: Optional[ChannelSettings] = None
+
                 if not private:
-                    server = self.ensure_server_exists(session, message.channel.guild.id)
+                    assert guild_xid
+                    assert channel_xid
+
+                    server = self.ensure_server_exists(session, guild_xid)
                     server_name = str(message.channel.guild)[0:50]
                     if not server.cached_name or server.cached_name != server_name:
                         server.cached_name = server_name  # type: ignore
@@ -1157,35 +1139,102 @@ class SpellBot(discord.Client):
                     user_settings = self.ensure_user_settings_exists(
                         session, user, server
                     )
+                    channel_settings = self.ensure_channel_settings_exists(
+                        session, server, channel_xid, message.channel.name
+                    )
 
+                    # auto-verify user if user unverified and this is auto-verify channel
+                    if not user_settings.verified and (
+                        not self.auto_verify_channels[guild_xid]
+                        or channel_xid in self.auto_verify_channels[guild_xid]
+                    ):
+                        user_settings.verified = True  # type: ignore
+                        session.commit()
+
+                    # delete message if user verified and this is unverified only channel
+                    if (
+                        not is_mod
+                        and not is_mentor
+                        and user_settings.verified
+                        and channel_xid in self.unverified_only_channels[guild_xid]
+                    ):
+                        await safe_delete_message(message)
+                        return
+
+                # only respond to command-like messages
+                if not message.content.startswith(prefix):
+                    return
+
+                # ignore unverified users if this is a verification required channel
+                if not private:
+                    assert channel_settings
+                    assert channel_xid
+                    assert user_settings
                     if (
                         not has_admin_perms
                         and not is_owner
                         and not is_admin(message.channel, message.author)
+                        and channel_settings.require_verification
+                        and not user_settings.verified
                     ):
-                        if not server.bot_allowed_in(message.channel.id):
-                            return
-                        channel_settings = self.ensure_channel_settings_exists(
-                            session, server, message.channel.id, message.channel.name
+                        discord_user = cast(discord.User, message.author)
+                        await self.safe_send_not_verified(
+                            discord_user, channel_settings, message.channel.name
                         )
-                        if channel_settings.require_verification:
-                            if not user_settings.verified:
-                                discord_user = cast(discord.User, message.author)
-                                await self.safe_send_not_verified(
-                                    discord_user, channel_settings, message.channel.name
-                                )
-                                await safe_react_error(message)
-                                return
+                        await safe_react_error(message)
+                        return
 
-            await self.process(message, prefix)
+                # this counts as valid user actvity
+                self.track_user_activity(session, user)
 
+                await self.process(
+                    Context(
+                        message=message,
+                        prefix=prefix,
+                        session=session,
+                        user=user,
+                        server=server,
+                        user_settings=user_settings,
+                        channel_settings=channel_settings,
+                    )
+                )
         except Exception as e:
             logging.exception("unhandled exception: %s", e)
             raise
+        finally:
+            if profiler:
+                profiler.commit()
+                reporter.report("", profiler.stats)
 
     async def on_ready(self) -> None:
         """Behavior when the client has successfully connected to Discord."""
         logger.debug("logged in as %s", self.user)
+
+        # cache some stuff so we don't have to fetch them from the db all the time
+        async with self.session() as session:
+            rows = (
+                session.query(Server).with_entities(Server.guild_xid, Server.prefix).all()
+            )
+            self.prefixes.update((row.guild_xid, row.prefix) for row in rows)
+
+            rows = (
+                session.query(AutoVerifyChannel)
+                .with_entities(AutoVerifyChannel.guild_xid, AutoVerifyChannel.channel_xid)
+                .all()
+            )
+            for row in rows:
+                self.auto_verify_channels[row.guild_xid].add(row.channel_xid)
+
+            rows = (
+                session.query(UnverifiedOnlyChannel)
+                .with_entities(
+                    UnverifiedOnlyChannel.guild_xid, UnverifiedOnlyChannel.channel_xid
+                )
+                .all()
+            )
+            for row in rows:
+                self.unverified_only_channels[row.guild_xid].add(row.channel_xid)
+
         begin_background_tasks(self)
 
     ##############################
@@ -1196,14 +1245,11 @@ class SpellBot(discord.Client):
     # bot command. These methods should have a signature like:
     #
     #     @command(allow_dm=True, admin_only=False, help_group="Hi")
-    #     def command_name(self, prefix, params, message)
+    #     def command_name(self, ctx: Context)
     #
     # - `allow_dm` indicates if the command is allowed to be used in direct messages.
     # - `admin_only` indicates if the command is available only to admins.
     # - `help_group` is the group name for this command in the usage help response.
-    # - `prefix` is the command prefix, which is "!" by default.
-    # - `params` are any space delimitered parameters also sent with the command.
-    # - `message` is the discord.py message object that triggered the command.
     #
     # The docstring used for the command method will be automatically used as the help
     # message for the command. To document commands with parameters use a & to delimit
@@ -1214,9 +1260,7 @@ class SpellBot(discord.Client):
     # Where [foo] indicates foo is optional and <bar> indicates bar is required.
 
     # @command(allow_dm=True, help_group="Commands for Players")
-    async def help(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def help(self, ctx: Context) -> None:
         """
         Sends you this help message.
         """
@@ -1251,7 +1295,7 @@ class SpellBot(discord.Client):
             use = use.replace("\n", "\n> ")
             use = re.sub(r"([^>])\s+$", r"\1", use, flags=re.M)
 
-            title = f"{prefix}{method.__name__}"
+            title = f"{ctx.prefix}{method.__name__}"
             if cmd_params_use:
                 title = f"{title} {cmd_params_use}"
             usage += f"\n`{title}`"
@@ -1271,15 +1315,13 @@ class SpellBot(discord.Client):
             "💜 You can help keep SpellBot running by becoming a patron! "
             "<https://www.patreon.com/lexicalunit>"
         )
-        if message.channel.type != discord.ChannelType.private:
-            await safe_react_ok(message)
+        if ctx.message.channel.type != discord.ChannelType.private:
+            await safe_react_ok(ctx.message)
         for page in paginate(usage):
-            await safe_send_user(cast(discord.User, message.author), page)
+            await safe_send_user(cast(discord.User, ctx.message.author), page)
 
     @command(allow_dm=True, help_group="Commands for Players")
-    async def about(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def about(self, ctx: Context) -> None:
         """
         Get information about SpellBot.
         """
@@ -1292,7 +1334,7 @@ class SpellBot(discord.Client):
         embed.description = (
             "_The Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
             "\n"
-            f"Use the command `{prefix}spellbot help` for usage details. "
+            f"Use the command `{ctx.prefix}spellbot help` for usage details. "
             "Having issues with SpellBot? "
             "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
             "\n"
@@ -1305,8 +1347,8 @@ class SpellBot(discord.Client):
         )
         embed.url = "http://spellbot.io/"
         embed.color = discord.Color(0x5A3EFD)
-        await safe_send_channel(message, embed=embed)
-        await safe_react_ok(message)
+        await safe_send_channel(ctx.message, embed=embed)
+        await safe_react_ok(ctx.message)
 
     async def _validate_size(self, msg: discord.Message, size: Optional[int]) -> bool:
         if not size or not (1 < size < 5):
@@ -1330,13 +1372,13 @@ class SpellBot(discord.Client):
             return False
         return True
 
-    async def _remove_user_from_game(self, session: Session, user: User):
+    async def _remove_user_from_game(self, ctx: Context, user: User):
         """If the user is currently in a game, take them out of it."""
         if user.waiting:
             game_to_update = user.game
             user.game_id = None  # type: ignore
-            session.commit()
-            await self.try_to_update_game(session, game_to_update)
+            ctx.session.commit()
+            await self.try_to_update_game(ctx, game_to_update)
 
     async def _respond_found_game(
         self, msg: discord.Message, user: discord.User, game: Game
@@ -1362,16 +1404,14 @@ class SpellBot(discord.Client):
         user.game.expires_at = expires_at  # type: ignore
         user.game.updated_at = now  # type: ignore
 
-    async def _post_new_game(
-        self, session: Session, msg: discord.Message, game: Game
-    ) -> Optional[discord.Message]:
-        wait = await self.average_wait(session, game)
-        post = await safe_send_channel(msg, embed=game.to_embed(wait=wait))
+    async def _post_new_game(self, ctx: Context, game: Game) -> Optional[discord.Message]:
+        wait = await self.average_wait(ctx, game)
+        post = await safe_send_channel(ctx.message, embed=game.to_embed(wait=wait))
         if not post:
             return None
 
         game.message_xid = post.id  # type: ignore
-        session.commit()
+        ctx.session.commit()
         await safe_react_emoji(post, EMOJI_JOIN_GAME)
         await safe_react_emoji(post, EMOJI_DROP_GAME)
         return post
@@ -1402,14 +1442,18 @@ class SpellBot(discord.Client):
                 await safe_send_user(user, next_award.message)
 
     async def _update_or_start_game(
-        self, session: Session, game: Game, post: discord.Message, guild: discord.Guild
+        self,
+        ctx: Context,
+        game: Game,
+        post: discord.Message,
+        guild: discord.Guild,
     ) -> None:
         if len(cast(List[User], game.users)) == game.size:  # game *might* be ready...
             found_discord_users = []
             for game_user in game.users:
                 discord_user = await safe_fetch_user(self, game_user.xid)
                 if not discord_user:  # user has left the server since signing up
-                    await self._remove_user_from_game(session, game_user)
+                    await self._remove_user_from_game(ctx, game_user)
                 else:
                     found_discord_users.append(discord_user)
             if len(found_discord_users) == game.size:  # game is *definitely* ready!
@@ -1417,23 +1461,23 @@ class SpellBot(discord.Client):
                     self.create_spelltable_url() if game.system == "spelltable" else None
                 )
                 game.url = game_url  # type: ignore
-                await self.setup_voice(session, game)
+                await self.setup_voice(ctx.session, game)
                 game.status = "started"  # type: ignore
                 game.game_power = game.power  # type: ignore
-                session.commit()
+                ctx.session.commit()
                 for game_user in game.users:
-                    session.add(Play(user_xid=game_user.xid, game_id=game.id))
-                session.commit()
+                    ctx.session.add(Play(user_xid=game_user.xid, game_id=game.id))
+                ctx.session.commit()
                 for discord_user in found_discord_users:
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))
-                    await self._handle_awards(session, guild, discord_user)
-                session.commit()
+                    await self._handle_awards(ctx.session, guild, discord_user)
+                ctx.session.commit()
                 await safe_edit_message(post, embed=game.to_embed())
                 await safe_clear_reactions(post)
-                await self.send_watch_list_notifications(session, game)
+                await self.send_watch_list_notifications(ctx.session, game)
                 return
         else:  # game *definitely* isn't ready yet
-            wait = await self.average_wait(session, game)
+            wait = await self.average_wait(ctx, game)
             await safe_edit_message(post, embed=game.to_embed(wait=wait))
 
     async def _call_attention_to_game(self, msg: discord.Message, game: Game) -> bool:
@@ -1455,127 +1499,118 @@ class SpellBot(discord.Client):
         await safe_send_channel(msg, embed=embed)
         return True
 
-    async def _play_helper(
-        self,
-        session: Session,
-        prefix: str,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        server = self.ensure_server_exists(session, message.channel.guild.id)
-        channel_settings = self.ensure_channel_settings_exists(
-            session, server, message.channel.id, message.channel.name
-        )
-        user = self.ensure_user_exists(session, message.author)
+    async def _play_helper(self, ctx: Context) -> None:
+        assert ctx.server
+        assert ctx.channel_settings
         mentions: List[discord.Member] = (
-            message.mentions
-            if message.channel.type != discord.ChannelType.private
+            ctx.message.mentions
+            if ctx.message.channel.type != discord.ChannelType.private
             else []
         )
         mentions = [
             mention
             for mention in mentions
-            if message.channel.permissions_for(mention).read_messages
+            if ctx.message.channel.permissions_for(mention).read_messages
         ]
 
-        if user.waiting and user.game.channel_xid == message.channel.id:
-            await self._call_attention_to_game(message, user.game)
-            await safe_react_ok(message)
+        if ctx.user.waiting and ctx.user.game.channel_xid == ctx.message.channel.id:
+            await self._call_attention_to_game(ctx.message, ctx.user.game)
+            await safe_react_ok(ctx.message)
             return
 
-        opts = parse_opts(params, default_size=channel_settings.default_size)
+        opts = parse_opts(ctx.params, default_size=ctx.channel_settings.default_size)
         size: Optional[int] = opts["size"]
         tag_names: List[str] = opts["tags"]
         system: str = opts["system"]
         note = " ".join(p for p in opts["params"] if not p.startswith("<@"))
 
         tags_enabled = (
-            channel_settings.tags_enabled
-            if channel_settings.tags_enabled is not None
-            else server.tags_enabled
+            ctx.channel_settings.tags_enabled
+            if ctx.channel_settings.tags_enabled is not None
+            else ctx.server.tags_enabled
         )
         if not tags_enabled:
             tag_names = []
 
-        if not await self._validate_size(message, size):
-            await safe_react_error(message)
+        if not await self._validate_size(ctx.message, size):
+            await safe_react_error(ctx.message)
             return
 
         assert size  # it's been validated, but pylance can't figure that out
         valid_size: int = size
 
-        if not await self._validate_mentions_size(message, mentions, valid_size):
-            await safe_react_error(message)
+        if not await self._validate_mentions_size(ctx.message, mentions, valid_size):
+            await safe_react_error(ctx.message)
             return
         mentioned_users: List[User] = [
-            self.ensure_user_exists(session, mentioned) for mentioned in mentions
+            self.ensure_user_exists(ctx.session, mentioned) for mentioned in mentions
         ]
 
-        if not await self._validate_tags_size(message, tag_names):
-            await safe_react_error(message)
+        if not await self._validate_tags_size(ctx.message, tag_names):
+            await safe_react_error(ctx.message)
             return
-        tags = Tag.create_many(session, tag_names)
+        tags = Tag.create_many(ctx.session, tag_names)
 
         # you can only add mentioned users to the game if they're not waiting
         free_users = [u for u in mentioned_users if not u.waiting]
 
         new_game = False
         game = Game.find_existing(
-            session=session,
-            server=server,
-            channel_xid=message.channel.id,
+            session=ctx.session,
+            server=ctx.server,
+            channel_xid=ctx.message.channel.id,
             size=valid_size,
             seats=1 + len(free_users),
             tags=tags,
             system=system,
-            power=user.power,
+            power=ctx.user.power,
         )
 
         # check if anyone in this game has the other blocked,
         # if so don't put this user into this existing game
-        if game and user.blocked(game):
+        if game and ctx.user.blocked(game):
             game = None
 
         if not game:
             now = datetime.utcnow()
-            expires_at = now + timedelta(minutes=server.expire)
+            expires_at = now + timedelta(minutes=ctx.server.expire)
             new_game = True
             game = Game(
                 created_at=now,
                 updated_at=now,
                 expires_at=expires_at,
                 size=valid_size,
-                channel_xid=message.channel.id,
+                channel_xid=ctx.message.channel.id,
                 system=system,
                 tags=tags,
-                server=server,
+                server=ctx.server,
                 note=note,
             )
 
-        await self._remove_user_from_game(session, user)
+        await self._remove_user_from_game(ctx, ctx.user)
 
-        self._add_user_to_game(user, game)
+        self._add_user_to_game(ctx.user, game)
         for free_user in free_users:
             self._add_user_to_game(free_user, game)
-        session.commit()
+        ctx.session.commit()
 
         post: Optional[discord.Message] = None
         if new_game:
-            post = await self._post_new_game(session, message, game)
+            post = await self._post_new_game(ctx, game)
         else:
-            discord_user = cast(discord.User, message.author)
-            post = await self._respond_found_game(message, discord_user, game)
+            discord_user = cast(discord.User, ctx.message.author)
+            post = await self._respond_found_game(ctx.message, discord_user, game)
             if not post:  # the post must have been deleted
-                post = await self._post_new_game(session, message, game)
+                post = await self._post_new_game(ctx, game)
 
         if post:
             await self._update_or_start_game(
-                session, game, post, cast(discord.Guild, message.guild)
+                ctx, game, post, cast(discord.Guild, ctx.message.guild)
             )
-            await safe_react_ok(message)
+            await safe_react_ok(ctx.message)
 
     @command(allow_dm=False, help_group="Commands for Players")
-    async def lfg(self, prefix: str, params: List[str], message: discord.Message) -> None:
+    async def lfg(self, ctx: Context) -> None:
         """
         Find or create a pending game for players to join.
 
@@ -1597,39 +1632,34 @@ class SpellBot(discord.Client):
         # NOTE: This and the code to handle message reactions is behind an async
         #       channel lock to prevent more than one person per guild per channel
         #       concurrently interleaving processing within this critical section.
-        async with self.channel_lock(message.channel.id):
-            async with self.session() as session:
-                await self._play_helper(session, prefix, params, message)
+        async with self.channel_lock(ctx.message.channel.id):
+            await self._play_helper(ctx)
 
     @command(allow_dm=False, help_group="Commands for Players")
-    async def plays(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def plays(self, ctx: Context) -> None:
         """
         Show how many games you've played on this server.
         """
-        async with self.session() as session:
-            guild_xid = message.channel.guild.id
-            user = self.ensure_user_exists(session, message.author)
-            award = (
-                session.query(UserAward)
-                .filter(
-                    and_(
-                        UserAward.user_xid == user.xid,
-                        UserAward.guild_xid == guild_xid,
-                    )
+        guild_xid = ctx.message.channel.guild.id
+        award = (
+            ctx.session.query(UserAward)
+            .filter(
+                and_(
+                    UserAward.user_xid == ctx.user.xid,
+                    UserAward.guild_xid == guild_xid,
                 )
-                .one_or_none()
             )
-            count = award.plays if award else 0
-            await safe_send_channel(
-                message,
-                s(
-                    "plays",
-                    reply=message.author.mention,
-                    count=count,
-                ),
-            )
+            .one_or_none()
+        )
+        count = award.plays if award else 0
+        await safe_send_channel(
+            ctx.message,
+            s(
+                "plays",
+                reply=ctx.message.author.mention,
+                count=count,
+            ),
+        )
 
     def _upsert_user_block(self, session: Session, user: User, blocked: User) -> None:
         data = {"user_xid": user.xid, "blocked_user_xid": blocked.xid}
@@ -1653,47 +1683,41 @@ class SpellBot(discord.Client):
                 session.execute(insert(users_blocks).values(data))
 
     @command(allow_dm=False, help_group="Commands for Players")
-    async def block(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def block(self, ctx: Context) -> None:
         """
         Block a user, by name, from joining your games. Do NOT use a mention.
         & <user name>
         """
-        author = message.author
+        author = ctx.message.author
         author_user = cast(discord.User, author)
         reply = author.mention
-        guild_xid = message.channel.guild.id
-        mentions = message.mentions
-        finder = create_member_finder(message)
+        mentions = ctx.message.mentions
+        finder = create_member_finder(ctx.message)
 
-        await safe_delete_message(message)  # delete ASAP to avoid drama
+        await safe_delete_message(ctx.message)  # delete ASAP to avoid drama
 
         if len(mentions) != 0:
             await safe_send_user(author_user, s("block_mentions", reply=reply))
             return
 
-        if len(params) == 0 or not params[0]:
+        if len(ctx.params) == 0 or not ctx.params[0]:
             await safe_send_user(author_user, s("block_no_params", reply=reply))
             return
 
-        block_name = params[0]
+        block_name = ctx.params[0]
         found_user: Optional[discord.User] = None
 
-        async with self.session() as session:
-            server = self.ensure_server_exists(session, guild_xid)
-            user = self.ensure_user_exists(session, author)
-            self.ensure_user_settings_exists(session, user, server)
-            mentioned = finder.find(block_name)
-            if mentioned and mentioned.id == author_user.id:
-                await safe_send_user(author_user, s("block_no_params", reply=reply))
-                return
-            if mentioned:
-                found_user = mentioned
-                blocked_user = self.ensure_user_exists(session, mentioned)
-                self.ensure_user_settings_exists(session, blocked_user, server)
-                self._upsert_user_block(session, user, blocked_user)
-            session.commit()
+        mentioned = finder.find(block_name)
+        if mentioned and mentioned.id == author_user.id:
+            await safe_send_user(author_user, s("block_no_params", reply=reply))
+            return
+        if mentioned:
+            found_user = mentioned
+            blocked_user = self.ensure_user_exists(ctx.session, mentioned)
+            assert ctx.server
+            self.ensure_user_settings_exists(ctx.session, blocked_user, ctx.server)
+            self._upsert_user_block(ctx.session, ctx.user, blocked_user)
+        ctx.session.commit()
 
         if not found_user:
             await safe_send_user(
@@ -1705,50 +1729,44 @@ class SpellBot(discord.Client):
         await safe_send_user(author_user, s("block", reply=reply, blocked=mention_str))
 
     @command(allow_dm=False, help_group="Commands for Players")
-    async def unblock(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def unblock(self, ctx: Context) -> None:
         """
         Unblock a previously blocked user by name. Do NOT use a mention.
         & <user name>
         """
-        author = message.author
+        assert ctx.server
+        author = ctx.message.author
         author_user = cast(discord.User, author)
         reply = author.mention
-        guild_xid = message.channel.guild.id
-        mentions = message.mentions
-        finder = create_member_finder(message)
+        mentions = ctx.message.mentions
+        finder = create_member_finder(ctx.message)
 
-        await safe_delete_message(message)  # delete ASAP to avoid drama
+        await safe_delete_message(ctx.message)  # delete ASAP to avoid drama
 
         if len(mentions) != 0:
             await safe_send_user(author_user, s("unblock_mentions", reply=reply))
             return
 
-        if len(params) == 0 or not params[0]:
+        if len(ctx.params) == 0 or not ctx.params[0]:
             await safe_send_user(author_user, s("unblock_no_params", reply=reply))
             return
 
-        unblock_name = params[0]
+        unblock_name = ctx.params[0]
         found_user: Optional[discord.User] = None
 
-        async with self.session() as session:
-            server = self.ensure_server_exists(session, guild_xid)
-            user = self.ensure_user_exists(session, author)
-            self.ensure_user_settings_exists(session, user, server)
-            mentioned = finder.find(unblock_name)
-            if mentioned:
-                found_user = mentioned
-                blocked_user = self.ensure_user_exists(session, mentioned)
-                self.ensure_user_settings_exists(session, blocked_user, server)
-                filters = [
-                    users_blocks.c.user_xid == user.xid,
-                    users_blocks.c.blocked_user_xid == blocked_user.xid,
-                ]
-                session.query(users_blocks).filter(and_(*filters)).delete(
-                    synchronize_session=False
-                )
-            session.commit()
+        mentioned = finder.find(unblock_name)
+        if mentioned:
+            found_user = mentioned
+            blocked_user = self.ensure_user_exists(ctx.session, mentioned)
+            self.ensure_user_settings_exists(ctx.session, blocked_user, ctx.server)
+            filters = [
+                users_blocks.c.user_xid == ctx.user.xid,
+                users_blocks.c.blocked_user_xid == blocked_user.xid,
+            ]
+            ctx.session.query(users_blocks).filter(and_(*filters)).delete(
+                synchronize_session=False
+            )
+        ctx.session.commit()
 
         if not found_user:
             await safe_send_user(
@@ -1759,32 +1777,25 @@ class SpellBot(discord.Client):
         mention_s = f"@{found_user.name}"
         await safe_send_user(author_user, s("unblock", reply=reply, unblocked=mention_s))
 
-    async def _verify_command_fest_report(
-        self,
-        session: Session,
-        prefix: str,
-        params: List[str],
-        message: discord.Message,
-        game: Game,
-    ) -> bool:
-        server = self.ensure_server_exists(session, message.channel.guild.id)
+    async def _verify_command_fest_report(self, ctx: Context, game: Game) -> bool:
+        assert ctx.server
         mentioned_users = []
-        for mentioned in message.mentions:
-            mentioned_user = self.ensure_user_exists(session, mentioned)
+        for mentioned in ctx.message.mentions:
+            mentioned_user = self.ensure_user_exists(ctx.session, mentioned)
             mentioned_users.append(mentioned_user)
 
         points = []
-        for param in params[1:]:
+        for param in ctx.params[1:]:
             if param.isdigit():
                 points.append(int(param))
 
         if len(mentioned_users) < 1:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "report_wrong",
-                    reply=message.author.mention,
-                    prefix=prefix,
+                    reply=ctx.message.author.mention,
+                    prefix=ctx.prefix,
                 ),
             )
             return False
@@ -1792,10 +1803,10 @@ class SpellBot(discord.Client):
         if len(mentioned_users) == len(points):
             for mentioned_user, pointage in zip(mentioned_users, points):
                 user_points = (
-                    session.query(UserPoints)
+                    ctx.session.query(UserPoints)
                     .filter_by(
                         user_xid=mentioned_user.xid,
-                        guild_xid=server.guild_xid,
+                        guild_xid=ctx.server.guild_xid,
                         game_id=game.id,
                     )
                     .one_or_none()
@@ -1803,21 +1814,21 @@ class SpellBot(discord.Client):
                 if not user_points:
                     user_points = UserPoints(
                         user_xid=mentioned_user.xid,
-                        guild_xid=server.guild_xid,
+                        guild_xid=ctx.server.guild_xid,
                         game_id=game.id,
                         points=pointage,
                     )
-                    session.add(user_points)
+                    ctx.session.add(user_points)
                 else:
                     user_points.points = pointage
-            session.commit()
+            ctx.session.commit()
         else:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "report_wrong",
-                    reply=message.author.mention,
-                    prefix=prefix,
+                    reply=ctx.message.author.mention,
+                    prefix=ctx.prefix,
                 ),
             )
             return False
@@ -1825,124 +1836,115 @@ class SpellBot(discord.Client):
         return True
 
     @command(allow_dm=False, help_group="Commands for Players")
-    async def report(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def report(self, ctx: Context) -> None:
         """
         Report your results on a finished game.
         & <Game ID> ...
         """
-        if len(params) < 2:
+        if len(ctx.params) < 2:
             await safe_send_channel(
-                message, s("report_no_params", reply=message.author.mention)
+                ctx.message, s("report_no_params", reply=ctx.message.author.mention)
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        req = params[0]
-        report_str = " ".join(params[1:])
+        req = ctx.params[0]
+        report_str = " ".join(ctx.params[1:])
 
         if len(report_str) >= 255:
             await safe_send_channel(
-                message, s("report_too_long", reply=message.author.mention)
+                ctx.message, s("report_too_long", reply=ctx.message.author.mention)
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        async with self.session() as session:
-            game: Optional[Game] = None
-            if req.lower().startswith("#sb") and req[3:].isdigit():
-                game_id = int(req[3:])
-                game = session.query(Game).filter(Game.id == game_id).one_or_none()
-            elif req.lower().startswith("sb") and req[2:].isdigit():
-                game_id = int(req[2:])
-                game = session.query(Game).filter(Game.id == game_id).one_or_none()
-            elif req.isdigit():
-                game_id = int(req)
-                game = session.query(Game).filter(Game.id == game_id).one_or_none()
-            elif re.match(r"^[\w-]*$", req):  # perhaps it's a spellbot game id
-                game = session.query(Game).filter(Game.url.ilike(f"%{req}")).one_or_none()
+        game: Optional[Game] = None
+        if req.lower().startswith("#sb") and req[3:].isdigit():
+            game_id = int(req[3:])
+            game = ctx.session.query(Game).filter(Game.id == game_id).one_or_none()
+        elif req.lower().startswith("sb") and req[2:].isdigit():
+            game_id = int(req[2:])
+            game = ctx.session.query(Game).filter(Game.id == game_id).one_or_none()
+        elif req.isdigit():
+            game_id = int(req)
+            game = ctx.session.query(Game).filter(Game.id == game_id).one_or_none()
+        elif re.match(r"^[\w-]*$", req):  # perhaps it's a spellbot game id
+            game = ctx.session.query(Game).filter(Game.url.ilike(f"%{req}")).one_or_none()
 
-            if not game:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "report_no_game",
-                        reply=message.author.mention,
-                    ),
-                )
-                await safe_react_error(message)
-                return
-
-            if not game.status == "started":
-                await safe_send_channel(
-                    message,
-                    s(
-                        "report_not_started",
-                        reply=message.author.mention,
-                    ),
-                )
-                await safe_react_error(message)
-                return
-
-            # TODO: This reporting logic is specific to CommandFest, it would be nice
-            #       to refactor this to be more flexible after the event.
-            verified = await self._verify_command_fest_report(
-                session=session, prefix=prefix, params=params, message=message, game=game
+        if not game:
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "report_no_game",
+                    reply=ctx.message.author.mention,
+                ),
             )
-            if not verified:
-                await safe_react_error(message)
-                return
+            await safe_react_error(ctx.message)
+            return
 
-            report = Report(game_id=game.id, report=report_str)
-            session.add(report)
-            session.commit()
-            await safe_send_channel(message, s("report", reply=message.author.mention))
-            await safe_react_ok(message)
+        if not game.status == "started":
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "report_not_started",
+                    reply=ctx.message.author.mention,
+                ),
+            )
+            await safe_react_error(ctx.message)
+            return
+
+        # TODO: This reporting logic is specific to CommandFest, it would be nice
+        #       to refactor this to be more flexible after the event.
+        verified = await self._verify_command_fest_report(ctx, game)
+        if not verified:
+            await safe_react_error(ctx.message)
+            return
+
+        report = Report(game_id=game.id, report=report_str)
+        ctx.session.add(report)
+        ctx.session.commit()
+        await safe_send_channel(
+            ctx.message, s("report", reply=ctx.message.author.mention)
+        )
+        await safe_react_ok(ctx.message)
 
     @command(allow_dm=False, admin_only=False, help_group="Commands for Players")
-    async def points(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def points(self, ctx: Context) -> None:
         """
         Get your total points on this server.
         """
-        async with self.session() as session:
-            user = self.ensure_user_exists(session, message.author)
-            server = self.ensure_server_exists(session, message.channel.guild.id)
-            points = user.points(server.guild_xid)
+        assert ctx.server
+        points = ctx.user.points(ctx.server.guild_xid)
 
-            await safe_send_channel(
-                message,
-                s(
-                    "points",
-                    reply=message.author.mention,
-                    points=points,
-                ),
-            )
+        await safe_send_channel(
+            ctx.message,
+            s(
+                "points",
+                reply=ctx.message.author.mention,
+                points=points,
+            ),
+        )
 
-            if is_admin(message.channel, message.author):
-                team_points = Team.points(session, message.channel.guild.id)
-                for team, team_points in team_points.items():
-                    await safe_send_channel(
-                        message,
-                        s(
-                            "points_team",
-                            reply=message.author.mention,
-                            team=team,
-                            points=team_points,
-                        ),
-                    )
+        if is_admin(ctx.message.channel, ctx.message.author):
+            team_points = Team.points(ctx.session, ctx.message.channel.guild.id)
+            for team, team_points in team_points.items():
+                await safe_send_channel(
+                    ctx.message,
+                    s(
+                        "points_team",
+                        reply=ctx.message.author.mention,
+                        team=team,
+                        points=team_points,
+                    ),
+                )
 
-            await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
     def decode_data(self, bdata):
         return bdata.decode("utf-8")
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
-    async def event(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def event(self, ctx: Context) -> None:
         """
         Create many games in batch from an attached CSV data file. _Requires the
         "SpellBot Admin" role._
@@ -1960,332 +1962,320 @@ class SpellBot(discord.Client):
         * Optional: Add up to five tags by using `~tag-name`.
         & <column 1> <column 2> ... [~tag-1 ~tag-2 ...] [msg: An optional message!]
         """
-        if not message.attachments:
+        assert ctx.server
+        assert ctx.channel_settings
+        if not ctx.message.attachments:
             await safe_send_channel(
-                message, s("event_no_data", reply=message.author.mention)
+                ctx.message, s("event_no_data", reply=ctx.message.author.mention)
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
-        if not params:
+        if not ctx.params:
             await safe_send_channel(
-                message, s("event_no_params", reply=message.author.mention)
+                ctx.message, s("event_no_params", reply=ctx.message.author.mention)
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        async with self.session() as session:
-            server = self.ensure_server_exists(session, message.channel.guild.id)
-            channel_settings = self.ensure_channel_settings_exists(
-                session, server, message.channel.id, message.channel.name
-            )
+        opts = parse_opts(ctx.params, default_size=ctx.channel_settings.default_size)
+        params, tag_names, opt_msg, system = (
+            opts["params"],
+            opts["tags"],
+            opts["message"],
+            opts["system"],
+        )
+        size = len(params)
+        attachment = ctx.message.attachments[0]
 
-            opts = parse_opts(params, default_size=channel_settings.default_size)
-            params, tag_names, opt_msg, system = (
-                opts["params"],
-                opts["tags"],
-                opts["message"],
-                opts["system"],
-            )
-            size = len(params)
-            attachment = message.attachments[0]
-
-            if len(tag_names) > 5:
-                await safe_send_channel(
-                    message, s("tags_too_many", reply=message.author.mention)
-                )
-                await safe_react_error(message)
-                return
-            if opt_msg and len(opt_msg) >= 255:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "game_message_too_long",
-                        reply=message.author.mention,
-                    ),
-                )
-                await safe_react_error(message)
-                return
-            if not (1 < size <= 4):
-                await safe_send_channel(
-                    message,
-                    s(
-                        "event_bad_play_count",
-                        reply=message.author.mention,
-                    ),
-                )
-                await safe_react_error(message)
-                return
-            if not attachment.filename.lower().endswith(".csv"):
-                await safe_send_channel(
-                    message, s("event_not_csv", reply=message.author.mention)
-                )
-                await safe_react_error(message)
-                return
-
-            tags = Tag.create_many(session, tag_names)
-
-            bdata = await message.attachments[0].read()
-            try:
-                sdata = self.decode_data(bdata)
-            except UnicodeDecodeError:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "event_not_utf",
-                        reply=message.author.mention,
-                    ),
-                )
-                await safe_react_error(message)
-                return
-
-            reader = csv.reader(StringIO(sdata))
-            header = [column.lower().strip() for column in next(reader)]
-            params = [param.lower().strip() for param in params]
-
-            if any(param not in header for param in params):
-                await safe_send_channel(
-                    message,
-                    s(
-                        "event_no_header",
-                        reply=message.author.mention,
-                    ),
-                )
-                await safe_react_error(message)
-                return
-
-            columns = [header.index(param) for param in params]
-
-            event = Event()
-            session.add(event)
-            session.commit()
-
-            players_in_this_event: Set[str] = set()
-            warnings = set()
-
-            finder = create_member_finder(message)
-
-            for i, row in enumerate(reader):
-                csv_row_data = [row[column].strip() for column in columns]
-                players_s = ", ".join([f'"{value}"' for value in csv_row_data])
-                player_names = [
-                    re.sub("#.*$", "", value.lower()).lstrip("@")
-                    for value in csv_row_data
-                ]
-
-                for player_name in player_names:
-                    if not finder.find(player_name):
-                        warning = s("event_missing_player", row=i + 1, players=players_s)
-                        await safe_send_channel(message, warning)
-                        continue
-
-                player_discord_users: List[discord.User] = []
-                for csv_data, player_name in zip(csv_row_data, player_names):
-                    if player_name in players_in_this_event:
-                        await safe_send_channel(
-                            message,
-                            s(
-                                "event_duplicate_user",
-                                row=i + 1,
-                                name=csv_data,
-                                players=players_s,
-                            ),
-                        )
-                        await safe_react_error(message)
-                        return
-                    player_discord_user = finder.find(player_name)
-                    if player_discord_user:
-                        players_in_this_event.add(player_name)
-                        player_discord_users.append(player_discord_user)
-                    else:
-                        warnings.add(
-                            s(
-                                "event_missing_user",
-                                row=i + 1,
-                                name=csv_data,
-                                players=players_s,
-                            )
-                        )
-
-                if len(player_discord_users) != size:
-                    continue
-
-                player_users = [
-                    self.ensure_user_exists(session, player_discord_user)
-                    for player_discord_user in player_discord_users
-                ]
-
-                for player_discord_user, player_user in zip(
-                    player_discord_users, player_users
-                ):
-                    if player_user.waiting:
-                        game_to_update = player_user.game
-                        player_user.game_id = None  # type: ignore
-                        await self.try_to_update_game(session, game_to_update)
-                    player_user.cached_name = player_discord_user.name
-                session.commit()
-
-                now = datetime.utcnow()
-                expires_at = now + timedelta(minutes=server.expire)
-                game = Game(
-                    created_at=now,
-                    expires_at=expires_at,
-                    guild_xid=message.channel.guild.id,
-                    size=size,
-                    updated_at=now,
-                    status="ready",
-                    system=system,
-                    message=opt_msg,
-                    users=player_users,
-                    event=event,
-                    tags=tags,
-                )
-                session.add(game)
-                session.commit()
-
-            def by_row(s: str) -> int:
-                m = re.match("^.*row ([0-9]+).*$", s)
-                # TODO: Hopefully no one adds a strings.yaml warning
-                #       that doesn't fit this exact format!
-                assert m is not None
-                return int(m[1])
-
-            warnings_s = "\n".join(sorted(warnings, key=by_row))
-            if warnings_s:
-                for page in paginate(warnings_s):
-                    await safe_send_channel(message, page)
-
-            if not event.games:
-                session.delete(event)
-                session.commit()
-                await safe_send_channel(
-                    message, s("event_empty", reply=message.author.mention)
-                )
-                await safe_react_error(message)
-                return
-
-            session.commit()
-            count = len([game for game in event.games])
+        if len(tag_names) > 5:
             await safe_send_channel(
-                message,
+                ctx.message, s("tags_too_many", reply=ctx.message.author.mention)
+            )
+            await safe_react_error(ctx.message)
+            return
+        if opt_msg and len(opt_msg) >= 255:
+            await safe_send_channel(
+                ctx.message,
                 s(
-                    "event_created",
-                    reply=message.author.mention,
-                    prefix=prefix,
-                    event_id=event.id,
-                    count=count,
+                    "game_message_too_long",
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_ok(message)
+            await safe_react_error(ctx.message)
+            return
+        if not (1 < size <= 4):
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "event_bad_play_count",
+                    reply=ctx.message.author.mention,
+                ),
+            )
+            await safe_react_error(ctx.message)
+            return
+        if not attachment.filename.lower().endswith(".csv"):
+            await safe_send_channel(
+                ctx.message, s("event_not_csv", reply=ctx.message.author.mention)
+            )
+            await safe_react_error(ctx.message)
+            return
+
+        tags = Tag.create_many(ctx.session, tag_names)
+
+        bdata = await ctx.message.attachments[0].read()
+        try:
+            sdata = self.decode_data(bdata)
+        except UnicodeDecodeError:
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "event_not_utf",
+                    reply=ctx.message.author.mention,
+                ),
+            )
+            await safe_react_error(ctx.message)
+            return
+
+        reader = csv.reader(StringIO(sdata))
+        header = [column.lower().strip() for column in next(reader)]
+        params = [param.lower().strip() for param in params]
+
+        if any(param not in header for param in params):
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "event_no_header",
+                    reply=ctx.message.author.mention,
+                ),
+            )
+            await safe_react_error(ctx.message)
+            return
+
+        columns = [header.index(param) for param in params]
+
+        event = Event()
+        ctx.session.add(event)
+        ctx.session.commit()
+
+        players_in_this_event: Set[str] = set()
+        warnings = set()
+
+        finder = create_member_finder(ctx.message)
+
+        for i, row in enumerate(reader):
+            csv_row_data = [row[column].strip() for column in columns]
+            players_s = ", ".join([f'"{value}"' for value in csv_row_data])
+            player_names = [
+                re.sub("#.*$", "", value.lower()).lstrip("@") for value in csv_row_data
+            ]
+
+            for player_name in player_names:
+                if not finder.find(player_name):
+                    warning = s("event_missing_player", row=i + 1, players=players_s)
+                    await safe_send_channel(ctx.message, warning)
+                    continue
+
+            player_discord_users: List[discord.User] = []
+            for csv_data, player_name in zip(csv_row_data, player_names):
+                if player_name in players_in_this_event:
+                    await safe_send_channel(
+                        ctx.message,
+                        s(
+                            "event_duplicate_user",
+                            row=i + 1,
+                            name=csv_data,
+                            players=players_s,
+                        ),
+                    )
+                    await safe_react_error(ctx.message)
+                    return
+                player_discord_user = finder.find(player_name)
+                if player_discord_user:
+                    players_in_this_event.add(player_name)
+                    player_discord_users.append(player_discord_user)
+                else:
+                    warnings.add(
+                        s(
+                            "event_missing_user",
+                            row=i + 1,
+                            name=csv_data,
+                            players=players_s,
+                        )
+                    )
+
+            if len(player_discord_users) != size:
+                continue
+
+            player_users = [
+                self.ensure_user_exists(ctx.session, player_discord_user)
+                for player_discord_user in player_discord_users
+            ]
+
+            for player_discord_user, player_user in zip(
+                player_discord_users, player_users
+            ):
+                if player_user.waiting:
+                    game_to_update = player_user.game
+                    player_user.game_id = None  # type: ignore
+                    await self.try_to_update_game(ctx, game_to_update)
+                player_user.cached_name = player_discord_user.name
+            ctx.session.commit()
+
+            now = datetime.utcnow()
+            expires_at = now + timedelta(minutes=ctx.server.expire)
+            game = Game(
+                created_at=now,
+                expires_at=expires_at,
+                guild_xid=ctx.message.channel.guild.id,
+                size=size,
+                updated_at=now,
+                status="ready",
+                system=system,
+                message=opt_msg,
+                users=player_users,
+                event=event,
+                tags=tags,
+            )
+            ctx.session.add(game)
+            ctx.session.commit()
+
+        def by_row(s: str) -> int:
+            m = re.match("^.*row ([0-9]+).*$", s)
+            # TODO: Hopefully no one adds a strings.yaml warning
+            #       that doesn't fit this exact format!
+            assert m is not None
+            return int(m[1])
+
+        warnings_s = "\n".join(sorted(warnings, key=by_row))
+        if warnings_s:
+            for page in paginate(warnings_s):
+                await safe_send_channel(ctx.message, page)
+
+        if not event.games:
+            ctx.session.delete(event)
+            ctx.session.commit()
+            await safe_send_channel(
+                ctx.message, s("event_empty", reply=ctx.message.author.mention)
+            )
+            await safe_react_error(ctx.message)
+            return
+
+        ctx.session.commit()
+        count = len([game for game in event.games])
+        await safe_send_channel(
+            ctx.message,
+            s(
+                "event_created",
+                reply=ctx.message.author.mention,
+                prefix=ctx.prefix,
+                event_id=event.id,
+                count=count,
+            ),
+        )
+        await safe_react_ok(ctx.message)
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
-    async def begin(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def begin(self, ctx: Context) -> None:
         """
         Confirm creation of games for the given event id. _Requires the
         "SpellBot Admin" role._
         & <event id>
         """
-        if not params:
+        if not ctx.params:
             await safe_send_channel(
-                message, s("begin_no_params", reply=message.author.mention)
+                ctx.message, s("begin_no_params", reply=ctx.message.author.mention)
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        event_id = to_int(params[0])
+        event_id = to_int(ctx.params[0])
         if not event_id:
             await safe_send_channel(
-                message, s("begin_bad_event", reply=message.author.mention)
+                ctx.message, s("begin_bad_event", reply=ctx.message.author.mention)
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        async with self.session() as session:
-            event: Optional[Event] = (
-                session.query(Event).filter(Event.id == event_id).one_or_none()
+        event: Optional[Event] = (
+            ctx.session.query(Event).filter(Event.id == event_id).one_or_none()
+        )
+        if not event:
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "begin_bad_event",
+                    reply=ctx.message.author.mention,
+                ),
             )
-            if not event:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "begin_bad_event",
-                        reply=message.author.mention,
-                    ),
+            await safe_react_error(ctx.message)
+            return
+
+        if event.started:
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "begin_event_already_started",
+                    reply=ctx.message.author.mention,
+                ),
+            )
+            await safe_react_error(ctx.message)
+            return
+
+        for game in cast(List[Game], event.games):
+            # Can't rely on "<@{xid}>" working because the user could have logged out.
+            # But if we don't have the cached name, we just have to fallback to it.
+            # Support <@!USERID> for server nick?
+            sorted_names = sorted(
+                [user.cached_name or f"<@{user.xid}>" for user in game.users]
+            )
+            players_str = ", ".join(cast(List[str], sorted_names))
+
+            found_discord_users = []
+            for game_user in game.users:
+                discord_user = await safe_fetch_user(self, game_user.xid)
+                if not discord_user:  # game_user has left the server since event created
+                    warning = s("begin_user_left", players=players_str)
+                    await safe_send_channel(ctx.message, warning)
+                else:
+                    found_discord_users.append(discord_user)
+            if len(found_discord_users) != len(cast(List[User], game.users)):
+                continue
+
+            game_url = (
+                self.create_spelltable_url() if game.system == "spelltable" else None
+            )
+            game.url = game_url  # type: ignore
+            await self.setup_voice(ctx.session, game)
+            game.status = "started"  # type: ignore
+            game.game_power = game.power  # type: ignore
+            response = game.to_embed(dm=True)
+            ctx.session.commit()
+            for game_user in game.users:
+                ctx.session.add(Play(user_xid=game_user.xid, game_id=game.id))
+            ctx.session.commit()
+
+            for discord_user in found_discord_users:
+                await safe_send_user(discord_user, embed=response)
+                await self._handle_awards(
+                    ctx.session, cast(discord.Guild, ctx.message.guild), discord_user
                 )
-                await safe_react_error(message)
-                return
+            ctx.session.commit()
 
-            if event.started:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "begin_event_already_started",
-                        reply=message.author.mention,
-                    ),
-                )
-                await safe_react_error(message)
-                return
-
-            for game in cast(List[Game], event.games):
-                # Can't rely on "<@{xid}>" working because the user could have logged out.
-                # But if we don't have the cached name, we just have to fallback to it.
-                # Support <@!USERID> for server nick?
-                sorted_names = sorted(
-                    [user.cached_name or f"<@{user.xid}>" for user in game.users]
-                )
-                players_str = ", ".join(cast(List[str], sorted_names))
-
-                found_discord_users = []
-                for game_user in game.users:
-                    discord_user = await safe_fetch_user(self, game_user.xid)
-                    if (
-                        not discord_user
-                    ):  # game_user has left the server since event created
-                        warning = s("begin_user_left", players=players_str)
-                        await safe_send_channel(message, warning)
-                    else:
-                        found_discord_users.append(discord_user)
-                if len(found_discord_users) != len(cast(List[User], game.users)):
-                    continue
-
-                game_url = (
-                    self.create_spelltable_url() if game.system == "spelltable" else None
-                )
-                game.url = game_url  # type: ignore
-                await self.setup_voice(session, game)
-                game.status = "started"  # type: ignore
-                game.game_power = game.power  # type: ignore
-                response = game.to_embed(dm=True)
-                session.commit()
-                for game_user in game.users:
-                    session.add(Play(user_xid=game_user.xid, game_id=game.id))
-                session.commit()
-
-                for discord_user in found_discord_users:
-                    await safe_send_user(discord_user, embed=response)
-                    await self._handle_awards(
-                        session, cast(discord.Guild, message.guild), discord_user
-                    )
-                session.commit()
-
-                await safe_send_channel(
-                    message,
-                    s(
-                        "game_created",
-                        reply=message.author.mention,
-                        id=game.id,
-                        url=game.url,
-                        players=players_str,
-                    ),
-                )
-                await safe_react_ok(message)
-                await self.send_watch_list_notifications(session, game)
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "game_created",
+                    reply=ctx.message.author.mention,
+                    id=game.id,
+                    url=game.url,
+                    players=players_str,
+                ),
+            )
+            await safe_react_ok(ctx.message)
+            await self.send_watch_list_notifications(ctx.session, game)
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
-    async def game(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def game(self, ctx: Context) -> None:
         """
         Create a game between mentioned users. _Requires the "SpellBot Admin" role._
 
@@ -2296,205 +2286,193 @@ class SpellBot(discord.Client):
         * Optional: Add tags by using `~tag-name` for the tags you want.
         & @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]
         """
-        async with self.session() as session:
-            server = self.ensure_server_exists(session, message.channel.guild.id)
-            channel_settings = self.ensure_channel_settings_exists(
-                session, server, message.channel.id, message.channel.name
+        assert ctx.server
+        assert ctx.channel_settings
+        opts = parse_opts(ctx.params, default_size=ctx.channel_settings.default_size)
+        size, tag_names, opt_msg, system = (
+            opts["size"],
+            opts["tags"],
+            opts["message"],
+            opts["system"],
+        )
+        mentions = (
+            ctx.message.mentions
+            if ctx.message.channel.type != discord.ChannelType.private
+            else []
+        )
+
+        if opt_msg and len(opt_msg) >= 255:
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "game_message_too_long",
+                    reply=ctx.message.author.mention,
+                ),
             )
-
-            opts = parse_opts(params, default_size=channel_settings.default_size)
-            size, tag_names, opt_msg, system = (
-                opts["size"],
-                opts["tags"],
-                opts["message"],
-                opts["system"],
+            await safe_react_error(ctx.message)
+            return
+        if tag_names and len(tag_names) > 5:
+            await safe_send_channel(
+                ctx.message, s("tags_too_many", reply=ctx.message.author.mention)
             )
-            mentions = (
-                message.mentions
-                if message.channel.type != discord.ChannelType.private
-                else []
+            await safe_react_error(ctx.message)
+            return
+
+        if not size or not (1 < size <= 4):
+            await safe_send_channel(
+                ctx.message, s("game_size_bad", reply=ctx.message.author.mention)
             )
+            await safe_react_error(ctx.message)
+            return
 
-            if opt_msg and len(opt_msg) >= 255:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "game_message_too_long",
-                        reply=message.author.mention,
-                    ),
-                )
-                await safe_react_error(message)
-                return
-            if tag_names and len(tag_names) > 5:
-                await safe_send_channel(
-                    message, s("tags_too_many", reply=message.author.mention)
-                )
-                await safe_react_error(message)
-                return
-
-            if not size or not (1 < size <= 4):
-                await safe_send_channel(
-                    message, s("game_size_bad", reply=message.author.mention)
-                )
-                await safe_react_error(message)
-                return
-
-            if len(mentions) > size:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "game_too_many_mentions",
-                        reply=message.author.mention,
-                        size=size,
-                    ),
-                )
-                await safe_react_error(message)
-                return
-
-            if len(mentions) < size:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "game_too_few_mentions",
-                        reply=message.author.mention,
-                        size=size,
-                    ),
-                )
-                await safe_react_error(message)
-                return
-
-            mentioned_users = []
-            for mentioned in mentions:
-                mentioned_user = self.ensure_user_exists(session, mentioned)
-                if mentioned_user.waiting:
-                    game_to_update = mentioned_user.game
-                    mentioned_user.game_id = None  # type: ignore
-                    await self.try_to_update_game(session, game_to_update)
-                mentioned_users.append(mentioned_user)
-            session.commit()
-
-            tags = Tag.create_many(session, tag_names)
-
-            now = datetime.utcnow()
-            expires_at = now + timedelta(minutes=server.expire)
-            url = self.create_spelltable_url() if system == "spelltable" else None
-            game = Game(
-                channel_xid=message.channel.id,
-                created_at=now,
-                expires_at=expires_at,
-                server=server,
-                size=size,
-                updated_at=now,
-                url=url,
-                status="started",
-                system=system,
-                message=opt_msg,
-                users=mentioned_users,
-                tags=tags,
+        if len(mentions) > size:
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "game_too_many_mentions",
+                    reply=ctx.message.author.mention,
+                    size=size,
+                ),
             )
-            session.add(game)
-            session.commit()
-            for game_user in game.users:
-                session.add(Play(user_xid=game_user.xid, game_id=game.id))
+            await safe_react_error(ctx.message)
+            return
 
-            if server.create_voice:
-                category_prefix = server.voice_category_prefix or VOICE_CATEGORY_PREFIX
-                await self.setup_voice(session, game, prefix=category_prefix)
-                session.commit()
-
-            player_response = game.to_embed(dm=True)
-            for player in mentioned_users:
-                discord_user = await safe_fetch_user(self, player.xid)
-                # TODO: What happens if discord_user is None?
-                if discord_user:
-                    await safe_send_user(discord_user, embed=player_response)
-
-            players_str = ", ".join(
-                # Support <@!USERID> for server nick?
-                sorted([f"<@{user.xid}>" for user in mentioned_users])
+        if len(mentions) < size:
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "game_too_few_mentions",
+                    reply=ctx.message.author.mention,
+                    size=size,
+                ),
             )
-            resp_args = {
-                "reply": message.author.mention,
-                "id": game.id,
-                "url": game.url,
-                "voice": game.voice_channel_invite,
-                "players": players_str,
-            }
-            if server.create_voice:
-                await safe_send_channel(
-                    message, s("game_created_with_voice", **resp_args)
-                )
-            else:
-                del resp_args["voice"]
-                await safe_send_channel(message, s("game_created", **resp_args))
-            await safe_react_ok(message)
+            await safe_react_error(ctx.message)
+            return
+
+        mentioned_users = []
+        for mentioned in mentions:
+            mentioned_user = self.ensure_user_exists(ctx.session, mentioned)
+            if mentioned_user.waiting:
+                game_to_update = mentioned_user.game
+                mentioned_user.game_id = None  # type: ignore
+                await self.try_to_update_game(ctx, game_to_update)
+            mentioned_users.append(mentioned_user)
+        ctx.session.commit()
+
+        tags = Tag.create_many(ctx.session, tag_names)
+
+        now = datetime.utcnow()
+        expires_at = now + timedelta(minutes=ctx.server.expire)
+        url = self.create_spelltable_url() if system == "spelltable" else None
+        game = Game(
+            channel_xid=ctx.message.channel.id,
+            created_at=now,
+            expires_at=expires_at,
+            server=ctx.server,
+            size=size,
+            updated_at=now,
+            url=url,
+            status="started",
+            system=system,
+            message=opt_msg,
+            users=mentioned_users,
+            tags=tags,
+        )
+        ctx.session.add(game)
+        ctx.session.commit()
+        for game_user in game.users:
+            ctx.session.add(Play(user_xid=game_user.xid, game_id=game.id))
+
+        if ctx.server.create_voice:
+            category_prefix = ctx.server.voice_category_prefix or VOICE_CATEGORY_PREFIX
+            await self.setup_voice(ctx.session, game, prefix=category_prefix)
+            ctx.session.commit()
+
+        player_response = game.to_embed(dm=True)
+        for player in mentioned_users:
+            discord_user = await safe_fetch_user(self, player.xid)
+            # TODO: What happens if discord_user is None?
+            if discord_user:
+                await safe_send_user(discord_user, embed=player_response)
+
+        players_str = ", ".join(
+            # Support <@!USERID> for server nick?
+            sorted([f"<@{user.xid}>" for user in mentioned_users])
+        )
+        resp_args = {
+            "reply": ctx.message.author.mention,
+            "id": game.id,
+            "url": game.url,
+            "voice": game.voice_channel_invite,
+            "players": players_str,
+        }
+        if ctx.server.create_voice:
+            await safe_send_channel(
+                ctx.message, s("game_created_with_voice", **resp_args)
+            )
+        else:
+            del resp_args["voice"]
+            await safe_send_channel(ctx.message, s("game_created", **resp_args))
+        await safe_react_ok(ctx.message)
 
     @command(allow_dm=True, help_group="Commands for Players")
-    async def leave(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def leave(self, ctx: Context) -> None:
         """
         Leave any pending games that you've signed up.
         """
-        async with self.session() as session:
-            user = self.ensure_user_exists(session, message.author)
-            if user.waiting:
-                game = user.game
-                user.game_id = None  # type: ignore
-                session.commit()
-                await self.try_to_update_game(session, game)
-            await safe_react_ok(message)
+        if ctx.user.waiting:
+            game = ctx.user.game
+            ctx.user.game_id = None  # type: ignore
+            ctx.session.commit()
+            await self.try_to_update_game(ctx, game)
+        await safe_react_ok(ctx.message)
 
     @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
-    async def export(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def export(self, ctx: Context) -> None:
         """
         Exports historical game data to a CSV file. _Requires the "SpellBot Admin" role._
         """
-        async with self.session() as session:
-            server = self.ensure_server_exists(session, message.channel.guild.id)
-            export_file = TMP_DIR / f"{message.channel.guild.name}.csv"
-            channel_name_cache = {}
-            data = server.games_data()
-            with open(export_file, "w") as f, redirect_stdout(f):
-                print(  # noqa: T001
-                    "id,size,status,system,channel,url,event_id,created_at,tags,message"
-                )
-                for i in range(len(data["id"])):
-                    channel_xid = data["channel_xid"][i]
-                    if channel_xid and channel_xid not in channel_name_cache:
-                        channel = await safe_fetch_channel(
-                            self, int(channel_xid), message.channel.guild.id
-                        )
-                        if channel:
-                            name = cast(discord.TextChannel, channel).name
-                            channel_name_cache[channel_xid] = f"#{name}"
-                        else:
-                            channel_name_cache[channel_xid] = f"<#{channel_xid}>"
-                    print(  # noqa: T001
-                        ",".join(
-                            [
-                                data["id"][i],
-                                data["size"][i],
-                                data["status"][i],
-                                data["system"][i],
-                                channel_name_cache[channel_xid] if channel_xid else "",
-                                data["url"][i],
-                                data["event_id"][i],
-                                data["created_at"][i],
-                                data["tags"][i],
-                                data["message"][i],
-                            ]
-                        )
+        assert ctx.server
+        assert ctx.channel_settings
+        export_file = TMP_DIR / f"{ctx.message.channel.guild.name}.csv"
+        channel_name_cache = {}
+        data = ctx.server.games_data()
+        with open(export_file, "w") as f, redirect_stdout(f):
+            print(  # noqa: T001
+                "id,size,status,system,channel,url,event_id,created_at,tags,message"
+            )
+            for i in range(len(data["id"])):
+                channel_xid = data["channel_xid"][i]
+                if channel_xid and channel_xid not in channel_name_cache:
+                    channel = await safe_fetch_channel(
+                        self, int(channel_xid), ctx.message.channel.guild.id
                     )
-            await safe_send_channel(message, "", file=discord.File(export_file))
-            await safe_react_ok(message)
+                    if channel:
+                        name = cast(discord.TextChannel, channel).name
+                        channel_name_cache[channel_xid] = f"#{name}"
+                    else:
+                        channel_name_cache[channel_xid] = f"<#{channel_xid}>"
+                print(  # noqa: T001
+                    ",".join(
+                        [
+                            data["id"][i],
+                            data["size"][i],
+                            data["status"][i],
+                            data["system"][i],
+                            channel_name_cache[channel_xid] if channel_xid else "",
+                            data["url"][i],
+                            data["event_id"][i],
+                            data["created_at"][i],
+                            data["tags"][i],
+                            data["message"][i],
+                        ]
+                    )
+                )
+        await safe_send_channel(ctx.message, "", file=discord.File(export_file))
+        await safe_react_ok(ctx.message)
 
-    @command(allow_dm=True, help_group="Commands for Players")
-    async def power(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    @command(allow_dm=False, help_group="Commands for Players")
+    async def power(self, ctx: Context) -> None:
         """
         Set or unset the power level of the deck you are going to play.
         **You DO NOT NEED to have a power level set to use SpellBot.**
@@ -2503,251 +2481,236 @@ class SpellBot(discord.Client):
         you in games with other players of similar power levels.
         & <none | 1..10>
         """
-        async with self.session() as session:
-            if message.channel.type != discord.ChannelType.private:
-                server = self.ensure_server_exists(session, message.channel.guild.id)
-                if not server.power_enabled:
-                    return
+        assert ctx.server
+        assert ctx.channel_settings
+        if (
+            ctx.message.channel.type != discord.ChannelType.private
+            and not ctx.server.power_enabled
+        ):
+            return
 
-            async def send_invalid(prepend) -> None:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "power_invalid",
-                        reply=message.author.mention,
-                        prepend=prepend,
-                    ),
-                )
-                await safe_react_error(message)
+        async def send_invalid(prepend) -> None:
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "power_invalid",
+                    reply=ctx.message.author.mention,
+                    prepend=prepend,
+                ),
+            )
+            await safe_react_error(ctx.message)
 
-            if not params:
-                return await send_invalid("")
+        if not ctx.params:
+            return await send_invalid("")
 
-            user = self.ensure_user_exists(session, message.author)
+        power = ctx.params[0].lower()
+        if power in ["none", "off", "unset", "no", "0"]:
+            ctx.user.power = None  # type: ignore
+            ctx.session.commit()
+            await safe_react_ok(ctx.message)
+            if ctx.user.waiting:
+                await self.try_to_update_game(ctx, ctx.user.game)
+            await safe_react_ok(ctx.message)
+            return
 
-            power = params[0].lower()
-            if power in ["none", "off", "unset", "no", "0"]:
-                user.power = None  # type: ignore
-                session.commit()
-                await safe_react_ok(message)
-                if user.waiting:
-                    await self.try_to_update_game(session, user.game)
-                await safe_react_ok(message)
-                return
+        if power == "unlimited":
+            return await send_invalid("⚡ ")
 
-            if power == "unlimited":
-                return await send_invalid("⚡ ")
+        if not power.isdigit():
+            return await send_invalid("")
 
-            if not power.isdigit():
-                return await send_invalid("")
+        power_i = int(power)
+        if not (1 <= power_i <= 10):
+            prepend = ""
+            if power_i == 11:
+                prepend = "🤘 "
+            elif power_i == 9000:
+                prepend = "💥 "
+            elif power_i == 42:
+                prepend = "🤖 "
+            return await send_invalid(prepend)
 
-            power_i = int(power)
-            if not (1 <= power_i <= 10):
-                prepend = ""
-                if power_i == 11:
-                    prepend = "🤘 "
-                elif power_i == 9000:
-                    prepend = "💥 "
-                elif power_i == 42:
-                    prepend = "🤖 "
-                return await send_invalid(prepend)
-
-            user.power = power_i  # type: ignore
-            session.commit()
-            await safe_react_ok(message)
-            if user.waiting:
-                await self.try_to_update_game(session, user.game)
-            await safe_react_ok(message)
+        ctx.user.power = power_i  # type: ignore
+        ctx.session.commit()
+        await safe_react_ok(ctx.message)
+        if ctx.user.waiting:
+            await self.try_to_update_game(ctx, ctx.user.game)
+        await safe_react_ok(ctx.message)
 
     @command(allow_dm=False, help_group="Commands for Players")
-    async def team(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def team(self, ctx: Context) -> None:
         """
         Set or get your team on this server. To get your team name, run this command with
         no parameters.
         & [team-name]
         """
-        async with self.session() as session:
-            server = self.ensure_server_exists(session, message.channel.guild.id)
-            if not server.teams:
-                await safe_send_channel(
-                    message, s("team_none", reply=message.author.mention)
-                )
-                await safe_react_error(message)
-                return
-
-            user = self.ensure_user_exists(session, message.author)
-            if not params:
-                user_settings = self.ensure_user_settings_exists(session, user, server)
-                if user_settings.team_id is None:
-                    await safe_send_channel(
-                        message,
-                        s(
-                            "team_not_set",
-                            reply=message.author.mention,
-                        ),
-                    )
-                    await safe_react_error(message)
-                    return
-
-                team = (
-                    session.query(Team).filter_by(id=user_settings.team_id).one_or_none()
-                )
-                if not team:
-                    user_settings.team_id = None  # type: ignore
-                    session.commit()
-                    await safe_send_channel(
-                        message,
-                        s(
-                            "team_gone",
-                            reply=message.author.mention,
-                        ),
-                    )
-                    await safe_react_error(message)
-                    return
-
-                await safe_send_channel(
-                    message,
-                    s(
-                        "team_yours",
-                        reply=message.author.mention,
-                        team=team.name,
-                    ),
-                )
-                await safe_react_ok(message)
-                return
-
-            team_request = params[0]
-            team_found: Optional[Team] = None
-            for team in server.teams:
-                if team_request.lower() != team.name.lower():
-                    continue
-                team_found = team
-                break
-
-            if not team_found:
-                teams = ", ".join(sorted(team.name for team in server.teams))
-                await safe_send_channel(
-                    message,
-                    s(
-                        "team_not_found",
-                        reply=message.author.mention,
-                        teams=teams,
-                    ),
-                )
-                await safe_react_error(message)
-                return
-
-            user_settings = self.ensure_user_settings_exists(session, user, server)
-            if user_settings.team_id != team_found.id:
-                user_settings.team_id = team_found.id  # type: ignore
-            session.commit()
-            await safe_react_ok(message)
-
-    async def _set_verified(
-        self, prefix: str, params: List[str], message: discord.Message, setting: bool
-    ) -> None:
-        if not await check_is_admin(message):
-            await safe_react_error(message)
+        assert ctx.server
+        assert ctx.channel_settings
+        assert ctx.user_settings
+        if not ctx.server.teams:
+            await safe_send_channel(
+                ctx.message, s("team_none", reply=ctx.message.author.mention)
+            )
+            await safe_react_error(ctx.message)
             return
 
-        if len(message.mentions) == 0:
-            await safe_react_error(message)
+        if not ctx.params:
+            if ctx.user_settings.team_id is None:
+                await safe_send_channel(
+                    ctx.message,
+                    s(
+                        "team_not_set",
+                        reply=ctx.message.author.mention,
+                    ),
+                )
+                await safe_react_error(ctx.message)
+                return
+
+            team = (
+                ctx.session.query(Team)
+                .filter_by(id=ctx.user_settings.team_id)
+                .one_or_none()
+            )
+            if not team:
+                ctx.user_settings.team_id = None  # type: ignore
+                ctx.session.commit()
+                await safe_send_channel(
+                    ctx.message,
+                    s(
+                        "team_gone",
+                        reply=ctx.message.author.mention,
+                    ),
+                )
+                await safe_react_error(ctx.message)
+                return
+
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "team_yours",
+                    reply=ctx.message.author.mention,
+                    team=team.name,
+                ),
+            )
+            await safe_react_ok(ctx.message)
             return
-        async with self.session() as session:
-            server = self.ensure_server_exists(session, message.channel.guild.id)
-            for mentioned in message.mentions:
-                user = self.ensure_user_exists(session, mentioned)
-                user_settings = self.ensure_user_settings_exists(session, user, server)
-                user_settings.verified = setting  # type: ignore
-            session.commit()
-        await safe_react_ok(message)
+
+        team_request = ctx.params[0]
+        team_found: Optional[Team] = None
+        for team in ctx.server.teams:
+            if team_request.lower() != team.name.lower():
+                continue
+            team_found = team
+            break
+
+        if not team_found:
+            teams = ", ".join(sorted(team.name for team in ctx.server.teams))
+            await safe_send_channel(
+                ctx.message,
+                s(
+                    "team_not_found",
+                    reply=ctx.message.author.mention,
+                    teams=teams,
+                ),
+            )
+            await safe_react_error(ctx.message)
+            return
+
+        if ctx.user_settings.team_id != team_found.id:
+            ctx.user_settings.team_id = team_found.id  # type: ignore
+        ctx.session.commit()
+        await safe_react_ok(ctx.message)
+
+    async def _set_verified(self, ctx: Context, setting: bool) -> None:
+        assert ctx.server
+
+        if not await check_is_admin(ctx.message):
+            await safe_react_error(ctx.message)
+            return
+
+        if len(ctx.message.mentions) == 0:
+            await safe_react_error(ctx.message)
+            return
+        for mentioned in ctx.message.mentions:
+            user = self.ensure_user_exists(ctx.session, mentioned)
+            user_settings = self.ensure_user_settings_exists(
+                ctx.session, user, ctx.server
+            )
+            user_settings.verified = setting  # type: ignore
+        ctx.session.commit()
+        await safe_react_ok(ctx.message)
 
     @command(allow_dm=False, help_group="Commands for Admins")
-    async def verify(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def verify(self, ctx: Context) -> None:
         """Verify a user on your server."""
-        await self._set_verified(prefix, params, message, True)
+        await self._set_verified(ctx, True)
 
     @command(allow_dm=False, help_group="Commands for Admins")
-    async def unverify(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def unverify(self, ctx: Context) -> None:
         """Unverify a user on your server."""
-        await self._set_verified(prefix, params, message, False)
+        await self._set_verified(ctx, False)
 
-    async def _set_watched(
-        self, prefix: str, params: List[str], message: discord.Message, setting: bool
-    ) -> None:
-        if not await check_is_admin(message):
-            await safe_react_error(message)
+    async def _set_watched(self, ctx: Context, setting: bool) -> None:
+        assert ctx.server
+        assert ctx.channel_settings
+        if not await check_is_admin(ctx.message):
+            await safe_react_error(ctx.message)
             return
 
-        if len(message.mentions) == 0:
-            await safe_react_error(message)
+        if len(ctx.message.mentions) == 0:
+            await safe_react_error(ctx.message)
             return
 
         note = " ".join(
-            p for p in params if not p.startswith("<@") and not p.startswith("@")
+            p for p in ctx.params if not p.startswith("<@") and not p.startswith("@")
         )
         if len(note) >= 255:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "watched_user_note_too_long",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                     command=command,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        async with self.session() as session:
-            server = self.ensure_server_exists(session, message.channel.guild.id)
-            for mentioned in message.mentions:
-                user = self.ensure_user_exists(session, mentioned)
-                watched_user_q = session.query(WatchedUser).filter_by(
-                    user_xid=user.xid, guild_xid=server.guild_xid
+        for mentioned in ctx.message.mentions:
+            user = self.ensure_user_exists(ctx.session, mentioned)
+            watched_user_q = ctx.session.query(WatchedUser).filter_by(
+                user_xid=user.xid, guild_xid=ctx.server.guild_xid
+            )
+            watched_user = watched_user_q.first()
+            if watched_user and not setting:
+                watched_user_q.delete()
+            if watched_user and setting:
+                watched_user.note = note  # type: ignore
+            if not watched_user and setting:
+                watched_user = WatchedUser(
+                    user_xid=user.xid, guild_xid=ctx.server.guild_xid, note=note
                 )
-                watched_user = watched_user_q.first()
-                if watched_user and not setting:
-                    watched_user_q.delete()
-                if watched_user and setting:
-                    watched_user.note = note  # type: ignore
-                if not watched_user and setting:
-                    watched_user = WatchedUser(
-                        user_xid=user.xid, guild_xid=server.guild_xid, note=note
-                    )
-                    session.add(watched_user)
-            session.commit()
-        await safe_react_ok(message)
+                ctx.session.add(watched_user)
+        ctx.session.commit()
+        await safe_react_ok(ctx.message)
 
     @command(allow_dm=False, help_group="Commands for Admins")
-    async def watch(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def watch(self, ctx: Context) -> None:
         """Watch a user on your server."""
-        await self._set_watched(prefix, params, message, True)
+        await self._set_watched(ctx, True)
 
     @command(allow_dm=False, help_group="Commands for Admins")
-    async def unwatch(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def unwatch(self, ctx: Context) -> None:
         """Unwatch a user on your server."""
-        await self._set_watched(prefix, params, message, False)
+        await self._set_watched(ctx, False)
 
     @command(allow_dm=False, help_group="Commands for Admins")
-    async def spellbot(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
+    async def spellbot(self, ctx: Context) -> None:
         """
         Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
 
         The following subcommands are supported:
         * `config`: Just show the current configuration for this server.
-        * `channels <list>`: Set SpellBot to only respond in the given list of channels.
         * `prefix <string>`: Set SpellBot's command prefix for text channels.
         * `links <private|public>`: Set the privacy for generated SpellTable links.
         * `spectate <on|off>`: Add a spectator link to the posts SpellBot makes.
@@ -2771,700 +2734,532 @@ class SpellBot(discord.Client):
         * `help`: Get detailed usage help for SpellBot.
         & <subcommand> [subcommand parameters]
         """
-        if not params:
+        if not ctx.params:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_missing_subcommand",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        command = params[0]
+        command, ctx.params = ctx.params[0], ctx.params[1:]
         if command == "help":
-            await self.spellbot_help(prefix, params[1:], message)
+            await self.spellbot_help(ctx)
             return
 
-        if not await check_is_admin(message):
-            await safe_react_error(message)
+        if not await check_is_admin(ctx.message):
+            await safe_react_error(ctx.message)
             return
 
-        async with self.session() as session:
-            server = self.ensure_server_exists(session, message.channel.guild.id)
-            if command == "channels":
-                await self.spellbot_channels(session, server, params[1:], message)
-            elif command == "prefix":
-                await self.spellbot_prefix(session, server, params[1:], message)
-            elif command == "expire":
-                await self.spellbot_expire(session, server, params[1:], message)
-            elif command == "config":
-                await self.spellbot_config(session, server, params[1:], message)
-            elif command == "links":
-                await self.spellbot_links(session, server, params[1:], message)
-            elif command == "spectate":
-                await self.spellbot_spectate(session, server, params[1:], message)
-            elif command == "teams":
-                await self.spellbot_teams(session, server, params[1:], message)
-            elif command == "power":
-                await self.spellbot_power(session, server, params[1:], message)
-            elif command == "voice":
-                await self.spellbot_voice(session, server, params[1:], message)
-            elif command == "tags":
-                await self.spellbot_tags(session, server, params[1:], message)
-            elif command == "queue-time":
-                await self.spellbot_queue_time(session, server, params[1:], message)
-            elif command == "smotd":
-                await self.spellbot_smotd(session, server, params[1:], message)
-            elif command == "voice-category":
-                await self.spellbot_voice_category(session, server, params[1:], message)
-            elif command == "awards":
-                await self.spellbot_awards(session, server, params[1:], message)
-            elif command == "cmotd":
-                await self.spellbot_cmotd(session, server, params[1:], message)
-            elif command == "motd":
-                await self.spellbot_motd(session, server, params[1:], message)
-            elif command == "size":
-                await self.spellbot_size(session, server, params[1:], message)
-            elif command == "stats":
-                await self.spellbot_stats(session, server, params[1:], message)
-            elif command == "toggle-verify":
-                await self.spellbot_toggle_verify(session, server, params[1:], message)
-            elif command == "auto-verify":
-                await self.spellbot_auto_verify(session, server, params[1:], message)
-            elif command == "unverified-only":
-                await self.spellbot_unverified_only(session, server, params[1:], message)
-            elif command == "verify-message":
-                await self.spellbot_verify_message(session, server, params[1:], message)
-            else:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "spellbot_unknown_subcommand",
-                        reply=message.author.mention,
-                        command=command,
-                    ),
-                )
-                await safe_react_error(message)
-
-    async def spellbot_channels(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params:
+        if command == "prefix":
+            await self.spellbot_prefix(ctx)
+        elif command == "expire":
+            await self.spellbot_expire(ctx)
+        elif command == "config":
+            await self.spellbot_config(ctx)
+        elif command == "links":
+            await self.spellbot_links(ctx)
+        elif command == "spectate":
+            await self.spellbot_spectate(ctx)
+        elif command == "teams":
+            await self.spellbot_teams(ctx)
+        elif command == "power":
+            await self.spellbot_power(ctx)
+        elif command == "voice":
+            await self.spellbot_voice(ctx)
+        elif command == "tags":
+            await self.spellbot_tags(ctx)
+        elif command == "queue-time":
+            await self.spellbot_queue_time(ctx)
+        elif command == "smotd":
+            await self.spellbot_smotd(ctx)
+        elif command == "voice-category":
+            await self.spellbot_voice_category(ctx)
+        elif command == "awards":
+            await self.spellbot_awards(ctx)
+        elif command == "cmotd":
+            await self.spellbot_cmotd(ctx)
+        elif command == "motd":
+            await self.spellbot_motd(ctx)
+        elif command == "size":
+            await self.spellbot_size(ctx)
+        elif command == "stats":
+            await self.spellbot_stats(ctx)
+        elif command == "toggle-verify":
+            await self.spellbot_toggle_verify(ctx)
+        elif command == "auto-verify":
+            await self.spellbot_auto_verify(ctx)
+        elif command == "unverified-only":
+            await self.spellbot_unverified_only(ctx)
+        elif command == "verify-message":
+            await self.spellbot_verify_message(ctx)
+        else:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
-                    "spellbot_channels_none",
-                    reply=message.author.mention,
+                    "spellbot_unknown_subcommand",
+                    reply=ctx.message.author.mention,
+                    command=command,
                 ),
             )
-            await safe_react_error(message)
-            return
+            await safe_react_error(ctx.message)
 
-        # Blow away the current associations first, otherwise SQLAlchemy will explode.
-        session.query(Channel).filter_by(guild_xid=server.guild_xid).delete()
-        session.commit()
-
-        all_channels = False
-        channels = []
-        for param in params:
-            if param.lower() == "all":
-                all_channels = True
-                break
-
-            m = re.match("<#([0-9]+)>", param)
-            if not m:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "spellbot_channels_warn",
-                        reply=message.author.mention,
-                        param=param,
-                    ),
-                )
-                continue
-
-            discord_channel = await safe_fetch_channel(self, int(m[1]), server.guild_xid)
-            if not discord_channel:
-                await safe_send_channel(
-                    message,
-                    s(
-                        "spellbot_channels_warn",
-                        reply=message.author.mention,
-                        param=param,
-                    ),
-                )
-                continue
-
-            channel = Channel(channel_xid=discord_channel.id, guild_xid=server.guild_xid)
-            session.add(channel)
-            channels.append(channel)
-            session.commit()
-
-        if all_channels:
-            server.channels = []  # type: ignore
-            session.commit()
+    async def spellbot_prefix(self, ctx: Context) -> None:
+        assert ctx.server
+        assert ctx.channel_settings
+        if not ctx.params:
             await safe_send_channel(
-                message,
-                s(
-                    "spellbot_channels",
-                    reply=message.author.mention,
-                    channels="all channels",
-                ),
-            )
-        elif channels:
-            server.channels = channels  # type: ignore
-            session.commit()
-            channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])
-            await safe_send_channel(
-                message,
-                s(
-                    "spellbot_channels",
-                    reply=message.author.mention,
-                    channels=channels_str,
-                ),
-            )
-        await safe_react_ok(message)
-
-    async def spellbot_prefix(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params:
-            await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_prefix_none",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        prefix_str = params[0][0:10]
-        server.prefix = prefix_str  # type: ignore
-        session.commit()
+        prefix_str = ctx.params[0][0:10]
+        ctx.server.prefix = prefix_str  # type: ignore
+        ctx.session.commit()
+        self.prefixes[ctx.server.guild_xid] = prefix_str
         await safe_send_channel(
-            message,
+            ctx.message,
             s(
                 "spellbot_prefix",
-                reply=message.author.mention,
+                reply=ctx.message.author.mention,
                 prefix=prefix_str,
             ),
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_links(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params:
+    async def spellbot_links(self, ctx: Context) -> None:
+        assert ctx.server
+        assert ctx.channel_settings
+        if not ctx.params:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_links_none",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        links_str = params[0].lower()
+        links_str = ctx.params[0].lower()
         if links_str not in ["private", "public"]:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_links_bad",
-                    reply=message.author.mention,
-                    input=params[0],
+                    reply=ctx.message.author.mention,
+                    input=ctx.params[0],
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        server.links = links_str  # type: ignore
-        session.commit()
+        ctx.server.links = links_str  # type: ignore
+        ctx.session.commit()
         await safe_send_channel(
-            message,
+            ctx.message,
             s(
                 "spellbot_links",
-                reply=message.author.mention,
+                reply=ctx.message.author.mention,
                 setting=links_str,
             ),
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_spectate(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params or params[0].lower() not in ["on", "off"]:
+    async def spellbot_spectate(self, ctx: Context) -> None:
+        assert ctx.server
+        assert ctx.channel_settings
+        if not ctx.params or ctx.params[0].lower() not in ["on", "off"]:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_spectate_bad",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        setting = params[0].lower()
-        server.show_spectate_link = setting == "on"  # type: ignore
-        session.commit()
+        setting = ctx.params[0].lower()
+        ctx.server.show_spectate_link = setting == "on"  # type: ignore
+        ctx.session.commit()
         await safe_send_channel(
-            message,
+            ctx.message,
             s(
                 "spellbot_spectate",
-                reply=message.author.mention,
+                reply=ctx.message.author.mention,
                 setting=setting,
             ),
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_expire(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params:
+    async def spellbot_expire(self, ctx: Context) -> None:
+        assert ctx.server
+        assert ctx.channel_settings
+        if not ctx.params:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_expire_none",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        expire = to_int(params[0])
+        expire = to_int(ctx.params[0])
         if not expire or not (0 < expire <= 60):
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_expire_bad",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        server.expire = expire  # type: ignore
-        session.commit()
+        ctx.server.expire = expire  # type: ignore
+        ctx.session.commit()
         await safe_send_channel(
-            message,
+            ctx.message,
             s(
                 "spellbot_expire",
-                reply=message.author.mention,
+                reply=ctx.message.author.mention,
                 expire=expire,
             ),
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_teams(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params:
+    async def spellbot_teams(self, ctx: Context) -> None:
+        assert ctx.server
+        assert ctx.channel_settings
+        if not ctx.params:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_teams_none",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        erase_all_teams = params[0].lower() == "none"
+        erase_all_teams = ctx.params[0].lower() == "none"
 
-        if len(params) < 2 and not erase_all_teams:
+        if len(ctx.params) < 2 and not erase_all_teams:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_teams_too_few",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
         # blow away any existing old teams
-        for team in server.teams:
-            session.delete(team)
-        session.commit()
+        for team in ctx.server.teams:
+            ctx.session.delete(team)
+        ctx.session.commit()
 
-        if not erase_all_teams:
-            # then create new ones
-            server.teams = [Team(name=name) for name in set(params)]  # type: ignore
-            session.commit()
+        if not erase_all_teams:  # then create new ones
+            new_teams = [Team(name=name) for name in set(ctx.params)]
+            ctx.server.teams = new_teams  # type: ignore
+            ctx.session.commit()
 
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_power(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params or params[0].lower() not in ["on", "off"]:
+    async def spellbot_power(self, ctx: Context) -> None:
+        if not ctx.params or ctx.params[0].lower() not in ["on", "off"]:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_power_bad",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        setting = params[0].lower()
-        server.power_enabled = setting == "on"  # type: ignore
-        session.commit()
+        setting = ctx.params[0].lower()
+        ctx.server.power_enabled = setting == "on"  # type: ignore
+        ctx.session.commit()
         await safe_send_channel(
-            message,
+            ctx.message,
             s(
                 "spellbot_power",
-                reply=message.author.mention,
+                reply=ctx.message.author.mention,
                 setting=setting,
             ),
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_voice(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params or params[0].lower() not in ["on", "off"]:
+    async def spellbot_voice(self, ctx: Context) -> None:
+        if not ctx.params or ctx.params[0].lower() not in ["on", "off"]:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_voice_bad",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        setting = params[0].lower()
-        server.create_voice = setting == "on"  # type: ignore
-        session.commit()
+        setting = ctx.params[0].lower()
+        ctx.server.create_voice = setting == "on"  # type: ignore
+        ctx.session.commit()
         await safe_send_channel(
-            message,
+            ctx.message,
             s(
                 "spellbot_voice",
-                reply=message.author.mention,
+                reply=ctx.message.author.mention,
                 setting=setting,
             ),
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_tags(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        tags_enabled = not any(param.lower() == "off" for param in params)
+    async def spellbot_tags(self, ctx: Context) -> None:
+        assert ctx.server
+        tags_enabled = not any(param.lower() == "off" for param in ctx.params)
         channel_mentions: list[MentionableChannelType] = cast(
-            list, message.channel_mentions
+            list, ctx.message.channel_mentions
         )
 
-        if message.channel_mentions:
+        if ctx.message.channel_mentions:
             for mention in channel_mentions:
                 channel_settings = self.ensure_channel_settings_exists(
-                    session, server, mention.id, mention.name
+                    ctx.session, ctx.server, mention.id, mention.name
                 )
                 channel_settings.tags_enabled = tags_enabled  # type: ignore
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_tags_channels",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                     channels=", ".join(f"<#{m.id}>" for m in channel_mentions),
                     setting="on" if tags_enabled else "off",
                 ),
             )
         else:
-            server.tags_enabled = tags_enabled  # type: ignore
+            ctx.server.tags_enabled = tags_enabled  # type: ignore
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_tags_server",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                     setting="on" if tags_enabled else "off",
                 ),
             )
 
-        session.commit()
-        await safe_react_ok(message)
+        ctx.session.commit()
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_queue_time(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        queue_time_enabled = not any(param.lower() == "off" for param in params)
+    async def spellbot_queue_time(self, ctx: Context) -> None:
+        assert ctx.server
+        queue_time_enabled = not any(param.lower() == "off" for param in ctx.params)
         channel_mentions: list[MentionableChannelType] = cast(
-            list, message.channel_mentions
+            list, ctx.message.channel_mentions
         )
 
-        if message.channel_mentions:
+        if ctx.message.channel_mentions:
             for mention in channel_mentions:
                 channel_settings = self.ensure_channel_settings_exists(
-                    session, server, mention.id, mention.name
+                    ctx.session, ctx.server, mention.id, mention.name
                 )
                 channel_settings.queue_time_enabled = queue_time_enabled  # type: ignore
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_queue_time_channels",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                     channels=", ".join(f"<#{m.id}>" for m in channel_mentions),
                     setting="on" if queue_time_enabled else "off",
                 ),
             )
         else:
-            server.queue_time_enabled = queue_time_enabled  # type: ignore
+            ctx.server.queue_time_enabled = queue_time_enabled  # type: ignore
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_queue_time_server",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                     setting="on" if queue_time_enabled else "off",
                 ),
             )
 
-        session.commit()
-        await safe_react_ok(message)
+        ctx.session.commit()
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_smotd(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        motd = " ".join(params)
-        reply = message.author.mention
+    async def spellbot_smotd(self, ctx: Context) -> None:
+        motd = " ".join(ctx.params)
+        reply = ctx.message.author.mention
         if len(motd) >= 255:
-            await safe_send_channel(message, s("spellbot_smotd_too_long", reply=reply))
-            await safe_react_error(message)
+            await safe_send_channel(
+                ctx.message, s("spellbot_smotd_too_long", reply=reply)
+            )
+            await safe_react_error(ctx.message)
             return
-        server.smotd = motd  # type: ignore
-        session.commit()
-        await safe_send_channel(message, s("spellbot_smotd", reply=reply, motd=motd))
-        await safe_react_ok(message)
+        ctx.server.smotd = motd  # type: ignore
+        ctx.session.commit()
+        await safe_send_channel(ctx.message, s("spellbot_smotd", reply=reply, motd=motd))
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_voice_category(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        category_prefix = " ".join(params)
-        reply = message.author.mention
+    async def spellbot_voice_category(self, ctx: Context) -> None:
+        category_prefix = " ".join(ctx.params)
+        reply = ctx.message.author.mention
         if len(category_prefix) >= 40:
             await safe_send_channel(
-                message, s("spellbot_voice_category_too_long", reply=reply)
+                ctx.message, s("spellbot_voice_category_too_long", reply=reply)
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
         if not category_prefix:
             category_prefix = VOICE_CATEGORY_PREFIX
-        server.voice_category_prefix = category_prefix  # type: ignore
-        session.commit()
+        ctx.server.voice_category_prefix = category_prefix  # type: ignore
+        ctx.session.commit()
         await safe_send_channel(
-            message,
+            ctx.message,
             s("spellbot_voice_category", reply=reply, category=category_prefix),
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_cmotd(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        motd = " ".join(params)
-        reply = message.author.mention
+    async def spellbot_cmotd(self, ctx: Context) -> None:
+        motd = " ".join(ctx.params)
+        reply = ctx.message.author.mention
         if len(motd) >= 255:
-            await safe_send_channel(message, s("spellbot_cmotd_too_long", reply=reply))
-            await safe_react_error(message)
+            await safe_send_channel(
+                ctx.message, s("spellbot_cmotd_too_long", reply=reply)
+            )
+            await safe_react_error(ctx.message)
             return
 
-        channel_settings = self.ensure_channel_settings_exists(
-            session, server, message.channel.id, message.channel.name
-        )
-        channel_settings.cmotd = motd  # type: ignore
-        session.commit()
-        await safe_send_channel(message, s("spellbot_cmotd", reply=reply, motd=motd))
-        await safe_react_ok(message)
+        ctx.channel_settings.cmotd = motd  # type: ignore
+        ctx.session.commit()
+        await safe_send_channel(ctx.message, s("spellbot_cmotd", reply=reply, motd=motd))
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_motd(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params:
+    async def spellbot_motd(self, ctx: Context) -> None:
+        if not ctx.params:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_motd_none",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        motd_str = params[0].lower()
+        motd_str = ctx.params[0].lower()
         if motd_str not in ["private", "public", "both"]:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_motd_bad",
-                    reply=message.author.mention,
-                    input=params[0],
+                    reply=ctx.message.author.mention,
+                    input=ctx.params[0],
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        server.motd = motd_str  # type: ignore
-        session.commit()
+        ctx.server.motd = motd_str  # type: ignore
+        ctx.session.commit()
         await safe_send_channel(
-            message,
+            ctx.message,
             s(
                 "spellbot_motd",
-                reply=message.author.mention,
+                reply=ctx.message.author.mention,
                 setting=motd_str,
             ),
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_size(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params:
+    async def spellbot_size(self, ctx: Context) -> None:
+        if not ctx.params:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_size_none",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        default_size = to_int(params[0])
+        default_size = to_int(ctx.params[0])
         if not default_size or not (1 < default_size <= 4):
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_size_bad",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        channel_settings = self.ensure_channel_settings_exists(
-            session, server, message.channel.id, message.channel.name
-        )
-        channel_settings.default_size = default_size  # type: ignore
-        session.commit()
+        ctx.channel_settings.default_size = default_size  # type: ignore
+        ctx.session.commit()
         await safe_send_channel(
-            message,
+            ctx.message,
             s(
                 "spellbot_size",
-                reply=message.author.mention,
+                reply=ctx.message.author.mention,
                 default_size=default_size,
             ),
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_toggle_verify(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        channel_settings = self.ensure_channel_settings_exists(
-            session, server, message.channel.id, message.channel.name
-        )
-        new_setting = not channel_settings.require_verification
-        channel_settings.require_verification = new_setting  # type: ignore
-        session.commit()
+    async def spellbot_toggle_verify(self, ctx: Context) -> None:
+        assert ctx.channel_settings
+        new_setting = not ctx.channel_settings.require_verification
+        ctx.channel_settings.require_verification = new_setting  # type: ignore
+        ctx.session.commit()
         await safe_send_channel(
-            message,
+            ctx.message,
             s(
                 "spellbot_toggle_verify",
-                reply=message.author.mention,
+                reply=ctx.message.author.mention,
                 setting="on" if new_setting else "off",
             ),
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_auto_verify(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        if not params:
+    async def spellbot_auto_verify(self, ctx: Context) -> None:
+        assert ctx.server
+        if not ctx.params:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_auto_verify_none",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
         # Blow away the current associations first, otherwise SQLAlchemy will explode.
-        session.query(AutoVerifyChannel).filter_by(guild_xid=server.guild_xid).delete()
+        to_delete = ctx.session.query(AutoVerifyChannel).filter_by(
+            guild_xid=ctx.server.guild_xid
+        )
+        to_delete.delete()
+        ctx.session.commit()
+        self.auto_verify_channels[ctx.server.guild_xid] = set()
 
         all_channels = False
         channels = []
-        for param in params:
+        for param in ctx.params:
             if param.lower() == "all":
                 all_channels = True
                 break
@@ -3472,171 +3267,162 @@ class SpellBot(discord.Client):
             m = re.match("<#([0-9]+)>", param)
             if not m:
                 await safe_send_channel(
-                    message,
+                    ctx.message,
                     s(
                         "spellbot_auto_verify_warn",
-                        reply=message.author.mention,
+                        reply=ctx.message.author.mention,
                         param=param,
                     ),
                 )
                 continue
 
-            discord_channel = await safe_fetch_channel(self, int(m[1]), server.guild_xid)
+            discord_channel = await safe_fetch_channel(
+                self, int(m[1]), ctx.server.guild_xid
+            )
             if not discord_channel:
                 await safe_send_channel(
-                    message,
+                    ctx.message,
                     s(
                         "spellbot_auto_verify_warn",
-                        reply=message.author.mention,
+                        reply=ctx.message.author.mention,
                         param=param,
                     ),
                 )
                 continue
 
             channel = AutoVerifyChannel(
-                channel_xid=discord_channel.id, guild_xid=server.guild_xid
+                channel_xid=discord_channel.id, guild_xid=ctx.server.guild_xid
             )
-            session.add(channel)
+            ctx.session.add(channel)
             channels.append(channel)
-            session.commit()
+            ctx.session.commit()
 
         if all_channels:
-            server.auto_verify_channels = []  # type: ignore
-            session.commit()
+            ctx.server.auto_verify_channels = []  # type: ignore
+            ctx.session.commit()
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_auto_verify",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                     channels="all channels",
                 ),
             )
         elif channels:
-            server.auto_verify_channels = channels  # type: ignore
-            session.commit()
+            ctx.server.auto_verify_channels = channels  # type: ignore
+            ctx.session.commit()
+            self.auto_verify_channels[ctx.server.guild_xid] = set(
+                c.channel_xid for c in channels
+            )
             channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_auto_verify",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                     channels=channels_str,
                 ),
             )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_unverified_only(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
+    async def spellbot_unverified_only(self, ctx: Context) -> None:
+        assert ctx.server
         # Blow away the current associations first, otherwise SQLAlchemy will explode.
-        session.query(UnverifiedOnlyChannel).filter_by(
-            guild_xid=server.guild_xid
+        ctx.session.query(UnverifiedOnlyChannel).filter_by(
+            guild_xid=ctx.server.guild_xid
         ).delete()
 
-        channels = []
-        for param in params:
+        channels: List[UnverifiedOnlyChannel] = []
+        for param in ctx.params:
             m = re.match("<#([0-9]+)>", param)
             if not m:
                 await safe_send_channel(
-                    message,
+                    ctx.message,
                     s(
                         "spellbot_unverified_only_warn",
-                        reply=message.author.mention,
+                        reply=ctx.message.author.mention,
                         param=param,
                     ),
                 )
                 return
 
-            discord_channel = await safe_fetch_channel(self, int(m[1]), server.guild_xid)
+            discord_channel = await safe_fetch_channel(
+                self, int(m[1]), ctx.server.guild_xid
+            )
             if not discord_channel:
                 await safe_send_channel(
-                    message,
+                    ctx.message,
                     s(
                         "spellbot_unverified_only_warn",
-                        reply=message.author.mention,
+                        reply=ctx.message.author.mention,
                         param=param,
                     ),
                 )
                 return
 
             channel = UnverifiedOnlyChannel(
-                channel_xid=discord_channel.id, guild_xid=server.guild_xid
+                channel_xid=discord_channel.id, guild_xid=ctx.server.guild_xid
             )
-            session.add(channel)
+            ctx.session.add(channel)
             channels.append(channel)
-            session.commit()
+            ctx.session.commit()
 
-        server.unverified_only_channels = channels  # type: ignore
-        session.commit()
+        ctx.server.unverified_only_channels = channels  # type: ignore
+        ctx.session.commit()
+        self.unverified_only_channels[ctx.server.guild_xid] = set(
+            c.channel_xid for c in channels
+        )
         channels_str = ", ".join([f"<#{c.channel_xid}>" for c in channels])
         await safe_send_channel(
-            message,
+            ctx.message,
             s(
                 "spellbot_unverified_only",
-                reply=message.author.mention,
+                reply=ctx.message.author.mention,
                 channels=channels_str,
             ),
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_verify_message(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        msg = " ".join(params)
-        reply = message.author.mention
+    async def spellbot_verify_message(self, ctx: Context) -> None:
+        msg = " ".join(ctx.params)
+        reply = ctx.message.author.mention
         if len(msg) >= 255:
             await safe_send_channel(
-                message, s("spellbot_verify_message_too_long", reply=reply)
+                ctx.message, s("spellbot_verify_message_too_long", reply=reply)
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        channel_settings = self.ensure_channel_settings_exists(
-            session, server, message.channel.id, message.channel.name
-        )
-        channel_settings.verify_message = msg  # type: ignore
-        session.commit()
+        ctx.channel_settings.verify_message = msg  # type: ignore
+        ctx.session.commit()
         await safe_send_channel(
-            message, s("spellbot_verify_message", reply=reply, msg=msg)
+            ctx.message, s("spellbot_verify_message", reply=reply, msg=msg)
         )
-        await safe_react_ok(message)
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_awards(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
-        reply = message.author.mention
-        if not message.attachments:
+    async def spellbot_awards(self, ctx: Context) -> None:
+        assert ctx.server
+        reply = ctx.message.author.mention
+        if not ctx.message.attachments:
             await safe_send_channel(
-                message,
-                s("spellbot_awards_no_data", reply=message.author.mention),
+                ctx.message,
+                s("spellbot_awards_no_data", reply=ctx.message.author.mention),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
-        bdata = await message.attachments[0].read()
+        bdata = await ctx.message.attachments[0].read()
         try:
             sdata = self.decode_data(bdata)
         except UnicodeDecodeError:
             await safe_send_channel(
-                message,
+                ctx.message,
                 s(
                     "spellbot_awards_not_utf",
-                    reply=message.author.mention,
+                    reply=ctx.message.author.mention,
                 ),
             )
-            await safe_react_error(message)
+            await safe_react_error(ctx.message)
             return
 
         reader = csv.reader(StringIO(sdata))
@@ -3644,9 +3430,9 @@ class SpellBot(discord.Client):
         for i, row in enumerate(reader):
             if len(row) != 3:
                 await safe_send_channel(
-                    message, s("spellbot_awards_bad_row", i=i + 1, reply=reply)
+                    ctx.message, s("spellbot_awards_bad_row", i=i + 1, reply=reply)
                 )
-                await safe_react_error(message)
+                await safe_react_error(ctx.message)
                 return
 
             repeating = False
@@ -3657,28 +3443,28 @@ class SpellBot(discord.Client):
             count: int = int(count_str)
             if count <= 0 or math.isinf(count) or math.isnan(count):
                 await safe_send_channel(
-                    message, s("spellbot_awards_bad_count", i=i + 1, reply=reply)
+                    ctx.message, s("spellbot_awards_bad_count", i=i + 1, reply=reply)
                 )
-                await safe_react_error(message)
+                await safe_react_error(ctx.message)
                 return
             if len(msg) < 5 or len(msg) >= 255:
                 await safe_send_channel(
-                    message,
+                    ctx.message,
                     s("spellbot_awards_message_bad_size", i=i + 1, reply=reply),
                 )
-                await safe_react_error(message)
+                await safe_react_error(ctx.message)
                 return
             if len(role) < 1 or len(role) >= 60:
                 await safe_send_channel(
-                    message,
+                    ctx.message,
                     s("spellbot_awards_role_too_long", i=i + 1, reply=reply),
                 )
-                await safe_react_error(message)
+                await safe_react_error(ctx.message)
                 return
 
             awards.append(
                 Award(
-                    guild_xid=server.guild_xid,
+                    guild_xid=ctx.server.guild_xid,
                     count=count,
                     repeating=repeating,
                     role=role,
@@ -3687,65 +3473,50 @@ class SpellBot(discord.Client):
             )
 
         # Blow away the current awards first
-        session.query(Award).filter_by(guild_xid=server.guild_xid).delete()
-        session.commit()
+        ctx.session.query(Award).filter_by(guild_xid=ctx.server.guild_xid).delete()
+        ctx.session.commit()
 
-        session.add_all(awards)
-        session.commit()
-        await safe_react_ok(message)
+        ctx.session.add_all(awards)
+        ctx.session.commit()
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_stats(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
+    async def spellbot_stats(self, ctx: Context) -> None:
         from itertools import groupby
         from operator import itemgetter
 
-        export_file = TMP_DIR / f"stats-{message.channel.guild.name}.csv"
+        export_file = TMP_DIR / f"stats-{ctx.message.channel.guild.name}.csv"
         with open(export_file, "w") as f, redirect_stdout(f):
             print("date,channel,games")  # noqa: T001
-            stats = Game.games_per_day_per_channel(session, message.channel.guild.id)
+            stats = Game.games_per_day_per_channel(
+                ctx.session, ctx.message.channel.guild.id
+            )
             for day, day_rows in groupby(stats, itemgetter(0)):
                 for channel, row in groupby(day_rows, itemgetter(1)):
                     count = [*row][0][2]
                     print(f"{day},<#{channel}>,{count}")  # noqa: T001
-        await safe_send_channel(message, "", file=discord.File(export_file))
-        await safe_react_ok(message)
+        await safe_send_channel(ctx.message, "", file=discord.File(export_file))
+        await safe_react_ok(ctx.message)
 
-    async def spellbot_config(
-        self,
-        session: Session,
-        server: Server,
-        params: List[str],
-        message: discord.Message,
-    ) -> None:
+    async def spellbot_config(self, ctx: Context) -> None:
+        assert ctx.server
         embed = discord.Embed(title="SpellBot Server Config")
         embed.set_thumbnail(url=THUMB_URL)
-        embed.add_field(name="Command prefix", value=server.prefix)
-        expires_str = f"{server.expire} minutes"
+        embed.add_field(name="Command prefix", value=ctx.server.prefix)
+        expires_str = f"{ctx.server.expire} minutes"
         embed.add_field(name="Inactivity expiration time", value=expires_str)
-        channels = sorted(server.channels, key=lambda channel: channel.channel_xid)
-        if channels:
-            channels_str = ", ".join(f"<#{channel.channel_xid}>" for channel in channels)
-        else:
-            channels_str = "All"
-        embed.add_field(name="Active channels", value=channels_str)
-        embed.add_field(name="Links privacy", value=server.links.title())
+        embed.add_field(name="Links privacy", value=ctx.server.links.title())
         embed.add_field(
-            name="Spectator links", value="On" if server.show_spectate_link else "Off"
+            name="Spectator links", value="On" if ctx.server.show_spectate_link else "Off"
         )
-        embed.add_field(name="MOTD privacy", value=str(server.motd).title())
-        embed.add_field(name="Power", value="On" if server.power_enabled else "Off")
-        embed.add_field(name="Tags", value="On" if server.tags_enabled else "Off")
+        embed.add_field(name="MOTD privacy", value=str(ctx.server.motd).title())
+        embed.add_field(name="Power", value="On" if ctx.server.power_enabled else "Off")
+        embed.add_field(name="Tags", value="On" if ctx.server.tags_enabled else "Off")
         embed.add_field(
             name="Voice channels",
-            value="On" if server.create_voice else "Off",
+            value="On" if ctx.server.create_voice else "Off",
         )
         av_channels = sorted(
-            server.auto_verify_channels, key=lambda channel: channel.channel_xid
+            ctx.server.auto_verify_channels, key=lambda channel: channel.channel_xid
         )
         if av_channels:
             av_channels_str = ", ".join(
@@ -3755,7 +3526,7 @@ class SpellBot(discord.Client):
             av_channels_str = "All"
         embed.add_field(name="Auto verify channels", value=av_channels_str)
         uo_channels = sorted(
-            server.unverified_only_channels, key=lambda channel: channel.channel_xid
+            ctx.server.unverified_only_channels, key=lambda channel: channel.channel_xid
         )
         if uo_channels:
             uo_channels_str = ", ".join(
@@ -3764,19 +3535,21 @@ class SpellBot(discord.Client):
         else:
             uo_channels_str = "None"
         embed.add_field(name="Unverified only channels", value=uo_channels_str)
-        if server.teams:
-            teams_str = ", ".join(sorted(team.name for team in server.teams))
+        if ctx.server.teams:
+            teams_str = ", ".join(sorted(team.name for team in ctx.server.teams))
             embed.add_field(name="Teams", value=teams_str)
-        embed.add_field(name="Server MOTD", value=server.smotd or "None", inline=False)
+        embed.add_field(
+            name="Server MOTD", value=ctx.server.smotd or "None", inline=False
+        )
         embed.add_field(
             name="Admin created voice category prefix",
-            value=server.voice_category_prefix or VOICE_CATEGORY_PREFIX,
+            value=ctx.server.voice_category_prefix or VOICE_CATEGORY_PREFIX,
             inline=False,
         )
         embed.color = discord.Color(0x5A3EFD)
-        embed.set_footer(text=f"Config for Guild ID: {server.guild_xid}")
-        await safe_send_channel(message, embed=embed)
-        await safe_react_ok(message)
+        embed.set_footer(text=f"Config for Guild ID: {ctx.server.guild_xid}")
+        await safe_send_channel(ctx.message, embed=embed)
+        await safe_react_ok(ctx.message)
 
         async def warn_about_permissions(channel: discord.TextChannel, options=None):
             if channel is None:
@@ -3788,35 +3561,29 @@ class SpellBot(discord.Client):
                     "add_reactions",
                     "manage_messages",
                 }
-            perms = message.channel.guild.me.permissions_in(channel)
+            perms = ctx.message.channel.guild.me.permissions_in(channel)
             for perm in options:
                 if not getattr(perms, perm):
                     await safe_send_channel(
-                        message,
+                        ctx.message,
                         s(
                             f"warning_permissions_no_{perm}",
                             channel=f"<#{channel.id}>",
                         ),
                     )
 
-        await warn_about_permissions(message.channel)
-
-        for chan in channels:
-            channel = await safe_fetch_channel(self, chan.channel_xid, server.guild_xid)
-            if channel is None or not isinstance(channel, discord.TextChannel):
-                continue
-            await warn_about_permissions(channel)
+        await warn_about_permissions(ctx.message.channel)
 
         for chan in av_channels:  # type: ignore
-            channel = await safe_fetch_channel(self, chan.channel_xid, server.guild_xid)
+            channel = await safe_fetch_channel(
+                self, chan.channel_xid, ctx.server.guild_xid
+            )
             if channel is None or not isinstance(channel, discord.TextChannel):
                 continue
             await warn_about_permissions(channel, {"read_messages"})
 
-    async def spellbot_help(
-        self, prefix: str, params: List[str], message: discord.Message
-    ) -> None:
-        await self.help(prefix, params, message)
+    async def spellbot_help(self, ctx: Context) -> None:
+        await self.help(ctx)
 
 
 def get_db_env(fallback: str) -> str:

@@ -5,9 +5,10 @@ import os
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Coroutine, List
+from typing import Coroutine, List, cast
 from unittest.mock import MagicMock, Mock
 
+import discord
 import pytest
 import pytz
 
@@ -243,8 +244,8 @@ class TestSpellBot:
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_is_admin(self, client, channel_maker, channel_type):
         channel = channel_maker.make(channel_type)
-        assert not spellbot.is_admin(channel, not_an_admin())
-        assert spellbot.is_admin(channel, an_admin())
+        assert not spellbot.is_admin(channel, cast(discord.Member, not_an_admin()))
+        assert spellbot.is_admin(channel, cast(discord.Member, an_admin()))
 
     async def test_parse_opts(self):
         assert spellbot.parse_opts(["a", "B", "c"]) == {
@@ -433,119 +434,6 @@ class TestSpellBot:
             f'Sorry {author.mention}, but the subcommand "foo" is not recognized.'
         )
 
-    async def test_on_message_spellbot_channels_none(self, client, channel_maker):
-        channel = channel_maker.text()
-        author = an_admin()
-        await client.on_message(MockMessage(author, channel, "!spellbot channels"))
-        assert channel.last_sent_response == (
-            f"Sorry {author.mention}, but please provide a list of channels."
-            " Like #bot-commands, for example."
-        )
-
-    async def test_on_message_spellbot_channels_all_bad(self, client, channel_maker):
-        channel = channel_maker.text()
-        author = an_admin()
-        await client.on_message(MockMessage(author, channel, "!spellbot channels foo"))
-        assert channel.last_sent_response == (
-            f'Sorry {author.mention}, but "foo" is not a valid channel. Try using # to'
-            ' mention the channels you want or using "all" if you want me to operate'
-            " in all channels."
-        )
-
-    async def test_on_message_spellbot_channels_one_bad_one_good(
-        self, client, channel_maker
-    ):
-        channel = channel_maker.text()
-        author = an_admin()
-        cmd = f"!spellbot channels foo <#{channel.id}>"
-        await client.on_message(MockMessage(author, channel, cmd))
-        assert len(channel.all_sent_responses) == 2
-        assert channel.all_sent_responses[0] == (
-            f'Sorry {author.mention}, but "foo" is not a valid channel. Try using # to'
-            ' mention the channels you want or using "all" if you want me to operate'
-            " in all channels."
-        )
-        assert channel.all_sent_responses[1] == (
-            f"Ok {author.mention}, I will now operate within: <#{channel.id}>"
-        )
-
-    async def test_on_message_spellbot_channels_with_bad_ref(self, client, channel_maker):
-        channel = channel_maker.text()
-        author = an_admin()
-        await client.on_message(
-            MockMessage(author, channel, f"!spellbot channels <#{channel.id + 1}>")
-        )
-        assert channel.last_sent_response == (
-            f'Sorry {author.mention}, but "<#{channel.id + 1}>" is not a valid channel.'
-            ' Try using # to mention the channels you want or using "all" if you'
-            " want me to operate in all channels."
-        )
-        msg = MockMessage(author, channel, "!leave")
-        await client.on_message(msg)
-        assert "✅" in msg.reactions
-
-    async def test_on_message_spellbot_channels_with_invalid(self, client, channel_maker):
-        channel = channel_maker.text()
-        author = an_admin()
-        await client.on_message(
-            MockMessage(author, channel, f"!spellbot channels #{channel.id}")
-        )
-        assert channel.last_sent_response == (
-            f'Sorry {author.mention}, but "#{channel.id}" is not a valid channel.'
-            ' Try using # to mention the channels you want or using "all" if you'
-            " want me to operate in all channels."
-        )
-
-        msg = MockMessage(author, channel, "!leave")
-        await client.on_message(msg)
-        assert "✅" in msg.reactions
-
-    async def test_on_message_spellbot_channels_no_mention(self, client, channel_maker):
-        channel = channel_maker.text()
-        author = an_admin()
-        await client.on_message(
-            MockMessage(author, channel, f"!spellbot channels #{channel.name}")
-        )
-        assert channel.last_sent_response == (
-            f'Sorry {author.mention}, but "#{channel.name}" is not a valid channel.'
-            ' Try using # to mention the channels you want or using "all" if you'
-            " want me to operate in all channels."
-        )
-
-        msg = MockMessage(author, channel, "!leave")
-        await client.on_message(msg)
-        assert "✅" in msg.reactions
-
-    async def test_on_message_spellbot_channels(self, client, channel_maker):
-        admin = an_admin()
-        author = not_an_admin()
-        channel = channel_maker.text()
-        foo = channel_maker.text("foo")
-        bar = channel_maker.text("bar")
-        baz = channel_maker.text("baz")
-        await client.on_message(
-            MockMessage(admin, channel, f"!spellbot channels <#{channel.id}>")
-        )
-        assert channel.last_sent_response == (
-            f"Ok {admin.mention}, I will now operate within: <#{channel.id}>"
-        )
-        cmd = f"!spellbot channels <#{foo.id}> <#{bar.id}> <#{baz.id}>"
-        await client.on_message(MockMessage(admin, channel, cmd))
-        resp = (
-            f"Ok {admin.mention}, I will now operate within:"
-            f" <#{foo.id}>, <#{bar.id}>, <#{baz.id}>"
-        )
-        assert channel.last_sent_response == resp
-        await client.on_message(
-            MockMessage(author, channel, "!spellbot help")
-        )  # bad channel now
-        assert len(author.all_sent_calls) == 0
-
-        await client.on_message(MockMessage(admin, foo, "!spellbot channels all"))
-        assert foo.last_sent_response == (
-            f"Ok {admin.mention}, I will now operate within: all channels"
-        )
-
     @pytest.mark.parametrize("channel_type", ["dm", "text"])
     async def test_on_message_about(self, client, channel_maker, channel_type):
         channel = channel_maker.make(channel_type)
@@ -656,7 +544,6 @@ class TestSpellBot:
         fields = {f["name"]: f["value"] for f in about["fields"]}
         assert fields == {
             "Unverified only channels": "None",
-            "Active channels": "All",
             "Admin created voice category prefix": VOICE_CATEGORY_PREFIX,
             "Auto verify channels": "All",
             "Command prefix": "$",
@@ -669,15 +556,6 @@ class TestSpellBot:
             "Tags": "On",
             "Voice channels": "Off",
         }
-
-        foo = channel_maker.text("foo")
-        bar = channel_maker.text("bar")
-        channels_cmd = f"$spellbot channels <#{channel.id}> <#{foo.id}> <#{bar.id}>"
-        await client.on_message(MockMessage(author, channel, channels_cmd))
-        await client.on_message(MockMessage(author, channel, "$spellbot config"))
-        about = channel.last_sent_embed
-        fields = {f["name"]: f["value"] for f in about["fields"]}
-        assert fields["Active channels"] == f"<#{channel.id}>, <#{foo.id}>, <#{bar.id}>"
 
     async def test_on_message_game_with_too_many_mentions(self, client, channel_maker):
         channel = channel_maker.text()
@@ -939,7 +817,6 @@ class TestSpellBot:
         server = client.ensure_server_exists(session, 5)
         session.commit()
         assert json.loads(str(server)) == {
-            "channels": [],
             "guild_xid": 5,
             "prefix": "!",
             "show_spectate_link": False,
@@ -1652,29 +1529,6 @@ class TestSpellBot:
         await client.on_raw_reaction_add(payload)
         assert game_embed_for(client, ADAM, False) is None
 
-    async def test_on_raw_reaction_add_plus_unauth_channel(self, client, channel_maker):
-        channel_a = channel_maker.text("a")
-        channel_b = channel_maker.text("b")
-
-        await client.on_message(MockMessage(GUY, channel_a, "!lfg"))
-        message = channel_a.last_sent_message
-
-        lock_up = MockMessage(
-            an_admin(), channel_a, f"!spellbot channels <#{channel_b.id}>"
-        )
-        await client.on_message(lock_up)
-
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
-            channel_id=channel_a.id,
-            guild_id=channel_a.guild.id,
-            member=ADAM,
-        )
-        await client.on_raw_reaction_add(payload)
-        assert game_embed_for(client, ADAM, False) is None
-
     async def test_on_raw_reaction_add_plus_not_a_game(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
@@ -2100,7 +1954,7 @@ class TestSpellBot:
         channel = channel_maker.make(channel_type)
 
         @spellbot.command(allow_dm=True)
-        def mock_cmd(prefix, params, message):
+        async def mock_cmd(ctx):
             raise RuntimeError("boom")
 
         monkeypatch.setattr(client, "spellbot", mock_cmd)
@@ -2273,88 +2127,79 @@ class TestSpellBot:
         assert game_json_for(client, AMY)["voice_channel_xid"] == 1
         assert "Join your voice chat now" not in amy_embed["description"]
 
-    @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_power_no_params(self, client, channel_maker, channel_type):
+    async def test_on_message_power_no_params(self, client, channel_maker):
         author = someone()
-        channel = channel_maker.make(channel_type)
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!power"))
         assert channel.last_sent_response == (
             f"Sorry {author.mention}, please provide a number between"
             ' 1 to 10 or "none" to unset.'
         )
 
-    @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_power_bad_param(self, client, channel_maker, channel_type):
+    async def test_on_message_power_bad_param(self, client, channel_maker):
         author = someone()
-        channel = channel_maker.make(channel_type)
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!power bottom"))
         assert channel.last_sent_response == (
             f"Sorry {author.mention}, please provide a number between"
             ' 1 to 10 or "none" to unset.'
         )
 
-    @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_power_no_space(self, client, channel_maker, channel_type):
+    async def test_on_message_power_no_space(self, client, channel_maker):
         author = someone()
-        channel = channel_maker.make(channel_type)
+        channel = channel_maker.text()
         msg = MockMessage(author, channel, "!power5")
         await client.on_message(msg)
         assert "✅" in msg.reactions
 
-    @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_power_neg_param(self, client, channel_maker, channel_type):
+    async def test_on_message_power_neg_param(self, client, channel_maker):
         author = someone()
-        channel = channel_maker.make(channel_type)
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!power -5"))
         assert channel.last_sent_response == (
             f"Sorry {author.mention}, please provide a number between"
             ' 1 to 10 or "none" to unset.'
         )
 
-    @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_power_unlimited(self, client, channel_maker, channel_type):
+    async def test_on_message_power_unlimited(self, client, channel_maker):
         author = someone()
-        channel = channel_maker.make(channel_type)
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!power unlimited"))
         assert channel.last_sent_response == (
             f"⚡ Sorry {author.mention}, please provide a number between"
             ' 1 to 10 or "none" to unset.'
         )
 
-    @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_power_high_param(self, client, channel_maker, channel_type):
+    async def test_on_message_power_high_param(self, client, channel_maker):
         author = someone()
-        channel = channel_maker.make(channel_type)
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!power 9000"))
         assert channel.last_sent_response == (
             f"💥 Sorry {author.mention}, please provide a number between"
             ' 1 to 10 or "none" to unset.'
         )
 
-    @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_power_eleven(self, client, channel_maker, channel_type):
+    async def test_on_message_power_eleven(self, client, channel_maker):
         author = someone()
-        channel = channel_maker.make(channel_type)
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!power 11"))
         assert channel.last_sent_response == (
             f"🤘 Sorry {author.mention}, please provide a number between"
             ' 1 to 10 or "none" to unset.'
         )
 
-    @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_power_42(self, client, channel_maker, channel_type):
+    async def test_on_message_power_42(self, client, channel_maker):
         author = someone()
-        channel = channel_maker.make(channel_type)
+        channel = channel_maker.text()
         await client.on_message(MockMessage(author, channel, "!power 42"))
         assert channel.last_sent_response == (
             f"🤖 Sorry {author.mention}, please provide a number between"
             ' 1 to 10 or "none" to unset.'
         )
 
-    @pytest.mark.parametrize("channel_type", ["dm", "text"])
-    async def test_on_message_power(self, client, channel_maker, channel_type):
+    async def test_on_message_power(self, client, channel_maker):
         author = someone()
-        channel = channel_maker.make(channel_type)
+        channel = channel_maker.text()
         msg = MockMessage(author, channel, "!power 5")
         await client.on_message(msg)
         assert "✅" in msg.reactions
@@ -4097,7 +3942,16 @@ class TestSpellBot:
         await client.on_message(MockMessage(AMY, channel, "!lfg"))
         game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
         await update_average_wait_times(client)
-        wait = await client.average_wait(session, game)
+
+        class MockContext:
+            def __init__(self):
+                self.session = client.data.Session()
+                self.server = self.session.query(Server).one_or_none()
+                assert self.server
+                self.channel_settings = self.session.query(ChannelSettings).one_or_none()
+                assert self.channel_settings
+
+        wait = await client.average_wait(MockContext(), game)
         assert wait is None
 
         await client.on_message(MockMessage(admin, channel, "!spellbot queue-time on"))
@@ -4108,7 +3962,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(JR, channel, "!lfg"))
         game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
         await update_average_wait_times(client)
-        wait = await client.average_wait(session, game)
+        wait = await client.average_wait(MockContext(), game)
         assert wait is not None
 
     async def test_on_message_spellbot_queue_time_channels_when_server_on(
@@ -4132,10 +3986,18 @@ class TestSpellBot:
             f" for the channels: <#{channel.id}>."
         )
 
+        class MockContext:
+            def __init__(self):
+                self.session = client.data.Session()
+                self.server = self.session.query(Server).one_or_none()
+                assert self.server
+                self.channel_settings = self.session.query(ChannelSettings).one_or_none()
+                assert self.channel_settings
+
         await client.on_message(MockMessage(AMY, channel, "!lfg"))
         game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
         await update_average_wait_times(client)
-        wait = await client.average_wait(session, game)
+        wait = await client.average_wait(MockContext(), game)
         assert wait is None
 
         cmd = "!spellbot queue-time <#{channel.id}> on"
@@ -4150,7 +4012,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(JR, channel, "!lfg"))
         game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
         await update_average_wait_times(client)
-        wait = await client.average_wait(session, game)
+        wait = await client.average_wait(MockContext(), game)
         assert wait is not None
 
     async def test_on_message_spellbot_queue_time_channels_when_server_off(
@@ -4175,10 +4037,18 @@ class TestSpellBot:
             f" for the channels: <#{channel.id}>."
         )
 
+        class MockContext:
+            def __init__(self):
+                self.session = client.data.Session()
+                self.server = self.session.query(Server).one_or_none()
+                assert self.server
+                self.channel_settings = self.session.query(ChannelSettings).one_or_none()
+                assert self.channel_settings
+
         await client.on_message(MockMessage(AMY, channel, "!lfg"))
         game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
         await update_average_wait_times(client)
-        wait = await client.average_wait(session, game)
+        wait = await client.average_wait(MockContext(), game)
         assert wait is None
 
         cmd = "!spellbot queue-time <#{channel.id}> on"
@@ -4193,7 +4063,7 @@ class TestSpellBot:
         await client.on_message(MockMessage(JR, channel, "!lfg"))
         game = session.query(Game).filter(Game.id != ignored_game.id).one_or_none()
         await update_average_wait_times(client)
-        wait = await client.average_wait(session, game)
+        wait = await client.average_wait(MockContext(), game)
         assert wait is not None
 
     async def test_on_message_watch_non_admin(self, client, channel_maker):

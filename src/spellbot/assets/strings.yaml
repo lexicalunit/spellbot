@@ -102,12 +102,6 @@ spellbot_awards_not_utf: Sorry $reply, but that file isn't UTF-8 encoded and I c
   read it.
 spellbot_awards_role_too_long: Sorry $reply, but the role name on row $i is too short
   or too long.
-spellbot_channels: 'Ok $reply, I will now operate within: $channels'
-spellbot_channels_none: 'Sorry $reply, but please provide a list of channels. Like
-  #bot-commands, for example.'
-spellbot_channels_warn: 'Sorry $reply, but "$param" is not a valid channel. Try using
-  # to mention the channels you want or using "all" if you want me to operate in all
-  channels.'
 spellbot_cmotd: 'Right on, $reply. The message of the day for this channel is now:
   $motd'
 spellbot_cmotd_too_long: Sorry $reply, but that message is too long.

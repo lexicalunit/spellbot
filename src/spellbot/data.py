@@ -66,7 +66,6 @@ class Server(Base):
     smotd = Column(String(255))
     voice_category_prefix = Column(String(40))
     games = relationship("Game", back_populates="server", uselist=True)
-    channels = relationship("Channel", back_populates="server", uselist=True)
     auto_verify_channels = relationship(
         "AutoVerifyChannel", back_populates="server", uselist=True
     )
@@ -77,11 +76,6 @@ class Server(Base):
         "ChannelSettings", back_populates="server", uselist=True, lazy="dynamic"
     )
     teams = relationship("Team", back_populates="server", uselist=True)
-
-    def bot_allowed_in(self, channel_xid: int) -> bool:
-        return not self.channels or any(
-            channel.channel_xid == channel_xid for channel in self.channels
-        )
 
     def channel_settings_for(self, channel_xid: int) -> Optional[ChannelSettings]:
         filters = {"channel_xid": channel_xid}
@@ -146,7 +140,6 @@ class Server(Base):
                 "prefix": self.prefix,
                 "expire": self.expire,
                 "show_spectate_link": self.show_spectate_link,
-                "channels": [channel.channel_xid for channel in self.channels],
                 "teams": [team.name for team in self.teams],
             }
         )
@@ -182,18 +175,6 @@ class Team(Base):
         for row in rows:
             results[row[0]] = row[1]
         return results
-
-
-class Channel(Base):
-    __tablename__ = "channels"
-    channel_xid = Column(BigInteger, primary_key=True, nullable=False)
-    guild_xid = Column(
-        BigInteger,
-        ForeignKey("servers.guild_xid", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    server = relationship("Server", back_populates="channels")
 
 
 class AutoVerifyChannel(Base):
@@ -233,7 +214,9 @@ class ChannelSettings(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     default_size = Column(Integer, nullable=True)
-    require_verification = Column(Boolean, nullable=False, server_default=false())
+    require_verification = Column(
+        Boolean, nullable=False, server_default=false(), default=False
+    )
     cmotd = Column(String(255))
     verify_message = Column(String(255))
     tags_enabled = Column(Boolean, nullable=True)  # overrides server setting
@@ -897,5 +880,5 @@ class Data:
         self.engine = create_engine(db_url, echo=False)
         self.conn = self.engine.connect()
         create_all(self.conn, db_url)
-        self.Session = sessionmaker(bind=self.engine)
+        self.Session = sessionmaker(bind=self.engine, expire_on_commit=True)
         self.metadata = Base.metadata
