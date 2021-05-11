@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Got rid of "active channels" entirely, use Discord permissions instead.
+
+### Changed
+
+- Refactoring commands to do less database work.
+- Pass around a command context object instead of a bunch of random variables.
+
 ### Added
 
 - Adding a separate build script to avoid accidental deploys.

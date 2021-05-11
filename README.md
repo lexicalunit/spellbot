@@ -79,7 +79,6 @@ These commands will help you configure SpellBot for your server.
 - `!spellbot`: This command allows admins to configure SpellBot for their
   server. It supports the following subcommands:
   - `config`: Just show the current configuration for this server.
-  - `channels`: Set the channels SpellBot is allowed to operate within.
   - `prefix`: Set the command prefix for SpellBot in text channels.
   - `links`: Set the privacy level for generated SpellTable links.
   - `spectate`: Add a spectator link to the posts SpellBot makes.

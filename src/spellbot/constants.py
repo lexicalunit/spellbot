@@ -22,6 +22,8 @@ EMOJI_FAIL = "❌"
 EMOJI_JOIN_GAME = "✋"
 EMOJI_OK = "✅"
 
+DEFAULT_PREFIX = "!"
+
 VOICE_CATEGORY_PREFIX = "SpellBot Voice Channels"
 
 VOICE_INVITE_EXPIRE_TIME_S = 14400  # 4 hours, make this configurable?
