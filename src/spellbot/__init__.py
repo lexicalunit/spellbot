@@ -37,12 +37,14 @@ import hupper  # type: ignore
 import redis
 import requests
 from aiohttp import web
-from aiohttp.web_response import Response
+from aiohttp.web_response import Response as WebResponse
 from dotenv import load_dotenv
 from easy_profile import SessionProfiler  # type: ignore
 from easy_profile.reporters import StreamReporter  # type: ignore
 from expiringdict import ExpiringDict  # type: ignore
+from requests import Response as RequestsResponse
 from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.exceptions import HTTPError  # type: ignore
 from requests.packages.urllib3.util.retry import Retry  # type: ignore
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
@@ -563,19 +565,26 @@ class SpellBot(discord.Client):
         if self.mock_games:
             return f"http://exmaple.com/game/{uuid4()}"
 
-        headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
-        r = requests_retry_session().post(CREATE_ENDPOINT, headers=headers, timeout=5)
+        r: Optional[RequestsResponse] = None
+        try:
+            headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
+            r = requests_retry_session().post(CREATE_ENDPOINT, headers=headers, timeout=5)
+        except HTTPError as e:
+            logger.exception("error: SpellTable API failure: %s", e)
+            return None
+
+        assert r
         try:
             return cast(str, r.json()["gameUrl"])
         except KeyError as e:
-            logger.error(
+            logger.exception(
                 "error: gameUrl missing from SpellTable API response (%s): %s; %s",
                 r.status_code,
                 r.json(),
                 e,
             )
         except (ValueError, TypeError) as e:
-            logger.error(
+            logger.exception(
                 "error: non-JSON response from SpellTable API response (%s): %s; %s",
                 r.status_code,
                 r.content,
@@ -3627,7 +3636,7 @@ def get_redis_url() -> Optional[str]:
     return getenv("REDISCLOUD_URL", None)
 
 
-async def ping(request) -> Response:
+async def ping(request) -> WebResponse:
     return web.Response(text="ok")
 
 
