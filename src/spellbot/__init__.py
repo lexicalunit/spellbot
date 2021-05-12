@@ -39,8 +39,6 @@ import requests
 from aiohttp import web
 from aiohttp.web_response import Response as WebResponse
 from dotenv import load_dotenv
-from easy_profile import SessionProfiler  # type: ignore
-from easy_profile.reporters import StreamReporter  # type: ignore
 from expiringdict import ExpiringDict  # type: ignore
 from requests import Response as RequestsResponse
 from requests.adapters import HTTPAdapter
@@ -49,6 +47,10 @@ from requests.packages.urllib3.util.retry import Retry  # type: ignore
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.expression import and_, or_
+
+# TODO: Re-add this when sqlalchemy-easy-profile is fixed.
+# from easy_profile import SessionProfiler  # type: ignore
+# from easy_profile.reporters import StreamReporter  # type: ignore
 
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
@@ -127,7 +129,9 @@ DEFAULT_PORT = 5020
 DEFAULT_HOST = "localhost"
 
 logger = logging.getLogger(__name__)
-reporter = StreamReporter()
+
+# TODO: Re-add this when sqlalchemy-easy-profile is fixed.
+# reporter = StreamReporter()
 
 
 def to_int(s: str) -> Optional[int]:
@@ -1118,10 +1122,11 @@ class SpellBot(discord.Client):
                         if perms:
                             has_admin_perms = perms.administrator
 
-        profiler: Optional[SessionProfiler] = None
-        if SPELLBOT_PROFILE:
-            profiler = SessionProfiler()
-            profiler.begin()
+        # TODO: Re-add this when sqlalchemy-easy-profile is fixed.
+        # profiler: Optional[SessionProfiler] = None
+        # if SPELLBOT_PROFILE:
+        #     profiler = SessionProfiler()
+        #     profiler.begin()
 
         try:
             async with self.session() as session:
@@ -1210,10 +1215,12 @@ class SpellBot(discord.Client):
         except Exception as e:
             logging.exception("unhandled exception: %s", e)
             raise
-        finally:
-            if profiler:
-                profiler.commit()
-                reporter.report("", profiler.stats)
+
+        # TODO: Re-add this when sqlalchemy-easy-profile is fixed.
+        # finally:
+        #     if profiler:
+        #         profiler.commit()
+        #         reporter.report("", profiler.stats)
 
     async def on_ready(self) -> None:
         """Behavior when the client has successfully connected to Discord."""
