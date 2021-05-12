@@ -48,10 +48,6 @@ from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.expression import and_, or_
 
-# TODO: Re-add this when sqlalchemy-easy-profile is fixed.
-# from easy_profile import SessionProfiler  # type: ignore
-# from easy_profile.reporters import StreamReporter  # type: ignore
-
 from spellbot._version import __version__
 from spellbot.assets import ASSET_FILES, s
 from spellbot.constants import (
@@ -114,6 +110,10 @@ from spellbot.tasks import begin_background_tasks
 
 if not getenv("PYTEST_CURRENT_TEST") and "pytest" not in sys.modules:
     load_dotenv()
+
+# TODO: Re-add this when sqlalchemy-easy-profile is fixed.
+# from easy_profile import SessionProfiler  # type: ignore
+# from easy_profile.reporters import StreamReporter  # type: ignore
 
 SPELLBOT_PROFILE = getenv("SPELLBOT_PROFILE") or False
 
