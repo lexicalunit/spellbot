@@ -1,5 +1,6 @@
 import json
 from contextlib import asynccontextmanager
+from unittest.mock import MagicMock
 
 from discord import ChannelType
 
@@ -273,6 +274,7 @@ class MockChannel:
         self.sent = AsyncMock(side_effect=send_side_effect)
         self.last_sent_message = None
         self.messages = []
+        self.permissions_for = MagicMock()
 
     async def send(self, content=None, *args, **kwargs):
         self.last_sent_message = await self.sent(

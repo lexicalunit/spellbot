@@ -35,6 +35,22 @@ def _user_or_guild_log_part(message: discord.Message) -> str:  # pragma: no cove
     return "DM"
 
 
+def bot_can_delete_channel(channel: ChannelType) -> bool:
+    if channel.type == discord.ChannelType.private:
+        return False
+    if not hasattr(channel, "guild"):
+        return False
+    guild: discord.Guild = getattr(channel, "guild")
+    if not guild:
+        return False
+    requirements = {"manage_channels"}
+    perms = channel.permissions_for(guild.me)
+    for req in requirements:
+        if not hasattr(perms, req) or not getattr(perms, req):
+            return False
+    return True
+
+
 def bot_can_react(message: discord.Message) -> bool:
     if message.channel.type == discord.ChannelType.private:
         return True
@@ -339,6 +355,9 @@ async def safe_create_category_channel(
 
 
 async def safe_delete_channel(channel: ChannelType, guild_xid: int) -> bool:
+    if not bot_can_delete_channel(channel):
+        return False
+
     try:
         await channel.delete()  # type: ignore
         return True
