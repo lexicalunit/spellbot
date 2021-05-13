@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds some more logging to some tasks.
+- More defensive code around SpellTable API calls.
 
 ## [v6.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v6.0.1) - 2021-05-11
 

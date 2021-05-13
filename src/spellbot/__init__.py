@@ -577,7 +577,10 @@ class SpellBot(discord.Client):
             logger.exception("error: SpellTable API failure: %s", e)
             return None
 
-        assert r
+        if not r:
+            logger.exception("error: unknown SpellTable API failure")
+            return None
+
         try:
             return cast(str, r.json()["gameUrl"])
         except KeyError as e:
