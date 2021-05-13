@@ -571,6 +571,18 @@ class TestOperations:
 
         mock_channel.delete.assert_called_once_with()
 
+    async def test_safe_delete_channel_forbidden(self, client, monkeypatch):
+        mock_channel = MockTextChannel(1, "general", [])
+
+        mock_perms = Mock(return_value={})
+        monkeypatch.setattr(mock_channel, "permissions_for", mock_perms)
+
+        await safe_delete_channel(
+            cast(discord.TextChannel, mock_channel), mock_channel.guild.id
+        )
+
+        mock_channel.delete.assert_not_called()
+
     async def test_safe_delete_channel_error(self, client, monkeypatch, caplog):
         mock_channel = MockTextChannel(1, "general", [])
         mock_guild_id = mock_channel.guild.id
