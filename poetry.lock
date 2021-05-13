@@ -380,7 +380,7 @@ smmap = ">=3.0.1,<5"
 
 [[package]]
 name = "gitpython"
-version = "3.1.15"
+version = "3.1.16"
 description = "Python Git Library"
 category = "dev"
 optional = false
@@ -388,7 +388,6 @@ python-versions = ">=3.5"
 
 [package.dependencies]
 gitdb = ">=4.0.1,<5"
-typing-extensions = ">=3.7.4.0"
 
 [[package]]
 name = "greenlet"
@@ -1090,28 +1089,6 @@ pymysql = ["pymysql (<1)", "pymysql"]
 sqlcipher = ["sqlcipher3-binary"]
 
 [[package]]
-name = "sqlalchemy-easy-profile"
-version = "1.2.0"
-description = "An easy profiler for SQLAlchemy queries"
-category = "main"
-optional = false
-python-versions = "*"
-develop = false
-
-[package.dependencies]
-sqlalchemy = "<1.5"
-sqlparse = ">=0.3.0"
-
-[package.extras]
-dev = ["tox"]
-
-[package.source]
-type = "git"
-url = "https://github.com/dmvass/sqlalchemy-easy-profile.git"
-reference = "master"
-resolved_reference = "686d3cd1bbf01998a94d2a035ea13690f05df215"
-
-[[package]]
 name = "sqlalchemy-stubs"
 version = "0.4"
 description = "SQLAlchemy stubs and mypy plugin"
@@ -1122,14 +1099,6 @@ python-versions = "*"
 [package.dependencies]
 mypy = ">=0.790"
 typing-extensions = ">=3.7.4"
-
-[[package]]
-name = "sqlparse"
-version = "0.4.1"
-description = "A non-validating SQL parser."
-category = "main"
-optional = false
-python-versions = ">=3.5"
 
 [[package]]
 name = "starlette"
@@ -1286,8 +1255,8 @@ multidict = ">=4.0"
 
 [metadata]
 lock-version = "1.1"
-python-versions = '>=3.8,<4'
-content-hash = "b3b8d83bca9bc4987b4ea66393182a64ec1aca3e88eb35317aa91a345d5a9ffa"
+python-versions = ">=3.8,<4"
+content-hash = "d5366077a4a0f9a0eb2eb6839d518ce7979215e54c21e0ddc6cf47d1d9542ab7"
 
 [metadata.files]
 aiofiles = [
@@ -1551,8 +1520,8 @@ gitdb = [
     {file = "gitdb-4.0.7.tar.gz", hash = "sha256:96bf5c08b157a666fec41129e6d327235284cca4c81e92109260f353ba138005"},
 ]
 gitpython = [
-    {file = "GitPython-3.1.15-py3-none-any.whl", hash = "sha256:a77824e516d3298b04fb36ec7845e92747df8fcfee9cacc32dd6239f9652f867"},
-    {file = "GitPython-3.1.15.tar.gz", hash = "sha256:05af150f47a5cca3f4b0af289b73aef8cf3c4fe2385015b06220cbcdee48bb6e"},
+    {file = "GitPython-3.1.16-py3-none-any.whl", hash = "sha256:37ac36cacf2e2be5e88f0810187c5833e71c1a2a8cf81588f5699d1b70183baa"},
+    {file = "GitPython-3.1.16.tar.gz", hash = "sha256:2bfcd25e6b81fe431fa3ab1f0975986cfddabf7870a323c183f3afbc9447c0c5"},
 ]
 greenlet = [
     {file = "greenlet-1.1.0-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:60848099b76467ef09b62b0f4512e7e6f0a2c977357a036de602b653667f5f4c"},
@@ -2133,14 +2102,9 @@ sqlalchemy = [
     {file = "SQLAlchemy-1.4.15-cp39-cp39-win_amd64.whl", hash = "sha256:17ce3009c69ac361d871bed3c9c30cf405d2739934d83322272bd455a697c874"},
     {file = "SQLAlchemy-1.4.15.tar.gz", hash = "sha256:0ff100c75cd175f35f4d24375a0b3d82461f5b1af5fc8d112ef0e5ceea8049e6"},
 ]
-sqlalchemy-easy-profile = []
 sqlalchemy-stubs = [
     {file = "sqlalchemy-stubs-0.4.tar.gz", hash = "sha256:c665d6dd4482ef642f01027fa06c3d5e91befabb219dc71fc2a09e7d7695f7ae"},
     {file = "sqlalchemy_stubs-0.4-py3-none-any.whl", hash = "sha256:5eec7aa110adf9b957b631799a72fef396b23ff99fe296df726645d01e312aa5"},
-]
-sqlparse = [
-    {file = "sqlparse-0.4.1-py3-none-any.whl", hash = "sha256:017cde379adbd6a1f15a61873f43e8274179378e95ef3fede90b5aa64d304ed0"},
-    {file = "sqlparse-0.4.1.tar.gz", hash = "sha256:0f91fd2e829c44362cbcfab3e9ae12e22badaa8a29ad5ff599f9ec109f0454e8"},
 ]
 starlette = [
     {file = "starlette-0.13.6-py3-none-any.whl", hash = "sha256:bd2ffe5e37fb75d014728511f8e68ebf2c80b0fa3d04ca1479f4dc752ae31ac9"},
