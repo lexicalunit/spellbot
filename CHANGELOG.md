@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Added more needed truncation for stored cached names.
+
 ### Added
 
 - Adds SQL profiling: set environment `SPELLBOT_PROFILE=1` to enable.
