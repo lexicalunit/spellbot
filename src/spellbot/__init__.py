@@ -710,7 +710,7 @@ class SpellBot(discord.Client):
             channel_settings = ChannelSettings(
                 guild_xid=server.guild_xid,
                 channel_xid=channel_xid,
-                cached_name=channel_name[0:50],
+                cached_name=channel_name[0:50] if channel_name else None,
             )
             session.add(channel_settings)
         else:
