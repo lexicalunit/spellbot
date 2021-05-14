@@ -95,11 +95,9 @@ pyyaml = "^5.4.1"
 redis = "^3.5.3"
 requests = "^2.25.1"
 sqlalchemy = "^1.4.6"
+sqlalchemy-easy-profile = "1.2.1"
 unidecode = "^1.2.0"
 uvicorn = "^0.13.4"
-
-# Add this when the library gets fixed.
-# sqlalchemy-easy-profile = {git = "https://github.com/dmvass/sqlalchemy-easy-profile.git"}
 
 [tool.poetry.dev-dependencies]
 black = "^21.5b0"
