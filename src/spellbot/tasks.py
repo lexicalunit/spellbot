@@ -67,6 +67,7 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
                 logger.info(f"could not fetch voice channel for game {game.id}")
                 game.voice_channel_xid = None  # type: ignore
                 game.voice_channel_invite = None  # type: ignore
+                session.commit()
                 continue
 
             empty_or_really_old = (
