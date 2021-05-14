@@ -1091,12 +1091,11 @@ sqlcipher = ["sqlcipher3-binary"]
 
 [[package]]
 name = "sqlalchemy-easy-profile"
-version = "1.2.0"
+version = "1.2.1"
 description = "An easy profiler for SQLAlchemy queries"
 category = "main"
 optional = false
 python-versions = "*"
-develop = false
 
 [package.dependencies]
 sqlalchemy = "<1.5"
@@ -1104,12 +1103,6 @@ sqlparse = ">=0.3.0"
 
 [package.extras]
 dev = ["tox"]
-
-[package.source]
-type = "git"
-url = "https://github.com/dmvass/sqlalchemy-easy-profile.git"
-reference = "master"
-resolved_reference = "686d3cd1bbf01998a94d2a035ea13690f05df215"
 
 [[package]]
 name = "sqlalchemy-stubs"
@@ -1287,7 +1280,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = '>=3.8,<4'
-content-hash = "b3b8d83bca9bc4987b4ea66393182a64ec1aca3e88eb35317aa91a345d5a9ffa"
+content-hash = "6b6a822726256163b857e747a0fcf59133ac8dfcb25d636e5ad96f0df0e36908"
 
 [metadata.files]
 aiofiles = [
@@ -2133,7 +2126,10 @@ sqlalchemy = [
     {file = "SQLAlchemy-1.4.15-cp39-cp39-win_amd64.whl", hash = "sha256:17ce3009c69ac361d871bed3c9c30cf405d2739934d83322272bd455a697c874"},
     {file = "SQLAlchemy-1.4.15.tar.gz", hash = "sha256:0ff100c75cd175f35f4d24375a0b3d82461f5b1af5fc8d112ef0e5ceea8049e6"},
 ]
-sqlalchemy-easy-profile = []
+sqlalchemy-easy-profile = [
+    {file = "sqlalchemy-easy-profile-1.2.1.tar.gz", hash = "sha256:def78c8346d22a95834b88bc4ab4668bc6fb5b05d1323919bc109482d098520d"},
+    {file = "sqlalchemy_easy_profile-1.2.1-py3-none-any.whl", hash = "sha256:f1c466faf5a151f5fe0843b0cc19d9986d20d525f1c47da57a2a0b5efd84eeb6"},
+]
 sqlalchemy-stubs = [
     {file = "sqlalchemy-stubs-0.4.tar.gz", hash = "sha256:c665d6dd4482ef642f01027fa06c3d5e91befabb219dc71fc2a09e7d7695f7ae"},
     {file = "sqlalchemy_stubs-0.4-py3-none-any.whl", hash = "sha256:5eec7aa110adf9b957b631799a72fef396b23ff99fe296df726645d01e312aa5"},

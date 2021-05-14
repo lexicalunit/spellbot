@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds SQL profiling: set environment `SPELLBOT_PROFILE=1` to enable.
+
 ## [v6.0.3](https://github.com/lexicalunit/spellbot/releases/tag/v6.0.3) - 2021-05-13
 
 ### Fixed
