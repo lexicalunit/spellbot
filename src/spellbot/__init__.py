@@ -637,7 +637,7 @@ class SpellBot(discord.Client):
         else:
             # try to keep this relatively up to date
             if cast(Any, user).name != db_user.cached_name:
-                db_user.name = cast(Any, user).name  # type: ignore
+                db_user.name = cast(Any, user).name[0:50]  # type: ignore
                 session.commit()
         return cast(User, db_user)
 
@@ -715,7 +715,7 @@ class SpellBot(discord.Client):
             session.add(channel_settings)
         else:
             if channel_name is not None and channel_name != "":
-                channel_settings.cached_name = channel_name  # type: ignore
+                channel_settings.cached_name = channel_name[0:50]  # type: ignore
             channel_settings.updated_at = datetime.utcnow()  # type: ignore
         session.commit()
         return cast(ChannelSettings, channel_settings)
@@ -2137,7 +2137,7 @@ class SpellBot(discord.Client):
                     game_to_update = player_user.game
                     player_user.game_id = None  # type: ignore
                     await self.try_to_update_game(ctx, game_to_update)
-                player_user.cached_name = player_discord_user.name
+                player_user.cached_name = player_discord_user.name[0:50]
             ctx.session.commit()
 
             now = datetime.utcnow()
