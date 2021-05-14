@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v6.0.4](https://github.com/lexicalunit/spellbot/releases/tag/v6.0.4) - 2021-05-14
+
+### Fixed
+
+- Added more needed truncation for stored cached names.
+
 ### Added
 
 - Adds SQL profiling: set environment `SPELLBOT_PROFILE=1` to enable.
