@@ -629,7 +629,9 @@ class SpellBot(discord.Client):
         user_xid = cast(Any, user).id  # typing doesn't recognize that id exists
         db_user = session.query(User).filter(User.xid == user_xid).one_or_none()
         if not db_user:
-            db_user = User(xid=user_xid, game_id=None, cached_name=cast(Any, user).name)
+            db_user = User(
+                xid=user_xid, game_id=None, cached_name=cast(Any, user).name[0:50]
+            )
             session.add(db_user)
             session.commit()
         else:
@@ -708,7 +710,7 @@ class SpellBot(discord.Client):
             channel_settings = ChannelSettings(
                 guild_xid=server.guild_xid,
                 channel_xid=channel_xid,
-                cached_name=channel_name,
+                cached_name=channel_name[0:50],
             )
             session.add(channel_settings)
         else:
