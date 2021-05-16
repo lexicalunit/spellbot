@@ -4,6 +4,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
+from aiohttp.client_exceptions import ClientOSError
 
 import redis
 
@@ -169,8 +170,11 @@ def begin_background_tasks(bot: SpellBot) -> None:
 
             async def task_runner() -> None:
                 while True:
-                    await spec["function"](bot)
-                    await asyncio.sleep(INTERVAL)
+                    try:
+                        await spec["function"](bot)
+                        await asyncio.sleep(INTERVAL)
+                    except Exception as e:
+                        logger.exception("error: unhandled exception in task: %s", e)
 
             bot.loop.create_task(task_runner())
 
