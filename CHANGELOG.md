@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Handle unhandled exceptions in background tasks so that the task doesn't die.
+
 ## [v6.0.5](https://github.com/lexicalunit/spellbot/releases/tag/v6.0.5) - 2021-05-14
 
 ### Fixed
