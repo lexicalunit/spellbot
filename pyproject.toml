@@ -67,7 +67,7 @@ packages = [
 ]
 readme = 'README.md'
 repository = 'https://github.com/lexicalunit/spellbot'
-version = "6.0.4"
+version = "6.0.6"
 
 [tool.poetry.dependencies]
 aiofiles = "^0.6.0"
@@ -105,7 +105,7 @@ coverage = "^5.5"
 faker = "^8.1.4"
 flake8 = "^3.9.2"
 flake8-print = "^4.0.0"
-gitpython = "^3.1.14"
+gitpython = "^3.1.17"
 ipython = "^7.23.1"
 isort = "^5.7.0"
 mypy = "^0.812"
