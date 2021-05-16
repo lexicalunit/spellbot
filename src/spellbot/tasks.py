@@ -4,7 +4,6 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
-from aiohttp.client_exceptions import ClientOSError
 
 import redis
 
