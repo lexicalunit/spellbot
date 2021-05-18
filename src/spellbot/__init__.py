@@ -44,7 +44,6 @@ from easy_profile.reporters import StreamReporter  # type: ignore
 from expiringdict import ExpiringDict  # type: ignore
 from requests import Response as RequestsResponse
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.exceptions import HTTPError  # type: ignore
 from requests.packages.urllib3.util.retry import Retry  # type: ignore
 from sqlalchemy import exc
 from sqlalchemy.orm.session import Session
