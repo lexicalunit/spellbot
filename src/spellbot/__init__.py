@@ -571,7 +571,7 @@ class SpellBot(discord.Client):
         try:
             headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
             r = requests_retry_session().post(CREATE_ENDPOINT, headers=headers, timeout=5)
-        except HTTPError as e:
+        except Exception as e:
             logger.exception("error: SpellTable API failure: %s", e)
             return None
 
