@@ -2051,108 +2051,121 @@ class SpellBot(discord.Client):
             await safe_react_error(ctx.message)
             return
 
-        reader = csv.reader(StringIO(sdata))
-        header = [column.lower().strip() for column in next(reader)]
-        params = [param.lower().strip() for param in params]
+        event_error: Optional[str] = None
+        try:
+            reader = csv.reader(StringIO(sdata))
+            header = [column.lower().strip() for column in next(reader)]
+            params = [param.lower().strip() for param in params]
 
-        if any(param not in header for param in params):
+            if any(param not in header for param in params):
+                await safe_send_channel(
+                    ctx.message,
+                    s(
+                        "event_no_header",
+                        reply=ctx.message.author.mention,
+                    ),
+                )
+                await safe_react_error(ctx.message)
+                return
+
+            columns = [header.index(param) for param in params]
+
+            event = Event()
+            ctx.session.add(event)
+            ctx.session.commit()
+
+            players_in_this_event: Set[str] = set()
+            warnings = set()
+
+            finder = create_member_finder(ctx.message)
+
+            for i, row in enumerate(reader):
+                csv_row_data = [row[column].strip() for column in columns]
+                players_s = ", ".join([f'"{value}"' for value in csv_row_data])
+                player_names = [
+                    re.sub("#.*$", "", value.lower()).lstrip("@")
+                    for value in csv_row_data
+                ]
+
+                for player_name in player_names:
+                    if not finder.find(player_name):
+                        warning = s("event_missing_player", row=i + 1, players=players_s)
+                        await safe_send_channel(ctx.message, warning)
+                        continue
+
+                player_discord_users: List[discord.User] = []
+                for csv_data, player_name in zip(csv_row_data, player_names):
+                    if player_name in players_in_this_event:
+                        await safe_send_channel(
+                            ctx.message,
+                            s(
+                                "event_duplicate_user",
+                                row=i + 1,
+                                name=csv_data,
+                                players=players_s,
+                            ),
+                        )
+                        await safe_react_error(ctx.message)
+                        return
+                    player_discord_user = finder.find(player_name)
+                    if player_discord_user:
+                        players_in_this_event.add(player_name)
+                        player_discord_users.append(player_discord_user)
+                    else:
+                        warnings.add(
+                            s(
+                                "event_missing_user",
+                                row=i + 1,
+                                name=csv_data,
+                                players=players_s,
+                            )
+                        )
+
+                if len(player_discord_users) != size:
+                    continue
+
+                player_users = [
+                    self.ensure_user_exists(ctx.session, player_discord_user)
+                    for player_discord_user in player_discord_users
+                ]
+
+                for player_discord_user, player_user in zip(
+                    player_discord_users, player_users
+                ):
+                    if player_user.waiting:
+                        game_to_update = player_user.game
+                        player_user.game_id = None  # type: ignore
+                        await self.try_to_update_game(ctx, game_to_update)
+                    player_user.cached_name = player_discord_user.name[0:50]
+                ctx.session.commit()
+
+                now = datetime.utcnow()
+                expires_at = now + timedelta(minutes=ctx.server.expire)
+                game = Game(
+                    created_at=now,
+                    expires_at=expires_at,
+                    guild_xid=ctx.message.channel.guild.id,
+                    size=size,
+                    updated_at=now,
+                    status="ready",
+                    system=system,
+                    message=opt_msg,
+                    users=player_users,
+                    event=event,
+                    tags=tags,
+                )
+                ctx.session.add(game)
+                ctx.session.commit()
+        except Exception as e:
+            event_error = str(e)
+
+        if event_error:
             await safe_send_channel(
                 ctx.message,
-                s(
-                    "event_no_header",
-                    reply=ctx.message.author.mention,
-                ),
+                s("event_error", reply=ctx.message.author.mention, error=event_error),
             )
             await safe_react_error(ctx.message)
             return
-
-        columns = [header.index(param) for param in params]
-
-        event = Event()
-        ctx.session.add(event)
-        ctx.session.commit()
-
-        players_in_this_event: Set[str] = set()
-        warnings = set()
-
-        finder = create_member_finder(ctx.message)
-
-        for i, row in enumerate(reader):
-            csv_row_data = [row[column].strip() for column in columns]
-            players_s = ", ".join([f'"{value}"' for value in csv_row_data])
-            player_names = [
-                re.sub("#.*$", "", value.lower()).lstrip("@") for value in csv_row_data
-            ]
-
-            for player_name in player_names:
-                if not finder.find(player_name):
-                    warning = s("event_missing_player", row=i + 1, players=players_s)
-                    await safe_send_channel(ctx.message, warning)
-                    continue
-
-            player_discord_users: List[discord.User] = []
-            for csv_data, player_name in zip(csv_row_data, player_names):
-                if player_name in players_in_this_event:
-                    await safe_send_channel(
-                        ctx.message,
-                        s(
-                            "event_duplicate_user",
-                            row=i + 1,
-                            name=csv_data,
-                            players=players_s,
-                        ),
-                    )
-                    await safe_react_error(ctx.message)
-                    return
-                player_discord_user = finder.find(player_name)
-                if player_discord_user:
-                    players_in_this_event.add(player_name)
-                    player_discord_users.append(player_discord_user)
-                else:
-                    warnings.add(
-                        s(
-                            "event_missing_user",
-                            row=i + 1,
-                            name=csv_data,
-                            players=players_s,
-                        )
-                    )
-
-            if len(player_discord_users) != size:
-                continue
-
-            player_users = [
-                self.ensure_user_exists(ctx.session, player_discord_user)
-                for player_discord_user in player_discord_users
-            ]
-
-            for player_discord_user, player_user in zip(
-                player_discord_users, player_users
-            ):
-                if player_user.waiting:
-                    game_to_update = player_user.game
-                    player_user.game_id = None  # type: ignore
-                    await self.try_to_update_game(ctx, game_to_update)
-                player_user.cached_name = player_discord_user.name[0:50]
-            ctx.session.commit()
-
-            now = datetime.utcnow()
-            expires_at = now + timedelta(minutes=ctx.server.expire)
-            game = Game(
-                created_at=now,
-                expires_at=expires_at,
-                guild_xid=ctx.message.channel.guild.id,
-                size=size,
-                updated_at=now,
-                status="ready",
-                system=system,
-                message=opt_msg,
-                users=player_users,
-                event=event,
-                tags=tags,
-            )
-            ctx.session.add(game)
-            ctx.session.commit()
 
         def by_row(s: str) -> int:
             m = re.match("^.*row ([0-9]+).*$", s)

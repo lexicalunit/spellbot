@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Handle all exception classes in SpellTable API requests.
+- Handle random CSV exceptions in processing of event data.
 
 ## [v6.0.7](https://github.com/lexicalunit/spellbot/releases/tag/v6.0.7) - 2021-05-16
 
