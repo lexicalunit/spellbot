@@ -874,6 +874,21 @@ class TestSpellBot:
             " Please address any warnings and try again."
         )
 
+    async def test_on_message_event_csv_error(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        jacobFirst = JACOB.name[0:2]
+        jacobRest = JACOB.name[2:]
+        data = bytes(f"player1,player2\n{jacobFirst}\n{jacobRest},{JR.name}\n", "utf-8")
+        csv_file = MockAttachment("event.csv", data)
+        comment = "!event player1 player2"
+        message = MockMessage(author, channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            f"Sorry {author.mention}, there was an error processing your"
+            " event file: list index out of range"
+        )
+
     async def test_on_message_event_not_utf(self, client, channel_maker, monkeypatch):
         channel = channel_maker.text()
         author = an_admin()
