@@ -102,7 +102,7 @@ uvicorn = "^0.13.4"
 [tool.poetry.dev-dependencies]
 black = "^21.5b0"
 coverage = "^5.5"
-faker = "^8.2.0"
+faker = "^8.3.0"
 flake8 = "^3.9.2"
 flake8-print = "^4.0.0"
 gitpython = "^3.1.17"
