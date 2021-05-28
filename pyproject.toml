@@ -115,7 +115,7 @@ pytest-freezegun = "^0.4.2"
 pytest-mock = "^3.6.1"
 pytest-snapshot = "^0.6.1"
 requests = "^2.25.1"
-requests-mock = "^1.9.2"
+requests-mock = "^1.9.3"
 sqlalchemy-stubs = "^0.4"
 tox = "^3.23.1"
 
