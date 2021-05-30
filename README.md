@@ -97,7 +97,7 @@ These commands will help you configure SpellBot for your server.
   - `unverified-only`: Set the channels that are only for unverified users.
   - `verify-message`: Set the verification message for a specific channel.
   - `voice-category`: Set category for voice channels created by !game.
-  - `awards`: Coming Soon - Attach a config file to award users who have played enough games.
+  - `awards`: Attach a config file to award users who have played enough games.
   - `stats`: Gets some statistics about SpellBot usage on your server.
   - `help`: Get detailed usage help for SpellBot.
 - `!verify`: Allows moderators to verify a user on their server.
