@@ -33,12 +33,7 @@ from sqlalchemy.sql.expression import asc, desc, distinct
 from sqlalchemy.sql.schema import UniqueConstraint
 from sqlalchemy.sql.sqltypes import Numeric
 
-from spellbot.constants import (
-    EMOJI_DROP_GAME,
-    EMOJI_JOIN_GAME,
-    THUMB_URL,
-    VOICE_INVITE_EXPIRE_TIME_S,
-)
+from spellbot.constants import THUMB_URL, VOICE_INVITE_EXPIRE_TIME_S
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = PACKAGE_ROOT / "assets"
@@ -754,8 +749,6 @@ class Game(Base):
                 )
         if self.status == "pending":
             description += (
-                f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
-                f"If you need to drop, react with {EMOJI_DROP_GAME}\n\n"
                 "_A SpellTable link will be created when all players have joined._\n\n"
                 f"Looking for more players to join you? Just run `{prefix}lfg` again.\n"
             )

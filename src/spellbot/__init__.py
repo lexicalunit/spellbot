@@ -57,8 +57,6 @@ from spellbot.constants import (
     CREATE_ENDPOINT,
     DEFAULT_GAME_SIZE,
     DEFAULT_PREFIX,
-    EMOJI_DROP_GAME,
-    EMOJI_JOIN_GAME,
     ICO_URL,
     INVITE_LINK,
     THUMB_URL,
@@ -90,7 +88,6 @@ from spellbot.data import (
 from spellbot.operations import (
     MentionableChannelType,
     safe_add_role,
-    safe_clear_reactions,
     safe_create_category_channel,
     safe_create_invite,
     safe_create_voice_channel,
@@ -100,10 +97,8 @@ from spellbot.operations import (
     safe_fetch_guild,
     safe_fetch_message,
     safe_fetch_user,
-    safe_react_emoji,
     safe_react_error,
     safe_react_ok,
-    safe_remove_reaction,
     safe_send_channel,
     safe_send_user,
 )
@@ -777,8 +772,9 @@ class SpellBot(discord.Client):
         # NOTE: Deleting the whole post ended up being confusing by invalidating
         #       hyperlinks to game posts. Instead, let's just empty the post contents.
         # await safe_delete_message(post)
-        await safe_edit_message(post, content=s("deleted_game"), embed=None)
-        await safe_clear_reactions(post)
+        await safe_edit_message(
+            post, content=s("deleted_game"), embed=None, remove_ui=True
+        )
 
     async def try_to_update_game(self, ctx: Context, game: Game) -> None:
         """Attempts to update the embed for a game."""
@@ -933,44 +929,39 @@ class SpellBot(discord.Client):
             session.delete(game)
             session.commit()
 
-    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
-        """Behavior when the client gets a new reaction on a Discord message."""
-        emoji = str(payload.emoji)
-        if emoji not in [EMOJI_JOIN_GAME, EMOJI_DROP_GAME]:
+    async def on_interaction(self, interaction: discord.interactions.Interaction) -> None:
+        if not interaction.data:
+            return
+        custom_id: Optional[str] = interaction.data.get("custom_id", None)
+        if custom_id not in {"join", "leave"}:
             return
 
-        channel = await safe_fetch_channel(
-            self, payload.channel_id, payload.guild_id or 0
-        )
-        if not channel or channel.type != discord.ChannelType.text:
-            return
+        try:
+            await interaction.response.defer()
+        except Exception as e:
+            logger.exception("error: %s", e)
 
-        # From the docs: payload.member is available if `event_type` is `REACTION_ADD`.
-        author = cast(discord.User, payload.member)
-        if author.bot:
-            return
-
-        message = await safe_fetch_message(
-            channel, payload.message_id, payload.guild_id or 0
-        )
-        if not message:
+        join_was_clicked = custom_id == "join"
+        author = interaction.user
+        message = interaction.message
+        guild_id = interaction.guild_id
+        channel_id = interaction.channel_id
+        if not author or not message or not guild_id or not channel_id:
             return
 
         # NOTE: This and the code that handles !lfg commands is behind an async
         #       channel lock to prevent more than one person per guild per channel
         #       concurrently interleaving processing within this critical section.
-        async with self.session() as session, self.channel_lock(payload.channel_id):
-            assert payload.guild_id is not None
-            server = self.ensure_server_exists(session, payload.guild_id)
+        async with self.session() as session, self.channel_lock(channel_id):
+            server = self.ensure_server_exists(session, guild_id)
             user = self.ensure_user_exists(session, author)
 
             if user.banned:
-                await safe_remove_reaction(message, emoji, author)
                 return
 
             user_settings = self.ensure_user_settings_exists(session, user, server)
             channel_settings = self.ensure_channel_settings_exists(
-                session, server, payload.channel_id, message.channel.name
+                session, server, channel_id, message.channel.name
             )
 
             ctx = Context(
@@ -989,7 +980,6 @@ class SpellBot(discord.Client):
                     await self.safe_send_not_verified(
                         author, channel_settings, message.channel.name
                     )
-                    await safe_remove_reaction(message, emoji, author)
                     return
 
             game = (
@@ -1001,18 +991,16 @@ class SpellBot(discord.Client):
             now = datetime.utcnow()
             expires_at = now + timedelta(minutes=server.expire)
 
-            await safe_remove_reaction(message, emoji, author)
-
             session.add(
                 Metric(
                     kind="user_reaction",
-                    guild_xid=payload.guild_id,
-                    channel_xid=payload.channel_id,
+                    guild_xid=guild_id,
+                    channel_xid=channel_id,
                     user_xid=author.id,
                 )
             )
 
-            if emoji == EMOJI_JOIN_GAME:
+            if join_was_clicked:
                 if any(user.xid == game_user.xid for game_user in game.users):
                     # this author is already in this game, they don't need to be added
                     return
@@ -1029,7 +1017,7 @@ class SpellBot(discord.Client):
                     session.commit()
                     await self.try_to_update_game(ctx, game_to_update)
                 user.game = game
-            else:  # emoji == EMOJI_DROP_GAME:
+            else:
                 if not any(user.xid == game_user.xid for game_user in game.users):
                     # this author is not in this game, so they can't be removed from it
                     return
@@ -1042,7 +1030,7 @@ class SpellBot(discord.Client):
 
                 # update the game message
                 wait = await self.average_wait(ctx, game)
-                await safe_edit_message(message, embed=game.to_embed(wait=wait))
+                await safe_edit_message(message, embed=game.to_embed(wait=wait), ui=True)
                 return
 
             game.updated_at = now  # type: ignore
@@ -1077,7 +1065,6 @@ class SpellBot(discord.Client):
                     )
                 session.commit()
                 await safe_edit_message(message, embed=game.to_embed())
-                await safe_clear_reactions(message)
                 await self.send_watch_list_notifications(session, game)
             else:
                 session.commit()
@@ -1119,8 +1106,8 @@ class SpellBot(discord.Client):
                     if hasattr(member, "roles"):
                         is_mod = any(r.name == "Moderators" for r in member.roles)
                         is_mentor = any(r.name == "Mentors" for r in member.roles)
-                    if hasattr(member, "permissions_in"):
-                        perms = member.permissions_in(message.channel)
+                    if hasattr(message.channel, "permissions_for"):
+                        perms = message.channel.permissions_for(member)
                         if perms:
                             has_admin_perms = perms.administrator
 
@@ -1421,14 +1408,14 @@ class SpellBot(discord.Client):
 
     async def _post_new_game(self, ctx: Context, game: Game) -> Optional[discord.Message]:
         wait = await self.average_wait(ctx, game)
-        post = await safe_send_channel(ctx.message, embed=game.to_embed(wait=wait))
+        post = await safe_send_channel(
+            ctx.message, embed=game.to_embed(wait=wait), ui=True
+        )
         if not post:
             return None
 
         game.message_xid = post.id  # type: ignore
         ctx.session.commit()
-        await safe_react_emoji(post, EMOJI_JOIN_GAME)
-        await safe_react_emoji(post, EMOJI_DROP_GAME)
         return post
 
     async def _handle_awards(
@@ -1488,7 +1475,6 @@ class SpellBot(discord.Client):
                     await self._handle_awards(ctx.session, guild, discord_user)
                 ctx.session.commit()
                 await safe_edit_message(post, embed=game.to_embed())
-                await safe_clear_reactions(post)
                 await self.send_watch_list_notifications(ctx.session, game)
                 return
         else:  # game *definitely* isn't ready yet
@@ -1683,7 +1669,7 @@ class SpellBot(discord.Client):
 
     def _upsert_user_block(self, session: Session, user: User, blocked: User) -> None:
         data = {"user_xid": user.xid, "blocked_user_xid": blocked.xid}
-        if "postgres" in session.bind.dialect.name:
+        if "postgres" in session.bind.dialect.name:  # pragma: no cover
             from sqlalchemy.dialects.postgresql import insert
 
             stmt = insert(users_blocks).values(data)
@@ -3618,7 +3604,7 @@ class SpellBot(discord.Client):
                     "add_reactions",
                     "manage_messages",
                 }
-            perms = ctx.message.channel.guild.me.permissions_in(channel)
+            perms = ctx.message.channel.permissions_for(ctx.message.channel.guild.me)
             for perm in options:
                 if not getattr(perms, perm):
                     await safe_send_channel(

@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, Mock
 
@@ -6,9 +8,11 @@ import pytz
 import redis
 from sqlalchemy.orm.session import Session
 
+from spellbot import tasks
 from spellbot.constants import REALLY_OLD_GAMES_HOURS
 from spellbot.data import Game, Server
 from spellbot.tasks import (
+    begin_background_tasks,
     cleanup_expired_games,
     cleanup_old_voice_channels,
     cleanup_started_games,
@@ -268,6 +272,29 @@ class TestTasks:
         mock_fetch_channel.assert_called()
         assert game_json_for(client, AMY)["voice_channel_xid"] is None
 
+    async def test_cleanup_old_voice_channels_error_delete_channel(
+        self, client, channel_maker, monkeypatch, freezer, caplog
+    ):
+        caplog.set_level(logging.INFO)
+        NOW = datetime(year=1982, month=4, day=24, tzinfo=pytz.utc)
+        freezer.move_to(NOW)
+        channel = channel_maker.text()
+        author = an_admin()
+        await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
+        await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
+        mock_voice_channel = channel_maker.voice("whatever", [])
+        mock_get_channel = Mock(return_value=mock_voice_channel)
+        monkeypatch.setattr(client, "get_channel", mock_get_channel)
+        freezer.move_to(NOW + timedelta(days=3))
+        mock_safe_delete_channel = AsyncMock(return_value=None)
+        monkeypatch.setattr(tasks, "safe_delete_channel", mock_safe_delete_channel)
+
+        await cleanup_old_voice_channels(client)
+
+        game_id = game_json_for(client, AMY)["id"]
+        assert f"failed to delete voice channel for game {game_id}" in caplog.text
+
     async def test_cleanup_voice_channels_in_use(
         self, client, channel_maker, monkeypatch, freezer
     ):
@@ -351,3 +378,36 @@ class TestTasks:
         await update_average_wait_times(client)
 
         assert client.average_wait_times["500-6500"] == pytest.approx(10)
+
+    async def test_begin_background_tasks(self, client, monkeypatch):
+        mock_task = AsyncMock()
+
+        monkeypatch.setattr(
+            tasks, "BACKROUND_TASK_SPECS", [{"interval": 200, "function": mock_task}]
+        )
+        jobs = begin_background_tasks(client)
+
+        while not mock_task.called:
+            await asyncio.sleep(1)
+
+        for job in jobs:
+            job.cancel()
+
+    async def test_begin_background_tasks_failure(self, client, monkeypatch, caplog):
+        caplog.set_level(logging.INFO)
+        mock_task = AsyncMock()
+        mock_task.side_effect = RuntimeError("mock exception")
+
+        monkeypatch.setattr(
+            tasks, "BACKROUND_TASK_SPECS", [{"interval": 200, "function": mock_task}]
+        )
+        jobs = begin_background_tasks(client)
+
+        while not mock_task.called:
+            await asyncio.sleep(1)
+
+        for job in jobs:
+            job.cancel()
+
+        assert "unhandled exception in task" in caplog.text
+        assert "mock exception" in caplog.text
