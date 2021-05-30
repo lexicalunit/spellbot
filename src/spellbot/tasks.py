@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from asyncio.tasks import Task
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, cast
 
 import redis
 
@@ -88,7 +89,7 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
                         f" in guild {game.guild_xid}"
                     )
                     guild = bot.get_guild(game.guild_xid)
-                    perms = guild.me.permissions_in(chan)
+                    perms = chan.permissions_for(guild.me)
                     chan_name = chan.name  # type: ignore
                     msg = (
                         "bot permissions in channel"
@@ -162,21 +163,25 @@ BACKROUND_TASK_SPECS = [
 ]
 
 
-def begin_background_tasks(bot: SpellBot) -> None:
+def begin_background_tasks(bot: SpellBot) -> List[Task]:
     """Start up any periodic background tasks."""
+    jobs: List[Task] = []
     for task_spec in BACKROUND_TASK_SPECS:
 
-        def task_context(spec: dict) -> None:
+        def task_context(spec: dict) -> Task:
             INTERVAL = spec["interval"]
 
             async def task_runner() -> None:
                 while True:
                     try:
                         await spec["function"](bot)
-                        await asyncio.sleep(INTERVAL)
                     except Exception as e:
                         logger.exception("error: unhandled exception in task: %s", e)
+                    finally:
+                        await asyncio.sleep(INTERVAL)
 
-            bot.loop.create_task(task_runner())
+            return cast(Task, bot.loop.create_task(task_runner()))
 
-        task_context(task_spec)
+        jobs.append(task_context(task_spec))
+
+    return jobs

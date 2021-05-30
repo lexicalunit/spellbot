@@ -6,6 +6,9 @@ import pytest
 
 from spellbot.constants import EMOJI_FAIL, EMOJI_OK
 from spellbot.operations import (
+    bot_can_delete_channel,
+    bot_can_read,
+    bot_can_role,
     safe_clear_reactions,
     safe_create_category_channel,
     safe_create_invite,
@@ -28,6 +31,7 @@ from .mocks import AsyncMock
 from .mocks.discord import (
     MockDiscordMessage,
     MockGuild,
+    MockMember,
     MockTextChannel,
     MockVoiceChannel,
 )
@@ -58,7 +62,7 @@ class TestOperations:
 
     async def test_safe_remove_reaction_error_forbidden(self, mock_message, monkeypatch):
         mock_perms = Mock(return_value={})
-        monkeypatch.setattr(mock_message.channel.guild.me, "permissions_in", mock_perms)
+        monkeypatch.setattr(mock_message.channel, "permissions_for", mock_perms)
 
         await safe_remove_reaction(
             cast(discord.Message, mock_message), "emoji", cast(discord.User, FRIEND)
@@ -96,7 +100,7 @@ class TestOperations:
         self, mock_message, client, monkeypatch
     ):
         mock_perms = Mock(return_value={})
-        monkeypatch.setattr(mock_message.channel.guild.me, "permissions_in", mock_perms)
+        monkeypatch.setattr(mock_message.channel, "permissions_for", mock_perms)
 
         await safe_clear_reactions(cast(discord.Message, mock_message))
 
@@ -128,7 +132,7 @@ class TestOperations:
 
     async def test_safe_react_ok_error_forbidden(self, mock_message, client, monkeypatch):
         mock_perms = Mock(return_value={})
-        monkeypatch.setattr(mock_message.channel.guild.me, "permissions_in", mock_perms)
+        monkeypatch.setattr(mock_message.channel, "permissions_for", mock_perms)
 
         await safe_react_ok(cast(discord.Message, mock_message))
 
@@ -177,7 +181,7 @@ class TestOperations:
         self, mock_message, client, monkeypatch
     ):
         mock_perms = Mock(return_value={})
-        monkeypatch.setattr(mock_message.channel.guild.me, "permissions_in", mock_perms)
+        monkeypatch.setattr(mock_message.channel, "permissions_for", mock_perms)
 
         await safe_react_error(cast(discord.Message, mock_message))
 
@@ -226,7 +230,7 @@ class TestOperations:
         self, mock_message, client, monkeypatch
     ):
         mock_perms = Mock(return_value={})
-        monkeypatch.setattr(mock_message.channel.guild.me, "permissions_in", mock_perms)
+        monkeypatch.setattr(mock_message.channel, "permissions_for", mock_perms)
 
         await safe_react_emoji(cast(discord.Message, mock_message), "👍")
 
@@ -755,3 +759,42 @@ class TestOperations:
     #     await safe_send_channel(cast(discord.TextChannel, channel), content="test")
     #     assert "warning: discord: could not send message to channel" in caplog.text
     #     assert "Internal Server Error" in caplog.text
+
+    async def test_bot_can_delete_channel(self, client, channel_maker, monkeypatch):
+        assert bot_can_delete_channel(channel_maker.text())
+        assert not bot_can_delete_channel(channel_maker.dm())
+
+        text_channel = channel_maker.text()
+        monkeypatch.setattr(text_channel, "guild", None)
+        assert not bot_can_delete_channel(text_channel)
+
+        text_channel = channel_maker.text()
+        monkeypatch.delattr(text_channel, "guild")
+        assert not bot_can_delete_channel(text_channel)
+
+    async def test_bot_can_read(self, client, channel_maker, monkeypatch):
+        assert bot_can_read(channel_maker.dm())
+        assert bot_can_read(channel_maker.text())
+
+        text_channel = channel_maker.text()
+
+        class MockBadPermissions:
+            read_messages = True
+
+        monkeypatch.setattr(
+            text_channel, "permissions_for", Mock(return_value=MockBadPermissions())
+        )
+        assert not bot_can_read(text_channel)
+
+    async def test_bot_can_role(self, client, channel_maker, monkeypatch):
+        text_channel = channel_maker.text()
+        assert bot_can_role(text_channel.guild)
+
+        class MockBadPermissions:
+            read_messages = True
+
+        class MockedMockMember(MockMember):
+            guild_permissions = MockBadPermissions()
+
+        text_channel.guild.me.__class__ = MockedMockMember
+        assert not bot_can_role(text_channel.guild)

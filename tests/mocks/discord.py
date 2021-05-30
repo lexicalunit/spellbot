@@ -1,6 +1,5 @@
 import json
 from contextlib import asynccontextmanager
-from unittest.mock import MagicMock
 
 from discord import ChannelType
 
@@ -103,6 +102,20 @@ class MockPayload:
         self.guild_id = guild_id
 
 
+class MockInteraction:
+    class MockResponse:
+        def __init__(self):
+            self.defer = AsyncMock()
+
+    def __init__(self, user, message, custom_id, guild_id, channel_id):
+        self.user = user
+        self.message = message
+        self.data = {"custom_id": custom_id}
+        self.guild_id = guild_id
+        self.channel_id = channel_id
+        self.response = self.MockResponse()
+
+
 def send_side_effect(*args, **kwargs):
     return MockDiscordMessage()
 
@@ -135,7 +148,8 @@ class MockMember:
         )
         return self.last_sent_message
 
-    def permissions_in(self, channel):
+    @property
+    def guild_permissions(self):
         class MockPermissions:
             def __init__(self, administrator):
                 self.administrator = administrator
@@ -144,7 +158,9 @@ class MockMember:
                 self.send_messages = True
                 self.add_reactions = True
                 self.manage_messages = True
+                self.manage_channels = True
                 self.read_message_history = True
+                self.manage_roles = True
 
         return MockPermissions(self.admin)
 
@@ -274,7 +290,9 @@ class MockChannel:
         self.sent = AsyncMock(side_effect=send_side_effect)
         self.last_sent_message = None
         self.messages = []
-        self.permissions_for = MagicMock()
+
+    def permissions_for(self, member):
+        return member.guild_permissions
 
     async def send(self, content=None, *args, **kwargs):
         self.last_sent_message = await self.sent(
@@ -357,7 +375,9 @@ class MockTextChannel(MockChannel):
                 self.send_messages = True
                 self.add_reactions = True
                 self.manage_messages = True
+                self.manage_channels = True
                 self.read_message_history = True
+                self.administrator = member.guild_permissions.administrator
 
         return MockPermissions()
 

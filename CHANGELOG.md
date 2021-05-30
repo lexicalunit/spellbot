@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Replaces emoji reactions with button interactions.
+
 ## [v6.1.4](https://github.com/lexicalunit/spellbot/releases/tag/v6.1.4) - 2021-06-15
 
 ### Fixed

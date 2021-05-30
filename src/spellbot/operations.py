@@ -2,9 +2,11 @@ import logging
 from typing import Any, Optional, Union, cast
 
 import discord
+from discord.enums import ButtonStyle
+from discord.ui import Button, View
 
 from spellbot.assets import s
-from spellbot.constants import EMOJI_FAIL, EMOJI_OK
+from spellbot.constants import EMOJI_DROP_GAME, EMOJI_FAIL, EMOJI_JOIN_GAME, EMOJI_OK
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,29 @@ MentionableChannelType = Union[
 
 # Discord API error code indicating that we can not send messages to this user.
 CANT_SEND_CODE = 50007
+
+
+class GameUI(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.join = Button(
+            style=ButtonStyle.primary,
+            label="Join this game!",
+            custom_id="join",
+            emoji=EMOJI_JOIN_GAME,
+        )
+        self.leave = Button(
+            style=ButtonStyle.secondary,
+            label="Leave",
+            custom_id="leave",
+            emoji=EMOJI_DROP_GAME,
+        )
+        self.children = [self.join, self.leave]
+
+    async def interaction_check(
+        self, interaction: discord.interactions.Interaction
+    ) -> bool:  # pragma: no cover
+        return False
 
 
 def _user_or_guild_log_part(message: discord.Message) -> str:  # pragma: no cover
@@ -60,7 +85,7 @@ def bot_can_react(message: discord.Message) -> bool:
         "add_reactions",
         "manage_messages",
     }
-    perms = message.channel.guild.me.permissions_in(message.channel)
+    perms = message.channel.permissions_for(message.channel.guild.me)
     for req in requirements:
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
@@ -71,7 +96,7 @@ def bot_can_send(message: discord.Message) -> bool:
     if message.channel.type == discord.ChannelType.private:
         return True
     requirements = {"send_messages"}
-    perms = message.channel.guild.me.permissions_in(message.channel)
+    perms = message.channel.permissions_for(message.channel.guild.me)
     for req in requirements:
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
@@ -85,7 +110,7 @@ def bot_can_read(channel: discord.TextChannel) -> bool:
         "read_messages",
         "read_message_history",
     }
-    perms = channel.guild.me.permissions_in(channel)
+    perms = channel.permissions_for(channel.guild.me)
     for req in requirements:
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
@@ -236,10 +261,13 @@ async def safe_fetch_user(
 
 
 async def safe_edit_message(
-    message: discord.Message, *, reason: str = None, **options
+    message: discord.Message, *, reason: str = None, remove_ui: bool = False, **options
 ) -> None:
     try:
-        await message.edit(reason=reason, **options)
+        if remove_ui:
+            await message.edit(reason=reason, **options, view=None)
+        else:
+            await message.edit(reason=reason, **options)
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,
@@ -421,12 +449,14 @@ async def safe_send_channel(
     *,
     embed: Optional[discord.Embed] = None,
     file: Optional[discord.File] = None,
+    ui: bool = False,
 ) -> Optional[discord.Message]:
     try:
         if not bot_can_send(message):
             return None
 
-        return await message.channel.send(content, embed=embed, file=file)
+        view = GameUI() if ui else None
+        return await message.channel.send(content, embed=embed, file=file, view=view)
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,
