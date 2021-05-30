@@ -23,13 +23,7 @@ from spellbot import (
     get_redis_url,
     ping,
 )
-from spellbot.constants import (
-    CREATE_ENDPOINT,
-    EMOJI_DROP_GAME,
-    EMOJI_JOIN_GAME,
-    THUMB_URL,
-    VOICE_CATEGORY_PREFIX,
-)
+from spellbot.constants import CREATE_ENDPOINT, THUMB_URL, VOICE_CATEGORY_PREFIX
 from spellbot.data import (
     Award,
     ChannelSettings,
@@ -43,7 +37,7 @@ from spellbot.tasks import update_average_wait_times
 
 from .constants import CLIENT_TOKEN, TEST_DATA_ROOT
 from .mocks import AsyncMock
-from .mocks.discord import MockAttachment, MockChannel, MockMessage, MockPayload
+from .mocks.discord import MockAttachment, MockChannel, MockInteraction, MockMessage
 from .mocks.users import (
     ADAM,
     ADMIN,
@@ -1373,15 +1367,14 @@ class TestSpellBot:
         channel = channel_maker.text()
         await client.on_message(MockMessage(JR, channel, "!lfg size:2 ~mtgo"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         game = game_json_for(client, ADAM)
         assert game["system"] == "mtgo"
         assert game["tags"] == []
@@ -1406,15 +1399,14 @@ class TestSpellBot:
         channel = channel_maker.text()
         await client.on_message(MockMessage(JR, channel, "!lfg size:2 ~arena"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            custom_id="join",
+            user=ADAM,
+            message=message,
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         game = game_json_for(client, ADAM)
         assert game["system"] == "arena"
         assert game["tags"] == []
@@ -1484,190 +1476,192 @@ class TestSpellBot:
         await client.on_message(msg)
         assert "✅" in msg.reactions
 
-    async def test_on_raw_reaction_add_irrelevant(self, client, channel_maker):
+    async def test_on_interaction_bad_data(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji="👍",
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="bogus",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert game_embed_for(client, ADAM, False) is None
 
-    async def test_on_raw_reaction_add_bad_channel(self, client, channel_maker):
+    async def test_on_interaction_bad_message(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
-        message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
-            channel_id=channel.id + 1,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=None,
+            custom_id="join",
+            channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert game_embed_for(client, ADAM, False) is None
 
-    async def test_on_raw_reaction_add_self(self, client, channel_maker):
+    async def test_on_interaction_bad_channel(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADMIN.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
-            channel_id=channel.id,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
+            channel_id=None,
             guild_id=channel.guild.id,
-            member=ADMIN,
         )
-        await client.on_raw_reaction_add(payload)
-        assert game_embed_for(client, ADMIN, False) is None
-
-    async def test_on_raw_reaction_add_bad_message(self, client, channel_maker):
-        channel = channel_maker.text()
-        await client.on_message(MockMessage(GUY, channel, "!lfg"))
-        message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id + 1,
-            emoji=EMOJI_JOIN_GAME,
-            channel_id=channel.id,
-            guild_id=channel.guild.id,
-            member=ADAM,
-        )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert game_embed_for(client, ADAM, False) is None
 
-    async def test_on_raw_reaction_add_plus_not_a_game(self, client, channel_maker):
+    async def test_on_interaction_bad_guild(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
+            channel_id=channel.id,
+            guild_id=None,
+        )
+        await client.on_interaction(interaction)
+        assert game_embed_for(client, ADAM, False) is None
+
+    async def test_on_interaction_bad_user(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        interaction = MockInteraction(
+            user=None,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
+        assert game_embed_for(client, ADAM, False) is None
+
+    async def test_on_interaction_plus_not_a_game(self, client, channel_maker):
+        channel = channel_maker.text()
+        await client.on_message(MockMessage(GUY, channel, "!lfg"))
+        message = channel.last_sent_message
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
+            channel_id=channel.id,
+            guild_id=channel.guild.id,
+        )
+        await client.on_interaction(interaction)
         assert game_embed_for(client, ADAM, False) == game_embed_for(client, GUY, False)
 
-    async def test_on_raw_reaction_add_plus_twice(self, client, channel_maker):
+    async def test_on_interaction_plus_twice(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
+        await client.on_interaction(interaction)
         assert len(ADAM.all_sent_calls) == 0
 
         assert message.last_edited_embed["title"] == (
             "**Waiting for 2 more players to join...**"
         )
 
-    async def test_on_raw_reaction_add_plus_already(self, client, channel_maker):
+    async def test_on_interaction_plus_already(self, client, channel_maker):
         channel = channel_maker.text()
 
         # first game
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message1 = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message1.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message1,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
         embed1 = channel.last_sent_embed
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
 
         # second game
         await client.on_message(MockMessage(JR, channel, "!lfg ~modern"))
         message2 = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message2.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message2,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert len(all_games(client)) == 2
         assert game_embed_for(client, ADAM, True) != game_embed_for(client, GUY, False)
 
         assert message1.last_edited_embed == embed1  # unchanged
         assert message2.last_edited_embed["title"] == "**Your game is ready!**"
 
-    async def test_on_raw_reaction_add_plus(self, client, channel_maker):
+    async def test_on_interaction_plus(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert "2 more players" in game_embed_for(client, ADAM, False)["title"]
 
         assert message.last_edited_embed["title"] == (
             "**Waiting for 2 more players to join...**"
         )
 
-    async def test_on_raw_reaction_add_plus_complete(self, client, channel_maker):
+    async def test_on_interaction_plus_complete(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         ready = game_embed_for(client, ADAM, True)
         assert GUY.last_sent_embed == ready
         assert ADAM.last_sent_embed == ready
 
         assert message.last_edited_embed["title"] == "**Your game is ready!**"
 
-    async def test_on_raw_reaction_add_plus_after_disconnect(self, client, channel_maker):
+    async def test_on_interaction_plus_after_disconnect(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
         message = channel.last_sent_message
 
         client.mock_disconnect_user(GUY)
 
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert "1 more player" in game_embed_for(client, ADAM, False)["title"]
 
         session = client.data.Session()
@@ -1676,9 +1670,6 @@ class TestSpellBot:
         assert message.last_edited_embed == {
             "color": 5914365,
             "description": (
-                f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
-                f"If you need to drop, react with {EMOJI_DROP_GAME}\n"
-                "\n"
                 "_A SpellTable link will be created when all players have joined._\n"
                 "\n"
                 "Looking for more players to join you? Just run `!lfg` "
@@ -1691,33 +1682,31 @@ class TestSpellBot:
             "type": "rich",
         }
 
-    async def test_on_raw_reaction_add_plus_then_minus(self, client, channel_maker):
+    async def test_on_interaction_plus_then_minus(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
 
         assert not user_has_game(client, ADAM)
 
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert user_has_game(client, ADAM)
 
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_DROP_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="leave",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert not user_has_game(client, ADAM)
 
         session = client.data.Session()
@@ -1726,9 +1715,6 @@ class TestSpellBot:
         assert message.last_edited_embed == {
             "color": 5914365,
             "description": (
-                f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
-                f"If you need to drop, react with {EMOJI_DROP_GAME}\n"
-                "\n"
                 "_A SpellTable link will be created when all players have joined._\n"
                 "\n"
                 "Looking for more players to join you? Just run `!lfg` "
@@ -1746,15 +1732,14 @@ class TestSpellBot:
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
 
-        payload = MockPayload(
-            user_id=GUY.id,
-            message_id=message.id,
-            emoji=EMOJI_DROP_GAME,
+        interaction = MockInteraction(
+            user=GUY,
+            message=message,
+            custom_id="leave",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=GUY,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert not user_has_game(client, GUY)
 
         session = client.data.Session()
@@ -1765,9 +1750,6 @@ class TestSpellBot:
             {
                 "color": 5914365,
                 "description": (
-                    f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
-                    f"If you need to drop, react with {EMOJI_DROP_GAME}\n"
-                    "\n"
                     "_A SpellTable link will be created when all players have joined._\n"
                     "\n"
                     "Looking for more players to join you? Just run `!lfg` "
@@ -1782,9 +1764,6 @@ class TestSpellBot:
         assert message.last_edited_embed == {
             "color": 5914365,
             "description": (
-                f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
-                f"If you need to drop, react with {EMOJI_DROP_GAME}\n"
-                "\n"
                 "_A SpellTable link will be created when all players have joined._\n"
                 "\n"
                 "Looking for more players to join you? Just run `!lfg` "
@@ -1796,35 +1775,31 @@ class TestSpellBot:
             "type": "rich",
         }
 
-    async def test_on_raw_reaction_add_minus_when_not_in_game(
-        self, client, channel_maker
-    ):
+    async def test_on_interaction_minus_when_not_in_game(self, client, channel_maker):
         channel = channel_maker.text()
         await client.on_message(MockMessage(GUY, channel, "!lfg"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert user_has_game(client, GUY)
         assert user_has_game(client, ADAM)
 
-        payload = MockPayload(
-            user_id=AMY.id,
-            message_id=message.id,
-            emoji=EMOJI_DROP_GAME,
+        interaction = MockInteraction(
+            user=AMY,
+            message=message,
+            custom_id="leave",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=AMY,
         )
         assert not user_has_game(client, AMY)
 
-    async def test_on_raw_reaction_add_minus_when_not_in_that_game(
+    async def test_on_interaction_minus_when_not_in_that_game(
         self, client, channel_maker
     ):
         channel = channel_maker.text()
@@ -1833,27 +1808,25 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(GUY, channel, "!lfg ~chaos"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert user_has_game(client, GUY)
         assert user_has_game(client, ADAM)
 
-        payload = MockPayload(
-            user_id=AMY.id,
-            message_id=message.id,
-            emoji=EMOJI_DROP_GAME,
+        interaction = MockInteraction(
+            user=AMY,
+            message=message,
+            custom_id="leave",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=AMY,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
         assert user_has_game(client, AMY)
 
     async def test_on_message_export_non_admin(self, client, channel_maker):
@@ -1868,15 +1841,14 @@ class TestSpellBot:
         channel = channel_maker.text()
         await client.on_message(MockMessage(JR, channel, "!lfg size:2 ~mtgo"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=ADAM.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=ADAM,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=ADAM,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
 
         # game_two is pending, so it shouldn't show up in the csv export
         await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
@@ -2237,9 +2209,6 @@ class TestSpellBot:
         assert game_embed_for(client, AMY, False) == {
             "color": 5914365,
             "description": (
-                f"To **join this game**, react with {EMOJI_JOIN_GAME}\n"
-                f"If you need to drop, react with {EMOJI_DROP_GAME}\n"
-                "\n"
                 "_A SpellTable link will be created when all players have joined._\n"
                 "\n"
                 "Looking for more players to join you? Just run `!lfg` "
@@ -3361,15 +3330,14 @@ class TestSpellBot:
         await client.on_message(MockMessage(admin, channel, "!spellbot toggle-verify"))
 
         # then have an unverified user try to react join
-        payload = MockPayload(
-            user_id=AMY.id,
-            message_id=game_post.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=AMY,
+            message=game_post,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=AMY,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
 
         # unverified user should get a notification about being unverified
         assert AMY.last_sent_response == (
@@ -3389,15 +3357,14 @@ class TestSpellBot:
         await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
 
         # and try again
-        payload = MockPayload(
-            user_id=AMY.id,
-            message_id=game_post.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=AMY,
+            message=game_post,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=AMY,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
 
         # both should have a game
         assert user_has_game(client, JR)
@@ -3413,15 +3380,14 @@ class TestSpellBot:
             session.execute("delete from games;")
             session.commit()
 
-        payload = MockPayload(
-            user_id=AMY.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=AMY,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=AMY,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
 
         assert not user_has_game(client, JR)
         assert not user_has_game(client, AMY)
@@ -3841,15 +3807,14 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(AMY, channel, "!lfg"))
         message = channel.last_sent_message
-        payload = MockPayload(
-            user_id=JACOB.id,
-            message_id=message.id,
-            emoji=EMOJI_JOIN_GAME,
+        interaction = MockInteraction(
+            user=JACOB,
+            message=message,
+            custom_id="join",
             channel_id=channel.id,
             guild_id=channel.guild.id,
-            member=JACOB,
         )
-        await client.on_raw_reaction_add(payload)
+        await client.on_interaction(interaction)
 
         assert game_embed_for(client, AMY, False) != game_embed_for(client, JACOB, False)
         assert game_embed_for(client, JACOB, False) is None
@@ -4206,11 +4171,12 @@ class TestSpellBot:
                 self.add_reactions = False
                 self.manage_messages = False
                 self.send_messages = True
+                self.administrator = False
 
         bad_permissions = BadPermissions()
-        mock_permissions_in = MagicMock(return_value=bad_permissions)
+        mock_permissions_for = MagicMock(return_value=bad_permissions)
 
-        monkeypatch.setattr(client.user, "permissions_in", mock_permissions_in)
+        monkeypatch.setattr(channel, "permissions_for", mock_permissions_for)
         monkeypatch.setattr(channel.guild, "me", client.user)
         await client.on_message(MockMessage(author, channel, "!spellbot config"))
 
@@ -4422,6 +4388,7 @@ class TestSpellBot:
         class MockPermissions:
             def __init__(self, read_messages):
                 self.read_messages = read_messages
+                self.administrator = False
 
         def mock_permissions_for(member):
             if member == JACOB:
