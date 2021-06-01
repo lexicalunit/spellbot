@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v6.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v6.1.0) - 2021-06-01
+
 ### Added
 
 - Added ability to ask for how many plays someone else has on a server.
