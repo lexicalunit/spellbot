@@ -1888,8 +1888,17 @@ class SpellBot(discord.Client):
         elif req.isdigit():
             game_id = int(req)
             game = ctx.session.query(Game).filter(Game.id == game_id).one_or_none()
-        elif re.match(r"^[\w-]*$", req):  # perhaps it's a spellbot game id
-            game = ctx.session.query(Game).filter(Game.url.ilike(f"%{req}")).one_or_none()
+        elif re.match(r"^[\w-]*$", req):  # perhaps it's a spelltable game id?
+            games = ctx.session.query(Game).filter(Game.url.ilike(f"%{req}")).all()
+            count = len(games)
+            if count > 1:
+                await safe_send_channel(
+                    ctx.message, s("report_ambiguous", reply=ctx.message.author.mention)
+                )
+                await safe_react_error(ctx.message)
+                return
+            elif count == 1:
+                game = games[0]
 
         if not game:
             await safe_send_channel(
