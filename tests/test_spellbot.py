@@ -4471,3 +4471,31 @@ class TestSpellBot:
         assert channel.last_sent_response == (
             f"{AMY.mention} has played 2 games on this server."
         )
+
+    async def test_on_message_report_by_url_ambiguous(
+        self, client, channel_maker, monkeypatch
+    ):
+        # this test isn't interested in verifying the report is correct
+        monkeypatch.setattr(
+            client, "_verify_command_fest_report", AsyncMock(return_value=True)
+        )
+
+        monkeypatch.setattr(client, "create_spelltable_url", Mock(return_value="aaaaa"))
+
+        channel = channel_maker.text()
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game ~modern {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+
+        channel = channel_maker.text()
+        mentions = [AMY, ADAM]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        cmd = f"!game ~modern {mentions_str}"
+        await client.on_message(MockMessage(an_admin(), channel, cmd, mentions=mentions))
+
+        await client.on_message(MockMessage(AMY, channel, "!report a sup"))
+        assert channel.last_sent_response == (
+            f"Sorry {AMY.mention}, I found multiple games that could match that ID."
+            " Try using the full `SB#` of your game."
+        )

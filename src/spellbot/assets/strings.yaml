@@ -77,6 +77,8 @@ power_invalid: ${prepend}Sorry $reply, please provide a number between 1 to 10 o
 reaction_permissions_required: I do not have permission to adjust reactions. A server
   admin will need to adjust my permissions.
 report: Thanks for the report, $reply!
+report_ambiguous: Sorry $reply, I found multiple games that could match that ID. Try
+  using the full `SB#` of your game.
 report_no_game: Sorry $reply, I couldn't find a game with that ID.
 report_no_params: $reply, please provide the SpellBot game reference ID or SpellTable
   ID followed by your report.
