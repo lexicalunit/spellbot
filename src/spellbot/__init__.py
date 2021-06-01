@@ -1653,28 +1653,33 @@ class SpellBot(discord.Client):
     @command(allow_dm=False, help_group="Commands for Players")
     async def plays(self, ctx: Context) -> None:
         """
-        Show how many games you've played on this server.
+        Show how many games you or someone else has played on this server.
+        & [@someone-else]
         """
         guild_xid = ctx.message.channel.guild.id
+
+        user_xid: int
+        reply: str
+        if ctx.message.mentions:
+            user_xid = ctx.message.mentions[0].id
+            reply = ctx.message.mentions[0].mention
+        else:
+            user_xid = ctx.user.xid
+            reply = ctx.message.author.mention
+
         award = (
             ctx.session.query(UserAward)
             .filter(
                 and_(
-                    UserAward.user_xid == ctx.user.xid,
+                    UserAward.user_xid == user_xid,
                     UserAward.guild_xid == guild_xid,
                 )
             )
             .one_or_none()
         )
+
         count = award.plays if award else 0
-        await safe_send_channel(
-            ctx.message,
-            s(
-                "plays",
-                reply=ctx.message.author.mention,
-                count=count,
-            ),
-        )
+        await safe_send_channel(ctx.message, s("plays", reply=reply, count=count))
 
     def _upsert_user_block(self, session: Session, user: User, blocked: User) -> None:
         data = {"user_xid": user.xid, "blocked_user_xid": blocked.xid}

@@ -4428,11 +4428,11 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(AMY, channel, "!plays"))
         assert channel.last_sent_response == (
-            f"You've played 0 games on this server, {AMY.mention}."
+            f"{AMY.mention} has played 0 games on this server."
         )
         await client.on_message(MockMessage(JR, channel, "!plays"))
         assert channel.last_sent_response == (
-            f"You've played 0 games on this server, {JR.mention}."
+            f"{JR.mention} has played 0 games on this server."
         )
 
         await client.on_message(MockMessage(AMY, channel, "!lfg ~modern"))
@@ -4440,11 +4440,11 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(AMY, channel, "!plays"))
         assert channel.last_sent_response == (
-            f"You've played 1 games on this server, {AMY.mention}."
+            f"{AMY.mention} has played 1 games on this server."
         )
         await client.on_message(MockMessage(JR, channel, "!plays"))
         assert channel.last_sent_response == (
-            f"You've played 1 games on this server, {JR.mention}."
+            f"{JR.mention} has played 1 games on this server."
         )
 
         await client.on_message(MockMessage(AMY, channel, "!lfg ~modern"))
@@ -4452,13 +4452,22 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(AMY, channel, "!plays"))
         assert channel.last_sent_response == (
-            f"You've played 2 games on this server, {AMY.mention}."
+            f"{AMY.mention} has played 2 games on this server."
         )
         await client.on_message(MockMessage(JR, channel, "!plays"))
         assert channel.last_sent_response == (
-            f"You've played 1 games on this server, {JR.mention}."
+            f"{JR.mention} has played 1 games on this server."
         )
         await client.on_message(MockMessage(ADAM, channel, "!plays"))
         assert channel.last_sent_response == (
-            f"You've played 1 games on this server, {ADAM.mention}."
+            f"{ADAM.mention} has played 1 games on this server."
+        )
+
+        mentions = [AMY]
+        mentions_str = " ".join([f"@{user.name}" for user in mentions])
+        await client.on_message(
+            MockMessage(ADAM, channel, f"!plays {mentions_str}", mentions=mentions)
+        )
+        assert channel.last_sent_response == (
+            f"{AMY.mention} has played 2 games on this server."
         )

@@ -19,8 +19,8 @@
 `!points`
 >  Get your total points on this server.
 
-`!plays`
->  Show how many games you've played on this server.
+`!plays [@someone-else]`
+>  Show how many games you or someone else has played on this server.
 
 `!lfg [size:N] [@player-1] [@player-2] ... [~tag-1] [~tag-2] ...`
 >  Find or create a pending game for players to join.
