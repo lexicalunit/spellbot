@@ -97,7 +97,7 @@ requests = "^2.25.1"
 sqlalchemy = "^1.4.6"
 sqlalchemy-easy-profile = "1.2.1"
 unidecode = "^1.2.0"
-uvicorn = "^0.13.4"
+uvicorn = ">=0.13.4,<0.15.0"
 
 [tool.poetry.dev-dependencies]
 black = "^21.5b0"
