@@ -4370,6 +4370,18 @@ class TestSpellBot:
             f"Sorry {author.mention}, but there's a bad count number on row 2."
         )
 
+    async def test_on_message_spellbot_awards_count_nan(self, client, channel_maker):
+        channel = channel_maker.text()
+        author = an_admin()
+        data = bytes("1,role 1,message 1\nfoo,role 2, message 2\n", "utf-8")
+        csv_file = MockAttachment("awards.csv", data)
+        comment = "!spellbot awards"
+        message = MockMessage(author, channel, comment, attachments=[csv_file])
+        await client.on_message(message)
+        assert channel.last_sent_response == (
+            f'Sorry {author.mention}, but "foo" is not a number, on row 2.'
+        )
+
     async def test_on_message_spellbot_awards_bad_message(self, client, channel_maker):
         channel = channel_maker.text()
         author = an_admin()
