@@ -3482,7 +3482,22 @@ class SpellBot(discord.Client):
             if count_str.startswith("%"):
                 repeating = True
                 count_str = count_str[1:]
-            count: int = int(count_str)
+
+            try:
+                count: int = int(count_str)
+            except:
+                await safe_send_channel(
+                    ctx.message,
+                    s(
+                        "spellbot_awards_count_nan",
+                        i=i + 1,
+                        count=count_str,
+                        reply=reply,
+                    ),
+                )
+                await safe_react_error(ctx.message)
+                return
+
             if count <= 0 or math.isinf(count) or math.isnan(count):
                 await safe_send_channel(
                     ctx.message, s("spellbot_awards_bad_count", i=i + 1, reply=reply)

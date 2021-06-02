@@ -96,6 +96,7 @@ spellbot_auto_verify_warn: 'Sorry $reply, but "$param" is not a valid channel. T
 spellbot_awards_bad_count: Sorry $reply, but there's a bad count number on row $i.
 spellbot_awards_bad_row: Sorry $reply, but there's not three columns of data on row
   $i.
+spellbot_awards_count_nan: Sorry $reply, but "$count" is not a number, on row $i.
 spellbot_awards_message_bad_size: Sorry $reply, the message is too short or too long
   on row $i. Please use between 5 and 255 characters.
 spellbot_awards_no_data: 'Sorry $reply, but you must include an attachment containing
