@@ -77,14 +77,16 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
             )
             if empty_or_really_old:
                 logger.info(f"deleting voice channel for game {game.id}")
+                game.voice_channel_xid = None  # type: ignore
+                game.voice_channel_invite = None  # type: ignore
+                session.commit()
+
                 success = await safe_delete_channel(chan, game.guild_xid)
-                if success:
-                    logger.info(f"deleted voice channel for game {game.id}")
-                    game.voice_channel_xid = None  # type: ignore
-                    game.voice_channel_invite = None  # type: ignore
-                    session.commit()
-                else:
-                    logger.info(f"failed to delete voice channel for game {game.id}")
+                if not success:
+                    logger.info(
+                        f"failed to delete voice channel for game {game.id}"
+                        f" in guild {game.guild_xid}"
+                    )
                     guild = bot.get_guild(game.guild_xid)
                     perms = guild.me.permissions_in(chan)
                     chan_name = chan.name  # type: ignore
