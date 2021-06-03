@@ -513,7 +513,7 @@ python-versions = "*"
 
 [[package]]
 name = "ipython"
-version = "7.24.0"
+version = "7.24.1"
 description = "IPython: Productive Interactive Computing"
 category = "dev"
 optional = false
@@ -1292,7 +1292,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4"
-content-hash = "70610f6fdc2fc5bae9aa704fdcc7e5dc133d8d8311d99b9aeb6bda98ed0ce30b"
+content-hash = "9fb92a413a85d81a875cad0230041d3637f8650d7798d48568e347522a102eb6"
 
 [metadata.files]
 aiofiles = [
@@ -1703,8 +1703,8 @@ iniconfig = [
     {file = "iniconfig-1.1.1.tar.gz", hash = "sha256:bc3af051d7d14b2ee5ef9969666def0cd1a000e121eaea580d4a313df4b37f32"},
 ]
 ipython = [
-    {file = "ipython-7.24.0-py3-none-any.whl", hash = "sha256:f86788eef439891438af3498525094cc2acbdbea4f2aa2f8895782d4ff471341"},
-    {file = "ipython-7.24.0.tar.gz", hash = "sha256:a171caa3d3d4c819a1c0742e3abecfd5a2b8ab525ca1c9f114b40b76b0679ab1"},
+    {file = "ipython-7.24.1-py3-none-any.whl", hash = "sha256:d513e93327cf8657d6467c81f1f894adc125334ffe0e4ddd1abbb1c78d828703"},
+    {file = "ipython-7.24.1.tar.gz", hash = "sha256:9bc24a99f5d19721fb8a2d1408908e9c0520a17fff2233ffe82620847f17f1b6"},
 ]
 ipython-genutils = [
     {file = "ipython_genutils-0.2.0-py2.py3-none-any.whl", hash = "sha256:72dd37233799e619666c9f639a9da83c34013a73e8bbc79a7a6348d93c61fab8"},
