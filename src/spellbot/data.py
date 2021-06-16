@@ -769,7 +769,7 @@ class Game(Base):
                     if self.server.show_spectate_link:
                         description += (
                             "\nOr spectate on the game with the following link."
-                            f"\n<{self.url}?spectate>"
+                            f"\n<{self.url}?spectate=true>"
                         )
                 else:
                     description += (
