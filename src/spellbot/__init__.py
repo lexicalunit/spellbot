@@ -1030,7 +1030,7 @@ class SpellBot(discord.Client):
 
                 # update the game message
                 wait = await self.average_wait(ctx, game)
-                await safe_edit_message(message, embed=game.to_embed(wait=wait), ui=True)
+                await safe_edit_message(message, embed=game.to_embed(wait=wait))
                 return
 
             game.updated_at = now  # type: ignore
@@ -1064,7 +1064,7 @@ class SpellBot(discord.Client):
                         session, cast(discord.Guild, message.guild), discord_user
                     )
                 session.commit()
-                await safe_edit_message(message, embed=game.to_embed())
+                await safe_edit_message(message, embed=game.to_embed(), remove_ui=True)
                 await self.send_watch_list_notifications(session, game)
             else:
                 session.commit()
@@ -1474,7 +1474,7 @@ class SpellBot(discord.Client):
                     await safe_send_user(discord_user, embed=game.to_embed(dm=True))
                     await self._handle_awards(ctx.session, guild, discord_user)
                 ctx.session.commit()
-                await safe_edit_message(post, embed=game.to_embed())
+                await safe_edit_message(post, embed=game.to_embed(), remove_ui=True)
                 await self.send_watch_list_notifications(ctx.session, game)
                 return
         else:  # game *definitely* isn't ready yet
