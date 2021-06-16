@@ -43,7 +43,7 @@ class TestTasks:
         assert channel.last_sent_response == (
             f"**Game {game['id']} created:**\n"
             f"> Game: <{game['url']}>\n"
-            f"> Spectate: <{game['url']}?spectate>\n"
+            f"> Spectate: <{game['url']}?spectate=true>\n"
             f"> Players notified by DM: <@{FRIEND.id}>, <@{BUDDY.id}>,"
             f" <@{GUY.id}>, <@{DUDE.id}>"
         )

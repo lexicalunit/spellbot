@@ -40,7 +40,7 @@ game_created: '**Game $id created:**
 
   > Game: <$url>
 
-  > Spectate: <${url}?spectate>
+  > Spectate: <${url}?spectate=true>
 
   > Players notified by DM: $players'
 game_created_with_voice: '**Game $id created:**
@@ -49,7 +49,7 @@ game_created_with_voice: '**Game $id created:**
 
   > Voice: <$voice>
 
-  > Spectate: <${url}?spectate>
+  > Spectate: <${url}?spectate=true>
 
   > Players notified by DM: $players'
 game_message_too_long: Sorry $reply, but the optional game message must be shorter
@@ -188,4 +188,4 @@ watched_user_notification: 'Watched users just hopped into game $game_id: $users
 
   Go to post: $link
 
-  Go to game: $game?spectate'
+  Go to game: $game?spectate=true'
