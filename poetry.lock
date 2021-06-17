@@ -1248,7 +1248,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-pyyaml"
-version = "5.4.1"
+version = "5.4.2"
 description = "Typing stubs for PyYAML"
 category = "main"
 optional = false
@@ -2268,7 +2268,7 @@ types-pytz = [
     {file = "types_pytz-0.1.1-py2.py3-none-any.whl", hash = "sha256:1f444521f32c02ec18f17b3ae2b0dffcfb10c0e92f9d93ace14daf6b646edac4"},
 ]
 types-pyyaml = [
-    {file = "types_PyYAML-5.4.1-py2.py3-none-any.whl", hash = "sha256:88c0c5bcb2656a7da25f0ed5a7cfa557edb8191a7f7a71b3aaabd799792c5321"},
+    {file = "types_PyYAML-5.4.2-py2.py3-none-any.whl", hash = "sha256:56cf695a6b8ae6dff37bbd31d749ab8097a70b8191274303614d3c6455767c91"},
 ]
 types-redis = [
     {file = "types_redis-3.5.1-py2.py3-none-any.whl", hash = "sha256:b27d7f4b8e8858b1549cba14527d3c4d953089ea1538f37698d0da8eb968fab9"},
