@@ -135,9 +135,15 @@ def to_int(s: str) -> Optional[int]:
 
 def playedh_log(message: discord.Message, s: str) -> None:  # pragma: no cover
     """Useful to introduce PlayEDH specific debug logging."""
-    if message.channel.guild.id != 304276578005942272:
+    if not hasattr(message.channel, "guild"):
         return
-    logger.error(f"playedh: {message.channel.name}: {s}")
+    guild: discord.Guild = message.channel.guild  # type: ignore
+    if guild.id != 304276578005942272:
+        return
+    if not hasattr(message.channel, "name"):
+        return
+    channel_name: str = message.channel.name  # type: ignore
+    logger.error(f"playedh: {channel_name}: {s}")
 
 
 def requests_retry_session(
@@ -254,9 +260,7 @@ def post_link(server_xid: int, channel_xid: int, message_xid: int) -> str:
     return f"https://discordapp.com/channels/{server_xid}/{channel_xid}/{message_xid}"
 
 
-def is_admin(
-    channel: discord.TextChannel, user_or_member: Union[discord.User, discord.Member]
-) -> bool:
+def is_admin(channel: Any, user_or_member: Union[discord.User, discord.Member]) -> bool:
     """Checks to see if given user or member has the admin role on this server."""
     member = (
         user_or_member
@@ -313,14 +317,19 @@ def paginate(text: str) -> Iterator[str]:
 def create_member_finder(message: discord.Message):
     class MemberFinder:
         def __init__(self, message: discord.Message):
-            self.members = message.channel.guild.members
-            self.FIND_MEMBER_CACHE: Dict[str, discord.User] = {}
+            self.members: List[discord.Member]
+            if hasattr(message.channel, "guild"):
+                self.members = message.channel.guild.members  # type: ignore
+            else:
+                self.members = []
+            self.FIND_MEMBER_CACHE: Dict[str, discord.Member] = {}
 
         # find users by name using members intents
-        def find(self, query: str) -> Optional[discord.User]:
+        def find(self, query: str) -> Optional[discord.Member]:
             lowercase_name = re.sub("#.*$", "", query.lower()).lstrip("@")
-            if lowercase_name in self.FIND_MEMBER_CACHE:
-                return self.FIND_MEMBER_CACHE[lowercase_name]
+            found_user = self.FIND_MEMBER_CACHE.get(lowercase_name, None)
+            if found_user:
+                return found_user
             found_user = discord.utils.find(
                 lambda m: m.name.lower() == lowercase_name
                 or (m.nick is not None and m.nick.lower() == lowercase_name),
@@ -376,6 +385,20 @@ class Context:
         self.user_settings = user_settings
         self.channel_settings = channel_settings
         self.params = params or []
+
+
+def is_private_msg(msg: discord.Message) -> bool:
+    if not hasattr(msg.channel, "type"):
+        return False
+    channel_type: discord.ChannelType = msg.channel.type  # type: ignore
+    rvalue: bool = cast(
+        bool, channel_type == discord.ChannelType.private
+    )  #  type: ignore
+    return rvalue
+
+
+def is_private_ctx(ctx: Context) -> bool:
+    return is_private_msg(ctx.message)
 
 
 class SpellBot(discord.Client):
@@ -794,7 +817,7 @@ class SpellBot(discord.Client):
 
     async def safe_send_not_verified(
         self,
-        author: discord.User,
+        author: Union[discord.User, discord.Member],
         channel_settings: ChannelSettings,
         channel_name: str,
     ) -> None:
@@ -858,10 +881,7 @@ class SpellBot(discord.Client):
 
         command = request if request in matching else matching[0]
         method = getattr(self, command)
-        if (
-            not method.allow_dm
-            and ctx.message.channel.type == discord.ChannelType.private
-        ):
+        if not method.allow_dm and is_private_ctx(ctx):
             author_user = cast(discord.User, ctx.message.author)
             await safe_send_user(
                 author_user, s("no_dm", reply=ctx.message.author.mention)
@@ -948,6 +968,9 @@ class SpellBot(discord.Client):
         channel_id = interaction.channel_id
         if not author or not message or not guild_id or not channel_id:
             return
+        if not hasattr(message.channel, "name"):
+            return
+        channel_name: str = message.channel.name  # type: ignore
 
         # NOTE: This and the code that handles !lfg commands is behind an async
         #       channel lock to prevent more than one person per guild per channel
@@ -961,7 +984,7 @@ class SpellBot(discord.Client):
 
             user_settings = self.ensure_user_settings_exists(session, user, server)
             channel_settings = self.ensure_channel_settings_exists(
-                session, server, channel_id, message.channel.name
+                session, server, channel_id, channel_name
             )
 
             ctx = Context(
@@ -978,7 +1001,7 @@ class SpellBot(discord.Client):
                 user_settings = self.ensure_user_settings_exists(session, user, server)
                 if not user_settings.verified:
                     await self.safe_send_not_verified(
-                        author, channel_settings, message.channel.name
+                        author, channel_settings, channel_name
                     )
                     return
 
@@ -1079,13 +1102,29 @@ class SpellBot(discord.Client):
         if author_xid == self.user.id:
             return
 
-        private: bool = message.channel.type == discord.ChannelType.private
-
-        # ignore everything except text channels and direct messages
-        if not private and message.channel.type != discord.ChannelType.text:
+        # ignore threads
+        if not hasattr(message.channel, "type"):
             return
 
-        guild_xid: Optional[int] = None if private else message.channel.guild.id
+        private: bool = is_private_msg(message)
+
+        # ignore everything except text channels and direct messages
+        channel_type: discord.ChannelType = message.channel.type  # type: ignore
+        if not private and channel_type != discord.ChannelType.text:
+            return
+
+        def get_guild_xid() -> Optional[int]:
+            if private:
+                return None
+            if not hasattr(message.channel, "guild"):
+                return None
+            guild: Optional[discord.Guild] = message.channel.guild  # type: ignore
+            if not guild:
+                return None
+            rvalue: int = cast(int, guild.id)  # type: ignore
+            return rvalue
+
+        guild_xid: Optional[int] = get_guild_xid()
         channel_xid: Optional[int] = None if private else message.channel.id
         prefix: str = DEFAULT_PREFIX
         if not private:
@@ -1097,8 +1136,8 @@ class SpellBot(discord.Client):
         is_owner: bool = False
         is_mod: bool = False
         is_mentor: bool = False
-        if not private and message.channel and message.channel.guild:
-            guild = message.channel.guild
+        if not private and message.channel and hasattr(message.channel, "guild"):
+            guild: discord.Guild = message.channel.guild  # type: ignore
             if hasattr(guild, "get_member"):
                 member = guild.get_member(message.author.id)  # type: ignore
                 if member:
@@ -1129,12 +1168,18 @@ class SpellBot(discord.Client):
                 user_settings: Optional[UserServerSettings] = None
                 channel_settings: Optional[ChannelSettings] = None
 
-                if not private:
+                if (
+                    not private
+                    and hasattr(message.channel, "guild")
+                    and hasattr(message.channel, "name")
+                ):
                     assert guild_xid
                     assert channel_xid
+                    guild: discord.Guild = message.channel.guild  # type: ignore
+                    channel_name: str = message.channel.name  # type: ignore
 
                     server = self.ensure_server_exists(session, guild_xid)
-                    server_name = str(message.channel.guild)[0:50]
+                    server_name = str(guild)[0:50]
                     if not server.cached_name or server.cached_name != server_name:
                         server.cached_name = server_name  # type: ignore
                         session.commit()
@@ -1142,7 +1187,7 @@ class SpellBot(discord.Client):
                         session, user, server
                     )
                     channel_settings = self.ensure_channel_settings_exists(
-                        session, server, channel_xid, message.channel.name
+                        session, server, channel_xid, channel_name
                     )
 
                     # auto-verify user if user unverified and this is auto-verify channel
@@ -1168,7 +1213,7 @@ class SpellBot(discord.Client):
                     return
 
                 # ignore unverified users if this is a verification required channel
-                if not private:
+                if not private and hasattr(message.channel, "name"):
                     assert channel_settings
                     assert channel_xid
                     assert user_settings
@@ -1179,9 +1224,10 @@ class SpellBot(discord.Client):
                         and channel_settings.require_verification
                         and not user_settings.verified
                     ):
+                        channel_name = message.channel.name  # type: ignore
                         discord_user = cast(discord.User, message.author)
                         await self.safe_send_not_verified(
-                            discord_user, channel_settings, message.channel.name
+                            discord_user, channel_settings, channel_name
                         )
                         await safe_react_error(message)
                         return
@@ -1317,7 +1363,7 @@ class SpellBot(discord.Client):
             "💜 You can help keep SpellBot running by becoming a patron! "
             "<https://www.patreon.com/lexicalunit>"
         )
-        if ctx.message.channel.type != discord.ChannelType.private:
+        if not is_private_ctx(ctx):
             await safe_react_ok(ctx.message)
         for page in paginate(usage):
             await safe_send_user(cast(discord.User, ctx.message.author), page)
@@ -1504,9 +1550,7 @@ class SpellBot(discord.Client):
         assert ctx.server
         assert ctx.channel_settings
         mentions: List[discord.Member] = (
-            ctx.message.mentions
-            if ctx.message.channel.type != discord.ChannelType.private
-            else []
+            ctx.message.mentions if not is_private_ctx(ctx) else []  # type: ignore
         )
         mentions = [
             mention
@@ -1711,7 +1755,7 @@ class SpellBot(discord.Client):
             return
 
         block_name = ctx.params[0]
-        found_user: Optional[discord.User] = None
+        found_user: Optional[discord.Member] = None
 
         mentioned = finder.find(block_name)
         if mentioned and mentioned.id == author_user.id:
@@ -1758,7 +1802,7 @@ class SpellBot(discord.Client):
             return
 
         unblock_name = ctx.params[0]
-        found_user: Optional[discord.User] = None
+        found_user: Optional[discord.Member] = None
 
         mentioned = finder.find(unblock_name)
         if mentioned:
@@ -2052,6 +2096,8 @@ class SpellBot(discord.Client):
             return
 
         event_error: Optional[str] = None
+        warnings = set()
+        event = Event()
         try:
             reader = csv.reader(StringIO(sdata))
             header = [column.lower().strip() for column in next(reader)]
@@ -2070,12 +2116,10 @@ class SpellBot(discord.Client):
 
             columns = [header.index(param) for param in params]
 
-            event = Event()
             ctx.session.add(event)
             ctx.session.commit()
 
             players_in_this_event: Set[str] = set()
-            warnings = set()
 
             finder = create_member_finder(ctx.message)
 
@@ -2093,7 +2137,7 @@ class SpellBot(discord.Client):
                         await safe_send_channel(ctx.message, warning)
                         continue
 
-                player_discord_users: List[discord.User] = []
+                player_discord_users: List[discord.Member] = []
                 for csv_data, player_name in zip(csv_row_data, player_names):
                     if player_name in players_in_this_event:
                         await safe_send_channel(
@@ -2136,7 +2180,8 @@ class SpellBot(discord.Client):
                         game_to_update = player_user.game
                         player_user.game_id = None  # type: ignore
                         await self.try_to_update_game(ctx, game_to_update)
-                    player_user.cached_name = player_discord_user.name[0:50]
+                    trunc_name: str = player_discord_user.name[0:50]
+                    player_user.cached_name = trunc_name  # type: ignore
                 ctx.session.commit()
 
                 now = datetime.utcnow()
@@ -2323,11 +2368,7 @@ class SpellBot(discord.Client):
             opts["message"],
             opts["system"],
         )
-        mentions = (
-            ctx.message.mentions
-            if ctx.message.channel.type != discord.ChannelType.private
-            else []
-        )
+        mentions = ctx.message.mentions if not is_private_ctx(ctx) else []
 
         if opt_msg and len(opt_msg) >= 255:
             await safe_send_channel(
@@ -2511,10 +2552,7 @@ class SpellBot(discord.Client):
         """
         assert ctx.server
         assert ctx.channel_settings
-        if (
-            ctx.message.channel.type != discord.ChannelType.private
-            and not ctx.server.power_enabled
-        ):
+        if not is_private_ctx(ctx) and not ctx.server.power_enabled:
             return
 
         async def send_invalid(prepend) -> None:
@@ -3594,7 +3632,7 @@ class SpellBot(discord.Client):
         await safe_send_channel(ctx.message, embed=embed)
         await safe_react_ok(ctx.message)
 
-        async def warn_about_permissions(channel: discord.TextChannel, options=None):
+        async def warn_about_permissions(channel: Any, options=None):
             if channel is None:
                 return
             if options is None:
