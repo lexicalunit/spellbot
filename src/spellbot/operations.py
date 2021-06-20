@@ -77,7 +77,9 @@ def bot_can_delete_channel(channel: ChannelType) -> bool:
 
 
 def bot_can_react(message: discord.Message) -> bool:
-    if message.channel.type == discord.ChannelType.private:
+    if not hasattr(message.channel, "type") or not hasattr(message.channel, "guild"):
+        return False
+    if message.channel.type == discord.ChannelType.private:  # type: ignore
         return True
     requirements = {
         "read_messages",
@@ -85,7 +87,7 @@ def bot_can_react(message: discord.Message) -> bool:
         "add_reactions",
         "manage_messages",
     }
-    perms = message.channel.permissions_for(message.channel.guild.me)
+    perms = message.channel.permissions_for(message.channel.guild.me)  # type: ignore
     for req in requirements:
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
@@ -93,10 +95,12 @@ def bot_can_react(message: discord.Message) -> bool:
 
 
 def bot_can_send(message: discord.Message) -> bool:
-    if message.channel.type == discord.ChannelType.private:
+    if not hasattr(message.channel, "type") or not hasattr(message.channel, "guild"):
+        return False
+    if message.channel.type == discord.ChannelType.private:  # type: ignore
         return True
     requirements = {"send_messages"}
-    perms = message.channel.permissions_for(message.channel.guild.me)
+    perms = message.channel.permissions_for(message.channel.guild.me)  # type: ignore
     for req in requirements:
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
@@ -197,7 +201,7 @@ async def safe_react_error(message: discord.Message) -> None:
 
 
 async def safe_fetch_message(
-    channel: ChannelType, message_xid: int, guild_xid: int
+    channel: Any, message_xid: int, guild_xid: int
 ) -> Optional[discord.Message]:
     if channel.type != discord.ChannelType.text:
         return None
@@ -224,13 +228,16 @@ async def safe_fetch_message(
 
 async def safe_fetch_channel(
     client: discord.Client, channel_xid: int, guild_xid: int
-) -> Optional[ChannelType]:
+) -> Optional[discord.TextChannel]:
     channel = client.get_channel(channel_xid)
     if channel:
         return channel
 
     try:
-        return await client.fetch_channel(channel_xid)
+        chan = await client.fetch_channel(channel_xid)
+        if isinstance(chan, discord.TextChannel):
+            return None
+        return chan  # type: ignore
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,
@@ -265,9 +272,9 @@ async def safe_edit_message(
 ) -> None:
     try:
         if remove_ui:
-            await message.edit(reason=reason, **options, view=None)
+            await message.edit(reason=reason, **options, view=None)  # type: ignore
         else:
-            await message.edit(reason=reason, **options)
+            await message.edit(reason=reason, **options)  # type: ignore
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,
@@ -297,7 +304,9 @@ async def safe_delete_message(message: discord.Message) -> None:
         )
 
 
-async def safe_send_user(user: discord.User, *args, **kwargs) -> None:
+async def safe_send_user(
+    user: Union[discord.User, discord.Member], *args, **kwargs
+) -> None:
     if not hasattr(user, "send"):
         # Very rarely we get a ClientUser object here instead of a User? I have
         # no idea why this happens but a ClientUser does not have a send() method.
@@ -454,9 +463,18 @@ async def safe_send_channel(
     try:
         if not bot_can_send(message):
             return None
+        if not hasattr(message.channel, "type"):
+            return None
+        channel: Union[discord.TextChannel, discord.DMChannel]
+        channel = message.channel  # type: ignore
 
         view = GameUI() if ui else None
-        return await message.channel.send(content, embed=embed, file=file, view=view)
+        return await channel.send(
+            content,
+            embed=embed,
+            file=file,
+            view=view,
+        )  # type: ignore
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,
