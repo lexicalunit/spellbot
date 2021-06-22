@@ -1241,7 +1241,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-pytz"
-version = "0.1.2"
+version = "2021.1.0"
 description = "Typing stubs for pytz"
 category = "main"
 optional = false
@@ -1365,7 +1365,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4"
-content-hash = "ceb116b1ef7a76985214ea0d43f8e64319d672993f0b556cb38286278b0436e4"
+content-hash = "44d9cc155c0aa20a69a5fc2c7690a1abb5c68f22f0e4187a341413200a79c375"
 
 [metadata.files]
 aiofiles = [
@@ -2261,8 +2261,8 @@ types-click = [
     {file = "types_click-7.1.2-py2.py3-none-any.whl", hash = "sha256:4722746f1ec9fd3fc8b1d7fb8c840604dc22f9e32bcc7a31a36d6d85cc2bce24"},
 ]
 types-pytz = [
-    {file = "types-pytz-0.1.2.tar.gz", hash = "sha256:923976ea4b55c00a5b51daad8f497519780315f7b298a49550e22176f5a8f6d5"},
-    {file = "types_pytz-0.1.2-py2.py3-none-any.whl", hash = "sha256:e2fb8cc82d8dc1d2f20b2776645cf74a65a8dfc9bd26a33adb9ebd2c03e0f8f8"},
+    {file = "types-pytz-2021.1.0.tar.gz", hash = "sha256:addfa2a1a27b324b6beb422faa4737962532bbab3793481d5bdebbffb8f9f243"},
+    {file = "types_pytz-2021.1.0-py3-none-any.whl", hash = "sha256:ec9555397f91518b2cf028ed837a69e388763c6a5e58abffaf37732f9c581a46"},
 ]
 types-pyyaml = [
     {file = "types-PyYAML-5.4.3.tar.gz", hash = "sha256:2e7b81b2b7af751634425107b986086c6ba7cb61270a43a5c290c58be8cdbc3a"},
