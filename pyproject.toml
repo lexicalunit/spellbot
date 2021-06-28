@@ -76,7 +76,7 @@ aioredis = "^1.3.1"
 alembic = "^1.5.8"
 click = ">=7.1.2,<9.0.0"
 coloredlogs = "^15.0.1"
-"discord.py" = {git = "https://github.com/Rapptz/discord.py.git", rev = "d30fea5b0dcba9cd130026b56ec01e78bd788aff"}
+"discord.py" = {git = "https://github.com/Rapptz/discord.py.git", rev = "e3a66bcccc7f8122e9fbe682bc3e1352792ce7fb"}
 dunamai = "^1.5.4"
 expiringdict = "^1.2.1"
 fastapi = ">=0.63,<0.66"
