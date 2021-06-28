@@ -272,9 +272,9 @@ async def safe_edit_message(
 ) -> None:
     try:
         if remove_ui:
-            await message.edit(reason=reason, **options, view=None)  # type: ignore
+            await message.edit(**options, view=None)  # type: ignore
         else:
-            await message.edit(reason=reason, **options)  # type: ignore
+            await message.edit(**options)  # type: ignore
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,

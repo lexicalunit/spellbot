@@ -442,7 +442,7 @@ class TestOperations:
     async def test_safe_edit_message(self, mock_message):
         await safe_edit_message(cast(discord.Message, mock_message))
 
-        mock_message.edit.assert_called_with(reason=None)
+        mock_message.edit.assert_called_with()
 
     async def test_safe_edit_message_error_bad_request(self, mock_message, caplog):
         response = Mock()
