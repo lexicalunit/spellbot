@@ -278,13 +278,17 @@ class TestOperations:
         mock_message.channel.fetch_message.assert_called_with(mock_message.id)
 
     async def test_safe_fetch_message_bad_channel(self, mock_message, monkeypatch):
+        mock_data = MagicMock()
+        mock_data.id = 0
+        mock_data.name = "name"
+        mock_data.position = "position"
         monkeypatch.setattr(
             mock_message,
             "channel",
             discord.VoiceChannel(
-                state=None,
+                state=MagicMock(),
                 guild=mock_message.channel.guild,
-                data={"id": 0, "name": "name", "position": "position"},
+                data=mock_data,
             ),
         )
 
@@ -529,7 +533,7 @@ class TestOperations:
         mock_channel = MockTextChannel(1, "general", [])
         chan = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
 
-        assert chan.id == 1
+        assert chan and chan.id == 1
 
     async def test_safe_create_voice_channel_create_error(
         self, client, monkeypatch, caplog
@@ -615,7 +619,7 @@ class TestOperations:
             client, mock_channel.guild.id, "whatever"
         )
 
-        assert category.id == 2
+        assert category and category.id == 2
 
     async def test_safe_create_category_channel_create_error(
         self, client, monkeypatch, caplog

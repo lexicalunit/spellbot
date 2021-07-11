@@ -86,7 +86,7 @@ from spellbot.data import (
     users_blocks,
 )
 from spellbot.operations import (
-    MentionableChannelType,
+    ChannelType,
     safe_add_role,
     safe_create_category_channel,
     safe_create_invite,
@@ -1099,7 +1099,7 @@ class SpellBot(discord.Client):
         author_xid: int = message.author.id  # type: ignore
 
         # ignore myself
-        if author_xid == self.user.id:
+        if self.user and author_xid == self.user.id:
             return
 
         # ignore threads
@@ -1146,7 +1146,8 @@ class SpellBot(discord.Client):
                         is_mod = any(r.name == "Moderators" for r in member.roles)
                         is_mentor = any(r.name == "Mentors" for r in member.roles)
                     if hasattr(message.channel, "permissions_for"):
-                        perms = message.channel.permissions_for(member)
+                        guild_channel = cast(discord.abc.GuildChannel, message.channel)
+                        perms = guild_channel.permissions_for(member)
                         if perms:
                             has_admin_perms = perms.administrator
 
@@ -1552,10 +1553,11 @@ class SpellBot(discord.Client):
         mentions: List[discord.Member] = (
             ctx.message.mentions if not is_private_ctx(ctx) else []  # type: ignore
         )
+        guild_channel = cast(discord.abc.GuildChannel, ctx.message.channel)
         mentions = [
             mention
             for mention in mentions
-            if ctx.message.channel.permissions_for(mention).read_messages
+            if guild_channel.permissions_for(mention).read_messages
         ]
 
         if ctx.user.waiting and ctx.user.game.channel_xid == ctx.message.channel.id:
@@ -1686,7 +1688,8 @@ class SpellBot(discord.Client):
         Show how many games you or someone else has played on this server.
         & [@someone-else]
         """
-        guild_xid = ctx.message.channel.guild.id
+        guild_channel = cast(discord.abc.GuildChannel, ctx.message.channel)
+        guild_xid = guild_channel.guild.id
 
         user_xid: int
         reply: str
@@ -1985,7 +1988,8 @@ class SpellBot(discord.Client):
         )
 
         if is_admin(ctx.message.channel, ctx.message.author):
-            team_points = Team.points(ctx.session, ctx.message.channel.guild.id)
+            guild_channel = cast(discord.abc.GuildChannel, ctx.message.channel)
+            team_points = Team.points(ctx.session, guild_channel.guild.id)
             for team, team_points in team_points.items():
                 await safe_send_channel(
                     ctx.message,
@@ -2186,10 +2190,11 @@ class SpellBot(discord.Client):
 
                 now = datetime.utcnow()
                 expires_at = now + timedelta(minutes=ctx.server.expire)
+                guild_channel = cast(discord.abc.GuildChannel, ctx.message.channel)
                 game = Game(
                     created_at=now,
                     expires_at=expires_at,
-                    guild_xid=ctx.message.channel.guild.id,
+                    guild_xid=guild_channel.guild.id,
                     size=size,
                     updated_at=now,
                     status="ready",
@@ -2503,7 +2508,8 @@ class SpellBot(discord.Client):
         """
         assert ctx.server
         assert ctx.channel_settings
-        export_file = TMP_DIR / f"{ctx.message.channel.guild.name}.csv"
+        guild_channel = cast(discord.abc.GuildChannel, ctx.message.channel)
+        export_file = TMP_DIR / f"{guild_channel.guild.name}.csv"
         channel_name_cache = {}
         data = ctx.server.games_data()
         with open(export_file, "w") as f, redirect_stdout(f):
@@ -2514,7 +2520,7 @@ class SpellBot(discord.Client):
                 channel_xid = data["channel_xid"][i]
                 if channel_xid and channel_xid not in channel_name_cache:
                     channel = await safe_fetch_channel(
-                        self, int(channel_xid), ctx.message.channel.guild.id
+                        self, int(channel_xid), guild_channel.guild.id
                     )
                     if channel:
                         name = cast(discord.TextChannel, channel).name
@@ -3097,14 +3103,12 @@ class SpellBot(discord.Client):
     async def spellbot_tags(self, ctx: Context) -> None:
         assert ctx.server
         tags_enabled = not any(param.lower() == "off" for param in ctx.params)
-        channel_mentions: list[MentionableChannelType] = cast(
-            list, ctx.message.channel_mentions
-        )
+        channel_mentions: list[ChannelType] = cast(list, ctx.message.channel_mentions)
 
         if ctx.message.channel_mentions:
             for mention in channel_mentions:
                 channel_settings = self.ensure_channel_settings_exists(
-                    ctx.session, ctx.server, mention.id, mention.name
+                    ctx.session, ctx.server, mention.id, getattr(mention, "name")
                 )
                 channel_settings.tags_enabled = tags_enabled  # type: ignore
             await safe_send_channel(
@@ -3133,14 +3137,12 @@ class SpellBot(discord.Client):
     async def spellbot_queue_time(self, ctx: Context) -> None:
         assert ctx.server
         queue_time_enabled = not any(param.lower() == "off" for param in ctx.params)
-        channel_mentions: list[MentionableChannelType] = cast(
-            list, ctx.message.channel_mentions
-        )
+        channel_mentions: list[ChannelType] = cast(list, ctx.message.channel_mentions)
 
         if ctx.message.channel_mentions:
             for mention in channel_mentions:
                 channel_settings = self.ensure_channel_settings_exists(
-                    ctx.session, ctx.server, mention.id, mention.name
+                    ctx.session, ctx.server, mention.id, getattr(mention, "name")
                 )
                 channel_settings.queue_time_enabled = queue_time_enabled  # type: ignore
             await safe_send_channel(
@@ -3565,12 +3567,11 @@ class SpellBot(discord.Client):
         from itertools import groupby
         from operator import itemgetter
 
-        export_file = TMP_DIR / f"stats-{ctx.message.channel.guild.name}.csv"
+        guild_channel = cast(discord.abc.GuildChannel, ctx.message.channel)
+        export_file = TMP_DIR / f"stats-{guild_channel.guild.name}.csv"
         with open(export_file, "w") as f, redirect_stdout(f):
             print("date,channel,games")  # noqa: T001
-            stats = Game.games_per_day_per_channel(
-                ctx.session, ctx.message.channel.guild.id
-            )
+            stats = Game.games_per_day_per_channel(ctx.session, guild_channel.guild.id)
             for day, day_rows in groupby(stats, itemgetter(0)):
                 for channel, row in groupby(day_rows, itemgetter(1)):
                     count = [*row][0][2]
@@ -3642,7 +3643,8 @@ class SpellBot(discord.Client):
                     "add_reactions",
                     "manage_messages",
                 }
-            perms = ctx.message.channel.permissions_for(ctx.message.channel.guild.me)
+            guild_channel = cast(discord.abc.GuildChannel, ctx.message.channel)
+            perms = guild_channel.permissions_for(guild_channel.guild.me)
             for perm in options:
                 if not getattr(perms, perm):
                     await safe_send_channel(

@@ -10,22 +10,7 @@ from spellbot.constants import EMOJI_DROP_GAME, EMOJI_FAIL, EMOJI_JOIN_GAME, EMO
 
 logger = logging.getLogger(__name__)
 
-ChannelType = Union[
-    discord.CategoryChannel,
-    discord.DMChannel,
-    discord.GroupChannel,
-    discord.StoreChannel,
-    discord.TextChannel,
-    discord.VoiceChannel,
-]
-
-MentionableChannelType = Union[
-    discord.CategoryChannel,
-    discord.GroupChannel,
-    discord.StoreChannel,
-    discord.TextChannel,
-    discord.VoiceChannel,
-]
+ChannelType = Union[discord.abc.GuildChannel, discord.abc.PrivateChannel]
 
 # Discord API error code indicating that we can not send messages to this user.
 CANT_SEND_CODE = 50007
@@ -61,7 +46,7 @@ def _user_or_guild_log_part(message: discord.Message) -> str:  # pragma: no cove
 
 
 def bot_can_delete_channel(channel: ChannelType) -> bool:
-    if channel.type == discord.ChannelType.private:
+    if getattr(channel, "type") == discord.ChannelType.private:
         return False
     if not hasattr(channel, "guild"):
         return False
@@ -69,7 +54,8 @@ def bot_can_delete_channel(channel: ChannelType) -> bool:
     if not guild:
         return False
     requirements = {"manage_channels"}
-    perms = channel.permissions_for(guild.me)
+    guild_channel = cast(discord.abc.GuildChannel, channel)
+    perms = guild_channel.permissions_for(guild.me)
     for req in requirements:
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
@@ -228,7 +214,7 @@ async def safe_fetch_message(
 
 async def safe_fetch_channel(
     client: discord.Client, channel_xid: int, guild_xid: int
-) -> Optional[discord.TextChannel]:
+) -> Optional[ChannelType]:
     channel = client.get_channel(channel_xid)
     if channel:
         return channel

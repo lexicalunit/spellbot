@@ -206,7 +206,9 @@ class TestTasks:
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] == 1
 
         mock_voice_channel = channel_maker.voice("whatever", [])
         mock_get_channel = Mock(return_value=mock_voice_channel)
@@ -218,7 +220,9 @@ class TestTasks:
         freezer.move_to(NOW + timedelta(days=3))
         await cleanup_old_voice_channels(client)
         mock_voice_channel.delete.assert_called()
-        assert game_json_for(client, AMY)["voice_channel_xid"] is None
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] is None
 
     async def test_cleanup_voice_channels_old_but_occupied(
         self, client, channel_maker, monkeypatch, freezer
@@ -233,7 +237,9 @@ class TestTasks:
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] == 1
 
         # simulate JACOB sitting in the voice channel for way too long
         mock_voice_channel = channel_maker.voice("whatever", [JACOB])
@@ -243,7 +249,9 @@ class TestTasks:
 
         await cleanup_old_voice_channels(client)
         mock_voice_channel.delete.assert_called()
-        assert game_json_for(client, AMY)["voice_channel_xid"] is None
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] is None
 
     async def test_cleanup_voice_channels_error_fetch_channel(
         self, client, channel_maker, monkeypatch, freezer
@@ -258,7 +266,9 @@ class TestTasks:
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] == 1
 
         mock_get_channel = Mock(return_value=None)
         mock_fetch_channel = AsyncMock(return_value=None)
@@ -270,7 +280,9 @@ class TestTasks:
 
         mock_get_channel.assert_called()
         mock_fetch_channel.assert_called()
-        assert game_json_for(client, AMY)["voice_channel_xid"] is None
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] is None
 
     async def test_cleanup_old_voice_channels_error_delete_channel(
         self, client, channel_maker, monkeypatch, freezer, caplog
@@ -292,7 +304,9 @@ class TestTasks:
 
         await cleanup_old_voice_channels(client)
 
-        game_id = game_json_for(client, AMY)["id"]
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        game_id = game_json_for_amy["id"]
         assert f"failed to delete voice channel for game {game_id}" in caplog.text
 
     async def test_cleanup_voice_channels_in_use(
@@ -308,7 +322,9 @@ class TestTasks:
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] == 1
 
         mock_voice_channel = channel_maker.voice("whatever", [AMY, JACOB])
         mock_get_channel = Mock(return_value=mock_voice_channel)
@@ -318,7 +334,9 @@ class TestTasks:
         await cleanup_old_voice_channels(client)
 
         mock_voice_channel.delete.assert_not_called()
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] == 1
 
     async def test_update_metrics_with_data(
         self, client, channel_maker, monkeypatch, freezer
