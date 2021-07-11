@@ -6,6 +6,7 @@ from asyncio.tasks import Task
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, cast
 
+import discord
 import redis
 
 from spellbot.constants import REALLY_OLD_GAMES_HOURS
@@ -64,6 +65,7 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
             logger.info(f"checking voice channel for game {game.id}")
             assert game.voice_channel_xid
             chan = await safe_fetch_channel(bot, game.voice_channel_xid, game.guild_xid)
+            chan = cast(discord.abc.GuildChannel, chan)
             if not chan:
                 logger.info(f"could not fetch voice channel for game {game.id}")
                 game.voice_channel_xid = None  # type: ignore
@@ -89,6 +91,7 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
                         f" in guild {game.guild_xid}"
                     )
                     guild = bot.get_guild(game.guild_xid)
+                    assert guild
                     perms = chan.permissions_for(guild.me)
                     chan_name = chan.name  # type: ignore
                     msg = (

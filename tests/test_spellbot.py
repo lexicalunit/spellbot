@@ -643,8 +643,10 @@ class TestSpellBot:
         assert BUDDY.last_sent_embed == player_response
         assert DUDE.last_sent_embed == player_response
 
-        assert game_json_for(client, GUY)["tags"] == []
-        assert game_json_for(client, GUY)["message"] is None
+        game_json_for_guy = game_json_for(client, GUY)
+        assert game_json_for_guy
+        assert game_json_for_guy["tags"] == []
+        assert game_json_for_guy["message"] is None
 
     async def test_on_message_game_with_voice(self, client, channel_maker):
         channel = channel_maker.text()
@@ -674,8 +676,10 @@ class TestSpellBot:
         assert BUDDY.last_sent_embed == player_response
         assert DUDE.last_sent_embed == player_response
 
-        assert game_json_for(client, GUY)["tags"] == []
-        assert game_json_for(client, GUY)["message"] is None
+        game_json_for_guy = game_json_for(client, GUY)
+        assert game_json_for_guy
+        assert game_json_for_guy["tags"] == []
+        assert game_json_for_guy["message"] is None
 
     async def test_on_message_game_with_message(self, client, channel_maker):
         channel = channel_maker.text()
@@ -698,8 +702,10 @@ class TestSpellBot:
         assert BUDDY.last_sent_embed == player_response
         assert DUDE.last_sent_embed == player_response
 
-        assert game_json_for(client, GUY)["tags"] == []
-        assert game_json_for(client, GUY)["message"] == message
+        game_json_for_guy = game_json_for(client, GUY)
+        assert game_json_for_guy
+        assert game_json_for_guy["tags"] == []
+        assert game_json_for_guy["message"] == message
 
     async def test_on_message_game_with_message_and_tags(self, client, channel_maker):
         channel = channel_maker.text()
@@ -722,8 +728,10 @@ class TestSpellBot:
         assert BUDDY.last_sent_embed == player_response
         assert DUDE.last_sent_embed == player_response
 
-        assert game_json_for(client, GUY)["tags"] == ["a", "b", "c"]
-        assert game_json_for(client, GUY)["message"] == message
+        game_json_for_guy = game_json_for(client, GUY)
+        assert game_json_for_guy
+        assert game_json_for_guy["tags"] == ["a", "b", "c"]
+        assert game_json_for_guy["message"] == message
 
         mentions = [ADAM, AMY]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
@@ -741,8 +749,10 @@ class TestSpellBot:
         assert ADAM.last_sent_embed == player_response
         assert AMY.last_sent_embed == player_response
 
-        assert game_json_for(client, ADAM)["tags"] == ["a", "b", "c"]
-        assert game_json_for(client, ADAM)["message"] == message
+        game_json_for_adam = game_json_for(client, ADAM)
+        assert game_json_for_adam
+        assert game_json_for_adam["tags"] == ["a", "b", "c"]
+        assert game_json_for_adam["message"] == message
 
     async def test_on_message_game_with_tags_and_message(self, client, channel_maker):
         channel = channel_maker.text()
@@ -765,8 +775,10 @@ class TestSpellBot:
         assert BUDDY.last_sent_embed == player_response
         assert DUDE.last_sent_embed == player_response
 
-        assert game_json_for(client, GUY)["tags"] == ["a", "b", "c"]
-        assert game_json_for(client, GUY)["message"] == message
+        game_json_for_guy = game_json_for(client, GUY)
+        assert game_json_for_guy
+        assert game_json_for_guy["tags"] == ["a", "b", "c"]
+        assert game_json_for_guy["message"] == message
 
     async def test_on_message_game_multiple_times(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1068,9 +1080,11 @@ class TestSpellBot:
             " This event will have 1 games. If everything looks good,"
             f" next run `!begin {event_id}` to start the event."
         )
-        assert game_json_for(client, AMY)["tags"] == ["a", "b", "c"]
-        assert game_json_for(client, AMY)["message"] == "an message override"
-        assert game_json_for(client, AMY) == game_json_for(client, JR)
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["tags"] == ["a", "b", "c"]
+        assert game_json_for_amy["message"] == "an message override"
+        assert game_json_for_amy == game_json_for(client, JR)
 
     async def test_on_message_event_with_tags_and_message(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1088,9 +1102,11 @@ class TestSpellBot:
             " This event will have 1 games. If everything looks good,"
             f" next run `!begin {event_id}` to start the event."
         )
-        assert game_json_for(client, AMY)["tags"] == ["a", "b", "c"]
-        assert game_json_for(client, AMY)["message"] == "an message override"
-        assert game_json_for(client, AMY) == game_json_for(client, JR)
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["tags"] == ["a", "b", "c"]
+        assert game_json_for_amy["message"] == "an message override"
+        assert game_json_for_amy == game_json_for(client, JR)
 
         data = bytes(f"player1,player2\n{ADAM.name},{GUY.name}", "utf-8")
         csv_file = MockAttachment("event.csv", data)
@@ -1105,9 +1121,11 @@ class TestSpellBot:
             " This event will have 1 games. If everything looks good,"
             f" next run `!begin {event_id}` to start the event."
         )
-        assert game_json_for(client, ADAM)["tags"] == ["a", "b", "c"]
-        assert game_json_for(client, ADAM)["message"] == "an message override"
-        assert game_json_for(client, ADAM) == game_json_for(client, GUY)
+        game_json_for_adam = game_json_for(client, ADAM)
+        assert game_json_for_adam
+        assert game_json_for_adam["tags"] == ["a", "b", "c"]
+        assert game_json_for_adam["message"] == "an message override"
+        assert game_json_for_adam == game_json_for(client, GUY)
 
     async def test_on_message_begin_not_admin(self, client, channel_maker):
         channel = channel_maker.text()
@@ -1376,6 +1394,7 @@ class TestSpellBot:
         )
         await client.on_interaction(interaction)
         game = game_json_for(client, ADAM)
+        assert game
         assert game["system"] == "mtgo"
         assert game["tags"] == []
         assert game_embed_for(client, ADAM, True) == {
@@ -1408,6 +1427,7 @@ class TestSpellBot:
         )
         await client.on_interaction(interaction)
         game = game_json_for(client, ADAM)
+        assert game
         assert game["system"] == "arena"
         assert game["tags"] == []
         assert game_embed_for(client, ADAM, True) == {
@@ -1623,7 +1643,9 @@ class TestSpellBot:
             guild_id=channel.guild.id,
         )
         await client.on_interaction(interaction)
-        assert "2 more players" in game_embed_for(client, ADAM, False)["title"]
+        game_embed_for_adam = game_embed_for(client, ADAM, False)
+        assert game_embed_for_adam
+        assert "2 more players" in game_embed_for_adam["title"]
 
         assert message.last_edited_embed["title"] == (
             "**Waiting for 2 more players to join...**"
@@ -1662,7 +1684,9 @@ class TestSpellBot:
             guild_id=channel.guild.id,
         )
         await client.on_interaction(interaction)
-        assert "1 more player" in game_embed_for(client, ADAM, False)["title"]
+        game_embed_for_adam = game_embed_for(client, ADAM, False)
+        assert game_embed_for_adam
+        assert "1 more player" in game_embed_for_adam["title"]
 
         session = client.data.Session()
         game = session.query(Game).all()[0]
@@ -1977,8 +2001,12 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
-        assert "http://" in game_embed_for(client, AMY, True, dm=True)["description"]
-        assert "http://" not in game_embed_for(client, AMY, True, dm=False)["description"]
+        game_embed_for_amy = game_embed_for(client, AMY, True, dm=True)
+        assert game_embed_for_amy
+        assert "http://" in game_embed_for_amy["description"]
+        game_embed_for_amy = game_embed_for(client, AMY, True, dm=False)
+        assert game_embed_for_amy
+        assert "http://" not in game_embed_for_amy["description"]
 
     async def test_on_message_spellbot_power_none(self, client, channel_maker):
         author = an_admin()
@@ -2051,7 +2079,9 @@ class TestSpellBot:
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] is None
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] is None
 
         await client.on_message(MockMessage(author, channel, "!spellbot voice on"))
         assert channel.last_sent_response == (
@@ -2062,7 +2092,10 @@ class TestSpellBot:
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         amy_embed = game_embed_for(client, AMY, True)
         assert amy_embed == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+        assert amy_embed
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] == 1
         assert "Join your voice chat now" in amy_embed["description"]
 
     async def test_on_message_spellbot_voice_private(self, client, channel_maker):
@@ -2075,7 +2108,10 @@ class TestSpellBot:
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
         amy_embed = game_embed_for(client, AMY, True)
         assert amy_embed == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+        assert amy_embed
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] == 1
         assert "Join your voice chat now" not in amy_embed["description"]
 
     async def test_game_creation_when_voice_channel_create_error(
@@ -2093,7 +2129,10 @@ class TestSpellBot:
         mock_op.assert_called()
         amy_embed = game_embed_for(client, AMY, True)
         assert amy_embed == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] is None
+        assert amy_embed
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] is None
         assert "Join your voice chat now" not in amy_embed["description"]
 
     async def test_game_creation_when_voice_invite_create_error(
@@ -2111,7 +2150,10 @@ class TestSpellBot:
         mock_op.assert_called()
         amy_embed = game_embed_for(client, AMY, True)
         assert amy_embed == game_embed_for(client, JACOB, True)
-        assert game_json_for(client, AMY)["voice_channel_xid"] == 1
+        assert amy_embed
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["voice_channel_xid"] == 1
         assert "Join your voice chat now" not in amy_embed["description"]
 
     async def test_on_message_power_no_params(self, client, channel_maker):
@@ -2190,10 +2232,14 @@ class TestSpellBot:
         msg = MockMessage(author, channel, "!power 5")
         await client.on_message(msg)
         assert "✅" in msg.reactions
-        assert user_json_for(client, author)["power"] == 5
+        user_json_for_author = user_json_for(client, author)
+        assert user_json_for_author
+        assert user_json_for_author["power"] == 5
         await client.on_message(MockMessage(author, channel, "!power off"))
         assert "✅" in msg.reactions
-        assert user_json_for(client, author)["power"] is None
+        user_json_for_author = user_json_for(client, author)
+        assert user_json_for_author
+        assert user_json_for_author["power"] is None
 
     async def test_on_message_lfg_with_power_similar(self, client, channel_maker):
         channel = channel_maker.text()
@@ -2658,6 +2704,7 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(AMY, channel, "!lfg ~modern ~fun"))
         game = game_json_for(client, AMY)
+        assert game
         assert game["size"] == 2
         assert game["tags"] == []
 
@@ -2668,6 +2715,7 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(JR, channel, "!lfg ~modern ~fun"))
         game = game_json_for(client, JR)
+        assert game
         assert game["size"] == 2
         assert set(game["tags"]) == {"modern", "fun"}
 
@@ -2688,6 +2736,7 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(AMY, channel, "!lfg ~modern ~fun"))
         game = game_json_for(client, AMY)
+        assert game
         assert game["size"] == 2
         assert game["tags"] == []
 
@@ -2702,6 +2751,7 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(JR, channel, "!lfg ~modern ~fun"))
         game = game_json_for(client, JR)
+        assert game
         assert game["size"] == 2
         assert set(game["tags"]) == {"modern", "fun"}
 
@@ -2723,6 +2773,7 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(AMY, channel, "!lfg ~modern ~fun"))
         game = game_json_for(client, AMY)
+        assert game
         assert game["size"] == 2
         assert game["tags"] == []
 
@@ -2737,6 +2788,7 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(JR, channel, "!lfg ~modern ~fun"))
         game = game_json_for(client, JR)
+        assert game
         assert game["size"] == 2
         assert set(game["tags"]) == {"modern", "fun"}
 
@@ -2862,7 +2914,9 @@ class TestSpellBot:
         await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
         await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
 
-        assert "Hello to you! Hi!" in game_embed_for(client, GUY, True)["description"]
+        game_embed_for_guy = game_embed_for(client, GUY, True)
+        assert game_embed_for_guy
+        assert "Hello to you! Hi!" in game_embed_for_guy["description"]
 
     async def test_on_message_spellbot_smotd_none(self, client, channel_maker):
         admin = an_admin()
@@ -2909,7 +2963,9 @@ class TestSpellBot:
         await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
         await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
 
-        assert "Hello to you! Hi!" in game_embed_for(client, GUY, True)["description"]
+        game_embed_for_guy = game_embed_for(client, GUY, True)
+        assert game_embed_for_guy
+        assert "Hello to you! Hi!" in game_embed_for_guy["description"]
 
     async def test_on_message_spellbot_cmotd_none(self, client, channel_maker):
         admin = an_admin()
@@ -2946,8 +3002,10 @@ class TestSpellBot:
         )
         await client.on_message(MockMessage(GUY, channel, "!lfg size:2"))
         await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
-        assert "Channel MOTD" in game_embed_for(client, GUY, True)["description"]
-        assert "Server MOTD" in game_embed_for(client, GUY, True)["description"]
+        game_embed_for_guy = game_embed_for(client, GUY, True)
+        assert game_embed_for_guy
+        assert "Channel MOTD" in game_embed_for_guy["description"]
+        assert "Server MOTD" in game_embed_for_guy["description"]
 
     async def test_on_message_spellbot_motd_none(self, client, channel_maker):
         author = an_admin()
@@ -2978,8 +3036,12 @@ class TestSpellBot:
         )
 
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
-        assert "foobar" in game_embed_for(client, AMY, False, dm=True)["description"]
-        assert "foobar" not in game_embed_for(client, AMY, False, dm=False)["description"]
+        game_embed_for_amy = game_embed_for(client, AMY, False, dm=True)
+        assert game_embed_for_amy
+        assert "foobar" in game_embed_for_amy["description"]
+        game_embed_for_amy = game_embed_for(client, AMY, False, dm=False)
+        assert game_embed_for_amy
+        assert "foobar" not in game_embed_for_amy["description"]
 
     async def test_on_message_spellbot_motd_public(self, client, channel_maker):
         channel = channel_maker.text()
@@ -2993,8 +3055,12 @@ class TestSpellBot:
         )
 
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
-        assert "foobar" not in game_embed_for(client, AMY, False, dm=True)["description"]
-        assert "foobar" in game_embed_for(client, AMY, False, dm=False)["description"]
+        game_embed_for_amy = game_embed_for(client, AMY, False, dm=True)
+        assert game_embed_for_amy
+        assert "foobar" not in game_embed_for_amy["description"]
+        game_embed_for_amy = game_embed_for(client, AMY, False, dm=False)
+        assert game_embed_for_amy
+        assert "foobar" in game_embed_for_amy["description"]
 
     async def test_on_message_spellbot_size_none(self, client, channel_maker):
         author = an_admin()
@@ -3043,7 +3109,9 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(AMY, channel, "!lfg size:2"))
         await client.on_message(MockMessage(JR, channel, "!lfg size:2"))
-        assert game_embed_for(client, AMY, True)["description"] == (
+        game_embed_for_amy = game_embed_for(client, AMY, True)
+        assert game_embed_for_amy
+        assert game_embed_for_amy["description"] == (
             "Sorry but SpellBot was unable to create a SpellTable link"
             " for this game. Please go to"
             " [spelltable.com](https://www.spelltable.com/) to create one.\n"
@@ -3500,8 +3568,10 @@ class TestSpellBot:
 
         await client.on_message(MockMessage(JACOB, channel, "!lfg ~legacy"))
         await client.on_message(MockMessage(AMY, channel, "!lfg ~legacy"))
-        assert game_embed_for(client, AMY, True) == game_embed_for(client, JACOB, True)
-        assert "spectate on the game" in game_embed_for(client, AMY, True)["description"]
+        game_embed_for_amy = game_embed_for(client, AMY, True)
+        assert game_embed_for_amy
+        assert game_embed_for_amy == game_embed_for(client, JACOB, True)
+        assert "spectate on the game" in game_embed_for_amy["description"]
 
     async def test_on_message_spellbot_auto_verify_none(self, client, channel_maker):
         channel = channel_maker.text()
@@ -3860,8 +3930,10 @@ class TestSpellBot:
         assert BUDDY.last_sent_embed == player_response
         assert DUDE.last_sent_embed == player_response
 
-        assert game_json_for(client, GUY)["tags"] == []
-        assert game_json_for(client, GUY)["message"] is None
+        game_json_for_guy = game_json_for(client, GUY)
+        assert game_json_for_guy
+        assert game_json_for_guy["tags"] == []
+        assert game_json_for_guy["message"] is None
 
         mock_op.assert_called_once_with(client, channel.guild.id, "This is a test")
 
@@ -4153,10 +4225,14 @@ class TestSpellBot:
         channel = channel_maker.text()
 
         await client.on_message(MockMessage(AMY, channel, "!lfg low"))
-        assert game_json_for(client, AMY)["note"] == "low"  # creation note
+        game_json_for_amy = game_json_for(client, AMY)
+        assert game_json_for_amy
+        assert game_json_for_amy["note"] == "low"  # creation note
 
         await client.on_message(MockMessage(JR, channel, "!lfg high"))
-        assert game_json_for(client, JR)["note"] == "low"  # can't be changed
+        game_json_for_jr = game_json_for(client, JR)
+        assert game_json_for_jr
+        assert game_json_for_jr["note"] == "low"  # can't be changed
 
     async def test_on_message_spellbot_config_permissions_warnings(
         self, client, channel_maker, monkeypatch
@@ -4221,30 +4297,39 @@ class TestSpellBot:
         fields = {f["name"]: f["value"] for f in config["fields"]}
         assert fields["Unverified only channels"] == f"<#{channel.id}>"
 
-        await client.on_message(MockMessage(user, channel, "!before"))
-        assert 'there is no "before" command' in channel.last_sent_response
+        await client.on_message(MockMessage(user, channel, "!power"))
+        assert channel.last_sent_response == (
+            f"Sorry {user.mention}, please provide a number between"
+            ' 1 to 10 or "none" to unset.'
+        )
 
         mentions = [user]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!verify {mentions_str}"
         await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
 
-        await client.on_message(MockMessage(user, channel, "!after"))
-        assert 'there is no "after" command' not in channel.last_sent_response
+        await client.on_message(MockMessage(user, channel, "!plays"))
+        assert channel.last_sent_response != (
+            f"{user.mention} has played 0 games on this server."
+        )
 
         mentions = [user]
         mentions_str = " ".join([f"@{user.name}" for user in mentions])
         cmd = f"!unverify {mentions_str}"
         await client.on_message(MockMessage(admin, channel, cmd, mentions=mentions))
 
-        await client.on_message(MockMessage(user, channel, "!again"))
-        assert 'there is no "again" command' in channel.last_sent_response
+        await client.on_message(MockMessage(user, channel, "!plays"))
+        assert channel.last_sent_response == (
+            f"{user.mention} has played 0 games on this server."
+        )
 
         await client.on_message(MockMessage(admin, channel, "!spellbot unverified-only"))
         await client.on_message(MockMessage(admin, channel, "!spellbot config"))
         config = channel.last_sent_embed
         fields = {f["name"]: f["value"] for f in config["fields"]}
         assert fields["Unverified only channels"] == "None"
+
+        await client.loop.shutdown_asyncgens()
 
     async def test_on_message_unverified_only_not_a_channel(self, client, channel_maker):
         admin = an_admin()
