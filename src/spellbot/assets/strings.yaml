@@ -168,6 +168,7 @@ team_none: Sorry $reply, but there aren't any teams on this server.
 team_not_found: 'Sorry $reply, but the teams available on this server are: $teams.'
 team_not_set: Hey $reply, you are not currently a part of a team on this server.
 team_yours: Hey $reply, you are on the $team team.
+top8_no_mention: Sorry $reply, but please mention a channel with that command.
 unblock: 'Ok $reply, I have unblocked the following users for you: $unblocked'
 unblock_mentions: Sorry $reply, please do not mention users, just copy their name
   without an @.

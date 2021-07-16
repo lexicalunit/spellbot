@@ -104,6 +104,7 @@ These commands will help you configure SpellBot for your server.
 - `!unverify`: Un-verifies a user for this server.
 - `!watch`: Allows moderators to watch a user on their server.
 - `!unwatch`: Un-watches a user for this server.
+- `!top8`: Show the top 8 players for a channel by games played.
 
 ### 🛋️ Ergonomics
 

@@ -4563,3 +4563,48 @@ class TestSpellBot:
             f"Sorry {AMY.mention}, I found multiple games that could match that ID."
             " Try using the full `SB#` of your game."
         )
+
+    async def test_on_message_top8_no_mention(self, client, channel_maker):
+        channel = channel_maker.text()
+        admin = an_admin()
+        await client.on_message(MockMessage(admin, channel, "!top8"))
+        assert channel.last_sent_response == (
+            f"Sorry {admin.mention}, but please mention a channel with that command."
+        )
+
+    async def test_on_message_top8(self, client, channel_maker):
+        channel = channel_maker.text()
+        admin = an_admin()
+        await client.on_message(
+            MockMessage(
+                admin, channel, f"!top8 {channel.mention}", channel_mentions=[channel]
+            )
+        )
+        assert channel.last_sent_response == f"Top 8 players in {channel.mention}\n\n"
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~modern"))
+        await client.on_message(MockMessage(JR, channel, "!lfg ~modern"))
+        await client.on_message(
+            MockMessage(
+                admin, channel, f"!top8 {channel.mention}", channel_mentions=[channel]
+            )
+        )
+        assert channel.last_sent_response == (
+            f"Top 8 players in {channel.mention}\n\n"
+            f"1: {AMY.mention} (1 plays)\n"
+            f"2: {JR.mention} (1 plays)"
+        )
+
+        await client.on_message(MockMessage(AMY, channel, "!lfg ~modern"))
+        await client.on_message(MockMessage(ADAM, channel, "!lfg ~modern"))
+        await client.on_message(
+            MockMessage(
+                admin, channel, f"!top8 {channel.mention}", channel_mentions=[channel]
+            )
+        )
+        assert channel.last_sent_response == (
+            f"Top 8 players in {channel.mention}\n\n"
+            f"1: {AMY.mention} (2 plays)\n"
+            f"2: {ADAM.mention} (1 plays)\n"
+            f"3: {JR.mention} (1 plays)"
+        )

@@ -1,3 +1,4 @@
+`!spellbot <subcommand> [subcommand parameters]`
 >  Configure SpellBot for your server. _Requires the "SpellBot Admin" role._
 > 
 > The following subcommands are supported:
@@ -26,5 +27,3 @@
 
 `!game @player1 @player2 ... [~tag-1 ~tag-2] [msg: Hello world!]`
 >  Create a game between mentioned users. _Requires the "SpellBot Admin" role._
-> 
-> Allows event runners to spin up an ad-hoc game directly between mentioned players.

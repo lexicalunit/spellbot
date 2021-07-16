@@ -1714,6 +1714,28 @@ class SpellBot(discord.Client):
         count = award.plays if award else 0
         await safe_send_channel(ctx.message, s("plays", reply=reply, count=count))
 
+    @command(allow_dm=False, admin_only=True, help_group="Commands for Admins")
+    async def top8(self, ctx: Context) -> None:
+        """Show the top 8 players for a channel by games played."""
+        channel_mentions: list[ChannelType] = cast(list, ctx.message.channel_mentions)
+        if not channel_mentions:
+            await safe_send_channel(
+                ctx.message, s("top8_no_mention", reply=ctx.message.author.mention)
+            )
+            await safe_react_error(ctx.message)
+            return
+
+        channel = cast(discord.abc.GuildChannel, channel_mentions[0])
+        async with self.session() as session:
+            players = Play.top8(session, channel.id)
+
+        header = f"Top 8 players in {channel.mention}\n"
+        scores = "\n".join(
+            f"{i+1}: <@{row[0]}> ({row[1]} plays)" for i, row in enumerate(players)
+        )
+        await safe_send_channel(ctx.message, f"{header}\n{scores}")
+        await safe_react_ok(ctx.message)
+
     def _upsert_user_block(self, session: Session, user: User, blocked: User) -> None:
         data = {"user_xid": user.xid, "blocked_user_xid": blocked.xid}
         if "postgres" in session.bind.dialect.name:  # pragma: no cover
