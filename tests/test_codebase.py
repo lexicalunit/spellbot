@@ -76,7 +76,7 @@ class TestCodebase:
         with open(REPO_ROOT / "README.md") as f:
             readme = f.read()
 
-        documented = set(re.findall(r"^- `!([a-z]+)`: .*$", readme, re.MULTILINE))
+        documented = set(re.findall(r"^- `!([a-z0-9]+)`: .*$", readme, re.MULTILINE))
         implemented = set(client.commands)
 
         assert documented == implemented
@@ -87,7 +87,7 @@ class TestCodebase:
             index = f.read()
 
         documented = set(
-            re.findall(r"^ *<li><code>!([a-z]+)</code>: .*$", index, re.MULTILINE)
+            re.findall(r"^ *<li><code>!([a-z0-9]+)</code>: .*$", index, re.MULTILINE)
         )
         implemented = set(client.commands)
 

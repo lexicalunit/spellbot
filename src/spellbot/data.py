@@ -443,6 +443,20 @@ class Play(Base):
         nullable=False,
     )
 
+    @classmethod
+    def top8(cls, session: Session, channel_xid: int) -> List[Tuple[int, int]]:
+        rows: Optional[List[Tuple[int, int]]] = (
+            session.query(Play.user_xid, func.count(Play.game_id).label("plays"))
+            .select_from(Play)
+            .join(Game)
+            .filter(Game.channel_xid == channel_xid)
+            .group_by(Play.user_xid)
+            .order_by(desc("plays"), Play.user_xid)
+            .limit(8)
+            .all()
+        )
+        return rows or []
+
 
 class Award(Base):
     __tablename__ = "awards"

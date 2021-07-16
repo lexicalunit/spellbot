@@ -368,6 +368,10 @@ class MockTextChannel(MockChannel):
         self.members = members
         self.guild = MockGuild(500, "Guild Name", members)
 
+    @property
+    def mention(self):
+        return f"<#{self.id}>"
+
     def permissions_for(self, member):
         class MockPermissions:
             def __init__(self):

@@ -56,4 +56,5 @@
 `!unverify`
 >  Unverify a user on your server.
 
-`!spellbot <subcommand> [subcommand parameters]`
+`!top8`
+>  Show the top 8 players for a channel by games played.
