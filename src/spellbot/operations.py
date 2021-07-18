@@ -1,4 +1,5 @@
 import logging
+import traceback
 from typing import Any, Optional, Union, cast
 
 import discord
@@ -461,10 +462,22 @@ async def safe_send_channel(
             file=file,
             view=view,
         )  # type: ignore
+    except discord.errors.HTTPException as e:
+        logger.warning(f"Debugging: embed = {embed.to_dict() if embed else None}")
+        logger.warning(f"Debugging: {message = }")
+        logger.warning(f"Debugging: {content = }")
+        logger.warning(f"Debugging: {file = }")
+        logger.warning(f"Debugging: {ui = }")
+        logger.exception(
+            "warning: discord: could not send message to channel: %s",
+            e,
+        )
+        print("Debugging, traceback:")  # noqa
+        for line in traceback.format_stack():
+            print(line.strip())  # noqa
     except (
         discord.errors.DiscordServerError,
         discord.errors.Forbidden,
-        discord.errors.HTTPException,
         discord.errors.InvalidArgument,
     ) as e:
         logger.exception(
