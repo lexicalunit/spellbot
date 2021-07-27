@@ -343,7 +343,7 @@ tests = ["dill", "coverage", "coveralls", "mock", "nose"]
 
 [[package]]
 name = "faker"
-version = "8.10.1"
+version = "8.10.3"
 description = "Faker is a Python package that generates fake data for you."
 category = "dev"
 optional = false
@@ -1397,8 +1397,8 @@ multidict = ">=4.0"
 
 [metadata]
 lock-version = "1.1"
-python-versions = '>=3.8,<4'
-content-hash = "73d96dbb3ac236b5f5d6371b992a1075ee15ab849850518f995c191c8cf3015b"
+python-versions = ">=3.8,<4"
+content-hash = "8d4604a9d0ee08d46d08251dd1b8f670e448b9c65f96a5524ed7cb7e94c3374d"
 
 [metadata.files]
 aiofiles = [
@@ -1504,6 +1504,11 @@ cffi = [
     {file = "cffi-1.14.6-cp27-cp27m-win_amd64.whl", hash = "sha256:7bcac9a2b4fdbed2c16fa5681356d7121ecabf041f18d97ed5b8e0dd38a80224"},
     {file = "cffi-1.14.6-cp27-cp27mu-manylinux1_i686.whl", hash = "sha256:ed38b924ce794e505647f7c331b22a693bee1538fdf46b0222c4717b42f744e7"},
     {file = "cffi-1.14.6-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:e22dcb48709fc51a7b58a927391b23ab37eb3737a98ac4338e2448bef8559b33"},
+    {file = "cffi-1.14.6-cp35-cp35m-macosx_10_9_x86_64.whl", hash = "sha256:aedb15f0a5a5949ecb129a82b72b19df97bbbca024081ed2ef88bd5c0a610534"},
+    {file = "cffi-1.14.6-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:48916e459c54c4a70e52745639f1db524542140433599e13911b2f329834276a"},
+    {file = "cffi-1.14.6-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:f627688813d0a4140153ff532537fbe4afea5a3dffce1f9deb7f91f848a832b5"},
+    {file = "cffi-1.14.6-cp35-cp35m-win32.whl", hash = "sha256:f0010c6f9d1a4011e429109fda55a225921e3206e7f62a0c22a35344bfd13cca"},
+    {file = "cffi-1.14.6-cp35-cp35m-win_amd64.whl", hash = "sha256:57e555a9feb4a8460415f1aac331a2dc833b1115284f7ded7278b54afc5bd218"},
     {file = "cffi-1.14.6-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:e8c6a99be100371dbb046880e7a282152aa5d6127ae01783e37662ef73850d8f"},
     {file = "cffi-1.14.6-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:19ca0dbdeda3b2615421d54bef8985f72af6e0c47082a8d26122adac81a95872"},
     {file = "cffi-1.14.6-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:d950695ae4381ecd856bcaf2b1e866720e4ab9a1498cba61c602e56630ca7195"},
@@ -1647,8 +1652,8 @@ expiringdict = [
     {file = "expiringdict-1.2.1.tar.gz", hash = "sha256:fe2ba427220425c3c8a3d29f6d2e2985bcee323f8bcd4021e68ebefbd90d8250"},
 ]
 faker = [
-    {file = "Faker-8.10.1-py3-none-any.whl", hash = "sha256:9ac6b39b9618f55be6b8b45089e624564469a035cc845c69ce990332ce3663f4"},
-    {file = "Faker-8.10.1.tar.gz", hash = "sha256:a665e6e2e9087ec9ad4ebcd2f09acd031b44193ee93401817001b6557c6502b4"},
+    {file = "Faker-8.10.3-py3-none-any.whl", hash = "sha256:f27a2a5c34042752f9d5fea2a9667aed5265d7d7bdd5ce83bc03b2f8a540d148"},
+    {file = "Faker-8.10.3.tar.gz", hash = "sha256:771b21ab55924867ac865f4b0c2f547c200172293b1056be16289584ef1215cb"},
 ]
 fastapi = [
     {file = "fastapi-0.66.0-py3-none-any.whl", hash = "sha256:85d8aee8c3c46171f4cb7bb3651425a42c07cb9183345d100ef55d88ca2ce15f"},
