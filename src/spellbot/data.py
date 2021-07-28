@@ -810,7 +810,8 @@ class Game(Base):
         if self.tags and len(cast(List[Tag], self.tags)) >= 1:
             sorted_tag_names: List[str] = sorted([tag.name for tag in self.tags])
             tag_names = ", ".join(sorted_tag_names)
-            embed.add_field(name="Tags", value=tag_names)
+            if tag_names:
+                embed.add_field(name="Tags", value=tag_names)
         power = self.power
         if power and self.server.power_enabled:
             embed.add_field(name="Average Power Level", value=f"{power:.1f}")

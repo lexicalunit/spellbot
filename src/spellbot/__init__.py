@@ -210,15 +210,16 @@ def parse_opts(params: List[str], default_size: Optional[int] = None) -> dict:
             system = "arena"
         elif param.startswith("~"):
             tag = param[1:].lower()
-            tags.append(tag)
-            if not size_set and tag in TWO_PLAYER_FORMATS:
-                size = 2
-            elif not size_set and tag in FOUR_PLAYER_FORMATS:
-                size = 4
-            elif not size_set and tag in FIVE_PLAYER_FORMATS:
-                size = 5
-            elif not size_set and tag in SIX_PLAYER_FORMATS:
-                size = 6
+            if tag:  # empty string isn't a valid tag
+                tags.append(tag)
+                if not size_set and tag in TWO_PLAYER_FORMATS:
+                    size = 2
+                elif not size_set and tag in FOUR_PLAYER_FORMATS:
+                    size = 4
+                elif not size_set and tag in FIVE_PLAYER_FORMATS:
+                    size = 5
+                elif not size_set and tag in SIX_PLAYER_FORMATS:
+                    size = 6
         elif param.lower().startswith("size:"):
             size_set = True
             rest = param[5:]
