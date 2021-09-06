@@ -1,19 +1,15 @@
-# flake8: noqa
+# Make all fixtures available to all tests
+from .fixtures import *  # noqa
 
-from .mocks.client import channel_maker, client, mock_background_tasks, patch_discord
-
-# Ensure that TestMeta runs last as those tests require the entire test suite
-# to have finished before they can can start. The other test suites could
-# theoretically be run in any order, but this is the order that I prefer.
+# Ensure that some suites run last and in order, any unspecified suites will before
 SUITE_ORDER = [
-    "TestSpellBot",
-    "TestOperations",
-    "TestTasks",
-    "TestMigrations",
     "TestCodebase",
-    "TestMeta",
 ]
 
 
 def pytest_collection_modifyitems(session, config, items):
-    items.sort(key=lambda f: SUITE_ORDER.index(f.cls.__name__))
+    def order(f):
+        suite = f.cls.__name__
+        return SUITE_ORDER.index(suite) + 1 if suite in SUITE_ORDER else 0
+
+    items.sort(key=order)

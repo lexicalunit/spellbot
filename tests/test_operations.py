@@ -1,804 +1,564 @@
-from typing import cast
-from unittest.mock import MagicMock, Mock
+from typing import Union
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import discord
 import pytest
+from discord.errors import DiscordException
+from discord_slash.context import ComponentContext
 
-from spellbot.constants import EMOJI_FAIL, EMOJI_OK
 from spellbot.operations import (
-    bot_can_delete_channel,
-    bot_can_read,
-    bot_can_role,
-    safe_clear_reactions,
+    safe_add_role,
     safe_create_category_channel,
     safe_create_invite,
     safe_create_voice_channel,
     safe_delete_channel,
-    safe_delete_message,
-    safe_edit_message,
-    safe_fetch_channel,
+    safe_ensure_voice_category,
     safe_fetch_guild,
     safe_fetch_message,
+    safe_fetch_text_channel,
     safe_fetch_user,
-    safe_react_emoji,
-    safe_react_error,
-    safe_react_ok,
-    safe_remove_reaction,
     safe_send_user,
+    safe_update_embed,
+    safe_update_embed_origin,
 )
-
-from .mocks import AsyncMock
-from .mocks.discord import (
-    MockDiscordMessage,
-    MockGuild,
-    MockMember,
-    MockTextChannel,
-    MockVoiceChannel,
-)
-from .mocks.users import FRIEND
-
-
-@pytest.fixture
-def mock_message(monkeypatch):
-    message = MockDiscordMessage()
-    monkeypatch.setattr(message, "add_reaction", AsyncMock())
-    monkeypatch.setattr(message, "clear_reactions", AsyncMock())
-    monkeypatch.setattr(message, "delete", AsyncMock())
-    monkeypatch.setattr(message, "edit", AsyncMock())
-    monkeypatch.setattr(message, "remove_reaction", AsyncMock())
-    monkeypatch.setattr(message.channel, "fetch_message", AsyncMock())
-    monkeypatch.setattr(message.channel, "send", AsyncMock())
-    return message
+from spellbot.utils import CANT_SEND_CODE
+from tests.mocks.discord import make_client
 
 
 @pytest.mark.asyncio
-class TestOperations:
-    async def test_safe_remove_reaction(self, mock_message):
-        await safe_remove_reaction(
-            cast(discord.Message, mock_message), "emoji", cast(discord.User, FRIEND)
-        )
-
-        mock_message.remove_reaction.assert_called_with("emoji", FRIEND)
-
-    async def test_safe_remove_reaction_error_forbidden(self, mock_message, monkeypatch):
-        mock_perms = Mock(return_value={})
-        monkeypatch.setattr(mock_message.channel, "permissions_for", mock_perms)
-
-        await safe_remove_reaction(
-            cast(discord.Message, mock_message), "emoji", cast(discord.User, FRIEND)
-        )
-
-        mock_message.channel.send.assert_called_with(
-            "I do not have permission to adjust reactions."
-            " A server admin will need to adjust my permissions."
-        )
-
-    async def test_safe_remove_reaction_error_bad_request(self, mock_message, caplog):
-        response = Mock()
-        response.status = 400
-        mock_message.remove_reaction.side_effect = discord.errors.HTTPException(
-            response, "BAD REQUEST"
-        )
-        mock_guild_id = mock_message.channel.guild.id
-
-        await safe_remove_reaction(
-            cast(discord.Message, mock_message), "emoji", cast(discord.User, FRIEND)
-        )
-
-        assert (
-            f"warning: discord (guild {mock_guild_id}): could not remove reaction"
-            in caplog.text
-        )
-        assert "BAD REQUEST" in caplog.text
-
-    async def test_safe_clear_reactions(self, mock_message):
-        await safe_clear_reactions(cast(discord.Message, mock_message))
-
-        mock_message.clear_reactions.assert_called()
-
-    async def test_safe_clear_reactions_error_forbidden(
-        self, mock_message, client, monkeypatch
-    ):
-        mock_perms = Mock(return_value={})
-        monkeypatch.setattr(mock_message.channel, "permissions_for", mock_perms)
-
-        await safe_clear_reactions(cast(discord.Message, mock_message))
-
-        mock_message.channel.send.assert_called_with(
-            "I do not have permission to adjust reactions."
-            " A server admin will need to adjust my permissions."
-        )
-
-    async def test_safe_clear_reactions_error_bad_request(self, mock_message, caplog):
-        response = Mock()
-        response.status = 400
-        mock_message.clear_reactions.side_effect = discord.errors.HTTPException(
-            response, "BAD REQUEST"
-        )
-        mock_guild_id = mock_message.channel.guild.id
-
-        await safe_clear_reactions(cast(discord.Message, mock_message))
-
-        assert (
-            f"warning: discord (guild {mock_guild_id}): could not clear reactions"
-            in caplog.text
-        )
-        assert "BAD REQUEST" in caplog.text
-
-    async def test_safe_react_ok(self, mock_message):
-        await safe_react_ok(cast(discord.Message, mock_message))
-
-        mock_message.add_reaction.assert_called_with(EMOJI_OK)
-
-    async def test_safe_react_ok_error_forbidden(self, mock_message, client, monkeypatch):
-        mock_perms = Mock(return_value={})
-        monkeypatch.setattr(mock_message.channel, "permissions_for", mock_perms)
-
-        await safe_react_ok(cast(discord.Message, mock_message))
-
-        mock_message.channel.send.assert_called_with(
-            "I do not have permission to adjust reactions."
-            " A server admin will need to adjust my permissions."
-        )
-
-    async def test_safe_react_ok_error_bad_request(self, mock_message, caplog):
-        response = Mock()
-        response.status = 400
-        mock_message.add_reaction.side_effect = discord.errors.HTTPException(
-            response, "BAD REQUEST"
-        )
-        mock_guild_id = mock_message.channel.guild.id
-
-        await safe_react_ok(cast(discord.Message, mock_message))
-
-        assert (
-            f"warning: discord (guild {mock_guild_id}): could not react to message"
-            in caplog.text
-        )
-        assert "BAD REQUEST" in caplog.text
-
-    async def test_safe_react_ok_error_not_found(self, mock_message, caplog):
-        response = Mock()
-        response.status = 404
-        mock_message.add_reaction.side_effect = discord.errors.NotFound(
-            response, "Not Found"
-        )
-        mock_guild_id = mock_message.channel.guild.id
-
-        await safe_react_ok(cast(discord.Message, mock_message))
-
-        assert (
-            f"discord (guild {mock_guild_id}): could not react to message" in caplog.text
-        )
-        assert "Not Found" in caplog.text
-
-    async def test_safe_react_error(self, mock_message):
-        await safe_react_error(cast(discord.Message, mock_message))
-
-        mock_message.add_reaction.assert_called_with(EMOJI_FAIL)
-
-    async def test_safe_react_error_error_forbidden(
-        self, mock_message, client, monkeypatch
-    ):
-        mock_perms = Mock(return_value={})
-        monkeypatch.setattr(mock_message.channel, "permissions_for", mock_perms)
-
-        await safe_react_error(cast(discord.Message, mock_message))
-
-        mock_message.channel.send.assert_called_with(
-            "I do not have permission to adjust reactions."
-            " A server admin will need to adjust my permissions."
-        )
-
-    async def test_safe_react_error_error_bad_request(self, mock_message, caplog):
-        response = Mock()
-        response.status = 400
-        mock_message.add_reaction.side_effect = discord.errors.HTTPException(
-            response, "BAD REQUEST"
-        )
-        mock_guild_id = mock_message.channel.guild.id
-
-        await safe_react_error(cast(discord.Message, mock_message))
-
-        assert (
-            f"warning: discord (guild {mock_guild_id}): could not react to message"
-            in caplog.text
-        )
-        assert "BAD REQUEST" in caplog.text
-
-    async def test_safe_react_error_error_not_found(self, mock_message, caplog):
-        response = Mock()
-        response.status = 404
-        mock_message.add_reaction.side_effect = discord.errors.NotFound(
-            response, "Not Found"
-        )
-        mock_guild_id = mock_message.channel.guild.id
-
-        await safe_react_error(cast(discord.Message, mock_message))
-
-        assert (
-            f"discord (guild {mock_guild_id}): could not react to message" in caplog.text
-        )
-        assert "Not Found" in caplog.text
-
-    async def test_safe_react_emoji(self, mock_message):
-        await safe_react_emoji(cast(discord.Message, mock_message), "👍")
-
-        mock_message.add_reaction.assert_called_with("👍")
-
-    async def test_safe_react_emoji_error_forbidden(
-        self, mock_message, client, monkeypatch
-    ):
-        mock_perms = Mock(return_value={})
-        monkeypatch.setattr(mock_message.channel, "permissions_for", mock_perms)
-
-        await safe_react_emoji(cast(discord.Message, mock_message), "👍")
-
-        mock_message.channel.send.assert_called_with(
-            "I do not have permission to adjust reactions."
-            " A server admin will need to adjust my permissions."
-        )
-
-    async def test_safe_react_emoji_error_bad_request(self, mock_message, caplog):
-        response = Mock()
-        response.status = 400
-        mock_message.add_reaction.side_effect = discord.errors.HTTPException(
-            response, "BAD REQUEST"
-        )
-        mock_guild_id = mock_message.channel.guild.id
-
-        await safe_react_emoji(cast(discord.Message, mock_message), "👍")
-
-        assert (
-            f"warning: discord (guild {mock_guild_id}): could not react to message"
-            in caplog.text
-        )
-        assert "BAD REQUEST" in caplog.text
-
-    async def test_safe_react_emoji_error_not_found(self, mock_message, caplog):
-        response = Mock()
-        response.status = 404
-        mock_message.add_reaction.side_effect = discord.errors.NotFound(
-            response, "Not Found"
-        )
-        mock_guild_id = mock_message.channel.guild.id
-
-        await safe_react_emoji(cast(discord.Message, mock_message), "👍")
-
-        assert (
-            f"discord (guild {mock_guild_id}): could not react to message" in caplog.text
-        )
-        assert "Not Found" in caplog.text
-
-    async def test_safe_fetch_message(self, mock_message):
-        await safe_fetch_message(
-            mock_message.channel, mock_message.id, mock_message.channel.guild.id
-        )
-
-        mock_message.channel.fetch_message.assert_called_with(mock_message.id)
-
-    async def test_safe_fetch_message_bad_channel(self, mock_message, monkeypatch):
-        mock_data = MagicMock()
-        mock_data.id = 0
-        mock_data.name = "name"
-        mock_data.position = "position"
-        monkeypatch.setattr(
-            mock_message,
-            "channel",
-            discord.VoiceChannel(
-                state=MagicMock(),
-                guild=mock_message.channel.guild,
-                data=mock_data,
-            ),
-        )
-
-        message = await safe_fetch_message(
-            mock_message.channel, mock_message.id, mock_message.channel.guild.id
-        )
-
-        assert message is None
-
-    async def test_safe_fetch_message_error_forbidden(self, mock_message, caplog):
-        http_response = Mock()
-        http_response.status = 403
-        mock_message.channel.fetch_message.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
-
-        await safe_fetch_message(
-            mock_message.channel, mock_message.id, mock_message.channel.guild.id
-        )
-
-        guild_id = mock_message.channel.guild.id
-        assert (
-            f"warning: discord (guild {guild_id}): could not fetch message" in caplog.text
-        )
-        assert "Missing Permissions" in caplog.text
-
-    async def test_safe_fetch_message_error_not_found(self, mock_message, caplog):
-        http_response = Mock()
-        http_response.status = 404
-        mock_message.channel.fetch_message.side_effect = discord.errors.NotFound(
-            http_response, "Not Found"
-        )
-
-        await safe_fetch_message(
-            mock_message.channel, mock_message.id, mock_message.channel.guild.id
-        )
-
-        guild_id = mock_message.channel.guild.id
-        assert f"discord (guild {guild_id}): could not fetch message" in caplog.text
-        assert "Not Found" in caplog.text
-
-    async def test_safe_fetch_channel_when_cached(self, client, monkeypatch):
-        mock_channel = MockTextChannel(1, "general", [])
-        mock_get_channel = MagicMock()
-        mock_get_channel.return_value = mock_channel
-        monkeypatch.setattr(client, "get_channel", mock_get_channel)
-
-        channel = await safe_fetch_channel(client, mock_channel.id, mock_channel.guild.id)
-
-        assert channel is mock_channel
-        mock_get_channel.assert_called_with(mock_channel.id)
-
-    async def test_safe_fetch_channel_when_not_cached(self, client, monkeypatch):
-        mock_channel = MockTextChannel(1, "general", [])
-        mock_get_channel = MagicMock()
-        mock_get_channel.return_value = None
-        monkeypatch.setattr(client, "get_channel", mock_get_channel)
-        mock_fetch_channel = AsyncMock()
-        mock_fetch_channel.return_value = mock_channel
-        monkeypatch.setattr(client, "fetch_channel", mock_fetch_channel)
-
-        channel = await safe_fetch_channel(client, mock_channel.id, mock_channel.guild.id)
-
-        assert channel is mock_channel
-        mock_get_channel.assert_called_with(mock_channel.id)
-        mock_fetch_channel.assert_called_with(mock_channel.id)
-
-    async def test_safe_fetch_channel_when_not_cached_error(
-        self, client, monkeypatch, caplog
-    ):
-        mock_channel = MockTextChannel(1, "general", [])
-        mock_get_channel = MagicMock()
-        mock_get_channel.return_value = None
-        monkeypatch.setattr(client, "get_channel", mock_get_channel)
-        mock_fetch_channel = AsyncMock()
-        http_response = Mock()
-        http_response.status = 403
-        mock_fetch_channel.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
-        monkeypatch.setattr(client, "fetch_channel", mock_fetch_channel)
-
-        await safe_fetch_channel(client, mock_channel.id, mock_channel.guild.id)
-
-        guild_id = mock_channel.guild.id
-        assert (
-            f"warning: discord (guild {guild_id}): could not fetch channel" in caplog.text
-        )
-        assert "Missing Permissions" in caplog.text
-
-    async def test_safe_fetch_channel_when_not_cached_missing(
-        self, client, monkeypatch, caplog
-    ):
-        mock_channel = MockTextChannel(1, "general", [])
-        mock_get_channel = MagicMock()
-        mock_get_channel.return_value = None
-        monkeypatch.setattr(client, "get_channel", mock_get_channel)
-        mock_fetch_channel = AsyncMock()
-        http_response = Mock()
-        http_response.status = 404
-        mock_fetch_channel.side_effect = discord.errors.NotFound(
-            http_response, "Not Found"
-        )
-        monkeypatch.setattr(client, "fetch_channel", mock_fetch_channel)
-
-        await safe_fetch_channel(client, mock_channel.id, mock_channel.guild.id)
-
-        guild_id = mock_channel.guild.id
-        assert f"discord (guild {guild_id}): could not fetch channel" in caplog.text
-        assert "Not Found" in caplog.text
-
-    async def test_safe_fetch_user_when_cached(self, client, monkeypatch):
-        mock_get_user = MagicMock()
-        mock_get_user.return_value = FRIEND
+class TestOperationsFetchUser:
+    async def test_cached(self):
+        user = MagicMock()
+        user.id = 1
+        client = make_client(users=[user])
+        found = await safe_fetch_user(client, user.id)
+        assert found is user
+
+    async def test_uncached(self, monkeypatch):
+        user = MagicMock()
+        user.id = 1
+        client = make_client(users=[user])
+        mock_get_user = MagicMock(return_value=None)
         monkeypatch.setattr(client, "get_user", mock_get_user)
+        found = await safe_fetch_user(client, user.id)
+        assert found is user
 
-        user = await safe_fetch_user(client, FRIEND.id)
 
-        assert user is FRIEND
-        mock_get_user.assert_called_with(FRIEND.id)
+@pytest.mark.asyncio
+class TestOperationsFetchGuild:
+    async def test_cached(self):
+        guild = MagicMock()
+        guild.id = 1
+        client = make_client(guilds=[guild])
+        found = await safe_fetch_guild(client, guild.id)
+        assert found is guild
 
-    async def test_safe_fetch_user_when_not_cached(self, client, monkeypatch):
-        mock_get_user = MagicMock()
-        mock_get_user.return_value = None
-        monkeypatch.setattr(client, "get_user", mock_get_user)
-        mock_fetch_user = AsyncMock()
-        mock_fetch_user.return_value = FRIEND
-        monkeypatch.setattr(client, "fetch_user", mock_fetch_user)
-
-        user = await safe_fetch_user(client, FRIEND.id)
-
-        assert user is FRIEND
-        mock_get_user.assert_called_with(FRIEND.id)
-        mock_fetch_user.assert_called_with(FRIEND.id)
-
-    async def test_safe_fetch_user_when_not_cached_error(
-        self, client, monkeypatch, caplog
-    ):
-        mock_get_user = MagicMock()
-        mock_get_user.return_value = None
-        monkeypatch.setattr(client, "get_user", mock_get_user)
-        mock_fetch_user = AsyncMock()
-        http_response = Mock()
-        http_response.status = 403
-        mock_fetch_user.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
-        monkeypatch.setattr(client, "fetch_user", mock_fetch_user)
-
-        await safe_fetch_user(client, FRIEND.id)
-
-        assert "warning: discord: could not fetch user" in caplog.text
-        assert "Missing Permissions" in caplog.text
-
-    async def test_safe_edit_message(self, mock_message):
-        await safe_edit_message(cast(discord.Message, mock_message))
-
-        mock_message.edit.assert_called_with()
-
-    async def test_safe_edit_message_error_bad_request(self, mock_message, caplog):
-        response = Mock()
-        response.status = 400
-        mock_message.edit.side_effect = discord.errors.HTTPException(
-            response, "BAD REQUEST"
-        )
-        mock_guild_id = mock_message.channel.guild.id
-
-        await safe_edit_message(cast(discord.Message, mock_message))
-
-        assert (
-            f"warning: discord (guild {mock_guild_id}): could not edit message"
-            in caplog.text
-        )
-        assert "BAD REQUEST" in caplog.text
-
-    async def test_safe_delete_message(self, mock_message):
-        await safe_delete_message(cast(discord.Message, mock_message))
-
-        mock_message.delete.assert_called_with()
-
-    async def test_safe_delete_message_error_bad_request(self, mock_message, caplog):
-        response = Mock()
-        response.status = 400
-        mock_message.delete.side_effect = discord.errors.HTTPException(
-            response, "BAD REQUEST"
-        )
-        mock_guild_id = mock_message.channel.guild.id
-
-        await safe_delete_message(cast(discord.Message, mock_message))
-
-        assert (
-            f"warning: discord (guild {mock_guild_id}): could not delete message"
-            in caplog.text
-        )
-        assert "BAD REQUEST" in caplog.text
-
-    async def test_safe_send_user(self, client, monkeypatch):
-        await safe_send_user(cast(discord.User, FRIEND), content="test")
-
-        assert FRIEND.last_sent_response == "test"
-
-    async def test_safe_send_user_error(self, client, monkeypatch, caplog):
-        mock_send = AsyncMock()
-        http_response = Mock()
-        http_response.status = 500
-        mock_send.side_effect = discord.errors.HTTPException(
-            http_response, "Internal Server Error"
-        )
-        monkeypatch.setattr(FRIEND, "send", mock_send)
-
-        await safe_send_user(cast(discord.User, FRIEND), content="test")
-
-        assert "error: discord (DM): could not send message to user" in caplog.text
-        assert "Internal Server Error" in caplog.text
-
-    async def test_safe_send_user_clientuser(self, client, caplog):
-        clientuser = discord.ClientUser(
-            state=None,
-            data={"username": "foo", "id": 1, "discriminator": 4000, "avatar": None},
-        )
-        await safe_send_user(cast(discord.User, clientuser), content="test")
-
-        assert (
-            "warning: discord (DM): could not send message to ClientUser" in caplog.text
-        )
-
-    async def test_safe_send_user_blocked(self, client, monkeypatch, caplog):
-        mock_send = AsyncMock()
-        http_response = Mock()
-        http_response.status = 403
-        mock_send.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
-        monkeypatch.setattr(FRIEND, "send", mock_send)
-
-        await safe_send_user(cast(discord.User, FRIEND), content="test")
-
-        assert "warning: discord (DM): can not send messages to user" in caplog.text
-        assert "Missing Permissions" not in caplog.text
-
-    async def test_safe_create_voice_channel(self, client, monkeypatch):
-        mock_channel = MockTextChannel(1, "general", [])
-        chan = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
-
-        assert chan and chan.id == 1
-
-    async def test_safe_create_voice_channel_create_error(
-        self, client, monkeypatch, caplog
-    ):
-        mock_channel = MockTextChannel(1, "general", [])
-        mock_guild = mock_channel.guild
-        mock_guild_id = mock_channel.guild.id
-
-        mock_get_guild = Mock(return_value=mock_guild)
+    async def test_uncached(self, monkeypatch):
+        guild = MagicMock()
+        guild.id = 1
+        client = make_client(guilds=[guild])
+        mock_get_guild = MagicMock(return_value=None)
         monkeypatch.setattr(client, "get_guild", mock_get_guild)
+        found = await safe_fetch_guild(client, guild.id)
+        assert found is guild
 
-        mock_create_voice_channel = AsyncMock()
-        http_response = Mock()
-        http_response.status = 403
-        mock_create_voice_channel.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
-        monkeypatch.setattr(mock_guild, "create_voice_channel", mock_create_voice_channel)
 
-        chan = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
+@pytest.mark.asyncio
+class TestOperationsFetchTextChannel:
+    async def test_cached(self):
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.id = 1
+        client = make_client(channels=[channel])
+        found = await safe_fetch_text_channel(client, 2, channel.id)
+        assert found is channel
 
-        assert chan is None
+    async def test_uncached(self, monkeypatch):
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.id = 1
+        client = make_client(channels=[channel])
+        mock_get_channel = MagicMock(return_value=None)
+        monkeypatch.setattr(client, "get_channel", mock_get_channel)
+        found = await safe_fetch_text_channel(client, 2, channel.id)
+        assert found is channel
+
+    async def test_non_text(self):
+        channel = MagicMock(spec=discord.DMChannel)
+        channel.id = 1
+        client = make_client(channels=[channel])
+        found = await safe_fetch_text_channel(client, 2, channel.id)
+        assert found is None
+
+    async def test_uncached_non_text(self, monkeypatch):
+        channel = MagicMock(spec=discord.DMChannel)
+        channel.id = 1
+        client = make_client(channels=[channel])
+        mock_get_channel = MagicMock(return_value=None)
+        monkeypatch.setattr(client, "get_channel", mock_get_channel)
+        found = await safe_fetch_text_channel(client, 2, channel.id)
+        assert found is None
+
+
+@pytest.mark.asyncio
+class TestOperationsFetchMessage:
+    read_perms = discord.Permissions(
+        discord.Permissions.read_messages.flag
+        | discord.Permissions.read_message_history.flag
+    )
+
+    async def test_happy_path(self):
+        message = MagicMock()
+        message.id = 1
+
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 2
+        guild.me = MagicMock()
+
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.id = 3
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+        channel.fetch_message = AsyncMock(return_value=message)
+        channel.permissions_for = MagicMock(return_value=self.read_perms)
+
+        found = await safe_fetch_message(channel, guild.id, message.id)
+        assert found is message
+
+    async def test_not_text(self):
+        message = MagicMock()
+        message.id = 1
+
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 2
+        guild.me = MagicMock()
+
+        channel = MagicMock(spec=discord.VoiceChannel)
+        channel.id = 3
+        channel.type = discord.ChannelType.voice
+        channel.guild = guild
+        channel.fetch_message = AsyncMock(return_value=message)
+        channel.permissions_for = MagicMock(return_value=self.read_perms)
+
+        found = await safe_fetch_message(channel, guild.id, message.id)
+        assert found is None
+
+    async def test_no_permissions(self):
+        message = MagicMock()
+        message.id = 1
+
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 2
+        guild.me = MagicMock()
+
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.id = 3
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+        channel.fetch_message = AsyncMock(return_value=message)
+        channel.permissions_for = MagicMock(return_value=discord.Permissions())
+
+        found = await safe_fetch_message(channel, guild.id, message.id)
+        assert found is None
+
+
+@pytest.mark.asyncio
+class TestOperationsUpdateEmbed:
+    async def test_happy_path(self):
+        message = MagicMock(spec=discord.Message)
+        message.edit = AsyncMock()
+        await safe_update_embed(message, "content", flags=1)
+        message.edit.assert_called_once_with("content", flags=1)
+
+
+@pytest.mark.asyncio
+class TestOperationsUpdateEmbedOrigin:
+    async def test_happy_path(self):
+        ctx = MagicMock(spec=ComponentContext)
+        ctx.edit_origin = AsyncMock()
+        ctx.origin_message_id = 1
+        await safe_update_embed_origin(ctx, "content", hidden=True)
+        ctx.edit_origin.assert_called_once_with("content", hidden=True)
+
+
+@pytest.mark.asyncio
+class TestOperationsCreateCategoryChannel:
+    async def test_happy_path(self):
+        guild = MagicMock()
+        guild.id = 1
+        guild.create_category_channel = AsyncMock()
+        client = make_client(guilds=[guild])
+        await safe_create_category_channel(client, guild.id, "name")
+        guild.create_category_channel.assert_called_once_with("name")
+
+    async def test_uncached(self, monkeypatch):
+        guild = MagicMock()
+        guild.id = 1
+        guild.create_category_channel = AsyncMock()
+        client = make_client(guilds=[guild])
+        mock_get_guild = MagicMock(return_value=None)
+        monkeypatch.setattr(client, "get_guild", mock_get_guild)
+        await safe_create_category_channel(client, guild.id, "name")
+        guild.create_category_channel.assert_called_once_with("name")
+
+    async def test_not_found(self):
+        guild = MagicMock()
+        guild.id = 1
+        guild.create_category_channel = AsyncMock()
+        client = make_client()
+        await safe_create_category_channel(client, guild.id, "name")
+        guild.create_category_channel.assert_not_called()
+
+
+@pytest.mark.asyncio
+class TestOperationsCreateVoiceChannel:
+    async def test_happy_path(self):
+        guild = MagicMock()
+        guild.id = 1
+        guild.create_voice_channel = AsyncMock()
+        category = MagicMock()
+        client = make_client(guilds=[guild])
+        await safe_create_voice_channel(client, guild.id, "name", category=category)
+        guild.create_voice_channel.assert_called_once_with("name", category=category)
+
+    async def test_uncached(self, monkeypatch):
+        guild = MagicMock()
+        guild.id = 1
+        guild.create_voice_channel = AsyncMock()
+        category = MagicMock()
+        client = make_client(guilds=[guild])
+        mock_get_guild = MagicMock(return_value=None)
+        monkeypatch.setattr(client, "get_guild", mock_get_guild)
+        await safe_create_voice_channel(client, guild.id, "name", category=category)
+        guild.create_voice_channel.assert_called_once_with("name", category=category)
+
+    async def test_not_found(self):
+        guild = MagicMock()
+        guild.id = 1
+        guild.create_voice_channel = AsyncMock()
+        category = MagicMock()
+        client = make_client()
+        await safe_create_voice_channel(client, guild.id, "name", category=category)
+        guild.create_voice_channel.assert_not_called()
+
+
+@pytest.mark.asyncio
+class TestOperationsCreateInvite:
+    async def test_happy_path(self):
+        guild = MagicMock()
+        guild.id = 1
+        channel = MagicMock(spec=discord.VoiceChannel)
+        channel.id = 2
+        invite = MagicMock()
+        invite.url = "http://url"
+        channel.create_invite = AsyncMock(return_value=invite)
+        url = await safe_create_invite(channel, guild.id, 10)
+        channel.create_invite.assert_awaited_once_with(max_age=10)
+        assert url == invite.url
+
+
+@pytest.mark.asyncio
+class TestOperationsDeleteChannel:
+    delete_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
+
+    async def test_happy_path(self):
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 2
+        guild.me = MagicMock()
+
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.id = 3
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+        channel.delete = AsyncMock()
+        channel.permissions_for = MagicMock(return_value=self.delete_perms)
+
+        assert await safe_delete_channel(channel, guild.id)
+        channel.delete.assert_called_once_with()
+
+    async def test_missing_channel_id(self):
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 2
+        guild.me = MagicMock()
+
+        channel = MagicMock(spec=discord.TextChannel)
+        del channel.id
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+        channel.delete = AsyncMock()
+        channel.permissions_for = MagicMock(return_value=self.delete_perms)
+
+        assert not await safe_delete_channel(channel, guild.id)
+        channel.delete.assert_not_called()
+
+    async def test_missing_permissions(self):
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 2
+        guild.me = MagicMock()
+
+        channel = MagicMock(spec=discord.TextChannel)
+        del channel.id
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+        channel.delete = AsyncMock()
+        channel.permissions_for = MagicMock(return_value=discord.Permissions())
+
+        assert not await safe_delete_channel(channel, guild.id)
+        channel.delete.assert_not_called()
+
+
+@pytest.mark.asyncio
+class TestOperationsSendUser:
+    async def test_happy_path(self):
+        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user.send = AsyncMock()
+        embed = discord.Embed()
+        await safe_send_user(user, "content", embed=embed)
+        user.send.assert_called_once_with("content", embed=embed)
+
+    async def test_not_sendable(self, caplog):
+        user = Mock()
+        del user.send
+        user.__str__ = lambda self: "user#1234"  # type: ignore
+        await safe_send_user(user, "content")
+        assert "no send method on user user#1234" in caplog.text
+
+    async def test_forbidden(self, caplog):
+        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.send = AsyncMock(side_effect=discord.errors.Forbidden(MagicMock(), "msg"))
+        await safe_send_user(user, "content")
+        assert "not allowed to send message to user#1234" in caplog.text
+
+    async def test_cant_send(self, caplog):
+        exception = discord.errors.HTTPException(MagicMock(), "msg")
+        setattr(exception, "code", CANT_SEND_CODE)
+        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.send = AsyncMock(side_effect=exception)
+        await safe_send_user(user, "content")
+        assert "not allowed to send message to user#1234" in caplog.text
+
+    async def test_http_failure(self, caplog):
+        exception = discord.errors.HTTPException(MagicMock(), "msg")
+        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.send = AsyncMock(side_effect=exception)
+        await safe_send_user(user, "content")
+        assert "failed to send message to user user#1234" in caplog.text
+
+    async def test_server_error(self, caplog):
+        exception = discord.errors.DiscordServerError(MagicMock(), "msg")
+        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.send = AsyncMock(side_effect=exception)
+        await safe_send_user(user, "content")
+        assert "discord server error sending to user user#1234" in caplog.text
+
+    async def test_invalid_argument(self, caplog):
+        exception = discord.errors.InvalidArgument(MagicMock(), "msg")
+        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.send = AsyncMock(side_effect=exception)
+        await safe_send_user(user, "content")
+        assert "could not send message to user user#1234" in caplog.text
+
+
+@pytest.mark.asyncio
+class TestOperationsAddRole:
+    role_perms = discord.Permissions(discord.Permissions.manage_roles.flag)
+
+    async def test_happy_path(self):
+        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member.id = 101
+        member.roles = []
+        member.add_roles = AsyncMock()
+        role = MagicMock()
+        role.name = "role"
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 201
+        guild.me = MagicMock()
+        guild.me.guild_permissions = self.role_perms
+        guild.roles = [role]
+        await safe_add_role(member, guild, "role")
+        member.add_roles.assert_called_once_with(role)
+
+    async def test_no_roles_attribute(self):
+        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user.id = 101
+        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member.id = user.id
+        member.roles = []
+        member.add_roles = AsyncMock()
+        role = MagicMock()
+        role.name = "role"
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 201
+        guild.me = MagicMock()
+        guild.me.guild_permissions = self.role_perms
+        guild.get_member = MagicMock(return_value=member)
+        guild.roles = [role]
+        await safe_add_role(member, guild, "role")
+        member.add_roles.assert_called_once_with(role)
+
+    async def test_no_member(self, caplog):
+        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.id = 101
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 201
+        guild.me = MagicMock()
+        guild.me.guild_permissions = self.role_perms
+        guild.get_member = MagicMock(return_value=None)
+        await safe_add_role(user, guild, "role")
+        guild.get_member.assert_called_once()
         assert (
-            f"warning: discord (guild {mock_guild_id}): could not create voice channel"
-            in caplog.text
-        )
-        assert "Missing Permissions" in caplog.text
+            f"warning: in guild {guild.id}, could not add role:"
+            " could not find member: user#1234"
+        ) in caplog.text
 
-    async def test_safe_create_voice_channel_guild_error(self, client, monkeypatch):
-        mock_channel = MockTextChannel(1, "general", [])
-        mock_get_guild = Mock(return_value=None)
-        monkeypatch.setattr(client, "get_guild", mock_get_guild)
-
-        chan = await safe_create_voice_channel(client, mock_channel.guild.id, "whatever")
-
-        assert chan is None
-
-    async def test_safe_delete_channel(self, client, monkeypatch):
-        mock_channel = MockTextChannel(1, "general", [])
-        await safe_delete_channel(
-            cast(discord.TextChannel, mock_channel), mock_channel.guild.id
-        )
-
-        mock_channel.delete.assert_called_once_with()
-
-    async def test_safe_delete_channel_forbidden(self, client, monkeypatch):
-        mock_channel = MockTextChannel(1, "general", [])
-
-        mock_perms = Mock(return_value={})
-        monkeypatch.setattr(mock_channel, "permissions_for", mock_perms)
-
-        await safe_delete_channel(
-            cast(discord.TextChannel, mock_channel), mock_channel.guild.id
-        )
-
-        mock_channel.delete.assert_not_called()
-
-    async def test_safe_delete_channel_error(self, client, monkeypatch, caplog):
-        mock_channel = MockTextChannel(1, "general", [])
-        mock_guild_id = mock_channel.guild.id
-
-        mock_delete = AsyncMock()
-        http_response = Mock()
-        http_response.status = 403
-        mock_delete.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
-        monkeypatch.setattr(mock_channel, "delete", mock_delete)
-
-        await safe_delete_channel(
-            cast(discord.TextChannel, mock_channel), mock_channel.guild.id
-        )
-
+    async def test_no_role(self, caplog):
+        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member.id = 101
+        member.roles = []
+        member.add_roles = AsyncMock()
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 201
+        guild.me = MagicMock()
+        guild.me.guild_permissions = self.role_perms
+        guild.roles = []
+        await safe_add_role(member, guild, "role")
         assert (
-            f"warning: discord (guild {mock_guild_id}): could not delete channel"
-            in caplog.text
-        )
-        assert "Missing Permissions" in caplog.text
+            f"warning: in guild {guild.id}, could not add role:"
+            " could not find role: role"
+        ) in caplog.text
 
-    async def test_safe_create_category_channel(self, client, monkeypatch):
-        mock_channel = MockTextChannel(1, "general", [])
-        category = await safe_create_category_channel(
-            client, mock_channel.guild.id, "whatever"
-        )
-
-        assert category and category.id == 2
-
-    async def test_safe_create_category_channel_create_error(
-        self, client, monkeypatch, caplog
-    ):
-        mock_channel = MockTextChannel(1, "general", [])
-        mock_guild = mock_channel.guild
-        mock_guild_id = mock_channel.guild.id
-
-        mock_get_guild = Mock(return_value=mock_guild)
-        monkeypatch.setattr(client, "get_guild", mock_get_guild)
-
-        mock_create_category_channel = AsyncMock()
-        http_response = Mock()
-        http_response.status = 403
-        mock_create_category_channel.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
-        monkeypatch.setattr(
-            mock_guild, "create_category_channel", mock_create_category_channel
-        )
-
-        cateogry = await safe_create_category_channel(
-            client, mock_channel.guild.id, "whatever"
-        )
-
-        assert cateogry is None
+    async def test_no_permissions(self, caplog):
+        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member.id = 101
+        member.roles = []
+        member.add_roles = AsyncMock()
+        role = MagicMock()
+        role.name = "role"
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 201
+        guild.me = MagicMock()
+        guild.me.guild_permissions = discord.Permissions()
+        guild.roles = [role]
+        await safe_add_role(member, guild, "role")
         assert (
-            f"warning: discord (guild {mock_guild_id}): could not create category channel"
-            in caplog.text
-        )
-        assert "Missing Permissions" in caplog.text
+            f"warning: in guild {guild.id}, could not add role:"
+            " no permissions to add role: role"
+        ) in caplog.text
 
-    async def test_safe_create_category_channel_guild_error(self, client, monkeypatch):
-        mock_channel = MockTextChannel(1, "general", [])
-        mock_get_guild = Mock(return_value=None)
-        monkeypatch.setattr(client, "get_guild", mock_get_guild)
-
-        category = await safe_create_category_channel(
-            client, mock_channel.guild.id, "whatever"
-        )
-
-        assert category is None
-
-    async def test_safe_create_invite(self, client, monkeypatch):
-        mock_channel = MockVoiceChannel(1, "general", [])
-        await safe_create_invite(
-            cast(discord.VoiceChannel, mock_channel), mock_channel.guild.id
-        )
-
-        mock_channel.create_invite.assert_called_once_with(max_age=0)
-
-    async def test_safe_create_invite_error(self, client, monkeypatch, caplog):
-        mock_channel = MockVoiceChannel(1, "general", [])
-        mock_guild_id = mock_channel.guild.id
-
-        mock_create_invite = AsyncMock()
-        http_response = Mock()
-        http_response.status = 400
-        mock_create_invite.side_effect = discord.errors.HTTPException(
-            http_response, "BAD REQUEST"
-        )
-        monkeypatch.setattr(mock_channel, "create_invite", mock_create_invite)
-
-        await safe_create_invite(
-            cast(discord.VoiceChannel, mock_channel), mock_channel.guild.id
-        )
-
+    async def test_forbidden(self, caplog):
+        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member.id = 101
+        member.roles = []
+        member.__str__ = lambda self: "user#1234"  # type: ignore
+        exception = discord.errors.Forbidden(MagicMock(), "msg")
+        member.add_roles = AsyncMock(side_effect=exception)
+        role = MagicMock()
+        role.name = "role"
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 201
+        guild.me = MagicMock()
+        guild.me.guild_permissions = self.role_perms
+        guild.roles = [role]
+        await safe_add_role(member, guild, "role")
         assert (
-            f"warning: discord (guild {mock_guild_id}): could create channel invite"
-            in caplog.text
-        )
-        assert "BAD REQUEST" in caplog.text
+            f"warning: in guild {guild.id},"
+            f" could not add role to member user#1234: {exception}"
+        ) in caplog.text
 
-    async def test_safe_fetch_guild_when_cached(self, client, monkeypatch):
-        mock_guild = MockGuild(1, "general", [])
-        mock_get_guild = MagicMock()
-        mock_get_guild.return_value = mock_guild
-        monkeypatch.setattr(client, "get_guild", mock_get_guild)
 
-        channel = await safe_fetch_guild(client, mock_guild.id)
+@pytest.mark.asyncio
+class TestEnsureVoiceCategory:
+    async def test_available_exists(self):
+        channel = MagicMock(spec=discord.VoiceChannel)
+        category = MagicMock(spec=discord.CategoryChannel)
+        category.name = "voice-channels"
+        category.channels = [channel]
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 101
+        guild.categories = [category]
+        guild.create_category_channel = AsyncMock()
+        client = make_client(guilds=[guild], categories=[category])
+        result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
+        assert result is category
+        guild.create_category_channel.assert_not_called()
 
-        assert channel is mock_guild
-        mock_get_guild.assert_called_with(mock_guild.id)
+    async def test_none_exists(self):
+        new_category = MagicMock(spec=discord.CategoryChannel)
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 101
+        guild.categories = []
+        guild.create_category_channel = AsyncMock(return_value=new_category)
+        client = make_client(guilds=[guild])
+        result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
+        assert result is new_category
+        guild.create_category_channel.assert_called_once_with("voice-channels")
 
-    async def test_safe_fetch_guild_when_not_cached(self, client, monkeypatch):
-        mock_guild = MockGuild(1, "general", [])
-        mock_get_guild = MagicMock()
-        mock_get_guild.return_value = None
-        monkeypatch.setattr(client, "get_guild", mock_get_guild)
-        mock_fetch_guild = AsyncMock()
-        mock_fetch_guild.return_value = mock_guild
-        monkeypatch.setattr(client, "fetch_guild", mock_fetch_guild)
+    async def test_none_available(self):
+        new_category = MagicMock(spec=discord.CategoryChannel)
+        channel = MagicMock(spec=discord.VoiceChannel)
+        category = MagicMock(spec=discord.CategoryChannel)
+        category.name = "voice-channels"
+        category.channels = [channel] * 50
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 101
+        guild.categories = [category]
+        guild.create_category_channel = AsyncMock(return_value=new_category)
+        client = make_client(guilds=[guild], categories=[category])
+        result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
+        assert result is new_category
+        guild.create_category_channel.assert_called_once_with("voice-channels 2")
 
-        channel = await safe_fetch_guild(client, mock_guild.id)
+    async def test_create_failure(self):
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 101
+        guild.categories = []
+        guild.create_category_channel = AsyncMock(side_effect=DiscordException())
+        client = make_client(guilds=[guild])
+        result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
+        assert result is None
+        guild.create_category_channel.assert_called_once_with("voice-channels")
 
-        assert channel is mock_guild
-        mock_get_guild.assert_called_with(mock_guild.id)
-        mock_fetch_guild.assert_called_with(mock_guild.id)
+    async def test_missing_numbered_category(self):
+        new_category = MagicMock(spec=discord.CategoryChannel)
+        new_category.name = "voice-channels 2"
+        channel1 = MagicMock(spec=discord.VoiceChannel)
+        category1 = MagicMock(spec=discord.CategoryChannel)
+        category1.name = "voice-channels 1"
+        category1.channels = [channel1] * 50
+        channel3 = MagicMock(spec=discord.VoiceChannel)
+        category3 = MagicMock(spec=discord.CategoryChannel)
+        category3.name = "voice-channels 3"
+        category3.channels = [channel3]
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 101
+        guild.categories = [category1, category3]
+        guild.create_category_channel = AsyncMock(return_value=new_category)
+        client = make_client(guilds=[guild], categories=[category1, category3])
+        result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
+        assert result is new_category
+        guild.create_category_channel.assert_called_once_with("voice-channels 2")
 
-    async def test_safe_fetch_guild_when_not_cached_error(
-        self, client, monkeypatch, caplog
-    ):
-        mock_guild = MockGuild(1, "general", [])
-        mock_get_guild = MagicMock()
-        mock_get_guild.return_value = None
-        monkeypatch.setattr(client, "get_guild", mock_get_guild)
-        mock_fetch_guild = AsyncMock()
-        http_response = Mock()
-        http_response.status = 403
-        mock_fetch_guild.side_effect = discord.errors.Forbidden(
-            http_response, "Missing Permissions"
-        )
-        monkeypatch.setattr(client, "fetch_guild", mock_fetch_guild)
+    async def test_available_has_bad_name(self):
+        new_category = MagicMock(spec=discord.CategoryChannel)
+        new_category.name = "voice-channels"
+        channel = MagicMock(spec=discord.VoiceChannel)
+        category = MagicMock(spec=discord.CategoryChannel)
+        category.name = "voice-channels xyz"
+        category.channels = [channel]
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 101
+        guild.categories = [category]
+        guild.create_category_channel = AsyncMock(return_value=new_category)
+        client = make_client(guilds=[guild], categories=[category])
+        result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
+        assert result is new_category
+        guild.create_category_channel.assert_called_once_with("voice-channels")
 
-        await safe_fetch_guild(client, mock_guild.id)
-
-        guild_id = mock_guild.id
-        assert (
-            f"warning: discord (guild {guild_id}): could not fetch guild" in caplog.text
-        )
-        assert "Missing Permissions" in caplog.text
-
-    # TODO: Refactor for safe_send_channel() that accepts discord.Message.
-    # async def test_safe_send_channel(self, client, channel_maker, monkeypatch):
-    #     channel = channel_maker.text()
-    #     await safe_send_channel(cast(discord.TextChannel, channel), content="test")
-    #     assert channel.last_sent_response == "test"
-
-    # TODO: Refactor for safe_send_channel() that accepts discord.Message.
-    # async def test_safe_send_channel_error(
-    #     self, client, channel_maker, monkeypatch, caplog
-    # ):
-    #     channel = channel_maker.text()
-    #     mock_send = AsyncMock()
-    #     http_response = Mock()
-    #     http_response.status = 500
-    #     mock_send.side_effect = discord.errors.HTTPException(
-    #         http_response, "Internal Server Error"
-    #     )
-    #     monkeypatch.setattr(channel, "send", mock_send)
-    #     await safe_send_channel(cast(discord.TextChannel, channel), content="test")
-    #     assert "warning: discord: could not send message to channel" in caplog.text
-    #     assert "Internal Server Error" in caplog.text
-
-    async def test_bot_can_delete_channel(self, client, channel_maker, monkeypatch):
-        assert bot_can_delete_channel(channel_maker.text())
-        assert not bot_can_delete_channel(channel_maker.dm())
-
-        text_channel = channel_maker.text()
-        monkeypatch.setattr(text_channel, "guild", None)
-        assert not bot_can_delete_channel(text_channel)
-
-        text_channel = channel_maker.text()
-        monkeypatch.delattr(text_channel, "guild")
-        assert not bot_can_delete_channel(text_channel)
-
-    async def test_bot_can_read(self, client, channel_maker, monkeypatch):
-        assert bot_can_read(channel_maker.dm())
-        assert bot_can_read(channel_maker.text())
-
-        text_channel = channel_maker.text()
-
-        class MockBadPermissions:
-            read_messages = True
-
-        monkeypatch.setattr(
-            text_channel, "permissions_for", Mock(return_value=MockBadPermissions())
-        )
-        assert not bot_can_read(text_channel)
-
-    async def test_bot_can_role(self, client, channel_maker, monkeypatch):
-        text_channel = channel_maker.text()
-        assert bot_can_role(text_channel.guild)
-
-        class MockBadPermissions:
-            read_messages = True
-
-        class MockedMockMember(MockMember):
-            guild_permissions = MockBadPermissions()
-
-        text_channel.guild.me.__class__ = MockedMockMember
-        assert not bot_can_role(text_channel.guild)
+    async def test_no_guild(self):
+        client = make_client()
+        result = await safe_ensure_voice_category(client, 404, "voice-channels")
+        assert result is None

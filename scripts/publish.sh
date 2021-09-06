@@ -1,9 +1,7 @@
-#!/bin/bash
-
-set -eu
+#!/bin/bash -ue
 
 usage() {
-    echo "usage: ${0##*/} [minor|major|patch] [-h|--help]" 1>&2
+    echo "usage: ${0##*/} [-h | --help] <minor | major | patch>" 1>&2
     echo "Bumps the minor, major, or patch version and releases the package." 1>&2
     exit 1
 }

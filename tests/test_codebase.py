@@ -1,22 +1,22 @@
 import re
 import sys
-from os import chdir, sep
+from os import chdir
 from subprocess import run
 
 import toml
-from git import Repo  # type: ignore
+from git import Repo
 
-from .constants import REPO_ROOT, SRC_DIRS
+from . import REPO_ROOT, SRC_DIRS
 
 
 class TestCodebase:
-    def test_mypy(self):
-        """Checks that the Python codebase passes mypy static analysis checks."""
+    def test_pyright(self):
+        """Checks that the Python codebase passes pyright static analysis checks."""
         chdir(REPO_ROOT)
-        cmd = ["mypy", *SRC_DIRS, "--warn-unused-configs"]
+        cmd = ["pyright", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, f"mypy issues:\n{proc.stdout.decode('utf-8')}"
+        assert proc.returncode == 0, f"pyright issues:\n{proc.stdout.decode('utf-8')}"
 
     def test_flake8(self):
         """Checks that the Python codebase passes configured flake8 checks."""
@@ -41,97 +41,6 @@ class TestCodebase:
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
         assert proc.returncode == 0, f"isort issues:\n{proc.stdout.decode('utf-8')}"
-
-    def test_sort_strings(self):
-        """Checks that the strings data is correctly sorted."""
-        chdir(REPO_ROOT)
-        cmd = ["python", "scripts/sort_strings.py", "--check"]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
-        proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, (
-            f"sort strings issues:\n{proc.stdout.decode('utf-8')}\n\n"
-            "Please run `poetry run scripts/sort_strings.py` to resolve this issue."
-        )
-
-    def test_snapshots_size(self):
-        """Checks that none of the snapshots files are unreasonably small."""
-        snapshots_dir = REPO_ROOT / "tests" / "snapshots"
-        small_snapshots = []
-        for f in snapshots_dir.glob("*.txt"):
-            if f.stat().st_size <= 150:
-                small_snapshots.append(f"- {f.name}")
-        if small_snapshots:
-            offenders = "\n".join(small_snapshots)
-            assert False, (
-                "Very small snapshot files are problematic.\n"
-                "Offending snapshot files:\n"
-                f"{offenders}\n"
-                "Consider refacotring them to avoid using snapshots. Tests that use "
-                "snapshots are harder to reason about when they fail. Whenever possible "
-                "a test with inline data is much easier to reason about and refactor."
-            )
-
-    def test_readme_commands(self, client):
-        """Checks that all commands are documented in our readme."""
-        with open(REPO_ROOT / "README.md") as f:
-            readme = f.read()
-
-        documented = set(re.findall(r"^- `!([a-z0-9]+)`: .*$", readme, re.MULTILINE))
-        implemented = set(client.commands)
-
-        assert documented == implemented
-
-    def test_index_commands(self, client):
-        """Checks that all commands are documented on our webpage."""
-        with open(REPO_ROOT / "docs" / "index.html") as f:
-            index = f.read()
-
-        documented = set(
-            re.findall(r"^ *<li><code>!([a-z0-9]+)</code>: .*$", index, re.MULTILINE)
-        )
-        implemented = set(client.commands)
-
-        assert documented == implemented
-
-    def test_subcommands_documented(self, client):
-        """Checks that all subcommands are documented in the spellbot() docstring."""
-        documented = set(
-            found.replace("-", "_")
-            for found in re.findall(
-                r"^ *\* `([a-z-]+) ?[^`]*`: .*$", client.spellbot.__doc__, re.MULTILINE
-            )
-        )
-        implemented = set(client.subcommands)
-
-        assert implemented == documented
-
-    def test_readme_subcommands(self, client):
-        """Checks that all subcommands are documented in our readme."""
-        with open(REPO_ROOT / "README.md") as f:
-            readme = f.read()
-
-        documented = set(
-            found.replace("-", "_")
-            for found in re.findall(r"^  - `([a-z-]+)`: .*$", readme, re.MULTILINE)
-        )
-        implemented = set(client.subcommands)
-
-        assert documented == implemented
-
-    def test_index_subcommands(self, client):
-        """Checks that all subcommands are documented on our webpage."""
-        with open(REPO_ROOT / "docs" / "index.html") as f:
-            index = f.read()
-
-        documented = set(
-            found.replace("-", "_")
-            for found in re.findall(
-                r"^ *<li><code>([a-z-]+)</code>: .*$", index, re.MULTILINE
-            )
-        )
-        implemented = set(client.subcommands)
-
-        assert documented == implemented
 
     def test_pyproject_dependencies(self):
         """Checks that pyproject.toml dependencies are sorted."""
@@ -163,7 +72,7 @@ class TestCodebase:
             if path.suffix.lower() in EXCLUDE_EXTS:
                 return
             rels = str(path.relative_to(REPO_ROOT))
-            if rels.startswith(f"tests{sep}snapshots{sep}"):
+            if "__snapshots__" in rels:
                 return
             with open(path) as file:
                 lastline = None

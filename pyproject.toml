@@ -14,8 +14,6 @@ max-line-length = 90
 
 [tool.pytest.ini_options]
 addopts = """
-    --ignore=tests/fixtures
-    --ignore=tests/snapshots
     -W ignore::DeprecationWarning
 """
 
@@ -23,11 +21,10 @@ addopts = """
 legacy_tox_ini = """
 [tox]
 isolated_build = true
-envlist = py{38,39}
+envlist = py{39}
 
 [gh-actions]
 python =
-    3.8: py38
     3.9: py39
 
 [testenv]
@@ -53,7 +50,6 @@ classifiers = [
   "Topic :: Communications :: Chat",
   "Topic :: Games/Entertainment :: Board Games",
   "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
 ]
 description = 'The Discord bot for SpellTable'
@@ -63,72 +59,66 @@ license = 'MIT'
 name = 'spellbot'
 packages = [
   {include = "spellbot", from = "src"},
-  {include = "spellapi", from = "src"},
 ]
 readme = 'README.md'
 repository = 'https://github.com/lexicalunit/spellbot'
-version = "6.1.4"
+version = "7.0.0"
 
 [tool.poetry.dependencies]
-aiofiles = ">=0.6,<0.8"
-aiohttp = "^3.7.4.post0"
-aioredis = "^1.3.1"
-alembic = "^1.5.8"
-click = ">=7.1.2,<9.0.0"
+PyYAML = "^5.4.1"
+SQLAlchemy = "^1.4.23"
+SQLAlchemy-Utils = "^0.37.8"
+aiohttp = "^3.7.4"
+aiohttp-jinja2 = "^1.5"
+aiohttp-retry = "^2.4.6"
+alembic = "^1.7.1"
+asgiref = "^3.4.1"
+click = "^8.0.1"
 coloredlogs = "^15.0.1"
-"discord.py" = {git = "https://github.com/Rapptz/discord.py.git", rev = "f14e584304d9d6676c90f8aa59d6e4be23d22a10"}
-dunamai = "^1.5.4"
+discord-py-interactions = "^3.0.2"
+"discord.py" = "1.7.3"
+dunamai = "^1.6.0"
 expiringdict = "^1.2.1"
-fastapi = ">=0.63,<0.68"
-fastapi-cache2 = "^0.1.6"
-httpx = ">=0.17.1,<0.19.0"
-humanize = "^3.10.0"
-hupper = "^1.10.2"
-itsdangerous = ">=1.1,<3.0"
-psycopg2-binary = "^2.8.6"
-python = '>=3.8,<4'
+gunicorn = "^20.1.0"
+humanize = "^3.11.0"
+hupper = "^1.10.3"
+importlib-resources = "^5.2.2"
+psycopg2-binary = "^2.9.1"
+pygicord = "^1.0.1"
+python = '>=3.9,<4'
 python-dateutil = "^2.8.2"
-python-dotenv = "^0.18.0"
-python-jose = {extras = ["cryptography"], version = "^3.2.0"}
+python-dotenv = "^0.19.0"
 pytz = "^2021.1"
-pyyaml = "^5.4.1"
-redis = "^3.5.3"
-requests = "^2.25.1"
-sqlalchemy = "^1.4.22"
-sqlalchemy-easy-profile = "1.2.1"
-types-PyYAML = "^5.4.1"
-types-click = "^7.1.2"
-types-pytz = ">=0.1.1,<2021.2.0"
-types-redis = "^3.5.1"
-types-requests = ">=0.1.13,<2.26.0"
-types-toml = "^0.1.2"
-unidecode = "^1.2.0"
-uvicorn = ">=0.13.4,<0.15.0"
+supervisor = "^4.2.2"
+types-PyYAML = "^5.4.10"
+types-python-dateutil = "^2.8.0"
+types-pytz = "^2021.1.2"
+types-toml = "^0.1.5"
+wrapt = "^1.13.1"
 
 [tool.poetry.dev-dependencies]
-black = "^21.7b0"
+Faker = "^8.12.1"
+GitPython = "3.1.18"
+black = "^21.8b0"
+callee = "^0.3.1"
 coverage = "^5.5"
-faker = "^8.10.3"
+factory-boy = "^3.2.0"
 flake8 = "^3.9.2"
 flake8-print = "^4.0.0"
-gitpython = "^3.1.18"
-ipython = "^7.24.1"
-isort = "^5.9.2"
-mypy = "^0.910"
-pytest = "^6.2.4"
+isort = "^5.9.3"
+pyright = "^0.0.10"
+pytest = "^6.2.5"
+pytest-aiohttp = "^0.3.0"
 pytest-asyncio = "^0.15.1"
 pytest-freezegun = "^0.4.2"
 pytest-mock = "^3.6.1"
-pytest-snapshot = "^0.6.1"
-requests = "^2.25.1"
-requests-mock = "^1.9.3"
 sqlalchemy-stubs = "^0.4"
-tox = "^3.24.0"
+syrupy = "^1.4.6"
+tox = "^3.24.3"
 
 [tool.poetry.scripts]
-spellapi = 'spellapi:main'
 spellbot = 'spellbot:main'
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.0.4"]

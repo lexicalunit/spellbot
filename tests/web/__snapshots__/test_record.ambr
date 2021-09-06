@@ -1,0 +1,2465 @@
+# name: TestWebRecord.test_channel_record[pyloop]
+  '
+  <html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+      <title>SpellBot</title>
+      <meta name="author" content="Amy Troschinetz">
+      <meta name="description" content="The Discord bot for SpellTable">
+      <meta name="theme-color" content="#5A3EFD">
+      <meta name="keywords" content="magic: the gathering, magic, mtg, edh, commander, spelltable, discord bot, discord, bot">
+      <link rel="alternate" type="application/rss+xml" title="SpellBot" href="https://spellbot.io/feed.xml">
+  
+      <meta property="og:site_name" content="SpellBot">
+      <meta property="og:title" content="SpellBot">
+      <meta property="og:description" content="The Discord bot for SpellTable">
+      <meta property="og:image" content="https://spellbot.io/assets/img/avatar-icon.png">
+      <meta property="og:type" content="website">
+      <meta property="og:url" content="https://spellbot.io/">
+  
+      <link rel="canonical" href="https://spellbot.io/">
+      <meta name="twitter:card" content="summary">
+      <meta name="twitter:site" content="@SpellBotIO">
+      <meta name="twitter:creator" content="@SpellBotIO">
+      <meta property="twitter:title" content="SpellBot">
+      <meta property="twitter:description" content="The Discord bot for SpellTable">
+      <meta name="twitter:image" content="https://spellbot.io/assets/img/avatar-icon.png">
+  
+      <script>
+          function copy(el) {
+              // copy the text
+              const temp = document.createElement('input')
+              temp.value = el.text
+              document.body.appendChild(temp)
+              temp.select()
+              document.execCommand('copy')
+              temp.remove()
+  
+              // notify user
+              const orig = el.textContent
+              el.textContent = 'Copied!'
+              el.style.pointerEvents = 'none';
+              el.style.cursor = 'default';
+              setTimeout(() => {
+                  el.textContent = orig
+                  el.style.pointerEvents = 'auto';
+                  el.style.cursor = 'pointer';
+              }, 1200)
+          }
+  
+          function page_impl(offset) {
+              const urlSearchParams = new URLSearchParams(window.location.search);
+              const params = Object.fromEntries(urlSearchParams.entries());
+              let {page} = params;
+              page = parseInt(page);
+              console.log("cur page:", page);
+              if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
+                  console.log("err, going to 0");
+                  page = 0;
+              } else {
+                  page += offset;
+                  if (page < 0) page = 0;
+                  console.log("going to page:", page);
+              }
+              window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
+          }
+  
+          function next_page() {
+              page_impl(1);
+          }
+  
+          function prev_page() {
+              page_impl(-1);
+          }
+      </script>
+  
+      <style>
+          * {
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+  }
+  
+  body,
+  html {
+    height: 100%;
+    font-family: sans-serif;
+  }
+  
+  em {
+    font-weight: 600;
+    font-style: normal;
+  }
+  
+  ul {
+    list-style-type: none;
+  }
+  
+  a {
+    margin: 0px;
+  }
+  
+  a,
+  a:hover,
+  a:visited {
+    color: #04a7ff;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
+  .limiter {
+    width: 100%;
+    margin: 0 auto;
+  }
+  
+  .container-table100 {
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 33px 30px;
+  }
+  
+  .wrap-table100 {
+    width: 1170px;
+  }
+  
+  table {
+    border-spacing: 1;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    box-shadow: 10px 10px rgb(113 128 150 / 50%);
+  }
+  
+  table * {
+    position: relative;
+  }
+  
+  table td,
+  table th {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  
+  table thead tr {
+    height: 60px;
+    background: rgb(13, 17, 23);
+  }
+  
+  th:first-child {
+    border-radius: 10px 0 0 0;
+  }
+  
+  th:last-child {
+    border-radius: 0 10px 0 0;
+  }
+  
+  tr:last-child td:first-child {
+    border-radius: 0 0 0 10px;
+  }
+  
+  tr:last-child td:last-child {
+    border-radius: 0 0 10px 0;
+  }
+  
+  table tbody tr {
+    height: 50px;
+  }
+  
+  table tbody tr:last-child {
+    border: 0;
+  }
+  
+  table td,
+  table th {
+    text-align: left;
+  }
+  
+  table td.l,
+  table th.l {
+    text-align: right;
+  }
+  
+  table td.c,
+  table th.c {
+    text-align: center;
+  }
+  
+  table td.r,
+  table th.r {
+    text-align: center;
+  }
+  
+  .table100-head th {
+    font-size: 18px;
+    color: #fff;
+    line-height: 1.2;
+    font-weight: unset;
+  }
+  
+  tbody tr:nth-child(even) {
+    background-color: #f5f5f5;
+  }
+  
+  tbody tr {
+    font-size: 15px;
+    color: #808080;
+    line-height: 1.2;
+    font-weight: unset;
+  }
+  
+  tbody tr:hover {
+    color: #555555;
+    background-color: #f5f5f5;
+    cursor: pointer;
+  }
+  
+  @media screen and (max-width: 992px) {
+    table {
+      display: block;
+    }
+  
+    table > *,
+    table tr,
+    table td,
+    table th {
+      display: block;
+    }
+  
+    table thead {
+      display: none;
+    }
+  
+    table tbody tr {
+      height: auto;
+      padding: 37px 0;
+    }
+  
+    table tbody tr td {
+      padding-left: 40% !important;
+      margin-bottom: 24px;
+    }
+  
+    table tbody tr td:last-child {
+      margin-bottom: 0;
+    }
+  
+    table tbody tr td:before {
+      font-size: 14px;
+      color: #999999;
+      line-height: 1.2;
+      font-weight: unset;
+      position: absolute;
+      width: 40%;
+      left: 30px;
+      top: 0;
+    }
+  
+    table tbody tr td:nth-child(1):before {
+      content: "Game";
+    }
+  
+    table tbody tr td:nth-child(2):before {
+      content: "Time";
+    }
+  
+    table tbody tr td:nth-child(3):before {
+      content: "Guild";
+    }
+  
+    table tbody tr td:nth-child(4):before {
+      content: "Channel";
+    }
+  
+    table tbody tr td:nth-child(5):before {
+      content: "Link";
+    }
+  
+    table tbody tr td:nth-child(6):before {
+      content: "Scores";
+    }
+  
+    tbody tr {
+      font-size: 14px;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .container-table100 {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+  }
+  
+  .user_id {
+    font-size: smaller !important;
+    font-family: monospace !important;
+  }
+  
+  .button {
+    margin: 1em;
+    box-shadow: inset 0px 0px 15px 3px #23395e;
+    background: linear-gradient(to bottom, #2e466e 5%, #415989 100%);
+    background-color: #2e466e;
+    border-radius: 17px;
+    border: 1px solid #1f2f47;
+    display: inline-block;
+    cursor: pointer;
+    color: #ffffff !important;
+    font-family: Arial;
+    font-size: 15px;
+    padding: 6px 13px;
+    text-decoration: none !important;
+    text-shadow: 0px 1px 0px #263666;
+  }
+  
+  .button:hover {
+    background: linear-gradient(to bottom, #415989 5%, #2e466e 100%);
+    background-color: #415989;
+  }
+  
+  .button:active {
+    position: relative;
+    top: 1px;
+  }
+  
+  .data {
+    display: none;
+  }
+  
+  .tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dashed #808080;
+  }
+  
+  .tooltip .tooltiptext {
+    visibility: hidden;
+    background-color: rgb(13, 17, 23);
+    text-align: center;
+    border-radius: 5px;
+    position: absolute;
+    z-index: 1;
+    width: 220px;
+    padding-top: 10px;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  
+  .tooltip:hover .tooltiptext {
+    visibility: visible;
+  }
+  
+  .tooltipcta {
+    color: #fff;
+  }
+  
+  .scores {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+  }
+  
+  .avatar {
+    display: none;
+  }
+  
+  .avatar a {
+    transition: all 0.3s ease-in-out;
+    float: right;
+  }
+  
+  .avatar a:hover {
+    filter: brightness(150%);
+  }
+  
+  .avatar img {
+    border-radius: 50%;
+    width: 100px;
+    background: transparent;
+    -webkit-animation: spin 60s linear infinite;
+    -moz-animation: spin 60s linear infinite;
+    animation: spin 60s linear infinite;
+  }
+  @-moz-keyframes spin {
+    100% {
+      -moz-transform: rotate(360deg);
+    }
+  }
+  @-webkit-keyframes spin {
+    100% {
+      -webkit-transform: rotate(360deg);
+    }
+  }
+  @keyframes spin {
+    100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg);
+    }
+  }
+      </style>
+  <body>
+  
+      <div class="limiter">
+          <div class="container-table100">
+              <div class="wrap-table100">
+                  <div class="avatar">
+                      <a href="https://spellbot.io/">
+                          <img alt="spellbot-icon" src="https://spellbot.io/assets/img/avatar-icon.png">
+                      </a>
+                  </div>
+                  <div class="table100">
+                      
+  <table>
+      <thead>
+          <tr class="table100-head">
+              <th>Game</th>
+              <th>Time</th>
+              <th>Guild</th>
+              <th>Channel</th>
+              <th>Format</th>
+              <th>Link</th>
+              <th>User Name</th>
+              <th>User ID</th>
+              <th>Points</th>
+          </tr>
+      </thead>
+      <tbody id="rows">
+          
+              <tr>
+                  <td><a href="https://discordapp.com/channels/201/301/None">SB#1</a></td>
+                  <td class="timestamp">1577836800000.0</td>
+                  <td><a href="https://discordapp.com/channels/201">guild</a></td>
+                  <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
+                  <td>Modern</td>
+                  
+                      <td>&nbsp;</td>
+                  
+                  <td>user1</td>
+                  <td class="user_id">101</td>
+                  <td><em>3</em></td>
+              </tr>
+          
+              <tr>
+                  <td><a href="https://discordapp.com/channels/201/301/None">SB#1</a></td>
+                  <td class="timestamp">1577836800000.0</td>
+                  <td><a href="https://discordapp.com/channels/201">guild</a></td>
+                  <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
+                  <td>Modern</td>
+                  
+                      <td>&nbsp;</td>
+                  
+                  <td>user2</td>
+                  <td class="user_id">102</td>
+                  <td><em>1</em></td>
+              </tr>
+          
+              <tr>
+                  <td><a href="https://discordapp.com/channels/201/301/None">SB#2</a></td>
+                  <td class="timestamp">1577836800000.0</td>
+                  <td><a href="https://discordapp.com/channels/201">guild</a></td>
+                  <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
+                  <td>Standard</td>
+                  
+                      <td>&nbsp;</td>
+                  
+                  <td>user1</td>
+                  <td class="user_id">101</td>
+                  <td><em>0</em></td>
+              </tr>
+          
+              <tr>
+                  <td><a href="https://discordapp.com/channels/201/301/None">SB#2</a></td>
+                  <td class="timestamp">1577836800000.0</td>
+                  <td><a href="https://discordapp.com/channels/201">guild</a></td>
+                  <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
+                  <td>Standard</td>
+                  
+                      <td>&nbsp;</td>
+                  
+                  <td>user2</td>
+                  <td class="user_id">102</td>
+                  <td><em>5</em></td>
+              </tr>
+          
+              <tr>
+                  <td><a href="https://discordapp.com/channels/201/301/None">SB#3</a></td>
+                  <td class="timestamp">1577836800000.0</td>
+                  <td><a href="https://discordapp.com/channels/201">guild</a></td>
+                  <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
+                  <td>Legacy</td>
+                  
+                      <td>&nbsp;</td>
+                  
+                  <td>user1</td>
+                  <td class="user_id">101</td>
+                  <td><em>0</em></td>
+              </tr>
+          
+              <tr>
+                  <td><a href="https://discordapp.com/channels/201/301/None">SB#3</a></td>
+                  <td class="timestamp">1577836800000.0</td>
+                  <td><a href="https://discordapp.com/channels/201">guild</a></td>
+                  <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
+                  <td>Legacy</td>
+                  
+                      <td>&nbsp;</td>
+                  
+                  <td>user2</td>
+                  <td class="user_id">102</td>
+                  <td><em>10</em></td>
+              </tr>
+          
+      </tbody>
+  </table>
+  
+                      <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
+                      <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                  </div>
+              </div>
+          </div>
+      </div>
+  
+      <script>
+          function humanize_timestamp(ts) {
+              const options = {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour12: true,
+                  hour: "numeric",
+                  minute: "numeric",
+                  timeZoneName: "short",
+              };
+              return (new Date(ts)).toLocaleDateString(undefined, options);
+          }
+  
+          els = document.getElementsByClassName("timestamp");
+          Array.from(els).forEach((el) => {
+              el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+      </script>
+  
+      <script
+          src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+          integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI="
+          crossorigin="anonymous"></script>
+  
+      <script>
+          // modified from source: https://github.com/rubo77/table2CSV
+  jQuery.fn.table2CSV = function(options) {
+    var options = jQuery.extend({
+        separator: ',',
+        headerSelector: 'th',
+        columnSelector: 'td',
+        transform_gt_lt: true // make &gt; and &lt; to > and <
+      },
+      options);
+  
+    var csvData = [];
+    var headerArr = [];
+    var el = this;
+  
+    //header
+    var tmpRow = [];
+    $(el).filter(':visible').find(options.headerSelector).each(function() {
+      if ($(this).css('display') != 'none') tmpRow[tmpRow.length] = formatData($(this).html());
+    });
+    row2CSV(tmpRow);
+  
+    // actual data
+    $(el).find('tr').each(function() {
+      var tmpRow = [];
+      $(this).filter(':visible').find(options.columnSelector).each(function() {
+        var data = $(this).find(".data");
+        if (data.length) {
+          tmpRow[tmpRow.length] = formatData($(data).html());
+        } else if ($(this).css('display') != 'none') {
+          tmpRow[tmpRow.length] = formatData($(this).html());
+        }
+      });
+      row2CSV(tmpRow);
+    });
+  
+    var mydata = csvData.join('\n');
+    if (options.transform_gt_lt) {
+      mydata = sinri_recover_gt_and_lt(mydata);
+    }
+    return mydata;
+  
+    function sinri_recover_gt_and_lt(input) {
+      var regexp = new RegExp(/&gt;/g);
+      var input = input.replace(regexp, '>');
+      var regexp = new RegExp(/&lt;/g);
+      var input = input.replace(regexp, '<');
+      return input;
+    }
+  
+    function row2CSV(tmpRow) {
+      var tmp = tmpRow.join('') // to remove any blank rows
+      if (tmpRow.length > 0 && tmp != '') {
+        var mystr = tmpRow.join(options.separator);
+        csvData[csvData.length] = mystr;
+      }
+    }
+  
+    function formatData(input) {
+      // double " according to rfc4180
+      var regexp = new RegExp(/["]/g);
+      var output = input.replace(regexp, '""');
+      //HTML
+      var regexp = new RegExp(/\<[^\<]+\>/g);
+      var output = output.replace(regexp, "");
+      output = output.replace(/&nbsp;/gi, ' '); //replace &nbsp;
+      if (output == "") return '';
+      return '"' + output.trim() + '"';
+    }
+  };
+      </script>
+  
+      <script>
+          $('table').each(function() {
+              const $table = $(this);
+              const $button = $("<a href='#' class='button'>");
+              $button.text("Export to spreadsheet");
+              $button.insertAfter($table);
+  
+              $button.click(function() {
+                  const csv = $table.table2CSV();
+                  window.location.href = 'data:text/csv;charset=UTF-8,' + encodeURIComponent(csv);
+              });
+          });
+      </script>
+  </body>
+  
+  </html>
+  '
+---
+# name: TestWebRecord.test_channel_record_no_plays[pyloop]
+  '
+  <html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+      <title>SpellBot</title>
+      <meta name="author" content="Amy Troschinetz">
+      <meta name="description" content="The Discord bot for SpellTable">
+      <meta name="theme-color" content="#5A3EFD">
+      <meta name="keywords" content="magic: the gathering, magic, mtg, edh, commander, spelltable, discord bot, discord, bot">
+      <link rel="alternate" type="application/rss+xml" title="SpellBot" href="https://spellbot.io/feed.xml">
+  
+      <meta property="og:site_name" content="SpellBot">
+      <meta property="og:title" content="SpellBot">
+      <meta property="og:description" content="The Discord bot for SpellTable">
+      <meta property="og:image" content="https://spellbot.io/assets/img/avatar-icon.png">
+      <meta property="og:type" content="website">
+      <meta property="og:url" content="https://spellbot.io/">
+  
+      <link rel="canonical" href="https://spellbot.io/">
+      <meta name="twitter:card" content="summary">
+      <meta name="twitter:site" content="@SpellBotIO">
+      <meta name="twitter:creator" content="@SpellBotIO">
+      <meta property="twitter:title" content="SpellBot">
+      <meta property="twitter:description" content="The Discord bot for SpellTable">
+      <meta name="twitter:image" content="https://spellbot.io/assets/img/avatar-icon.png">
+  
+      <script>
+          function copy(el) {
+              // copy the text
+              const temp = document.createElement('input')
+              temp.value = el.text
+              document.body.appendChild(temp)
+              temp.select()
+              document.execCommand('copy')
+              temp.remove()
+  
+              // notify user
+              const orig = el.textContent
+              el.textContent = 'Copied!'
+              el.style.pointerEvents = 'none';
+              el.style.cursor = 'default';
+              setTimeout(() => {
+                  el.textContent = orig
+                  el.style.pointerEvents = 'auto';
+                  el.style.cursor = 'pointer';
+              }, 1200)
+          }
+  
+          function page_impl(offset) {
+              const urlSearchParams = new URLSearchParams(window.location.search);
+              const params = Object.fromEntries(urlSearchParams.entries());
+              let {page} = params;
+              page = parseInt(page);
+              console.log("cur page:", page);
+              if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
+                  console.log("err, going to 0");
+                  page = 0;
+              } else {
+                  page += offset;
+                  if (page < 0) page = 0;
+                  console.log("going to page:", page);
+              }
+              window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
+          }
+  
+          function next_page() {
+              page_impl(1);
+          }
+  
+          function prev_page() {
+              page_impl(-1);
+          }
+      </script>
+  
+      <style>
+          * {
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+  }
+  
+  body,
+  html {
+    height: 100%;
+    font-family: sans-serif;
+  }
+  
+  em {
+    font-weight: 600;
+    font-style: normal;
+  }
+  
+  ul {
+    list-style-type: none;
+  }
+  
+  a {
+    margin: 0px;
+  }
+  
+  a,
+  a:hover,
+  a:visited {
+    color: #04a7ff;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
+  .limiter {
+    width: 100%;
+    margin: 0 auto;
+  }
+  
+  .container-table100 {
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 33px 30px;
+  }
+  
+  .wrap-table100 {
+    width: 1170px;
+  }
+  
+  table {
+    border-spacing: 1;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    box-shadow: 10px 10px rgb(113 128 150 / 50%);
+  }
+  
+  table * {
+    position: relative;
+  }
+  
+  table td,
+  table th {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  
+  table thead tr {
+    height: 60px;
+    background: rgb(13, 17, 23);
+  }
+  
+  th:first-child {
+    border-radius: 10px 0 0 0;
+  }
+  
+  th:last-child {
+    border-radius: 0 10px 0 0;
+  }
+  
+  tr:last-child td:first-child {
+    border-radius: 0 0 0 10px;
+  }
+  
+  tr:last-child td:last-child {
+    border-radius: 0 0 10px 0;
+  }
+  
+  table tbody tr {
+    height: 50px;
+  }
+  
+  table tbody tr:last-child {
+    border: 0;
+  }
+  
+  table td,
+  table th {
+    text-align: left;
+  }
+  
+  table td.l,
+  table th.l {
+    text-align: right;
+  }
+  
+  table td.c,
+  table th.c {
+    text-align: center;
+  }
+  
+  table td.r,
+  table th.r {
+    text-align: center;
+  }
+  
+  .table100-head th {
+    font-size: 18px;
+    color: #fff;
+    line-height: 1.2;
+    font-weight: unset;
+  }
+  
+  tbody tr:nth-child(even) {
+    background-color: #f5f5f5;
+  }
+  
+  tbody tr {
+    font-size: 15px;
+    color: #808080;
+    line-height: 1.2;
+    font-weight: unset;
+  }
+  
+  tbody tr:hover {
+    color: #555555;
+    background-color: #f5f5f5;
+    cursor: pointer;
+  }
+  
+  @media screen and (max-width: 992px) {
+    table {
+      display: block;
+    }
+  
+    table > *,
+    table tr,
+    table td,
+    table th {
+      display: block;
+    }
+  
+    table thead {
+      display: none;
+    }
+  
+    table tbody tr {
+      height: auto;
+      padding: 37px 0;
+    }
+  
+    table tbody tr td {
+      padding-left: 40% !important;
+      margin-bottom: 24px;
+    }
+  
+    table tbody tr td:last-child {
+      margin-bottom: 0;
+    }
+  
+    table tbody tr td:before {
+      font-size: 14px;
+      color: #999999;
+      line-height: 1.2;
+      font-weight: unset;
+      position: absolute;
+      width: 40%;
+      left: 30px;
+      top: 0;
+    }
+  
+    table tbody tr td:nth-child(1):before {
+      content: "Game";
+    }
+  
+    table tbody tr td:nth-child(2):before {
+      content: "Time";
+    }
+  
+    table tbody tr td:nth-child(3):before {
+      content: "Guild";
+    }
+  
+    table tbody tr td:nth-child(4):before {
+      content: "Channel";
+    }
+  
+    table tbody tr td:nth-child(5):before {
+      content: "Link";
+    }
+  
+    table tbody tr td:nth-child(6):before {
+      content: "Scores";
+    }
+  
+    tbody tr {
+      font-size: 14px;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .container-table100 {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+  }
+  
+  .user_id {
+    font-size: smaller !important;
+    font-family: monospace !important;
+  }
+  
+  .button {
+    margin: 1em;
+    box-shadow: inset 0px 0px 15px 3px #23395e;
+    background: linear-gradient(to bottom, #2e466e 5%, #415989 100%);
+    background-color: #2e466e;
+    border-radius: 17px;
+    border: 1px solid #1f2f47;
+    display: inline-block;
+    cursor: pointer;
+    color: #ffffff !important;
+    font-family: Arial;
+    font-size: 15px;
+    padding: 6px 13px;
+    text-decoration: none !important;
+    text-shadow: 0px 1px 0px #263666;
+  }
+  
+  .button:hover {
+    background: linear-gradient(to bottom, #415989 5%, #2e466e 100%);
+    background-color: #415989;
+  }
+  
+  .button:active {
+    position: relative;
+    top: 1px;
+  }
+  
+  .data {
+    display: none;
+  }
+  
+  .tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dashed #808080;
+  }
+  
+  .tooltip .tooltiptext {
+    visibility: hidden;
+    background-color: rgb(13, 17, 23);
+    text-align: center;
+    border-radius: 5px;
+    position: absolute;
+    z-index: 1;
+    width: 220px;
+    padding-top: 10px;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  
+  .tooltip:hover .tooltiptext {
+    visibility: visible;
+  }
+  
+  .tooltipcta {
+    color: #fff;
+  }
+  
+  .scores {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+  }
+  
+  .avatar {
+    display: none;
+  }
+  
+  .avatar a {
+    transition: all 0.3s ease-in-out;
+    float: right;
+  }
+  
+  .avatar a:hover {
+    filter: brightness(150%);
+  }
+  
+  .avatar img {
+    border-radius: 50%;
+    width: 100px;
+    background: transparent;
+    -webkit-animation: spin 60s linear infinite;
+    -moz-animation: spin 60s linear infinite;
+    animation: spin 60s linear infinite;
+  }
+  @-moz-keyframes spin {
+    100% {
+      -moz-transform: rotate(360deg);
+    }
+  }
+  @-webkit-keyframes spin {
+    100% {
+      -webkit-transform: rotate(360deg);
+    }
+  }
+  @keyframes spin {
+    100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg);
+    }
+  }
+      </style>
+  <body>
+  
+      <div class="limiter">
+          <div class="container-table100">
+              <div class="wrap-table100">
+                  <div class="avatar">
+                      <a href="https://spellbot.io/">
+                          <img alt="spellbot-icon" src="https://spellbot.io/assets/img/avatar-icon.png">
+                      </a>
+                  </div>
+                  <div class="table100">
+                      
+  <table>
+      <thead>
+          <tr class="table100-head">
+              <th>Game</th>
+              <th>Time</th>
+              <th>Guild</th>
+              <th>Channel</th>
+              <th>Format</th>
+              <th>Link</th>
+              <th>User Name</th>
+              <th>User ID</th>
+              <th>Points</th>
+          </tr>
+      </thead>
+      <tbody id="rows">
+          
+      </tbody>
+  </table>
+  
+                      <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
+                      <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                  </div>
+              </div>
+          </div>
+      </div>
+  
+      <script>
+          function humanize_timestamp(ts) {
+              const options = {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour12: true,
+                  hour: "numeric",
+                  minute: "numeric",
+                  timeZoneName: "short",
+              };
+              return (new Date(ts)).toLocaleDateString(undefined, options);
+          }
+  
+          els = document.getElementsByClassName("timestamp");
+          Array.from(els).forEach((el) => {
+              el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+      </script>
+  
+      <script
+          src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+          integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI="
+          crossorigin="anonymous"></script>
+  
+      <script>
+          // modified from source: https://github.com/rubo77/table2CSV
+  jQuery.fn.table2CSV = function(options) {
+    var options = jQuery.extend({
+        separator: ',',
+        headerSelector: 'th',
+        columnSelector: 'td',
+        transform_gt_lt: true // make &gt; and &lt; to > and <
+      },
+      options);
+  
+    var csvData = [];
+    var headerArr = [];
+    var el = this;
+  
+    //header
+    var tmpRow = [];
+    $(el).filter(':visible').find(options.headerSelector).each(function() {
+      if ($(this).css('display') != 'none') tmpRow[tmpRow.length] = formatData($(this).html());
+    });
+    row2CSV(tmpRow);
+  
+    // actual data
+    $(el).find('tr').each(function() {
+      var tmpRow = [];
+      $(this).filter(':visible').find(options.columnSelector).each(function() {
+        var data = $(this).find(".data");
+        if (data.length) {
+          tmpRow[tmpRow.length] = formatData($(data).html());
+        } else if ($(this).css('display') != 'none') {
+          tmpRow[tmpRow.length] = formatData($(this).html());
+        }
+      });
+      row2CSV(tmpRow);
+    });
+  
+    var mydata = csvData.join('\n');
+    if (options.transform_gt_lt) {
+      mydata = sinri_recover_gt_and_lt(mydata);
+    }
+    return mydata;
+  
+    function sinri_recover_gt_and_lt(input) {
+      var regexp = new RegExp(/&gt;/g);
+      var input = input.replace(regexp, '>');
+      var regexp = new RegExp(/&lt;/g);
+      var input = input.replace(regexp, '<');
+      return input;
+    }
+  
+    function row2CSV(tmpRow) {
+      var tmp = tmpRow.join('') // to remove any blank rows
+      if (tmpRow.length > 0 && tmp != '') {
+        var mystr = tmpRow.join(options.separator);
+        csvData[csvData.length] = mystr;
+      }
+    }
+  
+    function formatData(input) {
+      // double " according to rfc4180
+      var regexp = new RegExp(/["]/g);
+      var output = input.replace(regexp, '""');
+      //HTML
+      var regexp = new RegExp(/\<[^\<]+\>/g);
+      var output = output.replace(regexp, "");
+      output = output.replace(/&nbsp;/gi, ' '); //replace &nbsp;
+      if (output == "") return '';
+      return '"' + output.trim() + '"';
+    }
+  };
+      </script>
+  
+      <script>
+          $('table').each(function() {
+              const $table = $(this);
+              const $button = $("<a href='#' class='button'>");
+              $button.text("Export to spreadsheet");
+              $button.insertAfter($table);
+  
+              $button.click(function() {
+                  const csv = $table.table2CSV();
+                  window.location.href = 'data:text/csv;charset=UTF-8,' + encodeURIComponent(csv);
+              });
+          });
+      </script>
+  </body>
+  
+  </html>
+  '
+---
+# name: TestWebRecord.test_user_record[pyloop]
+  '
+  <html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+      <title>SpellBot</title>
+      <meta name="author" content="Amy Troschinetz">
+      <meta name="description" content="The Discord bot for SpellTable">
+      <meta name="theme-color" content="#5A3EFD">
+      <meta name="keywords" content="magic: the gathering, magic, mtg, edh, commander, spelltable, discord bot, discord, bot">
+      <link rel="alternate" type="application/rss+xml" title="SpellBot" href="https://spellbot.io/feed.xml">
+  
+      <meta property="og:site_name" content="SpellBot">
+      <meta property="og:title" content="SpellBot">
+      <meta property="og:description" content="The Discord bot for SpellTable">
+      <meta property="og:image" content="https://spellbot.io/assets/img/avatar-icon.png">
+      <meta property="og:type" content="website">
+      <meta property="og:url" content="https://spellbot.io/">
+  
+      <link rel="canonical" href="https://spellbot.io/">
+      <meta name="twitter:card" content="summary">
+      <meta name="twitter:site" content="@SpellBotIO">
+      <meta name="twitter:creator" content="@SpellBotIO">
+      <meta property="twitter:title" content="SpellBot">
+      <meta property="twitter:description" content="The Discord bot for SpellTable">
+      <meta name="twitter:image" content="https://spellbot.io/assets/img/avatar-icon.png">
+  
+      <script>
+          function copy(el) {
+              // copy the text
+              const temp = document.createElement('input')
+              temp.value = el.text
+              document.body.appendChild(temp)
+              temp.select()
+              document.execCommand('copy')
+              temp.remove()
+  
+              // notify user
+              const orig = el.textContent
+              el.textContent = 'Copied!'
+              el.style.pointerEvents = 'none';
+              el.style.cursor = 'default';
+              setTimeout(() => {
+                  el.textContent = orig
+                  el.style.pointerEvents = 'auto';
+                  el.style.cursor = 'pointer';
+              }, 1200)
+          }
+  
+          function page_impl(offset) {
+              const urlSearchParams = new URLSearchParams(window.location.search);
+              const params = Object.fromEntries(urlSearchParams.entries());
+              let {page} = params;
+              page = parseInt(page);
+              console.log("cur page:", page);
+              if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
+                  console.log("err, going to 0");
+                  page = 0;
+              } else {
+                  page += offset;
+                  if (page < 0) page = 0;
+                  console.log("going to page:", page);
+              }
+              window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
+          }
+  
+          function next_page() {
+              page_impl(1);
+          }
+  
+          function prev_page() {
+              page_impl(-1);
+          }
+      </script>
+  
+      <style>
+          * {
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+  }
+  
+  body,
+  html {
+    height: 100%;
+    font-family: sans-serif;
+  }
+  
+  em {
+    font-weight: 600;
+    font-style: normal;
+  }
+  
+  ul {
+    list-style-type: none;
+  }
+  
+  a {
+    margin: 0px;
+  }
+  
+  a,
+  a:hover,
+  a:visited {
+    color: #04a7ff;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
+  .limiter {
+    width: 100%;
+    margin: 0 auto;
+  }
+  
+  .container-table100 {
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 33px 30px;
+  }
+  
+  .wrap-table100 {
+    width: 1170px;
+  }
+  
+  table {
+    border-spacing: 1;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    box-shadow: 10px 10px rgb(113 128 150 / 50%);
+  }
+  
+  table * {
+    position: relative;
+  }
+  
+  table td,
+  table th {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  
+  table thead tr {
+    height: 60px;
+    background: rgb(13, 17, 23);
+  }
+  
+  th:first-child {
+    border-radius: 10px 0 0 0;
+  }
+  
+  th:last-child {
+    border-radius: 0 10px 0 0;
+  }
+  
+  tr:last-child td:first-child {
+    border-radius: 0 0 0 10px;
+  }
+  
+  tr:last-child td:last-child {
+    border-radius: 0 0 10px 0;
+  }
+  
+  table tbody tr {
+    height: 50px;
+  }
+  
+  table tbody tr:last-child {
+    border: 0;
+  }
+  
+  table td,
+  table th {
+    text-align: left;
+  }
+  
+  table td.l,
+  table th.l {
+    text-align: right;
+  }
+  
+  table td.c,
+  table th.c {
+    text-align: center;
+  }
+  
+  table td.r,
+  table th.r {
+    text-align: center;
+  }
+  
+  .table100-head th {
+    font-size: 18px;
+    color: #fff;
+    line-height: 1.2;
+    font-weight: unset;
+  }
+  
+  tbody tr:nth-child(even) {
+    background-color: #f5f5f5;
+  }
+  
+  tbody tr {
+    font-size: 15px;
+    color: #808080;
+    line-height: 1.2;
+    font-weight: unset;
+  }
+  
+  tbody tr:hover {
+    color: #555555;
+    background-color: #f5f5f5;
+    cursor: pointer;
+  }
+  
+  @media screen and (max-width: 992px) {
+    table {
+      display: block;
+    }
+  
+    table > *,
+    table tr,
+    table td,
+    table th {
+      display: block;
+    }
+  
+    table thead {
+      display: none;
+    }
+  
+    table tbody tr {
+      height: auto;
+      padding: 37px 0;
+    }
+  
+    table tbody tr td {
+      padding-left: 40% !important;
+      margin-bottom: 24px;
+    }
+  
+    table tbody tr td:last-child {
+      margin-bottom: 0;
+    }
+  
+    table tbody tr td:before {
+      font-size: 14px;
+      color: #999999;
+      line-height: 1.2;
+      font-weight: unset;
+      position: absolute;
+      width: 40%;
+      left: 30px;
+      top: 0;
+    }
+  
+    table tbody tr td:nth-child(1):before {
+      content: "Game";
+    }
+  
+    table tbody tr td:nth-child(2):before {
+      content: "Time";
+    }
+  
+    table tbody tr td:nth-child(3):before {
+      content: "Guild";
+    }
+  
+    table tbody tr td:nth-child(4):before {
+      content: "Channel";
+    }
+  
+    table tbody tr td:nth-child(5):before {
+      content: "Link";
+    }
+  
+    table tbody tr td:nth-child(6):before {
+      content: "Scores";
+    }
+  
+    tbody tr {
+      font-size: 14px;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .container-table100 {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+  }
+  
+  .user_id {
+    font-size: smaller !important;
+    font-family: monospace !important;
+  }
+  
+  .button {
+    margin: 1em;
+    box-shadow: inset 0px 0px 15px 3px #23395e;
+    background: linear-gradient(to bottom, #2e466e 5%, #415989 100%);
+    background-color: #2e466e;
+    border-radius: 17px;
+    border: 1px solid #1f2f47;
+    display: inline-block;
+    cursor: pointer;
+    color: #ffffff !important;
+    font-family: Arial;
+    font-size: 15px;
+    padding: 6px 13px;
+    text-decoration: none !important;
+    text-shadow: 0px 1px 0px #263666;
+  }
+  
+  .button:hover {
+    background: linear-gradient(to bottom, #415989 5%, #2e466e 100%);
+    background-color: #415989;
+  }
+  
+  .button:active {
+    position: relative;
+    top: 1px;
+  }
+  
+  .data {
+    display: none;
+  }
+  
+  .tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dashed #808080;
+  }
+  
+  .tooltip .tooltiptext {
+    visibility: hidden;
+    background-color: rgb(13, 17, 23);
+    text-align: center;
+    border-radius: 5px;
+    position: absolute;
+    z-index: 1;
+    width: 220px;
+    padding-top: 10px;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  
+  .tooltip:hover .tooltiptext {
+    visibility: visible;
+  }
+  
+  .tooltipcta {
+    color: #fff;
+  }
+  
+  .scores {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+  }
+  
+  .avatar {
+    display: none;
+  }
+  
+  .avatar a {
+    transition: all 0.3s ease-in-out;
+    float: right;
+  }
+  
+  .avatar a:hover {
+    filter: brightness(150%);
+  }
+  
+  .avatar img {
+    border-radius: 50%;
+    width: 100px;
+    background: transparent;
+    -webkit-animation: spin 60s linear infinite;
+    -moz-animation: spin 60s linear infinite;
+    animation: spin 60s linear infinite;
+  }
+  @-moz-keyframes spin {
+    100% {
+      -moz-transform: rotate(360deg);
+    }
+  }
+  @-webkit-keyframes spin {
+    100% {
+      -webkit-transform: rotate(360deg);
+    }
+  }
+  @keyframes spin {
+    100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg);
+    }
+  }
+      </style>
+  <body>
+  
+      <div class="limiter">
+          <div class="container-table100">
+              <div class="wrap-table100">
+                  <div class="avatar">
+                      <a href="https://spellbot.io/">
+                          <img alt="spellbot-icon" src="https://spellbot.io/assets/img/avatar-icon.png">
+                      </a>
+                  </div>
+                  <div class="table100">
+                      
+  <table>
+      <thead>
+          <tr class="table100-head">
+              <th>Game</th>
+              <th>Time</th>
+              <th>Guild</th>
+              <th>Channel</th>
+              <th>Format</th>
+              <th>Link</th>
+              <th>Scores</th>
+          </tr>
+      </thead>
+      <tbody id="rows">
+          
+              <tr>
+                  <td><a href="https://discordapp.com/channels/201/301/None">SB#1</a></td>
+                  <td class="timestamp">1577836800000.0</td>
+                  <td><a href="https://discordapp.com/channels/201">guild</a></td>
+                  <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
+                  <td>Modern</td>
+                  
+                      <td>&nbsp;</td>
+                  
+                  <td class="scores">
+                      <ul>
+                          
+                              <li>
+                                  <em>3 points</em>
+                                  &mdash;
+                                  <div class="tooltip">
+                                      user1
+                                      <span class="tooltiptext">
+                                          <span class="tooltipcta">Click&nbsp;ID&nbsp;to&nbsp;copy:</span><br />
+                                          <a onclick="copy(this)" class="button user_id" style="pointer-events: auto; cursor: pointer;">101</a>
+                                      </span>
+                                  </div>
+                              </li>
+                          
+                              <li>
+                                  <em>1 points</em>
+                                  &mdash;
+                                  <div class="tooltip">
+                                      user2
+                                      <span class="tooltiptext">
+                                          <span class="tooltipcta">Click&nbsp;ID&nbsp;to&nbsp;copy:</span><br />
+                                          <a onclick="copy(this)" class="button user_id" style="pointer-events: auto; cursor: pointer;">102</a>
+                                      </span>
+                                  </div>
+                              </li>
+                          
+                      </ul>
+                      <span class="data">
+                          user1:101=3;user2:102=1;
+                      </span>
+                  </td>
+              </tr>
+          
+              <tr>
+                  <td><a href="https://discordapp.com/channels/201/301/None">SB#2</a></td>
+                  <td class="timestamp">1577836800000.0</td>
+                  <td><a href="https://discordapp.com/channels/201">guild</a></td>
+                  <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
+                  <td>Standard</td>
+                  
+                      <td>&nbsp;</td>
+                  
+                  <td class="scores">
+                      <ul>
+                          
+                              <li>
+                                  <em>0 points</em>
+                                  &mdash;
+                                  <div class="tooltip">
+                                      user1
+                                      <span class="tooltiptext">
+                                          <span class="tooltipcta">Click&nbsp;ID&nbsp;to&nbsp;copy:</span><br />
+                                          <a onclick="copy(this)" class="button user_id" style="pointer-events: auto; cursor: pointer;">101</a>
+                                      </span>
+                                  </div>
+                              </li>
+                          
+                              <li>
+                                  <em>5 points</em>
+                                  &mdash;
+                                  <div class="tooltip">
+                                      user2
+                                      <span class="tooltiptext">
+                                          <span class="tooltipcta">Click&nbsp;ID&nbsp;to&nbsp;copy:</span><br />
+                                          <a onclick="copy(this)" class="button user_id" style="pointer-events: auto; cursor: pointer;">102</a>
+                                      </span>
+                                  </div>
+                              </li>
+                          
+                      </ul>
+                      <span class="data">
+                          user1:101=0;user2:102=5;
+                      </span>
+                  </td>
+              </tr>
+          
+              <tr>
+                  <td><a href="https://discordapp.com/channels/201/301/None">SB#3</a></td>
+                  <td class="timestamp">1577836800000.0</td>
+                  <td><a href="https://discordapp.com/channels/201">guild</a></td>
+                  <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
+                  <td>Legacy</td>
+                  
+                      <td>&nbsp;</td>
+                  
+                  <td class="scores">
+                      <ul>
+                          
+                              <li>
+                                  <em>0 points</em>
+                                  &mdash;
+                                  <div class="tooltip">
+                                      user1
+                                      <span class="tooltiptext">
+                                          <span class="tooltipcta">Click&nbsp;ID&nbsp;to&nbsp;copy:</span><br />
+                                          <a onclick="copy(this)" class="button user_id" style="pointer-events: auto; cursor: pointer;">101</a>
+                                      </span>
+                                  </div>
+                              </li>
+                          
+                              <li>
+                                  <em>10 points</em>
+                                  &mdash;
+                                  <div class="tooltip">
+                                      user2
+                                      <span class="tooltiptext">
+                                          <span class="tooltipcta">Click&nbsp;ID&nbsp;to&nbsp;copy:</span><br />
+                                          <a onclick="copy(this)" class="button user_id" style="pointer-events: auto; cursor: pointer;">102</a>
+                                      </span>
+                                  </div>
+                              </li>
+                          
+                      </ul>
+                      <span class="data">
+                          user1:101=0;user2:102=10;
+                      </span>
+                  </td>
+              </tr>
+          
+      </tbody>
+  </table>
+  
+                      <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
+                      <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                  </div>
+              </div>
+          </div>
+      </div>
+  
+      <script>
+          function humanize_timestamp(ts) {
+              const options = {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour12: true,
+                  hour: "numeric",
+                  minute: "numeric",
+                  timeZoneName: "short",
+              };
+              return (new Date(ts)).toLocaleDateString(undefined, options);
+          }
+  
+          els = document.getElementsByClassName("timestamp");
+          Array.from(els).forEach((el) => {
+              el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+      </script>
+  
+      <script
+          src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+          integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI="
+          crossorigin="anonymous"></script>
+  
+      <script>
+          // modified from source: https://github.com/rubo77/table2CSV
+  jQuery.fn.table2CSV = function(options) {
+    var options = jQuery.extend({
+        separator: ',',
+        headerSelector: 'th',
+        columnSelector: 'td',
+        transform_gt_lt: true // make &gt; and &lt; to > and <
+      },
+      options);
+  
+    var csvData = [];
+    var headerArr = [];
+    var el = this;
+  
+    //header
+    var tmpRow = [];
+    $(el).filter(':visible').find(options.headerSelector).each(function() {
+      if ($(this).css('display') != 'none') tmpRow[tmpRow.length] = formatData($(this).html());
+    });
+    row2CSV(tmpRow);
+  
+    // actual data
+    $(el).find('tr').each(function() {
+      var tmpRow = [];
+      $(this).filter(':visible').find(options.columnSelector).each(function() {
+        var data = $(this).find(".data");
+        if (data.length) {
+          tmpRow[tmpRow.length] = formatData($(data).html());
+        } else if ($(this).css('display') != 'none') {
+          tmpRow[tmpRow.length] = formatData($(this).html());
+        }
+      });
+      row2CSV(tmpRow);
+    });
+  
+    var mydata = csvData.join('\n');
+    if (options.transform_gt_lt) {
+      mydata = sinri_recover_gt_and_lt(mydata);
+    }
+    return mydata;
+  
+    function sinri_recover_gt_and_lt(input) {
+      var regexp = new RegExp(/&gt;/g);
+      var input = input.replace(regexp, '>');
+      var regexp = new RegExp(/&lt;/g);
+      var input = input.replace(regexp, '<');
+      return input;
+    }
+  
+    function row2CSV(tmpRow) {
+      var tmp = tmpRow.join('') // to remove any blank rows
+      if (tmpRow.length > 0 && tmp != '') {
+        var mystr = tmpRow.join(options.separator);
+        csvData[csvData.length] = mystr;
+      }
+    }
+  
+    function formatData(input) {
+      // double " according to rfc4180
+      var regexp = new RegExp(/["]/g);
+      var output = input.replace(regexp, '""');
+      //HTML
+      var regexp = new RegExp(/\<[^\<]+\>/g);
+      var output = output.replace(regexp, "");
+      output = output.replace(/&nbsp;/gi, ' '); //replace &nbsp;
+      if (output == "") return '';
+      return '"' + output.trim() + '"';
+    }
+  };
+      </script>
+  
+      <script>
+          $('table').each(function() {
+              const $table = $(this);
+              const $button = $("<a href='#' class='button'>");
+              $button.text("Export to spreadsheet");
+              $button.insertAfter($table);
+  
+              $button.click(function() {
+                  const csv = $table.table2CSV();
+                  window.location.href = 'data:text/csv;charset=UTF-8,' + encodeURIComponent(csv);
+              });
+          });
+      </script>
+  </body>
+  
+  </html>
+  '
+---
+# name: TestWebRecord.test_user_record_no_plays[pyloop]
+  '
+  <html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+      <title>SpellBot</title>
+      <meta name="author" content="Amy Troschinetz">
+      <meta name="description" content="The Discord bot for SpellTable">
+      <meta name="theme-color" content="#5A3EFD">
+      <meta name="keywords" content="magic: the gathering, magic, mtg, edh, commander, spelltable, discord bot, discord, bot">
+      <link rel="alternate" type="application/rss+xml" title="SpellBot" href="https://spellbot.io/feed.xml">
+  
+      <meta property="og:site_name" content="SpellBot">
+      <meta property="og:title" content="SpellBot">
+      <meta property="og:description" content="The Discord bot for SpellTable">
+      <meta property="og:image" content="https://spellbot.io/assets/img/avatar-icon.png">
+      <meta property="og:type" content="website">
+      <meta property="og:url" content="https://spellbot.io/">
+  
+      <link rel="canonical" href="https://spellbot.io/">
+      <meta name="twitter:card" content="summary">
+      <meta name="twitter:site" content="@SpellBotIO">
+      <meta name="twitter:creator" content="@SpellBotIO">
+      <meta property="twitter:title" content="SpellBot">
+      <meta property="twitter:description" content="The Discord bot for SpellTable">
+      <meta name="twitter:image" content="https://spellbot.io/assets/img/avatar-icon.png">
+  
+      <script>
+          function copy(el) {
+              // copy the text
+              const temp = document.createElement('input')
+              temp.value = el.text
+              document.body.appendChild(temp)
+              temp.select()
+              document.execCommand('copy')
+              temp.remove()
+  
+              // notify user
+              const orig = el.textContent
+              el.textContent = 'Copied!'
+              el.style.pointerEvents = 'none';
+              el.style.cursor = 'default';
+              setTimeout(() => {
+                  el.textContent = orig
+                  el.style.pointerEvents = 'auto';
+                  el.style.cursor = 'pointer';
+              }, 1200)
+          }
+  
+          function page_impl(offset) {
+              const urlSearchParams = new URLSearchParams(window.location.search);
+              const params = Object.fromEntries(urlSearchParams.entries());
+              let {page} = params;
+              page = parseInt(page);
+              console.log("cur page:", page);
+              if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
+                  console.log("err, going to 0");
+                  page = 0;
+              } else {
+                  page += offset;
+                  if (page < 0) page = 0;
+                  console.log("going to page:", page);
+              }
+              window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
+          }
+  
+          function next_page() {
+              page_impl(1);
+          }
+  
+          function prev_page() {
+              page_impl(-1);
+          }
+      </script>
+  
+      <style>
+          * {
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+  }
+  
+  body,
+  html {
+    height: 100%;
+    font-family: sans-serif;
+  }
+  
+  em {
+    font-weight: 600;
+    font-style: normal;
+  }
+  
+  ul {
+    list-style-type: none;
+  }
+  
+  a {
+    margin: 0px;
+  }
+  
+  a,
+  a:hover,
+  a:visited {
+    color: #04a7ff;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
+  .limiter {
+    width: 100%;
+    margin: 0 auto;
+  }
+  
+  .container-table100 {
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 33px 30px;
+  }
+  
+  .wrap-table100 {
+    width: 1170px;
+  }
+  
+  table {
+    border-spacing: 1;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    box-shadow: 10px 10px rgb(113 128 150 / 50%);
+  }
+  
+  table * {
+    position: relative;
+  }
+  
+  table td,
+  table th {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  
+  table thead tr {
+    height: 60px;
+    background: rgb(13, 17, 23);
+  }
+  
+  th:first-child {
+    border-radius: 10px 0 0 0;
+  }
+  
+  th:last-child {
+    border-radius: 0 10px 0 0;
+  }
+  
+  tr:last-child td:first-child {
+    border-radius: 0 0 0 10px;
+  }
+  
+  tr:last-child td:last-child {
+    border-radius: 0 0 10px 0;
+  }
+  
+  table tbody tr {
+    height: 50px;
+  }
+  
+  table tbody tr:last-child {
+    border: 0;
+  }
+  
+  table td,
+  table th {
+    text-align: left;
+  }
+  
+  table td.l,
+  table th.l {
+    text-align: right;
+  }
+  
+  table td.c,
+  table th.c {
+    text-align: center;
+  }
+  
+  table td.r,
+  table th.r {
+    text-align: center;
+  }
+  
+  .table100-head th {
+    font-size: 18px;
+    color: #fff;
+    line-height: 1.2;
+    font-weight: unset;
+  }
+  
+  tbody tr:nth-child(even) {
+    background-color: #f5f5f5;
+  }
+  
+  tbody tr {
+    font-size: 15px;
+    color: #808080;
+    line-height: 1.2;
+    font-weight: unset;
+  }
+  
+  tbody tr:hover {
+    color: #555555;
+    background-color: #f5f5f5;
+    cursor: pointer;
+  }
+  
+  @media screen and (max-width: 992px) {
+    table {
+      display: block;
+    }
+  
+    table > *,
+    table tr,
+    table td,
+    table th {
+      display: block;
+    }
+  
+    table thead {
+      display: none;
+    }
+  
+    table tbody tr {
+      height: auto;
+      padding: 37px 0;
+    }
+  
+    table tbody tr td {
+      padding-left: 40% !important;
+      margin-bottom: 24px;
+    }
+  
+    table tbody tr td:last-child {
+      margin-bottom: 0;
+    }
+  
+    table tbody tr td:before {
+      font-size: 14px;
+      color: #999999;
+      line-height: 1.2;
+      font-weight: unset;
+      position: absolute;
+      width: 40%;
+      left: 30px;
+      top: 0;
+    }
+  
+    table tbody tr td:nth-child(1):before {
+      content: "Game";
+    }
+  
+    table tbody tr td:nth-child(2):before {
+      content: "Time";
+    }
+  
+    table tbody tr td:nth-child(3):before {
+      content: "Guild";
+    }
+  
+    table tbody tr td:nth-child(4):before {
+      content: "Channel";
+    }
+  
+    table tbody tr td:nth-child(5):before {
+      content: "Link";
+    }
+  
+    table tbody tr td:nth-child(6):before {
+      content: "Scores";
+    }
+  
+    tbody tr {
+      font-size: 14px;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .container-table100 {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+  }
+  
+  .user_id {
+    font-size: smaller !important;
+    font-family: monospace !important;
+  }
+  
+  .button {
+    margin: 1em;
+    box-shadow: inset 0px 0px 15px 3px #23395e;
+    background: linear-gradient(to bottom, #2e466e 5%, #415989 100%);
+    background-color: #2e466e;
+    border-radius: 17px;
+    border: 1px solid #1f2f47;
+    display: inline-block;
+    cursor: pointer;
+    color: #ffffff !important;
+    font-family: Arial;
+    font-size: 15px;
+    padding: 6px 13px;
+    text-decoration: none !important;
+    text-shadow: 0px 1px 0px #263666;
+  }
+  
+  .button:hover {
+    background: linear-gradient(to bottom, #415989 5%, #2e466e 100%);
+    background-color: #415989;
+  }
+  
+  .button:active {
+    position: relative;
+    top: 1px;
+  }
+  
+  .data {
+    display: none;
+  }
+  
+  .tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dashed #808080;
+  }
+  
+  .tooltip .tooltiptext {
+    visibility: hidden;
+    background-color: rgb(13, 17, 23);
+    text-align: center;
+    border-radius: 5px;
+    position: absolute;
+    z-index: 1;
+    width: 220px;
+    padding-top: 10px;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  
+  .tooltip:hover .tooltiptext {
+    visibility: visible;
+  }
+  
+  .tooltipcta {
+    color: #fff;
+  }
+  
+  .scores {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+  }
+  
+  .avatar {
+    display: none;
+  }
+  
+  .avatar a {
+    transition: all 0.3s ease-in-out;
+    float: right;
+  }
+  
+  .avatar a:hover {
+    filter: brightness(150%);
+  }
+  
+  .avatar img {
+    border-radius: 50%;
+    width: 100px;
+    background: transparent;
+    -webkit-animation: spin 60s linear infinite;
+    -moz-animation: spin 60s linear infinite;
+    animation: spin 60s linear infinite;
+  }
+  @-moz-keyframes spin {
+    100% {
+      -moz-transform: rotate(360deg);
+    }
+  }
+  @-webkit-keyframes spin {
+    100% {
+      -webkit-transform: rotate(360deg);
+    }
+  }
+  @keyframes spin {
+    100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg);
+    }
+  }
+      </style>
+  <body>
+  
+      <div class="limiter">
+          <div class="container-table100">
+              <div class="wrap-table100">
+                  <div class="avatar">
+                      <a href="https://spellbot.io/">
+                          <img alt="spellbot-icon" src="https://spellbot.io/assets/img/avatar-icon.png">
+                      </a>
+                  </div>
+                  <div class="table100">
+                      
+  <table>
+      <thead>
+          <tr class="table100-head">
+              <th>Game</th>
+              <th>Time</th>
+              <th>Guild</th>
+              <th>Channel</th>
+              <th>Format</th>
+              <th>Link</th>
+              <th>Scores</th>
+          </tr>
+      </thead>
+      <tbody id="rows">
+          
+      </tbody>
+  </table>
+  
+                      <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
+                      <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                  </div>
+              </div>
+          </div>
+      </div>
+  
+      <script>
+          function humanize_timestamp(ts) {
+              const options = {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour12: true,
+                  hour: "numeric",
+                  minute: "numeric",
+                  timeZoneName: "short",
+              };
+              return (new Date(ts)).toLocaleDateString(undefined, options);
+          }
+  
+          els = document.getElementsByClassName("timestamp");
+          Array.from(els).forEach((el) => {
+              el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+      </script>
+  
+      <script
+          src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+          integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI="
+          crossorigin="anonymous"></script>
+  
+      <script>
+          // modified from source: https://github.com/rubo77/table2CSV
+  jQuery.fn.table2CSV = function(options) {
+    var options = jQuery.extend({
+        separator: ',',
+        headerSelector: 'th',
+        columnSelector: 'td',
+        transform_gt_lt: true // make &gt; and &lt; to > and <
+      },
+      options);
+  
+    var csvData = [];
+    var headerArr = [];
+    var el = this;
+  
+    //header
+    var tmpRow = [];
+    $(el).filter(':visible').find(options.headerSelector).each(function() {
+      if ($(this).css('display') != 'none') tmpRow[tmpRow.length] = formatData($(this).html());
+    });
+    row2CSV(tmpRow);
+  
+    // actual data
+    $(el).find('tr').each(function() {
+      var tmpRow = [];
+      $(this).filter(':visible').find(options.columnSelector).each(function() {
+        var data = $(this).find(".data");
+        if (data.length) {
+          tmpRow[tmpRow.length] = formatData($(data).html());
+        } else if ($(this).css('display') != 'none') {
+          tmpRow[tmpRow.length] = formatData($(this).html());
+        }
+      });
+      row2CSV(tmpRow);
+    });
+  
+    var mydata = csvData.join('\n');
+    if (options.transform_gt_lt) {
+      mydata = sinri_recover_gt_and_lt(mydata);
+    }
+    return mydata;
+  
+    function sinri_recover_gt_and_lt(input) {
+      var regexp = new RegExp(/&gt;/g);
+      var input = input.replace(regexp, '>');
+      var regexp = new RegExp(/&lt;/g);
+      var input = input.replace(regexp, '<');
+      return input;
+    }
+  
+    function row2CSV(tmpRow) {
+      var tmp = tmpRow.join('') // to remove any blank rows
+      if (tmpRow.length > 0 && tmp != '') {
+        var mystr = tmpRow.join(options.separator);
+        csvData[csvData.length] = mystr;
+      }
+    }
+  
+    function formatData(input) {
+      // double " according to rfc4180
+      var regexp = new RegExp(/["]/g);
+      var output = input.replace(regexp, '""');
+      //HTML
+      var regexp = new RegExp(/\<[^\<]+\>/g);
+      var output = output.replace(regexp, "");
+      output = output.replace(/&nbsp;/gi, ' '); //replace &nbsp;
+      if (output == "") return '';
+      return '"' + output.trim() + '"';
+    }
+  };
+      </script>
+  
+      <script>
+          $('table').each(function() {
+              const $table = $(this);
+              const $button = $("<a href='#' class='button'>");
+              $button.text("Export to spreadsheet");
+              $button.insertAfter($table);
+  
+              $button.click(function() {
+                  const csv = $table.table2CSV();
+                  window.location.href = 'data:text/csv;charset=UTF-8,' + encodeURIComponent(csv);
+              });
+          });
+      </script>
+  </body>
+  
+  </html>
+  '
+---

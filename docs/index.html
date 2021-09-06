@@ -8,7 +8,7 @@ description: "SpellBot is the Discord bot that helps you find other players look
 
 <div class="add-to-discord">
     <div class="hero">
-        <button type="button" class="add-bot" onclick="location.href='https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=268528721&scope=bot';">
+        <button type="button" class="add-bot" onclick="location.href='https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot';">
             <img src="/assets/img/discord-logo.svg" alt="add-bot" style="margin-inline-end: 15px;">
             Add to Discord
         </button>
@@ -22,88 +22,17 @@ description: "SpellBot is the Discord bot that helps you find other players look
     <h2>Getting Started</h2>
     <p>
         SpellBot is the Discord bot that helps you find other players looking to play <em>Magic: The Gathering</em> on <a href="https://spelltable.com">SpellTable</a>.
-        It can also be used by event runners to help organize online events on SpellTable. To get started, just <a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=268528721&scope=bot">invite the bot</a> to your server and send the message <code>!spellbot help</code>.
+        To get started, just <a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot">invite the bot</a>!
     </p>
     <section id="bot-commands" class="level3">
         <h2>🤖 Bot Commands</h2>
-        <ul>
-            <li><code>!spellbot help</code>: Provides detailed usage help.</li>
-            <li><code>!about</code>: Get information about SpellBot and its creators.</li>
-        </ul>
-    </section>
-    <section id="commands-for-players" class="level3">
-        <h3>✋ Commands for Players</h3>
-        <p>Just looking to play some games of Magic? These commands are for you!</p>
-        <ul>
-            <li><code>!lfg</code>: Sign up to play <em>Magic: The Gathering</em>!</li>
-            <li><code>!leave</code>: Leave any games that you’ve signed up for.</li>
-            <li><code>!power</code>: Set your current power level.</li>
-            <li><code>!report</code>: Report the results of the game you just played.</li>
-            <li><code>!team</code>: Join one of the teams available on your server.</li>
-            <li><code>!points</code>: Find out how many points you currently have.</li>
-            <li><code>!plays</code>: Find out how many games you've played.</li>
-            <li><code>!block</code>: Block other users from joining your games.</li>
-            <li><code>!unblock</code>: Unblock previously blocked users.</li>
-        </ul>
-        <p>When you run the <code>!lfg</code> command, SpellBot will post a message for sign ups.</p>
-        <img class="screenshot" src="https://user-images.githubusercontent.com/1903876/91242259-cedd2280-e6fb-11ea-8d30-e7127b6f96e9.png" alt="looking for game">
-        <p>Other users can react to it with the ✋ emoji to be added to the game. When the game is ready, SpellBot will update the message with your SpellTable details.</p>
-        <img class="screenshot" src="https://user-images.githubusercontent.com/1903876/91242257-cdabf580-e6fb-11ea-86ad-8f1aaf6d34dc.png" alt="game ready">
-        <p>Users can also use the 🚫 emoji reaction to leave the game.</p>
-    </section>
-    <section id="commands-for-event-runners" class="level3">
-        <h3>🎟️ Commands for Event Runners</h3>
-        <p class="note">
-            To use the <a href="#commands-for-event-runners">commands for event runners</a> and <a href="#commands-for-admins">commands for admins</a> you will need to <a href="https://support.discord.com/hc/en-us/articles/206029707-How-do-I-set-up-Permissions-">create a role</a> with the name <code>SpellBot Admin</code> (capitalization matters) on your server. Only users with that role will be able to use these commands. You do <em>not</em> need to give this role any additional privileges.
+        <p>
+            Just looking to play a game of Magic? Run the command <code>/lfg</code> and SpellBot will help you out!
         </p>
-        <p>These commands help facilitate online events on <a href="https://spelltable.com">SpellTable</a>.
-            <ul>
-                <li><code>!game</code>: Directly create games for the mentioned users.</li>
-                <li><code>!event</code>: Create a bunch of games all at once based on some uploaded data.</li>
-                <li><code>!begin</code>: Start an event that you previously created with <code>!event</code>.</li>
-                <li><code>!export</code>: Export historical game data for your server.</li>
-            </ul>
-    </section>
-    <section id="commands-for-admins" class="level3">
-        <h3>👑 Commands for Admins</h3>
-        <p>These commands will help you configure SpellBot for your server. You can use them if you have the aforementioned <code>SpellBot Admin</code> role <em>or</em> if you have Administrator privilages on your server. You don't need both.</p>
-        <ul>
-            <li><code>!spellbot</code>: This command allows admins to configure SpellBot for their server. It supports the following subcommands:
-                <ul>
-                    <li><code>config</code>: Just show the current configuration for this server.</li>
-                    <li><code>prefix</code>: Set the command prefix for SpellBot in text channels.</li>
-                    <li><code>links</code>: Set the privacy level for generated SpellTable links.</li>
-                    <li><code>spectate</code>: Add a spectator link to the posts SpellBot makes.</li>
-                    <li><code>expire</code>: Set how many minutes before games are expired due to inactivity.</li>
-                    <li><code>teams</code>: Sets the teams available on this server.</li>
-                    <li><code>power</code>: Turns the power command on or off for this server.</li>
-                    <li><code>voice</code>: When on, SpellBot will automatically create voice channels.</li>
-                    <li><code>tags</code>: Turn on or off the ability to use tags. Optionally mention specific channels.</li>
-                    <li><code>queue-time</code>: Turn on or off average queue time details. Optionally mention specific channels.</li>
-                    <li><code>smotd</code>: Set the server message of the day.</li>
-                    <li><code>cmotd</code>: Set the message of the day for the channel where you run it.</li>
-                    <li><code>motd</code>: Set the privacy level for messages of the day.</li>
-                    <li><code>size</code>: Sets the default game size for a specific channel.</li>
-                    <li><code>toggle-verify</code>: Toggles requirement of verification for a specific channel.</li>
-                    <li><code>auto-verify</code>: Set the channels that will trigger user auto verification.</li>
-                    <li><code>unverified-only</code>: Set the channels that are only for unverified users.</li>
-                    <li><code>verify-message</code>: Set the verification message for a specific channel.</li>
-                    <li><code>voice-category</code>: Set category for voice channels created by !game.</li>
-                    <li><code>awards</code>: Attach a config file to award users who have played enough games.</li>
-                    <li><code>stats</code>: Gets some statistics about SpellBot usage on your server.</li>
-                    <li><code>help</code>: Provides detailed usage help.</li>
-                </ul>
-            </li>
-            <li><code>!verify</code>: Allows moderators to verify a user on their server.</li>
-            <li><code>!unverify</code>: Un-verifies a user for this server.</li>
-            <li><code>!watch</code>: Allows moderators to watch a user on their server.</li>
-            <li><code>!unwatch</code>: Un-watches a user for this server.</li>
-            <li><code>!top8</code>: Show the top 8 players for a channel by games played.</li>
-        </ul>
-    </section>
-    <section id="ergonomics" class="level3">
-        <h3>🛋️ Ergonomics</h3>
-        <p>SpellBot will always try and assume useful defaults or try to do the right thing when you give it a command. For example if you use the tag <code>~modern</code> or other format names when creating a game, it will automatically assume the correct number of players for you. Hopefully these features are intuitive and helpful 🤞 — and if not, <a href="https://github.com/lexicalunit/spellbot/issues">please report bugs and request features</a> to your heart’s content.</p>
+        <img class="screenshot" src="https://user-images.githubusercontent.com/1903876/137987904-6fcdf273-5b60-4692-9389-a51d65c0a424.png" width="600" alt="/lfg" />
+        <p>
+            SpellBot uses <a href="https://discord.com/blog/slash-commands-are-here">Discord slash commands</a>. Each command provides its own help documentation that you can view directly within Discord itself before running the command. Take a look and see what's available by typing <code>/</code> and browsing the commands for SpellBot!
+        </p>
     </section>
 </section>
 
@@ -120,6 +49,15 @@ description: "SpellBot is the Discord bot that helps you find other players look
 <section id="contributing" class="level2">
     <h2>❤️ Contributing</h2>
     <p>If you’d like to become a part of the SpellBot development community please first know that we have a documented <a href="https://github.com/lexicalunit/spellbot/blob/master/CODE_OF_CONDUCT.md">code of conduct</a> and then see our <a href="https://github.com/lexicalunit/spellbot/blob/master/CONTRIBUTING.md">documentation on how to contribute</a> for details on how to get started.</p>
+</section>
+
+<section id="fine-print" class="level2">
+    <h2>🔍 Fine-print</h2>
+    <p>Any usage of SpellBot implies that you accept the following policies.</p>
+    <ul>
+        <li><a href="https://github.com/lexicalunit/spellbot/blob/master/PRIVACY_POLICY.md">Privacy Policy</a></li>
+        <li><a href="https://github.com/lexicalunit/spellbot/blob/master/TERMS_OF_SERVICE.md">Terms of Service</a></li>
+    </ul>
 </section>
 
 <hr class="small">
