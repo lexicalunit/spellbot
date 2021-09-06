@@ -3,8 +3,8 @@ branch = True
 source = src/spellbot
 omit =
     src/spellbot/_version.py
-    src/spellbot/versions/env.py
-    src/spellbot/debug.py
+    src/spellbot/migrations/env.py
+    src/spellbot/web/server.py
 
 [report]
 ignore_errors = True

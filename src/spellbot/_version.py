@@ -1,7 +1,9 @@
-import dunamai as _dunamai  # type: ignore
+from typing import Optional
+
+import dunamai as _dunamai
 
 
-def version_from_git():
+def version_from_git() -> Optional[str]:
     try:
         choice = _dunamai.Version.from_any_vcs
         version = _dunamai.get_version("spellbot", first_choice=choice).serialize()
@@ -10,7 +12,7 @@ def version_from_git():
         return None
 
 
-def version_from_package():
+def version_from_package() -> Optional[str]:
     try:
         choice = _dunamai.Version.from_any_vcs
         version = _dunamai.get_version("spellbot", third_choice=choice).serialize()
@@ -19,7 +21,7 @@ def version_from_package():
         return None
 
 
-def version_from_toml():
+def version_from_toml() -> Optional[str]:
     from os.path import dirname, realpath
     from pathlib import Path
 

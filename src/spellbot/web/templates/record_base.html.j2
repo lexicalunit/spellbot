@@ -1,0 +1,143 @@
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>SpellBot</title>
+    <meta name="author" content="Amy Troschinetz">
+    <meta name="description" content="The Discord bot for SpellTable">
+    <meta name="theme-color" content="#5A3EFD">
+    <meta name="keywords" content="magic: the gathering, magic, mtg, edh, commander, spelltable, discord bot, discord, bot">
+    <link rel="alternate" type="application/rss+xml" title="SpellBot" href="https://spellbot.io/feed.xml">
+
+    <meta property="og:site_name" content="SpellBot">
+    <meta property="og:title" content="SpellBot">
+    <meta property="og:description" content="The Discord bot for SpellTable">
+    <meta property="og:image" content="https://spellbot.io/assets/img/avatar-icon.png">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://spellbot.io/">
+
+    <link rel="canonical" href="https://spellbot.io/">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@SpellBotIO">
+    <meta name="twitter:creator" content="@SpellBotIO">
+    <meta property="twitter:title" content="SpellBot">
+    <meta property="twitter:description" content="The Discord bot for SpellTable">
+    <meta name="twitter:image" content="https://spellbot.io/assets/img/avatar-icon.png">
+
+    <script>
+        function copy(el) {
+            // copy the text
+            const temp = document.createElement('input')
+            temp.value = el.text
+            document.body.appendChild(temp)
+            temp.select()
+            document.execCommand('copy')
+            temp.remove()
+
+            // notify user
+            const orig = el.textContent
+            el.textContent = 'Copied!'
+            el.style.pointerEvents = 'none';
+            el.style.cursor = 'default';
+            setTimeout(() => {
+                el.textContent = orig
+                el.style.pointerEvents = 'auto';
+                el.style.cursor = 'pointer';
+            }, 1200)
+        }
+
+        function page_impl(offset) {
+            const urlSearchParams = new URLSearchParams(window.location.search);
+            const params = Object.fromEntries(urlSearchParams.entries());
+            let {page} = params;
+            page = parseInt(page);
+            console.log("cur page:", page);
+            if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
+                console.log("err, going to 0");
+                page = 0;
+            } else {
+                page += offset;
+                if (page < 0) page = 0;
+                console.log("going to page:", page);
+            }
+            window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
+        }
+
+        function next_page() {
+            page_impl(1);
+        }
+
+        function prev_page() {
+            page_impl(-1);
+        }
+    </script>
+
+    <style>
+        {% include "record.css" %}
+    </style>
+<body>
+
+    <div class="limiter">
+        <div class="container-table100">
+            <div class="wrap-table100">
+                <div class="avatar">
+                    <a href="https://spellbot.io/">
+                        <img alt="spellbot-icon" src="https://spellbot.io/assets/img/avatar-icon.png">
+                    </a>
+                </div>
+                <div class="table100">
+                    {% block table %}
+                    {% endblock %}
+                    <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
+                    <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function humanize_timestamp(ts) {
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour12: true,
+                hour: "numeric",
+                minute: "numeric",
+                timeZoneName: "short",
+            };
+            return (new Date(ts)).toLocaleDateString(undefined, options);
+        }
+
+        els = document.getElementsByClassName("timestamp");
+        Array.from(els).forEach((el) => {
+            el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+        });
+    </script>
+
+    <script
+        src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+        integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI="
+        crossorigin="anonymous"></script>
+
+    <script>
+        {% include "table2CSV.js" %}
+    </script>
+
+    <script>
+        $('table').each(function() {
+            const $table = $(this);
+            const $button = $("<a href='#' class='button'>");
+            $button.text("Export to spreadsheet");
+            $button.insertAfter($table);
+
+            $button.click(function() {
+                const csv = $table.table2CSV();
+                window.location.href = 'data:text/csv;charset=UTF-8,' + encodeURIComponent(csv);
+            });
+        });
+    </script>
+</body>
+
+</html>

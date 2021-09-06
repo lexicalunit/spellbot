@@ -7,10 +7,10 @@ It uses [`poetry`](usage) to manage dependencies. To install development
 dependencies use: `poetry install`. This will allow you to run
 [PyTest](https://docs.pytest.org/en/latest/) and the included scripts.
 
-You can install `poetry` with `pip`:
+You can install `poetry` with the script `install-poetry.py`:
 
 ```shell
-pip install poetry
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
 ```
 
 ## Installing the application
@@ -50,7 +50,7 @@ We use [tox](https://tox.readthedocs.io/en/latest/) to manage test execution.
 It can be installed with `pip`:
 
 ```shell
-pip install tox
+pip install -U tox
 ```
 
 Whenever you ran the `poetry install` command for the first time it created a
@@ -74,24 +74,25 @@ Now install [`tox-pyenv`](https://pypi.org/project/tox-pyenv/) so that `tox` can
 automatically find your environments:
 
 ```shell
-pip install tox-pyenv
+pip install -U tox-pyenv
 ```
 
 Now let's create the python environments you'll need. The following commands
-will do this on any *NIX system. For other systems hopefully what I'm doing here
+will do this on any \*NIX system. For other systems hopefully what I'm doing here
 is instructive. Details on each command are given with inline comments.
 
 ```shell
 # install a plugin that allows pyenv to know how to fetch the latest versions
+rm -rf "$(pyenv root)"/plugins/xxenv-latest
 git clone https://github.com/momo-lab/xxenv-latest.git "$(pyenv root)"/plugins/xxenv-latest
 
 # for each python environment in the tox configuration, create it using pyenv
 # this step takes a while, but you will only need to do this setup once
 tox -l | while read -r py; do
-    # translate a tox env name like "py38" into a number like "38"
+    # translate a tox env name like "py39" into a number like "39"
     number="$(echo "$py" | sed "s/^py//")"
 
-    # translate a number like "38" into a python version like "3.8"
+    # translate a number like "39" into a python version like "3.9"
     version="${number:0:1}.${number:1:1}"
 
     # install the latest python interpreter for that version
@@ -103,16 +104,16 @@ pyenv local $(pyenv versions --bare | tr '\n' ' ')
 ```
 
 The above script, **at the time of this writing**, amounts to running the
-following three commands:
+following commands:
 
 ```shell
-pyenv install 3.8.6
-pyenv install 3.9.0
-pyenv local 3.8.6 3.9.0
+pyenv install 3.9.6
+pyenv local 3.9.6
 ```
 
 But over time newer versions of python will become available and the above
-script should automatically handle that for you.
+script should automatically handle that for you. Also not that over time
+you may need to run `pyenv uninstall` on old and unused python versions.
 
 > **Note:** If your `pyenv install` command fails, please read
 > [this](https://github.com/pyenv/pyenv/wiki/common-build-problems) help
@@ -127,27 +128,18 @@ tox
 ```
 
 Or a specific set of tests and environment. For example all tests pertaining to
-users using the `py38` environment:
+users using the `py39` environment:
 
 ```shell
-tox -e py38 -- -k user
+tox -e py39 -- -k user
 ```
 
 After running the _full test suite_ you can view code coverage reports in the
 `coverage` directory broken out by python environment.
 
 ```shell
-open coverage/py38/index.html
+open coverage/py39/index.html
 ```
-
-## Running tests against different databases
-
-If you want to run the tests against something other than the default sqlite
-database, you can set the environment variable `TEST_SPELLBOT_DB_URL` and the
-tests will attempt to connect to your database using that connection string.
-The tests will not use the normal `SPELLBOT_DB_URL` variable. This is to prevent
-the test suite from possibly blowing away your user data by connecting to
-whatever database you have configured via `SPELLBOT_DB_URL`.
 
 ## Formatting and linting
 
@@ -161,19 +153,6 @@ run these tools against the codebase and report on any errors:
 tox -- -k codebase
 ```
 
-## Updating test snapshots
-
-We also use [pytest-snapshot](https://github.com/joseph-roitman/pytest-snapshot)
-to generate and test against snapshots. To generate new snapshots pass
-`--snapshot-update` to your `pytest` command. For example, from the root of this
-repository:
-
-```shell
-poetry run pytest -k your_test_function --snapshot-update
-```
-
-Where `your_test_function` is the name of the test you'd like to update.
-
 ## Release process
 
 There's two methods for doing a release. You can use a script to handle
@@ -182,7 +161,7 @@ script manually. Both methods are described below but I recommend the script.
 
 ### Scripted
 
-To do a release automatically there is a *NIX script available in the `scripts`
+To do a release automatically there is a \*NIX script available in the `scripts`
 directory to help. To use it you will need to have non-interactive
 `poetry publish` enabled by running:
 
@@ -201,7 +180,7 @@ project.
 Once you have that set up, you can release a new version by running:
 
 ```shell
-scripts/publish.sh [major|minor|patch]
+scripts/publish.sh <major | minor | patch>
 ```
 
 You must select either `major`, `minor`, or `patch` as the release kind. Please
@@ -231,7 +210,7 @@ git push --tags origin master
 > command is to ensure that all test still pass after the version is updated.
 
 You can get the `M.N.P` version numbers from `pyproject.toml` after you've run
-the `poetry version` command. On a *NIX shell you could also get it automatically like so:
+the `poetry version` command. On a \*NIX shell you could also get it automatically like so:
 
 ```shell
 grep "^version" < pyproject.toml | cut -d= -f2 | sed 's/"//g;s/ //g;s/^/v/;'
@@ -246,14 +225,8 @@ everything looks good.
 
 ## Deployment Process
 
-There are two different deployable components included in this repository:
-
-- SpellBot - The Discord bot itself.
-- SpellDash - The frontend administrative service for SpellBot.
-
-Below is a script for deploying each of these services to Heroku. First
-set `APP` to the name of your Heroku application. Then choose the
-component you want to deploy by selecting its corresponding Dockerfile.
+Below is a script for deploying SpellBot to Heroku. You can also use the `publish.sh`
+script included in this repository rather than running these manually.
 
 ```shell
 # You have to be logged into the Heroku container registry
@@ -262,19 +235,9 @@ heroku login
 heroku container:login
 
 APP="<the name of your heroku app>"
-DOCKERFILE="<Dockerfile.bot or Dockerfile.dash or Dockerfile.api>"
 
-docker build \
-    -t "registry.heroku.com/$APP/web" \
-    -f "$DOCKERFILE" \
-    # If you're building the Dashboard, see DOCKER.md for the
-    # required list of build-arg parameters that you must pass here.
-    # Other components do not have any build-arg parameters.
-    [--build-arg ...] \
-    .
-
+docker build -t "registry.heroku.com/$APP/web" .
 docker push "registry.heroku.com/$APP/web"
-
 heroku container:release web --app $APP
 ```
 
@@ -296,9 +259,8 @@ poetry run scripts/create_db_revision.py \
 This will create a revision script in the `src/spellbot/versions/versions`
 directory with a name like `REVISIONID_some_description_of_your_changes.py`.
 You may have to edit this script manually to ensure that it is correct as
-the autogenerate facility of `alembic revision` is not perfect, especially
-if you are using sqlite which doesn't support many database features.
+the autogenerate facility of `alembic revision` is not perfect.
 
-[alembic]:          https://alembic.sqlalchemy.org/
-[black]:            https://github.com/psf/black
-[wiki]:             https://animalcrossing.fandom.com/
+[alembic]: https://alembic.sqlalchemy.org/
+[black]: https://github.com/psf/black
+[wiki]: https://animalcrossing.fandom.com/

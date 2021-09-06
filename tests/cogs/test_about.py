@@ -1,0 +1,46 @@
+import pytest
+
+from spellbot._version import __version__
+from spellbot.cogs.about import AboutCog
+
+
+@pytest.mark.asyncio
+class TestCogAbout:
+    async def test_about(self, settings, bot, ctx):
+        cog = AboutCog(bot)
+        await cog._about.invoke(ctx)
+
+        ctx.send.assert_called_once()
+        assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
+            "color": settings.EMBED_COLOR,
+            "description": (
+                "_The Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
+                "\n"
+                "Having issues with SpellBot? Please [report bugs]"
+                "(https://github.com/lexicalunit/spellbot/issues)!\n"
+                "\n"
+                f"[🔗 Add SpellBot to your Discord!]({settings.BOT_INVITE_LINK})\n"
+                "\n"
+                "💜 Help keep SpellBot running by [becoming a patron!]"
+                "(https://www.patreon.com/lexicalunit)"
+            ),
+            "fields": [
+                {
+                    "inline": True,
+                    "name": "Version",
+                    "value": (
+                        f"[{__version__}]"
+                        f"(https://pypi.org/project/spellbot/{__version__}/)"
+                    ),
+                },
+                {
+                    "inline": True,
+                    "name": "Author",
+                    "value": "[@lexicalunit](https://github.com/lexicalunit)",
+                },
+            ],
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "SpellBot",
+            "type": "rich",
+            "url": "http://spellbot.io/",
+        }

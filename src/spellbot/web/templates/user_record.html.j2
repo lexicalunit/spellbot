@@ -1,0 +1,52 @@
+{% extends "record_base.html.j2" %}
+{% block table %}
+<table>
+    <thead>
+        <tr class="table100-head">
+            <th>Game</th>
+            <th>Time</th>
+            <th>Guild</th>
+            <th>Channel</th>
+            <th>Format</th>
+            <th>Link</th>
+            <th>Scores</th>
+        </tr>
+    </thead>
+    <tbody id="rows">
+        {% for record in records %}
+            <tr>
+                <td><a href="https://discordapp.com/channels/{{record.guild}}/{{record.channel}}/{{record.message}}">SB#{{record.id}}</a></td>
+                <td class="timestamp">{{record.updated_at}}</td>
+                <td><a href="https://discordapp.com/channels/{{record.guild}}">{{record.guild_name}}</a></td>
+                <td><a href="https://discordapp.com/channels/{{record.guild}}/{{record.channel}}">#{{record.channel_name}}</a></td>
+                <td>{{record.format}}</td>
+                {% if record.link %}
+                    <td><a href="{{record.link}}">Open in SpellTable</a><span class="data">{{record.link}}</span></td>
+                {% else %}
+                    <td>&nbsp;</td>
+                {% endif %}
+                <td class="scores">
+                    <ul>
+                        {% for name, data in record.scores.items() %}
+                            <li>
+                                <em>{{data[1]}} points</em>
+                                &mdash;
+                                <div class="tooltip">
+                                    {{name | default('Unknown User', true)}}
+                                    <span class="tooltiptext">
+                                        <span class="tooltipcta">Click&nbsp;ID&nbsp;to&nbsp;copy:</span><br />
+                                        <a onclick="copy(this)" class="button user_id" style="pointer-events: auto; cursor: pointer;">{{data[0]}}</a>
+                                    </span>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <span class="data">
+                        {% for name, data in record.scores.items() %}{{name}}:{{data[0]}}={{data[1]}};{% endfor %}
+                    </span>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
