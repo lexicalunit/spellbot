@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, List, cast
 
 import discord
 import redis
+from more_itertools import random_permutation
 
 from spellbot.constants import REALLY_OLD_GAMES_HOURS
 
@@ -18,6 +19,13 @@ from spellbot.data import Game, Server, User
 from spellbot.operations import safe_delete_channel, safe_fetch_channel
 
 logger = logging.getLogger(__name__)
+
+BATCH_LIMIT = 10
+
+
+def randomly(seq):
+    for idx in random_permutation(range(len(seq))):
+        yield seq[idx]
 
 
 async def cleanup_expired_games(bot: SpellBot) -> None:
@@ -61,7 +69,11 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
     """Checks for and deletes any bot created voice channels that are empty."""
     logger.info("starting old voice channels cleanup task...")
     async with bot.session() as session:
-        for game in Game.voiced(session):
+        processed = 0
+        for game in randomly(Game.voiced(session)):
+            if processed > BATCH_LIMIT:
+                break
+            processed += 1
             logger.info(f"checking voice channel for game {game.id}")
             assert game.voice_channel_xid
             chan = await safe_fetch_channel(bot, game.voice_channel_xid, game.guild_xid)
@@ -160,7 +172,7 @@ BACKROUND_TASK_SPECS = [
     {"interval": 120, "function": cleanup_expired_games},  # 2 minutes
     {"interval": 1800, "function": update_average_wait_times},  # 30 minutes
     {"interval": 3600, "function": update_metrics},  # 1 hour
-    {"interval": 600, "function": cleanup_old_voice_channels},  # 10 minutes
+    {"interval": 3600, "function": cleanup_old_voice_channels},  # 1 hour
     # Make cleanup_started_games manually triggered?
     # {"interval": 14400, "function": "cleanup_started_games"}, # 4 hours
 ]
