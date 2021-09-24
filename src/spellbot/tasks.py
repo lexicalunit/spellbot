@@ -4,10 +4,11 @@ import asyncio
 import logging
 from asyncio.tasks import Task
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, List, cast
+from typing import TYPE_CHECKING, List, Tuple, cast
 
 import redis
 from dateutil import tz
+from discord.channel import VoiceChannel
 from more_itertools import random_permutation
 
 from spellbot.constants import BATCH_LIMIT, REALLY_OLD_GAMES_HOURS, VOICE_CATEGORY_PREFIX
@@ -66,6 +67,7 @@ async def cleanup_expired_games(bot: SpellBot) -> None:
 async def cleanup_old_voice_channels(bot: SpellBot) -> None:
     """Checks for and deletes any bot created voice channels that are empty."""
     batch = 0
+    to_delete: List[Tuple[Game, VoiceChannel]] = []
     grace_delta = timedelta(minutes=1)
     grace_time_ago = datetime.utcnow() - grace_delta
     grace_time_ago = grace_time_ago.replace(tzinfo=tz.UTC)
@@ -83,34 +85,46 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
                 guild.categories,
             )
             for category in voice_categories:
-                logger.info(f"checking for channels in guild {guild.id}...")
+                logger.info(f"checking for channels in guild {guild.id} {guild.name}...")
                 voice_channels = category.voice_channels
                 for channel in voice_channels:
-                    logger.info(f"considering channel {channel.id}...")
+                    logger.info(f"considering channel {channel.id} {channel.name}...")
                     occupied = bool(channel.voice_states.keys())
                     channel_created_at = channel.created_at
                     if channel_created_at > grace_time_ago:
                         logger.info(f"channel {channel.id} is in grace period")
                         continue
                     elif not occupied or channel_created_at < age_limit_ago:
-                        logger.info(f"deleting channel {channel.id}...")
+                        logger.info("looking for matching game in database...")
                         game = (
                             session.query(Game)
                             .filter(Game.voice_channel_xid == channel.id)
                             .one_or_none()
                         )
                         if game:
-                            game.voice_channel_xid = None  # type: ignore
-                            game.voice_channel_invite = None  # type: ignore
-                            session.commit()
-                        await safe_delete_channel(channel, guild.id)
-
-                        # Try to avoid rate limiting on the Discord API
-                        batch += 1
-                        if batch > BATCH_LIMIT:
-                            return
+                            logger.info(f"found, channel {channel.id} can be deleted...")
+                            to_delete.append((game, channel))
+                        else:
+                            logger.error("did not find a matching game!")
                     else:
                         logger.info(f"channel {channel.id} is occupied")
+
+        for item in randomly(to_delete):
+            game = item[0]
+            channel = item[1]
+
+            logger.info(f"randomly deleting channel {channel.id} {channel.name}...")
+            game.voice_channel_xid = None  # type: ignore
+            game.voice_channel_invite = None  # type: ignore
+            session.commit()
+            await safe_delete_channel(channel, game.guild_xid)  # type: ignore
+
+            # Try to avoid rate limiting on the Discord API
+            batch += 1
+            if batch > BATCH_LIMIT:
+                remaining = len(to_delete) - BATCH_LIMIT
+                logger.info(f"batch limit reached, {remaining} channels left...")
+                return
 
 
 async def cleanup_started_games(bot: SpellBot) -> None:
