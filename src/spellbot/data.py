@@ -128,6 +128,11 @@ class Server(Base):
             data["tags"].append(tags_str)
         return data
 
+    @classmethod
+    def voiced(cls, session: Session) -> List[Server]:
+        rows = session.query(Server).filter(Server.create_voice.is_(True)).all()
+        return cast(List[Server], rows)
+
     def __repr__(self) -> str:
         return json.dumps(
             {

@@ -6,17 +6,17 @@ from asyncio.tasks import Task
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, cast
 
-import discord
 import redis
+from dateutil import tz
 from more_itertools import random_permutation
 
-from spellbot.constants import BATCH_LIMIT, REALLY_OLD_GAMES_HOURS
+from spellbot.constants import BATCH_LIMIT, REALLY_OLD_GAMES_HOURS, VOICE_CATEGORY_PREFIX
 
 if TYPE_CHECKING:  # pragma: no cover
     from spellbot import SpellBot
 
 from spellbot.data import Game, Server, User
-from spellbot.operations import safe_delete_channel, safe_fetch_channel
+from spellbot.operations import safe_delete_channel, safe_fetch_guild
 
 logger = logging.getLogger(__name__)
 
@@ -65,51 +65,52 @@ async def cleanup_expired_games(bot: SpellBot) -> None:
 
 async def cleanup_old_voice_channels(bot: SpellBot) -> None:
     """Checks for and deletes any bot created voice channels that are empty."""
-    logger.info("starting old voice channels cleanup task...")
+    batch = 0
+    grace_delta = timedelta(minutes=1)
+    grace_time_ago = datetime.utcnow() - grace_delta
+    grace_time_ago = grace_time_ago.replace(tzinfo=tz.UTC)
+    age_limit_delta = timedelta(hours=REALLY_OLD_GAMES_HOURS)
+    age_limit_ago = datetime.utcnow() - age_limit_delta
+    age_limit_ago = age_limit_ago.replace(tzinfo=tz.UTC)
     async with bot.session() as session:
-        processed = 0
-        for game in randomly(Game.voiced(session)):
-            if processed > BATCH_LIMIT:
-                break
-            processed += 1
-            logger.info(f"checking voice channel for game {game.id}")
-            assert game.voice_channel_xid
-            chan = await safe_fetch_channel(bot, game.voice_channel_xid, game.guild_xid)
-            chan = cast(discord.abc.GuildChannel, chan)
-            if not chan:
-                logger.info(f"could not fetch voice channel for game {game.id}")
-                game.voice_channel_xid = None  # type: ignore
-                game.voice_channel_invite = None  # type: ignore
-                session.commit()
+        for server in Server.voiced(session):
+            logger.info(f"checking for categories in guild {server.guild_xid}...")
+            guild = await safe_fetch_guild(bot, server.guild_xid)
+            if not guild:
                 continue
-
-            empty_or_really_old = (
-                not chan.voice_states.keys()  # type: ignore
-                or datetime.utcnow()
-                >= game.updated_at + timedelta(hours=REALLY_OLD_GAMES_HOURS)
+            voice_categories = filter(
+                lambda c: c.name.startswith(VOICE_CATEGORY_PREFIX),
+                guild.categories,
             )
-            if empty_or_really_old:
-                logger.info(f"deleting voice channel for game {game.id}")
-                game.voice_channel_xid = None  # type: ignore
-                game.voice_channel_invite = None  # type: ignore
-                session.commit()
+            for category in voice_categories:
+                logger.info(f"checking for channels in guild {guild.id}...")
+                voice_channels = category.voice_channels
+                for channel in voice_channels:
+                    logger.info(f"considering channel {channel.id}...")
+                    occupied = bool(channel.voice_states.keys())
+                    channel_created_at = channel.created_at
+                    if channel_created_at > grace_time_ago:
+                        logger.info(f"channel {channel.id} is in grace period")
+                        continue
+                    elif not occupied or channel_created_at < age_limit_ago:
+                        logger.info(f"deleting channel {channel.id}...")
+                        game = (
+                            session.query(Game)
+                            .filter(Game.voice_channel_xid == channel.id)
+                            .one_or_none()
+                        )
+                        if game:
+                            game.voice_channel_xid = None  # type: ignore
+                            game.voice_channel_invite = None  # type: ignore
+                            session.commit()
+                        await safe_delete_channel(channel, guild.id)
 
-                success = await safe_delete_channel(chan, game.guild_xid)
-                if not success:
-                    logger.info(
-                        f"failed to delete voice channel for game {game.id}"
-                        f" in guild {game.guild_xid}"
-                    )
-                    guild = bot.get_guild(game.guild_xid)
-                    assert guild
-                    perms = chan.permissions_for(guild.me)
-                    chan_name = chan.name  # type: ignore
-                    msg = (
-                        "bot permissions in channel"
-                        f" ({chan_name}:{game.voice_channel_xid}):"
-                        f" {perms.value}"
-                    )
-                    logger.info(msg)
+                        # Try to avoid rate limiting on the Discord API
+                        batch += 1
+                        if batch > BATCH_LIMIT:
+                            return
+                    else:
+                        logger.info(f"channel {channel.id} is occupied")
 
 
 async def cleanup_started_games(bot: SpellBot) -> None:
@@ -188,7 +189,7 @@ def begin_background_tasks(bot: SpellBot) -> List[Task]:
                 while True:
                     try:
                         await spec["function"](bot)
-                    except Exception as e:
+                    except BaseException as e:
                         logger.exception("error: unhandled exception in task: %s", e)
                     finally:
                         await asyncio.sleep(INTERVAL)

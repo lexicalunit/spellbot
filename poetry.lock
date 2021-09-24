@@ -1303,6 +1303,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "types-python-dateutil"
+version = "2.8.0"
+description = "Typing stubs for python-dateutil"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "types-pytz"
 version = "2021.1.0"
 description = "Typing stubs for pytz"
@@ -1429,7 +1437,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = '>=3.8,<4'
-content-hash = "ee3809fb80dbd25f729c7354571ca1d4d506d6053932d84aae8393d9cf22a678"
+content-hash = "85e88a8b1f2f1404fd25eeb89403c1f7cc350071ae2b50014e7999d860559575"
 
 [metadata.files]
 aiofiles = [
@@ -2338,6 +2346,10 @@ traitlets = [
 types-click = [
     {file = "types-click-7.1.2.tar.gz", hash = "sha256:040897284e4f9466825c3865f708a985a8e7ba4d8e22cb9198ffb7b522160850"},
     {file = "types_click-7.1.2-py2.py3-none-any.whl", hash = "sha256:4722746f1ec9fd3fc8b1d7fb8c840604dc22f9e32bcc7a31a36d6d85cc2bce24"},
+]
+types-python-dateutil = [
+    {file = "types-python-dateutil-2.8.0.tar.gz", hash = "sha256:540c6c53c3a52433d7088254e3afdc3f6c86b5ae452aaa1b796c26d01c9fd73c"},
+    {file = "types_python_dateutil-2.8.0-py3-none-any.whl", hash = "sha256:9954d87dc982344bb2aad73a7fe505bdca72f89088ef653c4c40f52649183437"},
 ]
 types-pytz = [
     {file = "types-pytz-2021.1.0.tar.gz", hash = "sha256:addfa2a1a27b324b6beb422faa4737962532bbab3793481d5bdebbffb8f9f243"},
