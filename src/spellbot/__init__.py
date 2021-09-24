@@ -37,12 +37,13 @@ import hupper  # type: ignore
 import redis
 import requests
 from aiohttp import web
+from aiohttp.client_exceptions import ClientError
 from aiohttp.web_response import Response as WebResponse
+from aiohttp_retry import ExponentialRetry, RetryClient
 from dotenv import load_dotenv
 from easy_profile import SessionProfiler  # type: ignore
 from easy_profile.reporters import StreamReporter  # type: ignore
 from expiringdict import ExpiringDict  # type: ignore
-from requests import Response as RequestsResponse
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry  # type: ignore
 from sqlalchemy import exc
@@ -581,39 +582,35 @@ class SpellBot(discord.Client):
         for mod in mod_role.members:
             await safe_send_user(mod, notification_message)
 
-    def create_spelltable_url(self) -> Optional[str]:
+    async def create_spelltable_url(self) -> Optional[str]:
         if self.mock_games:
             return f"http://exmaple.com/game/{uuid4()}"
 
-        r: Optional[RequestsResponse] = None
-        try:
-            headers = {"user-agent": f"spellbot/{__version__}", "key": self.auth}
-            r = requests_retry_session().post(CREATE_ENDPOINT, headers=headers, timeout=5)
-        except Exception as e:
-            logger.exception("error: SpellTable API failure: %s", e)
-            return None
-
-        if not r:
-            logger.exception("error: unknown SpellTable API failure")
-            return None
+        headers = {
+            "user-agent": f"spellbot/{__version__}",
+            "key": self.auth,
+        }
 
         try:
-            return cast(str, r.json()["gameUrl"])
-        except KeyError as e:
-            logger.exception(
-                "error: gameUrl missing from SpellTable API response (%s): %s; %s",
-                r.status_code,
-                r.json(),
-                e,
-            )
-        except (ValueError, TypeError) as e:
-            logger.exception(
-                "error: non-JSON response from SpellTable API response (%s): %s; %s",
-                r.status_code,
-                r.content,
-                e,
-            )
-        return None
+            async with RetryClient(
+                raise_for_status=False,
+                logger=logger,  # type: ignore
+                retry_options=ExponentialRetry(attempts=5, statuses={500}),
+            ) as client:
+                async with client.post(CREATE_ENDPOINT, headers=headers) as resp:
+                    data = await resp.json()
+                    if not data or "gameUrl" not in data:
+                        logger.warning(
+                            "warning: gameUrl missing from "
+                            "SpellTable API response (%s): %s",
+                            resp.status,
+                            data,
+                        )
+                        return None
+                    return str(data["gameUrl"])
+        except ClientError as e:
+            logger.warning("warning: SpellTable API failure: %s", e, exc_info=True)
+            return None
 
     async def setup_voice(
         self, session: Session, game: Game, prefix: str = VOICE_CATEGORY_PREFIX
@@ -1073,7 +1070,9 @@ class SpellBot(discord.Client):
 
             if len(found_discord_users) == game.size:  # game is ready
                 game.url = (  # type: ignore
-                    self.create_spelltable_url() if game.system == "spelltable" else None
+                    await self.create_spelltable_url()
+                    if game.system == "spelltable"
+                    else None
                 )
                 await self.setup_voice(session, game)
                 game.status = "started"  # type: ignore
@@ -1508,7 +1507,9 @@ class SpellBot(discord.Client):
                     found_discord_users.append(discord_user)
             if len(found_discord_users) == game.size:  # game is *definitely* ready!
                 game_url = (
-                    self.create_spelltable_url() if game.system == "spelltable" else None
+                    await self.create_spelltable_url()
+                    if game.system == "spelltable"
+                    else None
                 )
                 game.url = game_url  # type: ignore
                 await self.setup_voice(ctx.session, game)
@@ -2343,7 +2344,9 @@ class SpellBot(discord.Client):
                 continue
 
             game_url = (
-                self.create_spelltable_url() if game.system == "spelltable" else None
+                await self.create_spelltable_url()
+                if game.system == "spelltable"
+                else None
             )
             game.url = game_url  # type: ignore
             await self.setup_voice(ctx.session, game)
@@ -2460,7 +2463,7 @@ class SpellBot(discord.Client):
 
         now = datetime.utcnow()
         expires_at = now + timedelta(minutes=ctx.server.expire)
-        url = self.create_spelltable_url() if system == "spelltable" else None
+        url = await self.create_spelltable_url() if system == "spelltable" else None
         game = Game(
             channel_xid=ctx.message.channel.id,
             created_at=now,
