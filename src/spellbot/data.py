@@ -33,7 +33,7 @@ from sqlalchemy.sql.expression import asc, desc, distinct
 from sqlalchemy.sql.schema import UniqueConstraint
 from sqlalchemy.sql.sqltypes import Numeric
 
-from spellbot.constants import THUMB_URL, VOICE_INVITE_EXPIRE_TIME_S
+from spellbot.constants import BATCH_LIMIT, THUMB_URL, VOICE_INVITE_EXPIRE_TIME_S
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = PACKAGE_ROOT / "assets"
@@ -671,6 +671,8 @@ class Game(Base):
                     datetime.utcnow() - timedelta(minutes=10) >= Game.updated_at,
                 )
             )
+            .order_by(desc(Game.updated_at))
+            .limit(BATCH_LIMIT)
             .all(),
         )
 

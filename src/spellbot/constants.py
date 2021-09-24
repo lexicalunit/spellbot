@@ -29,3 +29,4 @@ VOICE_CATEGORY_PREFIX = "SpellBot Voice Channels"
 VOICE_INVITE_EXPIRE_TIME_S = 14400  # 4 hours, make this configurable?
 CLEAN_S = 7  # seconds before temporary messages by the bot get cleaned up, configurable?
 REALLY_OLD_GAMES_HOURS = 5  # hours passed before game is considered really old
+BATCH_LIMIT = 20  # cleanup voice channels in batches

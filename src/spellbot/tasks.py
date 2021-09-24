@@ -10,7 +10,7 @@ import discord
 import redis
 from more_itertools import random_permutation
 
-from spellbot.constants import REALLY_OLD_GAMES_HOURS
+from spellbot.constants import BATCH_LIMIT, REALLY_OLD_GAMES_HOURS
 
 if TYPE_CHECKING:  # pragma: no cover
     from spellbot import SpellBot
@@ -19,8 +19,6 @@ from spellbot.data import Game, Server, User
 from spellbot.operations import safe_delete_channel, safe_fetch_channel
 
 logger = logging.getLogger(__name__)
-
-BATCH_LIMIT = 10
 
 
 def randomly(seq):
@@ -171,7 +169,7 @@ async def update_average_wait_times(bot: SpellBot) -> None:
 BACKROUND_TASK_SPECS = [
     {"interval": 120, "function": cleanup_expired_games},  # 2 minutes
     {"interval": 1800, "function": update_average_wait_times},  # 30 minutes
-    {"interval": 3600, "function": update_metrics},  # 1 hour
+    {"interval": 1800, "function": update_metrics},  # 30 minutes
     {"interval": 3600, "function": cleanup_old_voice_channels},  # 1 hour
     # Make cleanup_started_games manually triggered?
     # {"interval": 14400, "function": "cleanup_started_games"}, # 4 hours
