@@ -4,7 +4,7 @@ import asyncio
 import logging
 from asyncio.tasks import Task
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, List, Tuple, cast
+from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 
 import redis
 from dateutil import tz
@@ -17,7 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from spellbot import SpellBot
 
 from spellbot.data import Game, Server, User
-from spellbot.operations import safe_delete_channel, safe_fetch_guild
+from spellbot.operations import safe_delete_channel
 
 logger = logging.getLogger(__name__)
 
@@ -67,18 +67,31 @@ async def cleanup_expired_games(bot: SpellBot) -> None:
 async def cleanup_old_voice_channels(bot: SpellBot) -> None:
     """Checks for and deletes any bot created voice channels that are empty."""
     batch = 0
-    to_delete: List[Tuple[Game, VoiceChannel]] = []
+    to_delete: List[Tuple[Optional[Game], VoiceChannel]] = []
     grace_delta = timedelta(minutes=1)
     grace_time_ago = datetime.utcnow() - grace_delta
     grace_time_ago = grace_time_ago.replace(tzinfo=tz.UTC)
     age_limit_delta = timedelta(hours=REALLY_OLD_GAMES_HOURS)
     age_limit_ago = datetime.utcnow() - age_limit_delta
     age_limit_ago = age_limit_ago.replace(tzinfo=tz.UTC)
+    guilds_bot_is_in = set(g.id for g in bot.guilds)
     async with bot.session() as session:
         for server in Server.voiced(session):
-            logger.info(f"checking for categories in guild {server.guild_xid}...")
-            guild = await safe_fetch_guild(bot, server.guild_xid)
+            if server.guild_xid not in guilds_bot_is_in:
+                logger.warning(
+                    f"bot is not in guild {server.guild_xid} {server.cached_name}...",
+                )
+                continue
+            logger.info(
+                "checking for categories in guild"
+                f" {server.guild_xid} {server.cached_name}..."
+            )
+            # guild = await safe_fetch_guild(bot, server.guild_xid)
+            guild = bot.get_guild(server.guild_xid)
             if not guild:
+                logger.info(
+                    f"could not get guild {server.guild_xid} {server.cached_name}...",
+                )
                 continue
             voice_categories = filter(
                 lambda c: c.name.startswith(VOICE_CATEGORY_PREFIX),
@@ -105,7 +118,8 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
                             logger.info(f"found, channel {channel.id} can be deleted...")
                             to_delete.append((game, channel))
                         else:
-                            logger.error("did not find a matching game!")
+                            to_delete.append((None, channel))
+                            logger.warning("did not find a matching game!")
                     else:
                         logger.info(f"channel {channel.id} is occupied")
 
@@ -114,9 +128,10 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
             channel = item[1]
 
             logger.info(f"randomly deleting channel {channel.id} {channel.name}...")
-            game.voice_channel_xid = None  # type: ignore
-            game.voice_channel_invite = None  # type: ignore
-            session.commit()
+            if game:
+                game.voice_channel_xid = None  # type: ignore
+                game.voice_channel_invite = None  # type: ignore
+                session.commit()
             await safe_delete_channel(channel, game.guild_xid)  # type: ignore
 
             # Try to avoid rate limiting on the Discord API
