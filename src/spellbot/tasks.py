@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 import redis
 from dateutil import tz
 from discord.channel import VoiceChannel
-from more_itertools import random_permutation
 
 from spellbot.constants import BATCH_LIMIT, REALLY_OLD_GAMES_HOURS, VOICE_CATEGORY_PREFIX
 
@@ -21,11 +20,6 @@ from spellbot.data import Game, Server, User
 from spellbot.operations import safe_delete_channel
 
 logger = logging.getLogger(__name__)
-
-
-def randomly(seq):
-    for idx in random_permutation(range(len(seq))):
-        yield seq[idx]
 
 
 async def cleanup_expired_games(bot: SpellBot) -> None:
@@ -126,7 +120,7 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
                     else:
                         logger.info(f"channel {channel.id} is occupied")
 
-        for item in randomly(to_delete):
+        for item in sorted(to_delete, key=lambda i: i[1].created_at):
             game = item[0]
             channel = item[1]
 
@@ -137,7 +131,7 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
                 session.commit()
 
             if game or re.match(r"\AGame-SB\d+\Z", channel.name):
-                logger.info(f"randomly deleting channel {channel.id} {channel.name}...")
+                logger.info(f"deleting channel {channel.id} {channel.name}...")
                 await safe_delete_channel(channel, channel.guild.id)  # type: ignore
 
                 # Try to avoid rate limiting on the Discord API
