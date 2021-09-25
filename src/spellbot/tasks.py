@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from asyncio.tasks import Task
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, List, Tuple, cast
+from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 
 import redis
 from dateutil import tz
@@ -67,7 +68,7 @@ async def cleanup_expired_games(bot: SpellBot) -> None:
 async def cleanup_old_voice_channels(bot: SpellBot) -> None:
     """Checks for and deletes any bot created voice channels that are empty."""
     batch = 0
-    to_delete: List[Tuple[Game, VoiceChannel]] = []
+    to_delete: List[Tuple[Optional[Game], VoiceChannel]] = []
     grace_delta = timedelta(minutes=10)
     grace_time_ago = datetime.utcnow() - grace_delta
     grace_time_ago = grace_time_ago.replace(tzinfo=tz.UTC)
@@ -86,7 +87,6 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
                 "checking for categories in guild"
                 f" {server.guild_xid} {server.cached_name}..."
             )
-            # guild = await safe_fetch_guild(bot, server.guild_xid)
             guild = bot.get_guild(server.guild_xid)
             if not guild:
                 logger.info(
@@ -118,6 +118,7 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
                             logger.info(f"found, channel {channel.id} can be deleted...")
                             to_delete.append((game, channel))
                         else:
+                            to_delete.append((None, channel))
                             logger.info(
                                 "did not find matching game for"
                                 f" {channel.id} {channel.name}"
@@ -129,11 +130,15 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
             game = item[0]
             channel = item[1]
 
-            logger.info(f"randomly deleting channel {channel.id} {channel.name}...")
-            game.voice_channel_xid = None  # type: ignore
-            game.voice_channel_invite = None  # type: ignore
-            session.commit()
-            await safe_delete_channel(channel, channel.guild.id)  # type: ignore
+            if game:
+                logger.info(f"clearing voice channel from game {game.id}...")
+                game.voice_channel_xid = None  # type: ignore
+                game.voice_channel_invite = None  # type: ignore
+                session.commit()
+
+            if game or re.match(r"\AGame-SB\d+\Z", channel.name):
+                logger.info(f"randomly deleting channel {channel.id} {channel.name}...")
+                await safe_delete_channel(channel, channel.guild.id)  # type: ignore
 
             # Try to avoid rate limiting on the Discord API
             batch += 1
