@@ -140,12 +140,12 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
                 logger.info(f"randomly deleting channel {channel.id} {channel.name}...")
                 await safe_delete_channel(channel, channel.guild.id)  # type: ignore
 
-            # Try to avoid rate limiting on the Discord API
-            batch += 1
-            if batch > BATCH_LIMIT:
-                remaining = len(to_delete) - BATCH_LIMIT
-                logger.info(f"batch limit reached, {remaining} channels left...")
-                return
+                # Try to avoid rate limiting on the Discord API
+                batch += 1
+                if batch > BATCH_LIMIT:
+                    remaining = len(to_delete) - BATCH_LIMIT
+                    logger.info(f"batch limit reached, {remaining} channels left...")
+                    return
 
 
 async def cleanup_started_games(bot: SpellBot) -> None:
