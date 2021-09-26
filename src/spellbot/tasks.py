@@ -120,7 +120,7 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
                     else:
                         logger.info(f"channel {channel.id} is occupied")
 
-        for item in sorted(to_delete, key=lambda i: i[1].created_at):
+        for item in sorted(to_delete, key=lambda i: i[1].created_at):  # type: ignore
             game = item[0]
             channel = item[1]
 
