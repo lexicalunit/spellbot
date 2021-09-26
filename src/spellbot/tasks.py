@@ -17,7 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from spellbot import SpellBot
 
 from spellbot.data import Game, Server, User
-from spellbot.operations import safe_delete_channel
+from spellbot.operations import bot_can_delete_channel, safe_delete_channel
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +132,21 @@ async def cleanup_old_voice_channels(bot: SpellBot) -> None:
 
             if game or re.match(r"\AGame-SB\d+\Z", channel.name):
                 logger.info(f"deleting channel {channel.id} {channel.name}...")
-                await safe_delete_channel(channel, channel.guild.id)  # type: ignore
+
+                can_delete = bot_can_delete_channel(channel)
+                if not can_delete:
+                    logger.info(
+                        f"no permissions to delete channel {channel.id} {channel.name}..."
+                    )
+                    continue
+
+                success = await safe_delete_channel(
+                    channel,
+                    channel.guild.id,
+                )  # type: ignore
+
+                if not success:
+                    logger.info(f"could not delete {channel.id} {channel.name}")
 
                 # Try to avoid rate limiting on the Discord API
                 batch += 1
