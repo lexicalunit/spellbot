@@ -200,7 +200,7 @@ BACKROUND_TASK_SPECS = [
     {"interval": 120, "function": cleanup_expired_games},  # 2 minutes
     {"interval": 1800, "function": update_average_wait_times},  # 30 minutes
     {"interval": 1800, "function": update_metrics},  # 30 minutes
-    {"interval": 3600, "function": cleanup_old_voice_channels},  # 1 hour
+    {"interval": 1800, "function": cleanup_old_voice_channels},  # 30 minutes
     # Make cleanup_started_games manually triggered?
     # {"interval": 14400, "function": "cleanup_started_games"}, # 4 hours
 ]
