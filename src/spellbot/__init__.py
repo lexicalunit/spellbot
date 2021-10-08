@@ -607,7 +607,10 @@ class SpellBot(discord.Client):
                             data,
                         )
                         return None
-                    return str(data["gameUrl"])
+                    return str(data["gameUrl"]).replace(
+                        "www.spelltable.com",
+                        "spelltable.wizards.com",  # v1 API still returns old domain
+                    )
         except ClientError as e:
             logger.warning("warning: SpellTable API failure: %s", e, exc_info=True)
             return None
