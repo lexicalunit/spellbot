@@ -22,7 +22,11 @@ The Discord bot for [SpellTable][spelltable].
 
 ## 🤖 Using SpellBot
 
-SpellBot implements the new [Discord slash commands](https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ) interface for user commands. Just type `/` and look for SpellBot commands. Each command has it's own documentation and options that you can see right in Discord.
+Just looking to play a game of Magic? Run the command `/lfg` and SpellBot will help you out!
+
+<img src="https://user-images.githubusercontent.com/1903876/137987904-6fcdf273-5b60-4692-9389-a51d65c0a424.png" width="600" alt="/lfg" />
+
+SpellBot uses [Discord slash commands](https://discord.com/blog/slash-commands-are-here). Each command provides its own help documentation that you can view directly within Discord itself before running the command. Take a look and see what's available by typing `/` and browsing the commands for SpellBot!
 
 ### 🎤 Feedback
 
