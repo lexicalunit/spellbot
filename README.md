@@ -3,7 +3,6 @@
 # SpellBot
 
 [![build][build-badge]][build]
-[![top][top-badge]][top]
 [![uptime][uptime-badge]][uptime]
 [![metrics][metrics-badge]][metrics]
 [![pypi][pypi-badge]][pypi]
@@ -93,7 +92,5 @@ Any usage of SpellBot implies that you accept the following policies.
 [python]: https://www.python.org/
 [security]: https://github.com/lexicalunit/spellbot/security
 [spelltable]: https://www.spelltable.com/
-[top-badge]: https://top.gg/api/widget/status/725510263251402832.svg?noavatar=true
-[top]: https://top.gg/bot/725510263251402832
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]: https://uptimerobot.com/dashboard#785764282
