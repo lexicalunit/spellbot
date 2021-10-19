@@ -63,7 +63,6 @@ class Settings(metaclass=Singleton):
             r"&permissions=2416045137"
             r"&scope=applications.commands%20bot"
         )
-        self.BOT_VOTE_LINK = "https://top.gg/bot/725510263251402832/vote"
         self.VOICE_CATEGORY_PREFIX = "SpellBot Voice Channels"
         self.VOICE_INVITE_EXPIRE_TIME_S = 14400  # 4 hours
         self.EMBED_COLOR = 0x5A3EFD
