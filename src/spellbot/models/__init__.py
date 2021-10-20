@@ -5,7 +5,6 @@ from importlib import import_module
 from inspect import getmembers, isclass
 from pathlib import Path
 from pkgutil import iter_modules
-from typing import Any, cast
 
 import alembic
 import alembic.command
@@ -46,7 +45,7 @@ def create_all(DATABASE_URL: str) -> None:
     config = alembic.config.Config(str(ALEMBIC_INI))
     config.set_main_option("script_location", str(MIGRATIONS_DIR))
     config.set_main_option("sqlalchemy.url", DATABASE_URL)
-    cast(Any, config.attributes)["connection"] = connection
+    config.attributes["connection"] = connection
     alembic.command.upgrade(config, "head")
 
 
@@ -57,13 +56,13 @@ def reverse_all(DATABASE_URL: str) -> None:
     config = alembic.config.Config(str(ALEMBIC_INI))
     config.set_main_option("script_location", str(MIGRATIONS_DIR))
     config.set_main_option("sqlalchemy.url", DATABASE_URL)
-    cast(Any, config.attributes)["connection"] = connection
+    config.attributes["connection"] = connection
     alembic.command.downgrade(config, "base")
 
 
 class StringLiteral(String):  # pragma: no cover
     def literal_processor(self, dialect):
-        super_processor = super(StringLiteral, self).literal_processor(dialect)
+        super_processor = super().literal_processor(dialect)
 
         def process(value):
             if isinstance(value, int):

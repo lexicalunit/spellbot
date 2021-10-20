@@ -60,8 +60,8 @@ async def bot() -> AsyncGenerator[SpellBot, None]:
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, settings) -> ClientSession:
-    app = build_web_app(settings)
+def client(loop, aiohttp_client) -> ClientSession:
+    app = build_web_app()
     return loop.run_until_complete(aiohttp_client(app))
 
 
