@@ -1,6 +1,7 @@
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional, Type, TypeVar, cast
+from typing import Optional, Type, TypeVar, cast
 
 import discord
 from asgiref.sync import sync_to_async

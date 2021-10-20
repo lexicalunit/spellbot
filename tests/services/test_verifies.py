@@ -7,7 +7,7 @@ from tests.factories.user import UserFactory
 
 @pytest.mark.asyncio
 class TestServiceVerifies:
-    async def test_verifies_upsert(self, session, guild):
+    async def test_verifies_upsert(self, guild):
         user = UserFactory.create()
         DatabaseSession.commit()
 

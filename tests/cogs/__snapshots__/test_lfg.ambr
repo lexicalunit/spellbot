@@ -1,0 +1,129 @@
+# name: TestCogLookingForGameJoinButton.test_join_with_show_points
+  <class 'list'> [
+    <class 'dict'> {
+      'components': <class 'tuple'> (
+        <class 'dict'> {
+          'custom_id': 'points',
+          'disabled': False,
+          'max_values': None,
+          'min_values': None,
+          'options': <class 'list'> [
+            <class 'dict'> {
+              'default': False,
+              'description': None,
+              'emoji': <class 'dict'> {
+                'id': None,
+                'name': '0️⃣',
+              },
+              'label': 'No points',
+              'value': '0',
+            },
+            <class 'dict'> {
+              'default': False,
+              'description': None,
+              'emoji': <class 'dict'> {
+                'id': None,
+                'name': '1️⃣',
+              },
+              'label': 'One point',
+              'value': '1',
+            },
+            <class 'dict'> {
+              'default': False,
+              'description': None,
+              'emoji': <class 'dict'> {
+                'id': None,
+                'name': '2️⃣',
+              },
+              'label': 'Two points',
+              'value': '2',
+            },
+            <class 'dict'> {
+              'default': False,
+              'description': None,
+              'emoji': <class 'dict'> {
+                'id': None,
+                'name': '3️⃣',
+              },
+              'label': 'Three points',
+              'value': '3',
+            },
+            <class 'dict'> {
+              'default': False,
+              'description': None,
+              'emoji': <class 'dict'> {
+                'id': None,
+                'name': '4️⃣',
+              },
+              'label': 'Four points',
+              'value': '4',
+            },
+            <class 'dict'> {
+              'default': False,
+              'description': None,
+              'emoji': <class 'dict'> {
+                'id': None,
+                'name': '5️⃣',
+              },
+              'label': 'Five points',
+              'value': '5',
+            },
+            <class 'dict'> {
+              'default': False,
+              'description': None,
+              'emoji': <class 'dict'> {
+                'id': None,
+                'name': '6️⃣',
+              },
+              'label': 'Six points',
+              'value': '6',
+            },
+            <class 'dict'> {
+              'default': False,
+              'description': None,
+              'emoji': <class 'dict'> {
+                'id': None,
+                'name': '7️⃣',
+              },
+              'label': 'Seven points',
+              'value': '7',
+            },
+            <class 'dict'> {
+              'default': False,
+              'description': None,
+              'emoji': <class 'dict'> {
+                'id': None,
+                'name': '8️⃣',
+              },
+              'label': 'Eight points',
+              'value': '8',
+            },
+            <class 'dict'> {
+              'default': False,
+              'description': None,
+              'emoji': <class 'dict'> {
+                'id': None,
+                'name': '9️⃣',
+              },
+              'label': 'Nine points',
+              'value': '9',
+            },
+            <class 'dict'> {
+              'default': False,
+              'description': None,
+              'emoji': <class 'dict'> {
+                'id': None,
+                'name': '🔟',
+              },
+              'label': 'Ten points',
+              'value': '10',
+            },
+          ],
+          'placeholder': 'How many points do you have to report?',
+          'type': <ComponentType.select: 3>,
+        },
+      ),
+      'type': <ComponentType.actionrow: 1>,
+    },
+  ]
+---

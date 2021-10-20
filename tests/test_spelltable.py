@@ -1,5 +1,6 @@
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, cast
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -24,13 +25,16 @@ class TestSpellTable:
 
         class MockClient:
             @asynccontextmanager
-            async def post(*args, **kwargs):
+            async def post(self, *args, **kwargs):  # pylint: disable=W0613
                 yield mock_response
 
         mock_client = MockClient()
 
         @asynccontextmanager
-        async def MockRetryClient(*args, **kwargs) -> AsyncGenerator[RetryClient, None]:
+        async def MockRetryClient(  # pylint: disable=W0613
+            *args,
+            **kwargs,
+        ) -> AsyncGenerator[RetryClient, None]:
             yield cast(RetryClient, mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
@@ -48,13 +52,16 @@ class TestSpellTable:
 
         class MockClient:
             @asynccontextmanager
-            async def post(*args, **kwargs):
+            async def post(self, *args, **kwargs):  # pylint: disable=W0613
                 yield mock_response
 
         mock_client = MockClient()
 
         @asynccontextmanager
-        async def MockRetryClient(*args, **kwargs) -> AsyncGenerator[RetryClient, None]:
+        async def MockRetryClient(  # pylint: disable=W0613
+            *args,
+            **kwargs,
+        ) -> AsyncGenerator[RetryClient, None]:
             yield cast(RetryClient, mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
@@ -69,7 +76,7 @@ class TestSpellTable:
 
         class MockClient:
             @asynccontextmanager
-            async def post(*args, **kwargs):
+            async def post(self, *args, **kwargs):  # pylint: disable=W0613
                 raise ClientError()
 
                 # Need to yield to satisfy static analysis of @asynccontextmanager.
@@ -78,7 +85,10 @@ class TestSpellTable:
         mock_client = MockClient()
 
         @asynccontextmanager
-        async def MockRetryClient(*args, **kwargs) -> AsyncGenerator[RetryClient, None]:
+        async def MockRetryClient(  # pylint: disable=W0613
+            *args,
+            **kwargs,
+        ) -> AsyncGenerator[RetryClient, None]:
             yield cast(RetryClient, mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)

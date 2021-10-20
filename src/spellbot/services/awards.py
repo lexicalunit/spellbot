@@ -1,5 +1,4 @@
 from collections import namedtuple
-from typing import List
 
 from asgiref.sync import sync_to_async
 from sqlalchemy.sql.expression import and_, or_
@@ -14,7 +13,7 @@ NewAward = namedtuple("NewAward", ["role", "message"])
 
 class AwardsService(BaseService):
     @sync_to_async
-    def give_awards(self, guild_xid: int, player_xids: List[int]) -> dict[int, NewAward]:
+    def give_awards(self, guild_xid: int, player_xids: list[int]) -> dict[int, NewAward]:
         """Returns dict of discord user ids -> role names to assign to that user."""
         new_roles: dict[int, NewAward] = {}
 

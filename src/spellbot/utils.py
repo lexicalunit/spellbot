@@ -1,6 +1,6 @@
 import logging
 from contextlib import AbstractContextManager
-from typing import Any, List, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 import discord
 from discord_slash.context import InteractionContext
@@ -29,7 +29,7 @@ def bot_can_role(guild: discord.Guild) -> bool:
     if not guild.me:
         return False
     perms = guild.me.guild_permissions
-    for req in {"manage_roles"}:
+    for req in ("manage_roles",):
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
     return True
@@ -46,7 +46,7 @@ def bot_can_read(channel: DiscordChannel) -> bool:
         return True
     guild: discord.Guild = getattr(guild_channel, "guild")
     perms = guild_channel.permissions_for(guild.me)
-    for req in {"read_messages", "read_message_history"}:
+    for req in ("read_messages", "read_message_history"):
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
     return True
@@ -63,7 +63,7 @@ def bot_can_delete_channel(channel: DiscordChannel) -> bool:
         return False
     guild: discord.Guild = getattr(guild_channel, "guild")
     perms = guild_channel.permissions_for(guild.me)
-    for req in {"manage_channels"}:
+    for req in ("manage_channels",):
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
     return True
@@ -84,7 +84,7 @@ def is_admin(ctx: InteractionContext) -> bool:
     settings = Settings()
     has_admin_role = any(
         role.name == settings.ADMIN_ROLE
-        for role in cast(List[discord.Role], author_roles)
+        for role in cast(list[discord.Role], author_roles)
     )
     if not has_admin_role:
         raise SpellbotAdminOnly()
@@ -111,7 +111,7 @@ def user_can_moderate(
     settings = Settings()
     return any(
         role.name == settings.ADMIN_ROLE or role.name.startswith(settings.MOD_PREFIX)
-        for role in cast(List[discord.Role], author_roles)
+        for role in cast(list[discord.Role], author_roles)
     )
 
 

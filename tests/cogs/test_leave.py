@@ -28,7 +28,7 @@ class TestCogLeaveGame:
         monkeypatch.setattr(leave_interaction, "safe_update_embed", sue_mock)
 
         cog = LeaveGameCog(bot)
-        await cog._leave.func(cog, ctx)
+        await cog.leave.func(cog, ctx)
 
         ctx.send.assert_called_once_with(
             "You have been removed from any games your were signed up for.",
@@ -54,7 +54,7 @@ class TestCogLeaveGame:
         DatabaseSession.commit()
 
         cog = LeaveGameCog(bot)
-        await cog._leave.func(cog, ctx)
+        await cog.leave.func(cog, ctx)
 
         ctx.send.assert_called_once_with(
             "You have been removed from any games your were signed up for.",
@@ -96,7 +96,7 @@ class TestCogLeaveGame:
         monkeypatch.setattr(leave_interaction, "safe_fetch_text_channel", sftc_mock)
 
         cog = LeaveGameCog(bot)
-        await cog._leave.func(cog, ctx)
+        await cog.leave.func(cog, ctx)
 
         ctx.send.assert_called_once_with(
             "You have been removed from any games your were signed up for.",
@@ -141,7 +141,7 @@ class TestCogLeaveGame:
         monkeypatch.setattr(leave_interaction, "safe_fetch_message", sfm_mock)
 
         cog = LeaveGameCog(bot)
-        await cog._leave.func(cog, ctx)
+        await cog.leave.func(cog, ctx)
 
         ctx.send.assert_called_once_with(
             "You have been removed from any games your were signed up for.",

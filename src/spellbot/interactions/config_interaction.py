@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, cast
+from typing import Optional, cast
 
 import discord
 import discord_slash.utils.manage_components as comp
@@ -26,10 +26,10 @@ class ConfigInteraction(BaseInteraction):
     def __init__(self, bot: SpellBot, ctx: InteractionContext):
         super().__init__(bot, ctx)
 
-    async def build_channels_embeds(self) -> List[Embed]:
+    async def build_channels_embeds(self) -> list[Embed]:
         guild = await self.services.guilds.to_dict()
         settings = Settings()
-        embeds: List[Embed] = []
+        embeds: list[Embed] = []
 
         def new_embed() -> Embed:
             embed = Embed(title=f"Configuration for channels in {guild['name']}")
@@ -84,10 +84,10 @@ class ConfigInteraction(BaseInteraction):
 
         return embeds
 
-    async def build_awards_embeds(self) -> List[Embed]:
+    async def build_awards_embeds(self) -> list[Embed]:
         guild = await self.services.guilds.to_dict()
         settings = Settings()
-        embeds: List[Embed] = []
+        embeds: list[Embed] = []
 
         def new_embed() -> Embed:
             embed = Embed(title=f"SpellBot Player Awards for {guild['name']}")

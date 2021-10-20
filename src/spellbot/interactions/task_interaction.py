@@ -1,7 +1,6 @@
 import logging
 import re
 from datetime import datetime, timedelta
-from typing import List
 
 from dateutil import tz
 from discord.channel import VoiceChannel
@@ -26,8 +25,8 @@ class VoiceChannelFilterer:
         age_limit_ago = datetime.utcnow() - age_limit_delta
         self.age_limit_ago = age_limit_ago.replace(tzinfo=tz.UTC)
 
-    async def filter(self, voice_channels: List[VoiceChannel]) -> List[VoiceChannel]:
-        channels: List[VoiceChannel] = []
+    async def filter(self, voice_channels: list[VoiceChannel]) -> list[VoiceChannel]:
+        channels: list[VoiceChannel] = []
 
         for channel in voice_channels:
             logger.info("considering channel %s(%s)", channel.name, channel.id)
@@ -72,8 +71,8 @@ class TaskInteraction(BaseInteraction):
         except BaseException as e:
             logger.exception("error: exception in background task: %s", e)
 
-    async def gather_channels(self) -> List[VoiceChannel]:
-        channels: List[VoiceChannel] = []
+    async def gather_channels(self) -> list[VoiceChannel]:
+        channels: list[VoiceChannel] = []
         active_guild_xids = set(g.id for g in self.bot.guilds)
         channel_filterer = VoiceChannelFilterer(self.services.games)
 
@@ -102,7 +101,7 @@ class TaskInteraction(BaseInteraction):
 
         return channels
 
-    async def delete_channels(self, channels: List[VoiceChannel]):
+    async def delete_channels(self, channels: list[VoiceChannel]):
         batch = 0
         for channel in sorted(channels, key=lambda c: c.created_at):
             logger.info("deleting channel %s(%s)", channel.name, channel.id)

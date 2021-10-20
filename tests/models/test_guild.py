@@ -5,7 +5,7 @@ from spellbot.models.guild import Guild
 
 
 class TestModelGuild:
-    def test_guild(self, session):
+    def test_guild(self):
         guild = Guild(xid=101, name="guild-name")
         channel1 = Channel(xid=201, name="channel1", guild=guild)
         channel2 = Channel(xid=202, name="channel2", guild=guild)

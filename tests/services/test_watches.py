@@ -9,7 +9,7 @@ from tests.factories.watch import WatchFactory
 
 @pytest.mark.asyncio
 class TestServiceWatches:
-    async def test_fetch(self, session):
+    async def test_fetch(self):
         guild1 = GuildFactory.create()
         guild2 = GuildFactory.create()
         user1 = UserFactory.create(xid=101)

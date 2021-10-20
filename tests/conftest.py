@@ -13,3 +13,10 @@ def pytest_collection_modifyitems(session, config, items):
         return SUITE_ORDER.index(suite) + 1 if suite in SUITE_ORDER else 0
 
     items.sort(key=order)
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "nosession: mark test to run without a database session",
+    )
