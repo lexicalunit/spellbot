@@ -3,7 +3,7 @@ from typing import cast
 
 from discord_slash.context import ComponentContext
 
-from spellbot.interactions import BaseInteraction, channel_lock
+from spellbot.interactions import BaseInteraction
 from spellbot.operations import (
     safe_fetch_message,
     safe_fetch_text_channel,
@@ -33,28 +33,27 @@ class LeaveInteraction(BaseInteraction):
         channel_xid = await self.services.games.current_channel_xid()
         guild_xid = await self.services.games.current_guild_xid()
 
-        async with channel_lock(channel_xid):
-            await self.services.users.leave_game()
-            channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
+        await self.services.users.leave_game()
+        channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
 
-            if not channel:
+        if not channel:
+            return await self.report_success()
+
+        message_xid = await self.services.games.current_message_xid()
+        message = await safe_fetch_message(channel, guild_xid, message_xid)
+
+        if not message:
+            return await self.report_success()
+
+        embed = await self.services.games.to_embed()
+
+        if origin:
+            # self.ctx should be a ComponentContext from a button click
+            ctx: ComponentContext = cast(ComponentContext, self.ctx)
+            if ctx.origin_message_id == message_xid:
+                return await safe_update_embed_origin(ctx, embed=embed)
+            else:
                 return await self.report_success()
 
-            message_xid = await self.services.games.current_message_xid()
-            message = await safe_fetch_message(channel, guild_xid, message_xid)
-
-            if not message:
-                return await self.report_success()
-
-            embed = await self.services.games.to_embed()
-
-            if origin:
-                # self.ctx should be a ComponentContext from a button click
-                ctx: ComponentContext = cast(ComponentContext, self.ctx)
-                if ctx.origin_message_id == message_xid:
-                    return await safe_update_embed_origin(ctx, embed=embed)
-                else:
-                    return await self.report_success()
-
-            await safe_update_embed(message, embed=embed)
-            await self.report_success()
+        await safe_update_embed(message, embed=embed)
+        await self.report_success()

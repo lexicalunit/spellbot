@@ -1,13 +1,16 @@
+import asyncio
 import logging
 import traceback
 from asyncio import AbstractEventLoop as Loop
 from collections import defaultdict
-from typing import Optional
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Optional
 from uuid import uuid4
 
 import discord
 from discord.ext.commands import Bot, errors
 from discord_slash import SlashCommand, context
+from expiringdict import ExpiringDict
 
 from spellbot.database import get_legacy_prefixes, initialize_connection
 from spellbot.errors import SpellbotAdminOnly, UserBannedError
@@ -44,6 +47,14 @@ class SpellBot(Bot):
         create_all(self.settings.DATABASE_URL)
         self.mock_games = mock_games
         self.legacy_prefix_cache = defaultdict(lambda: "!")
+        self.channel_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
+
+    @asynccontextmanager
+    async def channel_lock(self, channel_xid: int) -> AsyncGenerator[None, None]:
+        if not self.channel_locks.get(channel_xid):
+            self.channel_locks[channel_xid] = asyncio.Lock()
+        async with self.channel_locks[channel_xid]:  # type: ignore
+            yield
 
     async def on_ready(self) -> None:  # pragma: no cover
         logger.debug("logged in as %s", self.user)
