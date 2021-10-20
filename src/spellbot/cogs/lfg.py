@@ -22,14 +22,16 @@ class LookingForGameCog(commands.Cog):
 
     @cog_ext.cog_component()
     async def leave(self, ctx: ComponentContext):
-        async with LeaveInteraction.create(self.bot, ctx) as interaction:
-            await interaction.execute(origin=True)
+        async with self.bot.channel_lock(ctx.channel_id):
+            async with LeaveInteraction.create(self.bot, ctx) as interaction:
+                await interaction.execute(origin=True)
 
     @cog_ext.cog_component()
     async def join(self, ctx: ComponentContext):
         assert ctx.origin_message_id
-        async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
-            await interaction.execute(message_xid=ctx.origin_message_id)
+        async with self.bot.channel_lock(ctx.channel_id):
+            async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
+                await interaction.execute(message_xid=ctx.origin_message_id)
 
     @cog_ext.cog_component()
     async def points(self, ctx: ComponentContext):
@@ -84,8 +86,9 @@ class LookingForGameCog(commands.Cog):
         seats: Optional[int] = None,
         format: Optional[int] = None,
     ):
-        async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
-            await interaction.execute(friends=friends, seats=seats, format=format)
+        async with self.bot.channel_lock(ctx.channel_id):
+            async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
+                await interaction.execute(friends=friends, seats=seats, format=format)
 
 
 def setup(bot: SpellBot):

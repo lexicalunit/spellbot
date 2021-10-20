@@ -10,7 +10,7 @@ from discord_slash.context import ComponentContext, InteractionContext
 from discord_slash.model import ButtonStyle
 
 from spellbot.client import SpellBot
-from spellbot.interactions import BaseInteraction, channel_lock
+from spellbot.interactions import BaseInteraction
 from spellbot.models.game import GameFormat
 from spellbot.operations import (
     safe_add_role,
@@ -87,44 +87,43 @@ class LookingForGameInteraction(BaseInteraction):
             )
 
         fully_seated: bool = False
-        async with channel_lock(self.channel.id):
-            new: bool
-            if origin:
-                new = False
-                found = await self.services.games.select_by_message_xid(message_xid)
-                if not found:
-                    return await safe_send_channel(
-                        self.ctx,
-                        "You can not join this game.",
-                        hidden=True,
-                    )
-                if await self.services.games.blocked(self.ctx.author_id):
-                    return await safe_send_channel(
-                        self.ctx,
-                        "You can not join this game.",
-                        hidden=True,
-                    )
-                await self.services.games.add_player(self.ctx.author_id)
-            else:
-                new = await self.services.games.upsert(
-                    self.ctx.guild_id,
-                    self.channel.id,
-                    self.ctx.author_id,
-                    found_friends,
-                    seats,
-                    format,
+        new: bool
+        if origin:
+            new = False
+            found = await self.services.games.select_by_message_xid(message_xid)
+            if not found:
+                return await safe_send_channel(
+                    self.ctx,
+                    "You can not join this game.",
+                    hidden=True,
                 )
-
-            fully_seated = await self.services.games.fully_seated()
-            if fully_seated:
-                await self._handle_link_creation()
-                await self._handle_voice_creation(self.guild.id)
-
-            await self._handle_embed_creation(
-                new=new,
-                origin=origin,
-                fully_seated=fully_seated,
+            if await self.services.games.blocked(self.ctx.author_id):
+                return await safe_send_channel(
+                    self.ctx,
+                    "You can not join this game.",
+                    hidden=True,
+                )
+            await self.services.games.add_player(self.ctx.author_id)
+        else:
+            new = await self.services.games.upsert(
+                self.ctx.guild_id,
+                self.channel.id,
+                self.ctx.author_id,
+                found_friends,
+                seats,
+                format,
             )
+
+        fully_seated = await self.services.games.fully_seated()
+        if fully_seated:
+            await self._handle_link_creation()
+            await self._handle_voice_creation(self.guild.id)
+
+        await self._handle_embed_creation(
+            new=new,
+            origin=origin,
+            fully_seated=fully_seated,
+        )
 
         if fully_seated:
             await self.services.games.record_plays()

@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional, Type, TypeVar, cast
@@ -6,7 +5,6 @@ from typing import AsyncGenerator, Optional, Type, TypeVar, cast
 import discord
 from asgiref.sync import sync_to_async
 from discord_slash.context import InteractionContext
-from expiringdict import ExpiringDict
 from sqlalchemy.engine.base import Transaction
 
 from spellbot.client import SpellBot
@@ -14,15 +12,6 @@ from spellbot.database import DatabaseSession, connection
 from spellbot.errors import SpellbotAdminOnly, UserBannedError
 
 logger = logging.getLogger(__name__)
-channel_lock_cache = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
-
-
-@asynccontextmanager
-async def channel_lock(channel_xid: int) -> AsyncGenerator[None, None]:
-    lock = channel_lock_cache.get(channel_xid, asyncio.Lock())
-    channel_lock_cache[channel_xid] = lock
-    async with lock:  # type: ignore
-        yield
 
 
 class ServicesRegistry:

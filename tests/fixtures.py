@@ -164,6 +164,7 @@ def build_ctx(author, guild, channel, offset: int = 1):
     ctx.guild = guild
     ctx.guild_id = guild.id
     ctx.channel = channel
+    ctx.channel_id = channel.id
     ctx.message = build_message(guild, channel, author, offset)
     ctx.send = AsyncMock(return_value=build_response(guild, channel, offset))
     return ctx
