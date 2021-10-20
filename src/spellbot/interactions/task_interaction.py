@@ -30,7 +30,7 @@ class VoiceChannelFilterer:
         channels: List[VoiceChannel] = []
 
         for channel in voice_channels:
-            logger.info(f"considering channel {channel.name}({channel.id})")
+            logger.info("considering channel %s(%s)", channel.name, channel.id)
             occupied = bool(channel.voice_states.keys())
             channel_created_at = channel.created_at.replace(tzinfo=tz.UTC)
 
@@ -80,7 +80,7 @@ class TaskInteraction(BaseInteraction):
         for guild_xid in await self.services.guilds.voiced():
             await self.services.guilds.select(guild_xid)
             guild_name = await self.services.guilds.current_name()
-            logger.info(f"looking in guild {guild_name}({guild_xid})")
+            logger.info("looking in guild %s(%s)", guild_name, guild_xid)
 
             if guild_xid not in active_guild_xids:
                 logger.warning("guild is not active")
@@ -96,7 +96,7 @@ class TaskInteraction(BaseInteraction):
                 guild.categories,
             )
             for category in voice_categories:
-                logger.info(f"looking in category {category.name}")
+                logger.info("looking in category %s", category.name)
                 voice_channels = await channel_filterer.filter(category.voice_channels)
                 channels.extend(voice_channels)
 
@@ -105,12 +105,12 @@ class TaskInteraction(BaseInteraction):
     async def delete_channels(self, channels: List[VoiceChannel]):
         batch = 0
         for channel in sorted(channels, key=lambda c: c.created_at):
-            logger.info(f"deleting channel {channel.name}({channel.id})")
+            logger.info("deleting channel %s(%s)", channel.name, channel.id)
             await safe_delete_channel(channel, channel.guild.id)
 
             # Try to avoid rate limiting by the Discord API
             batch += 1
             if batch > settings.VOICE_CLEANUP_BATCH:
                 remaining = len(channels) - settings.VOICE_CLEANUP_BATCH
-                logger.info(f"batch limit reached, {remaining} channels remain")
+                logger.info("batch limit reached, %s channels remain", remaining)
                 break

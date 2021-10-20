@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
 
 
-def build_web_app(settings: Settings) -> web.Application:
+def build_web_app() -> web.Application:
     import_models()
     app = web.Application()
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(TEMPLATES_ROOT))
@@ -35,7 +35,7 @@ def launch_web_server(
     loop: Loop,
     port: int,
 ) -> None:  # pragma: no cover
-    app = build_web_app(settings)
+    app = build_web_app()
     runner = web.AppRunner(app)
     loop.run_until_complete(runner.setup())
     loop.run_until_complete(
@@ -46,4 +46,4 @@ def launch_web_server(
     )
     site = web.TCPSite(runner, settings.HOST, port)
     loop.run_until_complete(site.start())
-    logger.info(f"server running: http://{settings.HOST}:{port}")
+    logger.info("server running: http://%s:%s", settings.HOST, port)

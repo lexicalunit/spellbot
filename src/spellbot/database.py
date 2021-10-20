@@ -26,6 +26,12 @@ class ContextLocal(Generic[ProxiedObject], CallableObjectProxy):
     def set(self, obj: ProxiedObject):
         super().__init__(obj)
 
+    def __copy__(self):
+        raise NotImplementedError()
+
+    def __deepcopy__(self, memo):
+        raise NotImplementedError()
+
 
 # Thread sensitive module attributes, only use them within sync_to_async code!
 engine = ContextLocal.of_type(Engine)

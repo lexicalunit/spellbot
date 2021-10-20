@@ -192,8 +192,7 @@ async def safe_ensure_voice_category(
         if len(cat.channels) < 50:
             available = cat
             break  # we found an available channel, use it
-        else:
-            full.append(cat)  # keep track of how many full channels there are
+        full.append(cat)  # keep track of how many full channels there are
 
     if available:
         return available

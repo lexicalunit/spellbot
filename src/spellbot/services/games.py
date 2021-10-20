@@ -65,6 +65,7 @@ class GamesService(BaseService):
     @sync_to_async
     def upsert(
         self,
+        *,
         guild_xid: int,
         channel_xid: int,
         author_xid: int,

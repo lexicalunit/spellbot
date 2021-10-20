@@ -92,7 +92,8 @@ class SpellBot(Bot):
             else f"interaction `{ctx.interaction_id}`"
         )
         logger.error(
-            f"error: unhandled exception in {ref}: %s: %s",
+            "error: unhandled exception in %s: %s: %s",
+            ref,
             ex.__class__.__name__,
             ex,
         )
@@ -167,7 +168,7 @@ def build_bot(
     debug_guild: Optional[int] = None
     if bot.settings.DEBUG_GUILD:  # pragma: no cover
         debug_guild = int(bot.settings.DEBUG_GUILD)
-        logger.info(f"using debug guild: {debug_guild}")
+        logger.info("using debug guild: %s", debug_guild)
     bot.slash = SlashCommand(
         bot,
         debug_guild=debug_guild,
@@ -180,7 +181,7 @@ def build_bot(
 
     load_all_cogs(bot)
     commands = (key for key in bot.slash.commands.keys() if key != "context")
-    logger.info(f"loaded commands: {', '.join(commands)}")
+    logger.info("loaded commands: %s", ", ".join(commands))
 
     # setup database connection
     if not bot.loop.is_running():  # pragma: no cover

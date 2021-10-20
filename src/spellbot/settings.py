@@ -36,7 +36,7 @@ class Settings(metaclass=Singleton):
 
         # application
         self.BOT_TOKEN = getenv("BOT_TOKEN")
-        self.PORT = int(getenv("PORT", 3008))
+        self.PORT = int(getenv("PORT", "3008"))
         self.HOST = getenv("HOST") or "localhost"
         self.DEBUG_GUILD = getenv("DEBUG_GUILD")
         self.API_BASE_URL = getenv("API_BASE_URL", "https://bot.spellbot.io")

@@ -94,12 +94,12 @@ class LookingForGameInteraction(BaseInteraction):
             await self.services.games.add_player(self.ctx.author_id)
         else:
             new = await self.services.games.upsert(
-                self.ctx.guild_id,
-                self.channel.id,
-                self.ctx.author_id,
-                found_friends,
-                seats,
-                format,
+                guild_xid=self.ctx.guild_id,
+                channel_xid=self.channel.id,
+                author_xid=self.ctx.author_id,
+                friends=found_friends,
+                seats=seats,
+                format=format,
             )
 
         fully_seated = await self.services.games.fully_seated()

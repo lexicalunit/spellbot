@@ -28,7 +28,7 @@ FormatDetails = namedtuple("FormatDetails", ["players"])
 
 
 class GameFormat(Enum):
-    def __new__(cls, *args, **kwds):
+    def __new__(cls, *args, **kwargs):
         """Give each enum value an increasing numerical value starting at 1."""
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)

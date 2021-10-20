@@ -21,7 +21,8 @@ EMBED_DESCRIPTION_SIZE_LIMIT = 4096
 
 
 def log_warning(log: str, exec_info: bool = False, **kwargs: Any):
-    logger.warning(f"warning: discord: {log}", kwargs, exc_info=exec_info)
+    message = f"warning: discord: {log}"
+    logger.warning(message, kwargs, exc_info=exec_info)
 
 
 def bot_can_role(guild: discord.Guild) -> bool:

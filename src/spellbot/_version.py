@@ -28,10 +28,10 @@ def version_from_toml() -> Optional[str]:
     import toml
 
     try:
-        PKG_ROOT = dirname(realpath(__file__))
-        SRC_ROOT = Path(PKG_ROOT).parent
-        REPO_ROOT = SRC_ROOT.parent
-        pyproject = toml.load(REPO_ROOT / "pyproject.toml")
+        pkg_root = dirname(realpath(__file__))
+        src_root = Path(pkg_root).parent
+        repo_root = src_root.parent
+        pyproject = toml.load(repo_root / "pyproject.toml")
     except Exception:
         return None
 
