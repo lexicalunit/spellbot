@@ -14,7 +14,7 @@ class TestCogAbout:
         assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
             "color": settings.EMBED_COLOR,
             "description": (
-                "_The Discord bot for [SpellTable](https://www.spelltable.com/)._\n"
+                "_The Discord bot for [SpellTable](https://spelltable.wizards.com/)._\n"
                 "\n"
                 "Having issues with SpellBot? Please [report bugs]"
                 "(https://github.com/lexicalunit/spellbot/issues)!\n"

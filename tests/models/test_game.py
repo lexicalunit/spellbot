@@ -239,8 +239,8 @@ class TestModelGame:
             "color": settings.EMBED_COLOR,
             "description": (
                 "Sorry but SpellBot was unable to create a SpellTable link for "
-                "this game. Please go to [spelltable.com]"
-                "(https://www.spelltable.com/) to create one.\n"
+                "this game. Please go to [SpellTable]"
+                "(https://spelltable.wizards.com/) to create one.\n"
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
