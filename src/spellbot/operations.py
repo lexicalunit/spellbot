@@ -58,10 +58,9 @@ async def safe_fetch_text_channel(
     # first check our channel cache
     channel: Optional[DiscordChannel] = client.get_channel(channel_xid)
     if channel:
-        if isinstance(channel, discord.TextChannel):
-            return channel
-        else:
+        if not isinstance(channel, discord.TextChannel):
             return None
+        return channel
 
     # fallback to hitting the Discord API
     with suppress(
@@ -171,7 +170,7 @@ async def safe_ensure_voice_category(
         try:
             offset = len(prefix) + 1
             return 0 if cat.name == prefix else int(cat.name[offset:]) - 1
-        except:
+        except ValueError:
             return -1
 
     def category_name(i: int) -> str:

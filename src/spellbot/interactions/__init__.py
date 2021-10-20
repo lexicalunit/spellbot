@@ -65,14 +65,14 @@ class BaseInteraction:
     @sync_to_async
     def handle_exception(self, ex):
         if isinstance(ex, (SpellbotAdminOnly, UserBannedError)):
-            raise
+            raise ex
         logger.exception(
             "error: rolling back database transaction due to unhandled exception: %s: %s",
             ex.__class__.__name__,
             ex,
         )
         self.transaction.rollback()
-        raise
+        raise ex
 
     @sync_to_async
     def end_session(self):

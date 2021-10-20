@@ -71,13 +71,13 @@ class SpellBot(Bot):
                 "This command is not supported via Direct Message.",
                 hidden=True,
             )
-        elif isinstance(ex, SpellbotAdminOnly):
+        if isinstance(ex, SpellbotAdminOnly):
             return await safe_send_channel(
                 ctx,
                 "You do not have permission to do that.",
                 hidden=True,
             )
-        elif isinstance(ex, UserBannedError):
+        if isinstance(ex, UserBannedError):
             return await safe_send_channel(
                 ctx,
                 "You have been banned from using SpellBot.",

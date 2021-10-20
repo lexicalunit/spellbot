@@ -93,9 +93,9 @@ class UsersService(BaseService):
                 .one_or_none()
             )
             return bool(row[0]) if row else False
-        else:
-            assert self.user
-            return self.user.banned
+
+        assert self.user
+        return self.user.banned
 
     @sync_to_async
     def block(self, author_xid: int, target_xid: int) -> None:

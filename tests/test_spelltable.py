@@ -71,6 +71,8 @@ class TestSpellTable:
             @asynccontextmanager
             async def post(*args, **kwargs):
                 raise ClientError()
+
+                # Need to yield to satisfy static analysis of @asynccontextmanager.
                 yield  # noqa
 
         mock_client = MockClient()

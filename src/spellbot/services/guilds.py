@@ -140,9 +140,9 @@ class GuildsService(BaseService):
         return award.id
 
     @sync_to_async
-    def award_delete(self, id: int):
+    def award_delete(self, guild_award_id: int):
         assert self.guild
-        award = DatabaseSession.query(GuildAward).get(id)
+        award = DatabaseSession.query(GuildAward).get(guild_award_id)
         if award:
             DatabaseSession.delete(award)
         DatabaseSession.commit()
