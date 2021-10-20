@@ -68,7 +68,7 @@ class TestServiceGames:
     async def test_games_current_guild_xid(self, session, game):
         games = GamesService()
         await games.select(game.id)
-        await games.current_guild_xid() == 101
+        assert await games.current_guild_xid() == game.guild.xid
 
     async def test_games_current_channel_xid(self, session, guild, channel):
         game = GameFactory.create(guild=guild, channel=channel)
@@ -76,7 +76,7 @@ class TestServiceGames:
 
         games = GamesService()
         await games.select(game.id)
-        await games.current_channel_xid() == channel.xid
+        assert await games.current_channel_xid() == channel.xid
 
     async def test_games_current_message_xid(self, session, guild, channel):
         game = GameFactory.create(guild=guild, channel=channel, message_xid=5)
@@ -84,12 +84,12 @@ class TestServiceGames:
 
         games = GamesService()
         await games.select(game.id)
-        await games.current_message_xid() == 5
+        assert await games.current_message_xid() == 5
 
     async def test_games_current_id(self, session, game):
         games = GamesService()
         await games.select(game.id)
-        await games.current_id() == game.id
+        assert await games.current_id() == game.id
 
     async def test_games_fully_seated(self, session, guild, channel):
         started_game = GameFactory.create(guild=guild, channel=channel)

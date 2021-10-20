@@ -32,7 +32,7 @@ def version_from_toml() -> Optional[str]:
         SRC_ROOT = Path(PKG_ROOT).parent
         REPO_ROOT = SRC_ROOT.parent
         pyproject = toml.load(REPO_ROOT / "pyproject.toml")
-    except:
+    except Exception:
         return None
 
     tool = pyproject.get("tool", {})

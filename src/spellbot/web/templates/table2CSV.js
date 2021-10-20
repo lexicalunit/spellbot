@@ -9,7 +9,6 @@ jQuery.fn.table2CSV = function(options) {
     options);
 
   var csvData = [];
-  var headerArr = [];
   var el = this;
 
   //header
@@ -60,7 +59,7 @@ jQuery.fn.table2CSV = function(options) {
     var regexp = new RegExp(/["]/g);
     var output = input.replace(regexp, '""');
     //HTML
-    var regexp = new RegExp(/\<[^\<]+\>/g);
+    var regexp = new RegExp(/<[^<]+>/g);
     var output = output.replace(regexp, "");
     output = output.replace(/&nbsp;/gi, ' '); //replace &nbsp;
     if (output == "") return '';

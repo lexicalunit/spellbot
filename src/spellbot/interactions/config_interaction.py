@@ -40,7 +40,7 @@ class ConfigInteraction(BaseInteraction):
         def default(col):
             return getattr(Channel, col).default.arg
 
-        def update_channel_settings(channel_settings, col):
+        def update_channel_settings(channel, channel_settings, col):
             if channel[col] != default(col):
                 channel_settings[col] = channel[col]
 
@@ -49,10 +49,10 @@ class ConfigInteraction(BaseInteraction):
         description = ""
         for channel in guild.get("channels", []):
             channel_settings: dict = {}
-            update_channel_settings(channel_settings, "default_seats")
-            update_channel_settings(channel_settings, "auto_verify")
-            update_channel_settings(channel_settings, "unverified_only")
-            update_channel_settings(channel_settings, "verified_only")
+            update_channel_settings(channel, channel_settings, "default_seats")
+            update_channel_settings(channel, channel_settings, "auto_verify")
+            update_channel_settings(channel, channel_settings, "unverified_only")
+            update_channel_settings(channel, channel_settings, "verified_only")
             if channel_settings:
                 all_default = False
                 deets = ", ".join(
@@ -255,9 +255,9 @@ class ConfigInteraction(BaseInteraction):
         embed.color = settings.EMBED_COLOR
         await safe_send_channel(self.ctx, embed=embed, hidden=True)
 
-    async def award_delete(self, id: int):
+    async def award_delete(self, guild_award_id: int):
         assert self.ctx
-        await self.services.guilds.award_delete(id)
+        await self.services.guilds.award_delete(guild_award_id)
         settings = Settings()
         embed = Embed()
         embed.set_thumbnail(url=settings.ICO_URL)

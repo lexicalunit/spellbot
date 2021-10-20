@@ -52,8 +52,7 @@ class LeaveInteraction(BaseInteraction):
             ctx: ComponentContext = cast(ComponentContext, self.ctx)
             if ctx.origin_message_id == message_xid:
                 return await safe_update_embed_origin(ctx, embed=embed)
-            else:
-                return await self.report_success()
+            return await self.report_success()
 
         await safe_update_embed(message, embed=embed)
         await self.report_success()

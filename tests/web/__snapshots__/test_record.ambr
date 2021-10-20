@@ -76,8 +76,8 @@
   
       <style>
           * {
-    margin: 0px;
-    padding: 0px;
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
   }
   
@@ -97,7 +97,7 @@
   }
   
   a {
-    margin: 0px;
+    margin: 0;
   }
   
   a,
@@ -150,6 +150,7 @@
   table th {
     padding-left: 8px;
     padding-right: 8px;
+    text-align: left;
   }
   
   table thead tr {
@@ -158,7 +159,7 @@
   }
   
   th:first-child {
-    border-radius: 10px 0 0 0;
+    border-radius: 10px 0 0;
   }
   
   th:last-child {
@@ -170,7 +171,7 @@
   }
   
   tr:last-child td:last-child {
-    border-radius: 0 0 10px 0;
+    border-radius: 0 0 10px;
   }
   
   table tbody tr {
@@ -179,11 +180,6 @@
   
   table tbody tr:last-child {
     border: 0;
-  }
-  
-  table td,
-  table th {
-    text-align: left;
   }
   
   table td.l,
@@ -309,7 +305,7 @@
   
   .button {
     margin: 1em;
-    box-shadow: inset 0px 0px 15px 3px #23395e;
+    box-shadow: inset 0 0 15px 3px #23395e;
     background: linear-gradient(to bottom, #2e466e 5%, #415989 100%);
     background-color: #2e466e;
     border-radius: 17px;
@@ -321,7 +317,7 @@
     font-size: 15px;
     padding: 6px 13px;
     text-decoration: none !important;
-    text-shadow: 0px 1px 0px #263666;
+    text-shadow: 0 1px 0 #263666;
   }
   
   .button:hover {
@@ -568,7 +564,6 @@
       options);
   
     var csvData = [];
-    var headerArr = [];
     var el = this;
   
     //header
@@ -619,7 +614,7 @@
       var regexp = new RegExp(/["]/g);
       var output = input.replace(regexp, '""');
       //HTML
-      var regexp = new RegExp(/\<[^\<]+\>/g);
+      var regexp = new RegExp(/<[^<]+>/g);
       var output = output.replace(regexp, "");
       output = output.replace(/&nbsp;/gi, ' '); //replace &nbsp;
       if (output == "") return '';
@@ -724,8 +719,8 @@
   
       <style>
           * {
-    margin: 0px;
-    padding: 0px;
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
   }
   
@@ -745,7 +740,7 @@
   }
   
   a {
-    margin: 0px;
+    margin: 0;
   }
   
   a,
@@ -798,6 +793,7 @@
   table th {
     padding-left: 8px;
     padding-right: 8px;
+    text-align: left;
   }
   
   table thead tr {
@@ -806,7 +802,7 @@
   }
   
   th:first-child {
-    border-radius: 10px 0 0 0;
+    border-radius: 10px 0 0;
   }
   
   th:last-child {
@@ -818,7 +814,7 @@
   }
   
   tr:last-child td:last-child {
-    border-radius: 0 0 10px 0;
+    border-radius: 0 0 10px;
   }
   
   table tbody tr {
@@ -827,11 +823,6 @@
   
   table tbody tr:last-child {
     border: 0;
-  }
-  
-  table td,
-  table th {
-    text-align: left;
   }
   
   table td.l,
@@ -957,7 +948,7 @@
   
   .button {
     margin: 1em;
-    box-shadow: inset 0px 0px 15px 3px #23395e;
+    box-shadow: inset 0 0 15px 3px #23395e;
     background: linear-gradient(to bottom, #2e466e 5%, #415989 100%);
     background-color: #2e466e;
     border-radius: 17px;
@@ -969,7 +960,7 @@
     font-size: 15px;
     padding: 6px 13px;
     text-decoration: none !important;
-    text-shadow: 0px 1px 0px #263666;
+    text-shadow: 0 1px 0 #263666;
   }
   
   .button:hover {
@@ -1132,7 +1123,6 @@
       options);
   
     var csvData = [];
-    var headerArr = [];
     var el = this;
   
     //header
@@ -1183,7 +1173,7 @@
       var regexp = new RegExp(/["]/g);
       var output = input.replace(regexp, '""');
       //HTML
-      var regexp = new RegExp(/\<[^\<]+\>/g);
+      var regexp = new RegExp(/<[^<]+>/g);
       var output = output.replace(regexp, "");
       output = output.replace(/&nbsp;/gi, ' '); //replace &nbsp;
       if (output == "") return '';
@@ -1288,8 +1278,8 @@
   
       <style>
           * {
-    margin: 0px;
-    padding: 0px;
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
   }
   
@@ -1309,7 +1299,7 @@
   }
   
   a {
-    margin: 0px;
+    margin: 0;
   }
   
   a,
@@ -1362,6 +1352,7 @@
   table th {
     padding-left: 8px;
     padding-right: 8px;
+    text-align: left;
   }
   
   table thead tr {
@@ -1370,7 +1361,7 @@
   }
   
   th:first-child {
-    border-radius: 10px 0 0 0;
+    border-radius: 10px 0 0;
   }
   
   th:last-child {
@@ -1382,7 +1373,7 @@
   }
   
   tr:last-child td:last-child {
-    border-radius: 0 0 10px 0;
+    border-radius: 0 0 10px;
   }
   
   table tbody tr {
@@ -1391,11 +1382,6 @@
   
   table tbody tr:last-child {
     border: 0;
-  }
-  
-  table td,
-  table th {
-    text-align: left;
   }
   
   table td.l,
@@ -1521,7 +1507,7 @@
   
   .button {
     margin: 1em;
-    box-shadow: inset 0px 0px 15px 3px #23395e;
+    box-shadow: inset 0 0 15px 3px #23395e;
     background: linear-gradient(to bottom, #2e466e 5%, #415989 100%);
     background-color: #2e466e;
     border-radius: 17px;
@@ -1533,7 +1519,7 @@
     font-size: 15px;
     padding: 6px 13px;
     text-decoration: none !important;
-    text-shadow: 0px 1px 0px #263666;
+    text-shadow: 0 1px 0 #263666;
   }
   
   .button:hover {
@@ -1823,7 +1809,6 @@
       options);
   
     var csvData = [];
-    var headerArr = [];
     var el = this;
   
     //header
@@ -1874,7 +1859,7 @@
       var regexp = new RegExp(/["]/g);
       var output = input.replace(regexp, '""');
       //HTML
-      var regexp = new RegExp(/\<[^\<]+\>/g);
+      var regexp = new RegExp(/<[^<]+>/g);
       var output = output.replace(regexp, "");
       output = output.replace(/&nbsp;/gi, ' '); //replace &nbsp;
       if (output == "") return '';
@@ -1979,8 +1964,8 @@
   
       <style>
           * {
-    margin: 0px;
-    padding: 0px;
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
   }
   
@@ -2000,7 +1985,7 @@
   }
   
   a {
-    margin: 0px;
+    margin: 0;
   }
   
   a,
@@ -2053,6 +2038,7 @@
   table th {
     padding-left: 8px;
     padding-right: 8px;
+    text-align: left;
   }
   
   table thead tr {
@@ -2061,7 +2047,7 @@
   }
   
   th:first-child {
-    border-radius: 10px 0 0 0;
+    border-radius: 10px 0 0;
   }
   
   th:last-child {
@@ -2073,7 +2059,7 @@
   }
   
   tr:last-child td:last-child {
-    border-radius: 0 0 10px 0;
+    border-radius: 0 0 10px;
   }
   
   table tbody tr {
@@ -2082,11 +2068,6 @@
   
   table tbody tr:last-child {
     border: 0;
-  }
-  
-  table td,
-  table th {
-    text-align: left;
   }
   
   table td.l,
@@ -2212,7 +2193,7 @@
   
   .button {
     margin: 1em;
-    box-shadow: inset 0px 0px 15px 3px #23395e;
+    box-shadow: inset 0 0 15px 3px #23395e;
     background: linear-gradient(to bottom, #2e466e 5%, #415989 100%);
     background-color: #2e466e;
     border-radius: 17px;
@@ -2224,7 +2205,7 @@
     font-size: 15px;
     padding: 6px 13px;
     text-decoration: none !important;
-    text-shadow: 0px 1px 0px #263666;
+    text-shadow: 0 1px 0 #263666;
   }
   
   .button:hover {
@@ -2385,7 +2366,6 @@
       options);
   
     var csvData = [];
-    var headerArr = [];
     var el = this;
   
     //header
@@ -2436,7 +2416,7 @@
       var regexp = new RegExp(/["]/g);
       var output = input.replace(regexp, '""');
       //HTML
-      var regexp = new RegExp(/\<[^\<]+\>/g);
+      var regexp = new RegExp(/<[^<]+>/g);
       var output = output.replace(regexp, "");
       output = output.replace(/&nbsp;/gi, ' '); //replace &nbsp;
       if (output == "") return '';
