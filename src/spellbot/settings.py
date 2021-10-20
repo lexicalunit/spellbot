@@ -21,7 +21,7 @@ class Singleton(Generic[T], type):
         return cls._instances[cls]  # type: ignore
 
 
-class Settings(metaclass=Singleton):
+class Settings(metaclass=Singleton):  # pylint: disable=R0902
     def __init__(self):
         # content
         self.CONTENT_ROOT = "https://raw.githubusercontent.com/lexicalunit"

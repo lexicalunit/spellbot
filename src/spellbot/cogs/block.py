@@ -18,13 +18,13 @@ class BlockCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_context_menu(target=ContextMenuType.USER, name="Block")
-    async def _block(self, ctx: MenuContext):
+    async def block(self, ctx: MenuContext):
         assert ctx.target_author
         async with BlockInteraction.create(self.bot, ctx) as interaction:
             await interaction.block(target=ctx.target_author)
 
     @cog_ext.cog_context_menu(target=ContextMenuType.USER, name="Unblock")
-    async def _unblock(self, ctx: MenuContext):
+    async def unblock(self, ctx: MenuContext):
         assert ctx.target_author
         async with BlockInteraction.create(self.bot, ctx) as interaction:
             await interaction.unblock(target=ctx.target_author)

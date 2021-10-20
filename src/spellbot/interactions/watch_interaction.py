@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import discord
 from discord.embeds import Embed
@@ -59,7 +59,7 @@ class WatchInteraction(BaseInteraction):
     async def unwatch(self, target: Union[discord.User, discord.Member]):
         await self.execute(target, ActionType.UNWATCH)
 
-    async def get_watched_embeds(self) -> List[Embed]:
+    async def get_watched_embeds(self) -> list[Embed]:
         assert self.ctx
         settings = Settings()
 
@@ -74,7 +74,7 @@ class WatchInteraction(BaseInteraction):
         watches = WatchesService()
         entries = await watches.fetch(guild_xid=self.ctx.guild_id)
 
-        embeds: List[Embed] = []
+        embeds: list[Embed] = []
         embed = new_embed()
         description = ""
         for entry in entries:
@@ -97,7 +97,7 @@ class WatchInteraction(BaseInteraction):
 
     async def watched(self):
         assert self.ctx
-        embeds: List[Embed] = await self.get_watched_embeds()
+        embeds: list[Embed] = await self.get_watched_embeds()
         paginator = Paginator(pages=embeds, config=Config.MINIMAL)
         if len(embeds) > 1:
             try:

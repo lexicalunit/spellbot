@@ -50,6 +50,10 @@ select
     games.id,
     games.created_at,
     games.updated_at,
+    case
+        when when games.status = 'pending' then null
+        when when games.status = 'started' then games.updated_at
+    end as started_at
     games.guild_xid,
     games.channel_xid,
     games.message_xid,

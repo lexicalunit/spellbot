@@ -1,4 +1,5 @@
-from typing import List, Optional
+from datetime import datetime
+from typing import Optional
 
 import discord
 from asgiref.sync import sync_to_async
@@ -69,7 +70,7 @@ class GamesService(BaseService):
         guild_xid: int,
         channel_xid: int,
         author_xid: int,
-        friends: List[int],
+        friends: list[int],
         seats: int,
         format: int,
     ) -> bool:
@@ -186,15 +187,16 @@ class GamesService(BaseService):
         assert len(spelltable_link or "") <= MAX_SPELLTABLE_LINK_LEN
         self.game.spelltable_link = spelltable_link  # type: ignore
         self.game.status = GameStatus.STARTED.value  # type: ignore
+        self.game.started_at = datetime.utcnow()  # type: ignore
         DatabaseSession.commit()
 
     @sync_to_async
-    def current_player_xids(self) -> List[int]:
+    def current_player_xids(self) -> list[int]:
         assert self.game
         return [player.xid for player in self.game.players]
 
     @sync_to_async
-    def watch_notes(self, player_xids: List[int]) -> dict[int, Optional[str]]:
+    def watch_notes(self, player_xids: list[int]) -> dict[int, Optional[str]]:
         assert self.game
         watched = (
             DatabaseSession.query(Watch)
@@ -254,7 +256,7 @@ class GamesService(BaseService):
         DatabaseSession.commit()
 
     @sync_to_async
-    def filter_blocked(self, author_xid: int, other_xids: List[int]) -> List[int]:
+    def filter_blocked(self, author_xid: int, other_xids: list[int]) -> list[int]:
         blockers = (
             DatabaseSession.query(Block)
             .filter(

@@ -8,6 +8,7 @@ from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm.session import sessionmaker
 from wrapt import CallableObjectProxy
 
+from spellbot.models import create_all
 from spellbot.models.guild import Guild
 
 logger = logging.getLogger(__name__)
@@ -71,6 +72,7 @@ def initialize_connection(
     from spellbot.settings import Settings
 
     settings = Settings()
+    create_all(settings.DATABASE_URL)
     engine_obj = create_engine(
         settings.DATABASE_URL,
         echo=settings.DATABASE_ECHO,
@@ -78,6 +80,11 @@ def initialize_connection(
         isolation_level="AUTOCOMMIT" if autocommit else None,
     )
     connection_obj = engine_obj.connect()
+
+    if use_transaction:  # pragma: no cover
+        transaction_obj = connection_obj.begin()
+        transaction.set(transaction_obj)  # type: ignore
+
     db_session_obj = scoped_session(
         sessionmaker(
             bind=connection_obj,
@@ -89,14 +96,12 @@ def initialize_connection(
     connection.set(connection_obj)  # type: ignore
     DatabaseSession.set(db_session_obj)  # type: ignore
 
-    if use_transaction:  # pragma: no cover
-        transaction_obj = connection.begin()
-        transaction.set(transaction_obj)  # type: ignore
-
 
 @sync_to_async
 def rollback_transaction():
+    DatabaseSession.close()
     transaction.rollback()
+    connection.close()
 
 
 @sync_to_async

@@ -1,5 +1,3 @@
-from typing import List
-
 from asgiref.sync import sync_to_async
 from dateutil import tz
 from sqlalchemy.sql.elements import TextClause
@@ -96,7 +94,7 @@ class PlaysService(BaseService):
         sql: TextClause,
         params: dict,
         combined_scores: bool,
-    ) -> List[dict]:
+    ) -> list[dict]:
         def make_scores(data: str) -> dict:
             scores = {}
             records = data.split("@")
@@ -149,7 +147,7 @@ class PlaysService(BaseService):
         guild_xid: int,
         user_xid: int,
         page: int = 0,
-    ) -> List[dict]:
+    ) -> list[dict]:
         return self._records(
             text(RECORDS_SQL.replace("{secondary_filter}", USER_FILTER)),
             dict(
@@ -167,7 +165,7 @@ class PlaysService(BaseService):
         guild_xid: int,
         channel_xid: int,
         page: int = 0,
-    ) -> List[dict]:
+    ) -> list[dict]:
         return self._records(
             text(RECORDS_SQL.replace("{secondary_filter}", CHANNEL_FILTER)),
             dict(

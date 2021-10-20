@@ -19,7 +19,7 @@ class AboutCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_slash(name="about", description="Get information about SpellBot.")
-    async def _about(self, ctx: SlashContext):
+    async def about(self, ctx: SlashContext):
         settings = Settings()
         embed = Embed(title="SpellBot")
         embed.set_thumbnail(url=settings.THUMB_URL)

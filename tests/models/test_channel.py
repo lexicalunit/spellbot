@@ -4,7 +4,7 @@ from spellbot.models.guild import Guild
 
 
 class TestModelChannel:
-    def test_channel(self, session):
+    def test_channel(self):
         guild = Guild(xid=101, name="guild-name")
         channel = Channel(xid=201, name="channel-name", guild=guild)
         DatabaseSession.add_all([guild, channel])

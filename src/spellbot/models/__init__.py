@@ -45,7 +45,7 @@ def create_all(DATABASE_URL: str) -> None:
     config = alembic.config.Config(str(ALEMBIC_INI))
     config.set_main_option("script_location", str(MIGRATIONS_DIR))
     config.set_main_option("sqlalchemy.url", DATABASE_URL)
-    config.attributes["connection"] = connection
+    config.attributes["connection"] = connection  # pylint: disable=E1137
     alembic.command.upgrade(config, "head")
 
 
@@ -56,7 +56,7 @@ def reverse_all(DATABASE_URL: str) -> None:
     config = alembic.config.Config(str(ALEMBIC_INI))
     config.set_main_option("script_location", str(MIGRATIONS_DIR))
     config.set_main_option("sqlalchemy.url", DATABASE_URL)
-    config.attributes["connection"] = connection
+    config.attributes["connection"] = connection  # pylint: disable=E1137
     alembic.command.downgrade(config, "base")
 
 

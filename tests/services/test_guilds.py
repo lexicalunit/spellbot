@@ -12,7 +12,7 @@ from tests.factories.guild import GuildFactory
 
 @pytest.mark.asyncio
 class TestServiceGuilds:
-    async def test_guilds_upsert(self, session):
+    async def test_guilds_upsert(self):
         discord_guild = MagicMock()
         discord_guild.id = 101
         discord_guild.name = "guild-name"
@@ -32,7 +32,7 @@ class TestServiceGuilds:
         assert guild and guild.xid == discord_guild.id
         assert guild.name == "new-name"
 
-    async def test_guilds_select(self, session):
+    async def test_guilds_select(self):
         guilds = GuildsService()
         assert not await guilds.select(404)
 
@@ -41,7 +41,7 @@ class TestServiceGuilds:
 
         assert await guilds.select(404)
 
-    async def test_guilds_should_voice_create(self, session):
+    async def test_guilds_should_voice_create(self):
         guild1 = GuildFactory.create()
         guild2 = GuildFactory.create(voice_create=True)
         DatabaseSession.commit()
@@ -52,7 +52,7 @@ class TestServiceGuilds:
         await guilds.select(guild2.xid)
         assert await guilds.should_voice_create()
 
-    async def test_guilds_should_show_points(self, session):
+    async def test_guilds_should_show_points(self):
         guild1 = GuildFactory.create()
         guild2 = GuildFactory.create(show_points=True)
         DatabaseSession.commit()
@@ -63,7 +63,7 @@ class TestServiceGuilds:
         await guilds.select(guild2.xid)
         assert await guilds.should_show_points()
 
-    async def test_guilds_set_motd(self, session):
+    async def test_guilds_set_motd(self):
         guilds = GuildsService()
         assert not await guilds.select(101)
 
@@ -79,7 +79,7 @@ class TestServiceGuilds:
         guild = DatabaseSession.query(Guild).get(guild.xid)
         assert guild and guild.motd == message_of_the_day
 
-    async def test_guilds_toggle_show_links(self, session):
+    async def test_guilds_toggle_show_links(self):
         guilds = GuildsService()
         assert not await guilds.select(101)
 
@@ -103,7 +103,7 @@ class TestServiceGuilds:
         guild = DatabaseSession.query(Guild).get(101)
         assert guild and not guild.show_links
 
-    async def test_guilds_toggle_show_points(self, session):
+    async def test_guilds_toggle_show_points(self):
         guilds = GuildsService()
         assert not await guilds.select(101)
 
@@ -125,7 +125,7 @@ class TestServiceGuilds:
         guild = DatabaseSession.query(Guild).get(101)
         assert guild and not guild.show_points
 
-    async def test_guilds_toggle_voice_create(self, session):
+    async def test_guilds_toggle_voice_create(self):
         guilds = GuildsService()
         assert not await guilds.select(101)
 
@@ -147,7 +147,7 @@ class TestServiceGuilds:
         guild = DatabaseSession.query(Guild).get(101)
         assert guild and not guild.voice_create
 
-    async def test_guilds_current_name(self, session):
+    async def test_guilds_current_name(self):
         guild = GuildFactory.create(xid=101)
         DatabaseSession.commit()
 
@@ -155,7 +155,7 @@ class TestServiceGuilds:
         await guilds.select(101)
         assert await guilds.current_name() == guild.name
 
-    async def test_guilds_voiced(self, session):
+    async def test_guilds_voiced(self):
         guilds = GuildsService()
         assert await guilds.voiced() == []
 
@@ -166,7 +166,7 @@ class TestServiceGuilds:
 
         assert set(await guilds.voiced()) == {guild1.xid, guild3.xid}
 
-    async def test_guilds_to_dict(self, session):
+    async def test_guilds_to_dict(self):
         guild = GuildFactory.create(xid=101)
         DatabaseSession.commit()
 
@@ -175,7 +175,7 @@ class TestServiceGuilds:
         service_dict = await guilds.to_dict()
         assert guild.to_dict() == service_dict
 
-    async def test_guilds_award_add(self, session):
+    async def test_guilds_award_add(self):
         guilds = GuildsService()
         discord_guild = MagicMock()
         discord_guild.id = 101
@@ -199,7 +199,7 @@ class TestServiceGuilds:
         assert award.message == "a-message"
         assert award.guild_xid == discord_guild.id
 
-    async def test_guilds_award_delete(self, session, guild):
+    async def test_guilds_award_delete(self, guild):
         award1 = GuildAwardFactory.create(guild=guild)
         award2 = GuildAwardFactory.create(guild=guild)
         DatabaseSession.commit()
@@ -214,7 +214,7 @@ class TestServiceGuilds:
         assert not DatabaseSession.query(GuildAward).get(award1_id)
         assert DatabaseSession.query(GuildAward).get(award2.id)
 
-    async def test_guilds_has_award_with_count(self, session, guild):
+    async def test_guilds_has_award_with_count(self, guild):
         award1 = GuildAwardFactory.create(guild=guild, count=10)
         award2 = GuildAwardFactory.create(guild=guild, count=20)
         DatabaseSession.commit()

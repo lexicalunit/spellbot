@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from spellbot.database import DatabaseSession
 from spellbot.models.channel import Channel
 from spellbot.models.game import Game, GameStatus
@@ -7,7 +9,7 @@ from spellbot.models.user import User
 
 
 class TestModelGame:
-    def test_game_to_dict(self, session):
+    def test_game_to_dict(self):
         guild = Guild(xid=101, name="guild-name")
         channel = Channel(xid=201, name="channel-name", guild=guild)
         game = Game(message_xid=301, seats=4, guild=guild, channel=channel)
@@ -18,6 +20,7 @@ class TestModelGame:
             "id": game.id,
             "created_at": game.created_at,
             "updated_at": game.updated_at,
+            "started_at": game.started_at,
             "guild_xid": game.guild_xid,
             "channel_xid": game.channel_xid,
             "message_xid": game.message_xid,
@@ -29,7 +32,7 @@ class TestModelGame:
             "voice_invite_link": game.voice_invite_link,
         }
 
-    def test_game_show_links(self, session):
+    def test_game_show_links(self):
         guild1 = Guild(xid=101, name="guild-name")
         guild2 = Guild(xid=102, name="guild-name", show_links=True)
         channel1 = Channel(xid=201, name="channel-name", guild=guild1)
@@ -44,7 +47,7 @@ class TestModelGame:
         assert game2.show_links()
         assert game2.show_links(True)
 
-    def test_game_embed_empty(self, session, settings):
+    def test_game_embed_empty(self, settings):
         guild = Guild(xid=101, name="guild-name")
         channel = Channel(xid=201, name="channel-name", guild=guild)
         game = Game(message_xid=301, seats=4, guild=guild, channel=channel)
@@ -65,7 +68,7 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_pending(self, session, settings):
+    def test_game_embed_pending(self, settings):
         guild = Guild(xid=101, name="guild-name")
         channel = Channel(xid=201, name="channel-name", guild=guild)
         game = Game(message_xid=301, seats=4, guild=guild, channel=channel)
@@ -90,13 +93,14 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_with_spelltable_link(self, session, settings):
+    def test_game_embed_started_with_spelltable_link(self, settings):
         guild = Guild(xid=101, name="guild-name")
         channel = Channel(xid=201, name="channel-name", guild=guild)
         game = Game(
             message_xid=301,
             seats=2,
             status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31),
             spelltable_link="https://spelltable/link",
             guild=guild,
             channel=channel,
@@ -115,11 +119,8 @@ class TestModelGame:
                     "name": "Players",
                     "value": f"<@{player1.xid}>, <@{player2.xid}>",
                 },
-                {
-                    "inline": True,
-                    "name": "Format",
-                    "value": "Commander",
-                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -143,11 +144,8 @@ class TestModelGame:
                     "name": "Players",
                     "value": f"<@{player1.xid}>, <@{player2.xid}>",
                 },
-                {
-                    "inline": True,
-                    "name": "Format",
-                    "value": "Commander",
-                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -155,13 +153,14 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_with_points(self, session, settings):
+    def test_game_embed_started_with_points(self, settings):
         guild = Guild(xid=101, name="guild-name", show_points=True)
         channel = Channel(xid=201, name="channel-name", guild=guild)
         game = Game(
             message_xid=301,
             seats=2,
             status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31),
             guild=guild,
             channel=channel,
         )
@@ -188,11 +187,8 @@ class TestModelGame:
                     "name": "Players",
                     "value": f"<@{player1.xid}> (5 points), <@{player2.xid}> (1 point)",
                 },
-                {
-                    "inline": True,
-                    "name": "Format",
-                    "value": "Commander",
-                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -200,13 +196,14 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_without_spelltable_link(self, session, settings):
+    def test_game_embed_started_without_spelltable_link(self, settings):
         guild = Guild(xid=101, name="guild-name")
         channel = Channel(xid=201, name="channel-name", guild=guild)
         game = Game(
             message_xid=301,
             seats=2,
             status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31),
             guild=guild,
             channel=channel,
         )
@@ -224,11 +221,8 @@ class TestModelGame:
                     "name": "Players",
                     "value": f"<@{player1.xid}>, <@{player2.xid}>",
                 },
-                {
-                    "inline": True,
-                    "name": "Format",
-                    "value": "Commander",
-                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -252,11 +246,8 @@ class TestModelGame:
                     "name": "Players",
                     "value": f"<@{player1.xid}>, <@{player2.xid}>",
                 },
-                {
-                    "inline": True,
-                    "name": "Format",
-                    "value": "Commander",
-                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -264,13 +255,14 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_with_voice_invite_link(self, session, settings):
+    def test_game_embed_started_with_voice_invite_link(self, settings):
         guild = Guild(xid=101, name="guild-name")
         channel = Channel(xid=201, name="channel-name", guild=guild)
         game = Game(
             message_xid=301,
             seats=2,
             status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31),
             spelltable_link="https://spelltable/link",
             voice_invite_link="https://voice/invite/link",
             voice_xid=501,
@@ -291,11 +283,8 @@ class TestModelGame:
                     "name": "Players",
                     "value": f"<@{player1.xid}>, <@{player2.xid}>",
                 },
-                {
-                    "inline": True,
-                    "name": "Format",
-                    "value": "Commander",
-                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -322,11 +311,8 @@ class TestModelGame:
                     "name": "Players",
                     "value": f"<@{player1.xid}>, <@{player2.xid}>",
                 },
-                {
-                    "inline": True,
-                    "name": "Format",
-                    "value": "Commander",
-                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {
                     "inline": True,
                     "name": "Voice Channel",
@@ -339,13 +325,14 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_with_motd(self, session, settings):
+    def test_game_embed_started_with_motd(self, settings):
         guild = Guild(xid=101, name="guild-name", motd="this is a message of the day")
         channel = Channel(xid=201, name="channel-name", guild=guild)
         game = Game(
             message_xid=301,
             seats=2,
             status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31),
             spelltable_link="https://spelltable/link",
             guild=guild,
             channel=channel,
@@ -368,11 +355,8 @@ class TestModelGame:
                     "name": "Players",
                     "value": f"<@{player1.xid}>, <@{player2.xid}>",
                 },
-                {
-                    "inline": True,
-                    "name": "Format",
-                    "value": "Commander",
-                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -398,11 +382,8 @@ class TestModelGame:
                     "name": "Players",
                     "value": f"<@{player1.xid}>, <@{player2.xid}>",
                 },
-                {
-                    "inline": True,
-                    "name": "Format",
-                    "value": "Commander",
-                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {"url": settings.THUMB_URL},

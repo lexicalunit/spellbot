@@ -13,7 +13,7 @@ from tests.fixtures import build_channel, build_ctx, build_guild
 class TestCogScore:
     async def test_score(self, bot, ctx, settings):
         cog = ScoreCog(bot)
-        await cog._score.func(cog, ctx)
+        await cog.score.func(cog, ctx)
         ctx.send.assert_called_once()
         embed = ctx.send.call_args.kwargs.get("embed")
         assert embed is not None
@@ -34,7 +34,7 @@ class TestCogScore:
         DatabaseSession.commit()
 
         ctx.send = AsyncMock()
-        await cog._score.func(cog, ctx)
+        await cog.score.func(cog, ctx)
         ctx.send.assert_called_once()
         embed = ctx.send.call_args.kwargs.get("embed")
         assert embed is not None
@@ -55,7 +55,7 @@ class TestCogScore:
         DatabaseSession.commit()
 
         ctx.send = AsyncMock()
-        await cog._score.func(cog, ctx)
+        await cog.score.func(cog, ctx)
         ctx.send.assert_called_once()
         embed = ctx.send.call_args.kwargs.get("embed")
         assert embed is not None
@@ -71,8 +71,8 @@ class TestCogScore:
 
         new_guild = build_guild(2)
         new_channel = build_channel(new_guild, 2)
-        new_ctx = build_ctx(ctx.author, new_guild, new_channel, 2)
-        await cog._score.func(cog, new_ctx)
+        new_ctx = build_ctx(new_guild, new_channel, ctx.author, 2)
+        await cog.score.func(cog, new_ctx)
         new_ctx.send.assert_called_once()
         embed = new_ctx.send.call_args.kwargs.get("embed")
         assert embed is not None
@@ -95,7 +95,7 @@ class TestCogScore:
         ctx.target_author_id = target_author.id
 
         cog = ScoreCog(bot)
-        await cog._view_score.func(cog, ctx)
+        await cog.view_score.func(cog, ctx)
 
         ctx.send.assert_called_once()
         embed = ctx.send.call_args.kwargs.get("embed")
@@ -112,7 +112,7 @@ class TestCogScore:
 
     async def test_history(self, bot, ctx, settings):
         cog = ScoreCog(bot)
-        await cog._history.func(cog, ctx)
+        await cog.history.func(cog, ctx)
 
         ctx.send.assert_called_once()
         embed = ctx.send.call_args.kwargs.get("embed")

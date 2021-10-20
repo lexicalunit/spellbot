@@ -5,7 +5,7 @@ from spellbot.models.watch import Watch
 
 
 class TestModelWatch:
-    def test_watch(self, session):
+    def test_watch(self):
         guild = Guild(xid=101, name="guild-name")
         user = User(xid=201, name="user-name")
         watch = Watch(note="note", user_xid=user.xid, guild_xid=guild.xid)

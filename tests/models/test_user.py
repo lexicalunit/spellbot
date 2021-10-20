@@ -7,7 +7,7 @@ from spellbot.models.user import User
 
 
 class TestModelUser:
-    def test_user(self, session):
+    def test_user(self):
         guild = Guild(xid=101, name="guild-name")
         channel = Channel(xid=201, name="channel-name", guild=guild)
         game1 = Game(message_xid=301, seats=4, guild=guild, channel=channel)

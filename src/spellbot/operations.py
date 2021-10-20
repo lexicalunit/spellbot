@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Union, cast
+from typing import Optional, Union, cast
 
 import discord
 from discord.errors import DiscordException
@@ -177,7 +177,7 @@ async def safe_ensure_voice_category(
         return prefix if i == 0 else f"{prefix} {i + 1}"
 
     available: Optional[discord.CategoryChannel] = None
-    full: List[discord.CategoryChannel] = []
+    full: list[discord.CategoryChannel] = []
     for i, cat in enumerate(
         sorted(
             (c for c in guild.categories if c.name.startswith(prefix)),
@@ -283,8 +283,8 @@ async def safe_send_user(
             user=user,
             exec_info=True,
         )
-    except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
-        if isinstance(e, discord.errors.Forbidden) or e.code == CANT_SEND_CODE:
+    except (discord.errors.Forbidden, discord.errors.HTTPException) as ex:
+        if isinstance(ex, discord.errors.Forbidden) or ex.code == CANT_SEND_CODE:
             # User may have the bot blocked or they may have DMs only allowed for friends.
             # Generally speaking, we can safely ignore this sort of error. However, too
             # many failed API requests can cause our bot to be flagged and rate limited.

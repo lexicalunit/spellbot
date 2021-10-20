@@ -1,15 +1,15 @@
 """initial database schema
 
-Revision ID: 3948d9c8bddd
+Revision ID: c35c18ddd228
 Revises:
-Create Date: 2021-10-18 23:46:11.628179
+Create Date: 2021-10-22 01:48:21.117002
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "3948d9c8bddd"
+revision = "c35c18ddd228"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -131,6 +131,7 @@ def upgrade():
             server_default=sa.text("(now() at time zone 'utc')"),
             nullable=False,
         ),
+        sa.Column("started_at", sa.DateTime(), nullable=True),
         sa.Column("guild_xid", sa.BigInteger(), nullable=False),
         sa.Column("channel_xid", sa.BigInteger(), nullable=False),
         sa.Column("message_xid", sa.BigInteger(), nullable=True),

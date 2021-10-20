@@ -34,6 +34,6 @@ async def generate_link() -> Optional[str]:
                     )
                     return None
                 return str(data["gameUrl"])
-    except ClientError as e:
-        logger.warning("warning: SpellTable API failure: %s", e, exc_info=True)
+    except ClientError as ex:
+        logger.warning("warning: SpellTable API failure: %s", ex, exc_info=True)
         return None

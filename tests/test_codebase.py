@@ -74,7 +74,7 @@ class TestCodebase:
             rels = str(path.relative_to(REPO_ROOT))
             if "__snapshots__" in rels:
                 return
-            with open(path) as file:
+            with open(path, encoding="utf-8") as file:
                 lastline = None
                 key = None
                 for i, line in enumerate(file.readlines()):

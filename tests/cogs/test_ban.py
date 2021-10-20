@@ -13,7 +13,7 @@ class TestCogBan:
         target_user = MagicMock()
         target_user.id = 1002
         cog = BanCog(bot)
-        await cog._ban.callback(cog, ctx, str(target_user.id))
+        await cog.ban.callback(cog, ctx, str(target_user.id))
 
         ctx.author.send.assert_called_once_with(
             f"User <@{target_user.id}> has been banned.",
@@ -24,7 +24,7 @@ class TestCogBan:
         assert users[0].banned
 
         DatabaseSession.expire_all()
-        await cog._unban.callback(cog, ctx, str(target_user.id))
+        await cog.unban.callback(cog, ctx, str(target_user.id))
         users = list(DatabaseSession.query(User).all())
         assert len(users) == 1
         assert users[0].xid == target_user.id
@@ -32,10 +32,10 @@ class TestCogBan:
 
     async def test_ban_without_target(self, bot, ctx):
         cog = BanCog(bot)
-        await cog._ban.callback(cog, ctx, None)
+        await cog.ban.callback(cog, ctx, None)
         ctx.author.send.assert_called_once_with("No target user.")
 
     async def test_ban_with_invalid_target(self, bot, ctx):
         cog = BanCog(bot)
-        await cog._ban.callback(cog, ctx, "abc")
+        await cog.ban.callback(cog, ctx, "abc")
         ctx.author.send.assert_called_once_with("Invalid user id.")

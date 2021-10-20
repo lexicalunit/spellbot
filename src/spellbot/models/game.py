@@ -1,9 +1,10 @@
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum, auto
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import discord
+from dateutil import tz
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
@@ -28,7 +29,7 @@ FormatDetails = namedtuple("FormatDetails", ["players"])
 
 
 class GameFormat(Enum):
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs):  # pylint: disable=W0613
         """Give each enum value an increasing numerical value starting at 1."""
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
@@ -79,6 +80,11 @@ class Game(Base):
         server_default=now,
         onupdate=datetime.utcnow,
         doc="UTC timestamp when this games was last updated",
+    )
+    started_at = Column(
+        DateTime,
+        nullable=True,
+        doc="UTC timestamp when this games was started",
     )
     guild_xid = Column(
         BigInteger,
@@ -154,6 +160,11 @@ class Game(Base):
         doc="The channel this game was created in",
     )
 
+    @property
+    def started_at_timestamp(self) -> int:
+        assert self.started_at is not None
+        return int(self.started_at.replace(tzinfo=tz.UTC).timestamp())
+
     def show_links(self, dm: bool = False) -> bool:
         return True if dm else self.guild.show_links
 
@@ -212,7 +223,7 @@ class Game(Base):
 
     @property
     def embed_players(self) -> str:
-        player_strs: List[str] = []
+        player_strs: list[str] = []
         for player in self.players:
             points = player.points(self.id)
             if points:
@@ -245,6 +256,8 @@ class Game(Base):
         if self.players:
             embed.add_field(name="Players", value=self.embed_players, inline=False)
         embed.add_field(name="Format", value=self.format_name)
+        if self.started_at:
+            embed.add_field(name="Started at", value=f"<t:{self.started_at_timestamp}>")
         if self.voice_xid and self.show_links(dm):
             embed.add_field(name="Voice Channel", value=f"<#{self.voice_xid}>")
         embed.set_footer(text=self.embed_footer)
@@ -256,6 +269,7 @@ class Game(Base):
             "id": self.id,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
+            "started_at": self.started_at,
             "guild_xid": self.guild_xid,
             "channel_xid": self.channel_xid,
             "message_xid": self.message_xid,

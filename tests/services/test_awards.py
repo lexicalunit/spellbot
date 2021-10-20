@@ -10,7 +10,7 @@ from tests.factories.user import UserFactory
 
 @pytest.mark.asyncio
 class TestServiceAwards:
-    async def test_give_awards_first_award(self, session, guild, channel):
+    async def test_give_awards_first_award(self, guild, channel):
         GuildAwardFactory.create(guild=guild, count=1, role="one", message="msg")
         game = GameFactory.create(guild=guild, channel=channel)
         user = UserFactory.create()
@@ -28,7 +28,7 @@ class TestServiceAwards:
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {user.xid: NewAward(role="one", message="msg")}
 
-    async def test_give_awards_no_plays(self, session, guild, channel):
+    async def test_give_awards_no_plays(self, guild, channel):
         game = GameFactory.create(guild=guild, channel=channel)
         DatabaseSession.commit()
 
@@ -47,7 +47,7 @@ class TestServiceAwards:
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {}
 
-    async def test_give_awards_needs_more_plays(self, session, guild, channel):
+    async def test_give_awards_needs_more_plays(self, guild, channel):
         GuildAwardFactory.create(guild=guild, count=2, role="two", message="msg")
         game = GameFactory.create(guild=guild, channel=channel)
         user = UserFactory.create()
@@ -65,7 +65,7 @@ class TestServiceAwards:
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {}
 
-    async def test_give_awards_repeating(self, session, guild, channel):
+    async def test_give_awards_repeating(self, guild, channel):
         GuildAwardFactory.create(
             guild=guild,
             count=1,
