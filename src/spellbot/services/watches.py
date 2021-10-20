@@ -1,5 +1,3 @@
-from typing import List
-
 from asgiref.sync import sync_to_async
 
 from spellbot.database import DatabaseSession
@@ -9,7 +7,7 @@ from spellbot.services import BaseService
 
 class WatchesService(BaseService):
     @sync_to_async
-    def fetch(self, guild_xid: int) -> List[dict]:
+    def fetch(self, guild_xid: int) -> list[dict]:
         watches = (
             DatabaseSession.query(Watch)
             .filter(Watch.guild_xid == guild_xid)

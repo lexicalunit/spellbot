@@ -8,6 +8,7 @@ from discord_slash.context import ComponentContext
 from discord_slash.model import SlashCommandOptionType
 
 from spellbot.client import SpellBot
+from spellbot.interactions.admin_interaction import AdminInteraction
 from spellbot.interactions.config_interaction import ConfigInteraction
 from spellbot.interactions.watch_interaction import WatchInteraction
 from spellbot.utils import for_all_callbacks, is_admin
@@ -22,7 +23,7 @@ class AdminCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_slash(name="setup", description="Setup SpellBot on your server.")
-    async def _setup(self, ctx: SlashContext):
+    async def setup(self, ctx: SlashContext):
         async with ConfigInteraction.create(self.bot, ctx) as interaction:
             await interaction.setup()
 
@@ -59,7 +60,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    async def _motd(self, ctx: SlashContext, message: str):
+    async def motd(self, ctx: SlashContext, message: str):
         async with ConfigInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_motd(message)
 
@@ -67,7 +68,7 @@ class AdminCog(commands.Cog):
         name="channels",
         description="Show the current configurations for channels on your server.",
     )
-    async def _channels(self, ctx: SlashContext):
+    async def channels(self, ctx: SlashContext):
         async with ConfigInteraction.create(self.bot, ctx) as interaction:
             await interaction.channels()
 
@@ -75,7 +76,7 @@ class AdminCog(commands.Cog):
         name="awards",
         description="Setup player awards on your server.",
     )
-    async def _awards(self, ctx: SlashContext):
+    async def awards(self, ctx: SlashContext):
         async with ConfigInteraction.create(self.bot, ctx) as interaction:
             await interaction.awards()
 
@@ -110,7 +111,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    async def _award_add(
+    async def award_add(
         self,
         ctx: SlashContext,
         count: int,
@@ -134,7 +135,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    async def _award_delete(self, ctx: SlashContext, id: int):
+    async def award_delete(self, ctx: SlashContext, id: int):
         async with ConfigInteraction.create(self.bot, ctx) as interaction:
             await interaction.award_delete(id)
 
@@ -156,7 +157,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    async def _default_seats(self, ctx: SlashContext, seats: int):
+    async def default_seats(self, ctx: SlashContext, seats: int):
         async with ConfigInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_default_seats(seats)
 
@@ -173,7 +174,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    async def _auto_verify(self, ctx: SlashContext, setting: bool):
+    async def auto_verify(self, ctx: SlashContext, setting: bool):
         async with ConfigInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_auto_verify(setting)
 
@@ -190,7 +191,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    async def _verified_only(self, ctx: SlashContext, setting: bool):
+    async def verified_only(self, ctx: SlashContext, setting: bool):
         async with ConfigInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_verified_only(setting)
 
@@ -207,15 +208,31 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    async def _unverified_only(self, ctx: SlashContext, setting: bool):
+    async def unverified_only(self, ctx: SlashContext, setting: bool):
         async with ConfigInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_unverified_only(setting)
+
+    @cog_ext.cog_slash(
+        name="info",
+        description="Request a DM with full game information.",
+        options=[
+            {
+                "name": "game_id",
+                "required": True,
+                "description": "SpellBot ID of the game",
+                "type": SlashCommandOptionType.STRING.value,
+            },
+        ],
+    )
+    async def info(self, ctx: SlashContext, game_id: str):
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
+            await interaction.info(game_id)
 
     @cog_ext.cog_slash(
         name="watched",
         description="View the current list of watched users with notes.",
     )
-    async def _watched(self, ctx: SlashContext):
+    async def watched(self, ctx: SlashContext):
         async with WatchInteraction.create(self.bot, ctx) as interaction:
             await interaction.watched()
 
@@ -237,7 +254,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    async def _watch(
+    async def watch(
         self,
         ctx: SlashContext,
         target: Union[discord.User, discord.Member],
@@ -258,7 +275,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    async def _unwatch(
+    async def unwatch(
         self,
         ctx: SlashContext,
         target: Union[discord.User, discord.Member],

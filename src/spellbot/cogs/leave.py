@@ -16,7 +16,7 @@ class LeaveGameCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_slash(name="leave", description="Leaves any game that you are in.")
-    async def _leave(self, ctx: SlashContext):
+    async def leave(self, ctx: SlashContext):
         async with LeaveInteraction.create(self.bot, ctx) as interaction:
             await interaction.execute()
 

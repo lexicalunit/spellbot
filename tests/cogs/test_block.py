@@ -18,7 +18,7 @@ class TestCogBlock:
         ctx.target_author_id = target_author.id
 
         cog = BlockCog(bot)
-        await cog._block.func(cog, ctx)
+        await cog.block.func(cog, ctx)
 
         ctx.send.assert_called_once_with(
             f"<@{target_author.id}> has been blocked.",
@@ -38,6 +38,6 @@ class TestCogBlock:
         assert blocks[0].blocked_user_xid == target_author.id
 
         DatabaseSession.expire_all()
-        await cog._unblock.func(cog, ctx)
+        await cog.unblock.func(cog, ctx)
         blocks = list(DatabaseSession.query(Block).all())
         assert len(blocks) == 0

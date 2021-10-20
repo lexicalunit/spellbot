@@ -3,8 +3,9 @@ import logging
 import traceback
 from asyncio import AbstractEventLoop as Loop
 from collections import defaultdict
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
+from typing import Optional
 from uuid import uuid4
 
 import discord
@@ -14,7 +15,6 @@ from expiringdict import ExpiringDict
 
 from spellbot.database import get_legacy_prefixes, initialize_connection
 from spellbot.errors import SpellbotAdminOnly, UserBannedError
-from spellbot.models import create_all
 from spellbot.operations import safe_send_channel
 from spellbot.services.channels import ChannelsService
 from spellbot.services.guilds import GuildsService
@@ -36,15 +36,14 @@ class SpellBot(Bot):
     ):
         self.settings = Settings()
         intents = discord.Intents().default()
-        intents.members = True
-        intents.messages = True
+        intents.members = True  # pylint: disable=E0237
+        intents.messages = True  # pylint: disable=E0237
         super().__init__(
             command_prefix="!",
             help_command=None,
             loop=loop,
             intents=intents,
         )
-        create_all(self.settings.DATABASE_URL)
         self.mock_games = mock_games
         self.legacy_prefix_cache = defaultdict(lambda: "!")
         self.channel_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
@@ -161,7 +160,6 @@ def build_bot(
     force_sync_commands: bool = False,
     clean_commands: bool = False,
 ) -> SpellBot:
-    # setup bot client and run migrations
     bot = SpellBot(loop=loop, mock_games=mock_games)
 
     # setup slash commands extension
@@ -180,7 +178,7 @@ def build_bot(
     from spellbot.cogs import load_all_cogs
 
     load_all_cogs(bot)
-    commands = (key for key in bot.slash.commands.keys() if key != "context")
+    commands = (key for key in bot.slash.commands if key != "context")
     logger.info("loaded commands: %s", ", ".join(commands))
 
     # setup database connection

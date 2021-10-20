@@ -4,7 +4,7 @@ from spellbot.models.guild import Guild
 
 
 class TestModelAward:
-    def test_award(self, session):
+    def test_award(self):
         guild = Guild(xid=101, name="guild-name")
         guild_award = GuildAward(
             count=10,

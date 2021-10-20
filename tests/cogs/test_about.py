@@ -8,7 +8,7 @@ from spellbot.cogs.about import AboutCog
 class TestCogAbout:
     async def test_about(self, settings, bot, ctx):
         cog = AboutCog(bot)
-        await cog._about.invoke(ctx)
+        await cog.about.invoke(ctx)
 
         ctx.send.assert_called_once()
         assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {

@@ -56,6 +56,7 @@ class TestSpellBot:
             "channels",
             "context",
             "history",
+            "info",
             "leave",
             "lfg",
             "score",

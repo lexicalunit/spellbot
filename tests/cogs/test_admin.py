@@ -24,7 +24,7 @@ class TestCogAdmin:
     async def test_setup(self, bot, ctx, settings):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
-        await cog._setup.func(cog, ctx)
+        await cog.setup.func(cog, ctx)
         ctx.send.assert_called_once()
         assert ctx.send.call_args_list[0].kwargs["components"] == [
             {
@@ -171,7 +171,7 @@ class TestCogAdmin:
     async def test_motd(self, bot, ctx):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
-        await cog._motd.func(cog, ctx, "this is a test")
+        await cog.motd.func(cog, ctx, "this is a test")
         ctx.send.assert_called_once_with("Message of the day updated.", hidden=True)
         guild = DatabaseSession.query(Guild).one()
         assert guild.motd == "this is a test"
@@ -186,7 +186,7 @@ class TestCogAdminWatches:
         cog = AdminCog(bot)
 
         ctx.send = AsyncMock()
-        await cog._watch.func(cog, ctx, target, "note")
+        await cog.watch.func(cog, ctx, target, "note")
         ctx.send.assert_called_once_with(f"Watching <@{target.id}>.", hidden=True)
 
         watch = DatabaseSession.query(Watch).one()
@@ -197,7 +197,7 @@ class TestCogAdminWatches:
         }
 
         ctx.send = AsyncMock()
-        await cog._unwatch.func(cog, ctx, target)
+        await cog.unwatch.func(cog, ctx, target)
         ctx.send.assert_called_once_with(
             f"No longer watching <@{target.id}>.",
             hidden=True,
@@ -220,7 +220,7 @@ class TestCogAdminWatches:
         ctx.send = AsyncMock()
         ctx.guild_id = guild1.xid
         cog = AdminCog(bot)
-        await cog._watched.func(cog, ctx)
+        await cog.watched.func(cog, ctx)
         ctx.send.assert_called_once()
         assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -274,7 +274,7 @@ class TestCogAdminWatches:
 
         ctx.guild_id = guild1.xid
         cog = AdminCog(bot)
-        await cog._watched.func(cog, ctx)
+        await cog.watched.func(cog, ctx)
         Paginator_mock.assert_called_once()
         assert Paginator_mock.call_args_list[0].kwargs["config"] is Config.MINIMAL
         pages = Paginator_mock.call_args_list[0].kwargs["pages"]
@@ -324,7 +324,7 @@ class TestCogAdminWatches:
 
         ctx.guild_id = guild1.xid
         cog = AdminCog(bot)
-        await cog._watched.func(cog, ctx)
+        await cog.watched.func(cog, ctx)
 
         assert "warning: discord: pagination error: start-error" in caplog.text
 
@@ -335,7 +335,7 @@ class TestCogAdminChannels:
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         seats = Channel.default_seats.default.arg - 1  # type: ignore
-        await cog._default_seats.func(cog, ctx, seats)
+        await cog.default_seats.func(cog, ctx, seats)
         ctx.send.assert_called_once_with(
             f"Default seats set to {seats} for this channel.",
             hidden=True,
@@ -347,7 +347,7 @@ class TestCogAdminChannels:
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         default_value = Channel.auto_verify.default.arg  # type: ignore
-        await cog._auto_verify.func(cog, ctx, not default_value)
+        await cog.auto_verify.func(cog, ctx, not default_value)
         ctx.send.assert_called_once_with(
             f"Auto verification set to {not default_value} for this channel.",
             hidden=True,
@@ -359,7 +359,7 @@ class TestCogAdminChannels:
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         default_value = Channel.verified_only.default.arg  # type: ignore
-        await cog._verified_only.func(cog, ctx, not default_value)
+        await cog.verified_only.func(cog, ctx, not default_value)
         ctx.send.assert_called_once_with(
             f"Verified only set to {not default_value} for this channel.",
             hidden=True,
@@ -371,7 +371,7 @@ class TestCogAdminChannels:
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         default_value = Channel.unverified_only.default.arg  # type: ignore
-        await cog._unverified_only.func(cog, ctx, not default_value)
+        await cog.unverified_only.func(cog, ctx, not default_value)
         ctx.send.assert_called_once_with(
             f"Unverified only set to {not default_value} for this channel.",
             hidden=True,
@@ -389,7 +389,7 @@ class TestCogAdminChannels:
         DatabaseSession.commit()
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
-        await cog._channels.func(cog, ctx)
+        await cog.channels.func(cog, ctx)
         ctx.send.assert_called_once()
         assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -411,7 +411,7 @@ class TestCogAdminChannels:
         DatabaseSession.commit()
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
-        await cog._channels.func(cog, ctx)
+        await cog.channels.func(cog, ctx)
         ctx.send.assert_called_once()
         assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -444,7 +444,7 @@ class TestCogAdminChannels:
         monkeypatch.setattr(config_interaction, "Paginator", Paginator_mock)
 
         cog = AdminCog(bot)
-        await cog._channels.func(cog, ctx)
+        await cog.channels.func(cog, ctx)
 
         Paginator_mock.assert_called_once()
         assert Paginator_mock.call_args_list[0].kwargs["config"] is Config.MINIMAL
@@ -479,7 +479,7 @@ class TestCogAdminChannels:
         monkeypatch.setattr(config_interaction, "Paginator", Paginator_mock)
 
         cog = AdminCog(bot)
-        await cog._channels.func(cog, ctx)
+        await cog.channels.func(cog, ctx)
 
         assert "warning: discord: pagination error: start-error" in caplog.text
 
@@ -510,7 +510,7 @@ class TestCogAdminAwards:
         DatabaseSession.commit()
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
-        await cog._awards.func(cog, ctx)
+        await cog.awards.func(cog, ctx)
         ctx.send.assert_called_once()
         assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -530,7 +530,7 @@ class TestCogAdminAwards:
     async def test_awards_when_no_awards(self, bot, ctx, settings):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
-        await cog._awards.func(cog, ctx)
+        await cog.awards.func(cog, ctx)
         ctx.send.assert_called_once()
         assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -561,7 +561,7 @@ class TestCogAdminAwards:
         monkeypatch.setattr(config_interaction, "Paginator", Paginator_mock)
 
         cog = AdminCog(bot)
-        await cog._awards.func(cog, ctx)
+        await cog.awards.func(cog, ctx)
 
         Paginator_mock.assert_called_once()
         assert Paginator_mock.call_args_list[0].kwargs["config"] is Config.MINIMAL
@@ -595,7 +595,7 @@ class TestCogAdminAwards:
         monkeypatch.setattr(config_interaction, "Paginator", Paginator_mock)
 
         cog = AdminCog(bot)
-        await cog._awards.func(cog, ctx)
+        await cog.awards.func(cog, ctx)
 
         assert "warning: discord: pagination error: start-error" in caplog.text
 
@@ -607,7 +607,7 @@ class TestCogAdminAwards:
 
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
-        await cog._award_delete.func(cog, ctx, awards[0].id)
+        await cog.award_delete.func(cog, ctx, awards[0].id)
         ctx.send.assert_called_once()
         assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
             "author": {"name": "Award deleted!"},
@@ -622,7 +622,7 @@ class TestCogAdminAwards:
     async def test_award_add(self, bot, ctx, settings):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
-        await cog._award_add.func(cog, ctx, 10, "role", "message", repeating=True)
+        await cog.award_add.func(cog, ctx, 10, "role", "message", repeating=True)
         ctx.send.assert_called_once()
         assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
             "author": {"name": "Award added!"},
@@ -641,13 +641,13 @@ class TestCogAdminAwards:
         assert award.message == "message"
         assert award.repeating
 
-    async def test_award_add_dupe(self, bot, ctx, settings):
+    async def test_award_add_dupe(self, bot, ctx):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
-        await cog._award_add.func(cog, ctx, 10, "role", "message")
+        await cog.award_add.func(cog, ctx, 10, "role", "message")
 
         ctx.send = AsyncMock()
-        await cog._award_add.func(cog, ctx, 10, "role", "message")
+        await cog.award_add.func(cog, ctx, 10, "role", "message")
         ctx.send.assert_called_once_with(
             "There's already an award for players who reach that many games.",
             hidden=True,

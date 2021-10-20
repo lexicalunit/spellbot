@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 import discord
 from asgiref.sync import sync_to_async
@@ -94,7 +94,7 @@ class GuildsService(BaseService):
         return self.guild.name or ""
 
     @sync_to_async
-    def voiced(self) -> List[int]:
+    def voiced(self) -> list[int]:
         rows = DatabaseSession.query(Guild.xid).filter(Guild.voice_create.is_(True)).all()
         if not rows:
             return []

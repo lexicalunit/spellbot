@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import Optional
 
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
@@ -38,7 +38,7 @@ class LookingForGameCog(commands.Cog):
         await ctx.defer(ignore=True)
         assert ctx.origin_message
         assert ctx.selected_options
-        assert isinstance(ctx.selected_options, List)
+        assert isinstance(ctx.selected_options, list)
         points = int(ctx.selected_options[0])
         async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
             await interaction.add_points(ctx.origin_message, points)
@@ -79,7 +79,7 @@ class LookingForGameCog(commands.Cog):
             },
         ],
     )
-    async def _lfg(
+    async def lfg(
         self,
         ctx: SlashContext,
         friends: Optional[str] = None,

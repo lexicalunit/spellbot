@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import List, Optional, cast
+from typing import Optional, cast
 
 import discord
 import discord_slash.utils.manage_components as comp
@@ -71,7 +71,7 @@ class LookingForGameInteraction(BaseInteraction):
                 hidden=True,
             )
 
-        found_friends: List[int] = []
+        found_friends: list[int] = []
         if friends:
             found_friends = await self._ensure_friends_exist(friend_xids)
             found_friends = await self.services.games.filter_blocked(
@@ -161,14 +161,13 @@ class LookingForGameInteraction(BaseInteraction):
         if not voice_channel:
             return
 
+        # This can fail, but it's ok if it does, users don't NEED
+        # an invite link to find their game's voice channel.
         voice_invite_link = await safe_create_invite(
             voice_channel,
             guild_xid,
             settings.VOICE_INVITE_EXPIRE_TIME_S,
         )
-        if not voice_invite_link:
-            return
-
         await self.services.games.set_voice(voice_channel.id, voice_invite_link)
 
     async def _handle_embed_creation(self, new: bool, origin: bool, fully_seated: bool):
@@ -272,7 +271,7 @@ class LookingForGameInteraction(BaseInteraction):
         settings = Settings()
         player_xids = await self.services.games.current_player_xids()
         embed = await self.services.games.to_embed(dm=True)
-        failed_xids: List[int] = []
+        failed_xids: list[int] = []
 
         # notify players
         fetched_players: dict[int, discord.User] = {}
@@ -330,9 +329,9 @@ class LookingForGameInteraction(BaseInteraction):
         for member in mod_role.members:
             await safe_send_user(member, embed=embed)
 
-    async def _ensure_friends_exist(self, friend_xids: List[int]) -> List[int]:
+    async def _ensure_friends_exist(self, friend_xids: list[int]) -> list[int]:
         assert self.ctx
-        found_friends: List[int] = []
+        found_friends: list[int] = []
         for friend_xid in friend_xids:
             if friend_xid == self.ctx.author_id:
                 continue
