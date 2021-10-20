@@ -174,8 +174,8 @@ to the
 [PyPI settings for spellbot](https://pypi.org/manage/project/spellbot/settings/)
 and clicking on the `Create a token for spellbot` button there. Of course you
 will have to be a collaborator for this project on PyPI to be able to do this.
-Contact [amy@lexicalunit.com](mailto:amy@lexicalunit.com) to be added to the
-project.
+Contact [spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com) to be added
+to the project.
 
 Once you have that set up, you can release a new version by running:
 

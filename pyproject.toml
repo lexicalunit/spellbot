@@ -42,7 +42,7 @@ commands =
 
 [tool.poetry]
 authors = [
-  'Amy <amy@lexicalunit.com>',
+  'Amy Troschinetz <spellbot@lexicalunit.com>',
 ]
 classifiers = [
   "Development Status :: 4 - Beta",

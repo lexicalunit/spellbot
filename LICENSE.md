@@ -1,4 +1,4 @@
-Copyright (c) 2021 amy@lexicalunit.com
+Copyright (c) 2021 spellbot@lexicalunit.com
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
