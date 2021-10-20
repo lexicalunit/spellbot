@@ -183,8 +183,8 @@ class Game(Base):
                 else:
                     description += (
                         "Sorry but SpellBot was unable to create a SpellTable link"
-                        " for this game. Please go to"
-                        " [spelltable.com](https://www.spelltable.com/) to create one."
+                        " for this game. Please go to [SpellTable]"
+                        "(https://spelltable.wizards.com/) to create one."
                     )
                 if self.voice_invite_link:
                     settings = Settings()

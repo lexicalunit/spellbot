@@ -91,6 +91,6 @@ Any usage of SpellBot implies that you accept the following policies.
 [python-badge]: https://img.shields.io/badge/python-3.8+-blue.svg
 [python]: https://www.python.org/
 [security]: https://github.com/lexicalunit/spellbot/security
-[spelltable]: https://www.spelltable.com/
+[spelltable]: https://spelltable.wizards.com/
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]: https://uptimerobot.com/dashboard#785764282
