@@ -54,7 +54,7 @@ class LookingForGameInteraction(BaseInteraction):
         else:
             seats = seats or await self.services.channels.current_default_seats()
         format = format or GameFormat.COMMANDER.value  # type: ignore
-        friend_xids = list(map(int, re.findall(r"<@!(\d+)>", friends)))
+        friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", friends)))
 
         assert seats is not None
         if len(friend_xids) + 1 > seats:
@@ -65,18 +65,11 @@ class LookingForGameInteraction(BaseInteraction):
             )
 
         if await self.services.users.is_waiting():
-            if origin:
-                return await safe_send_channel(
-                    self.ctx,
-                    "You're already in a game.",
-                    hidden=True,
-                )
-            else:
-                return await safe_send_channel(
-                    self.ctx,
-                    "You're already in a game.",
-                    hidden=True,
-                )
+            return await safe_send_channel(
+                self.ctx,
+                "You're already in a game.",
+                hidden=True,
+            )
 
         found_friends: List[int] = []
         if friends:
@@ -91,12 +84,7 @@ class LookingForGameInteraction(BaseInteraction):
         if origin:
             new = False
             found = await self.services.games.select_by_message_xid(message_xid)
-            if not found:
-                return await safe_send_channel(
-                    self.ctx,
-                    "You can not join this game.",
-                    hidden=True,
-                )
+            assert found  # There shouldn't be any way for this not to exist
             if await self.services.games.blocked(self.ctx.author_id):
                 return await safe_send_channel(
                     self.ctx,
