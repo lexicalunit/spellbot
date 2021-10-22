@@ -20,5 +20,6 @@ loop.run_until_complete(
     initialize_connection(
         f"spellbot-web-{getpid()}",
         autocommit=True,
+        run_migrations=False,  # let the bot handle this
     )
 )
