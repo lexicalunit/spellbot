@@ -50,6 +50,7 @@ def initialize_connection(
     *,
     use_transaction: bool = False,
     autocommit: bool = False,
+    run_migrations: bool = True,
 ):
     """
     Connect to the database.
@@ -72,7 +73,8 @@ def initialize_connection(
     from spellbot.settings import Settings
 
     settings = Settings()
-    create_all(settings.DATABASE_URL)
+    if run_migrations:
+        create_all(settings.DATABASE_URL)
     engine_obj = create_engine(
         settings.DATABASE_URL,
         echo=settings.DATABASE_ECHO,
