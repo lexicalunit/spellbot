@@ -13,7 +13,8 @@ from spellbot.services import BaseService
 
 
 class GuildsService(BaseService):
-    guild: Optional[Guild] = None
+    def __init__(self):
+        self.guild: Optional[Guild] = None
 
     @sync_to_async()
     def upsert(self, guild: discord.Guild) -> None:

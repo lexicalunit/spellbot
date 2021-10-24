@@ -14,7 +14,8 @@ from spellbot.services import BaseService
 
 
 class UsersService(BaseService):
-    user: Optional[User] = None
+    def __init__(self):
+        self.user: Optional[User] = None
 
     @sync_to_async
     def upsert(self, target: Union[discord.User, discord.Member]) -> dict:

@@ -26,7 +26,8 @@ MAX_VOICE_INVITE_LINK_LEN = Game.voice_invite_link.property.columns[  # type: ig
 
 
 class GamesService(BaseService):
-    game: Optional[Game] = None
+    def __init__(self):
+        self.game: Optional[Game] = None
 
     @sync_to_async
     def select(self, game_id: int) -> bool:
