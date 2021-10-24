@@ -6,7 +6,6 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.engine.base import Connection, Engine, Transaction
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm.session import sessionmaker
-from wrapt import CallableObjectProxy
 
 from spellbot.models import create_all
 from spellbot.models.guild import Guild
@@ -15,17 +14,30 @@ logger = logging.getLogger(__name__)
 
 ProxiedObject = TypeVar("ProxiedObject")
 
+from contextvars import ContextVar
+from uuid import uuid4
 
-class ContextLocal(Generic[ProxiedObject], CallableObjectProxy):
+context_vars: dict["ContextLocal", ContextVar] = {}
+
+
+class ContextLocal(Generic[ProxiedObject]):
     def __init__(self):
-        super().__init__(None)
+        context_vars[self] = ContextVar(str(uuid4()))
 
     @classmethod
     def of_type(cls, _: Type[ProxiedObject]) -> ProxiedObject:
         return cls()  # type: ignore
 
     def set(self, obj: ProxiedObject):
-        super().__init__(obj)
+        context_vars[self].set(obj)
+
+    def __call__(self, *args, **kwargs):
+        cvar = context_vars[self].get()
+        return cvar.__call__(*args, **kwargs)
+
+    def __getattr__(self, name):
+        obj = context_vars[self].get()
+        return getattr(obj, name)
 
     def __copy__(self):
         raise NotImplementedError()
