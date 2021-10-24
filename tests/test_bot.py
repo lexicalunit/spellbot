@@ -166,7 +166,7 @@ class TestSpellBot:
         await bot.on_message(message)
         super_on_message_mock.assert_not_called()
 
-    async def test_on_message_command(self, bot, monkeypatch):
+    async def test_on_message_command(self, bot, monkeypatch, settings):
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
         message = MagicMock()
@@ -181,15 +181,19 @@ class TestSpellBot:
         await bot.on_message(message)
         super_on_message_mock.assert_not_called()
         handle_verification_mock.assert_called_once_with(message)
-        message.reply.assert_called_once_with(
-            (
-                "SpellBot uses slash commands now."
-                " Just type / to see the list of supported commands!"
-            ),
-            delete_after=7.0,
-        )
+        assert message.reply.call_args_list[0].kwargs["embed"].to_dict() == {
+            "color": 5914365,
+            "description": "SpellBot uses slash commands now. Just type `/` to see the"
+            " list of supported commands! It may take up to one hour for these commands"
+            " to appear for the first time. Also note that SpellBot's invite link has"
+            " changed. Your server admin may need to re-invite the bot using the"
+            f" [updated invite link]({settings.BOT_INVITE_LINK}) if slash commands do"
+            " not show up after one hour.",
+            "thumbnail": {"url": settings.ICO_URL},
+            "type": "rich",
+        }
 
-    async def test_on_message_command_error(self, bot, monkeypatch, caplog):
+    async def test_on_message_command_error(self, bot, monkeypatch, caplog, settings):
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
         message = MagicMock()
@@ -205,13 +209,17 @@ class TestSpellBot:
         await bot.on_message(message)
         super_on_message_mock.assert_not_called()
         handle_verification_mock.assert_called_once_with(message)
-        message.reply.assert_called_once_with(
-            (
-                "SpellBot uses slash commands now."
-                " Just type / to see the list of supported commands!"
-            ),
-            delete_after=7.0,
-        )
+        assert message.reply.call_args_list[0].kwargs["embed"].to_dict() == {
+            "color": 5914365,
+            "description": "SpellBot uses slash commands now. Just type `/` to see the"
+            " list of supported commands! It may take up to one hour for these commands"
+            " to appear for the first time. Also note that SpellBot's invite link has"
+            " changed. Your server admin may need to re-invite the bot using the"
+            f" [updated invite link]({settings.BOT_INVITE_LINK}) if slash commands do"
+            " not show up after one hour.",
+            "thumbnail": {"url": settings.ICO_URL},
+            "type": "rich",
+        }
         assert "warning: message-reply-error" in caplog.text
 
     async def test_on_message(self, bot, monkeypatch):
