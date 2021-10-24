@@ -11,7 +11,8 @@ from spellbot.services import BaseService
 
 
 class ChannelsService(BaseService):
-    channel: Optional[Channel] = None
+    def __init__(self):
+        self.channel: Optional[Channel] = None
 
     @sync_to_async()
     def upsert(self, channel: discord.TextChannel) -> None:

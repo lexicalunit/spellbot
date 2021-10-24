@@ -10,7 +10,8 @@ from spellbot.services import BaseService
 
 
 class VerifiesService(BaseService):
-    current: Optional[Verify] = None
+    def __init__(self):
+        self.current: Optional[Verify] = None
 
     @sync_to_async
     def upsert(
