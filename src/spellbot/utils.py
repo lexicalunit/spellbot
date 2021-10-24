@@ -103,10 +103,10 @@ def user_can_moderate(
     author_id = author.id  # type: ignore
     if author_id == guild.owner_id:
         return True
-    if (perms := channel.permissions_for(author)) and perms.administrator:
-        return True
     if not hasattr(author, "roles"):
         return False
+    if (perms := channel.permissions_for(author)) and perms.administrator:
+        return True
     author_roles = author.roles  # type: ignore
     settings = Settings()
     return any(
