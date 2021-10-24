@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v7.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v7.0.0) - 2021-10-24
+
 ### Changed
 
 - Complete rewrite of SpellBot to support the new Discord slash commands.
