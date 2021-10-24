@@ -1,3 +1,4 @@
+import contextvars
 import importlib
 import inspect
 from collections.abc import AsyncGenerator, Generator
@@ -55,10 +56,20 @@ async def _session_context_manager(nosession: bool = False) -> AsyncGenerator[No
 
 
 @pytest.fixture(scope="function", autouse=True)
-async def session(request) -> AsyncGenerator[None, None]:
+async def session_context(request) -> AsyncGenerator[contextvars.Context, None]:
     nosession = "nosession" in request.keywords
     async with _session_context_manager(nosession):
-        yield
+        context = contextvars.copy_context()
+        yield context
+        for c in context:
+            c.set(context[c])
+
+
+@pytest.fixture(autouse=True)
+def use_session_context(session_context: contextvars.Context):
+    for cvar in session_context:
+        cvar.set(session_context[cvar])
+    yield
 
 
 @pytest.fixture

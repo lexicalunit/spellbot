@@ -1051,7 +1051,7 @@ testing = ["coverage (>=4)", "coverage-enable-subprocess (>=1)", "flaky (>=3)", 
 name = "wrapt"
 version = "1.13.2"
 description = "Module for decorators, wrappers and monkey patching."
-category = "main"
+category = "dev"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 
@@ -1082,7 +1082,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = '>=3.9,<4'
-content-hash = "6506a36179d3dda57d1f6b15208c902f5b1c4efd7de49a6ce152904f189ff674"
+content-hash = "eee189e5564bbc1aeeaaa0e4c1f4f77568391230dacc6d61874567973935d9db"
 
 [metadata.files]
 aiohttp = [
