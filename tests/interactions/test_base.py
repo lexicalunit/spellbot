@@ -31,7 +31,7 @@ class TestInteractionBase:
         assert exc.value is error
 
         assert (
-            "error: rolling back database transaction due to unhandled exception:"
+            "error: rolling back database session due to unhandled exception:"
             " RuntimeError: whatever"
         ) in caplog.text
 

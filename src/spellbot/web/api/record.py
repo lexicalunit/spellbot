@@ -4,6 +4,7 @@ from enum import Enum, auto
 import aiohttp_jinja2
 from aiohttp import web
 from aiohttp.web_response import Response as WebResponse
+from spellbot.database import db_session_manager
 
 from spellbot.services.plays import PlaysService
 
@@ -42,8 +43,10 @@ async def impl(request: web.Request, kind: RecordKind) -> WebResponse:
 
 
 async def channel_endpoint(request: web.Request) -> WebResponse:
-    return await impl(request, RecordKind.CHANNEL)
+    async with db_session_manager():
+        return await impl(request, RecordKind.CHANNEL)
 
 
 async def user_endpoint(request: web.Request) -> WebResponse:
-    return await impl(request, RecordKind.USER)
+    async with db_session_manager():
+        return await impl(request, RecordKind.USER)

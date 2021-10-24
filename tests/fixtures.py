@@ -12,7 +12,12 @@ import pytest
 from aiohttp.client import ClientSession
 
 from spellbot.client import SpellBot, build_bot
-from spellbot.database import DatabaseSession, initialize_connection, rollback_transaction
+from spellbot.database import (
+    DatabaseSession,
+    db_session_maker,
+    initialize_connection,
+    rollback_transaction,
+)
 from spellbot.models.channel import Channel
 from spellbot.models.game import Game
 from spellbot.models.guild import Guild
@@ -37,6 +42,9 @@ async def _session_context_manager(nosession: bool = False) -> AsyncGenerator[No
         return
 
     await initialize_connection("spellbot-test", use_transaction=True)
+
+    test_session = db_session_maker()
+    DatabaseSession.set(test_session)  # type: ignore
 
     BlockFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
     ChannelFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
@@ -74,7 +82,8 @@ def use_session_context(session_context: contextvars.Context):
 
 @pytest.fixture
 async def bot() -> AsyncGenerator[SpellBot, None]:
-    yield build_bot(mock_games=True)
+    # In tests we create the connection using fixtures.
+    yield build_bot(mock_games=True, create_connection=False)
 
 
 @pytest.fixture

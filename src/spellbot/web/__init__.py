@@ -38,12 +38,7 @@ def launch_web_server(
     app = build_web_app()
     runner = web.AppRunner(app)
     loop.run_until_complete(runner.setup())
-    loop.run_until_complete(
-        initialize_connection(
-            "spellbot-web",
-            autocommit=True,
-        )
-    )
+    loop.run_until_complete(initialize_connection("spellbot-web"))
     site = web.TCPSite(runner, settings.HOST, port)
     loop.run_until_complete(site.start())
     logger.info("server running: http://%s:%s", settings.HOST, port)
