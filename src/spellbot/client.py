@@ -9,11 +9,16 @@ from typing import Optional
 from uuid import uuid4
 
 import discord
+from asgiref.sync import sync_to_async
 from discord.ext.commands import Bot, errors
 from discord_slash import SlashCommand, context
 from expiringdict import ExpiringDict
 
-from spellbot.database import get_legacy_prefixes, initialize_connection
+from spellbot.database import (
+    db_session_manager,
+    get_legacy_prefixes,
+    initialize_connection,
+)
 from spellbot.errors import SpellbotAdminOnly, UserBannedError
 from spellbot.operations import safe_send_channel
 from spellbot.services.channels import ChannelsService
@@ -24,6 +29,14 @@ from spellbot.spelltable import generate_link
 from spellbot.utils import user_can_moderate
 
 logger = logging.getLogger(__name__)
+
+
+@sync_to_async
+def begin_session():
+    from spellbot.database import DatabaseSession, db_session_maker
+
+    db_session = db_session_maker()
+    DatabaseSession.set(db_session)  # type: ignore
 
 
 class SpellBot(Bot):
@@ -54,9 +67,6 @@ class SpellBot(Bot):
             self.channel_locks[channel_xid] = asyncio.Lock()
         async with self.channel_locks[channel_xid]:  # type: ignore
             yield
-
-    async def on_ready(self) -> None:  # pragma: no cover
-        logger.debug("logged in as %s", self.user)
 
     async def create_spelltable_link(self) -> Optional[str]:
         if self.mock_games:
@@ -110,7 +120,7 @@ class SpellBot(Bot):
 
     async def on_message(self, message: discord.Message):
         if not message.guild or not hasattr(message.guild, "id"):
-            return await super().on_message(message)  # handle direct messages normally
+            return await super().on_message(message)  # handle DMs normally
         if (
             not hasattr(message.channel, "type")
             or message.channel.type != discord.ChannelType.text
@@ -118,7 +128,10 @@ class SpellBot(Bot):
             return  # ignore everything else, except messages in text channels...
         if message.flags.value & 64:
             return  # message is hidden, ignore it
-        await self.handle_verification(message)
+
+        async with db_session_manager():
+            await self.handle_verification(message)
+
         guild_xid = message.guild.id  # type: ignore
         if message.content.startswith(self.legacy_prefix_cache[guild_xid]):
             try:
@@ -126,14 +139,13 @@ class SpellBot(Bot):
                 embed = discord.Embed()
                 embed.set_thumbnail(url=settings.ICO_URL)
                 embed.description = (
-                    "SpellBot uses slash commands now. Just type `/` to see the list of"
-                    " supported commands! It may take up to one hour for these commands"
-                    " to appear for the first time. Also note that SpellBot's"
-                    " invite link has changed. Your server admin may need to re-invite"
-                    " the bot using the [updated invite link](https://discordapp.com/api"
-                    "/oauth2/authorize?client_id=725510263251402832&permissions="
-                    "2416045137&scope=applications.commands%20bot) if slash commands do"
-                    " not show up after one hour."
+                    "SpellBot uses slash commands now. Just type `/` to see the list"
+                    " of supported commands! It may take up to one hour for these"
+                    " commands to appear for the first time. Also note that"
+                    " SpellBot's invite link has changed. Your server admin may need"
+                    " to re-invite the bot using the [updated invite link]"
+                    f"({settings.BOT_INVITE_LINK}) if slash commands do not show up"
+                    " after one hour."
                 )
                 embed.color = settings.EMBED_COLOR
                 await message.reply(embed=embed)
@@ -164,11 +176,22 @@ class SpellBot(Bot):
                 await message.delete()
 
 
+async def bot_connection(bot):
+    logger.info("initializing database connection...")
+    await initialize_connection("spellbot-bot")
+
+    async with db_session_manager():
+        logger.info("building legacy command prefix cache...")
+        db_legacy_prefixes = await get_legacy_prefixes()
+        bot.legacy_prefix_cache.update(db_legacy_prefixes)
+
+
 def build_bot(
     loop: Optional[Loop] = None,
     mock_games: bool = False,
     force_sync_commands: bool = False,
     clean_commands: bool = False,
+    create_connection: bool = True,
 ) -> SpellBot:
     bot = SpellBot(loop=loop, mock_games=mock_games)
 
@@ -184,22 +207,15 @@ def build_bot(
         delete_from_unused_guilds=clean_commands,
     )
 
+    if create_connection:  # pragma: no cover
+        # In tests we create the connection using fixtures.
+        bot.loop.run_until_complete(bot_connection(bot))
+
     # load all cog extensions
     from spellbot.cogs import load_all_cogs
 
     load_all_cogs(bot)
     commands = (key for key in bot.slash.commands if key != "context")
     logger.info("loaded commands: %s", ", ".join(commands))
-
-    # setup database connection
-    if not bot.loop.is_running():  # pragma: no cover
-        # In tests we will have to call initialize_connection manually due to
-        # pytest-asyncio having already started the async loop before we can get here.
-        logger.info("initializing database connection...")
-        bot.loop.run_until_complete(initialize_connection("spellbot-bot"))
-
-        logger.info("building legacy command prefix cache...")
-        db_legacy_prefixes = bot.loop.run_until_complete(get_legacy_prefixes())
-        bot.legacy_prefix_cache.update(db_legacy_prefixes)
 
     return bot

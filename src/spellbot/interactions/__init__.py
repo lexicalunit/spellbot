@@ -6,10 +6,9 @@ from typing import Optional, Type, TypeVar, cast
 import discord
 from asgiref.sync import sync_to_async
 from discord_slash.context import InteractionContext
-from sqlalchemy.engine.base import Transaction
 
 from spellbot.client import SpellBot
-from spellbot.database import DatabaseSession, connection
+from spellbot.database import DatabaseSession, db_session_manager
 from spellbot.errors import SpellbotAdminOnly, UserBannedError
 
 logger = logging.getLogger(__name__)
@@ -38,16 +37,12 @@ InteractionType = TypeVar("InteractionType", bound="BaseInteraction")
 
 
 class BaseInteraction:
-    # Main thread data members, only use outside of sync_to_async code!
     bot: SpellBot
     services: ServicesRegistry
     ctx: Optional[InteractionContext]
     member: Optional[discord.Member]
     guild: Optional[discord.Guild]
     channel: Optional[discord.TextChannel]
-
-    # Thread sensitive data members, only use within sync_to_async code!
-    transaction: Transaction
 
     def __init__(self, bot: SpellBot, ctx: Optional[InteractionContext] = None):
         self.bot = bot
@@ -59,26 +54,16 @@ class BaseInteraction:
             self.channel = cast(discord.TextChannel, self.ctx.channel)
 
     @sync_to_async
-    def begin_session(self):
-        self.transaction = connection.begin()
-        DatabaseSession()
-
-    @sync_to_async
     def handle_exception(self, ex):
         if isinstance(ex, (SpellbotAdminOnly, UserBannedError)):
             raise ex
         logger.exception(
-            "error: rolling back database transaction due to unhandled exception: %s: %s",
+            "error: rolling back database session due to unhandled exception: %s: %s",
             ex.__class__.__name__,
             ex,
         )
-        self.transaction.rollback()
+        DatabaseSession.rollback()
         raise ex
-
-    @sync_to_async
-    def end_session(self):
-        self.transaction.commit()
-        DatabaseSession.remove()
 
     @classmethod
     @asynccontextmanager
@@ -91,16 +76,14 @@ class BaseInteraction:
             interaction = cls(bot, ctx)
         else:
             interaction = cls(bot)
-        try:
-            await interaction.begin_session()
-            if ctx:
-                await interaction.services.guilds.upsert(interaction.guild)
-                await interaction.services.channels.upsert(interaction.channel)
-                await interaction.services.users.upsert(interaction.member)
-                if await interaction.services.users.is_banned(ctx.author_id):
-                    raise UserBannedError()
-            yield interaction
-        except Exception as ex:
-            await interaction.handle_exception(ex)
-        finally:
-            await interaction.end_session()
+        async with db_session_manager():
+            try:
+                if ctx:
+                    await interaction.services.guilds.upsert(interaction.guild)
+                    await interaction.services.channels.upsert(interaction.channel)
+                    await interaction.services.users.upsert(interaction.member)
+                    if await interaction.services.users.is_banned(ctx.author_id):
+                        raise UserBannedError()
+                yield interaction
+            except Exception as ex:
+                await interaction.handle_exception(ex)

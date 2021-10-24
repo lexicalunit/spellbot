@@ -1,11 +1,13 @@
 import logging
+from contextlib import asynccontextmanager
 from typing import Generic, Type, TypeVar
 
 from asgiref.sync import sync_to_async
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine.base import Connection, Engine, Transaction
-from sqlalchemy.orm import scoped_session
-from sqlalchemy.orm.session import sessionmaker
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.session import Session
+from wrapt import CallableObjectProxy
 
 from spellbot.models import create_all
 from spellbot.models.guild import Guild
@@ -46,14 +48,29 @@ class ContextLocal(Generic[ProxiedObject]):
         raise NotImplementedError()
 
 
-# Thread sensitive module attributes, only use them within sync_to_async code!
-engine = ContextLocal.of_type(Engine)
-connection = ContextLocal.of_type(Connection)
-transaction = ContextLocal.of_type(Transaction)
+class TypedProxy(Generic[ProxiedObject], CallableObjectProxy):
+    def __init__(self):
+        super().__init__(None)
 
-# Thread local scoped database session, can be used inside/outside sync_to_async code,
-# but only AFTER initialize_connection() has finished running.
-DatabaseSession = ContextLocal.of_type(scoped_session)
+    @classmethod
+    def of_type(cls, _: Type[ProxiedObject]) -> ProxiedObject:
+        return cls()  # type: ignore
+
+    def set(self, obj: ProxiedObject):
+        super().__init__(obj)
+
+    def __copy__(self):
+        raise NotImplementedError()
+
+    def __deepcopy__(self, memo):
+        raise NotImplementedError()
+
+
+engine = TypedProxy.of_type(Engine)
+connection = TypedProxy.of_type(Connection)
+transaction = TypedProxy.of_type(Transaction)
+db_session_maker = TypedProxy.of_type(sessionmaker)
+DatabaseSession = ContextLocal.of_type(Session)
 
 
 @sync_to_async
@@ -61,7 +78,6 @@ def initialize_connection(
     app: str,
     *,
     use_transaction: bool = False,
-    autocommit: bool = False,
     run_migrations: bool = True,
 ):
     """
@@ -69,8 +85,9 @@ def initialize_connection(
 
     SpellBot follows the "thread-local scoped database sessions per request" model
     of typical web applications except that instead of web requests, we're dealing
-    with bot interactions. SpellBot maintains a database connection for the lifetime
-    of the bot, which is created in this function.
+    with bot interactions. And instead of thread local, we have context local aysnc
+    contextx. SpellBot maintains a database connection for the lifetime of the bot,
+    which is created in this function.
 
     Subsequent interactions then will create their own transaction and session
     with which to execute database queries. For more details on how this flow works,
@@ -91,7 +108,7 @@ def initialize_connection(
         settings.DATABASE_URL,
         echo=settings.DATABASE_ECHO,
         connect_args={"application_name": app},
-        isolation_level="AUTOCOMMIT" if autocommit else None,
+        isolation_level=None if use_transaction else "AUTOCOMMIT",
     )
     connection_obj = engine_obj.connect()
 
@@ -99,21 +116,34 @@ def initialize_connection(
         transaction_obj = connection_obj.begin()
         transaction.set(transaction_obj)  # type: ignore
 
-    db_session_obj = scoped_session(
-        sessionmaker(
-            bind=connection_obj,
-            autocommit=autocommit,
-        ),
-    )
+    db_session_maker_obj = sessionmaker(bind=connection_obj)
 
     engine.set(engine_obj)  # type: ignore
     connection.set(connection_obj)  # type: ignore
-    DatabaseSession.set(db_session_obj)  # type: ignore
+    db_session_maker.set(db_session_maker_obj)  # type: ignore
+
+
+@sync_to_async
+def begin_session():
+    db_session = db_session_maker()
+    DatabaseSession.set(db_session)  # type: ignore
+
+
+@sync_to_async
+def end_session():
+    DatabaseSession.commit()
+    DatabaseSession.close()
+
+
+@asynccontextmanager
+async def db_session_manager():
+    await begin_session()
+    yield
+    await end_session()
 
 
 @sync_to_async
 def rollback_transaction():
-    DatabaseSession.close()
     transaction.rollback()
     connection.close()
 
