@@ -51,9 +51,9 @@ select
     games.created_at,
     games.updated_at,
     case
-        when when games.status = 'pending' then null
-        when when games.status = 'started' then games.updated_at
-    end as started_at
+        when games.status = 'pending' then null
+        when games.status = 'started' then games.updated_at
+    end as started_at,
     games.guild_xid,
     games.channel_xid,
     games.message_xid,
@@ -75,7 +75,7 @@ where
 alter table games rename to old_games;
 
 -- users
-create table fmigrate_users as
+create table migrate_users as
 select
     xid,
     created_at,
