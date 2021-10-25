@@ -172,9 +172,8 @@ class GamesService(BaseService):
         return self.game.channel_xid
 
     @sync_to_async
-    def current_message_xid(self) -> int:
+    def current_message_xid(self) -> Optional[int]:
         assert self.game
-        assert self.game.message_xid
         return self.game.message_xid
 
     @sync_to_async

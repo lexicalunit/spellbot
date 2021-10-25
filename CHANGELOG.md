@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Better sanity checking user input on the /info command.
+- Safely handle the case where message xid was not set for a game.
 
 ## [v7.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v7.0.1) - 2021-10-24
 
