@@ -10,6 +10,7 @@ from discord_slash.model import SlashCommandOptionType
 from spellbot.client import SpellBot
 from spellbot.interactions.admin_interaction import AdminInteraction
 from spellbot.interactions.config_interaction import ConfigInteraction
+from spellbot.interactions.verify_interaction import VerifyInteraction
 from spellbot.interactions.watch_interaction import WatchInteraction
 from spellbot.utils import for_all_callbacks, is_admin
 
@@ -282,6 +283,46 @@ class AdminCog(commands.Cog):
     ):
         async with WatchInteraction.create(self.bot, ctx) as interaction:
             await interaction.unwatch(target=target)
+
+    @cog_ext.cog_slash(
+        name="verify",
+        description="Verify a user.",
+        options=[
+            {
+                "name": "target",
+                "required": True,
+                "description": "User to verify",
+                "type": SlashCommandOptionType.USER.value,
+            },
+        ],
+    )
+    async def verify(
+        self,
+        ctx: SlashContext,
+        target: Union[discord.User, discord.Member],
+    ):
+        async with VerifyInteraction.create(self.bot, ctx) as interaction:
+            await interaction.verify(target=target)
+
+    @cog_ext.cog_slash(
+        name="unverify",
+        description="Unverify a user.",
+        options=[
+            {
+                "name": "target",
+                "required": True,
+                "description": "User to unverify",
+                "type": SlashCommandOptionType.USER.value,
+            },
+        ],
+    )
+    async def unverify(
+        self,
+        ctx: SlashContext,
+        target: Union[discord.User, discord.Member],
+    ):
+        async with VerifyInteraction.create(self.bot, ctx) as interaction:
+            await interaction.unverify(target=target)
 
 
 def setup(bot: SpellBot):
