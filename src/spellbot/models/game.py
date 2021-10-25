@@ -1,7 +1,7 @@
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum, auto
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import discord
 from dateutil import tz
@@ -186,10 +186,8 @@ class Game(Base):
             if self.show_links(dm):
                 if self.spelltable_link:
                     description += (
-                        "[Join your SpellTable game now!]"
-                        f"(<{self.spelltable_link}>)"
-                        " (or [spectate this game]"
-                        f"({self.spelltable_link}?spectate=true))"
+                        f"[Join your SpellTable game now!]({self.spelltable_link})"
+                        f" (or [spectate this game]({self.spectate_link}))"
                     )
                 else:
                     description += (
@@ -202,7 +200,7 @@ class Game(Base):
                     expire_min = int(settings.VOICE_INVITE_EXPIRE_TIME_S / 60)
                     description += (
                         f"\n\n[Join your voice chat now!]({self.voice_invite_link})"
-                        f"  (invite will expire in {expire_min} minutes)"
+                        f" (invite will expire in {expire_min} minutes)"
                     )
             else:
                 description += (
@@ -236,6 +234,10 @@ class Game(Base):
     @property
     def embed_footer(self) -> str:
         return f"SpellBot Game ID: #SB{self.id}"
+
+    @property
+    def spectate_link(self) -> Optional[str]:
+        return f"{self.spelltable_link}?spectate=true" if self.spelltable_link else None
 
     @property
     def jump_link(self) -> str:
@@ -278,5 +280,7 @@ class Game(Base):
             "status": self.status,
             "format": self.format,
             "spelltable_link": self.spelltable_link,
+            "spectate_link": self.spectate_link,
             "voice_invite_link": self.voice_invite_link,
+            "jump_link": self.jump_link,
         }

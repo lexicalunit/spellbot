@@ -320,12 +320,17 @@ class LookingForGameInteraction(BaseInteraction):
         if not watch_notes:
             return
 
+        data = await self.services.games.to_dict()
+
         embed = Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name="Watched user(s) joined a game")
-        link = await self.services.games.jump_link()
         embed.color = settings.EMBED_COLOR
-        description = f"You can [jump to the game post]({link}) to see it!\n"
+        description = (
+            f"[⇤ Jump to the game post]({data['jump_link']})\n"
+            f"[➤ Spectate the game on SpellTable]({data['spectate_link']})\n\n"
+            f"**Users:**"
+        )
         for user_xid, note in watch_notes.items():
             description += f"\n• <@{user_xid}>: {note}"
         embed.description = description

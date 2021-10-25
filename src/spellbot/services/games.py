@@ -303,6 +303,11 @@ class GamesService(BaseService):
         return self.game.jump_link
 
     @sync_to_async
+    def to_dict(self) -> dict:
+        assert self.game
+        return self.game.to_dict()
+
+    @sync_to_async
     def players_included(self, player_xid: int) -> bool:
         """
         Players that played this game.
