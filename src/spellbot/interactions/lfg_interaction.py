@@ -224,12 +224,16 @@ class LookingForGameInteraction(BaseInteraction):
             if message:
                 await self.services.games.set_message_xid(message.id)
         else:
+            message: Optional[discord.Message] = None
+
             message_xid = await self.services.games.current_message_xid()
-            message = await safe_fetch_message(
-                self.channel,
-                self.guild.id,
-                message_xid,
-            )
+            if message_xid:
+                message = await safe_fetch_message(
+                    self.channel,
+                    self.guild.id,
+                    message_xid,
+                )
+
             if not message:  # repost a new game embed
                 message = await safe_send_channel(
                     self.ctx,

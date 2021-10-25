@@ -40,8 +40,10 @@ class LeaveInteraction(BaseInteraction):
             return await self.report_success()
 
         message_xid = await self.services.games.current_message_xid()
-        message = await safe_fetch_message(channel, guild_xid, message_xid)
+        if not message_xid:
+            return await self.report_success()
 
+        message = await safe_fetch_message(channel, guild_xid, message_xid)
         if not message:
             return await self.report_success()
 
