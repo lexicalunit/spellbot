@@ -144,8 +144,10 @@ async def db_session_manager():
 
 @sync_to_async
 def rollback_transaction():
-    transaction.rollback()
-    connection.close()
+    if transaction.is_active:
+        transaction.rollback()
+    if not connection.closed:
+        connection.close()
 
 
 @sync_to_async
