@@ -30,6 +30,8 @@ class TestModelGame:
             "format": game.format,
             "spelltable_link": game.spelltable_link,
             "voice_invite_link": game.voice_invite_link,
+            "jump_link": game.jump_link,
+            "spectate_link": game.spectate_link,
         }
 
     def test_game_show_links(self):
@@ -131,8 +133,8 @@ class TestModelGame:
             "color": settings.EMBED_COLOR,
             "description": (
                 "[Join your SpellTable game now!]"
-                f"(<{game.spelltable_link}>) (or [spectate this game]"
-                f"({game.spelltable_link}?spectate=true))\n"
+                f"({game.spelltable_link}) (or [spectate this game]"
+                f"({game.spectate_link}))\n"
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
@@ -295,11 +297,11 @@ class TestModelGame:
             "color": settings.EMBED_COLOR,
             "description": (
                 "[Join your SpellTable game now!]"
-                f"(<{game.spelltable_link}>) (or [spectate this game]"
-                f"({game.spelltable_link}?spectate=true))\n"
+                f"({game.spelltable_link}) (or [spectate this game]"
+                f"({game.spectate_link}))\n"
                 "\n"
-                f"[Join your voice chat now!]({game.voice_invite_link})  "
-                "(invite will expire in 240 minutes)\n"
+                f"[Join your voice chat now!]({game.voice_invite_link})"
+                " (invite will expire in 240 minutes)\n"
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
@@ -367,8 +369,8 @@ class TestModelGame:
             "color": settings.EMBED_COLOR,
             "description": (
                 "[Join your SpellTable game now!]"
-                f"(<{game.spelltable_link}>) (or [spectate this game]"
-                f"({game.spelltable_link}?spectate=true))\n"
+                f"({game.spelltable_link}) (or [spectate this game]"
+                f"({game.spectate_link}))\n"
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"

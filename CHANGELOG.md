@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds the /verify and /unverify admin commands.
+- Adds spectate link to watched user notifications.
 
 ### Fixed
 
