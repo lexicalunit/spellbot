@@ -21,8 +21,11 @@ from tests.factories.user import UserFactory
 from tests.fixtures import (
     build_author,
     build_channel,
+    build_client_user,
     build_ctx,
     build_guild,
+    build_message,
+    build_response,
     build_voice_channel,
     channel_from_ctx,
     game_from_ctx,
@@ -328,6 +331,63 @@ class TestCogLookingForGame:
         )
         game = DatabaseSession.query(Game).one_or_none()
         assert not game
+
+    async def test_lfg_multiple_times(self, bot):
+        guild = build_guild()
+        channel = build_channel(guild=guild)
+        author1 = build_author(1)
+        author2 = build_author(2)
+
+        ctx1 = MagicMock()
+        ctx1.author = author1
+        ctx1.author_id = author1.id
+        ctx1.guild = guild
+        ctx1.guild_id = guild.id
+        ctx1.channel = channel
+        ctx1.channel_id = channel.id
+        ctx1.message = build_message(guild, channel, author1, 1)
+        ctx1.send = AsyncMock(return_value=build_response(guild, channel, 1))
+
+        ctx2 = MagicMock()
+        ctx2.author = author2
+        ctx2.author_id = author2.id
+        ctx2.guild = guild
+        ctx2.guild_id = guild.id
+        ctx2.channel = channel
+        ctx2.channel_id = channel.id
+        ctx2.message = build_message(guild, channel, author2, 2)
+        ctx2.send = AsyncMock(return_value=build_response(guild, channel, 2))
+
+        client_user = build_client_user()
+        game_post = build_message(guild, channel, client_user, 3)
+
+        cog = LookingForGameCog(bot)
+
+        with mock_operations(lfg_interaction, users=[author1, author2]):
+            lfg_interaction.safe_send_channel.return_value = game_post
+            await cog.lfg.func(cog, ctx1, seats=2)
+
+        with mock_operations(lfg_interaction, users=[author1, author2]):
+            await cog.lfg.func(cog, ctx2, seats=2)
+
+        game = DatabaseSession.query(Game).one()
+        assert game.to_dict() == {
+            "channel_xid": channel.id,
+            "created_at": game.created_at,
+            "format": game.format,
+            "guild_xid": guild.id,
+            "id": game.id,
+            "jump_link": game.jump_link,
+            "message_xid": game_post.id,
+            "seats": 2,
+            "spectate_link": game.spectate_link,
+            "spelltable_link": game.spelltable_link,
+            "started_at": game.started_at,
+            "status": GameStatus.STARTED.value,
+            "updated_at": game.updated_at,
+            "voice_invite_link": None,
+            "voice_xid": None,
+        }
 
 
 @pytest.mark.asyncio

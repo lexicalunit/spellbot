@@ -60,7 +60,10 @@ class GamesService(BaseService):
     @sync_to_async
     def add_player(self, player_xid: int) -> None:
         assert self.game
-        assert len(self.game.players) + 1 <= self.game.seats
+
+        rows = DatabaseSession.query(User).filter(User.game_id == self.game.id).count()
+        assert rows + 1 <= self.game.seats
+
         query = update(User).where(User.xid == player_xid).values(game_id=self.game.id)
         DatabaseSession.execute(query)
         DatabaseSession.commit()
@@ -180,7 +183,8 @@ class GamesService(BaseService):
     @sync_to_async
     def fully_seated(self) -> bool:
         assert self.game
-        return self.game.seats == len(self.game.players)
+        rows = DatabaseSession.query(User).filter(User.game_id == self.game.id).count()
+        return rows == self.game.seats
 
     @sync_to_async
     def make_ready(self, spelltable_link: Optional[str]) -> None:
@@ -194,7 +198,8 @@ class GamesService(BaseService):
     @sync_to_async
     def current_player_xids(self) -> list[int]:
         assert self.game
-        return [player.xid for player in self.game.players]
+        rows = DatabaseSession.query(User.xid).filter(User.game_id == self.game.id)
+        return [int(row[0]) for row in rows]
 
     @sync_to_async
     def watch_notes(self, player_xids: list[int]) -> dict[int, Optional[str]]:
@@ -216,7 +221,9 @@ class GamesService(BaseService):
         assert self.game
         assert self.game.status == GameStatus.STARTED.value
 
-        player_xids = [player.xid for player in self.game.players]
+        rows = DatabaseSession.query(User.xid).filter(User.game_id == self.game.id)
+        player_xids = [int(row[0]) for row in rows]
+
         game_id = self.game.id
         guild_xid = self.game.guild_xid
 
@@ -283,7 +290,9 @@ class GamesService(BaseService):
     @sync_to_async
     def blocked(self, author_xid: int) -> bool:
         assert self.game
-        other_player_xids = [player.xid for player in self.game.players]
+        rows = DatabaseSession.query(User.xid).filter(User.game_id == self.game.id)
+        other_player_xids = [int(row[0]) for row in rows]
+
         query = DatabaseSession.query(Block).filter(
             or_(
                 and_(
