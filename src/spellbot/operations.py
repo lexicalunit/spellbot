@@ -111,14 +111,17 @@ async def safe_update_embed(message: discord.Message, *args, **kwargs) -> None:
         await message.edit(*args, **kwargs)
 
 
-async def safe_update_embed_origin(ctx: ComponentContext, *args, **kwargs) -> None:
+async def safe_update_embed_origin(ctx: ComponentContext, *args, **kwargs) -> bool:
     assert hasattr(ctx, "origin_message_id")
+    success = False
     with suppress(
         DiscordException,
         log="could not update origin embed in message %(message_xid)s",
         message_xid=ctx.origin_message_id,
     ):
         await ctx.edit_origin(*args, **kwargs)
+        success = True
+    return success
 
 
 async def safe_create_category_channel(

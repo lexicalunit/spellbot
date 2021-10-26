@@ -48,6 +48,13 @@ class LookingForGameInteraction(BaseInteraction):
         # False if user issued a /lfg command in chat.
         origin = bool(message_xid is not None)
 
+        if origin:
+            # self.ctx should be a ComponentContext from a button click
+            ctx: ComponentContext = cast(ComponentContext, self.ctx)
+
+            # Just in case this operation takes longer than expected...
+            await ctx.defer(edit_origin=True)
+
         friends = friends or ""
         if format and not seats:
             seats = GameFormat(format).players
@@ -246,17 +253,22 @@ class LookingForGameInteraction(BaseInteraction):
                 if origin:
                     # self.ctx should be a ComponentContext from a button click
                     ctx: ComponentContext = cast(ComponentContext, self.ctx)
-                    await safe_update_embed_origin(
+
+                    # Try to update the origin embed, sometimes this can fail.
+                    # If it does fail, we will fallback to doing a standard message.edit()
+                    # call instead. This should be fine because the interaction is always
+                    # deferred at the very start of our handling of it.
+                    success = await safe_update_embed_origin(
                         ctx,
                         embed=embed,
                         components=components,
                     )
-                else:
-                    await safe_update_embed(
-                        message,
-                        embed=embed,
-                        components=components,
-                    )
+                    if success:
+                        return
+
+                await safe_update_embed(message, embed=embed, components=components)
+
+                if not origin:
                     await self._reply_found_embed()
 
     async def _reply_found_embed(self):

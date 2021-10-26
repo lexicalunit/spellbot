@@ -216,6 +216,7 @@ def build_ctx(
     ctx.channel_id = channel.id
     ctx.message = build_message(guild, channel, author, offset)
     ctx.send = AsyncMock(return_value=build_response(guild, channel, offset))
+    ctx.defer = AsyncMock()
 
     def set_origin():
         ctx.origin_message = ctx.message
