@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Workaround for wonky discord-interactions edit-origin failures.
+- Fixes updated_at updates on games for user join/leave actions.
 - Better sanity checking user input on the /info command.
 - Safely handle the case where message xid was not set for a game.
 - Fixes a spurious warning in test suite due to transaction rollback.
