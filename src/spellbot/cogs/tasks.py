@@ -17,6 +17,7 @@ class TasksCog(commands.Cog):  # pragma: no cover
         self.bot = bot
         if not getenv("PYTEST_CURRENT_TEST") and "pytest" not in sys.modules:
             self.cleanup_old_voice_channels.start()
+            self.expire_inactive_games.start()
 
     @tasks.loop(minutes=settings.VOICE_CLEANUP_LOOP_M)
     async def cleanup_old_voice_channels(self):
@@ -25,6 +26,15 @@ class TasksCog(commands.Cog):  # pragma: no cover
 
     @cleanup_old_voice_channels.before_loop
     async def before_cleanup_old_voice_channels(self):
+        await self.bot.wait_until_ready()
+
+    @tasks.loop(minutes=settings.EXPIRE_GAMES_LOOP_M)
+    async def expire_inactive_games(self):
+        async with TaskInteraction.create(self.bot) as interaction:
+            await interaction.expire_inactive_games()
+
+    @expire_inactive_games.before_loop
+    async def before_expire_inactive_games(self):
         await self.bot.wait_until_ready()
 
 

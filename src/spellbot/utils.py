@@ -25,6 +25,18 @@ def log_warning(log: str, exec_info: bool = False, **kwargs: Any):
     logger.warning(message, kwargs, exc_info=exec_info)
 
 
+def bot_can_reply_to(message: discord.Message) -> bool:
+    if not hasattr(message.channel, "type") or not hasattr(message.channel, "guild"):
+        return False
+    if message.channel.type == discord.ChannelType.private:
+        return True
+    perms = message.channel.permissions_for(message.channel.guild.me)
+    for req in ("send_messages",):
+        if not hasattr(perms, req) or not getattr(perms, req):
+            return False
+    return True
+
+
 def bot_can_role(guild: discord.Guild) -> bool:
     if not guild.me:
         return False

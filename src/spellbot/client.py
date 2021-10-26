@@ -20,7 +20,7 @@ from spellbot.database import (
     initialize_connection,
 )
 from spellbot.errors import SpellbotAdminOnly, UserBannedError
-from spellbot.operations import safe_send_channel
+from spellbot.operations import safe_message_reply, safe_send_channel
 from spellbot.services.channels import ChannelsService
 from spellbot.services.guilds import GuildsService
 from spellbot.services.verifies import VerifiesService
@@ -134,23 +134,20 @@ class SpellBot(Bot):
 
         guild_xid = message.guild.id  # type: ignore
         if message.content.startswith(self.legacy_prefix_cache[guild_xid]):
-            try:
-                settings = Settings()
-                embed = discord.Embed()
-                embed.set_thumbnail(url=settings.ICO_URL)
-                embed.description = (
-                    "SpellBot uses slash commands now. Just type `/` to see the list"
-                    " of supported commands! It may take up to one hour for these"
-                    " commands to appear for the first time. Also note that"
-                    " SpellBot's invite link has changed. Your server admin may need"
-                    " to re-invite the bot using the [updated invite link]"
-                    f"({settings.BOT_INVITE_LINK}) if slash commands do not show up"
-                    " after one hour."
-                )
-                embed.color = settings.EMBED_COLOR
-                await message.reply(embed=embed)
-            except Exception as ex:
-                logger.warning("warning: %s", ex, exc_info=True)
+            settings = Settings()
+            embed = discord.Embed()
+            embed.set_thumbnail(url=settings.ICO_URL)
+            embed.description = (
+                "SpellBot uses slash commands now. Just type `/` to see the list"
+                " of supported commands! It may take up to one hour for these"
+                " commands to appear for the first time. Also note that"
+                " SpellBot's invite link has changed. Your server admin may need"
+                " to re-invite the bot using the [updated invite link]"
+                f"({settings.BOT_INVITE_LINK}) if slash commands do not show up"
+                " after one hour."
+            )
+            embed.color = settings.EMBED_COLOR
+            await safe_message_reply(message, embed=embed)
 
     async def handle_verification(self, message: discord.Message):
         # To verify users we need their user id, so just give up if it's not available

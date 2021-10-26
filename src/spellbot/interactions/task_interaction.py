@@ -7,7 +7,13 @@ from discord.channel import VoiceChannel
 
 from spellbot.client import SpellBot
 from spellbot.interactions import BaseInteraction
-from spellbot.operations import bot_can_delete_channel, safe_delete_channel
+from spellbot.operations import (
+    bot_can_delete_channel,
+    safe_delete_channel,
+    safe_fetch_message,
+    safe_fetch_text_channel,
+    safe_update_embed,
+)
 from spellbot.services.games import GamesService
 from spellbot.settings import Settings
 
@@ -113,3 +119,39 @@ class TaskInteraction(BaseInteraction):
                 remaining = len(channels) - settings.VOICE_CLEANUP_BATCH
                 logger.info("batch limit reached, %s channels remain", remaining)
                 break
+
+    async def expire_inactive_games(self):
+        logger.info("starting task expire_inactive_games")
+        try:
+            games = await self.services.games.inactive_games()
+            await self.expire_games(games)
+        except BaseException as e:
+            logger.exception("error: exception in background task: %s", e)
+
+    async def expire_games(self, games: list[dict]):
+        game_ids = [game["id"] for game in games]
+        await self.services.games.delete_games(game_ids)
+        for game in games:
+            await self.expire_game(game)
+
+    async def expire_game(self, game: dict):
+        message_xid = game["message_xid"]
+        if message_xid is None:
+            return
+
+        guild_xid = game["guild_xid"]
+        channel_xid = game["channel_xid"]
+        chan = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
+        if not chan:
+            return
+
+        post = await safe_fetch_message(chan, guild_xid, message_xid)
+        if not post:
+            return
+
+        await safe_update_embed(
+            post,
+            content="Sorry, this game was expired due to inactivity.",
+            embed=None,
+            components=None,
+        )

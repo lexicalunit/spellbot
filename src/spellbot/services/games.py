@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 import discord
@@ -16,6 +16,7 @@ from spellbot.models.play import Play
 from spellbot.models.user import User
 from spellbot.models.watch import Watch
 from spellbot.services import BaseService
+from spellbot.settings import Settings
 
 MAX_SPELLTABLE_LINK_LEN = Game.spelltable_link.property.columns[  # type: ignore
     0
@@ -345,4 +346,22 @@ class GamesService(BaseService):
             set_=dict(points=upsert.excluded.points),
         )
         DatabaseSession.execute(upsert, values)
+        DatabaseSession.commit()
+
+    @sync_to_async
+    def inactive_games(self) -> list[dict]:
+        settings = Settings()
+        limit = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M)
+        records = DatabaseSession.query(Game).filter(
+            and_(
+                Game.status == GameStatus.PENDING.value,
+                Game.updated_at <= limit,
+            )
+        )
+        return [record.to_dict() for record in records]
+
+    @sync_to_async
+    def delete_games(self, game_ids: list[int]):
+        query = DatabaseSession.query(Game).filter(Game.id.in_(game_ids))
+        query.delete(synchronize_session=False)
         DatabaseSession.commit()

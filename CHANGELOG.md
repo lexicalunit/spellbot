@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Adds the /verify and /unverify admin commands.
 - Adds spectate link to watched user notifications.
+- Adds game expiration after 45 minutes of inactivity.
+- Message reply permission check in slash command CTA response.
 
 ### Fixed
 

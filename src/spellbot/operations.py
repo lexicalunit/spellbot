@@ -10,6 +10,7 @@ from spellbot.utils import (
     DiscordChannel,
     bot_can_delete_channel,
     bot_can_read,
+    bot_can_reply_to,
     bot_can_role,
     log_warning,
     suppress,
@@ -260,6 +261,15 @@ async def safe_send_channel(
     ):
         message = await ctx.send(*args, **kwargs)
     return message
+
+
+async def safe_message_reply(message: discord.Message, *args, **kwargs):
+    if not bot_can_reply_to(message):
+        return
+    try:
+        await message.reply(*args, **kwargs)
+    except Exception as ex:
+        logger.debug("debug: %s", ex, exc_info=True)
 
 
 async def safe_send_user(
