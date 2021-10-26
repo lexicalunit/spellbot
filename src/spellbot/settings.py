@@ -69,9 +69,11 @@ class Settings(metaclass=Singleton):  # pylint: disable=R0902
         self.DATABASE_ECHO = False
         self.ADMIN_ROLE = "SpellBot Admin"
         self.MOD_PREFIX = "Moderator"
+        self.EXPIRE_TIME_M = 45  # 45 minutes
 
         # tasks
         self.VOICE_GRACE_PERIOD_M = 10  # 10 minutes
         self.VOICE_AGE_LIMIT_H = 5  # 5 hours
         self.VOICE_CLEANUP_LOOP_M = 30  # 30 minutes
-        self.VOICE_CLEANUP_BATCH = 40
+        self.VOICE_CLEANUP_BATCH = 40  # batch size
+        self.EXPIRE_GAMES_LOOP_M = 10  # 10 minutes

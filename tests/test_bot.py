@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
@@ -196,6 +197,7 @@ class TestSpellBot:
         }
 
     async def test_on_message_command_error(self, bot, monkeypatch, caplog, settings):
+        caplog.set_level(logging.DEBUG)
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
         message = MagicMock()
@@ -222,7 +224,7 @@ class TestSpellBot:
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
         }
-        assert "warning: message-reply-error" in caplog.text
+        assert "debug: message-reply-error" in caplog.text
 
     async def test_on_message(self, bot, monkeypatch):
         super_on_message_mock = AsyncMock()
