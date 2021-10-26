@@ -68,6 +68,15 @@ class GamesService(BaseService):
         DatabaseSession.execute(query)
         DatabaseSession.commit()
 
+        # This operation should "dirty" the Game, so we need to update its updated_at.
+        query = (
+            update(Game)
+            .where(Game.id == self.game.id)
+            .values(updated_at=datetime.utcnow())
+        )
+        DatabaseSession.execute(query)
+        DatabaseSession.commit()
+
     @sync_to_async
     def upsert(
         self,

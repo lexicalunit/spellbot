@@ -3,11 +3,13 @@ from typing import Any, Optional, Union
 
 import discord
 from asgiref.sync import sync_to_async
+from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
 from spellbot.models.block import Block
+from spellbot.models.game import Game
 from spellbot.models.user import User
 from spellbot.models.watch import Watch
 from spellbot.services import BaseService
@@ -77,8 +79,19 @@ class UsersService(BaseService):
     def leave_game(self) -> None:
         assert self.user
         assert self.user.game
+
+        left_game_id = self.user.game_id
+
         self.user.game_id = None  # type: ignore
         DatabaseSession.commit()
+
+        # This operation should "dirty" the Game, so we need to update its updated_at.
+        query = (
+            update(Game)
+            .where(Game.id == left_game_id)
+            .values(updated_at=datetime.utcnow())
+        )
+        DatabaseSession.execute(query)
 
     @sync_to_async
     def is_waiting(self) -> bool:
