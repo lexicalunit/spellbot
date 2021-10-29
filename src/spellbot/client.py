@@ -158,8 +158,8 @@ class SpellBot(Bot):
         guilds = GuildsService()
         await guilds.upsert(message.guild)
         channels = ChannelsService()
-        await channels.upsert(message.channel)
-        if await channels.should_auto_verify():
+        channel_data = await channels.upsert(message.channel)
+        if channel_data["auto_verify"]:
             verified = True
         verify = VerifiesService()
         assert message.guild
@@ -167,9 +167,9 @@ class SpellBot(Bot):
         await verify.upsert(guild.id, message_author_xid, verified)
         if not user_can_moderate(message.author, guild, message.channel):
             user_is_verified = await verify.is_verified()
-            if user_is_verified and await channels.unverified_only():
+            if user_is_verified and channel_data["unverified_only"]:
                 await message.delete()
-            if not user_is_verified and await channels.verified_only():
+            if not user_is_verified and channel_data["verified_only"]:
                 await message.delete()
 
 
