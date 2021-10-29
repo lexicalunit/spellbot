@@ -65,7 +65,7 @@ repository = 'https://github.com/lexicalunit/spellbot'
 version = "7.0.1"
 
 [tool.poetry.dependencies]
-PyYAML = "^5.4.1"
+PyYAML = ">=5.4.1,<7.0.0"
 SQLAlchemy = "^1.4.23"
 SQLAlchemy-Utils = "^0.37.8"
 aiohttp = "^3.7.4"
