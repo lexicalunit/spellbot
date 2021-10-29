@@ -37,3 +37,6 @@ jobs:
           poetry install --no-root
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
+        with:
+          setup-python-dependencies: false
+
