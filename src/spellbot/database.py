@@ -1,6 +1,8 @@
 import logging
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from typing import Generic, Type, TypeVar
+from uuid import uuid4
 
 from asgiref.sync import sync_to_async
 from sqlalchemy.engine import create_engine
@@ -13,12 +15,7 @@ from spellbot.models import create_all
 from spellbot.models.guild import Guild
 
 logger = logging.getLogger(__name__)
-
 ProxiedObject = TypeVar("ProxiedObject")
-
-from contextvars import ContextVar
-from uuid import uuid4
-
 context_vars: dict["ContextLocal", ContextVar] = {}
 
 
