@@ -43,6 +43,7 @@ class BaseInteraction:
     member: Optional[discord.Member]
     guild: Optional[discord.Guild]
     channel: Optional[discord.TextChannel]
+    channel_data: dict
 
     def __init__(self, bot: SpellBot, ctx: Optional[InteractionContext] = None):
         self.bot = bot
@@ -80,7 +81,9 @@ class BaseInteraction:
             try:
                 if ctx:
                     await interaction.services.guilds.upsert(interaction.guild)
-                    await interaction.services.channels.upsert(interaction.channel)
+                    interaction.channel_data = await interaction.services.channels.upsert(
+                        interaction.channel,
+                    )
                     await interaction.services.users.upsert(interaction.member)
                     if await interaction.services.users.is_banned(ctx.author_id):
                         raise UserBannedError()

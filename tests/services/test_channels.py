@@ -43,63 +43,65 @@ class TestServiceChannels:
 
     async def test_channels_current_default_seats(self, channel):
         channels = ChannelsService()
-        await channels.select(channel.xid)
-        assert await channels.current_default_seats() == channel.default_seats
+        data = await channels.select(channel.xid)
+        assert data["default_seats"] == channel.default_seats
 
     async def test_channels_set_default_seats(self, channel):
         channels = ChannelsService()
-        await channels.select(channel.xid)
-        assert await channels.current_default_seats() != 2
-        await channels.set_default_seats(2)
-        assert await channels.current_default_seats() == 2
+        data = await channels.select(channel.xid)
+        assert data["default_seats"] != 2
+
+        await channels.set_default_seats(channel.xid, 2)
+        data = await channels.select(channel.xid)
+        assert data["default_seats"] == 2
 
     async def test_channels_should_auto_verify(self, guild):
         channel = ChannelFactory.create(guild=guild, auto_verify=True)
         DatabaseSession.commit()
 
         channels = ChannelsService()
-        await channels.select(channel.xid)
-        assert await channels.should_auto_verify()
+        data = await channels.select(channel.xid)
+        assert data["auto_verify"]
 
     async def test_channels_verified_only(self, guild):
         channel = ChannelFactory.create(guild=guild, verified_only=True)
         DatabaseSession.commit()
 
         channels = ChannelsService()
-        await channels.select(channel.xid)
-        assert await channels.verified_only()
+        data = await channels.select(channel.xid)
+        assert data["verified_only"]
 
     async def test_channels_unverified_only(self, guild):
         channel = ChannelFactory.create(guild=guild, unverified_only=True)
         DatabaseSession.commit()
 
         channels = ChannelsService()
-        await channels.select(channel.xid)
-        assert await channels.unverified_only()
+        data = await channels.select(channel.xid)
+        assert data["unverified_only"]
 
     async def test_channels_set_auto_verify(self, guild):
         channel = ChannelFactory.create(guild=guild, auto_verify=False)
         DatabaseSession.commit()
 
         channels = ChannelsService()
-        await channels.select(channel.xid)
-        await channels.set_auto_verify(True)
-        assert await channels.should_auto_verify()
+        await channels.set_auto_verify(channel.xid, True)
+        data = await channels.select(channel.xid)
+        assert data["auto_verify"]
 
     async def test_channels_set_verified_only(self, guild):
         channel = ChannelFactory.create(guild=guild, verified_only=False)
         DatabaseSession.commit()
 
         channels = ChannelsService()
-        await channels.select(channel.xid)
-        await channels.set_verified_only(True)
-        assert await channels.verified_only()
+        await channels.set_verified_only(channel.xid, True)
+        data = await channels.select(channel.xid)
+        assert data["verified_only"]
 
     async def test_channels_set_unverified_only(self, guild):
         channel = ChannelFactory.create(guild=guild, unverified_only=False)
         DatabaseSession.commit()
 
         channels = ChannelsService()
-        await channels.select(channel.xid)
-        await channels.set_unverified_only(True)
-        assert await channels.unverified_only()
+        await channels.set_unverified_only(channel.xid, True)
+        data = await channels.select(channel.xid)
+        assert data["unverified_only"]

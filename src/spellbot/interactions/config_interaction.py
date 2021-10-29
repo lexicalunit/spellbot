@@ -301,7 +301,7 @@ class ConfigInteraction(BaseInteraction):
 
     async def set_default_seats(self, seats: int):
         assert self.ctx
-        await self.services.channels.set_default_seats(seats)
+        await self.services.channels.set_default_seats(self.ctx.channel_id, seats)
         await safe_send_channel(
             self.ctx,
             f"Default seats set to {seats} for this channel.",
@@ -310,7 +310,7 @@ class ConfigInteraction(BaseInteraction):
 
     async def set_auto_verify(self, setting: bool):
         assert self.ctx
-        await self.services.channels.set_auto_verify(setting)
+        await self.services.channels.set_auto_verify(self.ctx.channel_id, setting)
         await safe_send_channel(
             self.ctx,
             f"Auto verification set to {setting} for this channel.",
@@ -319,7 +319,7 @@ class ConfigInteraction(BaseInteraction):
 
     async def set_verified_only(self, setting: bool):
         assert self.ctx
-        await self.services.channels.set_verified_only(setting)
+        await self.services.channels.set_verified_only(self.ctx.channel_id, setting)
         await safe_send_channel(
             self.ctx,
             f"Verified only set to {setting} for this channel.",
@@ -328,7 +328,7 @@ class ConfigInteraction(BaseInteraction):
 
     async def set_unverified_only(self, setting: bool):
         assert self.ctx
-        await self.services.channels.set_unverified_only(setting)
+        await self.services.channels.set_unverified_only(self.ctx.channel_id, setting)
         await safe_send_channel(
             self.ctx,
             f"Unverified only set to {setting} for this channel.",

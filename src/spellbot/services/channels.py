@@ -4,6 +4,7 @@ from typing import Optional
 import discord
 from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.sql.expression import update
 
 from spellbot.database import DatabaseSession
 from spellbot.models.channel import Channel
@@ -11,11 +12,8 @@ from spellbot.services import BaseService
 
 
 class ChannelsService(BaseService):
-    def __init__(self):
-        self.channel: Optional[Channel] = None
-
     @sync_to_async()
-    def upsert(self, channel: discord.TextChannel) -> None:
+    def upsert(self, channel: discord.TextChannel) -> dict:
         name_max_len = Channel.name.property.columns[0].type.length  # type: ignore
         name = channel.name[:name_max_len]
         values = {
@@ -35,65 +33,35 @@ class ChannelsService(BaseService):
         )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
-        self.channel = (
-            DatabaseSession.query(Channel)
-            .filter(
-                Channel.xid == channel.id,
-            )
-            .one_or_none()
-        )
+
+        channel = DatabaseSession.query(Channel).filter(Channel.xid == channel.id).one()
+        return channel.to_dict()
 
     @sync_to_async
-    def select(self, channel_xid: int) -> bool:
-        self.channel = (
-            DatabaseSession.query(Channel)
-            .filter(
-                Channel.xid == channel_xid,
-            )
-            .one_or_none()
-        )
-        return bool(self.channel)
+    def select(self, xid: int) -> Optional[dict]:
+        channel = DatabaseSession.query(Channel).filter(Channel.xid == xid).one_or_none()
+        return channel.to_dict() if channel else None
 
     @sync_to_async
-    def current_default_seats(self) -> int:
-        assert self.channel
-        return self.channel.default_seats
-
-    @sync_to_async
-    def set_default_seats(self, seats: int) -> None:
-        assert self.channel
-        self.channel.default_seats = seats  # type: ignore
+    def set_default_seats(self, xid: int, seats: int) -> None:
+        query = update(Channel).where(Channel.xid == xid).values(default_seats=seats)
+        DatabaseSession.execute(query)
         DatabaseSession.commit()
 
     @sync_to_async
-    def should_auto_verify(self) -> bool:
-        assert self.channel
-        return bool(self.channel.auto_verify)
-
-    @sync_to_async
-    def verified_only(self) -> bool:
-        assert self.channel
-        return bool(self.channel.verified_only)
-
-    @sync_to_async
-    def unverified_only(self) -> bool:
-        assert self.channel
-        return bool(self.channel.unverified_only)
-
-    @sync_to_async
-    def set_auto_verify(self, setting: bool) -> None:
-        assert self.channel
-        self.channel.auto_verify = setting  # type: ignore
+    def set_auto_verify(self, xid: int, setting: bool) -> None:
+        query = update(Channel).where(Channel.xid == xid).values(auto_verify=setting)
+        DatabaseSession.execute(query)
         DatabaseSession.commit()
 
     @sync_to_async
-    def set_verified_only(self, setting: bool) -> None:
-        assert self.channel
-        self.channel.verified_only = setting  # type: ignore
+    def set_verified_only(self, xid: int, setting: bool) -> None:
+        query = update(Channel).where(Channel.xid == xid).values(verified_only=setting)
+        DatabaseSession.execute(query)
         DatabaseSession.commit()
 
     @sync_to_async
-    def set_unverified_only(self, setting: bool) -> None:
-        assert self.channel
-        self.channel.unverified_only = setting  # type: ignore
+    def set_unverified_only(self, xid: int, setting: bool) -> None:
+        query = update(Channel).where(Channel.xid == xid).values(unverified_only=setting)
+        DatabaseSession.execute(query)
         DatabaseSession.commit()
