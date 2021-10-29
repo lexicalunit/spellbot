@@ -52,7 +52,7 @@ class LookingForGameInteraction(BaseInteraction):
         if format and not seats:
             seats = GameFormat(format).players
         else:
-            seats = seats or await self.services.channels.current_default_seats()
+            seats = seats or self.channel_data["default_seats"]
         format = format or GameFormat.COMMANDER.value  # type: ignore
         friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", friends)))
 
