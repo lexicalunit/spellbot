@@ -4,7 +4,7 @@ from os import chdir
 from subprocess import run
 
 import toml
-from git import Repo
+from git.repo import Repo
 
 from . import REPO_ROOT, SRC_DIRS
 

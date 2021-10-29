@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Safely handle the case where message xid was not set for a game.
 - Fixes a spurious warning in test suite due to transaction rollback.
 
+### Changed
+
+- Dependency updates.
+
 ## [v7.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v7.0.1) - 2021-10-24
 
 ### Fixed
