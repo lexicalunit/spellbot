@@ -33,7 +33,12 @@ async def generate_link() -> Optional[str]:
                         data,
                     )
                     return None
-                return str(data["gameUrl"])
+                returned_url = str(data["gameUrl"])
+                wizards_url = returned_url.replace(
+                    "www.spelltable.com",
+                    "spelltable.wizards.com",
+                )
+                return wizards_url
     except ClientError as ex:
         logger.warning("warning: SpellTable API failure: %s", ex, exc_info=True)
         return None
