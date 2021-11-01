@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v7.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v7.1.0) - 2021-11-01
+
 ### Added
 
 - Adds the /verify and /unverify admin commands.
