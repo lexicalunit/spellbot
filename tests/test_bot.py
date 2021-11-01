@@ -56,6 +56,7 @@ class TestSpellBot:
             "Block",
             "channels",
             "context",
+            "game",
             "history",
             "info",
             "leave",
