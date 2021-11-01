@@ -85,8 +85,7 @@ class LookingForGameInteraction(BaseInteraction):
             assert message_xid
             new = False
             found = await self.services.games.select_by_message_xid(message_xid)
-            assert found  # There shouldn't be any way for this not to exist
-            if await self.services.games.blocked(self.ctx.author_id):
+            if not found or await self.services.games.blocked(self.ctx.author_id):
                 return await safe_send_channel(
                     self.ctx,
                     "You can not join this game.",
@@ -161,6 +160,51 @@ class LookingForGameInteraction(BaseInteraction):
         await self.services.games.add_points(self.ctx.author_id, points)
         embed = await self.services.games.to_embed()
         await safe_update_embed(message, embed=embed)
+
+    async def create_game(self, players: str, format: Optional[int] = None):
+        assert self.ctx
+        assert self.channel
+
+        game_format = GameFormat(format or GameFormat.COMMANDER.value)  # type: ignore
+        player_xids = list(map(int, re.findall(r"<@!?(\d+)>", players)))
+        requested_seats = len(player_xids)
+        if requested_seats < 2 or requested_seats > game_format.players:
+            return await safe_send_channel(
+                self.ctx,
+                f"You can't create a {game_format} game with {requested_seats} players.",
+                hidden=True,
+            )
+
+        found_players: list[int] = []
+        found_players = await self._ensure_players_exist(player_xids)
+
+        # TODO: Make the players leave any games they're currently pending in?
+
+        if len(found_players) != requested_seats:
+            excluded_player_xids = set(player_xids) - set(found_players)
+            excluded_players_s = ", ".join(f"<@{xid}>" for xid in excluded_player_xids)
+            return await safe_send_channel(
+                self.ctx,
+                (
+                    "Some of the players you mentioned can not"
+                    f" be added to a game: {excluded_players_s}"
+                ),
+                hidden=True,
+            )
+
+        await self.services.games.upsert(
+            guild_xid=self.ctx.guild_id,
+            channel_xid=self.channel.id,
+            author_xid=found_players[0],
+            friends=found_players[1:],
+            seats=requested_seats,
+            format=game_format.value,
+            create_new=True,
+        )
+        await self._handle_link_creation()
+        await self._handle_embed_creation(new=True, origin=False, fully_seated=True)
+        await self.services.games.record_plays()
+        await self._handle_direct_messages()
 
     async def _handle_link_creation(self):
         spelltable_link = await self.bot.create_spelltable_link()
@@ -393,3 +437,16 @@ class LookingForGameInteraction(BaseInteraction):
                 continue
             found_friends.append(friend_xid)
         return found_friends
+
+    async def _ensure_players_exist(self, player_xids: list[int]) -> list[int]:
+        assert self.ctx
+        found_players: list[int] = []
+        for player_xid in player_xids:
+            user = await safe_fetch_user(self.bot, player_xid)
+            if not user:
+                continue
+            data = await self.services.users.upsert(user)
+            if data["banned"]:
+                continue
+            found_players.append(player_xid)
+        return found_players

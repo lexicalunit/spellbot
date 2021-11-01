@@ -93,7 +93,54 @@ class GamesService(BaseService):
         friends: list[int],
         seats: int,
         format: int,
+        create_new: bool = False,
     ) -> bool:
+        existing: Optional[Game] = None
+        if not create_new:
+            existing = self._find_existing(
+                guild_xid=guild_xid,
+                channel_xid=channel_xid,
+                author_xid=author_xid,
+                friends=friends,
+                seats=seats,
+                format=format,
+            )
+
+        new: bool
+        game: Game
+        if existing:
+            game = existing
+            new = False
+        else:
+            game = Game(
+                guild_xid=guild_xid,
+                channel_xid=channel_xid,
+                seats=seats,
+                format=format,
+            )
+            DatabaseSession.add(game)
+            DatabaseSession.commit()
+            new = True
+
+        DatabaseSession.execute(
+            update(User)
+            .where(User.xid.in_([*friends, author_xid]))
+            .values(game_id=game.id)
+        )
+        DatabaseSession.commit()
+        self.game = game
+        return new
+
+    def _find_existing(
+        self,
+        *,
+        guild_xid: int,
+        channel_xid: int,
+        author_xid: int,
+        friends: list[int],
+        seats: int,
+        format: int,
+    ):
         required_seats = 1 + len(friends)
         inner = (
             select(
@@ -140,32 +187,7 @@ class GamesService(BaseService):
                 )
             )
         )
-        existing = outer.first()
-
-        new: bool
-        game: Game
-        if existing:
-            game = existing
-            new = False
-        else:
-            game = Game(
-                guild_xid=guild_xid,
-                channel_xid=channel_xid,
-                seats=seats,
-                format=format,
-            )
-            DatabaseSession.add(game)
-            DatabaseSession.commit()
-            new = True
-
-        DatabaseSession.execute(
-            update(User)
-            .where(User.xid.in_([*friends, author_xid]))
-            .values(game_id=game.id)
-        )
-        DatabaseSession.commit()
-        self.game = game
-        return new
+        return outer.first()
 
     @sync_to_async
     def to_embed(self, dm: bool = False) -> discord.Embed:
