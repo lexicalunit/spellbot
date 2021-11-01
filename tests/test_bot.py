@@ -186,12 +186,12 @@ class TestSpellBot:
         handle_verification_mock.assert_called_once_with(message)
         assert message.reply.call_args_list[0].kwargs["embed"].to_dict() == {
             "color": 5914365,
-            "description": "SpellBot uses slash commands now. Just type `/` to see the"
-            " list of supported commands! It may take up to one hour for these commands"
-            " to appear for the first time. Also note that SpellBot's invite link has"
-            " changed. Your server admin may need to re-invite the bot using the"
-            f" [updated invite link]({settings.BOT_INVITE_LINK}) if slash commands do"
-            " not show up after one hour.",
+            "description": (
+                "SpellBot uses [slash commands](https://discord.com/blog"
+                "/slash-commands-are-here) now. Type `/` to see the"
+                " list of commands! If you don't see any, please [re-invite the"
+                f" bot using its new invite link]({settings.BOT_INVITE_LINK})."
+            ),
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
         }
@@ -215,12 +215,12 @@ class TestSpellBot:
         handle_verification_mock.assert_called_once_with(message)
         assert message.reply.call_args_list[0].kwargs["embed"].to_dict() == {
             "color": 5914365,
-            "description": "SpellBot uses slash commands now. Just type `/` to see the"
-            " list of supported commands! It may take up to one hour for these commands"
-            " to appear for the first time. Also note that SpellBot's invite link has"
-            " changed. Your server admin may need to re-invite the bot using the"
-            f" [updated invite link]({settings.BOT_INVITE_LINK}) if slash commands do"
-            " not show up after one hour.",
+            "description": (
+                "SpellBot uses [slash commands](https://discord.com/blog"
+                "/slash-commands-are-here) now. Type `/` to see the"
+                " list of commands! If you don't see any, please [re-invite the"
+                f" bot using its new invite link]({settings.BOT_INVITE_LINK})."
+            ),
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
         }

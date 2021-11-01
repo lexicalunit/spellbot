@@ -138,16 +138,14 @@ class SpellBot(Bot):
             embed = discord.Embed()
             embed.set_thumbnail(url=settings.ICO_URL)
             embed.description = (
-                "SpellBot uses slash commands now. Just type `/` to see the list"
-                " of supported commands! It may take up to one hour for these"
-                " commands to appear for the first time. Also note that"
-                " SpellBot's invite link has changed. Your server admin may need"
-                " to re-invite the bot using the [updated invite link]"
-                f"({settings.BOT_INVITE_LINK}) if slash commands do not show up"
-                " after one hour."
+                "SpellBot uses [slash commands]"
+                "(https://discord.com/blog/slash-commands-are-here) now."
+                " Type `/` to see the list of commands! If you don't see any, please"
+                " [re-invite the bot using its new invite link]"
+                f"({settings.BOT_INVITE_LINK})."
             )
             embed.color = settings.EMBED_COLOR
-            await safe_message_reply(message, embed=embed)
+            await safe_message_reply(message, embed=embed, delete_after=10.0)
 
     async def handle_verification(self, message: discord.Message):
         # To verify users we need their user id, so just give up if it's not available
