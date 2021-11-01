@@ -47,7 +47,7 @@ class GamesService(BaseService):
         return bool(self.game)
 
     @sync_to_async
-    def select_by_message_xid(self, message_xid: int) -> bool:
+    def select_by_message_xid(self, message_xid: int) -> Optional[dict]:
         self.game = (
             DatabaseSession.query(Game)
             .filter(
@@ -55,10 +55,10 @@ class GamesService(BaseService):
             )
             .one_or_none()
         )
-        return bool(self.game)
+        return self.game.to_dict() if self.game else None
 
     @sync_to_async
-    def has_room(self) -> bool:
+    def current_status(self) -> bool:
         assert self.game
         rows = DatabaseSession.query(User).filter(User.game_id == self.game.id).count()
         return rows + 1 <= self.game.seats

@@ -11,7 +11,7 @@ from discord_slash.model import ButtonStyle
 
 from spellbot.client import SpellBot
 from spellbot.interactions import BaseInteraction
-from spellbot.models.game import GameFormat
+from spellbot.models.game import GameFormat, GameStatus
 from spellbot.operations import (
     safe_add_role,
     safe_create_invite,
@@ -98,7 +98,7 @@ class LookingForGameInteraction(BaseInteraction):
             # Discord's side of things. This makes it appear like a user can still
             # join a game, even though it's already started. We need to handle this
             # by informing the user and updating the game post they tried to join.
-            if not await self.services.games.has_room():
+            if found["status"] == GameStatus.STARTED.value:
                 # inform the player that their interaction failed
                 await safe_send_channel(
                     self.ctx,
@@ -116,6 +116,7 @@ class LookingForGameInteraction(BaseInteraction):
                     embed = await self.services.games.to_embed()
                     components = await self._fully_seated_components()
                     await safe_update_embed(message, embed=embed, components=components)
+
                 return
 
             await self.services.games.add_player(self.ctx.author_id)
