@@ -58,6 +58,12 @@ class GamesService(BaseService):
         return bool(self.game)
 
     @sync_to_async
+    def has_room(self) -> bool:
+        assert self.game
+        rows = DatabaseSession.query(User).filter(User.game_id == self.game.id).count()
+        return rows + 1 <= self.game.seats
+
+    @sync_to_async
     def add_player(self, player_xid: int) -> None:
         assert self.game
 

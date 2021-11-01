@@ -82,6 +82,7 @@ class LookingForGameInteraction(BaseInteraction):
         fully_seated: bool = False
         new: bool
         if origin:
+            assert message_xid
             new = False
             found = await self.services.games.select_by_message_xid(message_xid)
             assert found  # There shouldn't be any way for this not to exist
@@ -91,6 +92,32 @@ class LookingForGameInteraction(BaseInteraction):
                     "You can not join this game.",
                     hidden=True,
                 )
+
+            # Sometimes game posts have Join/Leave buttons on them even though
+            # the game has started. This can happen if an interaction fails on
+            # Discord's side of things. This makes it appear like a user can still
+            # join a game, even though it's already started. We need to handle this
+            # by informing the user and updating the game post they tried to join.
+            if not await self.services.games.has_room():
+                # inform the player that their interaction failed
+                await safe_send_channel(
+                    self.ctx,
+                    "Sorry, that game has already started.",
+                    hidden=True,
+                )
+
+                # attempt to update the problematic game post
+                message = await safe_fetch_message(
+                    self.channel,
+                    self.guild.id,
+                    message_xid,
+                )
+                if message:
+                    embed = await self.services.games.to_embed()
+                    components = await self._fully_seated_components()
+                    await safe_update_embed(message, embed=embed, components=components)
+                return
+
             await self.services.games.add_player(self.ctx.author_id)
         else:
             new = await self.services.games.upsert(
@@ -170,52 +197,61 @@ class LookingForGameInteraction(BaseInteraction):
         )
         await self.services.games.set_voice(voice_channel.id, voice_invite_link)
 
+    async def _pending_components(self):
+        buttons = [
+            comp.create_button(
+                style=ButtonStyle.blurple,
+                emoji="✋",
+                label="Join this game!",
+                custom_id="join",
+            ),
+            comp.create_button(
+                style=ButtonStyle.gray,
+                emoji="🚫",
+                label="Leave",
+                custom_id="leave",
+            ),
+        ]
+        action_row = comp.create_actionrow(*buttons)
+        return [action_row]
+
+    async def _fully_seated_components(self):
+        if not await self.services.guilds.should_show_points():
+            return []
+        select = comp.create_select(
+            options=[
+                comp.create_select_option("No points", value="0", emoji="0️⃣"),
+                comp.create_select_option("One point", value="1", emoji="1️⃣"),
+                comp.create_select_option("Two points", value="2", emoji="2️⃣"),
+                comp.create_select_option("Three points", value="3", emoji="3️⃣"),
+                comp.create_select_option("Four points", value="4", emoji="4️⃣"),
+                comp.create_select_option("Five points", value="5", emoji="5️⃣"),
+                comp.create_select_option("Six points", value="6", emoji="6️⃣"),
+                comp.create_select_option("Seven points", value="7", emoji="7️⃣"),
+                comp.create_select_option("Eight points", value="8", emoji="8️⃣"),
+                comp.create_select_option("Nine points", value="9", emoji="9️⃣"),
+                comp.create_select_option("Ten points", value="10", emoji="🔟"),
+            ],
+            placeholder="How many points do you have to report?",
+            custom_id="points",
+        )
+        action_row = comp.create_actionrow(select)
+        return [action_row]
+
     async def _handle_embed_creation(self, new: bool, origin: bool, fully_seated: bool):
         assert self.ctx
         assert self.guild
         assert self.channel
-        embed = await self.services.games.to_embed()
 
-        components = []
-        if not fully_seated:
-            buttons = [
-                comp.create_button(
-                    style=ButtonStyle.blurple,
-                    emoji="✋",
-                    label="Join this game!",
-                    custom_id="join",
-                ),
-                comp.create_button(
-                    style=ButtonStyle.gray,
-                    emoji="🚫",
-                    label="Leave",
-                    custom_id="leave",
-                ),
-            ]
-            action_row = comp.create_actionrow(*buttons)
-            components.append(action_row)
-        elif await self.services.guilds.should_show_points():
-            select = comp.create_select(
-                options=[
-                    comp.create_select_option("No points", value="0", emoji="0️⃣"),
-                    comp.create_select_option("One point", value="1", emoji="1️⃣"),
-                    comp.create_select_option("Two points", value="2", emoji="2️⃣"),
-                    comp.create_select_option("Three points", value="3", emoji="3️⃣"),
-                    comp.create_select_option("Four points", value="4", emoji="4️⃣"),
-                    comp.create_select_option("Five points", value="5", emoji="5️⃣"),
-                    comp.create_select_option("Six points", value="6", emoji="6️⃣"),
-                    comp.create_select_option("Seven points", value="7", emoji="7️⃣"),
-                    comp.create_select_option("Eight points", value="8", emoji="8️⃣"),
-                    comp.create_select_option("Nine points", value="9", emoji="9️⃣"),
-                    comp.create_select_option("Ten points", value="10", emoji="🔟"),
-                ],
-                placeholder="How many points do you have to report?",
-                custom_id="points",
-            )
-            action_row = comp.create_actionrow(select)
-            components.append(action_row)
+        # build the game post's embed and components:
+        embed: discord.Embed = await self.services.games.to_embed()
+        components: list[dict] = (
+            await self._fully_seated_components()
+            if fully_seated
+            else await self._pending_components()
+        )
 
-        if new:  # create initial game emebed
+        if new:  # create the initial game post:
             message = await safe_send_channel(
                 self.ctx,
                 embed=embed,
@@ -223,46 +259,45 @@ class LookingForGameInteraction(BaseInteraction):
             )
             if message:
                 await self.services.games.set_message_xid(message.id)
-        else:
-            message: Optional[discord.Message] = None
+            return
 
-            message_xid = await self.services.games.current_message_xid()
-            if message_xid:
-                message = await safe_fetch_message(
-                    self.channel,
-                    self.guild.id,
-                    message_xid,
-                )
+        message: Optional[discord.Message] = None
+        message_xid = await self.services.games.current_message_xid()
+        if message_xid:
+            message = await safe_fetch_message(self.channel, self.guild.id, message_xid)
 
-            if not message:  # repost a new game embed
-                message = await safe_send_channel(
-                    self.ctx,
-                    embed=embed,
-                    components=components,
-                )
-                if message:
-                    await self.services.games.set_message_xid(message.id)
-            else:  # update existing game embed
-                if origin:
-                    # self.ctx should be a ComponentContext from a button click
-                    ctx: ComponentContext = cast(ComponentContext, self.ctx)
+        if not message:  # repost the game post, we lost track of the original:
+            message = await safe_send_channel(
+                self.ctx,
+                embed=embed,
+                components=components,
+            )
+            if message:
+                await self.services.games.set_message_xid(message.id)
+            return
 
-                    # Try to update the origin embed, sometimes this can fail.
-                    # If it does fail, we will fallback to doing a standard
-                    # message.edit() call, which should hopefully at least update
-                    # the game embed, even if the interaction shows as "failed".
-                    success = await safe_update_embed_origin(
-                        ctx,
-                        embed=embed,
-                        components=components,
-                    )
-                    if success:
-                        return
+        # update the existing game post:
 
-                await safe_update_embed(message, embed=embed, components=components)
+        if origin:
+            # self.ctx should be a ComponentContext from a button click
+            ctx: ComponentContext = cast(ComponentContext, self.ctx)
 
-                if not origin:
-                    await self._reply_found_embed()
+            # Try to update the origin embed. Sometimes this can fail.
+            # If it does fail, we will fallback to doing a standard
+            # message.edit() call, which should hopefully at least update
+            # the game embed, even if the interaction shows as "failed".
+            success = await safe_update_embed_origin(
+                ctx,
+                embed=embed,
+                components=components,
+            )
+            if success:
+                return
+
+        await safe_update_embed(message, embed=embed, components=components)
+
+        if not origin:
+            await self._reply_found_embed()
 
     async def _reply_found_embed(self):
         assert self.ctx
