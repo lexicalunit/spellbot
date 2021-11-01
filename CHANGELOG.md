@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds the /game command for admins to create and start ad-hoc games.
+
 ### Changed
 
 - Reduce the size of the `!lfg` CTA and delete it after 10 seconds.
