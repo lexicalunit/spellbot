@@ -153,5 +153,5 @@ class TaskInteraction(BaseInteraction):
             post,
             content="Sorry, this game was expired due to inactivity.",
             embed=None,
-            components=None,
+            components=[],
         )
