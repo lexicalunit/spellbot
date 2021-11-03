@@ -1,28 +1,15 @@
-from spellbot.database import DatabaseSession
-from spellbot.models.award import GuildAward
-from spellbot.models.channel import Channel
-from spellbot.models.guild import Guild
+from tests.factories.award import GuildAwardFactory
+from tests.factories.channel import ChannelFactory
+from tests.factories.guild import GuildFactory
 
 
 class TestModelGuild:
     def test_guild(self):
-        guild = Guild(xid=101, name="guild-name")
-        channel1 = Channel(xid=201, name="channel1", guild=guild)
-        channel2 = Channel(xid=202, name="channel2", guild=guild)
-        guild_award1 = GuildAward(
-            count=10,
-            role="a-role",
-            message="a-message",
-            guild=guild,
-        )
-        guild_award2 = GuildAward(
-            count=20,
-            role="b-role",
-            message="b-message",
-            guild=guild,
-        )
-        DatabaseSession.add_all([guild, channel1, channel2, guild_award1, guild_award2])
-        DatabaseSession.commit()
+        guild = GuildFactory.create()
+        channel1 = ChannelFactory.create(guild=guild)
+        channel2 = ChannelFactory.create(guild=guild)
+        award1 = GuildAwardFactory.create(count=10, guild=guild)
+        award2 = GuildAwardFactory.create(count=20, guild=guild)
 
         assert guild.to_dict() == {
             "xid": guild.xid,
@@ -34,6 +21,6 @@ class TestModelGuild:
             "voice_create": guild.voice_create,
             "show_points": guild.show_points,
             "legacy_prefix": guild.legacy_prefix,
-            "channels": [channel.to_dict() for channel in guild.channels],
-            "awards": [award.to_dict() for award in guild.awards],
+            "channels": [channel1.to_dict(), channel2.to_dict()],
+            "awards": [award1.to_dict(), award2.to_dict()],
         }

@@ -3,9 +3,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from spellbot.cogs.score import ScoreCog
-from spellbot.database import DatabaseSession
-from spellbot.models.game import Game
-from spellbot.models.play import Play
+from tests.factories.game import GameFactory
+from tests.factories.play import PlayFactory
 from tests.fixtures import build_channel, build_ctx, build_guild
 
 
@@ -27,11 +26,12 @@ class TestCogScore:
             "type": "rich",
         }
 
-        game = Game(seats=2, guild_xid=ctx.guild.id, channel_xid=ctx.channel.id)
-        DatabaseSession.add(game)
-        DatabaseSession.commit()
-        DatabaseSession.add(Play(user_xid=ctx.author.id, game_id=game.id))
-        DatabaseSession.commit()
+        game = GameFactory.create(
+            seats=2,
+            guild_xid=ctx.guild.id,
+            channel_xid=ctx.channel.id,
+        )
+        PlayFactory.create(user_xid=ctx.author.id, game_id=game.id)
 
         ctx.send = AsyncMock()
         await cog.score.func(cog, ctx)
@@ -48,11 +48,12 @@ class TestCogScore:
             "type": "rich",
         }
 
-        game = Game(seats=2, guild_xid=ctx.guild.id, channel_xid=ctx.channel.id)
-        DatabaseSession.add(game)
-        DatabaseSession.commit()
-        DatabaseSession.add(Play(user_xid=ctx.author.id, game_id=game.id))
-        DatabaseSession.commit()
+        game = GameFactory.create(
+            seats=2,
+            guild_xid=ctx.guild.id,
+            channel_xid=ctx.channel.id,
+        )
+        PlayFactory.create(user_xid=ctx.author.id, game_id=game.id)
 
         ctx.send = AsyncMock()
         await cog.score.func(cog, ctx)

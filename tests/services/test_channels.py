@@ -38,7 +38,6 @@ class TestServiceChannels:
         assert not await channels.select(404)
 
         ChannelFactory.create(guild=guild, xid=404)
-        DatabaseSession.commit()
         assert await channels.select(404)
 
     async def test_channels_current_default_seats(self, channel):
@@ -57,7 +56,6 @@ class TestServiceChannels:
 
     async def test_channels_should_auto_verify(self, guild):
         channel = ChannelFactory.create(guild=guild, auto_verify=True)
-        DatabaseSession.commit()
 
         channels = ChannelsService()
         data = await channels.select(channel.xid)
@@ -65,7 +63,6 @@ class TestServiceChannels:
 
     async def test_channels_verified_only(self, guild):
         channel = ChannelFactory.create(guild=guild, verified_only=True)
-        DatabaseSession.commit()
 
         channels = ChannelsService()
         data = await channels.select(channel.xid)
@@ -73,7 +70,6 @@ class TestServiceChannels:
 
     async def test_channels_unverified_only(self, guild):
         channel = ChannelFactory.create(guild=guild, unverified_only=True)
-        DatabaseSession.commit()
 
         channels = ChannelsService()
         data = await channels.select(channel.xid)
@@ -81,7 +77,6 @@ class TestServiceChannels:
 
     async def test_channels_set_auto_verify(self, guild):
         channel = ChannelFactory.create(guild=guild, auto_verify=False)
-        DatabaseSession.commit()
 
         channels = ChannelsService()
         await channels.set_auto_verify(channel.xid, True)
@@ -90,7 +85,6 @@ class TestServiceChannels:
 
     async def test_channels_set_verified_only(self, guild):
         channel = ChannelFactory.create(guild=guild, verified_only=False)
-        DatabaseSession.commit()
 
         channels = ChannelsService()
         await channels.set_verified_only(channel.xid, True)
@@ -99,7 +93,6 @@ class TestServiceChannels:
 
     async def test_channels_set_unverified_only(self, guild):
         channel = ChannelFactory.create(guild=guild, unverified_only=False)
-        DatabaseSession.commit()
 
         channels = ChannelsService()
         await channels.set_unverified_only(channel.xid, True)

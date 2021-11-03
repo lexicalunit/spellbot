@@ -10,3 +10,4 @@ class GameFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     class Meta:
         model = Game
+        sqlalchemy_session_persistence = "flush"

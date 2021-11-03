@@ -1,6 +1,5 @@
 import pytest
 
-from spellbot.database import DatabaseSession
 from spellbot.errors import SpellbotAdminOnly, UserBannedError
 from spellbot.interactions import BaseInteraction
 from tests.factories.user import UserFactory
@@ -37,7 +36,6 @@ class TestInteractionBase:
 
     async def test_create_when_user_banned(self, bot, ctx):
         UserFactory.create(xid=ctx.author.id, banned=True)
-        DatabaseSession.commit()
 
         with pytest.raises(UserBannedError):
             async with MockInteraction.create(bot, ctx):
