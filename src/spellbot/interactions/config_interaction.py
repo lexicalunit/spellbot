@@ -235,13 +235,18 @@ class ConfigInteraction(BaseInteraction):
         repeating: Optional[bool] = False,
     ):
         assert self.ctx
+        if count < 1:
+            return await safe_send_channel(
+                self.ctx,
+                "You can't create an award for zero games played.",
+                hidden=True,
+            )
         if await self.services.guilds.has_award_with_count(count):
-            await safe_send_channel(
+            return await safe_send_channel(
                 self.ctx,
                 "There's already an award for players who reach that many games.",
                 hidden=True,
             )
-            return
         await self.services.guilds.award_add(count, role, message, repeating)
         settings = Settings()
         embed = Embed()
