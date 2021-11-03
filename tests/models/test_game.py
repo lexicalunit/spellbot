@@ -1,20 +1,18 @@
 from datetime import datetime
 
-from spellbot.database import DatabaseSession
-from spellbot.models.channel import Channel
-from spellbot.models.game import Game, GameStatus
-from spellbot.models.guild import Guild
-from spellbot.models.play import Play
-from spellbot.models.user import User
+from spellbot.models.game import GameStatus
+from tests.factories.channel import ChannelFactory
+from tests.factories.game import GameFactory
+from tests.factories.guild import GuildFactory
+from tests.factories.play import PlayFactory
+from tests.factories.user import UserFactory
 
 
 class TestModelGame:
     def test_game_to_dict(self):
-        guild = Guild(xid=101, name="guild-name")
-        channel = Channel(xid=201, name="channel-name", guild=guild)
-        game = Game(message_xid=301, seats=4, guild=guild, channel=channel)
-        DatabaseSession.add_all([guild, channel, game])
-        DatabaseSession.commit()
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild)
+        game = GameFactory.create(guild=guild, channel=channel)
 
         assert game.to_dict() == {
             "id": game.id,
@@ -35,14 +33,12 @@ class TestModelGame:
         }
 
     def test_game_show_links(self):
-        guild1 = Guild(xid=101, name="guild-name")
-        guild2 = Guild(xid=102, name="guild-name", show_links=True)
-        channel1 = Channel(xid=201, name="channel-name", guild=guild1)
-        channel2 = Channel(xid=202, name="channel-name", guild=guild2)
-        game1 = Game(message_xid=301, seats=4, guild=guild1, channel=channel1)
-        game2 = Game(message_xid=302, seats=4, guild=guild2, channel=channel2)
-        DatabaseSession.add_all([guild1, guild2, channel1, channel2, game1, game2])
-        DatabaseSession.commit()
+        guild1 = GuildFactory.create()
+        guild2 = GuildFactory.create(show_links=True)
+        channel1 = ChannelFactory.create(guild=guild1)
+        channel2 = ChannelFactory.create(guild=guild2)
+        game1 = GameFactory.create(guild=guild1, channel=channel1)
+        game2 = GameFactory.create(guild=guild2, channel=channel2)
 
         assert not game1.show_links()
         assert game1.show_links(True)
@@ -50,11 +46,9 @@ class TestModelGame:
         assert game2.show_links(True)
 
     def test_game_embed_empty(self, settings):
-        guild = Guild(xid=101, name="guild-name")
-        channel = Channel(xid=201, name="channel-name", guild=guild)
-        game = Game(message_xid=301, seats=4, guild=guild, channel=channel)
-        DatabaseSession.add_all([guild, channel, game])
-        DatabaseSession.commit()
+        guild = GuildFactory.create(motd=None)
+        channel = ChannelFactory.create(guild=guild)
+        game = GameFactory.create(guild=guild, channel=channel)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -71,12 +65,10 @@ class TestModelGame:
         }
 
     def test_game_embed_pending(self, settings):
-        guild = Guild(xid=101, name="guild-name")
-        channel = Channel(xid=201, name="channel-name", guild=guild)
-        game = Game(message_xid=301, seats=4, guild=guild, channel=channel)
-        player = User(xid=401, name="player", game=game)
-        DatabaseSession.add_all([guild, channel, game, player])
-        DatabaseSession.commit()
+        guild = GuildFactory.create(motd=None)
+        channel = ChannelFactory.create(guild=guild)
+        game = GameFactory.create(guild=guild, channel=channel)
+        player = UserFactory.create(game=game)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -96,10 +88,9 @@ class TestModelGame:
         }
 
     def test_game_embed_started_with_spelltable_link(self, settings):
-        guild = Guild(xid=101, name="guild-name")
-        channel = Channel(xid=201, name="channel-name", guild=guild)
-        game = Game(
-            message_xid=301,
+        guild = GuildFactory.create(motd=None)
+        channel = ChannelFactory.create(guild=guild)
+        game = GameFactory.create(
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31),
@@ -107,10 +98,8 @@ class TestModelGame:
             guild=guild,
             channel=channel,
         )
-        player1 = User(xid=401, name="player1", game=game)
-        player2 = User(xid=402, name="player2", game=game)
-        DatabaseSession.add_all([guild, channel, game, player1, player2])
-        DatabaseSession.commit()
+        player1 = UserFactory.create(game=game)
+        player2 = UserFactory.create(game=game)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -156,25 +145,19 @@ class TestModelGame:
         }
 
     def test_game_embed_started_with_points(self, settings):
-        guild = Guild(xid=101, name="guild-name", show_points=True)
-        channel = Channel(xid=201, name="channel-name", guild=guild)
-        game = Game(
-            message_xid=301,
+        guild = GuildFactory.create(show_points=True, motd=None)
+        channel = ChannelFactory.create(guild=guild)
+        game = GameFactory.create(
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31),
             guild=guild,
             channel=channel,
         )
-        DatabaseSession.add_all([guild, channel, game])
-        DatabaseSession.commit()
-
-        player1 = User(xid=401, name="player1", game=game)
-        player2 = User(xid=402, name="player2", game=game)
-        play1 = Play(user_xid=player1.xid, game_id=game.id, points=5)
-        play2 = Play(user_xid=player2.xid, game_id=game.id, points=1)
-        DatabaseSession.add_all([player1, player2, play1, play2])
-        DatabaseSession.commit()
+        player1 = UserFactory.create(game=game)
+        player2 = UserFactory.create(game=game)
+        PlayFactory.create(user_xid=player1.xid, game_id=game.id, points=5)
+        PlayFactory.create(user_xid=player2.xid, game_id=game.id, points=1)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -199,20 +182,17 @@ class TestModelGame:
         }
 
     def test_game_embed_started_without_spelltable_link(self, settings):
-        guild = Guild(xid=101, name="guild-name")
-        channel = Channel(xid=201, name="channel-name", guild=guild)
-        game = Game(
-            message_xid=301,
+        guild = GuildFactory.create(motd=None)
+        channel = ChannelFactory.create(guild=guild)
+        game = GameFactory.create(
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31),
             guild=guild,
             channel=channel,
         )
-        player1 = User(xid=401, name="player1", game=game)
-        player2 = User(xid=402, name="player2", game=game)
-        DatabaseSession.add_all([guild, channel, game, player1, player2])
-        DatabaseSession.commit()
+        player1 = UserFactory.create(game=game)
+        player2 = UserFactory.create(game=game)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -258,10 +238,9 @@ class TestModelGame:
         }
 
     def test_game_embed_started_with_voice_invite_link(self, settings):
-        guild = Guild(xid=101, name="guild-name")
-        channel = Channel(xid=201, name="channel-name", guild=guild)
-        game = Game(
-            message_xid=301,
+        guild = GuildFactory.create(motd=None)
+        channel = ChannelFactory.create(guild=guild)
+        game = GameFactory.create(
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31),
@@ -271,10 +250,8 @@ class TestModelGame:
             guild=guild,
             channel=channel,
         )
-        player1 = User(xid=401, name="player1", game=game)
-        player2 = User(xid=402, name="player2", game=game)
-        DatabaseSession.add_all([guild, channel, game, player1, player2])
-        DatabaseSession.commit()
+        player1 = UserFactory.create(game=game)
+        player2 = UserFactory.create(game=game)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -328,10 +305,9 @@ class TestModelGame:
         }
 
     def test_game_embed_started_with_motd(self, settings):
-        guild = Guild(xid=101, name="guild-name", motd="this is a message of the day")
-        channel = Channel(xid=201, name="channel-name", guild=guild)
-        game = Game(
-            message_xid=301,
+        guild = GuildFactory.create(motd="this is a message of the day")
+        channel = ChannelFactory.create(guild=guild)
+        game = GameFactory.create(
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31),
@@ -339,10 +315,8 @@ class TestModelGame:
             guild=guild,
             channel=channel,
         )
-        player1 = User(xid=401, name="player1", game=game)
-        player2 = User(xid=402, name="player2", game=game)
-        DatabaseSession.add_all([guild, channel, game, player1, player2])
-        DatabaseSession.commit()
+        player1 = UserFactory.create(game=game)
+        player2 = UserFactory.create(game=game)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,

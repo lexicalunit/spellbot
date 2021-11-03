@@ -21,7 +21,6 @@ class TestServiceGames:
 
     async def test_games_select_by_voice_xid(self, guild, channel):
         game = GameFactory.create(guild=guild, channel=channel, voice_xid=12345)
-        DatabaseSession.commit()
 
         games = GamesService()
         assert await games.select_by_voice_xid(game.voice_xid)
@@ -29,7 +28,6 @@ class TestServiceGames:
 
     async def test_games_select_by_message_xid(self, guild, channel):
         game = GameFactory.create(guild=guild, channel=channel)
-        DatabaseSession.commit()
 
         games = GamesService()
         assert await games.select_by_message_xid(game.message_xid)
@@ -37,7 +35,6 @@ class TestServiceGames:
 
     async def test_games_add_player(self, game):
         user = UserFactory.create()
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -72,7 +69,6 @@ class TestServiceGames:
 
     async def test_games_current_channel_xid(self, guild, channel):
         game = GameFactory.create(guild=guild, channel=channel)
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -80,7 +76,6 @@ class TestServiceGames:
 
     async def test_games_current_message_xid(self, guild, channel):
         game = GameFactory.create(guild=guild, channel=channel, message_xid=5)
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -97,7 +92,6 @@ class TestServiceGames:
         for _ in range(started_game.seats):
             UserFactory.create(game=started_game)
         UserFactory.create(game=pending_game)
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(started_game.id)
@@ -118,7 +112,6 @@ class TestServiceGames:
     async def test_games_current_player_xids(self, game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -129,7 +122,6 @@ class TestServiceGames:
         user2 = UserFactory.create(game=game)
         user3 = UserFactory.create()
         watch = WatchFactory.create(guild_xid=game.guild.xid, user_xid=user1.xid)
-        DatabaseSession.commit()
 
         DatabaseSession.expire_all()
         games = GamesService()
@@ -160,7 +152,6 @@ class TestServiceGames:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
         PlayFactory.create(user_xid=user1.xid, game_id=game.id)
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -172,7 +163,6 @@ class TestServiceGames:
         user2 = UserFactory.create(game=game)
         PlayFactory.create(user_xid=user1.xid, game_id=game.id, points=5)
         PlayFactory.create(user_xid=user2.xid, game_id=game.id, points=None)
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -193,7 +183,6 @@ class TestServiceGames:
         )
         user1 = UserFactory.create(xid=101, game=game)
         user2 = UserFactory.create(xid=102, game=game)
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -213,10 +202,8 @@ class TestServiceGamesBlocked:
     async def test_when_blocker_in_game(self, game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
-        DatabaseSession.commit()
 
         BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -225,10 +212,8 @@ class TestServiceGamesBlocked:
     async def test_when_blocker_outside_game(self, game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
-        DatabaseSession.commit()
 
         BlockFactory.create(user_xid=user2.xid, blocked_user_xid=user1.xid)
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -237,7 +222,6 @@ class TestServiceGamesBlocked:
     async def test_when_no_blockers(self, game):
         UserFactory.create(game=game)
         user3 = UserFactory.create()
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -249,10 +233,8 @@ class TestServiceGamesFilterBlocked:
     async def test_when_blocker_in_game(self, game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
-        DatabaseSession.commit()
 
         BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -261,10 +243,8 @@ class TestServiceGamesFilterBlocked:
     async def test_when_blocker_outside_game(self, game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
-        DatabaseSession.commit()
 
         BlockFactory.create(user_xid=user2.xid, blocked_user_xid=user1.xid)
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -273,7 +253,6 @@ class TestServiceGamesFilterBlocked:
     async def test_when_no_blockers(self, game):
         UserFactory.create(game=game)
         user3 = UserFactory.create()
-        DatabaseSession.commit()
 
         games = GamesService()
         await games.select(game.id)
@@ -301,7 +280,6 @@ class TestServiceGamesUpsert:
     async def test_lfg_with_friend_when_existing_game(self, game):
         user1 = UserFactory.create(xid=101)
         user2 = UserFactory.create(xid=102)
-        DatabaseSession.commit()
 
         games = GamesService()
         new = await games.upsert(
@@ -340,7 +318,6 @@ class TestServiceGamesUpsert:
     async def test_lfg_with_friend_when_no_game(self, guild, channel):
         user1 = UserFactory.create(xid=101)
         user2 = UserFactory.create(xid=102)
-        DatabaseSession.commit()
 
         games = GamesService()
         new = await games.upsert(
@@ -365,7 +342,6 @@ class TestServiceGamesUpsert:
         user2 = UserFactory.create(xid=102)
         user3 = UserFactory.create(xid=103)
         bad_game = GameFactory.create(seats=2, channel=channel, guild=guild)
-        DatabaseSession.commit()
 
         games = GamesService()
         new = await games.upsert(
@@ -395,7 +371,6 @@ class TestServiceGamesUpsert:
             guild=guild,
             format=GameFormat.TWO_HEADED_GIANT.value,
         )
-        DatabaseSession.commit()
 
         games = GamesService()
         new = await games.upsert(

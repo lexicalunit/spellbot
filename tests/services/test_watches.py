@@ -18,7 +18,6 @@ class TestServiceWatches:
         watch1 = WatchFactory.create(guild_xid=guild1.xid, user_xid=user1.xid)
         watch2 = WatchFactory.create(guild_xid=guild1.xid, user_xid=user2.xid)
         WatchFactory.create(guild_xid=guild2.xid, user_xid=user3.xid)
-        DatabaseSession.commit()
 
         DatabaseSession.expire_all()
         watches = WatchesService()

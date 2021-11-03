@@ -14,7 +14,6 @@ from tests.factories.user import UserFactory
 class TestServiceUsers:
     async def test_users_upsert(self):
         user = UserFactory.create(xid=201)
-        DatabaseSession.commit()
 
         discord_user = MagicMock()
         discord_user.id = 201
@@ -41,7 +40,6 @@ class TestServiceUsers:
         assert not await users.select(201)
 
         UserFactory.create(xid=201)
-        DatabaseSession.commit()
 
         DatabaseSession.expire_all()
         assert await users.select(201)
@@ -49,7 +47,6 @@ class TestServiceUsers:
     async def test_users_is_banned(self):
         user1 = UserFactory.create(banned=False)
         user2 = UserFactory.create(banned=True)
-        DatabaseSession.commit()
 
         users = UsersService()
         assert not await users.is_banned(user1.xid)
@@ -65,7 +62,6 @@ class TestServiceUsers:
 
     async def test_users_set_banned(self):
         user = UserFactory.create(banned=False)
-        DatabaseSession.commit()
 
         users = UsersService()
         await users.set_banned(True, user.xid)
@@ -73,7 +69,6 @@ class TestServiceUsers:
 
     async def test_users_current_game_id(self, game):
         user = UserFactory.create(game=game)
-        DatabaseSession.commit()
 
         users = UsersService()
         await users.select(user.xid)
@@ -81,7 +76,6 @@ class TestServiceUsers:
 
     async def test_users_leave_game(self, game):
         user = UserFactory.create(game=game)
-        DatabaseSession.commit()
 
         users = UsersService()
         await users.select(user.xid)
@@ -91,7 +85,6 @@ class TestServiceUsers:
     async def test_users_is_waiting(self, game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
-        DatabaseSession.commit()
 
         users = UsersService()
         await users.select(user1.xid)
@@ -102,7 +95,6 @@ class TestServiceUsers:
     async def test_users_block(self):
         user1 = UserFactory.create()
         user2 = UserFactory.create()
-        DatabaseSession.commit()
 
         users = UsersService()
         await users.block(user1.xid, user2.xid)
@@ -114,7 +106,6 @@ class TestServiceUsers:
     async def test_users_unblock(self):
         user1 = UserFactory.create()
         user2 = UserFactory.create()
-        DatabaseSession.commit()
 
         users = UsersService()
         await users.block(user1.xid, user2.xid)
@@ -131,7 +122,6 @@ class TestServiceUsers:
 
     async def test_users_watch(self, guild):
         user = UserFactory.create()
-        DatabaseSession.commit()
 
         users = UsersService()
         await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note")
@@ -142,7 +132,6 @@ class TestServiceUsers:
 
     async def test_users_watch_upsert(self, guild):
         user = UserFactory.create()
-        DatabaseSession.commit()
 
         users = UsersService()
         await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note1")
@@ -160,7 +149,6 @@ class TestServiceUsers:
 
     async def test_users_watch_without_note(self, guild):
         user = UserFactory.create()
-        DatabaseSession.commit()
 
         users = UsersService()
         await users.watch(guild_xid=guild.xid, user_xid=user.xid)
@@ -171,7 +159,6 @@ class TestServiceUsers:
 
     async def test_users_unwatch(self, guild):
         user = UserFactory.create()
-        DatabaseSession.commit()
 
         users = UsersService()
         await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note")

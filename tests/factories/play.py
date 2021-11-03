@@ -8,3 +8,4 @@ class PlayFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     class Meta:
         model = Play
+        sqlalchemy_session_persistence = "flush"

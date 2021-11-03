@@ -215,7 +215,6 @@ class TestCogAdminWatches:
         watch1 = WatchFactory.create(guild_xid=guild1.xid, user_xid=user1.xid)
         watch2 = WatchFactory.create(guild_xid=guild1.xid, user_xid=user2.xid)
         WatchFactory.create(guild_xid=guild2.xid, user_xid=user3.xid)
-        DatabaseSession.commit()
 
         ctx.send = AsyncMock()
         ctx.guild_id = guild1.xid
@@ -265,7 +264,6 @@ class TestCogAdminWatches:
             user_xid=user5.xid,
             note="ij " * 333,
         )
-        DatabaseSession.commit()
 
         paginator_mock = MagicMock()
         paginator_mock.start = AsyncMock()
@@ -314,7 +312,6 @@ class TestCogAdminWatches:
         WatchFactory.create(guild_xid=guild1.xid, user_xid=user3.xid, note="ef " * 333)
         WatchFactory.create(guild_xid=guild1.xid, user_xid=user4.xid, note="gh " * 333)
         WatchFactory.create(guild_xid=guild1.xid, user_xid=user5.xid, note="ij " * 333)
-        DatabaseSession.commit()
 
         paginator_mock = MagicMock()
         error = RuntimeError("start-error")
@@ -381,12 +378,10 @@ class TestCogAdminChannels:
 
     async def test_channels(self, bot, ctx, settings):
         guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        DatabaseSession.commit()
         channel1 = ChannelFactory.create(guild=guild, auto_verify=True)
         channel2 = ChannelFactory.create(guild=guild, unverified_only=True)
         channel3 = ChannelFactory.create(guild=guild, verified_only=True)
         channel4 = ChannelFactory.create(guild=guild, default_seats=2)
-        DatabaseSession.commit()
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.channels.func(cog, ctx)
@@ -406,9 +401,7 @@ class TestCogAdminChannels:
 
     async def test_channels_when_no_non_default_channels(self, bot, ctx, settings):
         guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        DatabaseSession.commit()
         ChannelFactory.create(guild=guild)
-        DatabaseSession.commit()
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.channels.func(cog, ctx)
@@ -427,7 +420,6 @@ class TestCogAdminChannels:
 
     async def test_channels_with_pagination(self, bot, ctx, monkeypatch):
         guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        DatabaseSession.commit()
         ChannelFactory.create_batch(
             100,
             guild=guild,
@@ -436,7 +428,6 @@ class TestCogAdminChannels:
             unverified_only=True,
             verified_only=True,
         )
-        DatabaseSession.commit()
 
         paginator_mock = MagicMock()
         paginator_mock.start = AsyncMock()
@@ -461,7 +452,6 @@ class TestCogAdminChannels:
         caplog,
     ):
         guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        DatabaseSession.commit()
         ChannelFactory.create_batch(
             100,
             guild=guild,
@@ -470,7 +460,6 @@ class TestCogAdminChannels:
             unverified_only=True,
             verified_only=True,
         )
-        DatabaseSession.commit()
 
         paginator_mock = MagicMock()
         error = RuntimeError("start-error")
@@ -488,7 +477,6 @@ class TestCogAdminChannels:
 class TestCogAdminAwards:
     async def test_awards(self, bot, ctx, settings):
         guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        DatabaseSession.commit()
         award1 = GuildAwardFactory.create(
             guild=guild,
             count=10,
@@ -507,7 +495,6 @@ class TestCogAdminAwards:
             role="role3",
             message="msg3",
         )
-        DatabaseSession.commit()
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.awards.func(cog, ctx)
@@ -545,7 +532,6 @@ class TestCogAdminAwards:
 
     async def test_awards_with_pagination(self, bot, ctx, monkeypatch):
         guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        DatabaseSession.commit()
         GuildAwardFactory.create_batch(
             40,
             guild=guild,
@@ -553,7 +539,6 @@ class TestCogAdminAwards:
             role="this-is-a-role-name",
             message="mm" * 50,
         )
-        DatabaseSession.commit()
 
         paginator_mock = MagicMock()
         paginator_mock.start = AsyncMock()
@@ -578,7 +563,6 @@ class TestCogAdminAwards:
         caplog,
     ):
         guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        DatabaseSession.commit()
         GuildAwardFactory.create_batch(
             40,
             guild=guild,
@@ -586,7 +570,6 @@ class TestCogAdminAwards:
             role="this-is-a-role-name",
             message="mm" * 50,
         )
-        DatabaseSession.commit()
 
         paginator_mock = MagicMock()
         error = RuntimeError("start-error")
@@ -601,9 +584,7 @@ class TestCogAdminAwards:
 
     async def test_award_delete(self, bot, ctx, settings):
         guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        DatabaseSession.commit()
         awards = GuildAwardFactory.create_batch(2, guild=guild)
-        DatabaseSession.commit()
 
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
