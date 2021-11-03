@@ -26,7 +26,6 @@ class TestInteractionTask:
 
     async def test_happy_path(self, bot, settings):
         db_guilds = GuildFactory.create_batch(5, voice_create=True)
-        DatabaseSession.commit()
 
         bot_guilds = {}
         for i, db_guild in enumerate(db_guilds):
@@ -65,7 +64,6 @@ class TestInteractionTask:
 
     async def test_channel_grace_period(self, bot, settings):
         db_guild = GuildFactory.create(voice_create=True)
-        DatabaseSession.commit()
 
         bot_guilds = {}
 
@@ -101,7 +99,6 @@ class TestInteractionTask:
 
     async def test_channel_occupied(self, bot, settings):
         db_guild = GuildFactory.create(voice_create=True)
-        DatabaseSession.commit()
 
         bot_guilds = {}
 
@@ -137,7 +134,6 @@ class TestInteractionTask:
 
     async def test_channel_occupied_past_limit(self, bot, settings):
         db_guild = GuildFactory.create(voice_create=True)
-        DatabaseSession.commit()
 
         bot_guilds = {}
 
@@ -173,7 +169,6 @@ class TestInteractionTask:
 
     async def test_channel_with_bad_permissions(self, bot, settings):
         db_guild = GuildFactory.create(voice_create=True)
-        DatabaseSession.commit()
 
         bot_guilds = {}
 
@@ -212,7 +207,6 @@ class TestInteractionTask:
         db_guild = GuildFactory.create(voice_create=True)
         db_channel = ChannelFactory.create(guild=db_guild)
         db_game = GameFactory.create(guild=db_guild, channel=db_channel, voice_xid=123)
-        DatabaseSession.commit()
 
         DatabaseSession.expire_all()
 
@@ -251,7 +245,6 @@ class TestInteractionTask:
         db_guild = GuildFactory.create(voice_create=True)
         db_channel = ChannelFactory.create(guild=db_guild)
         db_game = GameFactory.create(guild=db_guild, channel=db_channel, voice_xid=123)
-        DatabaseSession.commit()
 
         DatabaseSession.expire_all()
 
@@ -288,7 +281,6 @@ class TestInteractionTask:
 
     async def test_non_active_guilds(self, bot, settings):
         db_guilds = GuildFactory.create_batch(5, voice_create=True)
-        DatabaseSession.commit()
 
         bot_guilds = {}
         for i, db_guild in enumerate(db_guilds):
@@ -327,7 +319,6 @@ class TestInteractionTask:
 
     async def test_when_guild_cache_failure(self, bot, settings):
         db_guilds = GuildFactory.create_batch(5, voice_create=True)
-        DatabaseSession.commit()
 
         bot_guilds = {}
         for i, db_guild in enumerate(db_guilds):

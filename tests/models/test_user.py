@@ -1,34 +1,28 @@
-from spellbot.database import DatabaseSession
-from spellbot.models.channel import Channel
-from spellbot.models.game import Game, GameStatus
-from spellbot.models.guild import Guild
-from spellbot.models.play import Play
-from spellbot.models.user import User
+from spellbot.models.game import GameStatus
+from tests.factories.channel import ChannelFactory
+from tests.factories.game import GameFactory
+from tests.factories.guild import GuildFactory
+from tests.factories.play import PlayFactory
+from tests.factories.user import UserFactory
 
 
 class TestModelUser:
     def test_user(self):
-        guild = Guild(xid=101, name="guild-name")
-        channel = Channel(xid=201, name="channel-name", guild=guild)
-        game1 = Game(message_xid=301, seats=4, guild=guild, channel=channel)
-        user1 = User(xid=11, name="user1")
-        user2 = User(xid=12, name="user2", game=game1)
-        game2 = Game(
-            message_xid=301,
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild)
+        game1 = GameFactory.create(guild=guild, channel=channel)
+        user1 = UserFactory.create()
+        user2 = UserFactory.create(game=game1)
+        game2 = GameFactory.create(
             seats=2,
             status=GameStatus.STARTED.value,
             guild=guild,
             channel=channel,
         )
-        DatabaseSession.add_all([guild, channel, game1, game2, user1, user2])
-        DatabaseSession.commit()
-
-        player1 = User(xid=21, name="player1", game=game2)
-        player2 = User(xid=22, name="player2", game=game2)
-        play1 = Play(user_xid=player1.xid, game_id=game2.id, points=5)
-        play2 = Play(user_xid=player2.xid, game_id=game2.id, points=1)
-        DatabaseSession.add_all([player1, player2, play1, play2])
-        DatabaseSession.commit()
+        player1 = UserFactory.create(game=game2)
+        player2 = UserFactory.create(game=game2)
+        play1 = PlayFactory.create(user_xid=player1.xid, game_id=game2.id, points=5)
+        play2 = PlayFactory.create(user_xid=player2.xid, game_id=game2.id, points=1)
 
         assert user1.points(1) is None
         assert not user1.waiting

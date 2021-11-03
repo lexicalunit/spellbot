@@ -1,6 +1,5 @@
 import pytest
 
-from spellbot.database import DatabaseSession
 from spellbot.services.verifies import VerifiesService
 from tests.factories.user import UserFactory
 
@@ -9,7 +8,6 @@ from tests.factories.user import UserFactory
 class TestServiceVerifies:
     async def test_verifies_upsert(self, guild):
         user = UserFactory.create()
-        DatabaseSession.commit()
 
         verifies = VerifiesService()
         await verifies.upsert(guild.xid, user.xid)

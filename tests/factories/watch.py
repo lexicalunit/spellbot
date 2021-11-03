@@ -8,3 +8,4 @@ class WatchFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     class Meta:
         model = Watch
+        sqlalchemy_session_persistence = "flush"

@@ -10,3 +10,4 @@ class GuildFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     class Meta:
         model = Guild
+        sqlalchemy_session_persistence = "flush"

@@ -4,7 +4,6 @@ import discord
 import pytest
 
 from spellbot.cogs.leave import LeaveGameCog
-from spellbot.database import DatabaseSession
 from spellbot.interactions import leave_interaction
 from tests.factories.game import GameFactory
 from tests.factories.user import UserFactory
@@ -14,9 +13,7 @@ from tests.factories.user import UserFactory
 class TestCogLeaveGame:
     async def test_leave(self, bot, guild, channel, ctx, settings, monkeypatch):
         game = GameFactory.create(guild=guild, channel=channel)
-        DatabaseSession.commit()
         UserFactory.create(xid=ctx.author.id, name=ctx.author.display_name, game=game)
-        DatabaseSession.commit()
 
         sftc_mock = AsyncMock(return_value=ctx.channel)
         monkeypatch.setattr(leave_interaction, "safe_fetch_text_channel", sftc_mock)
@@ -51,7 +48,6 @@ class TestCogLeaveGame:
 
     async def test_leave_when_not_in_game(self, bot, ctx):
         UserFactory.create(xid=ctx.author.id, name=ctx.author.display_name)
-        DatabaseSession.commit()
 
         cog = LeaveGameCog(bot)
         await cog.leave.func(cog, ctx)
@@ -63,9 +59,7 @@ class TestCogLeaveGame:
 
     async def test_leave_when_no_channel(self, bot, guild, channel, monkeypatch):
         game = GameFactory.create(guild=guild, channel=channel)
-        DatabaseSession.commit()
         user = UserFactory.create(game=game)
-        DatabaseSession.commit()
 
         author = MagicMock()
         author.id = user.xid
@@ -105,9 +99,7 @@ class TestCogLeaveGame:
 
     async def test_leave_when_no_message(self, bot, guild, channel, monkeypatch):
         game = GameFactory.create(guild=guild, channel=channel)
-        DatabaseSession.commit()
         user = UserFactory.create(game=game)
-        DatabaseSession.commit()
 
         author = MagicMock()
         author.id = user.xid

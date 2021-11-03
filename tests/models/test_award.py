@@ -1,19 +1,11 @@
-from spellbot.database import DatabaseSession
-from spellbot.models.award import GuildAward
-from spellbot.models.guild import Guild
+from tests.factories.award import GuildAwardFactory
+from tests.factories.guild import GuildFactory
 
 
 class TestModelAward:
     def test_award(self):
-        guild = Guild(xid=101, name="guild-name")
-        guild_award = GuildAward(
-            count=10,
-            role="a-role",
-            message="a-message",
-            guild=guild,
-        )
-        DatabaseSession.add_all([guild, guild_award])
-        DatabaseSession.commit()
+        guild = GuildFactory.create()
+        guild_award = GuildAwardFactory.create(guild=guild)
 
         assert guild_award.to_dict() == {
             "id": guild_award.id,

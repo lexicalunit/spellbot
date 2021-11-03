@@ -37,14 +37,12 @@ class TestServiceGuilds:
         assert not await guilds.select(404)
 
         GuildFactory.create(xid=404)
-        DatabaseSession.commit()
 
         assert await guilds.select(404)
 
     async def test_guilds_should_voice_create(self):
         guild1 = GuildFactory.create()
         guild2 = GuildFactory.create(voice_create=True)
-        DatabaseSession.commit()
 
         guilds = GuildsService()
         await guilds.select(guild1.xid)
@@ -55,7 +53,6 @@ class TestServiceGuilds:
     async def test_guilds_should_show_points(self):
         guild1 = GuildFactory.create()
         guild2 = GuildFactory.create(show_points=True)
-        DatabaseSession.commit()
 
         guilds = GuildsService()
         await guilds.select(guild1.xid)
@@ -68,7 +65,6 @@ class TestServiceGuilds:
         assert not await guilds.select(101)
 
         guild = GuildFactory.create()
-        DatabaseSession.commit()
 
         guilds = GuildsService()
         await guilds.select(guild.xid)
@@ -84,7 +80,6 @@ class TestServiceGuilds:
         assert not await guilds.select(101)
 
         guild = GuildFactory.create(xid=101)
-        DatabaseSession.commit()
 
         guilds = GuildsService()
         await guilds.select(101)
@@ -108,7 +103,6 @@ class TestServiceGuilds:
         assert not await guilds.select(101)
 
         guild = GuildFactory.create(xid=101, name="guild-name")
-        DatabaseSession.commit()
 
         guilds = GuildsService()
         await guilds.select(101)
@@ -130,7 +124,6 @@ class TestServiceGuilds:
         assert not await guilds.select(101)
 
         guild = GuildFactory.create(xid=101)
-        DatabaseSession.commit()
 
         guilds = GuildsService()
         await guilds.select(101)
@@ -149,7 +142,6 @@ class TestServiceGuilds:
 
     async def test_guilds_current_name(self):
         guild = GuildFactory.create(xid=101)
-        DatabaseSession.commit()
 
         guilds = GuildsService()
         await guilds.select(101)
@@ -162,13 +154,11 @@ class TestServiceGuilds:
         guild1 = GuildFactory.create(voice_create=True)
         GuildFactory.create()
         guild3 = GuildFactory.create(voice_create=True)
-        DatabaseSession.commit()
 
         assert set(await guilds.voiced()) == {guild1.xid, guild3.xid}
 
     async def test_guilds_to_dict(self):
         guild = GuildFactory.create(xid=101)
-        DatabaseSession.commit()
 
         guilds = GuildsService()
         await guilds.select(101)
@@ -202,7 +192,6 @@ class TestServiceGuilds:
     async def test_guilds_award_delete(self, guild):
         award1 = GuildAwardFactory.create(guild=guild)
         award2 = GuildAwardFactory.create(guild=guild)
-        DatabaseSession.commit()
 
         guilds = GuildsService()
         await guilds.select(guild.xid)
@@ -217,7 +206,6 @@ class TestServiceGuilds:
     async def test_guilds_has_award_with_count(self, guild):
         award1 = GuildAwardFactory.create(guild=guild, count=10)
         award2 = GuildAwardFactory.create(guild=guild, count=20)
-        DatabaseSession.commit()
 
         guilds = GuildsService()
         await guilds.select(guild.xid)

@@ -9,3 +9,4 @@ class ChannelFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     class Meta:
         model = Channel
+        sqlalchemy_session_persistence = "flush"

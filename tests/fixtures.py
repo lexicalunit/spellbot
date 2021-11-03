@@ -34,6 +34,9 @@ from tests.factories.user import UserFactory
 from tests.factories.verify import VerifyFactory
 from tests.factories.watch import WatchFactory
 
+CLIENT_USER_ID = 1  # id of the test bot itself
+OWNER_USER_ID = 2  # id of the test guild owner
+
 
 @asynccontextmanager
 async def _session_context_manager(nosession: bool = False) -> AsyncGenerator[None, None]:
@@ -106,35 +109,27 @@ def frozen_now(freezer) -> Generator[datetime, None, None]:
 
 @pytest.fixture
 def guild() -> Guild:
-    inst = GuildFactory.create()
-    DatabaseSession.commit()
-    return inst
+    return GuildFactory.create()
 
 
 @pytest.fixture
 def channel(guild) -> Channel:
-    inst = ChannelFactory.create(guild=guild)
-    DatabaseSession.commit()
-    return inst
+    return ChannelFactory.create(guild=guild)
 
 
 @pytest.fixture
 def game(guild, channel) -> Game:
-    inst = GameFactory.create(guild=guild, channel=channel)
-    DatabaseSession.commit()
-    return inst
+    return GameFactory.create(guild=guild, channel=channel)
 
 
 @pytest.fixture
 def user() -> Game:
-    inst = UserFactory.create()
-    DatabaseSession.commit()
-    return inst
+    return UserFactory.create()
 
 
 def build_client_user() -> discord.User:
     client_user = MagicMock(spec=discord.User)
-    client_user.id = 1
+    client_user.id = CLIENT_USER_ID
     client_user.display_name = "SpellBot"
     client_user.mention = f"<@{client_user.id}>"
     return client_user
@@ -146,6 +141,7 @@ def build_author(offset: int = 1) -> discord.User:
     author.display_name = f"user-{author.id}"
     author.mention = f"<@{author.id}>"
     author.send = AsyncMock()
+    author.roles = []
     return author
 
 
@@ -153,6 +149,7 @@ def build_guild(offset: int = 1) -> discord.Guild:
     guild = MagicMock(spec=discord.Guild)
     guild.id = 2000 + offset
     guild.name = f"guild-{guild.id}"
+    guild.owner_id = OWNER_USER_ID
     return guild
 
 
@@ -161,6 +158,8 @@ def build_channel(guild: discord.Guild, offset: int = 1) -> discord.TextChannel:
     channel.id = 3000 + offset
     channel.name = f"channel-{channel.id}"
     channel.guild = guild
+    channel.type = discord.ChannelType.text
+    channel.permissions_for = MagicMock(return_value=discord.Permissions())
     return channel
 
 
@@ -176,6 +175,9 @@ def build_message(
     message.guild = guild
     message.channel = channel
     message.author = author
+    message.reply = AsyncMock()
+    message.delete = AsyncMock()
+    message.content = "content"
     return message
 
 
@@ -242,6 +244,11 @@ def dpy_channel(dpy_guild) -> discord.TextChannel:
 
 
 @pytest.fixture
+def dpy_message(dpy_guild, dpy_channel, dpy_author) -> discord.Message:
+    return build_message(dpy_guild, dpy_channel, dpy_author)
+
+
+@pytest.fixture
 def ctx(dpy_guild, dpy_channel, dpy_author):
     return build_ctx(dpy_guild, dpy_channel, dpy_author)
 
@@ -278,34 +285,22 @@ def mock_operations(
 
 def guild_from_ctx(ctx_fixture, **kwargs) -> Guild:
     kwargs["xid"] = kwargs.get("xid", ctx_fixture.guild.id)
-    guild = GuildFactory.create(**kwargs)
-    DatabaseSession.commit()
-    return guild
+    return GuildFactory.create(**kwargs)
 
 
 def channel_from_ctx(ctx_fixture, guild: Guild, **kwargs) -> Channel:
     kwargs["xid"] = kwargs.get("xid", ctx_fixture.channel.id)
-    channel = ChannelFactory.create(guild=guild, **kwargs)
-    DatabaseSession.commit()
-    return channel
+    return ChannelFactory.create(guild=guild, **kwargs)
 
 
 def game_from_ctx(ctx_fixture, guild: Guild, channel: Channel, **kwargs) -> Game:
     kwargs["message_xid"] = kwargs.get("message_xid", ctx_fixture.message.id)
-    game = GameFactory.create(
-        guild=guild,
-        channel=channel,
-        **kwargs,
-    )
-    DatabaseSession.commit()
-    return game
+    return GameFactory.create(guild=guild, channel=channel, **kwargs)
 
 
 def user_from_ctx(ctx_fixture, **kwargs) -> User:
     kwargs["xid"] = kwargs.get("xid", ctx_fixture.author.id)
-    user = UserFactory.create(**kwargs)
-    DatabaseSession.commit()
-    return user
+    return UserFactory.create(**kwargs)
 
 
 def mock_discord_user(user: User) -> discord.User:

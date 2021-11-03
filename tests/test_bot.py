@@ -11,7 +11,6 @@ from spellbot.database import DatabaseSession
 from spellbot.errors import SpellbotAdminOnly, UserBannedError
 from spellbot.models.channel import Channel
 from spellbot.models.guild import Guild
-from spellbot.models.user import User
 from spellbot.models.verify import Verify
 from tests.factories.channel import ChannelFactory
 from tests.factories.guild import GuildFactory
@@ -85,58 +84,43 @@ class TestSpellBot:
         assert link == "http://mock"
         generate_link_mock.assert_called_once_with()
 
-    async def test_handle_errors(self, bot, monkeypatch, caplog):
-        ctx = MagicMock()
-
-        safe_send_channel_mock = AsyncMock()
-        monkeypatch.setattr(client, "safe_send_channel", safe_send_channel_mock)
+    async def test_handle_error_dm(self, bot, ctx):
         await bot.handle_errors(ctx, MagicMock(spec=errors.NoPrivateMessage))
-        safe_send_channel_mock.assert_called_once_with(
-            ctx,
+        ctx.send.assert_called_once_with(
             "This command is not supported via Direct Message.",
             hidden=True,
         )
 
-        safe_send_channel_mock = AsyncMock()
-        monkeypatch.setattr(client, "safe_send_channel", safe_send_channel_mock)
+    async def test_handle_error_permissions(self, bot, ctx):
         await bot.handle_errors(ctx, MagicMock(spec=SpellbotAdminOnly))
-        safe_send_channel_mock.assert_called_once_with(
-            ctx,
+        ctx.send.assert_called_once_with(
             "You do not have permission to do that.",
             hidden=True,
         )
 
-        safe_send_channel_mock = AsyncMock()
-        monkeypatch.setattr(client, "safe_send_channel", safe_send_channel_mock)
+    async def test_handle_error_banned(self, bot, ctx):
         await bot.handle_errors(ctx, MagicMock(spec=UserBannedError))
-        safe_send_channel_mock.assert_called_once_with(
-            ctx,
+        ctx.send.assert_called_once_with(
             "You have been banned from using SpellBot.",
             hidden=True,
         )
 
-        safe_send_channel_mock = AsyncMock()
-        monkeypatch.setattr(client, "safe_send_channel", safe_send_channel_mock)
-        error = RuntimeError("test-bot-unhandled-exception")
-        await bot.handle_errors(ctx, error)
+    async def test_handle_error_unhandled_exception(self, bot, ctx, caplog):
+        await bot.handle_errors(ctx, RuntimeError("test-bot-unhandled-exception"))
         assert "unhandled exception" in caplog.text
         assert "test-bot-unhandled-exception" in caplog.text
 
-    async def test_on_component_callback_error(self, bot, monkeypatch):
-        handle_errors_mock = AsyncMock()
-        monkeypatch.setattr(bot, "handle_errors", handle_errors_mock)
-        ctx = MagicMock()
+    async def test_on_component_callback_error(self, bot, monkeypatch, ctx):
+        monkeypatch.setattr(bot, "handle_errors", AsyncMock())
         ex = MagicMock()
         await bot.on_component_callback_error(ctx, ex)
-        handle_errors_mock.assert_called_once_with(ctx, ex)
+        bot.handle_errors.assert_called_once_with(ctx, ex)
 
-    async def test_on_slash_command_error(self, bot, monkeypatch):
-        handle_errors_mock = AsyncMock()
-        monkeypatch.setattr(bot, "handle_errors", handle_errors_mock)
-        ctx = MagicMock()
+    async def test_on_slash_command_error(self, bot, monkeypatch, ctx):
+        monkeypatch.setattr(bot, "handle_errors", AsyncMock())
         ex = MagicMock()
         await bot.on_slash_command_error(ctx, ex)
-        handle_errors_mock.assert_called_once_with(ctx, ex)
+        bot.handle_errors.assert_called_once_with(ctx, ex)
 
     async def test_legacy_prefix_cache(self, bot):
         assert bot.legacy_prefix_cache[404] == "!"
@@ -227,22 +211,15 @@ class TestSpellBot:
         }
         assert "debug: message-reply-error" in caplog.text
 
-    async def test_on_message(self, bot, monkeypatch):
+    async def test_on_message(self, bot, monkeypatch, dpy_message):
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
-        message = MagicMock()
-        message.guild = MagicMock()
-        message.channel = MagicMock()
-        message.channel.type = discord.ChannelType.text
-        message.flags.value = 16
-        message.content = "sup"
-        message.reply = AsyncMock()
-        handle_verification_mock = AsyncMock()
-        monkeypatch.setattr(bot, "handle_verification", handle_verification_mock)
-        await bot.on_message(message)
+        monkeypatch.setattr(bot, "handle_verification", AsyncMock())
+        dpy_message.flags.value = 16
+        await bot.on_message(dpy_message)
         super_on_message_mock.assert_not_called()
-        handle_verification_mock.assert_called_once_with(message)
-        message.reply.assert_not_called()
+        bot.handle_verification.assert_called_once_with(dpy_message)
+        dpy_message.reply.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -253,292 +230,146 @@ class TestSpellBotHandleVerification:
         del message.author.id
         await bot.handle_verification(message)
 
-    async def test_without_auto_verify(self, bot):
-        guild = MagicMock()
-        guild.id = 101
-        guild.name = "guild"
-        guild.owner_id = 404
-        channel = MagicMock()
-        channel.id = 201
-        channel.name = "channel"
-        channel.guild = guild
-        channel.permissions_for = MagicMock(return_value=discord.Permissions())
-        author = MagicMock()
-        author.id = 301
-        author.name = "author"
-        author.roles = []
-        message = MagicMock()
-        message.guild = guild
-        message.channel = channel
-        message.author = author
-
-        await bot.handle_verification(message)
+    async def test_without_auto_verify(self, bot, dpy_message):
+        await bot.handle_verification(dpy_message)
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.query(Guild).one()
-        assert found.xid == guild.id and found.name == guild.name
-        found = DatabaseSession.query(Channel).one()
-        assert found.xid == channel.id and found.name == channel.name
-        found = DatabaseSession.query(User).one_or_none()
-        assert not found
+        assert DatabaseSession.query(Guild).one().xid == dpy_message.guild.id
+        assert DatabaseSession.query(Channel).one().xid == dpy_message.channel.id
         found = DatabaseSession.query(Verify).one()
-        assert found.guild_xid == guild.id and found.user_xid == author.id
+        assert found.guild_xid == dpy_message.guild.id
+        assert found.user_xid == dpy_message.author.id
         assert not found.verified
 
-    async def test_with_auto_verify(self, bot):
-        guild = MagicMock()
-        guild.id = 101
-        guild.name = "guild"
-        guild.owner_id = 404
-        channel = MagicMock()
-        channel.id = 201
-        channel.name = "channel"
-        channel.guild = guild
-        channel.permissions_for = MagicMock(return_value=discord.Permissions())
-        author = MagicMock()
-        author.id = 301
-        author.name = "author"
-        author.roles = []
-        message = MagicMock()
-        message.guild = guild
-        message.channel = channel
-        message.author = author
-        GuildFactory.create(xid=guild.id)
-        ChannelFactory.create(xid=channel.id, auto_verify=True, guild_xid=guild.id)
-        DatabaseSession.commit()
+    async def test_with_auto_verify(self, bot, dpy_message):
+        GuildFactory.create(xid=dpy_message.guild.id)
+        ChannelFactory.create(
+            xid=dpy_message.channel.id,
+            auto_verify=True,
+            guild_xid=dpy_message.guild.id,
+        )
 
-        await bot.handle_verification(message)
+        await bot.handle_verification(dpy_message)
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.query(Guild).one()
-        assert found.xid == guild.id and found.name == guild.name
-        found = DatabaseSession.query(Channel).one()
-        assert found.xid == channel.id and found.name == channel.name
-        found = DatabaseSession.query(User).one_or_none()
-        assert not found
+        assert DatabaseSession.query(Guild).one().xid == dpy_message.guild.id
+        assert DatabaseSession.query(Channel).one().xid == dpy_message.channel.id
         found = DatabaseSession.query(Verify).one()
-        assert found.guild_xid == guild.id and found.user_xid == author.id
+        assert found.guild_xid == dpy_message.guild.id
+        assert found.user_xid == dpy_message.author.id
         assert found.verified
 
-    async def test_verified_only_when_unverified(self, bot):
-        guild = MagicMock()
-        guild.id = 101
-        guild.name = "guild"
-        guild.owner_id = 404
-        channel = MagicMock()
-        channel.id = 201
-        channel.name = "channel"
-        channel.guild = guild
-        channel.permissions_for = MagicMock(return_value=discord.Permissions())
-        author = MagicMock()
-        author.id = 301
-        author.name = "author"
-        author.roles = []
-        message = MagicMock()
-        message.guild = guild
-        message.channel = channel
-        message.author = author
-        message.delete = AsyncMock()
-        GuildFactory.create(xid=guild.id)
-        ChannelFactory.create(xid=channel.id, verified_only=True, guild_xid=guild.id)
-        DatabaseSession.commit()
+    async def test_verified_only_when_unverified(self, bot, dpy_message):
+        GuildFactory.create(xid=dpy_message.guild.id)
+        ChannelFactory.create(
+            xid=dpy_message.channel.id,
+            verified_only=True,
+            guild_xid=dpy_message.guild.id,
+        )
 
-        await bot.handle_verification(message)
+        await bot.handle_verification(dpy_message)
 
-        message.delete.assert_called_once()
+        dpy_message.delete.assert_called_once()
 
-    async def test_verified_only_when_verified(self, bot):
-        guild = MagicMock()
-        guild.id = 101
-        guild.name = "guild"
-        guild.owner_id = 404
-        channel = MagicMock()
-        channel.id = 201
-        channel.name = "channel"
-        channel.guild = guild
-        channel.permissions_for = MagicMock(return_value=discord.Permissions())
-        author = MagicMock()
-        author.id = 301
-        author.name = "author"
-        author.roles = []
-        message = MagicMock()
-        message.guild = guild
-        message.channel = channel
-        message.author = author
-        message.delete = AsyncMock()
-        GuildFactory.create(xid=guild.id)
-        ChannelFactory.create(xid=channel.id, verified_only=True, guild_xid=guild.id)
-        VerifyFactory.create(guild_xid=guild.id, user_xid=author.id, verified=True)
-        DatabaseSession.commit()
+    async def test_verified_only_when_verified(self, bot, dpy_message):
+        GuildFactory.create(xid=dpy_message.guild.id)
+        ChannelFactory.create(
+            xid=dpy_message.channel.id,
+            verified_only=True,
+            guild_xid=dpy_message.guild.id,
+        )
+        VerifyFactory.create(
+            guild_xid=dpy_message.guild.id,
+            user_xid=dpy_message.author.id,
+            verified=True,
+        )
 
-        await bot.handle_verification(message)
+        await bot.handle_verification(dpy_message)
 
-        message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()
 
-    async def test_unverified_only_when_unverified(self, bot):
-        guild = MagicMock()
-        guild.id = 101
-        guild.name = "guild"
-        guild.owner_id = 404
-        channel = MagicMock()
-        channel.id = 201
-        channel.name = "channel"
-        channel.guild = guild
-        channel.permissions_for = MagicMock(return_value=discord.Permissions())
-        author = MagicMock()
-        author.id = 301
-        author.name = "author"
-        author.roles = []
-        message = MagicMock()
-        message.guild = guild
-        message.channel = channel
-        message.author = author
-        message.delete = AsyncMock()
-        GuildFactory.create(xid=guild.id)
-        ChannelFactory.create(xid=channel.id, unverified_only=True, guild_xid=guild.id)
-        DatabaseSession.commit()
+    async def test_unverified_only_when_unverified(self, bot, dpy_message):
+        GuildFactory.create(xid=dpy_message.guild.id)
+        ChannelFactory.create(
+            xid=dpy_message.channel.id,
+            unverified_only=True,
+            guild_xid=dpy_message.guild.id,
+        )
 
-        await bot.handle_verification(message)
+        await bot.handle_verification(dpy_message)
 
-        message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()
 
-    async def test_unverified_only_when_verified(self, bot):
-        guild = MagicMock()
-        guild.id = 101
-        guild.name = "guild"
-        guild.owner_id = 404
-        channel = MagicMock()
-        channel.id = 201
-        channel.name = "channel"
-        channel.guild = guild
-        channel.permissions_for = MagicMock(return_value=discord.Permissions())
-        author = MagicMock()
-        author.id = 301
-        author.name = "author"
-        author.roles = []
-        message = MagicMock()
-        message.guild = guild
-        message.channel = channel
-        message.author = author
-        message.delete = AsyncMock()
-        GuildFactory.create(xid=guild.id)
-        ChannelFactory.create(xid=channel.id, unverified_only=True, guild_xid=guild.id)
-        VerifyFactory.create(guild_xid=guild.id, user_xid=author.id, verified=True)
-        DatabaseSession.commit()
+    async def test_unverified_only_when_verified(self, bot, dpy_message):
+        GuildFactory.create(xid=dpy_message.guild.id)
+        ChannelFactory.create(
+            xid=dpy_message.channel.id,
+            unverified_only=True,
+            guild_xid=dpy_message.guild.id,
+        )
+        VerifyFactory.create(
+            guild_xid=dpy_message.guild.id,
+            user_xid=dpy_message.author.id,
+            verified=True,
+        )
 
-        await bot.handle_verification(message)
+        await bot.handle_verification(dpy_message)
 
-        message.delete.assert_called_once()
+        dpy_message.delete.assert_called_once()
 
-    async def test_message_from_mod_role(self, bot, settings):
-        guild = MagicMock()
-        guild.id = 101
-        guild.name = "guild"
-        guild.owner_id = 404
-        channel = MagicMock()
-        channel.id = 201
-        channel.name = "channel"
-        channel.guild = guild
-        channel.permissions_for = MagicMock(return_value=discord.Permissions())
+    async def test_message_from_mod_role(self, bot, settings, dpy_message):
         mod_role = MagicMock()
         mod_role.name = f"{settings.MOD_PREFIX}-role"
-        author = MagicMock()
-        author.id = 301
-        author.name = "author"
-        author.roles = [mod_role]
-        message = MagicMock()
-        message.guild = guild
-        message.channel = channel
-        message.author = author
-        message.delete = AsyncMock()
-        GuildFactory.create(xid=guild.id)
-        ChannelFactory.create(xid=channel.id, verified_only=True, guild_xid=guild.id)
-        DatabaseSession.commit()
+        dpy_message.author.roles = [mod_role]
+        GuildFactory.create(xid=dpy_message.guild.id)
+        ChannelFactory.create(
+            xid=dpy_message.channel.id,
+            verified_only=True,
+            guild_xid=dpy_message.guild.id,
+        )
 
-        await bot.handle_verification(message)
+        await bot.handle_verification(dpy_message)
 
-        message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()
 
-    async def test_message_from_admin_role(self, bot, settings):
-        guild = MagicMock()
-        guild.id = 101
-        guild.name = "guild"
-        guild.owner_id = 404
-        channel = MagicMock()
-        channel.id = 201
-        channel.name = "channel"
-        channel.guild = guild
-        channel.permissions_for = MagicMock(return_value=discord.Permissions())
+    async def test_message_from_admin_role(self, bot, settings, dpy_message):
         admin_role = MagicMock()
         admin_role.name = settings.ADMIN_ROLE
-        author = MagicMock()
-        author.id = 301
-        author.name = "author"
-        author.roles = [admin_role]
-        message = MagicMock()
-        message.guild = guild
-        message.channel = channel
-        message.author = author
-        message.delete = AsyncMock()
-        GuildFactory.create(xid=guild.id)
-        ChannelFactory.create(xid=channel.id, verified_only=True, guild_xid=guild.id)
-        DatabaseSession.commit()
+        dpy_message.author.roles = [admin_role]
+        GuildFactory.create(xid=dpy_message.guild.id)
+        ChannelFactory.create(
+            xid=dpy_message.channel.id,
+            verified_only=True,
+            guild_xid=dpy_message.guild.id,
+        )
 
-        await bot.handle_verification(message)
+        await bot.handle_verification(dpy_message)
 
-        message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()
 
-    async def test_message_from_owner(self, bot):
-        guild = MagicMock()
-        guild.id = 101
-        guild.name = "guild"
-        guild.owner_id = 404
-        channel = MagicMock()
-        channel.id = 201
-        channel.name = "channel"
-        channel.guild = guild
-        channel.permissions_for = MagicMock(return_value=discord.Permissions())
-        author = MagicMock()
-        author.id = guild.owner_id
-        author.name = "author"
-        author.roles = []
-        message = MagicMock()
-        message.guild = guild
-        message.channel = channel
-        message.author = author
-        message.delete = AsyncMock()
-        GuildFactory.create(xid=guild.id)
-        ChannelFactory.create(xid=channel.id, verified_only=True, guild_xid=guild.id)
-        DatabaseSession.commit()
+    async def test_message_from_owner(self, bot, dpy_message):
+        dpy_message.author.id = dpy_message.guild.owner_id
+        GuildFactory.create(xid=dpy_message.guild.id)
+        ChannelFactory.create(
+            xid=dpy_message.channel.id,
+            verified_only=True,
+            guild_xid=dpy_message.guild.id,
+        )
 
-        await bot.handle_verification(message)
+        await bot.handle_verification(dpy_message)
 
-        message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()
 
-    async def test_message_from_administrator(self, bot):
-        guild = MagicMock()
-        guild.id = 101
-        guild.name = "guild"
-        guild.owner_id = 404
-        channel = MagicMock()
-        channel.id = 201
-        channel.name = "channel"
-        channel.guild = guild
+    async def test_message_from_administrator(self, bot, dpy_message):
         admin_perms = discord.Permissions(discord.Permissions.administrator.flag)
-        channel.permissions_for = MagicMock(return_value=admin_perms)
-        author = MagicMock()
-        author.id = guild.owner_id
-        author.name = "author"
-        author.roles = []
-        message = MagicMock()
-        message.guild = guild
-        message.channel = channel
-        message.author = author
-        message.delete = AsyncMock()
-        GuildFactory.create(xid=guild.id)
-        ChannelFactory.create(xid=channel.id, verified_only=True, guild_xid=guild.id)
-        DatabaseSession.commit()
+        dpy_message.channel.permissions_for = MagicMock(return_value=admin_perms)
+        GuildFactory.create(xid=dpy_message.guild.id)
+        ChannelFactory.create(
+            xid=dpy_message.channel.id,
+            verified_only=True,
+            guild_xid=dpy_message.guild.id,
+        )
 
-        await bot.handle_verification(message)
+        await bot.handle_verification(dpy_message)
 
-        message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()

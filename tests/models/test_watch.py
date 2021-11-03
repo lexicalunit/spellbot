@@ -1,16 +1,13 @@
-from spellbot.database import DatabaseSession
-from spellbot.models.guild import Guild
-from spellbot.models.user import User
-from spellbot.models.watch import Watch
+from tests.factories.guild import GuildFactory
+from tests.factories.user import UserFactory
+from tests.factories.watch import WatchFactory
 
 
 class TestModelWatch:
     def test_watch(self):
-        guild = Guild(xid=101, name="guild-name")
-        user = User(xid=201, name="user-name")
-        watch = Watch(note="note", user_xid=user.xid, guild_xid=guild.xid)
-        DatabaseSession.add_all([guild, user, watch])
-        DatabaseSession.commit()
+        guild = GuildFactory.create()
+        user = UserFactory.create()
+        watch = WatchFactory.create(note="note", user_xid=user.xid, guild_xid=guild.xid)
 
         assert watch.to_dict() == {
             "guild_xid": watch.guild_xid,

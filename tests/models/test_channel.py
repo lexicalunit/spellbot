@@ -1,14 +1,11 @@
-from spellbot.database import DatabaseSession
-from spellbot.models.channel import Channel
-from spellbot.models.guild import Guild
+from tests.factories.channel import ChannelFactory
+from tests.factories.guild import GuildFactory
 
 
 class TestModelChannel:
     def test_channel(self):
-        guild = Guild(xid=101, name="guild-name")
-        channel = Channel(xid=201, name="channel-name", guild=guild)
-        DatabaseSession.add_all([guild, channel])
-        DatabaseSession.commit()
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild)
 
         assert channel.to_dict() == {
             "xid": channel.xid,

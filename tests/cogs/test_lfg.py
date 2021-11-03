@@ -48,13 +48,10 @@ class TestCogLookingForGamePoints:
             status=GameStatus.STARTED.value,
             message_xid=12345,
         )
-        DatabaseSession.commit()
         user1 = UserFactory.create(xid=ctx.author.id, game=game)
         user2 = UserFactory.create(game=game)
-        DatabaseSession.commit()
         PlayFactory.create(user_xid=user1.xid, game_id=game.id, points=0)
         PlayFactory.create(user_xid=user2.xid, game_id=game.id, points=0)
-        DatabaseSession.commit()
 
         message = MagicMock()
         message.id = game.message_xid
@@ -99,13 +96,10 @@ class TestCogLookingForGamePoints:
             status=GameStatus.STARTED.value,
             message_xid=12345,
         )
-        DatabaseSession.commit()
         user1 = UserFactory.create(xid=ctx.author.id, game=game)
         user2 = UserFactory.create(game=game)
-        DatabaseSession.commit()
         PlayFactory.create(user_xid=user1.xid, game_id=game.id, points=0)
         PlayFactory.create(user_xid=user2.xid, game_id=game.id, points=0)
-        DatabaseSession.commit()
 
         message = MagicMock()
         message.id = game.message_xid + 10  # +10 so that it won't be found
@@ -130,12 +124,9 @@ class TestCogLookingForGamePoints:
             status=GameStatus.STARTED.value,
             message_xid=12345,
         )
-        DatabaseSession.commit()
         UserFactory.create(xid=ctx.author.id)
         user2 = UserFactory.create(game=game)
-        DatabaseSession.commit()
         PlayFactory.create(user_xid=user2.xid, game_id=game.id, points=0)
-        DatabaseSession.commit()
 
         message = MagicMock()
         message.id = game.message_xid
@@ -169,11 +160,8 @@ class TestCogLookingForGame:
         channel = ChannelFactory.create(xid=ctx.channel.id, guild=guild, default_seats=2)
         author_user = UserFactory.create(xid=ctx.author.id)
         other_user = UserFactory.create(xid=ctx.author.id + 1)
-        DatabaseSession.commit()
         game = GameFactory.create(guild=guild, channel=channel, seats=2, message_xid=123)
-        DatabaseSession.commit()
         other_user.game = game
-        DatabaseSession.commit()
 
         author_player = MagicMock(spec=discord.Member)
         author_player.id = author_user.xid
@@ -223,13 +211,9 @@ class TestCogLookingForGame:
         channel = ChannelFactory.create(xid=ctx.channel.id, guild=guild)
         author_user = UserFactory.create(xid=ctx.author.id)
         other_user = UserFactory.create(xid=ctx.author.id + 1)
-        DatabaseSession.commit()
         game = GameFactory.create(guild=guild, channel=channel)
-        DatabaseSession.commit()
         other_user.game = game
-        DatabaseSession.commit()
         BlockFactory.create(user_xid=other_user.xid, blocked_user_xid=author_user.xid)
-        DatabaseSession.commit()
 
         cog = LookingForGameCog(bot)
         await cog.lfg.func(cog, ctx)
@@ -242,12 +226,8 @@ class TestCogLookingForGame:
     async def test_lfg_when_already_in_game(self, bot, ctx):
         guild = GuildFactory.create(xid=ctx.guild.id)
         channel = ChannelFactory.create(xid=ctx.channel.id, guild=guild)
-        user = UserFactory.create(xid=ctx.author.id)
-        DatabaseSession.commit()
         game = GameFactory.create(guild=guild, channel=channel)
-        DatabaseSession.commit()
-        user.game = game
-        DatabaseSession.commit()
+        UserFactory.create(xid=ctx.author.id, game=game)
 
         cog = LookingForGameCog(bot)
         await cog.lfg.func(cog, ctx)
@@ -394,9 +374,7 @@ class TestCogLookingForGame:
 class TestCogLookingForGameJoinButton:
     async def test_join(self, bot, guild, channel, settings, monkeypatch):
         game = GameFactory.create(guild=guild, channel=channel)
-        DatabaseSession.commit()
         user = UserFactory.create()
-        DatabaseSession.commit()
 
         author = MagicMock()
         author.id = user.xid
@@ -426,7 +404,6 @@ class TestCogLookingForGameJoinButton:
 
         query = update(Game).where(Game.id == game.id).values(message_xid=message.id)
         DatabaseSession.execute(query)
-        DatabaseSession.commit()
 
         sfm_mock = AsyncMock(return_value=message)
         monkeypatch.setattr(lfg_interaction, "safe_fetch_message", sfm_mock)
@@ -459,17 +436,13 @@ class TestCogLookingForGameJoinButton:
         guild = GuildFactory.create(xid=ctx.guild.id, show_points=True)
         channel = ChannelFactory.create(xid=ctx.channel.id, guild=guild)
         author_user = UserFactory.create(xid=ctx.author.id)
-        other_user = UserFactory.create(xid=ctx.author.id + 1)
-        DatabaseSession.commit()
         game = GameFactory.create(
             guild=guild,
             channel=channel,
             seats=2,
             message_xid=ctx.message.id,
         )
-        DatabaseSession.commit()
-        other_user.game = game
-        DatabaseSession.commit()
+        other_user = UserFactory.create(xid=ctx.author.id + 1, game=game)
 
         ctx.origin_message = ctx.message
         ctx.origin_message_id = ctx.message.id
@@ -496,6 +469,9 @@ class TestCogLookingForGameJoinButton:
 
         cog = LookingForGameCog(bot)
         await cog.join.func(cog, ctx)
+
+        DatabaseSession.expire_all()
+        game = DatabaseSession.query(Game).one()
 
         sueo_mock.assert_called_once()
         assert sueo_mock.call_args_list[0].kwargs["components"] == snapshot
@@ -530,17 +506,13 @@ class TestCogLookingForGameJoinButton:
         channel = ChannelFactory.create(xid=ctx.channel.id, guild=guild)
         author_user = UserFactory.create(xid=ctx.author.id)
         other_user = UserFactory.create(xid=ctx.author.id + 1)
-        DatabaseSession.commit()
         game = GameFactory.create(
             guild=guild,
             channel=channel,
             message_xid=ctx.message.id,
         )
-        DatabaseSession.commit()
         other_user.game = game
-        DatabaseSession.commit()
         BlockFactory.create(user_xid=other_user.xid, blocked_user_xid=author_user.xid)
-        DatabaseSession.commit()
 
         ctx.origin_message_id = ctx.message.id
         cog = LookingForGameCog(bot)
@@ -555,9 +527,7 @@ class TestCogLookingForGameJoinButton:
 class TestCogLookingForGameLeaveButton:
     async def test_leave(self, bot, guild, channel, settings, monkeypatch):
         game = GameFactory.create(guild=guild, channel=channel)
-        DatabaseSession.commit()
         user = UserFactory.create(game=game)
-        DatabaseSession.commit()
 
         author = MagicMock()
         author.id = user.xid
@@ -587,7 +557,6 @@ class TestCogLookingForGameLeaveButton:
 
         query = update(Game).where(Game.id == game.id).values(message_xid=message.id)
         DatabaseSession.execute(query)
-        DatabaseSession.commit()
 
         sftc_mock = AsyncMock(return_value=discord_channel)
         monkeypatch.setattr(leave_interaction, "safe_fetch_text_channel", sftc_mock)
@@ -627,7 +596,6 @@ class TestCogLookingForGameLeaveButton:
         wrong_xid = ctx.message.id + 1
         query = update(Game).where(Game.id == game.id).values(message_xid=wrong_xid)
         DatabaseSession.execute(query)
-        DatabaseSession.commit()
 
         with mock_operations(leave_interaction, users=[ctx.author]):
             leave_interaction.safe_fetch_text_channel.return_value = ctx.channel

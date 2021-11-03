@@ -11,8 +11,10 @@ class GuildAwardFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     class Meta:
         model = GuildAward
+        sqlalchemy_session_persistence = "flush"
 
 
 class UserAwardFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = UserAward
+        sqlalchemy_session_persistence = "flush"
