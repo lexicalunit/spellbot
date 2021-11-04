@@ -8,6 +8,7 @@ from spellbot.errors import SpellbotAdminOnly
 from spellbot.utils import (
     bot_can_delete_channel,
     bot_can_read,
+    bot_can_reply_to,
     bot_can_role,
     is_admin,
     log_warning,
@@ -40,6 +41,42 @@ class TestUtilsBotCanRole:
         guild.me.guild_permissions = MagicMock()
         del guild.me.guild_permissions.manage_roles
         assert not bot_can_role(guild)
+
+
+class TestUtilsBotCanReplyTo:
+    def test_happy_path(self):
+        send_permisions = discord.Permissions(discord.Permissions.send_messages.flag)
+        guild = MagicMock(spec=discord.Guild)
+        guild.me = MagicMock()
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+        channel.permissions_for = MagicMock(return_value=send_permisions)
+        message = MagicMock(spec=discord.Message)
+        message.channel = channel
+        assert bot_can_reply_to(message)
+
+    def test_missing_guild(self):
+        send_permisions = discord.Permissions(discord.Permissions.send_messages.flag)
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.type = discord.ChannelType.text
+        del channel.guild
+        channel.permissions_for = MagicMock(return_value=send_permisions)
+        message = MagicMock(spec=discord.Message)
+        message.channel = channel
+        assert not bot_can_reply_to(message)
+
+    def test_bad_permissions(self):
+        bad_permisions = discord.Permissions()
+        guild = MagicMock(spec=discord.Guild)
+        guild.me = MagicMock()
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+        channel.permissions_for = MagicMock(return_value=bad_permisions)
+        message = MagicMock(spec=discord.Message)
+        message.channel = channel
+        assert not bot_can_reply_to(message)
 
 
 class TestUtilsBotCanRead:

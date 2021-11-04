@@ -46,6 +46,21 @@ class TestCogLeaveGame:
             "type": "rich",
         }
 
+    async def test_leave_when_no_message_xid(self, bot, guild, channel, ctx, monkeypatch):
+        game = GameFactory.create(guild=guild, channel=channel, message_xid=None)
+        UserFactory.create(xid=ctx.author.id, name=ctx.author.display_name, game=game)
+
+        sftc_mock = AsyncMock(return_value=ctx.channel)
+        monkeypatch.setattr(leave_interaction, "safe_fetch_text_channel", sftc_mock)
+
+        cog = LeaveGameCog(bot)
+        await cog.leave.func(cog, ctx)
+
+        ctx.send.assert_called_once_with(
+            "You have been removed from any games your were signed up for.",
+            hidden=True,
+        )
+
     async def test_leave_when_not_in_game(self, bot, ctx):
         UserFactory.create(xid=ctx.author.id, name=ctx.author.display_name)
 

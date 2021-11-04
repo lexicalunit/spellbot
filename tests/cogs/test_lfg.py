@@ -66,7 +66,7 @@ class TestCogLookingForGamePoints:
         found = DatabaseSession.query(Play).filter(Play.user_xid == user1.xid).one()
         assert found.points == 5
         assert message.edit.call_args_list[0].kwargs["embed"].to_dict() == {
-            "color": 5914365,
+            "color": settings.EMBED_COLOR,
             "description": (
                 "Please check your Direct Messages for your SpellTable link.\n\n"
                 "When your game is over use the drop down to report your points.\n\n"
@@ -159,9 +159,8 @@ class TestCogLookingForGame:
         guild = GuildFactory.create(xid=ctx.guild.id)
         channel = ChannelFactory.create(xid=ctx.channel.id, guild=guild, default_seats=2)
         author_user = UserFactory.create(xid=ctx.author.id)
-        other_user = UserFactory.create(xid=ctx.author.id + 1)
         game = GameFactory.create(guild=guild, channel=channel, seats=2, message_xid=123)
-        other_user.game = game
+        other_user = UserFactory.create(xid=ctx.author.id + 1, game=game)
 
         author_player = MagicMock(spec=discord.Member)
         author_player.id = author_user.xid
@@ -210,9 +209,8 @@ class TestCogLookingForGame:
         guild = GuildFactory.create(xid=ctx.guild.id)
         channel = ChannelFactory.create(xid=ctx.channel.id, guild=guild)
         author_user = UserFactory.create(xid=ctx.author.id)
-        other_user = UserFactory.create(xid=ctx.author.id + 1)
         game = GameFactory.create(guild=guild, channel=channel)
-        other_user.game = game
+        other_user = UserFactory.create(xid=ctx.author.id + 1, game=game)
         BlockFactory.create(user_xid=other_user.xid, blocked_user_xid=author_user.xid)
 
         cog = LookingForGameCog(bot)
@@ -505,13 +503,12 @@ class TestCogLookingForGameJoinButton:
         guild = GuildFactory.create(xid=ctx.guild.id)
         channel = ChannelFactory.create(xid=ctx.channel.id, guild=guild)
         author_user = UserFactory.create(xid=ctx.author.id)
-        other_user = UserFactory.create(xid=ctx.author.id + 1)
         game = GameFactory.create(
             guild=guild,
             channel=channel,
             message_xid=ctx.message.id,
         )
-        other_user.game = game
+        other_user = UserFactory.create(xid=ctx.author.id + 1, game=game)
         BlockFactory.create(user_xid=other_user.xid, blocked_user_xid=author_user.xid)
 
         ctx.origin_message_id = ctx.message.id

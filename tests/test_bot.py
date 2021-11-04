@@ -170,7 +170,7 @@ class TestSpellBot:
         super_on_message_mock.assert_not_called()
         handle_verification_mock.assert_called_once_with(message)
         assert message.reply.call_args_list[0].kwargs["embed"].to_dict() == {
-            "color": 5914365,
+            "color": settings.EMBED_COLOR,
             "description": (
                 "SpellBot uses [slash commands](https://discord.com/blog"
                 "/slash-commands-are-here) now. Type `/` to see the"
@@ -199,7 +199,7 @@ class TestSpellBot:
         super_on_message_mock.assert_not_called()
         handle_verification_mock.assert_called_once_with(message)
         assert message.reply.call_args_list[0].kwargs["embed"].to_dict() == {
-            "color": 5914365,
+            "color": settings.EMBED_COLOR,
             "description": (
                 "SpellBot uses [slash commands](https://discord.com/blog"
                 "/slash-commands-are-here) now. Type `/` to see the"

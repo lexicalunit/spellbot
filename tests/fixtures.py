@@ -172,12 +172,13 @@ def build_message(
     message = MagicMock(spec=discord.Message)
     message.id = 4000 + offset
     message.name = f"message-{message.id}"
+    message.content = "content"
     message.guild = guild
     message.channel = channel
     message.author = author
     message.reply = AsyncMock()
     message.delete = AsyncMock()
-    message.content = "content"
+    message.edit = AsyncMock()
     return message
 
 
@@ -310,3 +311,11 @@ def mock_discord_user(user: User) -> discord.User:
     member.mention = f"<@{member.id}>"
     member.send = AsyncMock()
     return member
+
+
+def mock_discord_guild(guild: Guild) -> discord.Guild:
+    discord_guild = MagicMock(spec=discord.Guild)
+    discord_guild.id = guild.xid
+    discord_guild.name = guild.name
+    discord_guild.mention = f"<#{discord_guild.id}>"
+    return discord_guild

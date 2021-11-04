@@ -62,6 +62,11 @@ class TestServiceGames:
         found = DatabaseSession.query(Game).filter_by(message_xid=12345).one_or_none()
         assert found and found.id == game.id
 
+    async def test_games_current_status(self, game):
+        games = GamesService()
+        await games.select(game.id)
+        assert await games.current_status() == game.status
+
     async def test_games_current_guild_xid(self, game):
         games = GamesService()
         await games.select(game.id)
@@ -147,6 +152,11 @@ class TestServiceGames:
             "https://discordapp.com/channels/"
             f"{game.guild.xid}/{game.channel.xid}/{game.message_xid}"
         )
+
+    async def test_games_to_dict(self, game):
+        games = GamesService()
+        await games.select(game.id)
+        assert await games.to_dict() == game.to_dict()
 
     async def test_games_players_included(self, game):
         user1 = UserFactory.create(game=game)
