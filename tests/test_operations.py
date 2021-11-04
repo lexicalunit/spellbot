@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 from unittest.mock import AsyncMock, MagicMock, Mock
 
@@ -17,6 +18,7 @@ from spellbot.operations import (
     safe_fetch_message,
     safe_fetch_text_channel,
     safe_fetch_user,
+    safe_message_reply,
     safe_send_user,
     safe_update_embed,
     safe_update_embed_origin,
@@ -468,6 +470,60 @@ class TestOperationsAddRole:
             f"warning: in guild {guild.id},"
             f" could not add role to member user#1234: {exception}"
         ) in caplog.text
+
+
+@pytest.mark.asyncio
+class TestOperationsMessageReply:
+    async def test_happy_path(self):
+        send_permisions = discord.Permissions(discord.Permissions.send_messages.flag)
+        guild = MagicMock(spec=discord.Guild)
+        guild.me = MagicMock()
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+        channel.permissions_for = MagicMock(return_value=send_permisions)
+        message = MagicMock(spec=discord.Message)
+        message.channel = channel
+        message.reply = AsyncMock()
+        embed = MagicMock(spec=discord.Embed)
+
+        await safe_message_reply(message, "content", embed=embed)
+        message.reply.assert_called_once_with("content", embed=embed)
+
+    async def test_bad_permissions(self):
+        bad_permisions = discord.Permissions()
+        guild = MagicMock(spec=discord.Guild)
+        guild.me = MagicMock()
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+        channel.permissions_for = MagicMock(return_value=bad_permisions)
+        message = MagicMock(spec=discord.Message)
+        message.channel = channel
+        message.reply = AsyncMock()
+        embed = MagicMock(spec=discord.Embed)
+
+        await safe_message_reply(message, "content", embed=embed)
+        message.reply.assert_not_called()
+
+    async def test_reply_failure(self, caplog):
+        caplog.set_level(logging.DEBUG)
+        send_permisions = discord.Permissions(discord.Permissions.send_messages.flag)
+        guild = MagicMock(spec=discord.Guild)
+        guild.me = MagicMock()
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+        channel.permissions_for = MagicMock(return_value=send_permisions)
+        message = MagicMock(spec=discord.Message)
+        message.channel = channel
+        error = RuntimeError("something-failed")
+        message.reply = AsyncMock(side_effect=error)
+        embed = MagicMock(spec=discord.Embed)
+
+        await safe_message_reply(message, "content", embed=embed)
+        message.reply.assert_called_once_with("content", embed=embed)
+        assert "something-failed" in caplog.text
 
 
 @pytest.mark.asyncio

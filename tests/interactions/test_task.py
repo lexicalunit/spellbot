@@ -6,10 +6,19 @@ import pytest
 
 from spellbot.client import SpellBot
 from spellbot.database import DatabaseSession
+from spellbot.interactions import task_interaction
 from spellbot.interactions.task_interaction import TaskInteraction
+from spellbot.models.game import Game
 from tests.factories.channel import ChannelFactory
 from tests.factories.game import GameFactory
 from tests.factories.guild import GuildFactory
+from tests.fixtures import (
+    build_channel,
+    build_client_user,
+    build_message,
+    mock_discord_guild,
+    mock_operations,
+)
 
 
 @pytest.mark.asyncio
@@ -24,6 +33,117 @@ class TestInteractionTask:
             await interaction.cleanup_old_voice_channels()
             assert "error: exception in background task" in caplog.text
 
+
+@pytest.mark.asyncio
+class TestInteractionTaskExpireInactiveGames:
+    async def test_delete_none(self, bot):
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild)
+        GameFactory.create_batch(5, guild=guild, channel=channel)
+
+        async with TaskInteraction.create(bot) as interaction:
+            await interaction.expire_inactive_games()
+
+        assert DatabaseSession.query(Game).count() == 5
+
+    async def test_delete_all(self, bot, settings):
+        long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild)
+        GameFactory.create_batch(5, guild=guild, channel=channel, updated_at=long_ago)
+
+        async with TaskInteraction.create(bot) as interaction:
+            await interaction.expire_inactive_games()
+
+        assert DatabaseSession.query(Game).count() == 0
+
+    async def test_delete_happy_path(self, bot, settings):
+        long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild)
+        GameFactory.create(guild=guild, channel=channel, updated_at=long_ago)
+
+        async with TaskInteraction.create(bot) as interaction:
+            with mock_operations(task_interaction):
+                discord_guild = mock_discord_guild(guild)
+                discord_channel = build_channel(discord_guild)
+                client_user = build_client_user()
+                discord_message = build_message(
+                    discord_guild,
+                    discord_channel,
+                    client_user,
+                )
+                task_interaction.safe_fetch_text_channel = AsyncMock(
+                    return_value=discord_channel,
+                )
+                task_interaction.safe_fetch_message = AsyncMock(
+                    return_value=discord_message,
+                )
+
+                await interaction.expire_inactive_games()
+
+                task_interaction.safe_update_embed.assert_called_once_with(
+                    discord_message,
+                    components=[],
+                    content="Sorry, this game was expired due to inactivity.",
+                    embed=None,
+                )
+
+        assert DatabaseSession.query(Game).count() == 0
+
+    async def test_delete_when_fetch_channel_fails(self, bot, settings):
+        long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild)
+        GameFactory.create(guild=guild, channel=channel, updated_at=long_ago)
+
+        async with TaskInteraction.create(bot) as interaction:
+            with mock_operations(task_interaction):
+                task_interaction.safe_fetch_text_channel = AsyncMock(return_value=None)
+
+                await interaction.expire_inactive_games()
+
+        assert DatabaseSession.query(Game).count() == 0
+
+    async def test_delete_when_fetch_message_fails(self, bot, settings):
+        long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild)
+        GameFactory.create(guild=guild, channel=channel, updated_at=long_ago)
+
+        async with TaskInteraction.create(bot) as interaction:
+            with mock_operations(task_interaction):
+                discord_guild = mock_discord_guild(guild)
+                discord_channel = build_channel(discord_guild)
+                task_interaction.safe_fetch_text_channel = AsyncMock(
+                    return_value=discord_channel,
+                )
+                task_interaction.safe_fetch_message = AsyncMock(return_value=None)
+
+                await interaction.expire_inactive_games()
+
+        assert DatabaseSession.query(Game).count() == 0
+
+    async def test_delete_when_game_has_no_message_xid(self, bot, settings):
+        long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild)
+        GameFactory.create(
+            guild=guild,
+            channel=channel,
+            updated_at=long_ago,
+            message_xid=None,
+        )
+
+        async with TaskInteraction.create(bot) as interaction:
+            with mock_operations(task_interaction):
+                await interaction.expire_inactive_games()
+
+        assert DatabaseSession.query(Game).count() == 0
+
+
+@pytest.mark.asyncio
+class TestInteractionTaskCleanupOldVoicChannels:
     async def test_happy_path(self, bot, settings):
         db_guilds = GuildFactory.create_batch(5, voice_create=True)
 

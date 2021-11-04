@@ -11,6 +11,7 @@ from spellbot.interactions import config_interaction, watch_interaction
 from spellbot.models.award import GuildAward
 from spellbot.models.channel import Channel
 from spellbot.models.guild import Guild
+from spellbot.models.verify import Verify
 from spellbot.models.watch import Watch
 from tests.factories.award import GuildAwardFactory
 from tests.factories.channel import ChannelFactory
@@ -175,6 +176,40 @@ class TestCogAdmin:
         ctx.send.assert_called_once_with("Message of the day updated.", hidden=True)
         guild = DatabaseSession.query(Guild).one()
         assert guild.motd == "this is a test"
+
+
+@pytest.mark.asyncio
+class TestCogAdminInfo:
+    async def test_happy_path(self, bot, ctx, game, settings):
+        ctx.send = AsyncMock()
+        cog = AdminCog(bot)
+        await cog.info.func(cog, ctx, f"SB#{game.id}")
+        assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
+            "color": settings.EMBED_COLOR,
+            "description": (
+                "_A SpellTable link will be created when all players have joined._\n\n"
+                f"{game.guild.motd}"
+            ),
+            "fields": [
+                {"inline": True, "name": "Format", "value": "Commander"},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Waiting for 4 more players to join...**",
+            "type": "rich",
+        }
+
+    async def test_non_numeric_game_id(self, bot, ctx):
+        ctx.send = AsyncMock()
+        cog = AdminCog(bot)
+        await cog.info.func(cog, ctx, "bogus")
+        ctx.send.assert_awaited_once_with("There is no game with that ID.", hidden=True)
+
+    async def test_non_existant_game_id(self, bot, ctx):
+        ctx.send = AsyncMock()
+        cog = AdminCog(bot)
+        await cog.info.func(cog, ctx, "1")
+        ctx.send.assert_awaited_once_with("There is no game with that ID.", hidden=True)
 
 
 @pytest.mark.asyncio
@@ -622,6 +657,16 @@ class TestCogAdminAwards:
         assert award.message == "message"
         assert award.repeating
 
+    async def test_award_add_zero_count(self, bot, ctx):
+        ctx.send = AsyncMock()
+        cog = AdminCog(bot)
+        await cog.award_add.func(cog, ctx, 0, "role", "message")
+        ctx.send.assert_called_once_with(
+            "You can't create an award for zero games played.",
+            hidden=True,
+        )
+        assert DatabaseSession.query(GuildAward).count() == 0
+
     async def test_award_add_dupe(self, bot, ctx):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
@@ -634,3 +679,28 @@ class TestCogAdminAwards:
             hidden=True,
         )
         assert DatabaseSession.query(GuildAward).count() == 1
+
+
+@pytest.mark.asyncio
+class TestCogAdminVerifies:
+    async def test_verify_and_unverify(self, bot, ctx):
+        target = MagicMock(spec=discord.Member)
+        target.id = 1002
+        target.display_name = "user"
+        cog = AdminCog(bot)
+
+        ctx.send = AsyncMock()
+        await cog.verify.func(cog, ctx, target)
+        ctx.send.assert_called_once_with(f"Verified <@{target.id}>.", hidden=True)
+
+        found = DatabaseSession.query(Verify).one()
+        assert found.guild_xid == ctx.guild_id
+        assert found.user_xid == target.id
+        assert found.verified
+
+        ctx.send = AsyncMock()
+        await cog.unverify.func(cog, ctx, target)
+        ctx.send.assert_called_once_with(f"Unverified <@{target.id}>.", hidden=True)
+
+        found = DatabaseSession.query(Verify).one()
+        assert not found.verified

@@ -30,10 +30,6 @@ class ContextLocal(Generic[ProxiedObject]):
     def set(self, obj: ProxiedObject):
         context_vars[self].set(obj)
 
-    def __call__(self, *args, **kwargs):
-        cvar = context_vars[self].get()
-        return cvar.__call__(*args, **kwargs)
-
     def __getattr__(self, name):
         obj = context_vars[self].get()
         return getattr(obj, name)
@@ -99,7 +95,7 @@ def initialize_connection(
     from spellbot.settings import Settings
 
     settings = Settings()
-    if run_migrations:
+    if run_migrations:  # pragma: no cover
         create_all(settings.DATABASE_URL)
     engine_obj = create_engine(
         settings.DATABASE_URL,
@@ -143,7 +139,7 @@ async def db_session_manager():
 def rollback_transaction():
     if transaction.is_active:
         transaction.rollback()
-    if not connection.closed:
+    if not connection.closed:  # pragma: no cover
         connection.close()
 
 

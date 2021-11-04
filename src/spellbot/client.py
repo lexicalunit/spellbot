@@ -9,7 +9,6 @@ from typing import Optional
 from uuid import uuid4
 
 import discord
-from asgiref.sync import sync_to_async
 from discord.ext.commands import Bot, errors
 from discord_slash import SlashCommand, context
 from expiringdict import ExpiringDict
@@ -29,14 +28,6 @@ from spellbot.spelltable import generate_link
 from spellbot.utils import user_can_moderate
 
 logger = logging.getLogger(__name__)
-
-
-@sync_to_async
-def begin_session():
-    from spellbot.database import DatabaseSession, db_session_maker
-
-    db_session = db_session_maker()
-    DatabaseSession.set(db_session)  # type: ignore
 
 
 class SpellBot(Bot):
@@ -171,16 +162,6 @@ class SpellBot(Bot):
                 await message.delete()
 
 
-async def bot_connection(bot):
-    logger.info("initializing database connection...")
-    await initialize_connection("spellbot-bot")
-
-    async with db_session_manager():
-        logger.info("building legacy command prefix cache...")
-        db_legacy_prefixes = await get_legacy_prefixes()
-        bot.legacy_prefix_cache.update(db_legacy_prefixes)
-
-
 def build_bot(
     loop: Optional[Loop] = None,
     mock_games: bool = False,
@@ -202,8 +183,18 @@ def build_bot(
         delete_from_unused_guilds=clean_commands,
     )
 
+    # Note: In tests we create the connection using fixtures.
     if create_connection:  # pragma: no cover
-        # In tests we create the connection using fixtures.
+
+        async def bot_connection(bot):
+            logger.info("initializing database connection...")
+            await initialize_connection("spellbot-bot")
+
+            async with db_session_manager():
+                logger.info("building legacy command prefix cache...")
+                db_legacy_prefixes = await get_legacy_prefixes()
+                bot.legacy_prefix_cache.update(db_legacy_prefixes)
+
         bot.loop.run_until_complete(bot_connection(bot))
 
     # load all cog extensions
