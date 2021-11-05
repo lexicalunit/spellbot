@@ -81,10 +81,10 @@
     box-sizing: border-box;
   }
   
-  body,
-  html {
-    height: 100%;
+  body, html {
     font-family: sans-serif;
+    height: 100%;
+    width: 100%;
   }
   
   em {
@@ -112,14 +112,15 @@
   }
   
   .limiter {
+    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
     width: 100%;
     margin: 0 auto;
+    overflow: auto;
   }
   
   .container-table100 {
     width: 100%;
     min-height: 100vh;
-    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -292,6 +293,12 @@
   }
   
   @media (max-width: 576px) {
+    .tooltip,
+    .tooltiptext,
+    .tooltipcta {
+      display: none;
+    }
+  
     .container-table100 {
       padding-left: 15px;
       padding-right: 15px;
@@ -724,10 +731,10 @@
     box-sizing: border-box;
   }
   
-  body,
-  html {
-    height: 100%;
+  body, html {
     font-family: sans-serif;
+    height: 100%;
+    width: 100%;
   }
   
   em {
@@ -755,14 +762,15 @@
   }
   
   .limiter {
+    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
     width: 100%;
     margin: 0 auto;
+    overflow: auto;
   }
   
   .container-table100 {
     width: 100%;
     min-height: 100vh;
-    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -935,6 +943,12 @@
   }
   
   @media (max-width: 576px) {
+    .tooltip,
+    .tooltiptext,
+    .tooltipcta {
+      display: none;
+    }
+  
     .container-table100 {
       padding-left: 15px;
       padding-right: 15px;
@@ -1283,10 +1297,10 @@
     box-sizing: border-box;
   }
   
-  body,
-  html {
-    height: 100%;
+  body, html {
     font-family: sans-serif;
+    height: 100%;
+    width: 100%;
   }
   
   em {
@@ -1314,14 +1328,15 @@
   }
   
   .limiter {
+    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
     width: 100%;
     margin: 0 auto;
+    overflow: auto;
   }
   
   .container-table100 {
     width: 100%;
     min-height: 100vh;
-    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1494,6 +1509,12 @@
   }
   
   @media (max-width: 576px) {
+    .tooltip,
+    .tooltiptext,
+    .tooltipcta {
+      display: none;
+    }
+  
     .container-table100 {
       padding-left: 15px;
       padding-right: 15px;
@@ -1969,10 +1990,10 @@
     box-sizing: border-box;
   }
   
-  body,
-  html {
-    height: 100%;
+  body, html {
     font-family: sans-serif;
+    height: 100%;
+    width: 100%;
   }
   
   em {
@@ -2000,14 +2021,15 @@
   }
   
   .limiter {
+    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
     width: 100%;
     margin: 0 auto;
+    overflow: auto;
   }
   
   .container-table100 {
     width: 100%;
     min-height: 100vh;
-    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2180,6 +2202,12 @@
   }
   
   @media (max-width: 576px) {
+    .tooltip,
+    .tooltiptext,
+    .tooltipcta {
+      display: none;
+    }
+  
     .container-table100 {
       padding-left: 15px;
       padding-right: 15px;
