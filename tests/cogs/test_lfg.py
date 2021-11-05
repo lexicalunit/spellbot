@@ -155,55 +155,85 @@ class TestCogLookingForGame:
         assert game.guild_xid == ctx.guild.id
         assert user.game_id == game.id
 
-    async def test_lfg_fully_seated(self, bot, ctx, monkeypatch, settings):
+    async def test_lfg_fully_seated(self, bot, ctx, settings):
         guild = GuildFactory.create(xid=ctx.guild.id)
         channel = ChannelFactory.create(xid=ctx.channel.id, guild=guild, default_seats=2)
         author_user = UserFactory.create(xid=ctx.author.id)
         game = GameFactory.create(guild=guild, channel=channel, seats=2, message_xid=123)
         other_user = UserFactory.create(xid=ctx.author.id + 1, game=game)
+        author_player = mock_discord_user(author_user)
+        other_player = mock_discord_user(other_user)
 
-        author_player = MagicMock(spec=discord.Member)
-        author_player.id = author_user.xid
-        author_player.display_name = author_user.name
-        author_player.mention = f"<@{author_player.id}>"
-        author_player.send = AsyncMock()
+        with mock_operations(lfg_interaction, users=[author_player, other_player]):
+            message = MagicMock(spec=discord.Message)
+            message.id = game.message_xid
+            lfg_interaction.safe_fetch_message.return_value = message
 
-        other_player = MagicMock(spec=discord.Member)
-        other_player.id = other_user.xid
-        other_player.display_name = other_user.name
-        other_player.mention = f"<@{other_player.id}>"
-        other_player.send = AsyncMock()
+            cog = LookingForGameCog(bot)
+            await cog.lfg.func(cog, ctx)
 
-        async def safe_fetch_user_mock(_, xid):
-            if xid == author_player.id:
-                return author_player
-            if xid == other_player.id:
-                return other_player
-            return None
+            DatabaseSession.expire_all()
+            game = DatabaseSession.query(Game).one()
+            call = lfg_interaction.safe_update_embed
+            assert call.call_args_list[0].kwargs["embed"].to_dict() == {
+                "color": settings.EMBED_COLOR,
+                "description": (
+                    "Please check your Direct Messages for your SpellTable link.\n\n"
+                    f"{guild.motd}"
+                ),
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": f"<@{author_player.id}>, <@{other_player.id}>",
+                    },
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {
+                        "inline": True,
+                        "name": "Started at",
+                        "value": f"<t:{game.started_at_timestamp}>",
+                    },
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "thumbnail": {"url": settings.THUMB_URL},
+                "title": "**Your game is ready!**",
+                "type": "rich",
+            }
 
-        monkeypatch.setattr(lfg_interaction, "safe_fetch_user", safe_fetch_user_mock)
+    async def test_lfg_when_initial_post_fails(self, bot, ctx):
+        user = UserFactory.create(xid=ctx.author.id)
 
-        message = MagicMock(spec=discord.Message)
-        message.id = game.message_xid
-        sfm_mock = AsyncMock(return_value=message)
-        monkeypatch.setattr(lfg_interaction, "safe_fetch_message", sfm_mock)
+        with mock_operations(lfg_interaction, users=[user]):
+            lfg_interaction.safe_send_channel.return_value = None
 
-        sueo_mock = AsyncMock()
-        monkeypatch.setattr(lfg_interaction, "safe_update_embed_origin", sueo_mock)
+            cog = LookingForGameCog(bot)
+            await cog.lfg.func(cog, ctx)
 
-        cog = LookingForGameCog(bot)
-        await cog.lfg.func(cog, ctx)
+        game = DatabaseSession.query(Game).one()
+        assert game.message_xid == None
 
-        assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
-            "author": {"name": "I found a game for you!"},
-            "color": settings.EMBED_COLOR,
-            "description": (
-                "You can [jump to the game post](https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{message.id}) to see it!"
-            ),
-            "thumbnail": {"url": settings.ICO_URL},
-            "type": "rich",
-        }
+    async def test_lfg_when_fetch_post_fails(self, bot, ctx):
+        guild = GuildFactory.create(xid=ctx.guild.id)
+        channel = ChannelFactory.create(xid=ctx.channel.id, guild=guild)
+        user = UserFactory.create(xid=ctx.author.id)
+        other = UserFactory.create(xid=ctx.author.id + 1)
+        game = GameFactory.create(guild=guild, channel=channel, message_xid=100)
+
+        with mock_operations(lfg_interaction, users=[user, other]):
+            lfg_interaction.safe_fetch_message.return_value = None
+
+            message = MagicMock(spec=discord.Message)
+            message.id = game.message_xid + 1
+            lfg_interaction.safe_send_channel.return_value = message
+
+            cog = LookingForGameCog(bot)
+            await cog.lfg.func(cog, ctx)
+
+            lfg_interaction.safe_send_channel.assert_called_once()
+
+        DatabaseSession.expire_all()
+        game = DatabaseSession.query(Game).one()
+        assert game.message_xid == 101
 
     async def test_lfg_when_blocked(self, bot, ctx):
         guild = GuildFactory.create(xid=ctx.guild.id)
