@@ -4,10 +4,10 @@
   box-sizing: border-box;
 }
 
-body,
-html {
-  height: 100%;
+body, html {
   font-family: sans-serif;
+  height: 100%;
+  width: 100%;
 }
 
 em {
@@ -35,14 +35,15 @@ a:hover {
 }
 
 .limiter {
+  background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
   width: 100%;
   margin: 0 auto;
+  overflow: auto;
 }
 
 .container-table100 {
   width: 100%;
   min-height: 100vh;
-  background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,7 +52,7 @@ a:hover {
 }
 
 .wrap-table100 {
-  width: 1170px;
+  /* width: 1170px; */
 }
 
 table {
@@ -215,6 +216,10 @@ tbody tr:hover {
 }
 
 @media (max-width: 576px) {
+  .tooltip {
+    display: none;
+  }
+
   .container-table100 {
     padding-left: 15px;
     padding-right: 15px;
