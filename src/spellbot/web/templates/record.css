@@ -52,7 +52,7 @@ a:hover {
 }
 
 .wrap-table100 {
-  /* width: 1170px; */
+  width: 1170px;
 }
 
 table {
@@ -216,7 +216,9 @@ tbody tr:hover {
 }
 
 @media (max-width: 576px) {
-  .tooltip {
+  .tooltip,
+  .tooltiptext,
+  .tooltipcta {
     display: none;
   }
 
