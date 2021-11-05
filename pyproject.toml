@@ -12,6 +12,11 @@ use_parentheses = true
 [tool.pylint]
 max-line-length = 90
 
+[tool.pyright]
+enableTypeIgnoreComments = true
+reportMissingTypeStubs = false
+typeCheckingMode = "basic"
+
 [tool.pytest.ini_options]
 addopts = """
     -W ignore::DeprecationWarning
