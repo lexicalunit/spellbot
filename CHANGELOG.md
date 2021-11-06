@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds the /game command for admins to create and start ad-hoc games.
+- Adds voice channel and invite creation to the /game command.
 - More test coverage.
 
 ### Changed
