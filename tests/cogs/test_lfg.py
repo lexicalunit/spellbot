@@ -1,6 +1,6 @@
 import asyncio
 from typing import Optional
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import ANY, AsyncMock, MagicMock
 
 import discord
 import pytest
@@ -172,8 +172,8 @@ class TestCogLookingForGame:
 
             DatabaseSession.expire_all()
             game = DatabaseSession.query(Game).one()
-            call = lfg_interaction.safe_update_embed
-            assert call.call_args_list[0].kwargs["embed"].to_dict() == {
+            mock_call = lfg_interaction.safe_update_embed
+            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.EMBED_COLOR,
                 "description": (
                     "Please check your Direct Messages for your SpellTable link.\n\n"
@@ -361,8 +361,8 @@ class TestCogLookingForGameJoinButton:
             cog = LookingForGameCog(bot)
             await cog.join.func(cog, ctx)
 
-            call = lfg_interaction.safe_update_embed_origin
-            call.call_args_list[0].kwargs["embed"].to_dict() == {
+            mock_call = lfg_interaction.safe_update_embed_origin
+            mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.EMBED_COLOR,
                 "description": (
                     "_A SpellTable link will be created when all players have joined._\n"
@@ -393,10 +393,10 @@ class TestCogLookingForGameJoinButton:
 
             DatabaseSession.expire_all()
             game = DatabaseSession.query(Game).one()
-            call = lfg_interaction.safe_update_embed_origin
-            call.assert_called_once()
-            assert call.call_args_list[0].kwargs["components"] == snapshot
-            assert call.call_args_list[0].kwargs["embed"].to_dict() == {
+            mock_call = lfg_interaction.safe_update_embed_origin
+            mock_call.assert_called_once()
+            assert mock_call.call_args_list[0].kwargs["components"] == snapshot
+            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.EMBED_COLOR,
                 "description": (
                     "Please check your Direct Messages for your SpellTable link.\n\n"
@@ -436,10 +436,125 @@ class TestCogLookingForGameJoinButton:
             cog = LookingForGameCog(bot)
             await cog.join.func(cog, ctx)
 
-            call = lfg_interaction.safe_send_channel
-            call.assert_called_once_with(ctx, "You can not join this game.", hidden=True)
+            mock_call = lfg_interaction.safe_send_channel
+            mock_call.assert_called_once_with(
+                ctx,
+                "You can not join this game.",
+                hidden=True,
+            )
 
         assert DatabaseSession.query(Game).count() == 1
+
+    async def test_join_when_started(self, bot, ctx):
+        ctx.set_origin()
+        guild = ctx_guild(ctx)
+        channel = ctx_channel(ctx, guild)
+        ctx_game(ctx, guild, channel, status=GameStatus.STARTED.value)
+
+        with mock_operations(lfg_interaction, users=[ctx.author]):
+            lfg_interaction.safe_fetch_message.return_value = ctx.message
+
+            cog = LookingForGameCog(bot)
+            await cog.join.func(cog, ctx)
+
+            lfg_interaction.safe_send_channel.assert_called_once_with(
+                ctx,
+                "Sorry, that game has already started.",
+                hidden=True,
+            )
+            lfg_interaction.safe_update_embed.assert_called_once_with(
+                ANY,
+                components=[],
+                embed=ANY,
+            )
+
+    async def test_join_when_started_and_fetch_fails(self, bot, ctx):
+        ctx.set_origin()
+        guild = ctx_guild(ctx)
+        channel = ctx_channel(ctx, guild)
+        ctx_game(ctx, guild, channel, status=GameStatus.STARTED.value)
+
+        with mock_operations(lfg_interaction, users=[ctx.author]):
+            lfg_interaction.safe_fetch_message.return_value = None
+
+            cog = LookingForGameCog(bot)
+            await cog.join.func(cog, ctx)
+
+            lfg_interaction.safe_send_channel.assert_called_once_with(
+                ctx,
+                "Sorry, that game has already started.",
+                hidden=True,
+            )
+            lfg_interaction.safe_update_embed.assert_not_called()
+
+
+@pytest.mark.asyncio
+class TestCogLookingForGameUserNotifications:
+    async def test_happy_path(self, bot, ctx, settings):
+        guild = ctx_guild(ctx, motd=None, show_links=False)
+        channel = ctx_channel(ctx, guild, default_seats=2)
+        game = ctx_game(ctx, guild, channel, seats=2)
+        other_user = UserFactory.create(xid=ctx.author.id + 1, game=game)
+        other_player = mock_discord_user(other_user)
+
+        with mock_operations(lfg_interaction, users=[ctx.author, other_player]):
+            cog = LookingForGameCog(bot)
+            await cog.lfg.func(cog, ctx)
+
+            DatabaseSession.expire_all()
+            game = DatabaseSession.query(Game).one()
+            mock_call = lfg_interaction.safe_send_user
+            mock_call.assert_any_call(ctx.author, embed=ANY)
+            mock_call.assert_any_call(other_player, embed=ANY)
+            embed = mock_call.call_args_list[0].kwargs["embed"].to_dict()
+            assert embed == {
+                "color": settings.EMBED_COLOR,
+                "description": (
+                    f"[Join your SpellTable game now!]({game.spelltable_link})"
+                    f" (or [spectate this game]({game.spectate_link}))\n\n"
+                    f"You can also [jump to the original game post]({game.jump_link}) in"
+                    f" <#{game.channel_xid}>."
+                ),
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": f"<@{ctx.author.id}>, <@{other_user.xid}>",
+                    },
+                    {"inline": True, "name": "Format", "value": game.format_name},
+                    {
+                        "inline": True,
+                        "name": "Started at",
+                        "value": f"<t:{game.started_at_timestamp}>",
+                    },
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "thumbnail": {"url": settings.THUMB_URL},
+                "title": "**Your game is ready!**",
+                "type": "rich",
+            }
+
+    async def test_when_fetch_user_fails(self, bot, ctx):
+        guild = ctx_guild(ctx)
+        channel = ctx_channel(ctx, guild, default_seats=2)
+        game = ctx_game(ctx, guild, channel, seats=2)
+        other_user = UserFactory.create(xid=ctx.author.id + 1, game=game)
+        other_player = mock_discord_user(other_user)
+
+        with mock_operations(lfg_interaction, users=[ctx.author, other_player]):
+            lfg_interaction.safe_fetch_user = AsyncMock(return_value=None)
+
+            cog = LookingForGameCog(bot)
+            await cog.lfg.func(cog, ctx)
+
+            lfg_interaction.safe_send_user.assert_not_called()
+            lfg_interaction.safe_send_channel.assert_any_call(
+                ctx,
+                (
+                    "Unable to send Direct Messages to some players:"
+                    f" <@!{other_player.id}>, <@!{ctx.author.id}>"
+                ),
+            )
 
 
 @pytest.mark.asyncio
@@ -458,9 +573,9 @@ class TestCogLookingForGameLeaveButton:
             cog = LookingForGameCog(bot)
             await cog.leave.func(cog, ctx)
 
-            call = leave_interaction.safe_update_embed_origin
-            call.assert_called_once()
-            assert call.call_args_list[0].kwargs["embed"].to_dict() == {
+            mock_call = leave_interaction.safe_update_embed_origin
+            mock_call.assert_called_once()
+            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.EMBED_COLOR,
                 "description": (
                     "_A SpellTable link will be created when all players have joined._\n"
