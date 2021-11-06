@@ -5,7 +5,7 @@ import pytest
 from spellbot.cogs.score import ScoreCog
 from tests.factories.game import GameFactory
 from tests.factories.play import PlayFactory
-from tests.fixtures import build_channel, build_ctx, build_guild
+from tests.mocks import build_channel, build_ctx, build_guild
 
 
 @pytest.mark.asyncio
