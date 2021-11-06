@@ -1,335 +1,342 @@
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-body, html {
-  font-family: sans-serif;
-  height: 100%;
-  width: 100%;
+body,
+html {
+    font-family: sans-serif;
+    height: 100%;
+    width: 100%;
 }
 
 em {
-  font-weight: 600;
-  font-style: normal;
+    font-weight: 600;
+    font-style: normal;
 }
 
 ul {
-  list-style-type: none;
+    list-style-type: none;
 }
 
 a {
-  margin: 0;
+    margin: 0;
 }
 
 a,
 a:hover,
 a:visited {
-  color: #04a7ff;
-  text-decoration: none;
+    color: #04a7ff;
+    text-decoration: none;
 }
 
 a:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 .limiter {
-  background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
-  width: 100%;
-  margin: 0 auto;
-  overflow: auto;
+    background: linear-gradient(45deg, rgba(246, 173, 75), rgba(90, 62, 253));
+    width: 100%;
+    margin: 0 auto;
+    overflow: auto;
 }
 
 .container-table100 {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  padding: 33px 30px;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 33px 30px;
 }
 
 .wrap-table100 {
-  width: 1170px;
+    width: 1170px;
 }
 
 table {
-  border-spacing: 1;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 10px;
-  width: 100%;
-  margin: 0 auto;
-  position: relative;
-  box-shadow: 10px 10px rgb(113 128 150 / 50%);
+    border-spacing: 1;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    box-shadow: 10px 10px rgb(113 128 150 / 50%);
 }
 
 table * {
-  position: relative;
+    position: relative;
 }
 
 table td,
 table th {
-  padding-left: 8px;
-  padding-right: 8px;
-  text-align: left;
+    padding-left: 8px;
+    padding-right: 8px;
+    text-align: left;
 }
 
 table thead tr {
-  height: 60px;
-  background: rgb(13, 17, 23);
+    height: 60px;
+    background: rgb(13, 17, 23);
 }
 
 th:first-child {
-  border-radius: 10px 0 0;
+    border-radius: 10px 0 0;
 }
 
 th:last-child {
-  border-radius: 0 10px 0 0;
+    border-radius: 0 10px 0 0;
 }
 
 tr:last-child td:first-child {
-  border-radius: 0 0 0 10px;
+    border-radius: 0 0 0 10px;
 }
 
 tr:last-child td:last-child {
-  border-radius: 0 0 10px;
+    border-radius: 0 0 10px;
 }
 
 table tbody tr {
-  height: 50px;
+    height: 50px;
 }
 
 table tbody tr:last-child {
-  border: 0;
+    border: 0;
 }
 
 table td.l,
 table th.l {
-  text-align: right;
+    text-align: right;
 }
 
 table td.c,
 table th.c {
-  text-align: center;
+    text-align: center;
 }
 
 table td.r,
 table th.r {
-  text-align: center;
+    text-align: center;
 }
 
 .table100-head th {
-  font-size: 18px;
-  color: #fff;
-  line-height: 1.2;
-  font-weight: unset;
+    font-size: 18px;
+    color: #fff;
+    line-height: 1.2;
+    font-weight: unset;
 }
 
 tbody tr:nth-child(even) {
-  background-color: #f5f5f5;
+    background-color: #f5f5f5;
 }
 
 tbody tr {
-  font-size: 15px;
-  color: #808080;
-  line-height: 1.2;
-  font-weight: unset;
+    font-size: 15px;
+    color: #808080;
+    line-height: 1.2;
+    font-weight: unset;
 }
 
 tbody tr:hover {
-  color: #555555;
-  background-color: #f5f5f5;
-  cursor: pointer;
+    color: #555555;
+    background-color: #f5f5f5;
+    cursor: pointer;
 }
 
 @media screen and (max-width: 992px) {
-  table {
-    display: block;
-  }
 
-  table > *,
-  table tr,
-  table td,
-  table th {
-    display: block;
-  }
+    .tooltip,
+    .tooltiptext,
+    .tooltipcta {
+        display: none;
+    }
 
-  table thead {
-    display: none;
-  }
+    .container-table100 {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
 
-  table tbody tr {
-    height: auto;
-    padding: 37px 0;
-  }
+    table {
+        display: block;
+    }
 
-  table tbody tr td {
-    padding-left: 40% !important;
-    margin-bottom: 24px;
-  }
+    table>*,
+    table tr,
+    table td,
+    table th {
+        display: block;
+    }
 
-  table tbody tr td:last-child {
-    margin-bottom: 0;
-  }
+    td {
+        display: block !important;
+    }
 
-  table tbody tr td:before {
-    font-size: 14px;
-    color: #999999;
-    line-height: 1.2;
-    font-weight: unset;
-    position: absolute;
-    width: 40%;
-    left: 30px;
-    top: 0;
-  }
+    table thead {
+        display: none;
+    }
 
-  table tbody tr td:nth-child(1):before {
-    content: "Game";
-  }
+    table tbody tr {
+        height: auto;
+        padding: 37px 0;
+    }
 
-  table tbody tr td:nth-child(2):before {
-    content: "Time";
-  }
+    table tbody tr td {
+        padding-left: 40% !important;
+        margin-bottom: 24px;
+    }
 
-  table tbody tr td:nth-child(3):before {
-    content: "Guild";
-  }
+    table tbody tr td:last-child {
+        margin-bottom: 0;
+    }
 
-  table tbody tr td:nth-child(4):before {
-    content: "Channel";
-  }
+    table tbody tr td:before {
+        font-size: 14px;
+        color: #999999;
+        line-height: 1.2;
+        font-weight: unset;
+        position: absolute;
+        width: 40%;
+        left: 30px;
+        top: 0;
+    }
 
-  table tbody tr td:nth-child(5):before {
-    content: "Link";
-  }
+    table tbody tr td:nth-child(1):before {
+        content: "Game";
+    }
 
-  table tbody tr td:nth-child(6):before {
-    content: "Scores";
-  }
+    table tbody tr td:nth-child(2):before {
+        content: "Time";
+    }
 
-  tbody tr {
-    font-size: 14px;
-  }
-}
+    table tbody tr td:nth-child(3):before {
+        content: "Guild";
+    }
 
-@media (max-width: 576px) {
-  .tooltip,
-  .tooltiptext,
-  .tooltipcta {
-    display: none;
-  }
+    table tbody tr td:nth-child(4):before {
+        content: "Channel";
+    }
 
-  .container-table100 {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
+    table tbody tr td:nth-child(5):before {
+        content: "Link";
+    }
+
+    table tbody tr td:nth-child(6):before {
+        content: "Scores";
+    }
+
+    tbody tr {
+        font-size: 14px;
+    }
 }
 
 .user_id {
-  font-size: smaller !important;
-  font-family: monospace !important;
+    font-size: smaller !important;
+    font-family: monospace !important;
 }
 
 .button {
-  margin: 1em;
-  box-shadow: inset 0 0 15px 3px #23395e;
-  background: linear-gradient(to bottom, #2e466e 5%, #415989 100%);
-  background-color: #2e466e;
-  border-radius: 17px;
-  border: 1px solid #1f2f47;
-  display: inline-block;
-  cursor: pointer;
-  color: #ffffff !important;
-  font-family: Arial;
-  font-size: 15px;
-  padding: 6px 13px;
-  text-decoration: none !important;
-  text-shadow: 0 1px 0 #263666;
+    margin: 1em;
+    box-shadow: inset 0 0 15px 3px #23395e;
+    background: linear-gradient(to bottom, #2e466e 5%, #415989 100%);
+    background-color: #2e466e;
+    border-radius: 17px;
+    border: 1px solid #1f2f47;
+    display: inline-block;
+    cursor: pointer;
+    color: #ffffff !important;
+    font-family: Arial;
+    font-size: 15px;
+    padding: 6px 13px;
+    text-decoration: none !important;
+    text-shadow: 0 1px 0 #263666;
 }
 
 .button:hover {
-  background: linear-gradient(to bottom, #415989 5%, #2e466e 100%);
-  background-color: #415989;
+    background: linear-gradient(to bottom, #415989 5%, #2e466e 100%);
+    background-color: #415989;
 }
 
 .button:active {
-  position: relative;
-  top: 1px;
+    position: relative;
+    top: 1px;
 }
 
 .data {
-  display: none;
+    display: none;
 }
 
 .tooltip {
-  position: relative;
-  display: inline-block;
-  border-bottom: 1px dashed #808080;
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dashed #808080;
 }
 
 .tooltip .tooltiptext {
-  visibility: hidden;
-  background-color: rgb(13, 17, 23);
-  text-align: center;
-  border-radius: 5px;
-  position: absolute;
-  z-index: 1;
-  width: 220px;
-  padding-top: 10px;
-  padding-left: 5px;
-  padding-right: 5px;
+    visibility: hidden;
+    background-color: rgb(13, 17, 23);
+    text-align: center;
+    border-radius: 5px;
+    position: absolute;
+    z-index: 1;
+    width: 220px;
+    padding-top: 10px;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 
 .tooltip:hover .tooltiptext {
-  visibility: visible;
+    visibility: visible;
 }
 
 .tooltipcta {
-  color: #fff;
+    color: #fff;
 }
 
 .scores {
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
 }
 
 .avatar {
-  display: none;
+    display: none;
 }
 
 .avatar a {
-  transition: all 0.3s ease-in-out;
-  float: right;
+    transition: all 0.3s ease-in-out;
+    float: right;
 }
 
 .avatar a:hover {
-  filter: brightness(150%);
+    filter: brightness(150%);
 }
 
 .avatar img {
-  border-radius: 50%;
-  width: 100px;
-  background: transparent;
-  -webkit-animation: spin 60s linear infinite;
-  -moz-animation: spin 60s linear infinite;
-  animation: spin 60s linear infinite;
+    border-radius: 50%;
+    width: 100px;
+    background: transparent;
+    -webkit-animation: spin 60s linear infinite;
+    -moz-animation: spin 60s linear infinite;
+    animation: spin 60s linear infinite;
 }
+
 @-moz-keyframes spin {
-  100% {
-    -moz-transform: rotate(360deg);
-  }
+    100% {
+        -moz-transform: rotate(360deg);
+    }
 }
+
 @-webkit-keyframes spin {
-  100% {
-    -webkit-transform: rotate(360deg);
-  }
+    100% {
+        -webkit-transform: rotate(360deg);
+    }
 }
+
 @keyframes spin {
-  100% {
-    -webkit-transform: rotate(360deg);
-    transform: rotate(360deg);
-  }
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
 }
