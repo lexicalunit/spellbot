@@ -192,6 +192,7 @@ class LookingForGameInteraction(BaseInteraction):
                 hidden=True,
             )
 
+        assert self.ctx.guild_id
         await self.services.games.upsert(
             guild_xid=self.ctx.guild_id,
             channel_xid=self.channel.id,
@@ -202,6 +203,7 @@ class LookingForGameInteraction(BaseInteraction):
             create_new=True,
         )
         await self._handle_link_creation()
+        await self._handle_voice_creation(self.ctx.guild_id)
         await self._handle_embed_creation(new=True, origin=False, fully_seated=True)
         await self.services.games.record_plays()
         await self._handle_direct_messages()
