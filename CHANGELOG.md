@@ -10,14 +10,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds the /game command for admins to create and start ad-hoc games.
+- More test coverage.
 
 ### Changed
 
 - Reduce the size of the `!lfg` CTA and delete it after 10 seconds.
+- Adds some pyright config, remove mypy config.
 
 ### Fixed
 
 - Ensure components are removed from expired games.
+- Fix safari using table-cell display for td elements.
+- Some css fixes for mobile.
 
 ## [v7.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v7.1.0) - 2021-11-01
 
