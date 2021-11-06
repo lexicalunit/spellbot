@@ -24,7 +24,7 @@ from spellbot.operations import (
     safe_update_embed_origin,
 )
 from spellbot.utils import CANT_SEND_CODE
-from tests.mocks.discord import make_client
+from tests.mocks import mock_client
 
 
 @pytest.mark.asyncio
@@ -32,14 +32,14 @@ class TestOperationsFetchUser:
     async def test_cached(self):
         user = MagicMock()
         user.id = 1
-        client = make_client(users=[user])
+        client = mock_client(users=[user])
         found = await safe_fetch_user(client, user.id)
         assert found is user
 
     async def test_uncached(self, monkeypatch):
         user = MagicMock()
         user.id = 1
-        client = make_client(users=[user])
+        client = mock_client(users=[user])
         mock_get_user = MagicMock(return_value=None)
         monkeypatch.setattr(client, "get_user", mock_get_user)
         found = await safe_fetch_user(client, user.id)
@@ -51,14 +51,14 @@ class TestOperationsFetchGuild:
     async def test_cached(self):
         guild = MagicMock()
         guild.id = 1
-        client = make_client(guilds=[guild])
+        client = mock_client(guilds=[guild])
         found = await safe_fetch_guild(client, guild.id)
         assert found is guild
 
     async def test_uncached(self, monkeypatch):
         guild = MagicMock()
         guild.id = 1
-        client = make_client(guilds=[guild])
+        client = mock_client(guilds=[guild])
         mock_get_guild = MagicMock(return_value=None)
         monkeypatch.setattr(client, "get_guild", mock_get_guild)
         found = await safe_fetch_guild(client, guild.id)
@@ -70,14 +70,14 @@ class TestOperationsFetchTextChannel:
     async def test_cached(self):
         channel = MagicMock(spec=discord.TextChannel)
         channel.id = 1
-        client = make_client(channels=[channel])
+        client = mock_client(channels=[channel])
         found = await safe_fetch_text_channel(client, 2, channel.id)
         assert found is channel
 
     async def test_uncached(self, monkeypatch):
         channel = MagicMock(spec=discord.TextChannel)
         channel.id = 1
-        client = make_client(channels=[channel])
+        client = mock_client(channels=[channel])
         mock_get_channel = MagicMock(return_value=None)
         monkeypatch.setattr(client, "get_channel", mock_get_channel)
         found = await safe_fetch_text_channel(client, 2, channel.id)
@@ -86,14 +86,14 @@ class TestOperationsFetchTextChannel:
     async def test_non_text(self):
         channel = MagicMock(spec=discord.DMChannel)
         channel.id = 1
-        client = make_client(channels=[channel])
+        client = mock_client(channels=[channel])
         found = await safe_fetch_text_channel(client, 2, channel.id)
         assert found is None
 
     async def test_uncached_non_text(self, monkeypatch):
         channel = MagicMock(spec=discord.DMChannel)
         channel.id = 1
-        client = make_client(channels=[channel])
+        client = mock_client(channels=[channel])
         mock_get_channel = MagicMock(return_value=None)
         monkeypatch.setattr(client, "get_channel", mock_get_channel)
         found = await safe_fetch_text_channel(client, 2, channel.id)
@@ -187,7 +187,7 @@ class TestOperationsCreateCategoryChannel:
         guild = MagicMock()
         guild.id = 1
         guild.create_category_channel = AsyncMock()
-        client = make_client(guilds=[guild])
+        client = mock_client(guilds=[guild])
         await safe_create_category_channel(client, guild.id, "name")
         guild.create_category_channel.assert_called_once_with("name")
 
@@ -195,7 +195,7 @@ class TestOperationsCreateCategoryChannel:
         guild = MagicMock()
         guild.id = 1
         guild.create_category_channel = AsyncMock()
-        client = make_client(guilds=[guild])
+        client = mock_client(guilds=[guild])
         mock_get_guild = MagicMock(return_value=None)
         monkeypatch.setattr(client, "get_guild", mock_get_guild)
         await safe_create_category_channel(client, guild.id, "name")
@@ -205,7 +205,7 @@ class TestOperationsCreateCategoryChannel:
         guild = MagicMock()
         guild.id = 1
         guild.create_category_channel = AsyncMock()
-        client = make_client()
+        client = mock_client()
         await safe_create_category_channel(client, guild.id, "name")
         guild.create_category_channel.assert_not_called()
 
@@ -217,7 +217,7 @@ class TestOperationsCreateVoiceChannel:
         guild.id = 1
         guild.create_voice_channel = AsyncMock()
         category = MagicMock()
-        client = make_client(guilds=[guild])
+        client = mock_client(guilds=[guild])
         await safe_create_voice_channel(client, guild.id, "name", category=category)
         guild.create_voice_channel.assert_called_once_with("name", category=category)
 
@@ -226,7 +226,7 @@ class TestOperationsCreateVoiceChannel:
         guild.id = 1
         guild.create_voice_channel = AsyncMock()
         category = MagicMock()
-        client = make_client(guilds=[guild])
+        client = mock_client(guilds=[guild])
         mock_get_guild = MagicMock(return_value=None)
         monkeypatch.setattr(client, "get_guild", mock_get_guild)
         await safe_create_voice_channel(client, guild.id, "name", category=category)
@@ -237,7 +237,7 @@ class TestOperationsCreateVoiceChannel:
         guild.id = 1
         guild.create_voice_channel = AsyncMock()
         category = MagicMock()
-        client = make_client()
+        client = mock_client()
         await safe_create_voice_channel(client, guild.id, "name", category=category)
         guild.create_voice_channel.assert_not_called()
 
@@ -537,7 +537,7 @@ class TestEnsureVoiceCategory:
         guild.id = 101
         guild.categories = [category]
         guild.create_category_channel = AsyncMock()
-        client = make_client(guilds=[guild], categories=[category])
+        client = mock_client(guilds=[guild], categories=[category])
         result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
         assert result is category
         guild.create_category_channel.assert_not_called()
@@ -548,7 +548,7 @@ class TestEnsureVoiceCategory:
         guild.id = 101
         guild.categories = []
         guild.create_category_channel = AsyncMock(return_value=new_category)
-        client = make_client(guilds=[guild])
+        client = mock_client(guilds=[guild])
         result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
         assert result is new_category
         guild.create_category_channel.assert_called_once_with("voice-channels")
@@ -563,7 +563,7 @@ class TestEnsureVoiceCategory:
         guild.id = 101
         guild.categories = [category]
         guild.create_category_channel = AsyncMock(return_value=new_category)
-        client = make_client(guilds=[guild], categories=[category])
+        client = mock_client(guilds=[guild], categories=[category])
         result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
         assert result is new_category
         guild.create_category_channel.assert_called_once_with("voice-channels 2")
@@ -573,7 +573,7 @@ class TestEnsureVoiceCategory:
         guild.id = 101
         guild.categories = []
         guild.create_category_channel = AsyncMock(side_effect=DiscordException())
-        client = make_client(guilds=[guild])
+        client = mock_client(guilds=[guild])
         result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
         assert result is None
         guild.create_category_channel.assert_called_once_with("voice-channels")
@@ -593,7 +593,7 @@ class TestEnsureVoiceCategory:
         guild.id = 101
         guild.categories = [category1, category3]
         guild.create_category_channel = AsyncMock(return_value=new_category)
-        client = make_client(guilds=[guild], categories=[category1, category3])
+        client = mock_client(guilds=[guild], categories=[category1, category3])
         result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
         assert result is new_category
         guild.create_category_channel.assert_called_once_with("voice-channels 2")
@@ -609,12 +609,12 @@ class TestEnsureVoiceCategory:
         guild.id = 101
         guild.categories = [category]
         guild.create_category_channel = AsyncMock(return_value=new_category)
-        client = make_client(guilds=[guild], categories=[category])
+        client = mock_client(guilds=[guild], categories=[category])
         result = await safe_ensure_voice_category(client, guild.id, "voice-channels")
         assert result is new_category
         guild.create_category_channel.assert_called_once_with("voice-channels")
 
     async def test_no_guild(self):
-        client = make_client()
+        client = mock_client()
         result = await safe_ensure_voice_category(client, 404, "voice-channels")
         assert result is None

@@ -6,7 +6,7 @@ from spellbot.interactions import lfg_interaction
 from spellbot.models.game import Game, GameFormat, GameStatus
 from spellbot.models.user import User
 from tests.factories.user import UserFactory
-from tests.fixtures import (
+from tests.mocks import (
     build_author,
     build_client_user,
     build_message,

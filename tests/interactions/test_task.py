@@ -12,7 +12,7 @@ from spellbot.models.game import Game
 from tests.factories.channel import ChannelFactory
 from tests.factories.game import GameFactory
 from tests.factories.guild import GuildFactory
-from tests.fixtures import (
+from tests.mocks import (
     build_channel,
     build_client_user,
     build_message,
