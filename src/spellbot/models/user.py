@@ -15,7 +15,7 @@ from sqlalchemy.orm import relationship
 
 from spellbot.models import GameStatus, Play
 
-from . import Base, now
+from .base import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
     from .game import Game  # noqa

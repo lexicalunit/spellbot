@@ -6,7 +6,7 @@ from discord_slash.context import ComponentContext, InteractionContext
 from sqlalchemy.sql.expression import update
 from syrupy.assertion import SnapshotAssertion
 
-from spellbot import Settings, SpellBot
+from spellbot import SpellBot
 from spellbot.cogs.lfg import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import leave_interaction, lfg_interaction
@@ -20,6 +20,7 @@ from spellbot.models import (
     User,
     UserAward,
 )
+from spellbot.settings import Settings
 from tests.fixtures import Factories
 from tests.mocks import (
     build_author,

@@ -9,8 +9,7 @@ from discord.message import Message
 from discord_slash.context import ComponentContext, InteractionContext
 from discord_slash.model import ButtonStyle
 
-from spellbot.client import SpellBot
-from spellbot.interactions import BaseInteraction
+from spellbot import SpellBot
 from spellbot.models import GameFormat, GameStatus
 from spellbot.operations import (
     safe_add_role,
@@ -25,6 +24,8 @@ from spellbot.operations import (
     safe_update_embed_origin,
 )
 from spellbot.settings import Settings
+
+from .base_interaction import BaseInteraction
 
 logger = logging.getLogger(__name__)
 

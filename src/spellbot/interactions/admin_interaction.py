@@ -2,10 +2,11 @@ import logging
 
 from discord_slash.context import InteractionContext
 
-from spellbot.client import SpellBot
-from spellbot.interactions import BaseInteraction
+from spellbot import SpellBot
 from spellbot.operations import safe_send_channel
-from spellbot.services.games import GamesService
+from spellbot.services import GamesService
+
+from .base_interaction import BaseInteraction
 
 logger = logging.getLogger(__name__)
 

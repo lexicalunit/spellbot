@@ -3,7 +3,7 @@ from discord_slash.context import InteractionContext
 
 from spellbot import SpellBot
 from spellbot.errors import SpellbotAdminOnly, UserBannedError
-from spellbot.interactions import BaseInteraction
+from spellbot.interactions.base_interaction import BaseInteraction
 from tests.fixtures import Factories
 
 

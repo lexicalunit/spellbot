@@ -2,10 +2,9 @@ from asgiref.sync import sync_to_async
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Watch
-from spellbot.services import BaseService
 
 
-class WatchesService(BaseService):
+class WatchesService:
     @sync_to_async
     def fetch(self, guild_xid: int) -> list[dict]:
         watches = (

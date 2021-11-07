@@ -6,7 +6,7 @@ from discord_slash.context import ComponentContext, InteractionContext
 from discord_slash.model import ButtonStyle, ComponentType
 from pygicord import Config
 
-from spellbot.client import SpellBot
+from spellbot import SpellBot
 from spellbot.cogs.admin import AdminCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import config_interaction, watch_interaction

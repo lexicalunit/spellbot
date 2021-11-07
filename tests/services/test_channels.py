@@ -4,7 +4,7 @@ import pytest
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel
-from spellbot.services.channels import ChannelsService
+from spellbot.services import ChannelsService
 from tests.factories import ChannelFactory
 
 

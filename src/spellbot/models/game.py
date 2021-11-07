@@ -11,7 +11,7 @@ from sqlalchemy.sql.expression import text
 
 from spellbot.settings import Settings
 
-from . import Base, now
+from .base import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
     from .channel import Channel  # noqa

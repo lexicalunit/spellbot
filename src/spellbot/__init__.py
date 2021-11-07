@@ -10,7 +10,7 @@ import hupper
 from dotenv import load_dotenv
 
 from spellbot._version import __version__
-from spellbot.client import SpellBot
+from spellbot.client import SpellBot, build_bot
 from spellbot.settings import Settings
 from spellbot.web import launch_web_server
 
@@ -116,8 +116,6 @@ def main(
         launch_web_server(settings, loop, port or settings.PORT)
         loop.run_forever()
     else:
-        from spellbot.client import build_bot
-
         assert settings.BOT_TOKEN is not None
         bot = build_bot(
             loop=loop,
@@ -130,7 +128,7 @@ def main(
 
 __all__ = [
     "__version__",
-    "Settings",
+    "build_bot",
     "SpellBot",
 ]
 

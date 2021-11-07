@@ -2,7 +2,7 @@ import pytest
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Game, GameFormat, GameStatus, Play, User
-from spellbot.services.games import GamesService
+from spellbot.services import GamesService
 from tests.factories import (
     BlockFactory,
     GameFactory,

@@ -5,12 +5,11 @@ from sqlalchemy.sql.expression import and_, or_
 
 from spellbot.database import DatabaseSession
 from spellbot.models import GuildAward, Play, UserAward
-from spellbot.services import BaseService
 
 NewAward = namedtuple("NewAward", ["role", "message"])
 
 
-class AwardsService(BaseService):
+class AwardsService:
     @sync_to_async
     def give_awards(self, guild_xid: int, player_xids: list[int]) -> dict[int, NewAward]:
         """Returns dict of discord user ids -> role names to assign to that user."""
