@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Column, ForeignKey, Integer
 
-from . import Base
+from .base import Base
 
 if TYPE_CHECKING:  # pragma: no cover
     from .game import Game  # noqa

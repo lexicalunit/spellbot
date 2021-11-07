@@ -5,8 +5,7 @@ from datetime import datetime, timedelta
 from dateutil import tz
 from discord.channel import VoiceChannel
 
-from spellbot.client import SpellBot
-from spellbot.interactions import BaseInteraction
+from spellbot import SpellBot
 from spellbot.operations import (
     bot_can_delete_channel,
     safe_delete_channel,
@@ -14,8 +13,10 @@ from spellbot.operations import (
     safe_fetch_text_channel,
     safe_update_embed,
 )
-from spellbot.services.games import GamesService
+from spellbot.services import GamesService
 from spellbot.settings import Settings
+
+from .base_interaction import BaseInteraction
 
 settings = Settings()
 logger = logging.getLogger(__name__)

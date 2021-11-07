@@ -4,8 +4,8 @@ import discord
 import pytest
 from discord_slash.context import InteractionContext
 
-from spellbot import Settings
 from spellbot.errors import SpellbotAdminOnly
+from spellbot.settings import Settings
 from spellbot.utils import (
     bot_can_delete_channel,
     bot_can_read,

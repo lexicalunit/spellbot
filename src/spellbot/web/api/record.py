@@ -6,7 +6,7 @@ from aiohttp import web
 from aiohttp.web_response import Response as WebResponse
 
 from spellbot.database import db_session_manager
-from spellbot.services.plays import PlaysService
+from spellbot.services import PlaysService
 
 logger = logging.getLogger(__name__)
 

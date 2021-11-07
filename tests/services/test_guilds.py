@@ -4,7 +4,7 @@ import pytest
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Guild, GuildAward
-from spellbot.services.guilds import GuildsService
+from spellbot.services import GuildsService
 from tests.factories import GuildAwardFactory, GuildFactory
 
 

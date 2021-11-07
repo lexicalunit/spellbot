@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false, text
 from sqlalchemy.orm import relationship
 
-from . import Base, now
+from .base import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
     from .award import GuildAward  # noqa

@@ -6,8 +6,9 @@ import discord
 from discord_slash.context import InteractionContext
 
 from spellbot.client import SpellBot
-from spellbot.interactions import BaseInteraction
 from spellbot.operations import safe_send_channel
+
+from .base_interaction import BaseInteraction
 
 logger = logging.getLogger(__name__)
 

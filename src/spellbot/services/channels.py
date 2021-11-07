@@ -8,10 +8,9 @@ from sqlalchemy.sql.expression import update
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel
-from spellbot.services import BaseService
 
 
-class ChannelsService(BaseService):
+class ChannelsService:
     @sync_to_async()
     def upsert(self, channel: discord.TextChannel) -> dict:
         name_max_len = Channel.name.property.columns[0].type.length  # type: ignore

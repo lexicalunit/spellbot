@@ -3,7 +3,6 @@ from typing import cast
 
 from discord_slash.context import ComponentContext
 
-from spellbot.interactions import BaseInteraction
 from spellbot.operations import (
     safe_fetch_message,
     safe_fetch_text_channel,
@@ -11,6 +10,8 @@ from spellbot.operations import (
     safe_update_embed,
     safe_update_embed_origin,
 )
+
+from .base_interaction import BaseInteraction
 
 logger = logging.getLogger(__name__)
 

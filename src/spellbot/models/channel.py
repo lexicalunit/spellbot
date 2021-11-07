@@ -7,7 +7,7 @@ from sqlalchemy.sql.expression import false, text
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import Boolean, Integer
 
-from . import Base, now
+from .base import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
     from .game import Game  # noqa

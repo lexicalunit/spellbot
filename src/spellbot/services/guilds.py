@@ -8,10 +8,9 @@ from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Guild, GuildAward
-from spellbot.services import BaseService
 
 
-class GuildsService(BaseService):
+class GuildsService:
     def __init__(self):
         self.guild: Optional[Guild] = None
 

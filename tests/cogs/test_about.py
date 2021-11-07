@@ -1,8 +1,7 @@
 import pytest
 from discord_slash.context import InteractionContext
 
-from spellbot._version import __version__
-from spellbot.client import SpellBot
+from spellbot import SpellBot, __version__
 from spellbot.cogs.about import AboutCog
 from spellbot.settings import Settings
 

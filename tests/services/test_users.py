@@ -4,7 +4,7 @@ import pytest
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, User, Watch
-from spellbot.services.users import UsersService
+from spellbot.services import UsersService
 from tests.factories import UserFactory
 
 

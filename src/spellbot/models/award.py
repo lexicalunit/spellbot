@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import false
 from sqlalchemy.sql.sqltypes import Boolean
 
-from . import Base
+from .base import Base
 
 if TYPE_CHECKING:  # pragma: no cover
     from .guild import Guild  # noqa

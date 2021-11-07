@@ -1,6 +1,6 @@
 import pytest
 
-from spellbot import Settings
+from spellbot.settings import Settings
 
 
 class TestMigrations:

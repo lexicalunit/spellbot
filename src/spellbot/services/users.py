@@ -9,10 +9,9 @@ from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, Game, User, Watch
-from spellbot.services import BaseService
 
 
-class UsersService(BaseService):
+class UsersService:
     def __init__(self):
         self.user: Optional[User] = None
 

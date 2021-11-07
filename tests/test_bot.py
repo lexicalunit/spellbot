@@ -7,10 +7,11 @@ from discord.ext.commands import errors
 from discord.ext.commands.bot import Bot
 from discord_slash.context import InteractionContext, SlashContext
 
-from spellbot import Settings, SpellBot, client
+from spellbot import SpellBot, client
 from spellbot.database import DatabaseSession
 from spellbot.errors import SpellbotAdminOnly, UserBannedError
 from spellbot.models import Channel, Guild, Verify
+from spellbot.settings import Settings
 from tests.fixtures import Factories
 
 

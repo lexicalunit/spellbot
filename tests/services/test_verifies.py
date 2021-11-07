@@ -1,13 +1,14 @@
 import pytest
 
-from spellbot.services.verifies import VerifiesService
-from tests.factories.user import UserFactory
+from spellbot.models import Guild
+from spellbot.services import VerifiesService
+from tests.fixtures import Factories
 
 
 @pytest.mark.asyncio
 class TestServiceVerifies:
-    async def test_verifies_upsert(self, guild):
-        user = UserFactory.create()
+    async def test_verifies_upsert(self, guild: Guild, factories: Factories):
+        user = factories.user.create()
 
         verifies = VerifiesService()
         await verifies.upsert(guild.xid, user.xid)

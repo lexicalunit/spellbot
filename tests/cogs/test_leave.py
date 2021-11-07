@@ -4,10 +4,11 @@ import discord
 import pytest
 from discord_slash.context import InteractionContext
 
-from spellbot import Settings, SpellBot
+from spellbot import SpellBot
 from spellbot.cogs.leave import LeaveGameCog
 from spellbot.interactions import leave_interaction
 from spellbot.models import Channel, Guild
+from spellbot.settings import Settings
 from tests.fixtures import Factories
 
 # TODO: Rewrite these tests using mock_operations().

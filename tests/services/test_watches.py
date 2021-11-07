@@ -1,7 +1,7 @@
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.services.watches import WatchesService
+from spellbot.services import WatchesService
 from tests.factories import GuildFactory, UserFactory, WatchFactory
 
 
