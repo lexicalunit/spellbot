@@ -10,6 +10,7 @@ import hupper
 from dotenv import load_dotenv
 
 from spellbot._version import __version__
+from spellbot.client import SpellBot
 from spellbot.settings import Settings
 from spellbot.web import launch_web_server
 
@@ -126,6 +127,12 @@ def main(
         )
         bot.run(settings.BOT_TOKEN)
 
+
+__all__ = [
+    "__version__",
+    "Settings",
+    "SpellBot",
+]
 
 if __name__ == "__main__":
     main.main()

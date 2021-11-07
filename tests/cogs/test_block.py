@@ -1,21 +1,21 @@
 from unittest.mock import MagicMock
 
 import pytest
+from discord_slash.context import MenuContext
 
+from spellbot import SpellBot
 from spellbot.cogs.block import BlockCog
 from spellbot.database import DatabaseSession
-from spellbot.models.block import Block
-from spellbot.models.user import User
+from spellbot.models import Block, User
 
 
 @pytest.mark.asyncio
 class TestCogBlock:
-    async def test_block_and_unblock(self, bot, ctx):
+    async def test_block_and_unblock(self, bot: SpellBot, ctx: MenuContext):
         target_author = MagicMock()
         target_author.id = 2
         target_author.display_name = "target-author-display-name"
         ctx.target_author = target_author
-        ctx.target_author_id = target_author.id
 
         cog = BlockCog(bot)
         await cog.block.func(cog, ctx)
@@ -30,11 +30,11 @@ class TestCogBlock:
         assert users[0].name == target_author.display_name
         assert users[0].xid == target_author.id
         assert users[1].name == ctx.author.display_name
-        assert users[1].xid == ctx.author.id
+        assert users[1].xid == ctx.author_id
 
         blocks = list(DatabaseSession.query(Block).all())
         assert len(blocks) == 1
-        assert blocks[0].user_xid == ctx.author.id
+        assert blocks[0].user_xid == ctx.author_id
         assert blocks[0].blocked_user_xid == target_author.id
 
         DatabaseSession.expire_all()

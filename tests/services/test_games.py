@@ -1,15 +1,15 @@
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.models.game import Game, GameFormat, GameStatus
-from spellbot.models.play import Play
-from spellbot.models.user import User
+from spellbot.models import Game, GameFormat, GameStatus, Play, User
 from spellbot.services.games import GamesService
-from tests.factories.block import BlockFactory
-from tests.factories.game import GameFactory
-from tests.factories.play import PlayFactory
-from tests.factories.user import UserFactory
-from tests.factories.watch import WatchFactory
+from tests.factories import (
+    BlockFactory,
+    GameFactory,
+    PlayFactory,
+    UserFactory,
+    WatchFactory,
+)
 
 
 @pytest.mark.asyncio

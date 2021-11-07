@@ -1,6 +1,6 @@
 import factory
 
-from spellbot.models.user import User
+from spellbot.models import User
 
 
 class UserFactory(factory.alchemy.SQLAlchemyModelFactory):

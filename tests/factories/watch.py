@@ -1,6 +1,6 @@
 import factory
 
-from spellbot.models.watch import Watch
+from spellbot.models import Watch
 
 
 class WatchFactory(factory.alchemy.SQLAlchemyModelFactory):

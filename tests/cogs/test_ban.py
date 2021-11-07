@@ -1,15 +1,17 @@
 from unittest.mock import MagicMock
 
 import pytest
+from discord_slash.context import InteractionContext
 
+from spellbot import SpellBot
 from spellbot.cogs.ban import BanCog
 from spellbot.database import DatabaseSession
-from spellbot.models.user import User
+from spellbot.models import User
 
 
 @pytest.mark.asyncio
 class TestCogBan:
-    async def test_ban_and_unban(self, bot, ctx):
+    async def test_ban_and_unban(self, bot: SpellBot, ctx: InteractionContext):
         target_user = MagicMock()
         target_user.id = 1002
         cog = BanCog(bot)
@@ -30,12 +32,12 @@ class TestCogBan:
         assert users[0].xid == target_user.id
         assert not users[0].banned
 
-    async def test_ban_without_target(self, bot, ctx):
+    async def test_ban_without_target(self, bot: SpellBot, ctx: InteractionContext):
         cog = BanCog(bot)
         await cog.ban.callback(cog, ctx, None)
         ctx.author.send.assert_called_once_with("No target user.")
 
-    async def test_ban_with_invalid_target(self, bot, ctx):
+    async def test_ban_with_invalid_target(self, bot: SpellBot, ctx: InteractionContext):
         cog = BanCog(bot)
         await cog.ban.callback(cog, ctx, "abc")
         ctx.author.send.assert_called_once_with("Invalid user id.")

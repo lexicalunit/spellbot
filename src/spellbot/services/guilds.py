@@ -7,8 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
-from spellbot.models.award import GuildAward
-from spellbot.models.guild import Guild
+from spellbot.models import Guild, GuildAward
 from spellbot.services import BaseService
 
 

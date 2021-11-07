@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
-from spellbot.models.verify import Verify
+from spellbot.models import Verify
 from spellbot.services import BaseService
 
 

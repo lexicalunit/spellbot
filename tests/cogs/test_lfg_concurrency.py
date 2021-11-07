@@ -4,16 +4,17 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from spellbot import SpellBot
 from spellbot.cogs.lfg import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import lfg_interaction
-from spellbot.models.game import Game
+from spellbot.models import Game
 from tests.mocks import build_author, build_channel, build_ctx, build_guild
 
 
 @pytest.mark.asyncio
 class TestCogLookingForGameConcurrency:
-    async def test_concurrent_lfg_requests_different_channels(self, bot):
+    async def test_concurrent_lfg_requests_different_channels(self, bot: SpellBot):
         cog = LookingForGameCog(bot)
         guild = build_guild()
         n = 100
@@ -39,7 +40,7 @@ class TestCogLookingForGameConcurrency:
             message_xid = game.message_xid
         assert messages_out_of_order
 
-    async def test_concurrent_lfg_requests_same_channel(self, bot, monkeypatch):
+    async def test_concurrent_lfg_requests_same_channel(self, bot: SpellBot, monkeypatch):
         monkeypatch.setattr(lfg_interaction, "safe_fetch_user", AsyncMock())
 
         cog = LookingForGameCog(bot)

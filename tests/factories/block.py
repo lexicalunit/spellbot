@@ -1,6 +1,6 @@
 import factory
 
-from spellbot.models.block import Block
+from spellbot.models import Block
 
 
 class BlockFactory(factory.alchemy.SQLAlchemyModelFactory):

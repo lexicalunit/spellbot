@@ -9,12 +9,7 @@ from sqlalchemy.sql.expression import and_, asc, column, or_, select
 from sqlalchemy.sql.functions import count
 
 from spellbot.database import DatabaseSession
-from spellbot.models.award import UserAward
-from spellbot.models.block import Block
-from spellbot.models.game import Game, GameStatus
-from spellbot.models.play import Play
-from spellbot.models.user import User
-from spellbot.models.watch import Watch
+from spellbot.models import Block, Game, GameStatus, Play, User, UserAward, Watch
 from spellbot.services import BaseService
 from spellbot.settings import Settings
 

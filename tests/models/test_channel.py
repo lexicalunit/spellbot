@@ -1,11 +1,10 @@
-from tests.factories.channel import ChannelFactory
-from tests.factories.guild import GuildFactory
+from tests.fixtures import Factories
 
 
 class TestModelChannel:
-    def test_channel(self):
-        guild = GuildFactory.create()
-        channel = ChannelFactory.create(guild=guild)
+    def test_channel(self, factories: Factories):
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
 
         assert channel.to_dict() == {
             "xid": channel.xid,

@@ -1,11 +1,10 @@
-from tests.factories.award import GuildAwardFactory
-from tests.factories.guild import GuildFactory
+from tests.fixtures import Factories
 
 
 class TestModelAward:
-    def test_award(self):
-        guild = GuildFactory.create()
-        guild_award = GuildAwardFactory.create(guild=guild)
+    def test_award(self, factories: Factories):
+        guild = factories.guild.create()
+        guild_award = factories.guild_award.create(guild=guild)
 
         assert guild_award.to_dict() == {
             "id": guild_award.id,

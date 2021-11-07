@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import update
 
 from spellbot.database import DatabaseSession
-from spellbot.models.channel import Channel
+from spellbot.models import Channel
 from spellbot.services import BaseService
 
 

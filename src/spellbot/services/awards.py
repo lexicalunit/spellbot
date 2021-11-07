@@ -4,8 +4,7 @@ from asgiref.sync import sync_to_async
 from sqlalchemy.sql.expression import and_, or_
 
 from spellbot.database import DatabaseSession
-from spellbot.models.award import GuildAward, UserAward
-from spellbot.models.play import Play
+from spellbot.models import GuildAward, Play, UserAward
 from spellbot.services import BaseService
 
 NewAward = namedtuple("NewAward", ["role", "message"])

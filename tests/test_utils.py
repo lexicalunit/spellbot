@@ -4,6 +4,7 @@ import discord
 import pytest
 from discord_slash.context import InteractionContext
 
+from spellbot import Settings
 from spellbot.errors import SpellbotAdminOnly
 from spellbot.utils import (
     bot_can_delete_channel,
@@ -172,7 +173,7 @@ class TestUtilsBotCanDeleteChannel:
 
 
 class TestUtilsIsAdmin:
-    def test_happy_path(self, settings):
+    def test_happy_path(self, settings: Settings):
         role = MagicMock()
         role.name = settings.ADMIN_ROLE
         guild = MagicMock(spec=discord.Guild)
@@ -215,7 +216,7 @@ class TestUtilsIsAdmin:
         ctx.author_id = author.id
         assert is_admin(ctx)
 
-    def test_when_author_has_admin_role(self, settings):
+    def test_when_author_has_admin_role(self, settings: Settings):
         role = MagicMock()
         role.name = settings.ADMIN_ROLE
         guild = MagicMock(spec=discord.Guild)
@@ -232,7 +233,7 @@ class TestUtilsIsAdmin:
         ctx.author_id = author.id
         assert is_admin(ctx)
 
-    def test_when_author_does_not_have_admin_role(self, settings):
+    def test_when_author_does_not_have_admin_role(self, settings: Settings):
         role = MagicMock()
         role.name = f"not-{settings.ADMIN_ROLE}"
         guild = MagicMock(spec=discord.Guild)
@@ -250,7 +251,7 @@ class TestUtilsIsAdmin:
         with pytest.raises(SpellbotAdminOnly):
             is_admin(ctx)
 
-    def test_author_has_no_roles(self, settings):
+    def test_author_has_no_roles(self, settings: Settings):
         role = MagicMock()
         role.name = settings.ADMIN_ROLE
         guild = MagicMock(spec=discord.Guild)
@@ -270,7 +271,7 @@ class TestUtilsIsAdmin:
 
 
 class TestUtilsUserCanModerate:
-    def test_owner_happy_path(self, settings):
+    def test_owner_happy_path(self, settings: Settings):
         role = MagicMock()
         role.name = f"{settings.MOD_PREFIX}-whatever"
         guild = MagicMock(spec=discord.Guild)
@@ -282,7 +283,7 @@ class TestUtilsUserCanModerate:
         author.id = 1
         assert user_can_moderate(author, guild, channel)
 
-    def test_admin_happy_path(self, settings):
+    def test_admin_happy_path(self, settings: Settings):
         role = MagicMock()
         role.name = f"{settings.MOD_PREFIX}-whatever"
         guild = MagicMock(spec=discord.Guild)
@@ -294,7 +295,7 @@ class TestUtilsUserCanModerate:
         author.id = 1
         assert user_can_moderate(author, guild, channel)
 
-    def test_non_admin_happy_path(self, settings):
+    def test_non_admin_happy_path(self, settings: Settings):
         role = MagicMock()
         role.name = f"{settings.MOD_PREFIX}-whatever"
         guild = MagicMock(spec=discord.Guild)
@@ -306,7 +307,7 @@ class TestUtilsUserCanModerate:
         author.roles = [role]
         assert user_can_moderate(author, guild, channel)
 
-    def test_missing_channel(self, settings):
+    def test_missing_channel(self, settings: Settings):
         role = MagicMock()
         role.name = f"{settings.MOD_PREFIX}-whatever"
         guild = MagicMock(spec=discord.Guild)
@@ -316,7 +317,7 @@ class TestUtilsUserCanModerate:
         author.roles = [role]
         assert not user_can_moderate(author, guild, None)
 
-    def test_missing_guild(self, settings):
+    def test_missing_guild(self, settings: Settings):
         role = MagicMock()
         role.name = f"{settings.MOD_PREFIX}-whatever"
         channel = MagicMock(spec=discord.TextChannel)
@@ -326,7 +327,7 @@ class TestUtilsUserCanModerate:
         author.roles = [role]
         assert not user_can_moderate(author, None, channel)
 
-    def test_missing_author_id(self, settings):
+    def test_missing_author_id(self, settings: Settings):
         role = MagicMock()
         role.name = f"{settings.MOD_PREFIX}-whatever"
         guild = MagicMock(spec=discord.Guild)
@@ -348,7 +349,7 @@ class TestUtilsUserCanModerate:
         del author.roles
         assert not user_can_moderate(author, guild, channel)
 
-    def test_when_author_does_not_have_mod_role(self, settings):
+    def test_when_author_does_not_have_mod_role(self, settings: Settings):
         role = MagicMock()
         role.name = settings.MOD_PREFIX[:2]
         guild = MagicMock(spec=discord.Guild)

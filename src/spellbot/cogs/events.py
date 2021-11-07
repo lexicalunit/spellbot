@@ -7,7 +7,7 @@ from discord_slash.model import SlashCommandOptionType
 
 from spellbot.client import SpellBot
 from spellbot.interactions.lfg_interaction import LookingForGameInteraction
-from spellbot.models.game import GameFormat
+from spellbot.models import GameFormat
 from spellbot.utils import for_all_callbacks, is_admin
 
 logger = logging.getLogger(__name__)

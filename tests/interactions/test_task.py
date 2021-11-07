@@ -4,14 +4,11 @@ from unittest.mock import AsyncMock, MagicMock
 import discord
 import pytest
 
-from spellbot.client import SpellBot
+from spellbot import Settings, SpellBot
 from spellbot.database import DatabaseSession
-from spellbot.interactions import task_interaction
-from spellbot.interactions.task_interaction import TaskInteraction
-from spellbot.models.game import Game
-from tests.factories.channel import ChannelFactory
-from tests.factories.game import GameFactory
-from tests.factories.guild import GuildFactory
+from spellbot.interactions import TaskInteraction, task_interaction
+from spellbot.models import Game
+from tests.fixtures import Factories
 from tests.mocks import (
     build_channel,
     build_client_user,
@@ -23,7 +20,7 @@ from tests.mocks import (
 
 @pytest.mark.asyncio
 class TestInteractionTask:
-    async def test_error_in_background_task(self, bot, monkeypatch, caplog):
+    async def test_error_in_background_task(self, bot: SpellBot, monkeypatch, caplog):
         async with TaskInteraction.create(bot) as interaction:
             error = RuntimeError("gather-channels-error")
             gather_channels_mock = AsyncMock(retun_value=[])
@@ -36,32 +33,46 @@ class TestInteractionTask:
 
 @pytest.mark.asyncio
 class TestInteractionTaskExpireInactiveGames:
-    async def test_delete_none(self, bot):
-        guild = GuildFactory.create()
-        channel = ChannelFactory.create(guild=guild)
-        GameFactory.create_batch(5, guild=guild, channel=channel)
+    async def test_delete_none(
+        self,
+        bot: SpellBot,
+        factories: Factories,
+    ):
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        factories.game.create_batch(5, guild=guild, channel=channel)
 
         async with TaskInteraction.create(bot) as interaction:
             await interaction.expire_inactive_games()
 
         assert DatabaseSession.query(Game).count() == 5
 
-    async def test_delete_all(self, bot, settings):
+    async def test_delete_all(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
         long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
-        guild = GuildFactory.create()
-        channel = ChannelFactory.create(guild=guild)
-        GameFactory.create_batch(5, guild=guild, channel=channel, updated_at=long_ago)
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        factories.game.create_batch(5, guild=guild, channel=channel, updated_at=long_ago)
 
         async with TaskInteraction.create(bot) as interaction:
             await interaction.expire_inactive_games()
 
         assert DatabaseSession.query(Game).count() == 0
 
-    async def test_delete_happy_path(self, bot, settings):
+    async def test_delete_happy_path(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
         long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
-        guild = GuildFactory.create()
-        channel = ChannelFactory.create(guild=guild)
-        GameFactory.create(guild=guild, channel=channel, updated_at=long_ago)
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        factories.game.create(guild=guild, channel=channel, updated_at=long_ago)
 
         async with TaskInteraction.create(bot) as interaction:
             with mock_operations(task_interaction):
@@ -91,11 +102,16 @@ class TestInteractionTaskExpireInactiveGames:
 
         assert DatabaseSession.query(Game).count() == 0
 
-    async def test_delete_when_fetch_channel_fails(self, bot, settings):
+    async def test_delete_when_fetch_channel_fails(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
         long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
-        guild = GuildFactory.create()
-        channel = ChannelFactory.create(guild=guild)
-        GameFactory.create(guild=guild, channel=channel, updated_at=long_ago)
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        factories.game.create(guild=guild, channel=channel, updated_at=long_ago)
 
         async with TaskInteraction.create(bot) as interaction:
             with mock_operations(task_interaction):
@@ -105,11 +121,16 @@ class TestInteractionTaskExpireInactiveGames:
 
         assert DatabaseSession.query(Game).count() == 0
 
-    async def test_delete_when_fetch_message_fails(self, bot, settings):
+    async def test_delete_when_fetch_message_fails(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
         long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
-        guild = GuildFactory.create()
-        channel = ChannelFactory.create(guild=guild)
-        GameFactory.create(guild=guild, channel=channel, updated_at=long_ago)
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        factories.game.create(guild=guild, channel=channel, updated_at=long_ago)
 
         async with TaskInteraction.create(bot) as interaction:
             with mock_operations(task_interaction):
@@ -124,11 +145,16 @@ class TestInteractionTaskExpireInactiveGames:
 
         assert DatabaseSession.query(Game).count() == 0
 
-    async def test_delete_when_game_has_no_message_xid(self, bot, settings):
+    async def test_delete_when_game_has_no_message_xid(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
         long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
-        guild = GuildFactory.create()
-        channel = ChannelFactory.create(guild=guild)
-        GameFactory.create(
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        factories.game.create(
             guild=guild,
             channel=channel,
             updated_at=long_ago,
@@ -144,8 +170,13 @@ class TestInteractionTaskExpireInactiveGames:
 
 @pytest.mark.asyncio
 class TestInteractionTaskCleanupOldVoicChannels:
-    async def test_happy_path(self, bot, settings):
-        db_guilds = GuildFactory.create_batch(5, voice_create=True)
+    async def test_happy_path(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
+        db_guilds = factories.guild.create_batch(5, voice_create=True)
 
         bot_guilds = {}
         for i, db_guild in enumerate(db_guilds):
@@ -182,8 +213,13 @@ class TestInteractionTaskCleanupOldVoicChannels:
                 for channel in category.voice_channels:
                     channel.delete.assert_called_once()
 
-    async def test_channel_grace_period(self, bot, settings):
-        db_guild = GuildFactory.create(voice_create=True)
+    async def test_channel_grace_period(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
+        db_guild = factories.guild.create(voice_create=True)
 
         bot_guilds = {}
 
@@ -217,8 +253,13 @@ class TestInteractionTaskCleanupOldVoicChannels:
 
         voice_channel.delete.assert_not_called()
 
-    async def test_channel_occupied(self, bot, settings):
-        db_guild = GuildFactory.create(voice_create=True)
+    async def test_channel_occupied(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
+        db_guild = factories.guild.create(voice_create=True)
 
         bot_guilds = {}
 
@@ -252,8 +293,13 @@ class TestInteractionTaskCleanupOldVoicChannels:
 
         voice_channel.delete.assert_not_called()
 
-    async def test_channel_occupied_past_limit(self, bot, settings):
-        db_guild = GuildFactory.create(voice_create=True)
+    async def test_channel_occupied_past_limit(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
+        db_guild = factories.guild.create(voice_create=True)
 
         bot_guilds = {}
 
@@ -287,8 +333,13 @@ class TestInteractionTaskCleanupOldVoicChannels:
 
         voice_channel.delete.assert_called_once()
 
-    async def test_channel_with_bad_permissions(self, bot, settings):
-        db_guild = GuildFactory.create(voice_create=True)
+    async def test_channel_with_bad_permissions(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
+        db_guild = factories.guild.create(voice_create=True)
 
         bot_guilds = {}
 
@@ -323,10 +374,15 @@ class TestInteractionTaskCleanupOldVoicChannels:
 
         voice_channel.delete.assert_not_called()
 
-    async def test_channel_with_matching_message_id(self, bot, settings):
-        db_guild = GuildFactory.create(voice_create=True)
-        db_channel = ChannelFactory.create(guild=db_guild)
-        db_game = GameFactory.create(guild=db_guild, channel=db_channel, voice_xid=123)
+    async def test_channel_with_matching_message_id(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
+        db_guild = factories.guild.create(voice_create=True)
+        db_channel = factories.channel.create(guild=db_guild)
+        db_game = factories.game.create(guild=db_guild, channel=db_channel, voice_xid=123)
 
         DatabaseSession.expire_all()
 
@@ -361,10 +417,15 @@ class TestInteractionTaskCleanupOldVoicChannels:
 
         voice_channel.delete.assert_called_once()
 
-    async def test_channel_without_matching_message_id(self, bot, settings):
-        db_guild = GuildFactory.create(voice_create=True)
-        db_channel = ChannelFactory.create(guild=db_guild)
-        db_game = GameFactory.create(guild=db_guild, channel=db_channel, voice_xid=123)
+    async def test_channel_without_matching_message_id(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
+        db_guild = factories.guild.create(voice_create=True)
+        db_channel = factories.channel.create(guild=db_guild)
+        db_game = factories.game.create(guild=db_guild, channel=db_channel, voice_xid=123)
 
         DatabaseSession.expire_all()
 
@@ -399,8 +460,13 @@ class TestInteractionTaskCleanupOldVoicChannels:
 
         voice_channel.delete.assert_not_called()
 
-    async def test_non_active_guilds(self, bot, settings):
-        db_guilds = GuildFactory.create_batch(5, voice_create=True)
+    async def test_non_active_guilds(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
+        db_guilds = factories.guild.create_batch(5, voice_create=True)
 
         bot_guilds = {}
         for i, db_guild in enumerate(db_guilds):
@@ -437,8 +503,13 @@ class TestInteractionTaskCleanupOldVoicChannels:
                 for channel in category.voice_channels:
                     channel.delete.assert_not_called()
 
-    async def test_when_guild_cache_failure(self, bot, settings):
-        db_guilds = GuildFactory.create_batch(5, voice_create=True)
+    async def test_when_guild_cache_failure(
+        self,
+        bot: SpellBot,
+        settings: Settings,
+        factories: Factories,
+    ):
+        db_guilds = factories.guild.create_batch(5, voice_create=True)
 
         bot_guilds = {}
         for i, db_guild in enumerate(db_guilds):
@@ -475,7 +546,7 @@ class TestInteractionTaskCleanupOldVoicChannels:
                 for channel in category.voice_channels:
                     channel.delete.assert_not_called()
 
-    async def test_delete_channels_batching(self, bot, settings):
+    async def test_delete_channels_batching(self, bot: SpellBot, settings: Settings):
         channels = []
         for i in range(settings.VOICE_CLEANUP_BATCH * 2):
             channel = MagicMock(spec=discord.VoiceChannel)

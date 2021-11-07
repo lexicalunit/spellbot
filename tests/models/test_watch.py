@@ -1,13 +1,15 @@
-from tests.factories.guild import GuildFactory
-from tests.factories.user import UserFactory
-from tests.factories.watch import WatchFactory
+from tests.fixtures import Factories
 
 
 class TestModelWatch:
-    def test_watch(self):
-        guild = GuildFactory.create()
-        user = UserFactory.create()
-        watch = WatchFactory.create(note="note", user_xid=user.xid, guild_xid=guild.xid)
+    def test_watch(self, factories: Factories):
+        guild = factories.guild.create()
+        user = factories.user.create()
+        watch = factories.watch.create(
+            note="note",
+            user_xid=user.xid,
+            guild_xid=guild.xid,
+        )
 
         assert watch.to_dict() == {
             "guild_xid": watch.guild_xid,

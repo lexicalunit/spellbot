@@ -11,8 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 from wrapt import CallableObjectProxy
 
-from spellbot.models import create_all
-from spellbot.models.guild import Guild
+from spellbot.models import Guild, create_all
 
 logger = logging.getLogger(__name__)
 ProxiedObject = TypeVar("ProxiedObject")

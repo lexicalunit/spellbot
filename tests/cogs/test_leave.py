@@ -2,18 +2,31 @@ from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
+from discord_slash.context import InteractionContext
 
+from spellbot import Settings, SpellBot
 from spellbot.cogs.leave import LeaveGameCog
 from spellbot.interactions import leave_interaction
-from tests.factories.game import GameFactory
-from tests.factories.user import UserFactory
+from spellbot.models import Channel, Guild
+from tests.fixtures import Factories
+
+# TODO: Rewrite these tests using mock_operations().
 
 
 @pytest.mark.asyncio
 class TestCogLeaveGame:
-    async def test_leave(self, bot, guild, channel, ctx, settings, monkeypatch):
-        game = GameFactory.create(guild=guild, channel=channel)
-        UserFactory.create(xid=ctx.author.id, name=ctx.author.display_name, game=game)
+    async def test_leave(
+        self,
+        bot: SpellBot,
+        guild: Guild,
+        channel: Channel,
+        ctx: InteractionContext,
+        settings: Settings,
+        factories: Factories,
+        monkeypatch,
+    ):
+        game = factories.game.create(guild=guild, channel=channel)
+        factories.user.create(xid=ctx.author_id, name=ctx.author.display_name, game=game)
 
         sftc_mock = AsyncMock(return_value=ctx.channel)
         monkeypatch.setattr(leave_interaction, "safe_fetch_text_channel", sftc_mock)
@@ -46,9 +59,17 @@ class TestCogLeaveGame:
             "type": "rich",
         }
 
-    async def test_leave_when_no_message_xid(self, bot, guild, channel, ctx, monkeypatch):
-        game = GameFactory.create(guild=guild, channel=channel, message_xid=None)
-        UserFactory.create(xid=ctx.author.id, name=ctx.author.display_name, game=game)
+    async def test_leave_when_no_message_xid(
+        self,
+        bot: SpellBot,
+        guild: Guild,
+        channel: Channel,
+        ctx: InteractionContext,
+        factories: Factories,
+        monkeypatch,
+    ):
+        game = factories.game.create(guild=guild, channel=channel, message_xid=None)
+        factories.user.create(xid=ctx.author_id, name=ctx.author.display_name, game=game)
 
         sftc_mock = AsyncMock(return_value=ctx.channel)
         monkeypatch.setattr(leave_interaction, "safe_fetch_text_channel", sftc_mock)
@@ -61,8 +82,13 @@ class TestCogLeaveGame:
             hidden=True,
         )
 
-    async def test_leave_when_not_in_game(self, bot, ctx):
-        UserFactory.create(xid=ctx.author.id, name=ctx.author.display_name)
+    async def test_leave_when_not_in_game(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        factories: Factories,
+    ):
+        factories.user.create(xid=ctx.author_id, name=ctx.author.display_name)
 
         cog = LeaveGameCog(bot)
         await cog.leave.func(cog, ctx)
@@ -72,9 +98,16 @@ class TestCogLeaveGame:
             hidden=True,
         )
 
-    async def test_leave_when_no_channel(self, bot, guild, channel, monkeypatch):
-        game = GameFactory.create(guild=guild, channel=channel)
-        user = UserFactory.create(game=game)
+    async def test_leave_when_no_channel(
+        self,
+        bot: SpellBot,
+        guild: Guild,
+        channel: Channel,
+        factories: Factories,
+        monkeypatch,
+    ):
+        game = factories.game.create(guild=guild, channel=channel)
+        user = factories.user.create(game=game)
 
         author = MagicMock()
         author.id = user.xid
@@ -112,9 +145,16 @@ class TestCogLeaveGame:
             hidden=True,
         )
 
-    async def test_leave_when_no_message(self, bot, guild, channel, monkeypatch):
-        game = GameFactory.create(guild=guild, channel=channel)
-        user = UserFactory.create(game=game)
+    async def test_leave_when_no_message(
+        self,
+        bot: SpellBot,
+        guild: Guild,
+        channel: Channel,
+        factories: Factories,
+        monkeypatch,
+    ):
+        game = factories.game.create(guild=guild, channel=channel)
+        user = factories.user.create(game=game)
 
         author = MagicMock()
         author.id = user.xid

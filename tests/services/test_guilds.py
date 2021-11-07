@@ -3,11 +3,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.models.award import GuildAward
-from spellbot.models.guild import Guild
+from spellbot.models import Guild, GuildAward
 from spellbot.services.guilds import GuildsService
-from tests.factories.award import GuildAwardFactory
-from tests.factories.guild import GuildFactory
+from tests.factories import GuildAwardFactory, GuildFactory
 
 
 @pytest.mark.asyncio
