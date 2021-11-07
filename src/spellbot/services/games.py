@@ -10,7 +10,6 @@ from sqlalchemy.sql.functions import count
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, Game, GameStatus, Play, User, UserAward, Watch
-from spellbot.services import BaseService
 from spellbot.settings import Settings
 
 MAX_SPELLTABLE_LINK_LEN = Game.spelltable_link.property.columns[  # type: ignore
@@ -21,7 +20,7 @@ MAX_VOICE_INVITE_LINK_LEN = Game.voice_invite_link.property.columns[  # type: ig
 ].type.length
 
 
-class GamesService(BaseService):
+class GamesService:
     def __init__(self):
         self.game: Optional[Game] = None
 

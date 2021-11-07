@@ -5,7 +5,6 @@ from sqlalchemy.sql.expression import and_, text
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Game, GameFormat, Play
-from spellbot.services import BaseService
 
 CHANNEL_FILTER = "games.channel_xid = :channel_xid"
 USER_FILTER = "plays.user_xid = :user_xid"
@@ -72,7 +71,7 @@ RECORDS_SQL = """
 """
 
 
-class PlaysService(BaseService):
+class PlaysService:
     @sync_to_async()
     def count(self, user_xid: int, guild_xid: int) -> int:
         return int(

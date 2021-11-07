@@ -4,8 +4,8 @@ from os import getenv
 
 from discord.ext import commands, tasks
 
-from spellbot.client import SpellBot
-from spellbot.interactions.task_interaction import TaskInteraction
+from spellbot import SpellBot
+from spellbot.interactions import TaskInteraction
 from spellbot.settings import Settings
 
 logger = logging.getLogger(__name__)

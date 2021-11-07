@@ -4,8 +4,9 @@ from discord import Color, Embed
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 
-from spellbot import Settings, SpellBot, __version__
+from spellbot import SpellBot, __version__
 from spellbot.operations import safe_send_channel
+from spellbot.settings import Settings
 from spellbot.utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)

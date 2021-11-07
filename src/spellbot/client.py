@@ -20,9 +20,7 @@ from spellbot.database import (
 )
 from spellbot.errors import SpellbotAdminOnly, UserBannedError
 from spellbot.operations import safe_message_reply, safe_send_channel
-from spellbot.services.channels import ChannelsService
-from spellbot.services.guilds import GuildsService
-from spellbot.services.verifies import VerifiesService
+from spellbot.services import ChannelsService, GuildsService, VerifiesService
 from spellbot.settings import Settings
 from spellbot.spelltable import generate_link
 from spellbot.utils import user_can_moderate

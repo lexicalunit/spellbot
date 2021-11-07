@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from spellbot import Settings
 from spellbot.models import GameStatus
+from spellbot.settings import Settings
 from tests.fixtures import Factories
 
 

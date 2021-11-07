@@ -1,86 +1,93 @@
 import pytest
 
-from spellbot.services.awards import AwardsService, NewAward
-from tests.factories.award import GuildAwardFactory, UserAwardFactory
-from tests.factories.game import GameFactory
-from tests.factories.play import PlayFactory
-from tests.factories.user import UserFactory
+from spellbot.models import Channel, Guild
+from spellbot.services import AwardsService, NewAward
+from tests.fixtures import Factories
 
 
 @pytest.mark.asyncio
 class TestServiceAwards:
-    async def test_give_awards_first_award(self, guild, channel):
-        GuildAwardFactory.create(guild=guild, count=1, role="one", message="msg")
-        game = GameFactory.create(guild=guild, channel=channel)
-        user = UserFactory.create()
-
-        PlayFactory.create(user_xid=user.xid, game_id=game.id)
-        UserAwardFactory.create(
+    async def test_give_awards_first_award(
+        self,
+        guild: Guild,
+        channel: Channel,
+        factories: Factories,
+    ):
+        factories.guild_award.create(guild=guild, count=1, role="one", message="msg")
+        game = factories.game.create(guild=guild, channel=channel)
+        user = factories.user.create()
+        factories.play.create(user_xid=user.xid, game_id=game.id)
+        factories.user_award.create(
             user_xid=user.xid,
             guild_xid=guild.xid,
             guild_award_id=None,
         )
-
         awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {user.xid: NewAward(role="one", message="msg")}
 
-    async def test_give_awards_no_plays(self, guild, channel):
-        game = GameFactory.create(guild=guild, channel=channel)
-
-        GuildAwardFactory.create(guild=guild, count=1, role="one", message="msg")
-        user = UserFactory.create(game=game)
-
-        UserAwardFactory.create(
+    async def test_give_awards_no_plays(
+        self,
+        guild: Guild,
+        channel: Channel,
+        factories: Factories,
+    ):
+        game = factories.game.create(guild=guild, channel=channel)
+        factories.guild_award.create(guild=guild, count=1, role="one", message="msg")
+        user = factories.user.create(game=game)
+        factories.user_award.create(
             user_xid=user.xid,
             guild_xid=guild.xid,
             guild_award_id=None,
         )
-
         awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {}
 
-    async def test_give_awards_needs_more_plays(self, guild, channel):
-        GuildAwardFactory.create(guild=guild, count=2, role="two", message="msg")
-        game = GameFactory.create(guild=guild, channel=channel)
-        user = UserFactory.create()
-
-        PlayFactory.create(user_xid=user.xid, game_id=game.id)
-        UserAwardFactory.create(
+    async def test_give_awards_needs_more_plays(
+        self,
+        guild: Guild,
+        channel: Channel,
+        factories: Factories,
+    ):
+        factories.guild_award.create(guild=guild, count=2, role="two", message="msg")
+        game = factories.game.create(guild=guild, channel=channel)
+        user = factories.user.create()
+        factories.play.create(user_xid=user.xid, game_id=game.id)
+        factories.user_award.create(
             user_xid=user.xid,
             guild_xid=guild.xid,
             guild_award_id=None,
         )
-
         awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {}
 
-    async def test_give_awards_repeating(self, guild, channel):
-        GuildAwardFactory.create(
+    async def test_give_awards_repeating(
+        self,
+        guild: Guild,
+        channel: Channel,
+        factories: Factories,
+    ):
+        factories.guild_award.create(
             guild=guild,
             count=1,
             role="one",
             message="msg",
             repeating=True,
         )
-        game1 = GameFactory.create(guild=guild, channel=channel)
-        user = UserFactory.create()
-
-        PlayFactory.create(user_xid=user.xid, game_id=game1.id)
-        UserAwardFactory.create(
+        game1 = factories.game.create(guild=guild, channel=channel)
+        user = factories.user.create()
+        factories.play.create(user_xid=user.xid, game_id=game1.id)
+        factories.user_award.create(
             user_xid=user.xid,
             guild_xid=guild.xid,
             guild_award_id=None,
         )
-
         awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {user.xid: NewAward(role="one", message="msg")}
-
-        game2 = GameFactory.create(guild=guild, channel=channel)
-        PlayFactory.create(user_xid=user.xid, game_id=game2.id)
-
+        game2 = factories.game.create(guild=guild, channel=channel)
+        factories.play.create(user_xid=user.xid, game_id=game2.id)
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {user.xid: NewAward(role="one", message="msg")}

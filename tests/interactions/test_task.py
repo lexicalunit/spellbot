@@ -4,10 +4,11 @@ from unittest.mock import AsyncMock, MagicMock
 import discord
 import pytest
 
-from spellbot import Settings, SpellBot
+from spellbot import SpellBot
 from spellbot.database import DatabaseSession
 from spellbot.interactions import TaskInteraction, task_interaction
 from spellbot.models import Game
+from spellbot.settings import Settings
 from tests.fixtures import Factories
 from tests.mocks import (
     build_channel,

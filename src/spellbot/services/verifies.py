@@ -6,10 +6,9 @@ from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Verify
-from spellbot.services import BaseService
 
 
-class VerifiesService(BaseService):
+class VerifiesService:
     def __init__(self):
         self.current: Optional[Verify] = None
 

@@ -7,12 +7,13 @@ from discord.embeds import Embed
 from discord_slash.context import InteractionContext
 from pygicord import Config, Paginator
 
-from spellbot.client import SpellBot
-from spellbot.interactions import BaseInteraction
+from spellbot import SpellBot
 from spellbot.operations import safe_send_channel
-from spellbot.services.watches import WatchesService
+from spellbot.services import WatchesService
 from spellbot.settings import Settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT, log_warning
+
+from .base_interaction import BaseInteraction
 
 logger = logging.getLogger(__name__)
 
