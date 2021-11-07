@@ -1,12 +1,20 @@
 import pytest
+from discord_slash.context import InteractionContext
 
 from spellbot._version import __version__
+from spellbot.client import SpellBot
 from spellbot.cogs.about import AboutCog
+from spellbot.settings import Settings
 
 
 @pytest.mark.asyncio
 class TestCogAbout:
-    async def test_about(self, settings, bot, ctx):
+    async def test_about(
+        self,
+        settings: Settings,
+        bot: SpellBot,
+        ctx: InteractionContext,
+    ):
         cog = AboutCog(bot)
         await cog.about.invoke(ctx)
 

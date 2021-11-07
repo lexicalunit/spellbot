@@ -1,20 +1,16 @@
 import importlib
 import inspect
+from asyncio import AbstractEventLoop
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Optional, Union, cast
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
+from discord_slash.context import InteractionContext
 
-from spellbot.models.channel import Channel
-from spellbot.models.game import Game
-from spellbot.models.guild import Guild
-from spellbot.models.user import User
-from tests.factories.channel import ChannelFactory
-from tests.factories.game import GameFactory
-from tests.factories.guild import GuildFactory
-from tests.factories.user import UserFactory
+from spellbot.models import Channel, Game, Guild, User
+from tests.factories import ChannelFactory, GameFactory, GuildFactory, UserFactory
 
 CLIENT_USER_ID = 1  # id of the test bot itself
 OWNER_USER_ID = 2  # id of the test guild owner
@@ -24,12 +20,12 @@ class MockClient:
     def __init__(
         self,
         *,
-        user=MagicMock(),
-        loop=MagicMock(),
-        channels=None,
-        guilds=None,
-        users=None,
-        categories=None,
+        user: discord.User = MagicMock(spec=discord.User),
+        loop: AbstractEventLoop = MagicMock(spec=AbstractEventLoop),
+        channels: list[discord.TextChannel] = None,
+        guilds: list[discord.Guild] = None,
+        users: list[discord.User] = None,
+        categories: list[discord.CategoryChannel] = None,
     ):
         self.user = user
         self.loop = loop
@@ -38,37 +34,37 @@ class MockClient:
         self.users = users or []
         self.categoies = categories or []
 
-    def __get_user(self, xid):
+    def __get_user(self, xid) -> Optional[discord.User]:
         for user in self.users:
             if user.id == xid:
                 return user
 
-    def get_user(self, xid):
+    def get_user(self, xid) -> Optional[discord.User]:
         return self.__get_user(xid)
 
-    async def fetch_user(self, xid):
+    async def fetch_user(self, xid) -> Optional[discord.User]:
         return self.__get_user(xid)
 
-    def __get_channel(self, xid):
+    def __get_channel(self, xid) -> Optional[discord.TextChannel]:
         for channel in self.channels:
             if channel.id == xid:
                 return channel
 
-    def get_channel(self, xid):
+    def get_channel(self, xid) -> Optional[discord.TextChannel]:
         return self.__get_channel(xid)
 
-    async def fetch_channel(self, xid):
+    async def fetch_channel(self, xid) -> Optional[discord.TextChannel]:
         return self.__get_channel(xid)
 
-    def __get_guild(self, xid):
+    def __get_guild(self, xid) -> Optional[discord.Guild]:
         for guild in self.guilds:
             if guild.id == xid:
                 return guild
 
-    def get_guild(self, xid):
+    def get_guild(self, xid) -> Optional[discord.Guild]:
         return self.__get_guild(xid)
 
-    async def fetch_guild(self, xid):
+    async def fetch_guild(self, xid) -> Optional[discord.Guild]:
         return self.__get_guild(xid)
 
 
@@ -210,8 +206,9 @@ def build_ctx(
     channel: discord.TextChannel,
     author: discord.User,
     offset: int = 1,
-):
-    ctx = MagicMock()
+    origin: bool = False,
+) -> InteractionContext:
+    ctx = MagicMock(spec=InteractionContext)
     ctx.author = author
     ctx.author_id = author.id
     ctx.guild = guild
@@ -222,11 +219,11 @@ def build_ctx(
     ctx.send = AsyncMock(return_value=build_response(guild, channel, offset))
     ctx.defer = AsyncMock()
 
-    def set_origin():
+    if origin:
+        ctx.edit_origin = AsyncMock()
         ctx.origin_message = ctx.message
         ctx.origin_message_id = ctx.message.id
 
-    ctx.set_origin = set_origin
     return ctx
 
 

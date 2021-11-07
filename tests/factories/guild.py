@@ -1,6 +1,6 @@
 import factory
 
-from spellbot.models.guild import Guild
+from spellbot.models import Guild
 
 
 class GuildFactory(factory.alchemy.SQLAlchemyModelFactory):

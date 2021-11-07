@@ -7,14 +7,14 @@ import pytest
 from aiohttp.client_exceptions import ClientError
 from aiohttp_retry.client import RetryClient
 
-from spellbot import spelltable
+from spellbot import Settings, spelltable
 from spellbot.spelltable import generate_link
 
 
 @pytest.mark.asyncio
 class TestSpellTable:
     async def test_generate_link(self, monkeypatch):
-        settings = MagicMock()
+        settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
         monkeypatch.setattr(spelltable, "Settings", lambda: settings)
@@ -42,7 +42,7 @@ class TestSpellTable:
         assert await generate_link() == game_url
 
     async def test_generate_link_missing_game_url(self, monkeypatch):
-        settings = MagicMock()
+        settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
         monkeypatch.setattr(spelltable, "Settings", lambda: settings)
@@ -69,7 +69,7 @@ class TestSpellTable:
         assert await generate_link() is None
 
     async def test_generate_link_raises_error(self, monkeypatch):
-        settings = MagicMock()
+        settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
         monkeypatch.setattr(spelltable, "Settings", lambda: settings)

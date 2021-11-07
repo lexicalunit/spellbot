@@ -1,10 +1,12 @@
+import discord
 import pytest
+from discord_slash.context import InteractionContext
 
+from spellbot import SpellBot
 from spellbot.cogs.events import EventsCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import lfg_interaction
-from spellbot.models.game import Game, GameFormat, GameStatus
-from spellbot.models.user import User
+from spellbot.models import Game, GameFormat, GameStatus, User
 from tests.factories.user import UserFactory
 from tests.mocks import (
     build_author,
@@ -17,7 +19,11 @@ from tests.mocks import (
 
 @pytest.mark.asyncio
 class TestCogEvents:
-    async def test_game(self, bot, ctx):
+    async def test_game(self, bot: SpellBot, ctx: InteractionContext):
+        assert ctx.guild
+        assert ctx.channel
+        assert isinstance(ctx.channel, discord.TextChannel)
+        assert isinstance(ctx.author, discord.User)
         player1 = build_author(1)
         player2 = build_author(2)
         client_user = build_client_user()
@@ -40,7 +46,8 @@ class TestCogEvents:
         for user in users:
             assert user.game_id == game.id
 
-    async def test_game_with_one_player(self, bot, ctx):
+    async def test_game_with_one_player(self, bot: SpellBot, ctx: InteractionContext):
+        assert isinstance(ctx.author, discord.User)
         player = build_author(1)
 
         with mock_operations(lfg_interaction, users=[ctx.author, player]):
@@ -52,7 +59,8 @@ class TestCogEvents:
                 hidden=True,
             )
 
-    async def test_game_with_banned_player(self, bot, ctx):
+    async def test_game_with_banned_player(self, bot: SpellBot, ctx: InteractionContext):
+        assert isinstance(ctx.author, discord.User)
         player = build_author(1)
         banned_user = UserFactory.create(banned=True)
         banned_player = mock_discord_user(banned_user)

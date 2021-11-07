@@ -1,6 +1,6 @@
 import factory
 
-from spellbot.models.play import Play
+from spellbot.models import Play
 
 
 class PlayFactory(factory.alchemy.SQLAlchemyModelFactory):

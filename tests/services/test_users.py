@@ -3,11 +3,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.models.block import Block
-from spellbot.models.user import User
-from spellbot.models.watch import Watch
+from spellbot.models import Block, User, Watch
 from spellbot.services.users import UsersService
-from tests.factories.user import UserFactory
+from tests.factories import UserFactory
 
 
 @pytest.mark.asyncio

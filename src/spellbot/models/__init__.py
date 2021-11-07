@@ -25,8 +25,18 @@ logger = logging.getLogger(__name__)
 Base = declarative_base()
 now = text("(now() at time zone 'utc')")
 
+from .award import GuildAward, UserAward
+from .block import Block
+from .channel import Channel
+from .game import Game, GameFormat, GameStatus
+from .guild import Guild
+from .play import Play
+from .user import User
+from .verify import Verify
+from .watch import Watch
 
-def import_models():
+
+def import_models():  # pragma: no cover
     package_dir = Path(__file__).resolve().parent
     for info in iter_modules([str(package_dir)]):
         module = import_module(f"{__name__}.{info.name}")
@@ -84,3 +94,24 @@ def literalquery(statement):  # pragma: no cover
     if isinstance(statement, sqlalchemy.orm.Query):
         statement = statement.statement
     return statement.compile(compile_kwargs={"literal_binds": True}).string
+
+
+__all__ = [
+    "Base",
+    "Block",
+    "Channel",
+    "create_all",
+    "Game",
+    "GameFormat",
+    "GameStatus",
+    "Guild",
+    "GuildAward",
+    "import_models",
+    "literalquery",
+    "Play",
+    "reverse_all",
+    "User",
+    "UserAward",
+    "Verify",
+    "Watch",
+]

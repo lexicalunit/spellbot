@@ -8,10 +8,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
-from spellbot.models.block import Block
-from spellbot.models.game import Game
-from spellbot.models.user import User
-from spellbot.models.watch import Watch
+from spellbot.models import Block, Game, User, Watch
 from spellbot.services import BaseService
 
 

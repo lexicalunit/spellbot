@@ -3,9 +3,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.models.channel import Channel
+from spellbot.models import Channel
 from spellbot.services.channels import ChannelsService
-from tests.factories.channel import ChannelFactory
+from tests.factories import ChannelFactory
 
 
 @pytest.mark.asyncio

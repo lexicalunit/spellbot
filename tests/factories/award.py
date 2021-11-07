@@ -1,6 +1,6 @@
 import factory
 
-from spellbot.models.award import GuildAward, UserAward
+from spellbot.models import GuildAward, UserAward
 
 
 class GuildAwardFactory(factory.alchemy.SQLAlchemyModelFactory):

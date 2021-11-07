@@ -11,7 +11,7 @@ from discord_slash.model import ButtonStyle
 
 from spellbot.client import SpellBot
 from spellbot.interactions import BaseInteraction
-from spellbot.models.game import GameFormat, GameStatus
+from spellbot.models import GameFormat, GameStatus
 from spellbot.operations import (
     safe_add_role,
     safe_create_invite,
