@@ -13,8 +13,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from spellbot.models.game import GameStatus
-from spellbot.models.play import Play
+from spellbot.models import GameStatus, Play
 
 from . import Base, now
 

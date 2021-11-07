@@ -2,9 +2,7 @@ import pytest
 
 from spellbot.database import DatabaseSession
 from spellbot.services.watches import WatchesService
-from tests.factories.guild import GuildFactory
-from tests.factories.user import UserFactory
-from tests.factories.watch import WatchFactory
+from tests.factories import GuildFactory, UserFactory, WatchFactory
 
 
 @pytest.mark.asyncio

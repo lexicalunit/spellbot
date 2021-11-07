@@ -1,6 +1,6 @@
 import factory
 
-from spellbot.models.channel import Channel
+from spellbot.models import Channel
 
 
 class ChannelFactory(factory.alchemy.SQLAlchemyModelFactory):

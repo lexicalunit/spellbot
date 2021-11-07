@@ -1,15 +1,13 @@
-from tests.factories.award import GuildAwardFactory
-from tests.factories.channel import ChannelFactory
-from tests.factories.guild import GuildFactory
+from tests.fixtures import Factories
 
 
 class TestModelGuild:
-    def test_guild(self):
-        guild = GuildFactory.create()
-        channel1 = ChannelFactory.create(guild=guild)
-        channel2 = ChannelFactory.create(guild=guild)
-        award1 = GuildAwardFactory.create(count=10, guild=guild)
-        award2 = GuildAwardFactory.create(count=20, guild=guild)
+    def test_guild(self, factories: Factories):
+        guild = factories.guild.create()
+        channel1 = factories.channel.create(guild=guild)
+        channel2 = factories.channel.create(guild=guild)
+        award1 = factories.guild_award.create(count=10, guild=guild)
+        award2 = factories.guild_award.create(count=20, guild=guild)
 
         assert guild.to_dict() == {
             "xid": guild.xid,

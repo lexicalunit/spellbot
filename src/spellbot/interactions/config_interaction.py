@@ -10,7 +10,7 @@ from pygicord import Config, Paginator
 
 from spellbot.client import SpellBot
 from spellbot.interactions import BaseInteraction
-from spellbot.models.channel import Channel
+from spellbot.models import Channel
 from spellbot.operations import safe_send_channel, safe_update_embed_origin
 from spellbot.settings import Settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT, log_warning

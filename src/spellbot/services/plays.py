@@ -4,8 +4,7 @@ from sqlalchemy.sql.elements import TextClause
 from sqlalchemy.sql.expression import and_, text
 
 from spellbot.database import DatabaseSession
-from spellbot.models.game import Game, GameFormat
-from spellbot.models.play import Play
+from spellbot.models import Game, GameFormat, Play
 from spellbot.services import BaseService
 
 CHANNEL_FILTER = "games.channel_xid = :channel_xid"

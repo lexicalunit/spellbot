@@ -1,6 +1,6 @@
 import factory
 
-from spellbot.models.verify import Verify
+from spellbot.models import Verify
 
 
 class VerifyFactory(factory.alchemy.SQLAlchemyModelFactory):

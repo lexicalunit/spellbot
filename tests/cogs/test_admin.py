@@ -2,27 +2,28 @@ from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
+from discord_slash.context import ComponentContext, InteractionContext
 from discord_slash.model import ButtonStyle, ComponentType
 from pygicord import Config
 
+from spellbot.client import SpellBot
 from spellbot.cogs.admin import AdminCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import config_interaction, watch_interaction
-from spellbot.models.award import GuildAward
-from spellbot.models.channel import Channel
-from spellbot.models.guild import Guild
-from spellbot.models.verify import Verify
-from spellbot.models.watch import Watch
-from tests.factories.award import GuildAwardFactory
-from tests.factories.channel import ChannelFactory
-from tests.factories.guild import GuildFactory
-from tests.factories.user import UserFactory
-from tests.factories.watch import WatchFactory
+from spellbot.models import Channel, Game, Guild, GuildAward, Verify, Watch
+from spellbot.settings import Settings
+from tests.fixtures import Factories
 
 
 @pytest.mark.asyncio
 class TestCogAdmin:
-    async def test_setup(self, bot, ctx, settings):
+    async def test_setup(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        settings: Settings,
+    ):
+        assert ctx.guild
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.setup.func(cog, ctx)
@@ -83,7 +84,13 @@ class TestCogAdmin:
             "type": "rich",
         }
 
-    async def test_refresh_setup(self, bot, ctx, settings):
+    async def test_refresh_setup(
+        self,
+        bot: SpellBot,
+        ctx: ComponentContext,
+        settings: Settings,
+    ):
+        assert ctx.guild
         ctx.origin_message_id = 12345
         ctx.edit_origin = AsyncMock()
         cog = AdminCog(bot)
@@ -145,31 +152,28 @@ class TestCogAdmin:
             "type": "rich",
         }
 
-    async def test_toggle_show_links(self, bot, ctx):
-        ctx.edit_origin = AsyncMock()
+    async def test_toggle_show_links(self, bot: SpellBot, origin_ctx: ComponentContext):
         cog = AdminCog(bot)
-        await cog.toggle_show_links.func(cog, ctx)
-        ctx.edit_origin.assert_called_once()
+        await cog.toggle_show_links.func(cog, origin_ctx)
+        origin_ctx.edit_origin.assert_called_once()
         guild = DatabaseSession.query(Guild).one()
         assert guild.show_links != Guild.show_links.default.arg  # type: ignore
 
-    async def test_toggle_show_points(self, bot, ctx):
-        ctx.edit_origin = AsyncMock()
+    async def test_toggle_show_points(self, bot: SpellBot, origin_ctx: ComponentContext):
         cog = AdminCog(bot)
-        await cog.toggle_show_points.func(cog, ctx)
-        ctx.edit_origin.assert_called_once()
+        await cog.toggle_show_points.func(cog, origin_ctx)
+        origin_ctx.edit_origin.assert_called_once()
         guild = DatabaseSession.query(Guild).one()
         assert guild.show_points != Guild.show_points.default.arg  # type: ignore
 
-    async def test_toggle_voice_create(self, bot, ctx):
-        ctx.edit_origin = AsyncMock()
+    async def test_toggle_voice_create(self, bot: SpellBot, origin_ctx: ComponentContext):
         cog = AdminCog(bot)
-        await cog.toggle_voice_create.func(cog, ctx)
-        ctx.edit_origin.assert_called_once()
+        await cog.toggle_voice_create.func(cog, origin_ctx)
+        origin_ctx.edit_origin.assert_called_once()
         guild = DatabaseSession.query(Guild).one()
         assert guild.voice_create != Guild.voice_create.default.arg  # type: ignore
 
-    async def test_motd(self, bot, ctx):
+    async def test_motd(self, bot: SpellBot, ctx: ComponentContext):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.motd.func(cog, ctx, "this is a test")
@@ -180,7 +184,13 @@ class TestCogAdmin:
 
 @pytest.mark.asyncio
 class TestCogAdminInfo:
-    async def test_happy_path(self, bot, ctx, game, settings):
+    async def test_happy_path(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        settings: Settings,
+        game: Game,
+    ):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.info.func(cog, ctx, f"SB#{game.id}")
@@ -199,13 +209,13 @@ class TestCogAdminInfo:
             "type": "rich",
         }
 
-    async def test_non_numeric_game_id(self, bot, ctx):
+    async def test_non_numeric_game_id(self, bot: SpellBot, ctx: InteractionContext):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.info.func(cog, ctx, "bogus")
         ctx.send.assert_awaited_once_with("There is no game with that ID.", hidden=True)
 
-    async def test_non_existant_game_id(self, bot, ctx):
+    async def test_non_existant_game_id(self, bot: SpellBot, ctx: InteractionContext):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.info.func(cog, ctx, "1")
@@ -214,7 +224,8 @@ class TestCogAdminInfo:
 
 @pytest.mark.asyncio
 class TestCogAdminWatches:
-    async def test_watch_and_unwatch(self, bot, ctx):
+    async def test_watch_and_unwatch(self, bot: SpellBot, ctx: InteractionContext):
+        assert ctx.guild
         target = MagicMock(spec=discord.Member)
         target.id = 1002
         target.display_name = "user"
@@ -226,7 +237,7 @@ class TestCogAdminWatches:
 
         watch = DatabaseSession.query(Watch).one()
         assert watch.to_dict() == {
-            "guild_xid": ctx.guild.id,
+            "guild_xid": ctx.guild_id,
             "user_xid": target.id,
             "note": "note",
         }
@@ -241,15 +252,21 @@ class TestCogAdminWatches:
         watch = DatabaseSession.query(Watch).one_or_none()
         assert not watch
 
-    async def test_watched_single_page(self, settings, bot, ctx):
-        guild1 = GuildFactory.create()
-        guild2 = GuildFactory.create()
-        user1 = UserFactory.create(xid=101)
-        user2 = UserFactory.create(xid=102)
-        user3 = UserFactory.create(xid=103)
-        watch1 = WatchFactory.create(guild_xid=guild1.xid, user_xid=user1.xid)
-        watch2 = WatchFactory.create(guild_xid=guild1.xid, user_xid=user2.xid)
-        WatchFactory.create(guild_xid=guild2.xid, user_xid=user3.xid)
+    async def test_watched_single_page(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        settings: Settings,
+        factories: Factories,
+    ):
+        guild1 = factories.guild.create()
+        guild2 = factories.guild.create()
+        user1 = factories.user.create(xid=101)
+        user2 = factories.user.create(xid=102)
+        user3 = factories.user.create(xid=103)
+        watch1 = factories.watch.create(guild_xid=guild1.xid, user_xid=user1.xid)
+        watch2 = factories.watch.create(guild_xid=guild1.xid, user_xid=user2.xid)
+        factories.watch.create(guild_xid=guild2.xid, user_xid=user3.xid)
 
         ctx.send = AsyncMock()
         ctx.guild_id = guild1.xid
@@ -267,34 +284,41 @@ class TestCogAdminWatches:
             "type": "rich",
         }
 
-    async def test_watched_multiple_pages(self, settings, bot, ctx, monkeypatch):
-        guild1 = GuildFactory.create()
-        user1 = UserFactory.create(xid=101)
-        user2 = UserFactory.create(xid=102)
-        user3 = UserFactory.create(xid=103)
-        user4 = UserFactory.create(xid=104)
-        user5 = UserFactory.create(xid=105)
-        watch1 = WatchFactory.create(
+    async def test_watched_multiple_pages(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        settings: Settings,
+        factories: Factories,
+        monkeypatch,
+    ):
+        guild1 = factories.guild.create()
+        user1 = factories.user.create(xid=101)
+        user2 = factories.user.create(xid=102)
+        user3 = factories.user.create(xid=103)
+        user4 = factories.user.create(xid=104)
+        user5 = factories.user.create(xid=105)
+        watch1 = factories.watch.create(
             guild_xid=guild1.xid,
             user_xid=user1.xid,
             note="ab " * 333,
         )
-        watch2 = WatchFactory.create(
+        watch2 = factories.watch.create(
             guild_xid=guild1.xid,
             user_xid=user2.xid,
             note="cd " * 333,
         )
-        watch3 = WatchFactory.create(
+        watch3 = factories.watch.create(
             guild_xid=guild1.xid,
             user_xid=user3.xid,
             note="ef " * 333,
         )
-        watch4 = WatchFactory.create(
+        watch4 = factories.watch.create(
             guild_xid=guild1.xid,
             user_xid=user4.xid,
             note="gh " * 333,
         )
-        watch5 = WatchFactory.create(
+        watch5 = factories.watch.create(
             guild_xid=guild1.xid,
             user_xid=user5.xid,
             note="ij " * 333,
@@ -335,18 +359,25 @@ class TestCogAdminWatches:
         }
         paginator_mock.start.assert_called_once_with(ctx)
 
-    async def test_watched_pagination_start_error(self, bot, ctx, monkeypatch, caplog):
-        guild1 = GuildFactory.create()
-        user1 = UserFactory.create(xid=101)
-        user2 = UserFactory.create(xid=102)
-        user3 = UserFactory.create(xid=103)
-        user4 = UserFactory.create(xid=104)
-        user5 = UserFactory.create(xid=105)
-        WatchFactory.create(guild_xid=guild1.xid, user_xid=user1.xid, note="ab " * 333)
-        WatchFactory.create(guild_xid=guild1.xid, user_xid=user2.xid, note="cd " * 333)
-        WatchFactory.create(guild_xid=guild1.xid, user_xid=user3.xid, note="ef " * 333)
-        WatchFactory.create(guild_xid=guild1.xid, user_xid=user4.xid, note="gh " * 333)
-        WatchFactory.create(guild_xid=guild1.xid, user_xid=user5.xid, note="ij " * 333)
+    async def test_watched_pagination_start_error(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        factories: Factories,
+        monkeypatch,
+        caplog,
+    ):
+        guild1 = factories.guild.create()
+        user1 = factories.user.create(xid=101)
+        user2 = factories.user.create(xid=102)
+        user3 = factories.user.create(xid=103)
+        user4 = factories.user.create(xid=104)
+        user5 = factories.user.create(xid=105)
+        factories.watch.create(guild_xid=guild1.xid, user_xid=user1.xid, note="ab " * 333)
+        factories.watch.create(guild_xid=guild1.xid, user_xid=user2.xid, note="cd " * 333)
+        factories.watch.create(guild_xid=guild1.xid, user_xid=user3.xid, note="ef " * 333)
+        factories.watch.create(guild_xid=guild1.xid, user_xid=user4.xid, note="gh " * 333)
+        factories.watch.create(guild_xid=guild1.xid, user_xid=user5.xid, note="ij " * 333)
 
         paginator_mock = MagicMock()
         error = RuntimeError("start-error")
@@ -363,7 +394,7 @@ class TestCogAdminWatches:
 
 @pytest.mark.asyncio
 class TestCogAdminChannels:
-    async def test_default_seats(self, bot, ctx):
+    async def test_default_seats(self, bot: SpellBot, ctx: InteractionContext):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         seats = Channel.default_seats.default.arg - 1  # type: ignore
@@ -375,7 +406,7 @@ class TestCogAdminChannels:
         channel = DatabaseSession.query(Channel).one()
         assert channel.default_seats == seats
 
-    async def test_auto_verify(self, bot, ctx):
+    async def test_auto_verify(self, bot: SpellBot, ctx: InteractionContext):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         default_value = Channel.auto_verify.default.arg  # type: ignore
@@ -387,7 +418,7 @@ class TestCogAdminChannels:
         channel = DatabaseSession.query(Channel).one()
         assert channel.auto_verify != default_value
 
-    async def test_verified_only(self, bot, ctx):
+    async def test_verified_only(self, bot: SpellBot, ctx: InteractionContext):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         default_value = Channel.verified_only.default.arg  # type: ignore
@@ -399,7 +430,7 @@ class TestCogAdminChannels:
         channel = DatabaseSession.query(Channel).one()
         assert channel.verified_only != default_value
 
-    async def test_unverified_only(self, bot, ctx):
+    async def test_unverified_only(self, bot: SpellBot, ctx: InteractionContext):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         default_value = Channel.unverified_only.default.arg  # type: ignore
@@ -411,12 +442,19 @@ class TestCogAdminChannels:
         channel = DatabaseSession.query(Channel).one()
         assert channel.unverified_only != default_value
 
-    async def test_channels(self, bot, ctx, settings):
-        guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        channel1 = ChannelFactory.create(guild=guild, auto_verify=True)
-        channel2 = ChannelFactory.create(guild=guild, unverified_only=True)
-        channel3 = ChannelFactory.create(guild=guild, verified_only=True)
-        channel4 = ChannelFactory.create(guild=guild, default_seats=2)
+    async def test_channels(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        settings: Settings,
+        factories: Factories,
+    ):
+        assert ctx.guild
+        guild = factories.guild.create(xid=ctx.guild_id, name=ctx.guild.name)
+        channel1 = factories.channel.create(guild=guild, auto_verify=True)
+        channel2 = factories.channel.create(guild=guild, unverified_only=True)
+        channel3 = factories.channel.create(guild=guild, verified_only=True)
+        channel4 = factories.channel.create(guild=guild, default_seats=2)
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.channels.func(cog, ctx)
@@ -434,9 +472,16 @@ class TestCogAdminChannels:
             "type": "rich",
         }
 
-    async def test_channels_when_no_non_default_channels(self, bot, ctx, settings):
-        guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        ChannelFactory.create(guild=guild)
+    async def test_channels_when_no_non_default_channels(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        settings: Settings,
+        factories: Factories,
+    ):
+        assert ctx.guild
+        guild = factories.guild.create(xid=ctx.guild_id, name=ctx.guild.name)
+        factories.channel.create(guild=guild)
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.channels.func(cog, ctx)
@@ -453,9 +498,16 @@ class TestCogAdminChannels:
             "type": "rich",
         }
 
-    async def test_channels_with_pagination(self, bot, ctx, monkeypatch):
-        guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        ChannelFactory.create_batch(
+    async def test_channels_with_pagination(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        factories: Factories,
+        monkeypatch,
+    ):
+        assert ctx.guild
+        guild = factories.guild.create(xid=ctx.guild_id, name=ctx.guild.name)
+        factories.channel.create_batch(
             100,
             guild=guild,
             default_seats=2,
@@ -481,13 +533,15 @@ class TestCogAdminChannels:
 
     async def test_awards_with_pagination_start_error(
         self,
-        bot,
-        ctx,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        factories: Factories,
         monkeypatch,
         caplog,
     ):
-        guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        ChannelFactory.create_batch(
+        assert ctx.guild
+        guild = factories.guild.create(xid=ctx.guild_id, name=ctx.guild.name)
+        factories.channel.create_batch(
             100,
             guild=guild,
             default_seats=2,
@@ -510,21 +564,28 @@ class TestCogAdminChannels:
 
 @pytest.mark.asyncio
 class TestCogAdminAwards:
-    async def test_awards(self, bot, ctx, settings):
-        guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        award1 = GuildAwardFactory.create(
+    async def test_awards(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        settings: Settings,
+        factories: Factories,
+    ):
+        assert ctx.guild
+        guild = factories.guild.create(xid=ctx.guild_id, name=ctx.guild.name)
+        award1 = factories.guild_award.create(
             guild=guild,
             count=10,
             role="role1",
             message="msg1",
         )
-        award2 = GuildAwardFactory.create(
+        award2 = factories.guild_award.create(
             guild=guild,
             count=20,
             role="role2",
             message="msg2",
         )
-        award3 = GuildAwardFactory.create(
+        award3 = factories.guild_award.create(
             guild=guild,
             count=30,
             role="role3",
@@ -549,7 +610,13 @@ class TestCogAdminAwards:
             "type": "rich",
         }
 
-    async def test_awards_when_no_awards(self, bot, ctx, settings):
+    async def test_awards_when_no_awards(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        settings: Settings,
+    ):
+        assert ctx.guild
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.awards.func(cog, ctx)
@@ -565,9 +632,16 @@ class TestCogAdminAwards:
             "type": "rich",
         }
 
-    async def test_awards_with_pagination(self, bot, ctx, monkeypatch):
-        guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        GuildAwardFactory.create_batch(
+    async def test_awards_with_pagination(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        factories: Factories,
+        monkeypatch,
+    ):
+        assert ctx.guild
+        guild = factories.guild.create(xid=ctx.guild_id, name=ctx.guild.name)
+        factories.guild_award.create_batch(
             40,
             guild=guild,
             count=10,
@@ -592,13 +666,15 @@ class TestCogAdminAwards:
 
     async def test_awards_with_pagination_start_error(
         self,
-        bot,
-        ctx,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        factories: Factories,
         monkeypatch,
         caplog,
     ):
-        guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        GuildAwardFactory.create_batch(
+        assert ctx.guild
+        guild = factories.guild.create(xid=ctx.guild_id, name=ctx.guild.name)
+        factories.guild_award.create_batch(
             40,
             guild=guild,
             count=10,
@@ -617,9 +693,16 @@ class TestCogAdminAwards:
 
         assert "warning: discord: pagination error: start-error" in caplog.text
 
-    async def test_award_delete(self, bot, ctx, settings):
-        guild = GuildFactory.create(xid=ctx.guild.id, name=ctx.guild.name)
-        awards = GuildAwardFactory.create_batch(2, guild=guild)
+    async def test_award_delete(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        settings: Settings,
+        factories: Factories,
+    ):
+        assert ctx.guild
+        guild = factories.guild.create(xid=ctx.guild_id, name=ctx.guild.name)
+        awards = factories.guild_award.create_batch(2, guild=guild)
 
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
@@ -635,7 +718,12 @@ class TestCogAdminAwards:
         assert ctx.send.call_args_list[0].kwargs["hidden"]
         assert DatabaseSession.query(GuildAward).count() == 1
 
-    async def test_award_add(self, bot, ctx, settings):
+    async def test_award_add(
+        self,
+        bot: SpellBot,
+        ctx: InteractionContext,
+        settings: Settings,
+    ):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.award_add.func(cog, ctx, 10, "role", "message", repeating=True)
@@ -657,7 +745,7 @@ class TestCogAdminAwards:
         assert award.message == "message"
         assert award.repeating
 
-    async def test_award_add_zero_count(self, bot, ctx):
+    async def test_award_add_zero_count(self, bot: SpellBot, ctx: InteractionContext):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.award_add.func(cog, ctx, 0, "role", "message")
@@ -667,7 +755,7 @@ class TestCogAdminAwards:
         )
         assert DatabaseSession.query(GuildAward).count() == 0
 
-    async def test_award_add_dupe(self, bot, ctx):
+    async def test_award_add_dupe(self, bot: SpellBot, ctx: InteractionContext):
         ctx.send = AsyncMock()
         cog = AdminCog(bot)
         await cog.award_add.func(cog, ctx, 10, "role", "message")
@@ -683,7 +771,7 @@ class TestCogAdminAwards:
 
 @pytest.mark.asyncio
 class TestCogAdminVerifies:
-    async def test_verify_and_unverify(self, bot, ctx):
+    async def test_verify_and_unverify(self, bot: SpellBot, ctx: InteractionContext):
         target = MagicMock(spec=discord.Member)
         target.id = 1002
         target.display_name = "user"

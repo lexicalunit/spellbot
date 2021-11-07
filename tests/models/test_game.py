@@ -1,18 +1,15 @@
 from datetime import datetime
 
-from spellbot.models.game import GameStatus
-from tests.factories.channel import ChannelFactory
-from tests.factories.game import GameFactory
-from tests.factories.guild import GuildFactory
-from tests.factories.play import PlayFactory
-from tests.factories.user import UserFactory
+from spellbot import Settings
+from spellbot.models import GameStatus
+from tests.fixtures import Factories
 
 
 class TestModelGame:
-    def test_game_to_dict(self):
-        guild = GuildFactory.create()
-        channel = ChannelFactory.create(guild=guild)
-        game = GameFactory.create(guild=guild, channel=channel)
+    def test_game_to_dict(self, factories: Factories):
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(guild=guild, channel=channel)
 
         assert game.to_dict() == {
             "id": game.id,
@@ -32,23 +29,23 @@ class TestModelGame:
             "spectate_link": game.spectate_link,
         }
 
-    def test_game_show_links(self):
-        guild1 = GuildFactory.create()
-        guild2 = GuildFactory.create(show_links=True)
-        channel1 = ChannelFactory.create(guild=guild1)
-        channel2 = ChannelFactory.create(guild=guild2)
-        game1 = GameFactory.create(guild=guild1, channel=channel1)
-        game2 = GameFactory.create(guild=guild2, channel=channel2)
+    def test_game_show_links(self, factories: Factories):
+        guild1 = factories.guild.create()
+        guild2 = factories.guild.create(show_links=True)
+        channel1 = factories.channel.create(guild=guild1)
+        channel2 = factories.channel.create(guild=guild2)
+        game1 = factories.game.create(guild=guild1, channel=channel1)
+        game2 = factories.game.create(guild=guild2, channel=channel2)
 
         assert not game1.show_links()
         assert game1.show_links(True)
         assert game2.show_links()
         assert game2.show_links(True)
 
-    def test_game_embed_empty(self, settings):
-        guild = GuildFactory.create(motd=None)
-        channel = ChannelFactory.create(guild=guild)
-        game = GameFactory.create(guild=guild, channel=channel)
+    def test_game_embed_empty(self, settings: Settings, factories: Factories):
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(guild=guild, channel=channel)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -64,11 +61,11 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_pending(self, settings):
-        guild = GuildFactory.create(motd=None)
-        channel = ChannelFactory.create(guild=guild)
-        game = GameFactory.create(guild=guild, channel=channel)
-        player = UserFactory.create(game=game)
+    def test_game_embed_pending(self, settings: Settings, factories: Factories):
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(guild=guild, channel=channel)
+        player = factories.user.create(game=game)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -87,10 +84,14 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_with_spelltable_link(self, settings):
-        guild = GuildFactory.create(motd=None)
-        channel = ChannelFactory.create(guild=guild)
-        game = GameFactory.create(
+    def test_game_embed_started_with_spelltable_link(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ):
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31),
@@ -98,8 +99,8 @@ class TestModelGame:
             guild=guild,
             channel=channel,
         )
-        player1 = UserFactory.create(game=game)
-        player2 = UserFactory.create(game=game)
+        player1 = factories.user.create(game=game)
+        player2 = factories.user.create(game=game)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -144,20 +145,24 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_with_points(self, settings):
-        guild = GuildFactory.create(show_points=True, motd=None)
-        channel = ChannelFactory.create(guild=guild)
-        game = GameFactory.create(
+    def test_game_embed_started_with_points(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ):
+        guild = factories.guild.create(show_points=True, motd=None)
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31),
             guild=guild,
             channel=channel,
         )
-        player1 = UserFactory.create(game=game)
-        player2 = UserFactory.create(game=game)
-        PlayFactory.create(user_xid=player1.xid, game_id=game.id, points=5)
-        PlayFactory.create(user_xid=player2.xid, game_id=game.id, points=1)
+        player1 = factories.user.create(game=game)
+        player2 = factories.user.create(game=game)
+        factories.play.create(user_xid=player1.xid, game_id=game.id, points=5)
+        factories.play.create(user_xid=player2.xid, game_id=game.id, points=1)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -181,18 +186,22 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_without_spelltable_link(self, settings):
-        guild = GuildFactory.create(motd=None)
-        channel = ChannelFactory.create(guild=guild)
-        game = GameFactory.create(
+    def test_game_embed_started_without_spelltable_link(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ):
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31),
             guild=guild,
             channel=channel,
         )
-        player1 = UserFactory.create(game=game)
-        player2 = UserFactory.create(game=game)
+        player1 = factories.user.create(game=game)
+        player2 = factories.user.create(game=game)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -237,10 +246,14 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_with_voice_invite_link(self, settings):
-        guild = GuildFactory.create(motd=None)
-        channel = ChannelFactory.create(guild=guild)
-        game = GameFactory.create(
+    def test_game_embed_started_with_voice_invite_link(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ):
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31),
@@ -250,8 +263,8 @@ class TestModelGame:
             guild=guild,
             channel=channel,
         )
-        player1 = UserFactory.create(game=game)
-        player2 = UserFactory.create(game=game)
+        player1 = factories.user.create(game=game)
+        player2 = factories.user.create(game=game)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
@@ -304,10 +317,10 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_with_motd(self, settings):
-        guild = GuildFactory.create(motd="this is a message of the day")
-        channel = ChannelFactory.create(guild=guild)
-        game = GameFactory.create(
+    def test_game_embed_started_with_motd(self, settings: Settings, factories: Factories):
+        guild = factories.guild.create(motd="this is a message of the day")
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31),
@@ -315,8 +328,8 @@ class TestModelGame:
             guild=guild,
             channel=channel,
         )
-        player1 = UserFactory.create(game=game)
-        player2 = UserFactory.create(game=game)
+        player1 = factories.user.create(game=game)
+        player2 = factories.user.create(game=game)
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,

@@ -1,28 +1,24 @@
-from spellbot.models.game import GameStatus
-from tests.factories.channel import ChannelFactory
-from tests.factories.game import GameFactory
-from tests.factories.guild import GuildFactory
-from tests.factories.play import PlayFactory
-from tests.factories.user import UserFactory
+from spellbot.models import GameStatus
+from tests.fixtures import Factories
 
 
 class TestModelUser:
-    def test_user(self):
-        guild = GuildFactory.create()
-        channel = ChannelFactory.create(guild=guild)
-        game1 = GameFactory.create(guild=guild, channel=channel)
-        user1 = UserFactory.create()
-        user2 = UserFactory.create(game=game1)
-        game2 = GameFactory.create(
+    def test_user(self, factories: Factories):
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game1 = factories.game.create(guild=guild, channel=channel)
+        user1 = factories.user.create()
+        user2 = factories.user.create(game=game1)
+        game2 = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
             guild=guild,
             channel=channel,
         )
-        player1 = UserFactory.create(game=game2)
-        player2 = UserFactory.create(game=game2)
-        play1 = PlayFactory.create(user_xid=player1.xid, game_id=game2.id, points=5)
-        play2 = PlayFactory.create(user_xid=player2.xid, game_id=game2.id, points=1)
+        player1 = factories.user.create(game=game2)
+        player2 = factories.user.create(game=game2)
+        play1 = factories.play.create(user_xid=player1.xid, game_id=game2.id, points=5)
+        play2 = factories.play.create(user_xid=player2.xid, game_id=game2.id, points=1)
 
         assert user1.points(1) is None
         assert not user1.waiting
