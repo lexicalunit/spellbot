@@ -73,7 +73,7 @@ class LookingForGameInteraction(BaseInteraction):
 
         found_friends: list[int] = []
         if friends:
-            found_friends = await self._ensure_friends_exist(friend_xids)
+            found_friends = await self.ensure_users_exist(friend_xids)
             found_friends = await self.services.games.filter_blocked(
                 self.ctx.author_id,
                 found_friends,
@@ -176,7 +176,7 @@ class LookingForGameInteraction(BaseInteraction):
             )
 
         found_players: list[int] = []
-        found_players = await self._ensure_players_exist(player_xids)
+        found_players = await self.ensure_users_exist(player_xids, exclude_self=False)
 
         # TODO: Make the players leave any games they're currently pending in?
 
@@ -425,30 +425,27 @@ class LookingForGameInteraction(BaseInteraction):
         for member in mod_role.members:
             await safe_send_user(member, embed=embed)
 
-    async def _ensure_friends_exist(self, friend_xids: list[int]) -> list[int]:
-        assert self.ctx
-        found_friends: list[int] = []
-        for friend_xid in friend_xids:
-            if friend_xid == self.ctx.author_id:
-                continue
-            user = await safe_fetch_user(self.bot, friend_xid)
-            if not user:
-                continue
-            data = await self.services.users.upsert(user)
-            if data["banned"]:
-                continue
-            found_friends.append(friend_xid)
-        return found_friends
+    async def ensure_users_exist(
+        self,
+        user_xids: list[int],
+        *,
+        exclude_self: bool = True,
+    ) -> list[int]:
+        """
+        Ensure DB users exist for the given list of external IDs.
 
-    async def _ensure_players_exist(self, player_xids: list[int]) -> list[int]:
+        When exclude_self is True, don't create a user for IDs matching the author's.
+        """
         assert self.ctx
-        found_players: list[int] = []
-        for player_xid in player_xids:
-            user = await safe_fetch_user(self.bot, player_xid)
+        found_users: list[int] = []
+        for user_xid in user_xids:
+            if exclude_self and user_xid == self.ctx.author_id:
+                continue
+            user = await safe_fetch_user(self.bot, user_xid)
             if not user:
                 continue
             data = await self.services.users.upsert(user)
             if data["banned"]:
                 continue
-            found_players.append(player_xid)
-        return found_players
+            found_users.append(user_xid)
+        return found_users
