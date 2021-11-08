@@ -5,17 +5,16 @@ from datetime import datetime, timedelta
 from dateutil import tz
 from discord.channel import VoiceChannel
 
-from spellbot import SpellBot
-from spellbot.operations import (
+from .. import SpellBot
+from ..operations import (
     bot_can_delete_channel,
     safe_delete_channel,
     safe_fetch_message,
     safe_fetch_text_channel,
     safe_update_embed,
 )
-from spellbot.services import GamesService
-from spellbot.settings import Settings
-
+from ..services import GamesService
+from ..settings import Settings
 from .base_interaction import BaseInteraction
 
 settings = Settings()

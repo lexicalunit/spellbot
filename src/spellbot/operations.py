@@ -5,7 +5,7 @@ import discord
 from discord.errors import DiscordException
 from discord_slash.context import ComponentContext, InteractionContext
 
-from spellbot.utils import (
+from .utils import (
     CANT_SEND_CODE,
     DiscordChannel,
     bot_can_delete_channel,

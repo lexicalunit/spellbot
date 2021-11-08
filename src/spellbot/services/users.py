@@ -7,8 +7,8 @@ from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
-from spellbot.database import DatabaseSession
-from spellbot.models import Block, Game, User, Watch
+from ..database import DatabaseSession
+from ..models import Block, Game, User, Watch
 
 
 class UsersService:

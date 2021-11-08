@@ -8,9 +8,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_, asc, column, or_, select
 from sqlalchemy.sql.functions import count
 
-from spellbot.database import DatabaseSession
-from spellbot.models import Block, Game, GameStatus, Play, User, UserAward, Watch
-from spellbot.settings import Settings
+from ..database import DatabaseSession
+from ..models import Block, Game, GameStatus, Play, User, UserAward, Watch
+from ..settings import Settings
 
 MAX_SPELLTABLE_LINK_LEN = Game.spelltable_link.property.columns[  # type: ignore
     0

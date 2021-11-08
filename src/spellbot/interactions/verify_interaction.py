@@ -4,9 +4,8 @@ from typing import Union
 import discord
 from discord_slash.context import InteractionContext
 
-from spellbot.client import SpellBot
-from spellbot.operations import safe_send_channel
-
+from .. import SpellBot
+from ..operations import safe_send_channel
 from .base_interaction import BaseInteraction
 
 logger = logging.getLogger(__name__)
