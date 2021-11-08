@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 from wrapt import CallableObjectProxy
 
-from spellbot.models import Guild, create_all
+from .models import Guild, create_all
 
 logger = logging.getLogger(__name__)
 ProxiedObject = TypeVar("ProxiedObject")
@@ -91,7 +91,7 @@ def initialize_connection(
     `rollback_transaction()`. This is useful for allowing tests to run within their
     own transaction that is always rolled back.
     """
-    from spellbot.settings import Settings
+    from .settings import Settings
 
     settings = Settings()
     if run_migrations:  # pragma: no cover

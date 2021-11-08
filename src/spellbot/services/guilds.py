@@ -6,8 +6,8 @@ from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
-from spellbot.database import DatabaseSession
-from spellbot.models import Guild, GuildAward
+from ..database import DatabaseSession
+from ..models import Guild, GuildAward
 
 
 class GuildsService:

@@ -7,10 +7,10 @@ import discord
 from asgiref.sync import sync_to_async
 from discord_slash.context import InteractionContext
 
-from spellbot import SpellBot
-from spellbot.database import DatabaseSession, db_session_manager
-from spellbot.errors import SpellbotAdminOnly, UserBannedError
-from spellbot.services import ServicesRegistry
+from .. import SpellBot
+from ..database import DatabaseSession, db_session_manager
+from ..errors import SpellbotAdminOnly, UserBannedError
+from ..services import ServicesRegistry
 
 logger = logging.getLogger(__name__)
 

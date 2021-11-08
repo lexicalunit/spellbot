@@ -9,8 +9,7 @@ from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
-from spellbot.settings import Settings
-
+from ..settings import Settings
 from .base import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover

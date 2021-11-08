@@ -6,8 +6,8 @@ from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import update
 
-from spellbot.database import DatabaseSession
-from spellbot.models import Channel
+from ..database import DatabaseSession
+from ..models import Channel
 
 
 class ChannelsService:

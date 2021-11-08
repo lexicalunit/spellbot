@@ -5,9 +5,9 @@ from discord_slash import cog_ext
 from discord_slash.context import MenuContext
 from discord_slash.model import ContextMenuType
 
-from spellbot.client import SpellBot
-from spellbot.interactions.block_interaction import BlockInteraction
-from spellbot.utils import for_all_callbacks
+from .. import SpellBot
+from ..interactions import BlockInteraction
+from ..utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
 

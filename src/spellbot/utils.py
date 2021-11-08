@@ -6,8 +6,8 @@ import discord
 from discord_slash.context import InteractionContext
 from discord_slash.model import CallbackObject
 
-from spellbot.errors import SpellbotAdminOnly
-from spellbot.settings import Settings
+from .errors import SpellbotAdminOnly
+from .settings import Settings
 
 logger = logging.getLogger(__name__)
 

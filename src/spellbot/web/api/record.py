@@ -5,8 +5,8 @@ import aiohttp_jinja2
 from aiohttp import web
 from aiohttp.web_response import Response as WebResponse
 
-from spellbot.database import db_session_manager
-from spellbot.services import PlaysService
+from ...database import db_session_manager
+from ...services import PlaysService
 
 logger = logging.getLogger(__name__)
 

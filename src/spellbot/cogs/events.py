@@ -5,10 +5,10 @@ from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 from discord_slash.model import SlashCommandOptionType
 
-from spellbot.client import SpellBot
-from spellbot.interactions.lfg_interaction import LookingForGameInteraction
-from spellbot.models import GameFormat
-from spellbot.utils import for_all_callbacks, is_admin
+from .. import SpellBot
+from ..interactions import LookingForGameInteraction
+from ..models import GameFormat
+from ..utils import for_all_callbacks, is_admin
 
 logger = logging.getLogger(__name__)
 
