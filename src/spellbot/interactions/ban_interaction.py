@@ -3,9 +3,8 @@ from typing import Optional
 
 from discord.ext import commands
 
-from spellbot.client import SpellBot
-from spellbot.operations import safe_send_user
-
+from .. import SpellBot
+from ..operations import safe_send_user
 from .base_interaction import BaseInteraction
 
 logger = logging.getLogger(__name__)

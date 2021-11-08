@@ -3,9 +3,9 @@ import logging
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 
-from spellbot.client import SpellBot
-from spellbot.interactions.leave_interaction import LeaveInteraction
-from spellbot.utils import for_all_callbacks
+from .. import SpellBot
+from ..interactions import LeaveInteraction
+from ..utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
 

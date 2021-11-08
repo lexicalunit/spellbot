@@ -3,8 +3,8 @@ from dateutil import tz
 from sqlalchemy.sql.elements import TextClause
 from sqlalchemy.sql.expression import and_, text
 
-from spellbot.database import DatabaseSession
-from spellbot.models import Game, GameFormat, Play
+from ..database import DatabaseSession
+from ..models import Game, GameFormat, Play
 
 CHANNEL_FILTER = "games.channel_xid = :channel_xid"
 USER_FILTER = "plays.user_xid = :user_xid"

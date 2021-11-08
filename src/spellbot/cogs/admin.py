@@ -7,14 +7,14 @@ from discord_slash import SlashContext, cog_ext
 from discord_slash.context import ComponentContext
 from discord_slash.model import SlashCommandOptionType
 
-from spellbot import SpellBot
-from spellbot.interactions import (
+from .. import SpellBot
+from ..interactions import (
     AdminInteraction,
     ConfigInteraction,
     VerifyInteraction,
     WatchInteraction,
 )
-from spellbot.utils import for_all_callbacks, is_admin
+from ..utils import for_all_callbacks, is_admin
 
 logger = logging.getLogger(__name__)
 

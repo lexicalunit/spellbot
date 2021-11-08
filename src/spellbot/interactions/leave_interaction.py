@@ -3,14 +3,13 @@ from typing import cast
 
 from discord_slash.context import ComponentContext
 
-from spellbot.operations import (
+from ..operations import (
     safe_fetch_message,
     safe_fetch_text_channel,
     safe_send_channel,
     safe_update_embed,
     safe_update_embed_origin,
 )
-
 from .base_interaction import BaseInteraction
 
 logger = logging.getLogger(__name__)

@@ -4,10 +4,12 @@ from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any
+from unittest.mock import MagicMock, patch
 
 import discord
 import pytest
 from aiohttp.client import ClientSession
+from click.testing import CliRunner
 from discord_slash.context import InteractionContext
 
 from spellbot import SpellBot, build_bot
@@ -182,3 +184,49 @@ def origin_ctx(
     dpy_author: discord.User,
 ) -> InteractionContext:
     return build_ctx(dpy_guild, dpy_channel, dpy_author, origin=True)
+
+
+@pytest.fixture
+def cli():
+    # Note: In python 3.10 this formatting can be improved:
+    #       https://bugs.python.org/issue12782
+    with patch("spellbot.cli.asyncio") as mock_asyncio, patch(
+        "spellbot.cli.configure_logging"
+    ) as mock_configure_logging, patch("spellbot.cli.hupper") as mock_hupper, patch(
+        "spellbot.client.build_bot"
+    ) as mock_build_bot, patch(
+        "spellbot.settings.Settings"
+    ) as mock_Settings, patch(
+        "spellbot.web.launch_web_server"
+    ) as mock_launch_web_server:
+        mock_loop = MagicMock(name="loop")
+        mock_loop.run_forever = MagicMock(name="run_forever")
+        mock_asyncio.get_event_loop = MagicMock(
+            return_value=mock_loop,
+            name="get_event_loop",
+        )
+        mock_bot = MagicMock(name="bot")
+        mock_bot.run = MagicMock(name="run")
+        mock_build_bot.return_value = mock_bot
+        mock_hupper.start_reloader = MagicMock(name="start_reloader")
+        mock_settings = MagicMock(name="settings")
+        mock_settings.BOT_TOKEN = "facedeadbeef"
+        mock_settings.PORT = 404
+        mock_Settings.return_value = mock_settings
+
+        obj = MagicMock()
+        obj.asyncio = mock_asyncio
+        obj.build_bot = mock_build_bot
+        obj.configure_logging = mock_configure_logging
+        obj.hupper = mock_hupper
+        obj.launch_web_server = mock_launch_web_server
+        obj.Settings = mock_Settings
+        obj.settings = mock_settings
+        obj.bot = mock_bot
+        obj.loop = mock_loop
+        yield obj
+
+
+@pytest.fixture
+def runner() -> CliRunner:
+    return CliRunner()

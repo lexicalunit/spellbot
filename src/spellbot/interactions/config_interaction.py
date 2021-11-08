@@ -8,12 +8,11 @@ from discord_slash.context import ComponentContext, InteractionContext
 from discord_slash.model import ButtonStyle
 from pygicord import Config, Paginator
 
-from spellbot import SpellBot
-from spellbot.models import Channel
-from spellbot.operations import safe_send_channel, safe_update_embed_origin
-from spellbot.settings import Settings
-from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT, log_warning
-
+from .. import SpellBot
+from ..models import Channel
+from ..operations import safe_send_channel, safe_update_embed_origin
+from ..settings import Settings
+from ..utils import EMBED_DESCRIPTION_SIZE_LIMIT, log_warning
 from .base_interaction import BaseInteraction
 
 logger = logging.getLogger(__name__)

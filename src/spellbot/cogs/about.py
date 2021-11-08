@@ -4,10 +4,10 @@ from discord import Color, Embed
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 
-from spellbot import SpellBot, __version__
-from spellbot.operations import safe_send_channel
-from spellbot.settings import Settings
-from spellbot.utils import for_all_callbacks
+from .. import SpellBot, __version__
+from ..operations import safe_send_channel
+from ..settings import Settings
+from ..utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
 

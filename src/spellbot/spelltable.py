@@ -4,8 +4,8 @@ from typing import Optional
 from aiohttp.client_exceptions import ClientError
 from aiohttp_retry import ExponentialRetry, RetryClient
 
-from spellbot import __version__
-from spellbot.settings import Settings
+from . import __version__
+from .settings import Settings
 
 logger = logging.getLogger(__name__)
 

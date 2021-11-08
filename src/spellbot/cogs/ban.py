@@ -3,8 +3,8 @@ from typing import Optional
 
 from discord.ext import commands
 
-from spellbot.client import SpellBot
-from spellbot.interactions.ban_interaction import BanInteraction
+from .. import SpellBot
+from ..interactions import BanInteraction
 
 logger = logging.getLogger(__name__)
 

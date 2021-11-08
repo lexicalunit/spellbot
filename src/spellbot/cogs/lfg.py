@@ -6,11 +6,11 @@ from discord_slash import SlashContext, cog_ext
 from discord_slash.context import ComponentContext
 from discord_slash.model import SlashCommandOptionType
 
-from spellbot.client import SpellBot
-from spellbot.interactions.leave_interaction import LeaveInteraction
-from spellbot.interactions.lfg_interaction import LookingForGameInteraction
-from spellbot.models import GameFormat
-from spellbot.utils import for_all_callbacks
+from .. import SpellBot
+from ..interactions.leave_interaction import LeaveInteraction
+from ..interactions.lfg_interaction import LookingForGameInteraction
+from ..models import GameFormat
+from ..utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
 

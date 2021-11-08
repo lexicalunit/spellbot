@@ -13,17 +13,13 @@ from discord.ext.commands import Bot, errors
 from discord_slash import SlashCommand, context
 from expiringdict import ExpiringDict
 
-from spellbot.database import (
-    db_session_manager,
-    get_legacy_prefixes,
-    initialize_connection,
-)
-from spellbot.errors import SpellbotAdminOnly, UserBannedError
-from spellbot.operations import safe_message_reply, safe_send_channel
-from spellbot.services import ChannelsService, GuildsService, VerifiesService
-from spellbot.settings import Settings
-from spellbot.spelltable import generate_link
-from spellbot.utils import user_can_moderate
+from .database import db_session_manager, get_legacy_prefixes, initialize_connection
+from .errors import SpellbotAdminOnly, UserBannedError
+from .operations import safe_message_reply, safe_send_channel
+from .services import ChannelsService, GuildsService, VerifiesService
+from .settings import Settings
+from .spelltable import generate_link
+from .utils import user_can_moderate
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +192,7 @@ def build_bot(
         bot.loop.run_until_complete(bot_connection(bot))
 
     # load all cog extensions
-    from spellbot.cogs import load_all_cogs
+    from .cogs import load_all_cogs
 
     load_all_cogs(bot)
     commands = (key for key in bot.slash.commands if key != "context")

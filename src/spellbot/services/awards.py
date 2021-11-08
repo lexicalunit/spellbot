@@ -3,8 +3,8 @@ from collections import namedtuple
 from asgiref.sync import sync_to_async
 from sqlalchemy.sql.expression import and_, or_
 
-from spellbot.database import DatabaseSession
-from spellbot.models import GuildAward, Play, UserAward
+from ..database import DatabaseSession
+from ..models import GuildAward, Play, UserAward
 
 NewAward = namedtuple("NewAward", ["role", "message"])
 

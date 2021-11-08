@@ -1,7 +1,7 @@
 from asgiref.sync import sync_to_async
 
-from spellbot.database import DatabaseSession
-from spellbot.models import Watch
+from ..database import DatabaseSession
+from ..models import Watch
 
 
 class WatchesService:

@@ -1,0 +1,20 @@
+# name: TestCLI.test_help
+  '
+  Usage: main [OPTIONS]
+  
+  Options:
+    -l, --log-level [CRITICAL|ERROR|WARNING|INFO|DEBUG]
+                                    INFO is not set, can also be set by the
+                                    LOG_LEVEL environment variable.
+    -d, --dev-mode                  Development mode, automatically reload bot
+                                    when source changes
+    -m, --mock-games                Produce mock game urls instead of real ones
+    -s, --sync-commands             Force sync all slash commands at startup
+    -c, --clean-commands            Cleanup all unused slash commands at startup
+    -a, --api                       Start the API web server instead of the bot
+    -p, --port INTEGER              Use the given port number to serve the API
+    --version                       Show the version and exit.
+    --help                          Show this message and exit.
+  
+  '
+---
