@@ -26,11 +26,11 @@ class Settings(metaclass=Singleton):  # pylint: disable=R0902
         # content
         self.CONTENT_ROOT = "https://raw.githubusercontent.com/lexicalunit"
         self.THUMB_URL = (
-            f"{self.CONTENT_ROOT}/spellbot/master/spellbot.png"
+            f"{self.CONTENT_ROOT}/spellbot/main/spellbot.png"
             f"?{datetime.today().strftime('%Y-%m-%d')}"  # workaround over-eager caching
         )
         self.ICO_URL = (
-            f"{self.CONTENT_ROOT}/spellbot/master/spellbot-sm.png"
+            f"{self.CONTENT_ROOT}/spellbot/main/spellbot-sm.png"
             f"?{datetime.today().strftime('%Y-%m-%d')}"  # workaround over-eager caching
         )
 

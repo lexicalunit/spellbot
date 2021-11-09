@@ -26,8 +26,8 @@ fi
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-if [[ $BRANCH != "master" ]]; then
-    echo "error: you must be on the master branch to publish" 1>&2
+if [[ $BRANCH != "main" ]]; then
+    echo "error: you must be on the main branch to publish" 1>&2
     exit 1
 fi
 
@@ -89,6 +89,6 @@ if ! poetry publish -n; then
     exit 1
 fi
 
-# tag and push changes to origin/master
+# tag and push changes to origin/main
 run "git tag '$VERSION'"
-run "git push --tags origin master"
+run "git push --tags origin main"
