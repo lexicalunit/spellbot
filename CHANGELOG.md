@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Changed default branch name to main.
+
 ### Fixed
 
 - Handle `name` property missing from guild, channel, or users.
