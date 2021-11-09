@@ -34,7 +34,7 @@ class TestInteractionLookingForGame:
         async with LookingForGameInteraction.create(bot, ctx) as interaction:
             created = await interaction.ensure_users_exist(user_xids)
             assert set(created) == set(
-                [user.id for user in user_list if user.id != ctx.author_id]
+                user.id for user in user_list if user.id != ctx.author_id
             )
 
         assert DatabaseSession.query(User).count() == 3
@@ -82,7 +82,7 @@ class TestInteractionLookingForGame:
         async with LookingForGameInteraction.create(bot, ctx) as interaction:
             created = await interaction.ensure_users_exist(user_xids, exclude_self=False)
             assert set(created) == set(
-                [user.id for user in user_list if user.id != user_list[-1].id]
+                user.id for user in user_list if user.id != user_list[-1].id
             )
 
         assert DatabaseSession.query(User).count() == 2
@@ -109,7 +109,7 @@ class TestInteractionLookingForGame:
         async with LookingForGameInteraction.create(bot, ctx) as interaction:
             created = await interaction.ensure_users_exist(user_xids, exclude_self=False)
             assert set(created) == set(
-                [user.id for user in user_list if user.id != banned_user_xid]
+                user.id for user in user_list if user.id != banned_user_xid
             )
 
         assert DatabaseSession.query(User).count() == 3
