@@ -1,3 +1,5 @@
+# pylint: disable=wrong-import-position
+
 import asyncio
 import logging
 import sys
