@@ -1,3 +1,5 @@
+# pylint: disable=inconsistent-return-statements
+
 import importlib
 import inspect
 from asyncio import AbstractEventLoop

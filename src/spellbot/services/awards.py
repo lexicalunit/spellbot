@@ -1,3 +1,5 @@
+# pylint: disable=wrong-import-order
+
 from collections import namedtuple
 
 from asgiref.sync import sync_to_async

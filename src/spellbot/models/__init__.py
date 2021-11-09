@@ -1,3 +1,5 @@
+# pylint: disable=wrong-import-position
+
 from importlib import import_module
 from inspect import getmembers, isclass
 from pathlib import Path

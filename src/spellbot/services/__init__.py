@@ -1,3 +1,5 @@
+# pylint: disable=too-many-instance-attributes
+
 from .awards import AwardsService, NewAward
 from .channels import ChannelsService
 from .games import GamesService
