@@ -34,18 +34,23 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
 <table>
     <tr>
         <td align="center"><a href="https://www.playedh.com/"><img height="160" src="https://user-images.githubusercontent.com/1903876/140843874-78510411-dcc8-4a26-a59a-0d6856698dcc.png" alt="PlayEDH" /><br />PlayEDH</a></td>
-        <td align="center"><a href="https://www.commandthecause.org/"><img height="160" src="https://user-images.githubusercontent.com/1903876/140864827-a56b9ee4-a545-41f1-90ea-06d35bce2bf9.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
         <td align="center"><a href="https://www.reddit.com/r/CompetitiveEDH/"><img height="160" src="https://user-images.githubusercontent.com/1903876/140865281-19774420-a49b-4d0e-bf0c-db3ad937022e.png" alt="r/cEDH" /><br />r/cEDH</a></td>
+        <td align="center"><a href="https://www.commandthecause.org/"><img height="160" src="https://user-images.githubusercontent.com/1903876/140864827-a56b9ee4-a545-41f1-90ea-06d35bce2bf9.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
     </tr>
     <tr>
         <td align="center"><a href="https://www.patreon.com/ihateyourdeck"><img height="140" src="https://user-images.githubusercontent.com/1903876/140844363-e07a5552-d2de-47d3-b1f7-faf6fbbd5b78.png" alt="I Hate Your Deck" /><br />I&nbsp;Hate&nbsp;Your&nbsp;Deck</a></td>
         <td align="center"><a href="https://www.patreon.com/NitpickingNerds"><img height="140" src="https://user-images.githubusercontent.com/1903876/140844623-8d8528a9-b60c-49c6-be0f-1d627b85adba.png" alt="The Nitpicking Nerds" /><br />The&nbsp;Nitpicking&nbsp;Nerds</a></td>
-        <td align="center"><a href="https://disboard.org/server/806995731268632596"><img height="140" src="https://user-images.githubusercontent.com/1903876/140845585-8053037f-a42b-4c1c-88f2-1b3c403fea09.jpg" alt="The Mages Guild" /><br />The&nbsp;Mages&nbsp;Guild</a></td>
+        <td align="center"><a href="https://www.patreon.com/asylumgamingmtg"><img height="140" src="https://user-images.githubusercontent.com/1903876/140862514-5057c356-c166-48a0-a71c-329d33480003.png" alt="Asylum Gaming" /><br />Asylum&nbsp;Gaming</a></td>
     </tr>
     <tr>
+        <td align="center"><a href="https://disboard.org/server/815001383979450368"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863859-9ec1997b-9983-498e-9295-fa594d242b4d.jpg" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
+        <td align="center"><a href="https://disboard.org/server/806995731268632596"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845585-8053037f-a42b-4c1c-88f2-1b3c403fea09.jpg" alt="The Mages Guild" /><br />The&nbsp;Mages&nbsp;Guild</a></td>
+        <td align="center"><a href="https://disboard.org/server/848414032398516264"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863856-00482a5a-7fe5-4cbb-8c4b-2442504925ea.jpg" alt="Commander en Español" /><br />Commander&nbsp;en&nbsp;Español</a></td>
+    </tr>
+    <tr>
+        <td align="center">&nbsp;</td>
         <td align="center"><a href="https://disboard.org/server/752261529390284870"><img src="https://user-images.githubusercontent.com/1903876/140845571-12e391d0-4cc8-4766-bf40-071f32503a7d.jpg" alt="Commander SpellTable (DE)" /><br />Commander&nbsp;SpellTable&nbsp;(DE)</a></td>
-        <td align="center"><a href="https://disboard.org/server/815001383979450368"><img src="https://user-images.githubusercontent.com/1903876/140863859-9ec1997b-9983-498e-9295-fa594d242b4d.jpg" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
-        <td align="center"><a href="https://disboard.org/server/848414032398516264"><img src="https://user-images.githubusercontent.com/1903876/140863856-00482a5a-7fe5-4cbb-8c4b-2442504925ea.jpg" alt="Commander en Español" /><br />Commander&nbsp;en&nbsp;Español</a></td>
+        <td align="center">&nbsp;</td>
     </tr>
 </table>
 
