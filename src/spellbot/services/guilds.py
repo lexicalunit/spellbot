@@ -16,7 +16,9 @@ class GuildsService:
 
     @sync_to_async()
     def upsert(self, guild: discord.Guild) -> None:
-        name = guild.name[: Guild.name.property.columns[0].type.length]  # type: ignore
+        name_max_len = Guild.name.property.columns[0].type.length  # type: ignore
+        raw_name = getattr(guild, "name", "")
+        name = raw_name[:name_max_len]
         values = {
             "xid": guild.id,
             "name": name,
