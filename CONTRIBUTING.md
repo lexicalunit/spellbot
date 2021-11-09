@@ -203,7 +203,7 @@ poetry build
 git commit -am "Release vM.N.P"
 poetry publish
 git tag 'vM.N.P'
-git push --tags origin master
+git push --tags origin main
 ```
 
 > **Note:** The reason you should run `tox` after running the `poetry version`

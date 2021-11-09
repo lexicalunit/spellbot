@@ -1,4 +1,4 @@
-<img align="right" width="200" src="https://raw.githubusercontent.com/lexicalunit/spellbot/master/spellbot.png" />
+<img align="right" width="200" src="https://raw.githubusercontent.com/lexicalunit/spellbot/main/spellbot.png" />
 
 # SpellBot
 
@@ -97,7 +97,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [black]: https://github.com/psf/black
 [build-badge]: https://github.com/lexicalunit/spellbot/workflows/build/badge.svg
 [build]: https://github.com/lexicalunit/spellbot/actions
-[codecov-badge]: https://codecov.io/gh/lexicalunit/spellbot/branch/master/graph/badge.svg
+[codecov-badge]: https://codecov.io/gh/lexicalunit/spellbot/branch/main/graph/badge.svg
 [codecov]: https://codecov.io/gh/lexicalunit/spellbot
 [codeql-badge]: https://github.com/lexicalunit/spellbot/workflows/CodeQL/badge.svg
 [contributors]: https://github.com/lexicalunit/spellbot/graphs/contributors
