@@ -38,9 +38,9 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
         <td align="center"><a href="https://www.commandthecause.org/"><img height="160" src="https://user-images.githubusercontent.com/1903876/140864827-a56b9ee4-a545-41f1-90ea-06d35bce2bf9.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://www.patreon.com/ihateyourdeck"><img height="140" src="https://user-images.githubusercontent.com/1903876/140844363-e07a5552-d2de-47d3-b1f7-faf6fbbd5b78.png" alt="I Hate Your Deck" /><br />I&nbsp;Hate&nbsp;Your&nbsp;Deck</a></td>
-        <td align="center"><a href="https://www.patreon.com/NitpickingNerds"><img height="140" src="https://user-images.githubusercontent.com/1903876/140844623-8d8528a9-b60c-49c6-be0f-1d627b85adba.png" alt="The Nitpicking Nerds" /><br />The&nbsp;Nitpicking&nbsp;Nerds</a></td>
-        <td align="center"><a href="https://www.patreon.com/asylumgamingmtg"><img height="140" src="https://user-images.githubusercontent.com/1903876/140862514-5057c356-c166-48a0-a71c-329d33480003.png" alt="Asylum Gaming" /><br />Asylum&nbsp;Gaming</a></td>
+        <td align="center"><a href="https://www.patreon.com/ihateyourdeck"><img width="230" src="https://user-images.githubusercontent.com/1903876/140844363-e07a5552-d2de-47d3-b1f7-faf6fbbd5b78.png" alt="I Hate Your Deck" /><br />I&nbsp;Hate&nbsp;Your&nbsp;Deck</a></td>
+        <td align="center"><a href="https://www.patreon.com/NitpickingNerds"><img height="141" src="https://user-images.githubusercontent.com/1903876/140844623-8d8528a9-b60c-49c6-be0f-1d627b85adba.png" alt="The Nitpicking Nerds" /><br />The&nbsp;Nitpicking&nbsp;Nerds</a></td>
+        <td align="center"><a href="https://www.patreon.com/asylumgamingmtg"><img height="141" src="https://user-images.githubusercontent.com/1903876/140862514-5057c356-c166-48a0-a71c-329d33480003.png" alt="Asylum Gaming" /><br />Asylum&nbsp;Gaming</a></td>
     </tr>
     <tr>
         <td align="center"><a href="https://disboard.org/server/815001383979450368"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863859-9ec1997b-9983-498e-9295-fa594d242b4d.jpg" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
