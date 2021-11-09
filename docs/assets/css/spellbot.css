@@ -126,3 +126,10 @@ code {
 #main-navbar .navbar-nav .nav-item:last-child img {
   animation: fadeIn ease-in 2s;
 }
+
+table, tr, td {
+  background-color: #1a202c !important;
+  border-collapse: collapse !important;
+  border: 0 !important;
+  text-align: center !important;
+}

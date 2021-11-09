@@ -27,7 +27,31 @@ Just looking to play a game of Magic? Run the command `/lfg` and SpellBot will h
 
 SpellBot uses [Discord slash commands](https://discord.com/blog/slash-commands-are-here). Each command provides its own help documentation that you can view directly within Discord itself before running the command. Take a look and see what's available by typing `/` and browsing the commands for SpellBot!
 
-### 🎤 Feedback
+## 🔭 Where to Play?
+
+These communities are using SpellBot to play Magic! Maybe one of them is right for you?
+
+<table>
+    <tr>
+        <td align="center"><a href="https://www.playedh.com/"><img width="200" src="https://user-images.githubusercontent.com/1903876/140843874-78510411-dcc8-4a26-a59a-0d6856698dcc.png" alt="PlayEDH" /><br />PlayEDH</a></td>
+        <td align="center"><a href="https://www.commandthecause.org/"><img width="200" src="https://user-images.githubusercontent.com/1903876/140845218-5d859bc5-788b-41c7-98d9-70eea1016100.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
+        <td align="center"><a href="https://www.reddit.com/r/CompetitiveEDH/"><img width="200" src="https://user-images.githubusercontent.com/1903876/140845960-c1184b44-c6be-4176-8834-a9d5b237e74d.png" alt="r/cEDH" /><br />r/cEDH</a></td>
+    </tr>
+    <tr>
+        <td align="center"><a href="https://www.patreon.com/ihateyourdeck"><img width="200" src="https://user-images.githubusercontent.com/1903876/140844363-e07a5552-d2de-47d3-b1f7-faf6fbbd5b78.png" alt="I Hate Your Deck" /><br />I&nbsp;Hate&nbsp;Your&nbsp;Deck</a></td>
+        <td align="center"><a href="https://www.patreon.com/NitpickingNerds"><img src="https://user-images.githubusercontent.com/1903876/140844623-8d8528a9-b60c-49c6-be0f-1d627b85adba.png" alt="The Nitpicking Nerds" /><br />The&nbsp;Nitpicking&nbsp;Nerds</a></td>
+        <td align="center"><a href="https://disboard.org/server/806995731268632596"><img src="https://user-images.githubusercontent.com/1903876/140845585-8053037f-a42b-4c1c-88f2-1b3c403fea09.jpg" alt="The Mages Guild" /><br />The&nbsp;Mages&nbsp;Guild</a></td>
+    </tr>
+    <tr>
+        <td align="center"><a href="https://disboard.org/server/752261529390284870"><img src="https://user-images.githubusercontent.com/1903876/140845571-12e391d0-4cc8-4766-bf40-071f32503a7d.jpg" alt="Commander SpellTable (DE)" /><br />Commander&nbsp;SpellTable&nbsp;(DE)</a></td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+    </tr>
+</table>
+
+Want your community to be featured here as well? Please contact me at [spellbot@lexicalunit](mailto:spellbot@lexicalunit.com)!
+
+## 🎤 Feedback
 
 Thoughts and suggestions? Come join us on the
 [SpellTable Discord server][discord-invite]! Please also feel free
