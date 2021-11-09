@@ -54,7 +54,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
     </tr>
 </table>
 
-Want your community to be featured here as well? Please contact me at [spellbot@lexicalunit](mailto:spellbot@lexicalunit.com)!
+Want your community to be featured here as well? Please contact me at [spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com)!
 
 ## 🎤 Feedback
 
