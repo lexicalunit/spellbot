@@ -47,6 +47,20 @@ class BaseInteraction:
         DatabaseSession.rollback()
         raise ex
 
+    async def upsert_request_objects(self):
+        if hasattr(self, "guild") and self.guild:
+            await self.services.guilds.upsert(self.guild)
+
+        if hasattr(self, "channel") and self.channel:
+            self.channel_data = await self.services.channels.upsert(self.channel)
+
+        if hasattr(self, "member") and self.member:
+            await self.services.users.upsert(self.member)
+
+        if hasattr(self, "ctx") and self.ctx:
+            if await self.services.users.is_banned(self.ctx.author_id):
+                raise UserBannedError()
+
     @classmethod
     @asynccontextmanager
     async def create(
@@ -54,20 +68,10 @@ class BaseInteraction:
         bot: SpellBot,
         ctx: Optional[InteractionContext] = None,
     ) -> AsyncGenerator[InteractionType, None]:
-        if ctx:
-            interaction = cls(bot, ctx)
-        else:
-            interaction = cls(bot)
+        interaction = cls(bot, ctx) if ctx else cls(bot)
         async with db_session_manager():
             try:
-                if ctx:
-                    await interaction.services.guilds.upsert(interaction.guild)
-                    interaction.channel_data = await interaction.services.channels.upsert(
-                        interaction.channel,
-                    )
-                    await interaction.services.users.upsert(interaction.member)
-                    if await interaction.services.users.is_banned(ctx.author_id):
-                        raise UserBannedError()
+                await interaction.upsert_request_objects()
                 yield interaction
             except Exception as ex:
                 await interaction.handle_exception(ex)

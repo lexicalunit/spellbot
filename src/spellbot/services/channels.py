@@ -14,7 +14,8 @@ class ChannelsService:
     @sync_to_async()
     def upsert(self, channel: discord.TextChannel) -> dict:
         name_max_len = Channel.name.property.columns[0].type.length  # type: ignore
-        name = channel.name[:name_max_len]
+        raw_name = getattr(channel, "name", "")
+        name = raw_name[:name_max_len]
         values = {
             "xid": channel.id,
             "guild_xid": channel.guild.id,

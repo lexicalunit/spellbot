@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Handle `name` property missing from guild, channel, or users.
+- Handle upserts for guild, channel, and users more carefully.
+
 ## [v7.2.0](https://github.com/lexicalunit/spellbot/releases/tag/v7.2.0) - 2021-11-06
 
 ### Added

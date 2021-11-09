@@ -19,13 +19,10 @@ class UsersService:
     def upsert(self, target: Union[discord.User, discord.Member]) -> dict:
         assert hasattr(target, "id")
         xid = target.id  # type: ignore
-        name = target.display_name
         max_name_len = User.name.property.columns[0].type.length  # type: ignore
-        values = {
-            "xid": xid,
-            "name": name[:max_name_len],
-            "updated_at": datetime.utcnow(),
-        }
+        raw_name = getattr(target, "display_name", "")
+        name = raw_name[:max_name_len]
+        values = {"xid": xid, "name": name, "updated_at": datetime.utcnow()}
         upsert = insert(User).values(**values)
         upsert = upsert.on_conflict_do_update(
             index_elements=[User.xid],
