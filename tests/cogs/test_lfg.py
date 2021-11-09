@@ -136,12 +136,7 @@ class TestCogLookingForGame(CogFixturesMixin):
 
             assert message_xid1 != message_xid2
 
-    async def test_lfg_when_repost_game_fails(
-        self,
-        guild: Guild,
-        channel: Channel,
-        ctx: InteractionContext,
-    ):
+    async def test_lfg_when_repost_game_fails(self, guild: Guild, channel: Channel):
         cog = LookingForGameCog(self.bot)
         discord_guild = mock_discord_guild(guild)
         discord_channel = mock_discord_channel(channel, guild=discord_guild)
