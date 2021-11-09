@@ -1,4 +1,4 @@
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name, protected-access
 
 import contextvars
 from asyncio import AbstractEventLoop
