@@ -1,3 +1,5 @@
+# pylint: disable=unreachable
+
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import cast
