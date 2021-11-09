@@ -77,6 +77,10 @@ class Channel(Base):
         server_default=false(),
         doc="Unverified user posts will be deleted from this channel automatically.",
     )
+    motd = Column(
+        String(255),
+        doc="Channel message of the day",
+    )
 
     guild = relationship(
         "Guild",
