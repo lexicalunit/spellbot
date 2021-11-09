@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 import contextvars
 from asyncio import AbstractEventLoop
 from collections.abc import AsyncGenerator, Generator
