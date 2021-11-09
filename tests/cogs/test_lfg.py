@@ -367,7 +367,7 @@ class TestCogLookingForGameJoinButton:
             await cog.join.func(cog, origin_ctx)
 
             mock_call = lfg_interaction.safe_update_embed_origin
-            mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
+            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.EMBED_COLOR,
                 "description": (
                     "_A SpellTable link will be created when all players have joined._\n"
