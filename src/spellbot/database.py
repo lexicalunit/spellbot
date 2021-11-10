@@ -142,6 +142,7 @@ def rollback_transaction():
         transaction.rollback()
     if not connection.closed:  # pragma: no cover
         connection.close()
+    engine.dispose()
 
 
 @sync_to_async

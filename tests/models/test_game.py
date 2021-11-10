@@ -44,7 +44,7 @@ class TestModelGame:
 
     def test_game_embed_empty(self, settings: Settings, factories: Factories):
         guild = factories.guild.create(motd=None)
-        channel = factories.channel.create(guild=guild)
+        channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(guild=guild, channel=channel)
 
         assert game.to_embed().to_dict() == {
@@ -63,7 +63,7 @@ class TestModelGame:
 
     def test_game_embed_pending(self, settings: Settings, factories: Factories):
         guild = factories.guild.create(motd=None)
-        channel = factories.channel.create(guild=guild)
+        channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(guild=guild, channel=channel)
         player = factories.user.create(game=game)
 
@@ -90,7 +90,7 @@ class TestModelGame:
         factories: Factories,
     ):
         guild = factories.guild.create(motd=None)
-        channel = factories.channel.create(guild=guild)
+        channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
@@ -151,7 +151,7 @@ class TestModelGame:
         factories: Factories,
     ):
         guild = factories.guild.create(show_points=True, motd=None)
-        channel = factories.channel.create(guild=guild)
+        channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
@@ -192,7 +192,7 @@ class TestModelGame:
         factories: Factories,
     ):
         guild = factories.guild.create(motd=None)
-        channel = factories.channel.create(guild=guild)
+        channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
@@ -252,7 +252,7 @@ class TestModelGame:
         factories: Factories,
     ):
         guild = factories.guild.create(motd=None)
-        channel = factories.channel.create(guild=guild)
+        channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
@@ -319,7 +319,7 @@ class TestModelGame:
 
     def test_game_embed_started_with_motd(self, settings: Settings, factories: Factories):
         guild = factories.guild.create(motd="this is a message of the day")
-        channel = factories.channel.create(guild=guild)
+        channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,

@@ -51,7 +51,7 @@ class TestCogLookingForGamePoints:
             "description": (
                 "Please check your Direct Messages for your SpellTable link.\n\n"
                 "When your game is over use the drop down to report your points.\n\n"
-                f"{guild.motd}"
+                f"{guild.motd}\n\n{channel.motd}"
             ),
             "fields": [
                 {
