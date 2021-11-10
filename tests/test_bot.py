@@ -32,6 +32,7 @@ class TestSpellBot:
         }
         assert bot.slash.subcommands["set"].keys() == {
             "auto_verify",
+            "channel_motd",
             "default_seats",
             "motd",
             "unverified_only",
