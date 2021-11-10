@@ -187,7 +187,7 @@ class TestCogAdminInfo(CogFixturesMixin):
             "color": self.settings.EMBED_COLOR,
             "description": (
                 "_A SpellTable link will be created when all players have joined._\n\n"
-                f"{game.guild.motd}"
+                f"{game.guild.motd}\n\n{game.channel.motd}"
             ),
             "fields": [
                 {"inline": True, "name": "Format", "value": "Commander"},
