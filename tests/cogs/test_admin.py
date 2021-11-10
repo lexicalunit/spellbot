@@ -411,7 +411,6 @@ class TestCogAdminChannels(CogFixturesMixin):
         assert channel.auto_verify != default_value
 
     async def test_verified_only(self, ctx: InteractionContext):
-        ctx.send = AsyncMock()
         cog = AdminCog(self.bot)
         default_value = Channel.verified_only.default.arg  # type: ignore
         await cog.verified_only.func(cog, ctx, not default_value)
@@ -423,7 +422,6 @@ class TestCogAdminChannels(CogFixturesMixin):
         assert channel.verified_only != default_value
 
     async def test_unverified_only(self, ctx: InteractionContext):
-        ctx.send = AsyncMock()
         cog = AdminCog(self.bot)
         default_value = Channel.unverified_only.default.arg  # type: ignore
         await cog.unverified_only.func(cog, ctx, not default_value)
@@ -433,6 +431,17 @@ class TestCogAdminChannels(CogFixturesMixin):
         )
         channel = DatabaseSession.query(Channel).one()
         assert channel.unverified_only != default_value
+
+    async def test_channel_motd(self, ctx: InteractionContext):
+        cog = AdminCog(self.bot)
+        motd = "this is a channel message of the day"
+        await cog.channel_motd.func(cog, ctx, motd)
+        ctx.send.assert_called_once_with(
+            f"Message of the day for this channel has been set to: {motd}",
+            hidden=True,
+        )
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.motd == motd
 
     async def test_channels(self, ctx: InteractionContext):
         assert ctx.guild

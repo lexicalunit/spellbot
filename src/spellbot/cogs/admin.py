@@ -67,6 +67,23 @@ class AdminCog(commands.Cog):
         async with ConfigInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_motd(message)
 
+    @cog_ext.cog_subcommand(
+        base="set",
+        name="channel_motd",
+        description="Set this channel's message of the day.",
+        options=[
+            {
+                "name": "message",
+                "required": True,
+                "description": "Message content",
+                "type": SlashCommandOptionType.STRING.value,
+            },
+        ],
+    )
+    async def channel_motd(self, ctx: SlashContext, message: str):
+        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+            await interaction.set_channel_motd(message)
+
     @cog_ext.cog_slash(
         name="channels",
         description="Show the current configurations for channels on your server.",
