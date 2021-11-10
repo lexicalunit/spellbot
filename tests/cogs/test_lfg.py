@@ -84,7 +84,7 @@ class TestCogLookingForGame(CogFixturesMixin):
                 "color": self.settings.EMBED_COLOR,
                 "description": (
                     "Please check your Direct Messages for your SpellTable link.\n\n"
-                    f"{guild.motd}"
+                    f"{guild.motd}\n\n{channel.motd}"
                 ),
                 "fields": [
                     {
@@ -330,7 +330,7 @@ class TestCogLookingForGameJoinButton(CogFixturesMixin):
         assert origin_ctx.author
         assert isinstance(origin_ctx.author, discord.User)
         guild = ctx_guild(origin_ctx)
-        channel = ctx_channel(origin_ctx, guild)
+        channel = ctx_channel(origin_ctx, guild, motd=None)
         game = ctx_game(origin_ctx, guild, channel)
         user = ctx_user(origin_ctx)
 
@@ -385,7 +385,7 @@ class TestCogLookingForGameJoinButton(CogFixturesMixin):
                 "description": (
                     "Please check your Direct Messages for your SpellTable link.\n\n"
                     "When your game is over use the drop down to report your points.\n\n"
-                    f"{guild.motd}"
+                    f"{guild.motd}\n\n{channel.motd}"
                 ),
                 "fields": [
                     {
@@ -496,7 +496,7 @@ class TestCogLookingForGameJoinButton(CogFixturesMixin):
                 "description": (
                     "_A SpellTable link will be created when all players have joined._\n"
                     "\n"
-                    f"{guild.motd}"
+                    f"{guild.motd}\n\n{channel.motd}"
                 ),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"<@{user.xid}>"},
@@ -515,7 +515,7 @@ class TestCogLookingForGameUserNotifications(CogFixturesMixin):
         assert ctx.author
         assert isinstance(ctx.author, discord.User)
         guild = ctx_guild(ctx, motd=None, show_links=False)
-        channel = ctx_channel(ctx, guild, default_seats=2)
+        channel = ctx_channel(ctx, guild, default_seats=2, motd=None)
         game = ctx_game(ctx, guild, channel, seats=2)
         other_user = self.factories.user.create(xid=ctx.author_id + 1, game=game)
         other_player = mock_discord_user(other_user)
@@ -658,7 +658,7 @@ class TestCogLookingForGameWatchedUsers(CogFixturesMixin):
         assert ctx.author
         assert isinstance(ctx.author, discord.User)
         guild = ctx_guild(ctx, motd=None, show_links=False)
-        channel = ctx_channel(ctx, guild, default_seats=2)
+        channel = ctx_channel(ctx, guild, default_seats=2, motd=None)
         game = ctx_game(ctx, guild, channel, seats=2)
         other_user = self.factories.user.create(xid=ctx.author_id + 1, game=game)
         other_player = mock_discord_user(other_user)
@@ -752,7 +752,7 @@ class TestCogLookingForGameLeaveButton(CogFixturesMixin):
                 "description": (
                     "_A SpellTable link will be created when all players have joined._\n"
                     "\n"
-                    f"{guild.motd}"
+                    f"{guild.motd}\n\n{channel.motd}"
                 ),
                 "fields": [{"inline": True, "name": "Format", "value": "Commander"}],
                 "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},

@@ -51,7 +51,7 @@ class TestCogLeaveGame:
             "description": (
                 "_A SpellTable link will be created when all players have joined._\n"
                 "\n"
-                f"{guild.motd}"
+                f"{guild.motd}\n\n{channel.motd}"
             ),
             "fields": [{"inline": True, "name": "Format", "value": "Commander"}],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},

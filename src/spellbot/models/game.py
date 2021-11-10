@@ -216,6 +216,8 @@ class Game(Base):
                 )
         if self.guild.motd:
             description += f"\n\n{self.guild.motd}"
+        if self.channel.motd:
+            description += f"\n\n{self.channel.motd}"
         return description
 
     @property
