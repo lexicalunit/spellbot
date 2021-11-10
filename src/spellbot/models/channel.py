@@ -105,4 +105,5 @@ class Channel(Base):
             "auto_verify": self.auto_verify,
             "unverified_only": self.unverified_only,
             "verified_only": self.verified_only,
+            "motd": self.motd,
         }

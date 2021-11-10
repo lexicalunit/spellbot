@@ -339,3 +339,12 @@ class ConfigInteraction(BaseInteraction):
             f"Unverified only set to {setting} for this channel.",
             hidden=True,
         )
+
+    async def set_channel_motd(self, message: str):
+        assert self.ctx
+        motd = await self.services.channels.set_motd(self.ctx.channel_id, message)
+        await safe_send_channel(
+            self.ctx,
+            f"Message of the day for this channel has been set to: {motd}",
+            hidden=True,
+        )

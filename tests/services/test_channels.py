@@ -98,3 +98,14 @@ class TestServiceChannels:
         await channels.set_unverified_only(channel.xid, True)
         data = await channels.select(channel.xid)
         assert data["unverified_only"]
+
+    async def test_channels_set_motd(self, guild):
+        channels = ChannelsService()
+
+        channel = ChannelFactory.create(guild=guild, motd="whatever")
+        data = await channels.select(channel.xid)
+        assert data["motd"] == "whatever"
+
+        await channels.set_motd(channel.xid, "something else")
+        data = await channels.select(channel.xid)
+        assert data["motd"] == "something else"
