@@ -4,7 +4,7 @@ import discord
 import pytest
 from discord_slash.context import InteractionContext
 
-from spellbot.errors import SpellbotAdminOnly
+from spellbot.errors import AdminOnlyError
 from spellbot.settings import Settings
 from spellbot.utils import (
     bot_can_delete_channel,
@@ -194,13 +194,13 @@ class TestUtilsIsAdmin:
     def test_missing_guild(self):
         ctx = MagicMock(spec=InteractionContext)
         del ctx.guild
-        with pytest.raises(SpellbotAdminOnly):
+        with pytest.raises(AdminOnlyError):
             is_admin(ctx)
 
     def test_missing_channel(self):
         ctx = MagicMock(spec=InteractionContext)
         del ctx.channel
-        with pytest.raises(SpellbotAdminOnly):
+        with pytest.raises(AdminOnlyError):
             is_admin(ctx)
 
     def test_when_author_is_owner(self):
@@ -248,7 +248,7 @@ class TestUtilsIsAdmin:
         ctx.channel = channel
         ctx.author = author
         ctx.author_id = author.id
-        with pytest.raises(SpellbotAdminOnly):
+        with pytest.raises(AdminOnlyError):
             is_admin(ctx)
 
     def test_author_has_no_roles(self, settings: Settings):
@@ -266,7 +266,7 @@ class TestUtilsIsAdmin:
         ctx.channel = channel
         ctx.author = author
         ctx.author_id = author.id
-        with pytest.raises(SpellbotAdminOnly):
+        with pytest.raises(AdminOnlyError):
             is_admin(ctx)
 
 
