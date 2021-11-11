@@ -11,8 +11,14 @@ from discord_slash.context import InteractionContext
 
 from .. import SpellBot
 from ..database import DatabaseSession, db_session_manager
-from ..errors import SpellbotAdminOnly, UserBannedError
-from ..services import ServicesRegistry
+from ..errors import (
+    SpellBotError,
+    UserBannedError,
+    UserUnverifiedError,
+    UserVerifiedError,
+)
+from ..services import ServicesRegistry, VerifiesService
+from ..utils import user_can_moderate
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +45,7 @@ class BaseInteraction:
 
     @sync_to_async
     def handle_exception(self, ex):
-        if isinstance(ex, (SpellbotAdminOnly, UserBannedError)):
+        if isinstance(ex, SpellBotError):
             raise ex
         logger.exception(
             "error: rolling back database session due to unhandled exception: %s: %s",
@@ -62,6 +68,24 @@ class BaseInteraction:
         if hasattr(self, "ctx") and self.ctx:
             if await self.services.users.is_banned(self.ctx.author_id):
                 raise UserBannedError()
+
+        if (
+            (hasattr(self, "guild") and self.guild)
+            and (hasattr(self, "channel") and self.channel)
+            and (hasattr(self, "member") and self.member)
+            and (hasattr(self, "ctx") and self.ctx)
+        ):
+            verified: Optional[bool] = None
+            if self.channel_data["auto_verify"]:
+                verified = True
+            verify = VerifiesService()
+            await verify.upsert(self.guild.id, self.ctx.author_id, verified)
+            if not user_can_moderate(self.ctx.author, self.guild, self.channel):
+                user_is_verified = await verify.is_verified()
+                if user_is_verified and self.channel_data["unverified_only"]:
+                    raise UserVerifiedError()
+                if not user_is_verified and self.channel_data["verified_only"]:
+                    raise UserUnverifiedError()
 
     @classmethod
     @asynccontextmanager

@@ -9,7 +9,7 @@ from discord_slash.context import InteractionContext, SlashContext
 
 from spellbot import SpellBot, client
 from spellbot.database import DatabaseSession
-from spellbot.errors import SpellbotAdminOnly, UserBannedError
+from spellbot.errors import AdminOnlyError, UserBannedError
 from spellbot.models import Channel, Guild, Verify
 from spellbot.settings import Settings
 from tests.fixtures import Factories
@@ -92,7 +92,7 @@ class TestSpellBot:
         )
 
     async def test_handle_error_permissions(self, bot: SpellBot, ctx: InteractionContext):
-        await bot.handle_errors(ctx, MagicMock(spec=SpellbotAdminOnly))
+        await bot.handle_errors(ctx, MagicMock(spec=AdminOnlyError))
         ctx.send.assert_called_once_with(
             "You do not have permission to do that.",
             hidden=True,

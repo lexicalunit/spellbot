@@ -2,7 +2,7 @@ import pytest
 from discord_slash.context import InteractionContext
 
 from spellbot import SpellBot
-from spellbot.errors import SpellbotAdminOnly, UserBannedError
+from spellbot.errors import AdminOnlyError, UserBannedError
 from spellbot.interactions.base_interaction import BaseInteraction
 from tests.fixtures import Factories
 
@@ -20,9 +20,9 @@ class TestInteractionBase:
                 await interaction.execute(UserBannedError())
 
     async def test_handle_exception_admin_only(self, bot: SpellBot):
-        with pytest.raises(SpellbotAdminOnly):
+        with pytest.raises(AdminOnlyError):
             async with MockInteraction.create(bot) as interaction:
-                await interaction.execute(SpellbotAdminOnly())
+                await interaction.execute(AdminOnlyError())
 
     async def test_handle_exception(self, bot: SpellBot, caplog):
         error = RuntimeError("whatever")

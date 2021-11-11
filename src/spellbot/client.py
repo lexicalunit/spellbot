@@ -14,7 +14,12 @@ from discord_slash import SlashCommand, context
 from expiringdict import ExpiringDict
 
 from .database import db_session_manager, get_legacy_prefixes, initialize_connection
-from .errors import SpellbotAdminOnly, UserBannedError
+from .errors import (
+    AdminOnlyError,
+    UserBannedError,
+    UserUnverifiedError,
+    UserVerifiedError,
+)
 from .operations import safe_message_reply, safe_send_channel
 from .services import ChannelsService, GuildsService, VerifiesService
 from .settings import Settings
@@ -65,7 +70,7 @@ class SpellBot(Bot):
                 "This command is not supported via Direct Message.",
                 hidden=True,
             )
-        if isinstance(ex, SpellbotAdminOnly):
+        if isinstance(ex, AdminOnlyError):
             return await safe_send_channel(
                 ctx,
                 "You do not have permission to do that.",
@@ -75,6 +80,18 @@ class SpellBot(Bot):
             return await safe_send_channel(
                 ctx,
                 "You have been banned from using SpellBot.",
+                hidden=True,
+            )
+        if isinstance(ex, UserVerifiedError):
+            return await safe_send_channel(
+                ctx,
+                "Only unverified users can do that in this channel.",
+                hidden=True,
+            )
+        if isinstance(ex, UserUnverifiedError):
+            return await safe_send_channel(
+                ctx,
+                "Only verified users can do that in this channel.",
                 hidden=True,
             )
 
