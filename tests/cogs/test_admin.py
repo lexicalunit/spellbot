@@ -176,6 +176,11 @@ class TestCogAdmin(CogFixturesMixin):
         guild = DatabaseSession.query(Guild).one()
         assert guild.motd == "this is a test"
 
+        await cog.motd.func(cog, ctx)
+        DatabaseSession.expire_all()
+        guild = DatabaseSession.query(Guild).one()
+        assert guild.motd == ""
+
 
 @pytest.mark.asyncio
 class TestCogAdminInfo(CogFixturesMixin):
@@ -442,6 +447,11 @@ class TestCogAdminChannels(CogFixturesMixin):
         )
         channel = DatabaseSession.query(Channel).one()
         assert channel.motd == motd
+
+        await cog.channel_motd.func(cog, ctx)
+        DatabaseSession.expire_all()
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.motd == ""
 
     async def test_channels(self, ctx: InteractionContext):
         assert ctx.guild
