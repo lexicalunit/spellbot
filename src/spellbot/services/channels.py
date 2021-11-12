@@ -69,9 +69,12 @@ class ChannelsService:
         DatabaseSession.commit()
 
     @sync_to_async()
-    def set_motd(self, xid: int, message: str) -> str:
-        max_len = Channel.motd.property.columns[0].type.length  # type: ignore
-        motd = message[:max_len]
+    def set_motd(self, xid: int, message: Optional[str] = None) -> str:
+        if message:
+            max_len = Channel.motd.property.columns[0].type.length  # type: ignore
+            motd = message[:max_len]
+        else:
+            motd = ""
         query = update(Channel).where(Channel.xid == xid).values(motd=motd)
         DatabaseSession.execute(query)
         DatabaseSession.commit()
