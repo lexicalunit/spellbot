@@ -6,7 +6,7 @@ import discord
 from discord_slash.context import InteractionContext
 from discord_slash.model import CallbackObject
 
-from .errors import SpellbotAdminOnly
+from .errors import AdminOnlyError
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -88,13 +88,13 @@ def is_admin(ctx: InteractionContext) -> bool:
     guild = getattr(ctx, "guild", None)
     channel = getattr(ctx, "channel", None)
     if not guild or not channel:
-        raise SpellbotAdminOnly()
+        raise AdminOnlyError()
     if ctx.author_id == guild.owner_id:
         return True
     if (perms := channel.permissions_for(ctx.author)) and perms.administrator:
         return True
     if not hasattr(ctx.author, "roles"):
-        raise SpellbotAdminOnly()
+        raise AdminOnlyError()
     author_roles = ctx.author.roles  # type: ignore
     settings = Settings()
     has_admin_role = any(
@@ -102,7 +102,7 @@ def is_admin(ctx: InteractionContext) -> bool:
         for role in cast(list[discord.Role], author_roles)
     )
     if not has_admin_role:
-        raise SpellbotAdminOnly()
+        raise AdminOnlyError()
     return True
 
 

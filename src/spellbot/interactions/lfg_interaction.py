@@ -40,9 +40,8 @@ class LookingForGameInteraction(BaseInteraction):
         format: Optional[int] = None,
         message_xid: Optional[int] = None,
     ):
-        assert self.ctx
-        assert self.guild
-        assert self.channel
+        if not self.ctx or not self.guild or not self.channel:  # pragma: no cover
+            return
 
         # True if user clicked on a Join Game button.
         # False if user issued a /lfg command in chat.

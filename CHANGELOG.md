@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Handle user verification status within interactions instead of just messages.
+
 ## [v7.3.0](https://github.com/lexicalunit/spellbot/releases/tag/v7.3.0) - 2021-11-10
 
 ### Added
