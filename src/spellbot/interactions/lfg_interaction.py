@@ -41,6 +41,9 @@ class LookingForGameInteraction(BaseInteraction):
         message_xid: Optional[int] = None,
     ):
         if not self.ctx or not self.guild or not self.channel:  # pragma: no cover
+            # I have no idea how this is possible but I keep seeing
+            # random cases where self.channel is None here, so let's
+            # just ignore these kinds of interactions.
             return
 
         # True if user clicked on a Join Game button.
