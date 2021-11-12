@@ -67,10 +67,12 @@ class GuildsService:
         return self.guild.show_points
 
     @sync_to_async()
-    def set_motd(self, message: str) -> None:
-        assert self.guild
-        motd = message[: Guild.motd.property.columns[0].type.length]  # type: ignore
-        self.guild.motd = motd  # type: ignore
+    def set_motd(self, message: Optional[str] = None) -> None:
+        if message:
+            motd = message[: Guild.motd.property.columns[0].type.length]  # type: ignore
+            self.guild.motd = motd  # type: ignore
+        else:
+            self.guild.motd = ""  # type: ignore
         DatabaseSession.commit()
 
     @sync_to_async()

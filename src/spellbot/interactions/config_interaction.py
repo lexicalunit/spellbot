@@ -272,7 +272,7 @@ class ConfigInteraction(BaseInteraction):
         embed.color = settings.EMBED_COLOR
         await safe_send_channel(self.ctx, embed=embed, hidden=True)
 
-    async def set_motd(self, message: str):
+    async def set_motd(self, message: Optional[str] = None):
         assert self.ctx
         await self.services.guilds.set_motd(message)
         await safe_send_channel(self.ctx, "Message of the day updated.", hidden=True)
@@ -340,7 +340,7 @@ class ConfigInteraction(BaseInteraction):
             hidden=True,
         )
 
-    async def set_channel_motd(self, message: str):
+    async def set_channel_motd(self, message: Optional[str] = None):
         assert self.ctx
         motd = await self.services.channels.set_motd(self.ctx.channel_id, message)
         await safe_send_channel(
