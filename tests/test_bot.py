@@ -9,7 +9,12 @@ from discord_slash.context import InteractionContext, SlashContext
 
 from spellbot import SpellBot, client
 from spellbot.database import DatabaseSession
-from spellbot.errors import AdminOnlyError, UserBannedError
+from spellbot.errors import (
+    AdminOnlyError,
+    UserBannedError,
+    UserUnverifiedError,
+    UserVerifiedError,
+)
 from spellbot.models import Channel, Guild, Verify
 from spellbot.settings import Settings
 from tests.fixtures import Factories
@@ -102,6 +107,20 @@ class TestSpellBot:
         await bot.handle_errors(ctx, MagicMock(spec=UserBannedError))
         ctx.send.assert_called_once_with(
             "You have been banned from using SpellBot.",
+            hidden=True,
+        )
+
+    async def test_handle_error_unverified(self, bot: SpellBot, ctx: InteractionContext):
+        await bot.handle_errors(ctx, MagicMock(spec=UserUnverifiedError))
+        ctx.send.assert_called_once_with(
+            "Only verified users can do that in this channel.",
+            hidden=True,
+        )
+
+    async def test_handle_error_verified(self, bot: SpellBot, ctx: InteractionContext):
+        await bot.handle_errors(ctx, MagicMock(spec=UserVerifiedError))
+        ctx.send.assert_called_once_with(
+            "Only unverified users can do that in this channel.",
             hidden=True,
         )
 
