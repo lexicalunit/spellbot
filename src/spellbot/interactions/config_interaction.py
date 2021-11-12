@@ -146,7 +146,7 @@ class ConfigInteraction(BaseInteraction):
         embed.description = description[:EMBED_DESCRIPTION_SIZE_LIMIT]
         embed.add_field(
             name="MOTD",
-            value=guild["motd"],
+            value=guild["motd"] or "None",
             inline=False,
         )
         embed.add_field(
