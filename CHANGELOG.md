@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v7.3.2](https://github.com/lexicalunit/spellbot/releases/tag/v7.3.2) - 2021-11-12
+
 ### Fixed
 
 - Fixs the `/setup` command when guild motd has been unset.
