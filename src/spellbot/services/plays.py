@@ -49,6 +49,7 @@ RECORDS_SQL = """
                 COALESCE(plays.points, 0)::text
             ),
             '@'
+            ORDER BY users.xid
         )
     FROM
         game_plays
