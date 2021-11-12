@@ -733,7 +733,7 @@ class TestCogAdminVerifies:
         await cog.verify.func(cog, ctx, target)
         ctx.send.assert_called_once_with(f"Verified <@{target.id}>.", hidden=True)
 
-        found = DatabaseSession.query(Verify).one()
+        found = DatabaseSession.query(Verify).filter(Verify.user_xid == target.id).one()
         assert found.guild_xid == ctx.guild_id
         assert found.user_xid == target.id
         assert found.verified
@@ -742,5 +742,5 @@ class TestCogAdminVerifies:
         await cog.unverify.func(cog, ctx, target)
         ctx.send.assert_called_once_with(f"Unverified <@{target.id}>.", hidden=True)
 
-        found = DatabaseSession.query(Verify).one()
+        found = DatabaseSession.query(Verify).filter(Verify.user_xid == target.id).one()
         assert not found.verified
