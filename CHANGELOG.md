@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Made `message:` optional in `/set motd` and `/set channel_motd`.
+
 ### Fixed
 
 - Handle user verification status within interactions instead of just messages.
