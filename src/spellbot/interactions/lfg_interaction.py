@@ -33,6 +33,96 @@ class LookingForGameInteraction(BaseInteraction):
     def __init__(self, bot: SpellBot, ctx: InteractionContext):
         super().__init__(bot, ctx)
 
+    async def get_friends(self, friends: Optional[str] = None) -> str:
+        return friends or ""
+
+    async def get_seats(
+        self,
+        format: Optional[int] = None,
+        seats: Optional[int] = None,
+    ) -> int:
+        if format and not seats:
+            return GameFormat(format).players
+        return seats or self.channel_data["default_seats"]
+
+    async def get_format(self, format: Optional[int] = None) -> int:
+        return format or GameFormat.COMMANDER.value  # type: ignore
+
+    async def filter_friend_xids(self, friend_xids: list[int]) -> list[int]:
+        assert self.ctx
+        if friend_xids:
+            friend_xids = await self.ensure_users_exist(friend_xids)
+        if friend_xids:
+            friend_xids = await self.services.games.filter_blocked(
+                self.ctx.author_id,
+                friend_xids,
+            )
+        return friend_xids
+
+    async def upsert_game(
+        self,
+        friend_xids: list[int],
+        seats: int,
+        format: int,
+        message_xid: Optional[int],
+    ) -> Optional[bool]:
+        assert self.ctx
+        assert self.guild
+        assert self.channel
+
+        # True if user clicked on a Join Game button.
+        # False if user issued a /lfg command in chat.
+        origin = bool(message_xid is not None)
+
+        if not origin:
+            return await self.services.games.upsert(
+                guild_xid=self.ctx.guild_id,
+                channel_xid=self.channel.id,
+                author_xid=self.ctx.author_id,
+                friends=friend_xids,
+                seats=seats,
+                format=format,
+            )
+
+        assert message_xid
+        found = await self.services.games.select_by_message_xid(message_xid)
+        if not found or await self.services.games.blocked(self.ctx.author_id):
+            await safe_send_channel(
+                self.ctx,
+                "You can not join this game.",
+                hidden=True,
+            )
+            return None
+
+        # Sometimes game posts have Join/Leave buttons on them even though
+        # the game has started. This can happen if an interaction fails on
+        # Discord's side of things. This makes it appear like a user can still
+        # join a game, even though it's already started. We need to handle this
+        # by informing the user and updating the game post they tried to join.
+        if found["status"] == GameStatus.STARTED.value:
+            # inform the player that their interaction failed
+            await safe_send_channel(
+                self.ctx,
+                "Sorry, that game has already started.",
+                hidden=True,
+            )
+
+            # attempt to update the problematic game post
+            message = await safe_fetch_message(
+                self.channel,
+                self.guild.id,
+                message_xid,
+            )
+            if message:
+                embed = await self.services.games.to_embed()
+                components = await self._fully_seated_components()
+                await safe_update_embed(message, embed=embed, components=components)
+
+            return None
+
+        await self.services.games.add_player(self.ctx.author_id)
+        return False
+
     async def execute(
         self,
         friends: Optional[str] = None,
@@ -50,21 +140,9 @@ class LookingForGameInteraction(BaseInteraction):
         # False if user issued a /lfg command in chat.
         origin = bool(message_xid is not None)
 
-        friends = friends or ""
-        if format and not seats:
-            seats = GameFormat(format).players
-        else:
-            seats = seats or self.channel_data["default_seats"]
-        format = format or GameFormat.COMMANDER.value  # type: ignore
-        friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", friends)))
-
-        assert seats is not None
-        if len(friend_xids) + 1 > seats:
-            return await safe_send_channel(
-                self.ctx,
-                "You mentioned too many players.",
-                hidden=True,
-            )
+        actual_friends: str = await self.get_friends(friends)
+        actual_seats: int = await self.get_seats(format, seats)
+        actual_format: int = await self.get_format(format)
 
         if await self.services.users.is_waiting():
             return await safe_send_channel(
@@ -73,63 +151,25 @@ class LookingForGameInteraction(BaseInteraction):
                 hidden=True,
             )
 
-        found_friends: list[int] = []
-        if friends:
-            found_friends = await self.ensure_users_exist(friend_xids)
-            found_friends = await self.services.games.filter_blocked(
-                self.ctx.author_id,
-                found_friends,
+        friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", actual_friends)))
+
+        if len(friend_xids) + 1 > actual_seats:
+            return await safe_send_channel(
+                self.ctx,
+                "You mentioned too many players.",
+                hidden=True,
             )
 
-        fully_seated: bool = False
-        new: bool
-        if origin:
-            assert message_xid
-            new = False
-            found = await self.services.games.select_by_message_xid(message_xid)
-            if not found or await self.services.games.blocked(self.ctx.author_id):
-                return await safe_send_channel(
-                    self.ctx,
-                    "You can not join this game.",
-                    hidden=True,
-                )
+        friend_xids = await self.filter_friend_xids(friend_xids)
 
-            # Sometimes game posts have Join/Leave buttons on them even though
-            # the game has started. This can happen if an interaction fails on
-            # Discord's side of things. This makes it appear like a user can still
-            # join a game, even though it's already started. We need to handle this
-            # by informing the user and updating the game post they tried to join.
-            if found["status"] == GameStatus.STARTED.value:
-                # inform the player that their interaction failed
-                await safe_send_channel(
-                    self.ctx,
-                    "Sorry, that game has already started.",
-                    hidden=True,
-                )
-
-                # attempt to update the problematic game post
-                message = await safe_fetch_message(
-                    self.channel,
-                    self.guild.id,
-                    message_xid,
-                )
-                if message:
-                    embed = await self.services.games.to_embed()
-                    components = await self._fully_seated_components()
-                    await safe_update_embed(message, embed=embed, components=components)
-
-                return
-
-            await self.services.games.add_player(self.ctx.author_id)
-        else:
-            new = await self.services.games.upsert(
-                guild_xid=self.ctx.guild_id,
-                channel_xid=self.channel.id,
-                author_xid=self.ctx.author_id,
-                friends=found_friends,
-                seats=seats,
-                format=format,
-            )
+        new = await self.upsert_game(
+            friend_xids,
+            actual_seats,
+            actual_format,
+            message_xid,
+        )
+        if new is None:
+            return
 
         fully_seated = await self.services.games.fully_seated()
         if fully_seated:

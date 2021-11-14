@@ -149,6 +149,7 @@ def build_guild(offset: int = 1) -> discord.Guild:
     guild.id = 2000 + offset
     guild.name = f"guild-{guild.id}"
     guild.owner_id = OWNER_USER_ID
+    guild.create_category_channel = AsyncMock()
     return guild
 
 
