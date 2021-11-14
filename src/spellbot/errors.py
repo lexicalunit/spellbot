@@ -2,8 +2,7 @@ from discord.ext.commands.errors import CheckFailure
 
 
 class SpellBotError(CheckFailure):
-    def __init__(self, message):
-        super().__init__(message)
+    ...
 
 
 class AdminOnlyError(SpellBotError):

@@ -7,7 +7,7 @@ from discord.ext.commands import errors
 from discord.ext.commands.bot import Bot
 from discord_slash.context import InteractionContext, SlashContext
 
-from spellbot import SpellBot, client
+from spellbot import client
 from spellbot.database import DatabaseSession
 from spellbot.errors import (
     AdminOnlyError,
@@ -16,26 +16,25 @@ from spellbot.errors import (
     UserVerifiedError,
 )
 from spellbot.models import Channel, Guild, Verify
-from spellbot.settings import Settings
-from tests.fixtures import Factories
+from tests.mixins import BaseMixin
 
 
 @pytest.mark.asyncio
-class TestSpellBot:
-    async def test_commands_loaded(self, bot: SpellBot):
-        assert bot.all_commands.keys() == {
+class TestSpellBot(BaseMixin):
+    async def test_commands_loaded(self):
+        assert self.bot.all_commands.keys() == {
             "ban",
             "unban",
         }
-        assert bot.slash.subcommands.keys() == {
+        assert self.bot.slash.subcommands.keys() == {
             "award",
             "set",
         }
-        assert bot.slash.subcommands["award"].keys() == {
+        assert self.bot.slash.subcommands["award"].keys() == {
             "add",
             "delete",
         }
-        assert bot.slash.subcommands["set"].keys() == {
+        assert self.bot.slash.subcommands["set"].keys() == {
             "auto_verify",
             "channel_motd",
             "default_seats",
@@ -43,7 +42,7 @@ class TestSpellBot:
             "unverified_only",
             "verified_only",
         }
-        assert bot.slash.components[None].keys() == {
+        assert self.bot.slash.components[None].keys() == {
             "join",
             "leave",
             "points",
@@ -52,7 +51,7 @@ class TestSpellBot:
             "toggle_show_points",
             "toggle_voice_create",
         }
-        assert bot.slash.commands.keys() == {
+        assert self.bot.slash.commands.keys() == {
             "about",
             "award",
             "awards",
@@ -76,108 +75,95 @@ class TestSpellBot:
             "watched",
         }
 
-    async def test_create_spelltable_link_mock(self, bot: SpellBot):
-        link = await bot.create_spelltable_link()
+    async def test_create_spelltable_link_mock(self):
+        link = await self.bot.create_spelltable_link()
         assert link is not None
         assert link.startswith("http://exmaple.com/game/")
 
-    async def test_create_spelltable_link(self, bot: SpellBot, monkeypatch):
-        bot.mock_games = False
+    async def test_create_spelltable_link(self, monkeypatch):
+        self.bot.mock_games = False
         generate_link_mock = AsyncMock(return_value="http://mock")
         monkeypatch.setattr(client, "generate_link", generate_link_mock)
-        link = await bot.create_spelltable_link()
+        link = await self.bot.create_spelltable_link()
         assert link == "http://mock"
         generate_link_mock.assert_called_once_with()
 
-    async def test_handle_error_dm(self, bot: SpellBot, ctx: InteractionContext):
-        await bot.handle_errors(ctx, MagicMock(spec=errors.NoPrivateMessage))
+    async def test_handle_error_dm(self, ctx: InteractionContext):
+        await self.bot.handle_errors(ctx, MagicMock(spec=errors.NoPrivateMessage))
         ctx.send.assert_called_once_with(
             "This command is not supported via Direct Message.",
             hidden=True,
         )
 
-    async def test_handle_error_permissions(self, bot: SpellBot, ctx: InteractionContext):
-        await bot.handle_errors(ctx, MagicMock(spec=AdminOnlyError))
+    async def test_handle_error_permissions(self, ctx: InteractionContext):
+        await self.bot.handle_errors(ctx, MagicMock(spec=AdminOnlyError))
         ctx.send.assert_called_once_with(
             "You do not have permission to do that.",
             hidden=True,
         )
 
-    async def test_handle_error_banned(self, bot: SpellBot, ctx: InteractionContext):
-        await bot.handle_errors(ctx, MagicMock(spec=UserBannedError))
+    async def test_handle_error_banned(self, ctx: InteractionContext):
+        await self.bot.handle_errors(ctx, MagicMock(spec=UserBannedError))
         ctx.send.assert_called_once_with(
             "You have been banned from using SpellBot.",
             hidden=True,
         )
 
-    async def test_handle_error_unverified(self, bot: SpellBot, ctx: InteractionContext):
-        await bot.handle_errors(ctx, MagicMock(spec=UserUnverifiedError))
+    async def test_handle_error_unverified(self, ctx: InteractionContext):
+        await self.bot.handle_errors(ctx, MagicMock(spec=UserUnverifiedError))
         ctx.send.assert_called_once_with(
             "Only verified users can do that in this channel.",
             hidden=True,
         )
 
-    async def test_handle_error_verified(self, bot: SpellBot, ctx: InteractionContext):
-        await bot.handle_errors(ctx, MagicMock(spec=UserVerifiedError))
+    async def test_handle_error_verified(self, ctx: InteractionContext):
+        await self.bot.handle_errors(ctx, MagicMock(spec=UserVerifiedError))
         ctx.send.assert_called_once_with(
             "Only unverified users can do that in this channel.",
             hidden=True,
         )
 
-    async def test_handle_error_unhandled_exception(
-        self,
-        bot: SpellBot,
-        caplog,
-    ):
+    async def test_handle_error_unhandled_exception(self, caplog):
         ctx = MagicMock()
-        await bot.handle_errors(ctx, RuntimeError("test-bot-unhandled-exception"))
+        await self.bot.handle_errors(ctx, RuntimeError("test-bot-unhandled-exception"))
         assert "unhandled exception" in caplog.text
         assert "test-bot-unhandled-exception" in caplog.text
 
-    async def test_on_component_callback_error(
-        self,
-        bot: SpellBot,
-        monkeypatch,
-    ):
-        monkeypatch.setattr(bot, "handle_errors", AsyncMock())
+    async def test_on_component_callback_error(self, monkeypatch):
+        monkeypatch.setattr(self.bot, "handle_errors", AsyncMock())
         ex = MagicMock()
         ctx = MagicMock()
-        await bot.on_component_callback_error(ctx, ex)
-        bot.handle_errors.assert_called_once_with(ctx, ex)
+        await self.bot.on_component_callback_error(ctx, ex)
+        self.bot.handle_errors.assert_called_once_with(ctx, ex)
 
-    async def test_on_slash_command_error(
-        self,
-        bot: SpellBot,
-        ctx: SlashContext,
-        monkeypatch,
-    ):
-        monkeypatch.setattr(bot, "handle_errors", AsyncMock())
+    async def test_on_slash_command_error(self, ctx: SlashContext, monkeypatch):
+        monkeypatch.setattr(self.bot, "handle_errors", AsyncMock())
         ex = MagicMock()
-        await bot.on_slash_command_error(ctx, ex)
-        bot.handle_errors.assert_called_once_with(ctx, ex)
+        await self.bot.on_slash_command_error(ctx, ex)
+        self.bot.handle_errors.assert_called_once_with(ctx, ex)
 
-    async def test_legacy_prefix_cache(self, bot: SpellBot):
-        assert bot.legacy_prefix_cache[404] == "!"
+    async def test_legacy_prefix_cache(self):
+        assert self.bot.legacy_prefix_cache[404] == "!"
 
-    async def test_on_message_no_guild(self, bot: SpellBot, monkeypatch):
+    async def test_on_message_no_guild(self, monkeypatch):
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
         message = MagicMock()
         message.guild = None
-        await bot.on_message(message)
+        await self.bot.on_message(message)
         super_on_message_mock.assert_called_once_with(message)
 
-    async def test_on_message_no_channel_type(self, bot: SpellBot, monkeypatch):
+    async def test_on_message_no_channel_type(self, monkeypatch):
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
         message = MagicMock()
         message.guild = MagicMock()
         message.channel = MagicMock()
         del message.channel.type
-        await bot.on_message(message)
+        await self.bot.on_message(message)
         super_on_message_mock.assert_not_called()
 
-    async def test_on_message_hidden(self, bot: SpellBot, monkeypatch):
+    async def test_on_message_hidden(self, monkeypatch):
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
         message = MagicMock()
@@ -185,15 +171,10 @@ class TestSpellBot:
         message.channel = MagicMock()
         message.channel.type = discord.ChannelType.text
         message.flags.value = 64
-        await bot.on_message(message)
+        await self.bot.on_message(message)
         super_on_message_mock.assert_not_called()
 
-    async def test_on_message_command(
-        self,
-        bot: SpellBot,
-        settings: Settings,
-        monkeypatch,
-    ):
+    async def test_on_message_command(self, monkeypatch):
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
         message = MagicMock()
@@ -204,29 +185,23 @@ class TestSpellBot:
         message.content = "!lfg"
         message.reply = AsyncMock()
         handle_verification_mock = AsyncMock()
-        monkeypatch.setattr(bot, "handle_verification", handle_verification_mock)
-        await bot.on_message(message)
+        monkeypatch.setattr(self.bot, "handle_verification", handle_verification_mock)
+        await self.bot.on_message(message)
         super_on_message_mock.assert_not_called()
         handle_verification_mock.assert_called_once_with(message)
         assert message.reply.call_args_list[0].kwargs["embed"].to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": self.settings.EMBED_COLOR,
             "description": (
                 "SpellBot uses [slash commands](https://discord.com/blog"
                 "/slash-commands-are-here) now. Type `/` to see the"
                 " list of commands! If you don't see any, please [re-invite the"
-                f" bot using its new invite link]({settings.BOT_INVITE_LINK})."
+                f" bot using its new invite link]({self.settings.BOT_INVITE_LINK})."
             ),
-            "thumbnail": {"url": settings.ICO_URL},
+            "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
         }
 
-    async def test_on_message_command_error(
-        self,
-        bot: SpellBot,
-        settings: Settings,
-        monkeypatch,
-        caplog,
-    ):
+    async def test_on_message_command_error(self, monkeypatch, caplog):
         caplog.set_level(logging.DEBUG)
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
@@ -239,57 +214,48 @@ class TestSpellBot:
         error = RuntimeError("message-reply-error")
         message.reply = AsyncMock(side_effect=error)
         handle_verification_mock = AsyncMock()
-        monkeypatch.setattr(bot, "handle_verification", handle_verification_mock)
-        await bot.on_message(message)
+        monkeypatch.setattr(self.bot, "handle_verification", handle_verification_mock)
+        await self.bot.on_message(message)
         super_on_message_mock.assert_not_called()
         handle_verification_mock.assert_called_once_with(message)
         assert message.reply.call_args_list[0].kwargs["embed"].to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": self.settings.EMBED_COLOR,
             "description": (
                 "SpellBot uses [slash commands](https://discord.com/blog"
                 "/slash-commands-are-here) now. Type `/` to see the"
                 " list of commands! If you don't see any, please [re-invite the"
-                f" bot using its new invite link]({settings.BOT_INVITE_LINK})."
+                f" bot using its new invite link]({self.settings.BOT_INVITE_LINK})."
             ),
-            "thumbnail": {"url": settings.ICO_URL},
+            "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
         }
         assert "debug: message-reply-error" in caplog.text
 
-    async def test_on_message(
-        self,
-        bot: SpellBot,
-        dpy_message: discord.Message,
-        monkeypatch,
-    ):
+    async def test_on_message(self, dpy_message: discord.Message, monkeypatch):
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
-        monkeypatch.setattr(bot, "handle_verification", AsyncMock())
+        monkeypatch.setattr(self.bot, "handle_verification", AsyncMock())
         dpy_message.flags.value = 16
-        await bot.on_message(dpy_message)
+        await self.bot.on_message(dpy_message)
         super_on_message_mock.assert_not_called()
-        bot.handle_verification.assert_called_once_with(dpy_message)
+        self.bot.handle_verification.assert_called_once_with(dpy_message)
         dpy_message.reply.assert_not_called()
 
 
 @pytest.mark.asyncio
-class TestSpellBotHandleVerification:
-    async def test_missing_author_id(self, bot: SpellBot):
+class TestSpellBotHandleVerification(BaseMixin):
+    async def test_missing_author_id(self):
         message = MagicMock()
         message.author = MagicMock()
         del message.author.id
-        await bot.handle_verification(message)
+        await self.bot.handle_verification(message)
 
-    async def test_without_auto_verify(
-        self,
-        bot: SpellBot,
-        dpy_message: discord.Message,
-    ):
+    async def test_without_auto_verify(self, dpy_message: discord.Message):
         assert dpy_message.guild
         assert dpy_message.author
         assert isinstance(dpy_message.guild, discord.Guild)
         assert isinstance(dpy_message.author, discord.User)
-        await bot.handle_verification(dpy_message)
+        await self.bot.handle_verification(dpy_message)
 
         DatabaseSession.expire_all()
         assert DatabaseSession.query(Guild).one().xid == dpy_message.guild.id
@@ -299,15 +265,19 @@ class TestSpellBotHandleVerification:
         assert found.user_xid == dpy_message.author.id
         assert not found.verified
 
-    async def test_with_auto_verify(self, bot: SpellBot, dpy_message, factories):
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
+    async def test_with_auto_verify(self, dpy_message: discord.Message):
+        assert dpy_message.guild
+        assert dpy_message.author
+        assert isinstance(dpy_message.guild, discord.Guild)
+        assert isinstance(dpy_message.author, discord.User)
+        self.factories.guild.create(xid=dpy_message.guild.id)
+        self.factories.channel.create(
             xid=dpy_message.channel.id,
             auto_verify=True,
             guild_xid=dpy_message.guild.id,
         )
 
-        await bot.handle_verification(dpy_message)
+        await self.bot.handle_verification(dpy_message)
 
         DatabaseSession.expire_all()
         assert DatabaseSession.query(Guild).one().xid == dpy_message.guild.id
@@ -317,180 +287,139 @@ class TestSpellBotHandleVerification:
         assert found.user_xid == dpy_message.author.id
         assert found.verified
 
-    async def test_verified_only_when_unverified(
-        self,
-        bot: SpellBot,
-        dpy_message: discord.Message,
-        factories: Factories,
-    ):
+    async def test_verified_only_when_unverified(self, dpy_message: discord.Message):
         assert dpy_message.guild
         assert isinstance(dpy_message.guild, discord.Guild)
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
+        self.factories.guild.create(xid=dpy_message.guild.id)
+        self.factories.channel.create(
             xid=dpy_message.channel.id,
             verified_only=True,
             guild_xid=dpy_message.guild.id,
         )
 
-        await bot.handle_verification(dpy_message)
+        await self.bot.handle_verification(dpy_message)
 
         dpy_message.delete.assert_called_once()
 
-    async def test_verified_only_when_verified(
-        self,
-        bot: SpellBot,
-        dpy_message: discord.Message,
-        factories: Factories,
-    ):
+    async def test_verified_only_when_verified(self, dpy_message: discord.Message):
         assert dpy_message.guild
         assert isinstance(dpy_message.guild, discord.Guild)
         assert isinstance(dpy_message.author, discord.User)
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
+        self.factories.guild.create(xid=dpy_message.guild.id)
+        self.factories.channel.create(
             xid=dpy_message.channel.id,
             verified_only=True,
             guild_xid=dpy_message.guild.id,
         )
-        factories.verify.create(
+        self.factories.verify.create(
             guild_xid=dpy_message.guild.id,
             user_xid=dpy_message.author.id,
             verified=True,
         )
 
-        await bot.handle_verification(dpy_message)
+        await self.bot.handle_verification(dpy_message)
 
         dpy_message.delete.assert_not_called()
 
-    async def test_unverified_only_when_unverified(
-        self,
-        bot: SpellBot,
-        dpy_message: discord.Message,
-        factories: Factories,
-    ):
+    async def test_unverified_only_when_unverified(self, dpy_message: discord.Message):
         assert dpy_message.guild
         assert isinstance(dpy_message.guild, discord.Guild)
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
+        self.factories.guild.create(xid=dpy_message.guild.id)
+        self.factories.channel.create(
             xid=dpy_message.channel.id,
             unverified_only=True,
             guild_xid=dpy_message.guild.id,
         )
 
-        await bot.handle_verification(dpy_message)
+        await self.bot.handle_verification(dpy_message)
 
         dpy_message.delete.assert_not_called()
 
-    async def test_unverified_only_when_verified(
-        self,
-        bot: SpellBot,
-        dpy_message: discord.Message,
-        factories: Factories,
-    ):
+    async def test_unverified_only_when_verified(self, dpy_message: discord.Message):
         assert dpy_message.guild
         assert isinstance(dpy_message.guild, discord.Guild)
         assert isinstance(dpy_message.author, discord.User)
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
+        self.factories.guild.create(xid=dpy_message.guild.id)
+        self.factories.channel.create(
             xid=dpy_message.channel.id,
             unverified_only=True,
             guild_xid=dpy_message.guild.id,
         )
-        factories.verify.create(
+        self.factories.verify.create(
             guild_xid=dpy_message.guild.id,
             user_xid=dpy_message.author.id,
             verified=True,
         )
 
-        await bot.handle_verification(dpy_message)
+        await self.bot.handle_verification(dpy_message)
 
         dpy_message.delete.assert_called_once()
 
-    async def test_message_from_mod_role(
-        self,
-        bot: SpellBot,
-        settings: Settings,
-        dpy_message: discord.Message,
-        factories: Factories,
-        monkeypatch,
-    ):
+    async def test_message_from_mod_role(self, dpy_message: discord.Message, monkeypatch):
         assert dpy_message.guild
         assert isinstance(dpy_message.guild, discord.Guild)
         mod_role = MagicMock()
-        mod_role.name = f"{settings.MOD_PREFIX}-role"
+        mod_role.name = f"{self.settings.MOD_PREFIX}-role"
         monkeypatch.setattr(dpy_message.author, "roles", [mod_role])
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
+        self.factories.guild.create(xid=dpy_message.guild.id)
+        self.factories.channel.create(
             xid=dpy_message.channel.id,
             verified_only=True,
             guild_xid=dpy_message.guild.id,
         )
 
-        await bot.handle_verification(dpy_message)
+        await self.bot.handle_verification(dpy_message)
 
         dpy_message.delete.assert_not_called()
 
     async def test_message_from_admin_role(
         self,
-        bot: SpellBot,
-        settings: Settings,
         dpy_message: discord.Message,
-        factories: Factories,
         monkeypatch,
     ):
         assert dpy_message.guild
         assert isinstance(dpy_message.guild, discord.Guild)
         admin_role = MagicMock()
-        admin_role.name = settings.ADMIN_ROLE
+        admin_role.name = self.settings.ADMIN_ROLE
         monkeypatch.setattr(dpy_message.author, "roles", [admin_role])
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
+        self.factories.guild.create(xid=dpy_message.guild.id)
+        self.factories.channel.create(
             xid=dpy_message.channel.id,
             verified_only=True,
             guild_xid=dpy_message.guild.id,
         )
 
-        await bot.handle_verification(dpy_message)
+        await self.bot.handle_verification(dpy_message)
 
         dpy_message.delete.assert_not_called()
 
-    async def test_message_from_owner(
-        self,
-        bot: SpellBot,
-        dpy_message: discord.Message,
-        factories: Factories,
-        monkeypatch,
-    ):
+    async def test_message_from_owner(self, dpy_message: discord.Message, monkeypatch):
         assert dpy_message.guild
         assert isinstance(dpy_message.guild, discord.Guild)
         monkeypatch.setattr(dpy_message.author, "id", dpy_message.guild.owner_id)
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
+        self.factories.guild.create(xid=dpy_message.guild.id)
+        self.factories.channel.create(
             xid=dpy_message.channel.id,
             verified_only=True,
             guild_xid=dpy_message.guild.id,
         )
 
-        await bot.handle_verification(dpy_message)
+        await self.bot.handle_verification(dpy_message)
 
         dpy_message.delete.assert_not_called()
 
-    async def test_message_from_administrator(
-        self,
-        bot: SpellBot,
-        dpy_message: discord.Message,
-        factories: Factories,
-    ):
+    async def test_message_from_administrator(self, dpy_message: discord.Message):
         assert dpy_message.guild
         assert isinstance(dpy_message.guild, discord.Guild)
         admin_perms = discord.Permissions(discord.Permissions.administrator.flag)
         dpy_message.channel.permissions_for = MagicMock(return_value=admin_perms)
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
+        self.factories.guild.create(xid=dpy_message.guild.id)
+        self.factories.channel.create(
             xid=dpy_message.channel.id,
             verified_only=True,
             guild_xid=dpy_message.guild.id,
         )
 
-        await bot.handle_verification(dpy_message)
+        await self.bot.handle_verification(dpy_message)
 
         dpy_message.delete.assert_not_called()
