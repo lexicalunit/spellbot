@@ -102,7 +102,7 @@ types-toml = "^0.10.1"
 wrapt = "1.13.2"
 
 [tool.poetry.dev-dependencies]
-Faker = "^9.8.0"
+Faker = "^9.8.2"
 GitPython = "^3.1.24"
 black = "^21.10b0"
 callee = "^0.3.1"
