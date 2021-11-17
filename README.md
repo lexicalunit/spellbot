@@ -12,6 +12,10 @@
 [![python][python-badge]][python]
 [![black][black-badge]][black]
 [![mit][mit-badge]][mit]
+[![discord.py][discord-py-badge]][discord-py]
+[![discord-interactions][discord-interactions-badge]][discord-interactions]
+[![heroku][heroku-badge]][heroku]
+[![docker][docker-badge]][docker-hub]
 [![patreon][patreon-button]][patreon]
 [![follow][follow-badge]][follow]
 
@@ -101,20 +105,27 @@ Any usage of SpellBot implies that you accept the following policies.
 [codecov]: https://codecov.io/gh/lexicalunit/spellbot
 [codeql-badge]: https://github.com/lexicalunit/spellbot/workflows/CodeQL/badge.svg
 [contributors]: https://github.com/lexicalunit/spellbot/graphs/contributors
+[discord-interactions-badge]: https://img.shields.io/badge/discord--interactions-3.x-blue
+[discord-interactions]: https://github.com/goverfl0w/discord-interactions
 [discord-invite]: https://discord.gg/zXzgqMN
+[discord-py-badge]: https://img.shields.io/badge/discord.py-1.7.3-blue
+[discord-py]: https://github.com/Rapptz/discord.py
+[docker-badge]: https://img.shields.io/docker/pulls/lexicalunit/spellbot.svg
 [docker-hub]: https://hub.docker.com/r/lexicalunit/spellbot
 [factor-badge]: https://www.codefactor.io/repository/github/lexicalunit/spellbot/badge
 [factor]: https://www.codefactor.io/repository/github/lexicalunit/spellbot
 [follow-badge]: https://img.shields.io/twitter/follow/SpellBotIO?style=social
 [follow]: https://twitter.com/intent/follow?screen_name=SpellBotIO
+[heroku-badge]: https://heroku-badge.herokuapp.com/?app=lexicalunit-spellbot&style=flat&svg=1
+[heroku]: https://dashboard.heroku.com/apps/lexicalunit-spellbot
 [issues]: https://github.com/lexicalunit/spellbot/issues
-[patreon]: https://www.patreon.com/lexicalunit
-[patreon-button]: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dlexicalunit%26type%3Dpatrons88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
 [lexicalunit]: http://github.com/lexicalunit
 [metrics-badge]: https://img.shields.io/badge/metrics-grafana-orange.svg
 [metrics]: https://lexicalunit.grafana.net/d/4TSUCbcMz/spellbot?orgId=1
 [mit-badge]: https://img.shields.io/badge/License-MIT-yellow.svg
 [mit]: https://opensource.org/licenses/MIT
+[patreon-button]: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dlexicalunit%26type%3Dpatrons88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
+[patreon]: https://www.patreon.com/lexicalunit
 [pypi-badge]: https://img.shields.io/pypi/v/spellbot
 [pypi]: https://pypi.org/project/spellbot/
 [python-badge]: https://img.shields.io/badge/python-3.8+-blue.svg
