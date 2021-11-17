@@ -1,33 +1,31 @@
-<img align="right" width="200" src="https://raw.githubusercontent.com/lexicalunit/spellbot/main/spellbot.png" />
+<img align="right" width="200" alt="spellbot" src="https://raw.githubusercontent.com/lexicalunit/spellbot/main/spellbot.png" />
 
 # SpellBot
 
 [![build][build-badge]][build]
 [![uptime][uptime-badge]][uptime]
-[![metrics][metrics-badge]][metrics]
-[![pypi][pypi-badge]][pypi]
 [![codecov][codecov-badge]][codecov]
 [![CodeFactor][factor-badge]][factor]
 [![CodeQL][codeql-badge]][security]
+[![heroku][heroku-badge]][heroku]
 [![python][python-badge]][python]
-[![black][black-badge]][black]
-[![mit][mit-badge]][mit]
+[![pypi][pypi-badge]][pypi]
 [![discord.py][discord-py-badge]][discord-py]
 [![discord-interactions][discord-interactions-badge]][discord-interactions]
-[![heroku][heroku-badge]][heroku]
 [![docker][docker-badge]][docker-hub]
+[![black][black-badge]][black]
+[![mit][mit-badge]][mit]
+[![metrics][metrics-badge]][metrics]
 [![patreon][patreon-button]][patreon]
 [![follow][follow-badge]][follow]
 
-The Discord bot for [SpellTable][spelltable].
-
-[![add-bot][add-bot-button]][add-bot]
+<p align="center"><a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot"><img align="center" alt="Add to Discord" src="https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png" /></a><br />The Discord bot for <a href="https://spelltable.wizards.com/">SpellTable</a></p>
 
 ## 🤖 Using SpellBot
 
 Just looking to play a game of Magic? Run the command `/lfg` and SpellBot will help you out!
 
-<img src="https://user-images.githubusercontent.com/1903876/137987904-6fcdf273-5b60-4692-9389-a51d65c0a424.png" width="600" alt="/lfg" />
+<p align="center"><img src="https://user-images.githubusercontent.com/1903876/137987904-6fcdf273-5b60-4692-9389-a51d65c0a424.png" width="600" alt="/lfg" /></p>
 
 SpellBot uses [Discord slash commands](https://discord.com/blog/slash-commands-are-here). Each command provides its own help documentation that you can view directly within Discord itself before running the command. Take a look and see what's available by typing `/` and browsing the commands for SpellBot!
 
@@ -95,8 +93,6 @@ Any usage of SpellBot implies that you accept the following policies.
 
 [MIT][mit] © [amy@lexicalunit][lexicalunit] et [al][contributors]
 
-[add-bot-button]: https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png
-[add-bot]: https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot
 [black-badge]: https://img.shields.io/badge/code%20style-black-000000.svg
 [black]: https://github.com/psf/black
 [build-badge]: https://github.com/lexicalunit/spellbot/workflows/build/badge.svg
