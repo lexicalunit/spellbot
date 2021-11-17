@@ -69,23 +69,31 @@ class BaseInteraction:
             if await self.services.users.is_banned(self.ctx.author_id):
                 raise UserBannedError()
 
-        if (
+        if self.should_do_verification():
+            await self.handle_verification()
+
+    async def handle_verification(self):
+        assert self.guild
+        assert self.ctx
+        verified: Optional[bool] = None
+        if self.channel_data["auto_verify"]:
+            verified = True
+        verify = VerifiesService()
+        await verify.upsert(self.guild.id, self.ctx.author_id, verified)
+        if not user_can_moderate(self.ctx.author, self.guild, self.channel):
+            user_is_verified = await verify.is_verified()
+            if user_is_verified and self.channel_data["unverified_only"]:
+                raise UserVerifiedError()
+            if not user_is_verified and self.channel_data["verified_only"]:
+                raise UserUnverifiedError()
+
+    def should_do_verification(self):
+        return (
             (hasattr(self, "guild") and self.guild)
             and (hasattr(self, "channel") and self.channel)
             and (hasattr(self, "member") and self.member)
             and (hasattr(self, "ctx") and self.ctx)
-        ):
-            verified: Optional[bool] = None
-            if self.channel_data["auto_verify"]:
-                verified = True
-            verify = VerifiesService()
-            await verify.upsert(self.guild.id, self.ctx.author_id, verified)
-            if not user_can_moderate(self.ctx.author, self.guild, self.channel):
-                user_is_verified = await verify.is_verified()
-                if user_is_verified and self.channel_data["unverified_only"]:
-                    raise UserVerifiedError()
-                if not user_is_verified and self.channel_data["verified_only"]:
-                    raise UserUnverifiedError()
+        )
 
     @classmethod
     @asynccontextmanager
