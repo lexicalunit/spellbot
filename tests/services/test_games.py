@@ -158,6 +158,9 @@ class TestServiceGames:
         await games.select(game.id)
         assert await games.to_dict() == game.to_dict()
 
+
+@pytest.mark.asyncio
+class TestServiceGamesPlays:
     async def test_games_players_included(self, game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
