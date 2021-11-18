@@ -9,6 +9,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class Block(Base):
+    """Allows users to block other users."""
+
     __tablename__ = "blocks"
 
     user_xid = Column(

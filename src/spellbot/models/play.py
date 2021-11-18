@@ -10,6 +10,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class Play(Base):
+    """Records of a users game plays."""
+
     __tablename__ = "plays"
 
     user_xid = Column(

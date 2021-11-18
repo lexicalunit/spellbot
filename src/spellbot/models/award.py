@@ -13,6 +13,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class GuildAward(Base):
+    """Awards available on a guild."""
+
     __tablename__ = "guild_awards"
 
     id = Column(
@@ -71,6 +73,8 @@ class GuildAward(Base):
 
 
 class UserAward(Base):
+    """Awards that a user has achieved on a per guild basis."""
+
     __tablename__ = "user_awards"
 
     user_xid = Column(

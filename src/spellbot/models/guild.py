@@ -13,6 +13,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class Guild(Base):
+    """Represents a Discord guild."""
+
     __tablename__ = "guilds"
 
     xid = Column(BigInteger, primary_key=True, nullable=False)
