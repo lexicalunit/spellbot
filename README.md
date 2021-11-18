@@ -6,7 +6,6 @@
 [![uptime][uptime-badge]][uptime]
 [![codecov][codecov-badge]][codecov]
 [![CodeFactor][factor-badge]][factor]
-[![CodeQL][codeql-badge]][security]
 [![heroku][heroku-badge]][heroku]
 [![python][python-badge]][python]
 [![pypi][pypi-badge]][pypi]
@@ -99,7 +98,6 @@ Any usage of SpellBot implies that you accept the following policies.
 [build]: https://github.com/lexicalunit/spellbot/actions
 [codecov-badge]: https://codecov.io/gh/lexicalunit/spellbot/branch/main/graph/badge.svg
 [codecov]: https://codecov.io/gh/lexicalunit/spellbot
-[codeql-badge]: https://github.com/lexicalunit/spellbot/workflows/CodeQL/badge.svg
 [contributors]: https://github.com/lexicalunit/spellbot/graphs/contributors
 [discord-interactions-badge]: https://img.shields.io/badge/discord--interactions-3.x-blue
 [discord-interactions]: https://github.com/goverfl0w/discord-interactions
