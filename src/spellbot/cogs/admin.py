@@ -10,12 +10,7 @@ from discord_slash.context import ComponentContext
 from discord_slash.model import SlashCommandOptionType
 
 from .. import SpellBot
-from ..interactions import (
-    AdminInteraction,
-    ConfigInteraction,
-    VerifyInteraction,
-    WatchInteraction,
-)
+from ..interactions import AdminInteraction, VerifyInteraction, WatchInteraction
 from ..utils import for_all_callbacks, is_admin
 
 logger = logging.getLogger(__name__)
@@ -29,27 +24,27 @@ class AdminCog(commands.Cog):
 
     @cog_ext.cog_slash(name="setup", description="Setup SpellBot on your server.")
     async def setup(self, ctx: SlashContext):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.setup()
 
     @cog_ext.cog_component()
     async def refresh_setup(self, ctx: ComponentContext):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.refresh_setup()
 
     @cog_ext.cog_component()
     async def toggle_show_links(self, ctx: ComponentContext):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.toggle_show_links()
 
     @cog_ext.cog_component()
     async def toggle_show_points(self, ctx: ComponentContext):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.toggle_show_points()
 
     @cog_ext.cog_component()
     async def toggle_voice_create(self, ctx: ComponentContext):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.toggle_voice_create()
 
     @cog_ext.cog_subcommand(
@@ -66,7 +61,7 @@ class AdminCog(commands.Cog):
         ],
     )
     async def motd(self, ctx: SlashContext, message: Optional[str] = None):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_motd(message)
 
     @cog_ext.cog_subcommand(
@@ -83,7 +78,7 @@ class AdminCog(commands.Cog):
         ],
     )
     async def channel_motd(self, ctx: SlashContext, message: Optional[str] = None):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_channel_motd(message)
 
     @cog_ext.cog_slash(
@@ -91,7 +86,7 @@ class AdminCog(commands.Cog):
         description="Show the current configurations for channels on your server.",
     )
     async def channels(self, ctx: SlashContext):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.channels()
 
     @cog_ext.cog_slash(
@@ -99,7 +94,7 @@ class AdminCog(commands.Cog):
         description="Setup player awards on your server.",
     )
     async def awards(self, ctx: SlashContext):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.awards()
 
     @cog_ext.cog_subcommand(
@@ -141,7 +136,7 @@ class AdminCog(commands.Cog):
         message: str,
         repeating: Optional[bool] = False,
     ):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.award_add(count, str(role), message, repeating)
 
     @cog_ext.cog_subcommand(
@@ -158,7 +153,7 @@ class AdminCog(commands.Cog):
         ],
     )
     async def award_delete(self, ctx: SlashContext, id: int):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.award_delete(id)
 
     @cog_ext.cog_subcommand(
@@ -180,7 +175,7 @@ class AdminCog(commands.Cog):
         ],
     )
     async def default_seats(self, ctx: SlashContext, seats: int):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_default_seats(seats)
 
     @cog_ext.cog_subcommand(
@@ -197,7 +192,7 @@ class AdminCog(commands.Cog):
         ],
     )
     async def auto_verify(self, ctx: SlashContext, setting: bool):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_auto_verify(setting)
 
     @cog_ext.cog_subcommand(
@@ -214,7 +209,7 @@ class AdminCog(commands.Cog):
         ],
     )
     async def verified_only(self, ctx: SlashContext, setting: bool):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_verified_only(setting)
 
     @cog_ext.cog_subcommand(
@@ -231,7 +226,7 @@ class AdminCog(commands.Cog):
         ],
     )
     async def unverified_only(self, ctx: SlashContext, setting: bool):
-        async with ConfigInteraction.create(self.bot, ctx) as interaction:
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_unverified_only(setting)
 
     @cog_ext.cog_slash(

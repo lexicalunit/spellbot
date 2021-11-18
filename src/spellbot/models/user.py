@@ -13,7 +13,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from ..models import GameStatus, Play
+from ..models import Config, GameStatus, Play
 from .base import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -21,6 +21,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class User(Base):
+    """Represents a Discord user."""
+
     __tablename__ = "users"
 
     xid = Column(
@@ -69,6 +71,7 @@ class User(Base):
         back_populates="players",
         doc="Game that this player is currently in",
     )
+
     plays = relationship(
         "Play",
         primaryjoin="User.xid == Play.user_xid",
@@ -85,9 +88,29 @@ class User(Base):
     #
     # Allows for application code like: `some_user.points[game_id].points`
 
+    configs = relationship(
+        "Config",
+        primaryjoin="User.xid == Config.user_xid",
+        lazy="dynamic",  # this is a sqlalchemy legacy feature not supported in 2.0
+        doc="Queryset of guild specific user configs for this user",
+    )
+    # A possible alternative -- less performant?
+    #
+    # configs = relationship(
+    #     "Config",
+    #     primaryjoin="User.xid == Config.user_xid",
+    #     collection_class=attribute_mapped_collection("guild_xid"),
+    # )
+    #
+    # Allows for application code like: `some_user.points[game_id].points`
+
     def points(self, game_id: int) -> Optional[int]:
         play = self.plays.filter(Play.game_id == game_id).one_or_none()
         return play.points if play else None
+
+    def config(self, guild_xid: int) -> Optional[dict]:
+        guild_config = self.configs.filter(Config.guild_xid == guild_xid).one_or_none()
+        return guild_config.to_dict() if guild_config else None
 
     @property
     def waiting(self) -> bool:

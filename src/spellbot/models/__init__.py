@@ -20,6 +20,7 @@ from .award import GuildAward, UserAward
 from .base import Base, create_all, literalquery, reverse_all
 from .block import Block
 from .channel import Channel
+from .config import Config
 from .game import Game, GameFormat, GameStatus
 from .guild import Guild
 from .play import Play
@@ -31,6 +32,7 @@ __all__ = [
     "Base",
     "Block",
     "Channel",
+    "Config",
     "create_all",
     "Game",
     "GameFormat",

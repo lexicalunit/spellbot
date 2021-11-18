@@ -15,6 +15,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class Channel(Base):
+    """Represents a Discord text channel."""
+
     __tablename__ = "channels"
 
     xid = Column(
