@@ -4,6 +4,8 @@ from .base import Base
 
 
 class Verify(Base):
+    """Records of a user's verification status on a per guild basis."""
+
     __tablename__ = "verify"
 
     guild_xid = Column(

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Column, ForeignKey, String
+from sqlalchemy import BigInteger, Column, ForeignKey, Integer
 
 from .base import Base
 
@@ -9,10 +9,10 @@ if TYPE_CHECKING:  # pragma: no cover
     from .user import User  # noqa
 
 
-class Watch(Base):
-    """Records of watched users on a per guild basis."""
+class Config(Base):
+    """User configuration on a per guild basis."""
 
-    __tablename__ = "watches"
+    __tablename__ = "configs"
 
     guild_xid = Column(
         BigInteger,
@@ -26,16 +26,17 @@ class Watch(Base):
         ForeignKey("users.xid", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        doc="The external Discord ID of a user for moderators to keep an eye on",
+        doc="The external Discord ID of this user",
     )
-    note = Column(
-        String(1024),
-        doc="The note to DM to moderators when this user enters a game",
+    power_level = Column(
+        Integer,
+        nullable=True,
+        doc="User's current power level",
     )
 
     def to_dict(self) -> dict:
         return {
-            "guild_xid": self.guild_xid,
             "user_xid": self.user_xid,
-            "note": self.note,
+            "guild_xid": self.guild_xid,
+            "power_level": self.power_level,
         }

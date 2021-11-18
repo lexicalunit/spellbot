@@ -28,6 +28,8 @@ FormatDetails = namedtuple("FormatDetails", ["players"])
 
 
 class GameFormat(Enum):
+    """A Magic: The Gathering game format."""
+
     def __new__(cls, *args, **kwargs):  # pylint: disable=W0613
         """Give each enum value an increasing numerical value starting at 1."""
         value = len(cls.__members__) + 1
@@ -56,6 +58,8 @@ class GameFormat(Enum):
 
 
 class Game(Base):
+    """Represents a pending or started SpellTable game."""
+
     __tablename__ = "games"
 
     id = Column(
@@ -224,12 +228,20 @@ class Game(Base):
     def embed_players(self) -> str:
         player_strs: list[str] = []
         for player in self.players:
-            points = player.points(self.id)
-            if points:
-                points_str = f" ({points} point{'s' if points > 1 else ''})"
-            else:
-                points_str = ""
-            player_strs.append(f"<@{player.xid}>{points_str}")
+            points_str = ""
+            if self.status == GameStatus.STARTED.value:
+                points = player.points(self.id)
+                if points:
+                    points_str = f" ({points} point{'s' if points > 1 else ''})"
+
+            power_level_str = ""
+            if self.status == GameStatus.PENDING.value:
+                config = player.config(self.guild_xid) or {}
+                power_level = config.get("power_level", None)
+                if power_level:
+                    power_level_str = f" (power level: {power_level})"
+
+            player_strs.append(f"<@{player.xid}>{power_level_str}{points_str}")
         return ", ".join(sorted(player_strs))
 
     @property

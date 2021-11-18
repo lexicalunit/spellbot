@@ -63,6 +63,7 @@ class TestSpellBot(BaseMixin):
             "info",
             "leave",
             "lfg",
+            "power",
             "score",
             "set",
             "setup",
