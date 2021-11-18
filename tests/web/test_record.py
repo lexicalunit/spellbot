@@ -16,8 +16,8 @@ class TestWebRecord:
         freezer,
     ):
         freezer.move_to(datetime(2020, 1, 1))
-        user1 = factories.user.create(xid=101, name="user1")
-        user2 = factories.user.create(xid=102, name="user2")
+        user1 = factories.user.create(xid=101, name="user:1")
+        user2 = factories.user.create(xid=102, name="user@2")
         guild = factories.guild.create(xid=201, name="guild")
         channel = factories.channel.create(xid=301, name="channel", guild=guild)
         game1 = factories.game.create(

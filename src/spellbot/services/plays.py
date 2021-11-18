@@ -42,7 +42,7 @@ RECORDS_SQL = """
         channels.name,
         STRING_AGG(
             CONCAT(
-                users.name,
+                REPLACE(REPLACE(users.name, ':', ''), '@', ''),
                 ':',
                 users.xid,
                 ':',
