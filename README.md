@@ -18,7 +18,12 @@
 [![patreon][patreon-button]][patreon]
 [![follow][follow-badge]][follow]
 
+<br />
+<br />
+<br />
+<br />
 <p align="center"><a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot"><img align="center" alt="Add to Discord" src="https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png" /></a><br />The Discord bot for <a href="https://spelltable.wizards.com/">SpellTable</a></p>
+<br />
 
 ## 🤖 Using SpellBot
 
