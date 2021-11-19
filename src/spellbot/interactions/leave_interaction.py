@@ -30,8 +30,9 @@ class LeaveInteraction(BaseInteraction):
             return await self.report_success()
 
         await self.services.games.select(game_id)
-        channel_xid = await self.services.games.current_channel_xid()
-        guild_xid = await self.services.games.current_guild_xid()
+        game_data = await self.services.games.to_dict()
+        channel_xid = game_data["channel_xid"]
+        guild_xid = game_data["guild_xid"]
 
         await self.services.users.leave_game()
         channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
@@ -39,7 +40,7 @@ class LeaveInteraction(BaseInteraction):
         if not channel:
             return await self.report_success()
 
-        message_xid = await self.services.games.current_message_xid()
+        message_xid = game_data["message_xid"]
         if not message_xid:
             return await self.report_success()
 

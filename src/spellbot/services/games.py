@@ -54,12 +54,6 @@ class GamesService:
         return self.game.to_dict() if self.game else None
 
     @sync_to_async
-    def current_status(self) -> bool:
-        assert self.game
-        rows = DatabaseSession.query(User).filter(User.game_id == self.game.id).count()
-        return rows + 1 <= self.game.seats
-
-    @sync_to_async
     def add_player(self, player_xid: int) -> None:
         assert self.game
 
@@ -197,23 +191,6 @@ class GamesService:
         DatabaseSession.commit()
 
     @sync_to_async
-    def current_guild_xid(self) -> int:
-        assert self.game
-        assert self.game.guild_xid
-        return self.game.guild_xid
-
-    @sync_to_async
-    def current_channel_xid(self) -> int:
-        assert self.game
-        assert self.game.channel_xid
-        return self.game.channel_xid
-
-    @sync_to_async
-    def current_message_xid(self) -> Optional[int]:
-        assert self.game
-        return self.game.message_xid
-
-    @sync_to_async
     def fully_seated(self) -> bool:
         assert self.game
         rows = DatabaseSession.query(User).filter(User.game_id == self.game.id).count()
@@ -229,7 +206,7 @@ class GamesService:
         DatabaseSession.commit()
 
     @sync_to_async
-    def current_player_xids(self) -> list[int]:
+    def player_xids(self) -> list[int]:
         assert self.game
         rows = DatabaseSession.query(User.xid).filter(User.game_id == self.game.id)
         return [int(row[0]) for row in rows]
@@ -284,11 +261,6 @@ class GamesService:
         DatabaseSession.commit()
 
     @sync_to_async
-    def current_id(self) -> int:
-        assert self.game
-        return self.game.id
-
-    @sync_to_async
     def set_voice(self, voice_xid: int, voice_invite_link: str) -> None:
         assert self.game
         assert len(voice_invite_link or "") <= MAX_VOICE_INVITE_LINK_LEN
@@ -341,16 +313,6 @@ class GamesService:
         return bool(DatabaseSession.query(query.exists()).scalar())
 
     @sync_to_async
-    def jump_link(self) -> str:
-        assert self.game
-        return self.game.jump_link
-
-    @sync_to_async
-    def to_dict(self) -> dict:
-        assert self.game
-        return self.game.to_dict()
-
-    @sync_to_async
     def players_included(self, player_xid: int) -> bool:
         """
         Players that played this game.
@@ -389,6 +351,11 @@ class GamesService:
         )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
+
+    @sync_to_async
+    def to_dict(self) -> dict:
+        assert self.game
+        return self.game.to_dict()
 
     @sync_to_async
     def inactive_games(self) -> list[dict]:
