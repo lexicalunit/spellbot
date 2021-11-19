@@ -62,35 +62,6 @@ class TestServiceGames:
         found = DatabaseSession.query(Game).filter_by(message_xid=12345).one_or_none()
         assert found and found.id == game.id
 
-    async def test_games_current_status(self, game):
-        games = GamesService()
-        await games.select(game.id)
-        assert await games.current_status() == game.status
-
-    async def test_games_current_guild_xid(self, game):
-        games = GamesService()
-        await games.select(game.id)
-        assert await games.current_guild_xid() == game.guild.xid
-
-    async def test_games_current_channel_xid(self, guild, channel):
-        game = GameFactory.create(guild=guild, channel=channel)
-
-        games = GamesService()
-        await games.select(game.id)
-        assert await games.current_channel_xid() == channel.xid
-
-    async def test_games_current_message_xid(self, guild, channel):
-        game = GameFactory.create(guild=guild, channel=channel, message_xid=5)
-
-        games = GamesService()
-        await games.select(game.id)
-        assert await games.current_message_xid() == 5
-
-    async def test_games_current_id(self, game):
-        games = GamesService()
-        await games.select(game.id)
-        assert await games.current_id() == game.id
-
     async def test_games_fully_seated(self, guild, channel):
         started_game = GameFactory.create(guild=guild, channel=channel)
         pending_game = GameFactory.create(guild=guild, channel=channel)
@@ -114,13 +85,13 @@ class TestServiceGames:
         assert found and found.spelltable_link == "http://link"
         assert found.status == GameStatus.STARTED.value
 
-    async def test_games_current_player_xids(self, game):
+    async def test_games_player_xids(self, game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
 
         games = GamesService()
         await games.select(game.id)
-        assert set(await games.current_player_xids()) == {user1.xid, user2.xid}
+        assert set(await games.player_xids()) == {user1.xid, user2.xid}
 
     async def test_games_watch_notes(self, game):
         user1 = UserFactory.create(game=game)
@@ -144,14 +115,6 @@ class TestServiceGames:
         found = DatabaseSession.query(Game).get(game.id)
         assert found and found.voice_xid == 12345
         assert found.voice_invite_link == "http://link"
-
-    async def test_games_jump_link(self, game):
-        games = GamesService()
-        await games.select(game.id)
-        assert await games.jump_link() == (
-            "https://discordapp.com/channels/"
-            f"{game.guild.xid}/{game.channel.xid}/{game.message_xid}"
-        )
 
     async def test_games_to_dict(self, game):
         games = GamesService()

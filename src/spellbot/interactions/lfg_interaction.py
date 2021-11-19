@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 class LookingForGameInteraction(BaseInteraction):
     def __init__(self, bot: SpellBot, ctx: InteractionContext):
         super().__init__(bot, ctx)
+        self.settings = Settings()
 
     async def get_friends(self, friends: Optional[str] = None) -> str:
         return friends or ""
@@ -258,20 +259,19 @@ class LookingForGameInteraction(BaseInteraction):
         if not await self.services.guilds.should_voice_create():
             return
 
-        settings = Settings()
         category = await safe_ensure_voice_category(
             self.bot,
             guild_xid,
-            settings.VOICE_CATEGORY_PREFIX,
+            self.settings.VOICE_CATEGORY_PREFIX,
         )
         if not category:
             return
 
-        game_id = await self.services.games.current_id()
+        game_data = await self.services.games.to_dict()
         voice_channel = await safe_create_voice_channel(
             self.bot,
             guild_xid,
-            f"Game-SB{game_id}",
+            f"Game-SB{game_data['id']}",
             category,
         )
         if not voice_channel:
@@ -282,7 +282,7 @@ class LookingForGameInteraction(BaseInteraction):
         voice_invite_link = await safe_create_invite(
             voice_channel,
             guild_xid,
-            settings.VOICE_INVITE_EXPIRE_TIME_S,
+            self.settings.VOICE_INVITE_EXPIRE_TIME_S,
         )
         await self.services.games.set_voice(voice_channel.id, voice_invite_link)
 
@@ -351,7 +351,8 @@ class LookingForGameInteraction(BaseInteraction):
             return
 
         message: Optional[discord.Message] = None
-        message_xid = await self.services.games.current_message_xid()
+        game_data = await self.services.games.to_dict()
+        message_xid = game_data["message_xid"]
         if message_xid:
             message = await safe_fetch_message(self.channel, self.guild.id, message_xid)
 
@@ -390,19 +391,18 @@ class LookingForGameInteraction(BaseInteraction):
 
     async def _reply_found_embed(self):
         assert self.ctx
-        settings = Settings()
         embed = Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
+        embed.set_thumbnail(url=self.settings.ICO_URL)
         embed.set_author(name="I found a game for you!")
-        link = await self.services.games.jump_link()
+        game_data = await self.services.games.to_dict()
+        link = game_data["jump_link"]
         embed.description = f"You can [jump to the game post]({link}) to see it!"
-        embed.color = settings.EMBED_COLOR
+        embed.color = self.settings.EMBED_COLOR
         await safe_send_channel(self.ctx, embed=embed, hidden=True)
 
     async def _handle_direct_messages(self):
         assert self.ctx
-        settings = Settings()
-        player_xids = await self.services.games.current_player_xids()
+        player_xids = await self.services.games.player_xids()
         embed = await self.services.games.to_embed(dm=True)
         failed_xids: list[int] = []
 
@@ -434,11 +434,15 @@ class LookingForGameInteraction(BaseInteraction):
             warning = f"Unable to send Direct Messages to some players: {failures}"
             await safe_send_channel(self.ctx, warning)
 
-        # notify moderators about watched players
+        await self._handle_watched_players(player_xids)
+
+    async def _handle_watched_players(self, player_xids: list[int]):
+        """Notify moderators about watched players."""
+        assert self.ctx
         assert self.ctx.guild
         mod_role: Optional[discord.Role] = None
         for role in self.ctx.guild.roles:
-            if role.name.startswith(settings.MOD_PREFIX):
+            if role.name.startswith(self.settings.MOD_PREFIX):
                 mod_role = role
                 break
 
@@ -452,9 +456,9 @@ class LookingForGameInteraction(BaseInteraction):
         data = await self.services.games.to_dict()
 
         embed = Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
+        embed.set_thumbnail(url=self.settings.ICO_URL)
         embed.set_author(name="Watched user(s) joined a game")
-        embed.color = settings.EMBED_COLOR
+        embed.color = self.settings.EMBED_COLOR
         description = (
             f"[⇤ Jump to the game post]({data['jump_link']})\n"
             f"[➤ Spectate the game on SpellTable]({data['spectate_link']})\n\n"
