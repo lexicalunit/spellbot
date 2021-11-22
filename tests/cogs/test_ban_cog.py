@@ -4,7 +4,7 @@ import pytest
 from discord_slash.context import InteractionContext
 
 from spellbot import SpellBot
-from spellbot.cogs.ban import BanCog
+from spellbot.cogs.ban_cog import BanCog
 from spellbot.database import DatabaseSession
 from spellbot.models import User
 

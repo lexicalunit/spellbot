@@ -1,7 +1,7 @@
 # pylint: disable=too-many-arguments
 
 import logging
-from typing import Optional, Union
+from typing import Optional
 
 import discord
 from discord.ext import commands
@@ -10,7 +10,7 @@ from discord_slash.context import ComponentContext
 from discord_slash.model import SlashCommandOptionType
 
 from .. import SpellBot
-from ..interactions import AdminInteraction, VerifyInteraction, WatchInteraction
+from ..interactions import AdminInteraction
 from ..utils import for_all_callbacks, is_admin
 
 logger = logging.getLogger(__name__)
@@ -244,101 +244,6 @@ class AdminCog(commands.Cog):
     async def info(self, ctx: SlashContext, game_id: str):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.info(game_id)
-
-    @cog_ext.cog_slash(
-        name="watched",
-        description="View the current list of watched users with notes.",
-    )
-    async def watched(self, ctx: SlashContext):
-        async with WatchInteraction.create(self.bot, ctx) as interaction:
-            await interaction.watched()
-
-    @cog_ext.cog_slash(
-        name="watch",
-        description="Moderators should receive notifications about this user's activity.",
-        options=[
-            {
-                "name": "target",
-                "required": True,
-                "description": "User to watch",
-                "type": SlashCommandOptionType.USER.value,
-            },
-            {
-                "name": "note",
-                "required": False,
-                "description": "A note about why this using is being watched",
-                "type": SlashCommandOptionType.STRING.value,
-            },
-        ],
-    )
-    async def watch(
-        self,
-        ctx: SlashContext,
-        target: Union[discord.User, discord.Member],
-        note: Optional[str] = None,
-    ):
-        async with WatchInteraction.create(self.bot, ctx) as interaction:
-            await interaction.watch(target=target, note=note)
-
-    @cog_ext.cog_slash(
-        name="unwatch",
-        description="No longer receive notifications about this user's activity.",
-        options=[
-            {
-                "name": "target",
-                "required": True,
-                "description": "User to unwatch",
-                "type": SlashCommandOptionType.USER.value,
-            },
-        ],
-    )
-    async def unwatch(
-        self,
-        ctx: SlashContext,
-        target: Union[discord.User, discord.Member],
-    ):
-        async with WatchInteraction.create(self.bot, ctx) as interaction:
-            await interaction.unwatch(target=target)
-
-    @cog_ext.cog_slash(
-        name="verify",
-        description="Verify a user.",
-        options=[
-            {
-                "name": "target",
-                "required": True,
-                "description": "User to verify",
-                "type": SlashCommandOptionType.USER.value,
-            },
-        ],
-    )
-    async def verify(
-        self,
-        ctx: SlashContext,
-        target: Union[discord.User, discord.Member],
-    ):
-        async with VerifyInteraction.create(self.bot, ctx) as interaction:
-            await interaction.verify(target=target)
-
-    @cog_ext.cog_slash(
-        name="unverify",
-        description="Unverify a user.",
-        options=[
-            {
-                "name": "target",
-                "required": True,
-                "description": "User to unverify",
-                "type": SlashCommandOptionType.USER.value,
-            },
-        ],
-    )
-    async def unverify(
-        self,
-        ctx: SlashContext,
-        target: Union[discord.User, discord.Member],
-    ):
-        async with VerifyInteraction.create(self.bot, ctx) as interaction:
-            await interaction.unverify(target=target)
 
 
 def setup(bot: SpellBot):

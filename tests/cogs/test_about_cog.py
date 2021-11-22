@@ -2,7 +2,7 @@ import pytest
 from discord_slash.context import InteractionContext
 
 from spellbot import SpellBot, __version__
-from spellbot.cogs.about import AboutCog
+from spellbot.cogs.about_cog import AboutCog
 from spellbot.settings import Settings
 
 

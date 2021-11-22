@@ -5,7 +5,7 @@ import pytest
 from discord_slash.context import InteractionContext, MenuContext
 
 from spellbot import SpellBot
-from spellbot.cogs.score import ScoreCog
+from spellbot.cogs.score_cog import ScoreCog
 from spellbot.settings import Settings
 from tests.factories.game import GameFactory
 from tests.factories.play import PlayFactory
