@@ -1,6 +1,6 @@
 import pytest
 
-from spellbot.cogs.config import ConfigCog
+from spellbot.cogs.config_cog import ConfigCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import config_interaction
 from spellbot.models import Config

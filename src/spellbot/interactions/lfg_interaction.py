@@ -221,8 +221,6 @@ class LookingForGameInteraction(BaseInteraction):
         found_players: list[int] = []
         found_players = await self.ensure_users_exist(player_xids, exclude_self=False)
 
-        # TODO: Make the players leave any games they're currently pending in?
-
         if len(found_players) != requested_seats:
             excluded_player_xids = set(player_xids) - set(found_players)
             excluded_players_s = ", ".join(f"<@{xid}>" for xid in excluded_player_xids)
