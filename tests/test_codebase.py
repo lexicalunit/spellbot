@@ -34,6 +34,14 @@ class TestCodebase:
         proc = run(cmd, capture_output=True)
         assert proc.returncode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
 
+    def test_pylint(self):
+        """Checks that the Python codebase passes configured pylint checks."""
+        chdir(REPO_ROOT)
+        cmd = ["pylint", *SRC_DIRS]
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        proc = run(cmd, capture_output=True)
+        assert proc.returncode == 0, f"pylint issues:\n{proc.stdout.decode('utf-8')}"
+
     def test_isort(self):
         """Checks that the Python codebase imports are correctly sorted."""
         chdir(REPO_ROOT)

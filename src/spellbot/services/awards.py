@@ -31,7 +31,7 @@ class AwardsService:
                     and_(
                         UserAward.guild_xid == guild_xid,
                         UserAward.user_xid == player_xid,
-                    )
+                    ),
                 )
                 .one_or_none()
             )
@@ -48,7 +48,7 @@ class AwardsService:
                             plays % GuildAward.count == 0,
                             GuildAward.repeating.is_(True),
                         ),
-                    )
+                    ),
                 ).one_or_none()
                 if next_award and (
                     (user_award.guild_award_id != next_award.id)

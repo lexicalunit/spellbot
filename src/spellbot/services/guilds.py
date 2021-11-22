@@ -119,9 +119,9 @@ class GuildsService:
                 and_(
                     GuildAward.guild_xid == self.guild.xid,
                     GuildAward.count == count,
-                )
+                ),
             )
-            .one_or_none()
+            .one_or_none(),
         )
 
     @sync_to_async

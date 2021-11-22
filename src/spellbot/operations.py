@@ -186,7 +186,7 @@ async def safe_ensure_voice_category(
         sorted(
             (c for c in guild.categories if c.name.startswith(prefix)),
             key=category_num,
-        )
+        ),
     ):
         cat_num = category_num(cat)
         if cat_num < 0:

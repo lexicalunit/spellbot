@@ -34,13 +34,22 @@ def upgrade():
         sa.Column("name", sa.String(length=100), nullable=True),
         sa.Column("motd", sa.String(length=255), nullable=True),
         sa.Column(
-            "show_links", sa.Boolean(), server_default=sa.text("false"), nullable=False
+            "show_links",
+            sa.Boolean(),
+            server_default=sa.text("false"),
+            nullable=False,
         ),
         sa.Column(
-            "voice_create", sa.Boolean(), server_default=sa.text("false"), nullable=False
+            "voice_create",
+            sa.Boolean(),
+            server_default=sa.text("false"),
+            nullable=False,
         ),
         sa.Column(
-            "show_points", sa.Boolean(), server_default=sa.text("false"), nullable=False
+            "show_points",
+            sa.Boolean(),
+            server_default=sa.text("false"),
+            nullable=False,
         ),
         sa.Column(
             "legacy_prefix",
@@ -55,7 +64,10 @@ def upgrade():
         sa.Column("guild_xid", sa.BigInteger(), nullable=False),
         sa.Column("user_xid", sa.BigInteger(), nullable=False),
         sa.Column(
-            "verified", sa.Boolean(), server_default=sa.text("false"), nullable=False
+            "verified",
+            sa.Boolean(),
+            server_default=sa.text("false"),
+            nullable=False,
         ),
         sa.PrimaryKeyConstraint("guild_xid", "user_xid"),
     )
@@ -77,10 +89,16 @@ def upgrade():
         sa.Column("guild_xid", sa.BigInteger(), nullable=False),
         sa.Column("name", sa.String(length=100), nullable=True),
         sa.Column(
-            "default_seats", sa.Integer(), server_default=sa.text("4"), nullable=False
+            "default_seats",
+            sa.Integer(),
+            server_default=sa.text("4"),
+            nullable=False,
         ),
         sa.Column(
-            "auto_verify", sa.Boolean(), server_default=sa.text("false"), nullable=False
+            "auto_verify",
+            sa.Boolean(),
+            server_default=sa.text("false"),
+            nullable=False,
         ),
         sa.Column(
             "unverified_only",
@@ -89,13 +107,19 @@ def upgrade():
             nullable=False,
         ),
         sa.Column(
-            "verified_only", sa.Boolean(), server_default=sa.text("false"), nullable=False
+            "verified_only",
+            sa.Boolean(),
+            server_default=sa.text("false"),
+            nullable=False,
         ),
         sa.ForeignKeyConstraint(["guild_xid"], ["guilds.xid"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("xid"),
     )
     op.create_index(
-        op.f("ix_channels_guild_xid"), "channels", ["guild_xid"], unique=False
+        op.f("ix_channels_guild_xid"),
+        "channels",
+        ["guild_xid"],
+        unique=False,
     )
     op.create_table(
         "guild_awards",
@@ -103,7 +127,10 @@ def upgrade():
         sa.Column("guild_xid", sa.BigInteger(), nullable=False),
         sa.Column("count", sa.Integer(), nullable=False),
         sa.Column(
-            "repeating", sa.Boolean(), server_default=sa.text("false"), nullable=False
+            "repeating",
+            sa.Boolean(),
+            server_default=sa.text("false"),
+            nullable=False,
         ),
         sa.Column("role", sa.String(length=100), nullable=False),
         sa.Column("message", sa.String(length=500), nullable=False),
@@ -111,10 +138,16 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_guild_awards_count"), "guild_awards", ["count"], unique=False
+        op.f("ix_guild_awards_count"),
+        "guild_awards",
+        ["count"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_guild_awards_guild_xid"), "guild_awards", ["guild_xid"], unique=False
+        op.f("ix_guild_awards_guild_xid"),
+        "guild_awards",
+        ["guild_xid"],
+        unique=False,
     )
     op.create_table(
         "games",
@@ -169,7 +202,10 @@ def upgrade():
         ),
         sa.Column("name", sa.String(length=100), nullable=False),
         sa.Column(
-            "banned", sa.Boolean(), server_default=sa.text("false"), nullable=False
+            "banned",
+            sa.Boolean(),
+            server_default=sa.text("false"),
+            nullable=False,
         ),
         sa.Column("game_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(["game_id"], ["games.id"], ondelete="SET NULL"),
@@ -185,7 +221,10 @@ def upgrade():
         sa.PrimaryKeyConstraint("user_xid", "blocked_user_xid"),
     )
     op.create_index(
-        op.f("ix_blocks_blocked_user_xid"), "blocks", ["blocked_user_xid"], unique=False
+        op.f("ix_blocks_blocked_user_xid"),
+        "blocks",
+        ["blocked_user_xid"],
+        unique=False,
     )
     op.create_index(op.f("ix_blocks_user_xid"), "blocks", ["user_xid"], unique=False)
     op.create_table(
@@ -207,10 +246,16 @@ def upgrade():
         sa.PrimaryKeyConstraint("user_xid", "guild_xid"),
     )
     op.create_index(
-        op.f("ix_user_awards_guild_xid"), "user_awards", ["guild_xid"], unique=False
+        op.f("ix_user_awards_guild_xid"),
+        "user_awards",
+        ["guild_xid"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_user_awards_user_xid"), "user_awards", ["user_xid"], unique=False
+        op.f("ix_user_awards_user_xid"),
+        "user_awards",
+        ["user_xid"],
+        unique=False,
     )
     op.create_table(
         "watches",

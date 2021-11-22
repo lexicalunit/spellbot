@@ -84,7 +84,7 @@ class TestUtilsBotCanRead:
     def test_happy_path(self):
         read_permisions = discord.Permissions(
             discord.Permissions.read_messages.flag
-            | discord.Permissions.read_message_history.flag
+            | discord.Permissions.read_message_history.flag,
         )
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
@@ -97,7 +97,7 @@ class TestUtilsBotCanRead:
     def test_missing_channel_type(self):
         read_permisions = discord.Permissions(
             discord.Permissions.read_messages.flag
-            | discord.Permissions.read_message_history.flag
+            | discord.Permissions.read_message_history.flag,
         )
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()

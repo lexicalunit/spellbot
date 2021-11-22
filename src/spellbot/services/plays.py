@@ -84,10 +84,10 @@ class PlaysService:
                 and_(
                     Play.user_xid == user_xid,
                     Game.guild_xid == guild_xid,
-                )
+                ),
             )
             .count()
-            or 0
+            or 0,
         )
 
     def _records(

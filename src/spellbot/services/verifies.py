@@ -47,7 +47,7 @@ class VerifiesService:
                 and_(
                     Verify.guild_xid == guild_xid,
                     Verify.user_xid == user_xid,
-                )
+                ),
             )
             .one_or_none()
         )
