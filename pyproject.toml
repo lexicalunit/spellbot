@@ -99,6 +99,7 @@ types-PyYAML = "^6.0.1"
 types-python-dateutil = "^2.8.2"
 types-pytz = "^2021.3.0"
 types-toml = "^0.10.1"
+uvloop = "^0.16.0"
 wrapt = "1.13.2"
 
 [tool.poetry.dev-dependencies]

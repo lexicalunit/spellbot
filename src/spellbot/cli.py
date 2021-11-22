@@ -7,6 +7,7 @@ from typing import Optional
 
 import click
 import hupper
+import uvloop
 from dotenv import load_dotenv
 
 from ._version import __version__
@@ -15,6 +16,8 @@ from .logs import configure_logging
 # load .env environment variables as early as possible
 if not getenv("PYTEST_CURRENT_TEST") and "pytest" not in sys.modules:  # pragma: no cover
     load_dotenv()
+
+uvloop.install()
 
 
 @click.command()
@@ -27,10 +30,16 @@ if not getenv("PYTEST_CURRENT_TEST") and "pytest" not in sys.modules:  # pragma:
 )
 @click.option(
     "-d",
-    "--dev-mode",
+    "--dev",
     default=False,
     is_flag=True,
     help="Development mode, automatically reload bot when source changes",
+)
+@click.option(
+    "--debug",
+    default=False,
+    is_flag=True,
+    help="Enable detailed asyncio debugging",
 )
 @click.option(
     "-m",
@@ -70,14 +79,15 @@ if not getenv("PYTEST_CURRENT_TEST") and "pytest" not in sys.modules:  # pragma:
 @click.version_option(version=__version__)
 def main(
     log_level: Optional[str],
-    dev_mode: bool,
+    dev: bool,
+    debug: bool,
     mock_games: bool,
     sync_commands: bool,
     clean_commands: bool,
     api: bool,
     port: Optional[int] = None,
 ) -> None:
-    if dev_mode:
+    if dev:
         hupper.start_reloader("spellbot.main")
 
     from .client import build_bot
@@ -89,6 +99,8 @@ def main(
     configure_logging(level)
 
     loop = asyncio.get_event_loop()
+    if debug:
+        loop.set_debug(True)
     if api:
         launch_web_server(settings, loop, port or settings.PORT)
         loop.run_forever()
