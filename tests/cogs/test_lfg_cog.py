@@ -104,7 +104,7 @@ class TestCogLookingForGame(InteractionContextMixin):
             await cog.lfg.func(cog, self.ctx)
 
         game = DatabaseSession.query(Game).one()
-        assert game.message_xid == None
+        assert game.message_xid is None
 
     async def test_lfg_when_fetch_post_fails(self):
         guild = self.factories.guild.create(xid=self.ctx.guild_id)

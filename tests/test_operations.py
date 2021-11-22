@@ -80,7 +80,7 @@ class TestOperationsFetchTextChannel:
 class TestOperationsFetchMessage:
     read_perms = discord.Permissions(
         discord.Permissions.read_messages.flag
-        | discord.Permissions.read_message_history.flag
+        | discord.Permissions.read_message_history.flag,
     )
 
     @pytest.fixture(autouse=True)

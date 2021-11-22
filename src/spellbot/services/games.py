@@ -115,7 +115,7 @@ class GamesService:
         DatabaseSession.execute(
             update(User)
             .where(User.xid.in_([*friends, author_xid]))
-            .values(game_id=game.id)
+            .values(game_id=game.id),
         )
         DatabaseSession.commit()
         self.game = game
@@ -138,7 +138,7 @@ class GamesService:
                     Game,
                     User.xid.label("users_xid"),
                     count(User.xid).over(partition_by=Game.id).label("player_count"),
-                ]
+                ],
             )
             .join(User, isouter=True)
             .filter(  # type: ignore
@@ -148,17 +148,17 @@ class GamesService:
                     Game.seats == seats,
                     Game.format == format,
                     Game.status == GameStatus.PENDING.value,
-                )
+                ),
             )
             .group_by(Game, User.xid)
             .order_by(asc(Game.updated_at))
             .alias("inner")
         )
         user_blocks = DatabaseSession.query(Block.blocked_user_xid).filter_by(
-            user_xid=author_xid
+            user_xid=author_xid,
         )
         blocks_user = DatabaseSession.query(Block.user_xid).filter_by(
-            blocked_user_xid=author_xid
+            blocked_user_xid=author_xid,
         )
         outer = (
             DatabaseSession.query(Game)
@@ -174,7 +174,7 @@ class GamesService:
                         ~inner.c.users_xid.in_(user_blocks),
                         ~inner.c.users_xid.in_(blocks_user),
                     ),
-                )
+                ),
             )
         )
         return outer.first()
@@ -220,7 +220,7 @@ class GamesService:
                 and_(
                     Watch.guild_xid == self.game.guild_xid,
                     Watch.user_xid.in_(player_xids),
-                )
+                ),
             )
             .all()
         )
@@ -241,9 +241,12 @@ class GamesService:
         DatabaseSession.execute(
             insert(Play)
             .values(
-                [dict(user_xid=player_xid, game_id=game_id) for player_xid in player_xids]
+                [
+                    dict(user_xid=player_xid, game_id=game_id)
+                    for player_xid in player_xids
+                ],
             )
-            .on_conflict_do_nothing()
+            .on_conflict_do_nothing(),
         )
 
         # upsert into user_awards
@@ -253,9 +256,9 @@ class GamesService:
                 [
                     dict(guild_xid=guild_xid, user_xid=player_xid)
                     for player_xid in player_xids
-                ]
+                ],
             )
-            .on_conflict_do_nothing()
+            .on_conflict_do_nothing(),
         )
 
         DatabaseSession.commit()
@@ -282,14 +285,14 @@ class GamesService:
                         Block.blocked_user_xid == author_xid,
                         Block.user_xid.in_(other_xids),
                     ),
-                )
+                ),
             )
             .all()
         )
         return list(
             set(other_xids)
             - set(blocker.user_xid for blocker in blockers)
-            - set(blocker.blocked_user_xid for blocker in blockers)
+            - set(blocker.blocked_user_xid for blocker in blockers),
         )
 
     @sync_to_async
@@ -308,7 +311,7 @@ class GamesService:
                     Block.blocked_user_xid == author_xid,
                     Block.user_xid.in_(other_player_xids),
                 ),
-            )
+            ),
         )
         return bool(DatabaseSession.query(query.exists()).scalar())
 
@@ -326,7 +329,7 @@ class GamesService:
                 and_(
                     Play.user_xid == player_xid,
                     Play.game_id == self.game.id,
-                )
+                ),
             )
             .one_or_none()
         )
@@ -365,7 +368,7 @@ class GamesService:
             and_(
                 Game.status == GameStatus.PENDING.value,
                 Game.updated_at <= limit,
-            )
+            ),
         )
         return [record.to_dict() for record in records]
 

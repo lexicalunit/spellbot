@@ -196,13 +196,13 @@ def cli():
     # Note: In python 3.10 this formatting can be improved:
     #       https://bugs.python.org/issue12782
     with patch("spellbot.cli.asyncio") as mock_asyncio, patch(
-        "spellbot.cli.configure_logging"
+        "spellbot.cli.configure_logging",
     ) as mock_configure_logging, patch("spellbot.cli.hupper") as mock_hupper, patch(
-        "spellbot.client.build_bot"
+        "spellbot.client.build_bot",
     ) as mock_build_bot, patch(
-        "spellbot.settings.Settings"
+        "spellbot.settings.Settings",
     ) as mock_Settings, patch(
-        "spellbot.web.launch_web_server"
+        "spellbot.web.launch_web_server",
     ) as mock_launch_web_server:
         mock_loop = MagicMock(name="loop")
         mock_loop.run_forever = MagicMock(name="run_forever")

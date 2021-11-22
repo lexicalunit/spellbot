@@ -123,7 +123,7 @@ class UsersService:
             and_(
                 Block.user_xid == author_xid,
                 Block.blocked_user_xid == target_xid,
-            )
+            ),
         ).delete(synchronize_session=False)
         DatabaseSession.commit()
 
@@ -156,6 +156,6 @@ class UsersService:
             and_(
                 Watch.guild_xid == guild_xid,
                 Watch.user_xid == user_xid,
-            )
+            ),
         ).delete(synchronize_session=False)
         DatabaseSession.commit()

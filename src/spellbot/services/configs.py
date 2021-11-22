@@ -18,7 +18,7 @@ class ConfigsService:
                 and_(
                     Config.guild_xid == guild_xid,
                     Config.user_xid == user_xid,
-                )
+                ),
             )
             .one_or_none()
         )
