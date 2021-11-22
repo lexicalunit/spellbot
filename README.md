@@ -39,7 +39,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
 
 <table>
     <tr>
-        <td align="center"><a href="https://www.playedh.com/"><img height="160" src="https://user-images.githubusercontent.com/1903876/140843874-78510411-dcc8-4a26-a59a-0d6856698dcc.png" alt="PlayEDH" /><br />PlayEDH</a></td>
+        <td align="center"><a href="https://www.playedh.com/"><img width="160" height="160" src="https://user-images.githubusercontent.com/1903876/140843874-78510411-dcc8-4a26-a59a-0d6856698dcc.png" alt="PlayEDH" /><br />PlayEDH</a></td>
         <td align="center"><a href="https://www.reddit.com/r/CompetitiveEDH/"><img height="160" src="https://user-images.githubusercontent.com/1903876/140865281-19774420-a49b-4d0e-bf0c-db3ad937022e.png" alt="r/cEDH" /><br />r/cEDH</a></td>
         <td align="center"><a href="https://www.commandthecause.org/"><img height="160" src="https://user-images.githubusercontent.com/1903876/140864827-a56b9ee4-a545-41f1-90ea-06d35bce2bf9.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
     </tr>
