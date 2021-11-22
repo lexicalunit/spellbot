@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from spellbot import SpellBot
-from spellbot.cogs.lfg import LookingForGameCog
+from spellbot.cogs.lfg_cog import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import lfg_interaction
 from spellbot.models import Game
