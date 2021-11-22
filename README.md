@@ -115,7 +115,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [factor]: https://www.codefactor.io/repository/github/lexicalunit/spellbot
 [follow-badge]: https://img.shields.io/twitter/follow/SpellBotIO?style=social
 [follow]: https://twitter.com/intent/follow?screen_name=SpellBotIO
-[heroku-badge]: https://heroku-badge.herokuapp.com/?app=lexicalunit-spellbot&style=flat&svg=1
+[heroku-badge]: https://img.shields.io/badge/heroku-deployed-green
 [heroku]: https://dashboard.heroku.com/apps/lexicalunit-spellbot
 [issues]: https://github.com/lexicalunit/spellbot/issues
 [lexicalunit]: http://github.com/lexicalunit
@@ -133,3 +133,4 @@ Any usage of SpellBot implies that you accept the following policies.
 [spelltable]: https://spelltable.wizards.com/
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]: https://uptimerobot.com/dashboard#785764282
+<!-- [heroku-badge]: https://heroku-badge.herokuapp.com/?app=lexicalunit-spellbot&style=flat&svg=1 -->
