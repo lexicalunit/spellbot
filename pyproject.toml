@@ -67,7 +67,7 @@ packages = [
 ]
 readme = 'README.md'
 repository = 'https://github.com/lexicalunit/spellbot'
-version = "7.5.1"
+version = "7.5.2"
 
 [tool.poetry.dependencies]
 PyYAML = "^6.0"
