@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 from wrapt import CallableObjectProxy
 
-from .models import Guild, create_all
+from .models import create_all
 
 logger = logging.getLogger(__name__)
 ProxiedObject = TypeVar("ProxiedObject")
@@ -143,11 +143,3 @@ def rollback_transaction():
     if not connection.closed:  # pragma: no cover
         connection.close()
     engine.dispose()
-
-
-@sync_to_async
-def get_legacy_prefixes() -> dict:  # pragma: no cover
-    return {
-        row[0]: row[1]
-        for row in DatabaseSession.query(Guild.xid, Guild.legacy_prefix).all()
-    }

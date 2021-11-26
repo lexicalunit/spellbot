@@ -1,4 +1,3 @@
-import logging
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
@@ -143,9 +142,6 @@ class TestSpellBot(BaseMixin):
         await self.bot.on_slash_command_error(ctx, ex)
         self.bot.handle_errors.assert_called_once_with(ctx, ex)
 
-    async def test_legacy_prefix_cache(self):
-        assert self.bot.legacy_prefix_cache[404] == "!"
-
     async def test_on_message_no_guild(self, monkeypatch):
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
@@ -174,63 +170,6 @@ class TestSpellBot(BaseMixin):
         message.flags.value = 64
         await self.bot.on_message(message)
         super_on_message_mock.assert_not_called()
-
-    async def test_on_message_command(self, monkeypatch):
-        super_on_message_mock = AsyncMock()
-        monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
-        message = MagicMock()
-        message.guild = MagicMock()
-        message.channel = MagicMock()
-        message.channel.type = discord.ChannelType.text
-        message.flags.value = 16
-        message.content = "!lfg"
-        message.reply = AsyncMock()
-        handle_verification_mock = AsyncMock()
-        monkeypatch.setattr(self.bot, "handle_verification", handle_verification_mock)
-        await self.bot.on_message(message)
-        super_on_message_mock.assert_not_called()
-        handle_verification_mock.assert_called_once_with(message)
-        assert message.reply.call_args_list[0].kwargs["embed"].to_dict() == {
-            "color": self.settings.EMBED_COLOR,
-            "description": (
-                "SpellBot uses [slash commands](https://discord.com/blog"
-                "/slash-commands-are-here) now. Type `/` to see the"
-                " list of commands! If you don't see any, please [re-invite the"
-                f" bot using its new invite link]({self.settings.BOT_INVITE_LINK})."
-            ),
-            "thumbnail": {"url": self.settings.ICO_URL},
-            "type": "rich",
-        }
-
-    async def test_on_message_command_error(self, monkeypatch, caplog):
-        caplog.set_level(logging.DEBUG)
-        super_on_message_mock = AsyncMock()
-        monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
-        message = MagicMock()
-        message.guild = MagicMock()
-        message.channel = MagicMock()
-        message.channel.type = discord.ChannelType.text
-        message.flags.value = 16
-        message.content = "!lfg"
-        error = RuntimeError("message-reply-error")
-        message.reply = AsyncMock(side_effect=error)
-        handle_verification_mock = AsyncMock()
-        monkeypatch.setattr(self.bot, "handle_verification", handle_verification_mock)
-        await self.bot.on_message(message)
-        super_on_message_mock.assert_not_called()
-        handle_verification_mock.assert_called_once_with(message)
-        assert message.reply.call_args_list[0].kwargs["embed"].to_dict() == {
-            "color": self.settings.EMBED_COLOR,
-            "description": (
-                "SpellBot uses [slash commands](https://discord.com/blog"
-                "/slash-commands-are-here) now. Type `/` to see the"
-                " list of commands! If you don't see any, please [re-invite the"
-                f" bot using its new invite link]({self.settings.BOT_INVITE_LINK})."
-            ),
-            "thumbnail": {"url": self.settings.ICO_URL},
-            "type": "rich",
-        }
-        assert "debug: message-reply-error" in caplog.text
 
     async def test_on_message(self, dpy_message: discord.Message, monkeypatch):
         super_on_message_mock = AsyncMock()

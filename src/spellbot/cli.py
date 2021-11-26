@@ -36,6 +36,7 @@ uvloop.install()
     help="Development mode, automatically reload bot when source changes",
 )
 @click.option(
+    "-g",
     "--debug",
     default=False,
     is_flag=True,

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false, text
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
 from sqlalchemy.orm import relationship
 
 from .base import Base, now
@@ -62,13 +62,6 @@ class Guild(Base):
         server_default=false(),
         doc="Configuration for showing points reporting on started games",
     )
-    legacy_prefix = Column(
-        String(10),
-        nullable=False,
-        default="!",
-        server_default=text("'!'"),
-        doc="Legacy command prefix used by this guild before v7",
-    )
 
     games = relationship(
         "Game",
@@ -100,7 +93,6 @@ class Guild(Base):
             "show_links": self.show_links,
             "voice_create": self.voice_create,
             "show_points": self.show_points,
-            "legacy_prefix": self.legacy_prefix,
             "channels": [channel.to_dict() for channel in self.channels],
             "awards": [award.to_dict() for award in self.awards],
         }
