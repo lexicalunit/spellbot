@@ -2,7 +2,6 @@ import asyncio
 import logging
 import traceback
 from asyncio import AbstractEventLoop as Loop
-from collections import defaultdict
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -13,14 +12,14 @@ from discord.ext.commands import Bot, errors
 from discord_slash import SlashCommand, context
 from expiringdict import ExpiringDict
 
-from .database import db_session_manager, get_legacy_prefixes, initialize_connection
+from .database import db_session_manager, initialize_connection
 from .errors import (
     AdminOnlyError,
     UserBannedError,
     UserUnverifiedError,
     UserVerifiedError,
 )
-from .operations import safe_message_reply, safe_send_channel
+from .operations import safe_send_channel
 from .services import ChannelsService, GuildsService, VerifiesService
 from .settings import Settings
 from .spelltable import generate_link
@@ -48,7 +47,6 @@ class SpellBot(Bot):
             intents=intents,
         )
         self.mock_games = mock_games
-        self.legacy_prefix_cache = defaultdict(lambda: "!")
         self.channel_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
 
     @asynccontextmanager
@@ -134,21 +132,6 @@ class SpellBot(Bot):
         async with db_session_manager():
             await self.handle_verification(message)
 
-        guild_xid = message.guild.id  # type: ignore
-        if message.content.startswith(self.legacy_prefix_cache[guild_xid]):
-            settings = Settings()
-            embed = discord.Embed()
-            embed.set_thumbnail(url=settings.ICO_URL)
-            embed.description = (
-                "SpellBot uses [slash commands]"
-                "(https://discord.com/blog/slash-commands-are-here) now."
-                " Type `/` to see the list of commands! If you don't see any, please"
-                " [re-invite the bot using its new invite link]"
-                f"({settings.BOT_INVITE_LINK})."
-            )
-            embed.color = settings.EMBED_COLOR
-            await safe_message_reply(message, embed=embed, delete_after=10.0)
-
     async def handle_verification(self, message: discord.Message):
         # To verify users we need their user id, so just give up if it's not available
         if not hasattr(message.author, "id"):
@@ -197,16 +180,11 @@ def build_bot(
     # Note: In tests we create the connection using fixtures.
     if create_connection:  # pragma: no cover
 
-        async def bot_connection(bot):
+        async def bot_connection():
             logger.info("initializing database connection...")
             await initialize_connection("spellbot-bot")
 
-            async with db_session_manager():
-                logger.info("building legacy command prefix cache...")
-                db_legacy_prefixes = await get_legacy_prefixes()
-                bot.legacy_prefix_cache.update(db_legacy_prefixes)
-
-        bot.loop.run_until_complete(bot_connection(bot))
+        bot.loop.run_until_complete(bot_connection())
 
     # load all cog extensions
     from .cogs import load_all_cogs
