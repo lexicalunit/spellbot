@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v7.6.1](https://github.com/lexicalunit/spellbot/releases/tag/v7.6.1) - 2021-11-25
+
 ### Fixed
 
 - Small fix to the way pagination work in game history pages.
