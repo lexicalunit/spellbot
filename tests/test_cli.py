@@ -81,6 +81,10 @@ class TestCLI:
             mock_games=True,
         )
 
+    def test_run_bot_with_debug(self, cli, runner):
+        runner.invoke(main, ["--debug"])
+        cli.loop.set_debug.assert_called_once_with(True)
+
     def test_run_bot_with_dev(self, cli, runner):
         runner.invoke(main, ["--dev"])
         cli.hupper.start_reloader.assert_called_once_with("spellbot.main")
