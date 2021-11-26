@@ -54,14 +54,11 @@
               const params = Object.fromEntries(urlSearchParams.entries());
               let {page} = params;
               page = parseInt(page);
-              console.log("cur page:", page);
               if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
-                  console.log("err, going to 0");
-                  page = 0;
+                  page = offset > 0 ? 1 : 0;
               } else {
                   page += offset;
                   if (page < 0) page = 0;
-                  console.log("going to page:", page);
               }
               window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
           }
@@ -712,14 +709,11 @@
               const params = Object.fromEntries(urlSearchParams.entries());
               let {page} = params;
               page = parseInt(page);
-              console.log("cur page:", page);
               if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
-                  console.log("err, going to 0");
-                  page = 0;
+                  page = offset > 0 ? 1 : 0;
               } else {
                   page += offset;
                   if (page < 0) page = 0;
-                  console.log("going to page:", page);
               }
               window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
           }
@@ -1286,14 +1280,11 @@
               const params = Object.fromEntries(urlSearchParams.entries());
               let {page} = params;
               page = parseInt(page);
-              console.log("cur page:", page);
               if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
-                  console.log("err, going to 0");
-                  page = 0;
+                  page = offset > 0 ? 1 : 0;
               } else {
                   page += offset;
                   if (page < 0) page = 0;
-                  console.log("going to page:", page);
               }
               window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
           }
@@ -1987,14 +1978,11 @@
               const params = Object.fromEntries(urlSearchParams.entries());
               let {page} = params;
               page = parseInt(page);
-              console.log("cur page:", page);
               if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
-                  console.log("err, going to 0");
-                  page = 0;
+                  page = offset > 0 ? 1 : 0;
               } else {
                   page += offset;
                   if (page < 0) page = 0;
-                  console.log("going to page:", page);
               }
               window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
           }
