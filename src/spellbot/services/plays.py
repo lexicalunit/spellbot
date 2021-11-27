@@ -6,7 +6,7 @@ from sqlalchemy.sql.elements import TextClause
 from sqlalchemy.sql.expression import and_, text
 
 from ..database import DatabaseSession
-from ..models import Game, GameFormat, Play
+from ..models import Game, GameFormat, GameStatus, Play
 
 CHANNEL_FILTER = "games.channel_xid = :channel_xid"
 USER_FILTER = "plays.user_xid = :user_xid"
@@ -26,6 +26,7 @@ RECORDS_SQL = """
         JOIN games ON games.id = plays.game_id
         WHERE
             games.guild_xid = :guild_xid AND
+            games.status = :status AND
             {secondary_filter}
         ORDER BY
             games.updated_at DESC
@@ -156,6 +157,7 @@ class PlaysService:
                 user_xid=user_xid,
                 offset=page * PAGE_SIZE,
                 page_size=PAGE_SIZE,
+                status=GameStatus.STARTED.value,
             ),
             combined_scores=True,
         )
@@ -174,6 +176,7 @@ class PlaysService:
                 channel_xid=channel_xid,
                 offset=page * PAGE_SIZE,
                 page_size=PAGE_SIZE,
+                status=GameStatus.STARTED.value,
             ),
             combined_scores=False,
         )
