@@ -15,6 +15,7 @@ class TestModelGame:
             "id": game.id,
             "created_at": game.created_at,
             "updated_at": game.updated_at,
+            "deleted_at": game.deleted_at,
             "started_at": game.started_at,
             "guild_xid": game.guild_xid,
             "channel_xid": game.channel_xid,

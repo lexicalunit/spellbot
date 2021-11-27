@@ -82,7 +82,7 @@ class TestInteractionTaskExpireInactiveGames(BaseMixin):
         async with TaskInteraction.create(bot) as interaction:
             await interaction.expire_inactive_games()
 
-        assert DatabaseSession.query(Game).count() == 0
+        assert DatabaseSession.query(Game).filter(Game.deleted_at.is_(None)).count() == 0
 
     async def test_delete_happy_path(self):
         long_ago = datetime.utcnow() - timedelta(minutes=self.settings.EXPIRE_TIME_M + 1)
@@ -116,7 +116,7 @@ class TestInteractionTaskExpireInactiveGames(BaseMixin):
                     embed=None,
                 )
 
-        assert DatabaseSession.query(Game).count() == 0
+        assert DatabaseSession.query(Game).filter(Game.deleted_at.is_(None)).count() == 0
 
     async def test_delete_when_fetch_channel_fails(
         self,
@@ -135,7 +135,7 @@ class TestInteractionTaskExpireInactiveGames(BaseMixin):
 
                 await interaction.expire_inactive_games()
 
-        assert DatabaseSession.query(Game).count() == 0
+        assert DatabaseSession.query(Game).filter(Game.deleted_at.is_(None)).count() == 0
 
     async def test_delete_when_fetch_message_fails(self):
         long_ago = datetime.utcnow() - timedelta(minutes=self.settings.EXPIRE_TIME_M + 1)
@@ -154,7 +154,7 @@ class TestInteractionTaskExpireInactiveGames(BaseMixin):
 
                 await interaction.expire_inactive_games()
 
-        assert DatabaseSession.query(Game).count() == 0
+        assert DatabaseSession.query(Game).filter(Game.deleted_at.is_(None)).count() == 0
 
     async def test_delete_when_game_has_no_message_xid(self):
         long_ago = datetime.utcnow() - timedelta(minutes=self.settings.EXPIRE_TIME_M + 1)
@@ -171,7 +171,7 @@ class TestInteractionTaskExpireInactiveGames(BaseMixin):
             with mock_operations(task_interaction):
                 await interaction.expire_inactive_games()
 
-        assert DatabaseSession.query(Game).count() == 0
+        assert DatabaseSession.query(Game).filter(Game.deleted_at.is_(None)).count() == 0
 
 
 @pytest.mark.asyncio

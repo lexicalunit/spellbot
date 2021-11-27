@@ -306,6 +306,7 @@ class TestCogLookingForGameCrossContext(BaseMixin):
         assert game.to_dict() == {
             "channel_xid": channel.id,
             "created_at": game.created_at,
+            "deleted_at": None,
             "format": game.format,
             "guild_xid": guild.id,
             "id": game.id,
