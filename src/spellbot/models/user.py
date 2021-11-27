@@ -114,7 +114,11 @@ class User(Base):
 
     @property
     def waiting(self) -> bool:
-        return bool(self.game and self.game.status == GameStatus.PENDING.value)
+        return bool(
+            self.game
+            and self.game.status == GameStatus.PENDING.value
+            and not self.game.deleted_at,
+        )
 
     def to_dict(self) -> dict:
         return {

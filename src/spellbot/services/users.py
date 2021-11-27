@@ -85,8 +85,10 @@ class UsersService:
             update(Game)
             .where(Game.id == left_game_id)
             .values(updated_at=datetime.utcnow())
+            .execution_options(synchronize_session=False)
         )
         DatabaseSession.execute(query)
+        DatabaseSession.commit()
 
     @sync_to_async
     def is_waiting(self) -> bool:

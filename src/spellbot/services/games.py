@@ -60,7 +60,12 @@ class GamesService:
         rows = DatabaseSession.query(User).filter(User.game_id == self.game.id).count()
         assert rows + 1 <= self.game.seats
 
-        query = update(User).where(User.xid == player_xid).values(game_id=self.game.id)
+        query = (
+            update(User)
+            .where(User.xid == player_xid)
+            .values(game_id=self.game.id)
+            .execution_options(synchronize_session=False)
+        )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
 
@@ -69,6 +74,7 @@ class GamesService:
             update(Game)
             .where(Game.id == self.game.id)
             .values(updated_at=datetime.utcnow())
+            .execution_options(synchronize_session=False)
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
@@ -115,7 +121,8 @@ class GamesService:
         DatabaseSession.execute(
             update(User)
             .where(User.xid.in_([*friends, author_xid]))
-            .values(game_id=game.id),
+            .values(game_id=game.id)
+            .execution_options(synchronize_session=False),
         )
         DatabaseSession.commit()
         self.game = game
@@ -148,6 +155,7 @@ class GamesService:
                     Game.seats == seats,
                     Game.format == format,
                     Game.status == GameStatus.PENDING.value,
+                    Game.deleted_at.is_(None),
                 ),
             )
             .group_by(Game, User.xid)
@@ -374,6 +382,9 @@ class GamesService:
 
     @sync_to_async
     def delete_games(self, game_ids: list[int]):
-        query = DatabaseSession.query(Game).filter(Game.id.in_(game_ids))
-        query.delete(synchronize_session=False)
+        DatabaseSession.execute(
+            update(Game)
+            .where(Game.id.in_(game_ids))
+            .values(deleted_at=datetime.utcnow()),
+        )
         DatabaseSession.commit()

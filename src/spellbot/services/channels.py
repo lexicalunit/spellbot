@@ -46,25 +46,45 @@ class ChannelsService:
 
     @sync_to_async
     def set_default_seats(self, xid: int, seats: int) -> None:
-        query = update(Channel).where(Channel.xid == xid).values(default_seats=seats)
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(default_seats=seats)
+            .execution_options(synchronize_session=False)
+        )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
 
     @sync_to_async
     def set_auto_verify(self, xid: int, setting: bool) -> None:
-        query = update(Channel).where(Channel.xid == xid).values(auto_verify=setting)
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(auto_verify=setting)
+            .execution_options(synchronize_session=False)
+        )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
 
     @sync_to_async
     def set_verified_only(self, xid: int, setting: bool) -> None:
-        query = update(Channel).where(Channel.xid == xid).values(verified_only=setting)
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(verified_only=setting)
+            .execution_options(synchronize_session=False)
+        )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
 
     @sync_to_async
     def set_unverified_only(self, xid: int, setting: bool) -> None:
-        query = update(Channel).where(Channel.xid == xid).values(unverified_only=setting)
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(unverified_only=setting)
+            .execution_options(synchronize_session=False)
+        )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
 
@@ -75,7 +95,12 @@ class ChannelsService:
             motd = message[:max_len]
         else:
             motd = ""
-        query = update(Channel).where(Channel.xid == xid).values(motd=motd)
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(motd=motd)
+            .execution_options(synchronize_session=False)
+        )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
         return motd
