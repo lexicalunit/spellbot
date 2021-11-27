@@ -89,6 +89,12 @@ class Game(Base):
         nullable=True,
         doc="UTC timestamp when this games was started",
     )
+    deleted_at = Column(
+        DateTime,
+        nullable=True,
+        index=True,
+        doc="UTC timestamp when this games was deleted",
+    )
     guild_xid = Column(
         BigInteger,
         ForeignKey("guilds.xid", ondelete="CASCADE"),
@@ -285,6 +291,7 @@ class Game(Base):
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "started_at": self.started_at,
+            "deleted_at": self.deleted_at,
             "guild_xid": self.guild_xid,
             "channel_xid": self.channel_xid,
             "message_xid": self.message_xid,
