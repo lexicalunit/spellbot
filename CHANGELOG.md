@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Adds an index to optimize records matching.
+- Removes useless sorting in records subquery.
+- Rearranges records subquery to better inform query optimizer.
+- Removes needless guild and channel fetch from records query.
+- Refactors channel records query to avoid duplicate seq scans.
+
 ## [v7.7.2](https://github.com/lexicalunit/spellbot/releases/tag/v7.7.2) - 2021-11-26
 
 ### Changed

@@ -157,3 +157,31 @@ class TestWebRecord:
     async def test_channel_record_invalid_ids(self, client: ClientSession):
         resp = await client.get("/g/abc/c/xyz")
         assert resp.status == 404
+
+    async def test_user_record_missing_guild(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ):
+        user = factories.user.create(xid=101, name="user")
+        resp = await client.get(f"/g/404/u/{user.xid}")
+        assert resp.status == 404
+
+    async def test_channel_record_missing_guild(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ):
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        resp = await client.get(f"/g/404/c/{channel.xid}")
+        assert resp.status == 404
+
+    async def test_channel_record_missing_channel(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ):
+        guild = factories.guild.create(xid=201, name="guild")
+        resp = await client.get(f"/g/{guild.xid}/c/404")
+        assert resp.status == 404

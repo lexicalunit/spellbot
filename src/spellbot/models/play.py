@@ -26,6 +26,7 @@ class Play(Base):
         ForeignKey("games.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
+        index=True,
         doc="The SpellBot game ID of the game the user played",
     )
     points = Column(
