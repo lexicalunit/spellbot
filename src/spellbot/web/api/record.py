@@ -1,6 +1,7 @@
 import logging
 from collections import namedtuple
 from enum import Enum, auto
+from typing import Optional
 
 import aiohttp_jinja2
 from aiohttp import web
@@ -17,18 +18,37 @@ class RecordKind(Enum):
     USER = auto()
 
 
-Opts = namedtuple("Opts", ["guild_xid", "target_xid", "page"])
+Opts = namedtuple("Opts", ["guild_xid", "target_xid", "page", "tz_offset", "tz_name"])
 
 
 async def parse_opts(request: web.Request, kind: RecordKind) -> Opts:
     """Parse out the request options from web request object."""
     guild_xid = int(request.match_info["guild"])
+
     if kind is RecordKind.CHANNEL:
         target_xid = int(request.match_info["channel"])
     else:
         target_xid = int(request.match_info["user"])
+
     page = max(int(request.query.get("page", 0)), 0)
-    return Opts(guild_xid=guild_xid, target_xid=target_xid, page=page)
+
+    tz_offset_cookie = request.cookies.get("timezone_offset")
+    tz_offset: Optional[int] = None
+    if tz_offset_cookie:
+        try:
+            tz_offset = int(tz_offset_cookie)
+        except ValueError:
+            pass
+
+    tz_name = request.cookies.get("timezone_name")
+
+    return Opts(
+        guild_xid=guild_xid,
+        target_xid=target_xid,
+        page=page,
+        tz_offset=tz_offset,
+        tz_name=tz_name,
+    )
 
 
 async def impl(request: web.Request, kind: RecordKind) -> WebResponse:
@@ -54,13 +74,9 @@ async def impl(request: web.Request, kind: RecordKind) -> WebResponse:
     if records is None:
         return WebResponse(status=404)
 
-    context = {"records": records}
-    response = aiohttp_jinja2.render_template(
-        f"{'channel' if kind is RecordKind.CHANNEL else 'user'}_record.html.j2",
-        request,
-        context,
-    )
-    return response
+    path = f"{'channel' if kind is RecordKind.CHANNEL else 'user'}_record.html.j2"
+    context = {"records": records, "tz_offset": opts.tz_offset, "tz_name": opts.tz_name}
+    return aiohttp_jinja2.render_template(path, request, context)
 
 
 async def channel_endpoint(request: web.Request) -> WebResponse:
