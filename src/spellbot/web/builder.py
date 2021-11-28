@@ -1,10 +1,15 @@
+# pylint: disable=wrong-import-order
+
 import logging
 from asyncio.events import AbstractEventLoop as Loop
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import aiohttp_jinja2
 import jinja2
+import pytz
 from aiohttp import web
+from babel.dates import format_datetime
 
 from ..database import initialize_connection
 from ..models import import_models
@@ -16,10 +21,23 @@ logger = logging.getLogger(__name__)
 TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
 
 
+def humanize(ts: int, offset: int, zone: str) -> str:
+    d = datetime.fromtimestamp(ts / 1e3, tz=pytz.UTC) - timedelta(minutes=offset)
+    try:
+        d = d.replace(tzinfo=pytz.timezone(zone))
+    except pytz.UnknownTimeZoneError:
+        pass
+    return format_datetime(d, format="long")
+
+
 def build_web_app() -> web.Application:
     import_models()
     app = web.Application()
-    aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(TEMPLATES_ROOT))
+    aiohttp_jinja2.setup(
+        app,
+        loader=jinja2.FileSystemLoader(TEMPLATES_ROOT),
+        filters={"humanize": humanize},
+    )
     app.add_routes(
         [
             web.get(r"/", ping.endpoint),
