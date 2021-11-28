@@ -93,10 +93,56 @@
         </div>
     </div>
 
+    <script
+        src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+        integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI="
+        crossorigin="anonymous"></script>
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"
+        integrity="sha256-0H3Nuz3aug3afVbUlsu12Puxva3CP4EhJtPExqs54Vg="
+        crossorigin="anonymous"></script>
+
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+        integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.34/moment-timezone-with-data.js"
+        integrity="sha512-oqSECbLRRAy3Sq2tJ0RmzbqXHprFS+n7WapvpI1t0V7CtV4vghscIQ8MYoQo6tp4MrJmih4SlOaYuCkPRi3j6A=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+
     <script>
+        const timezoneOffsetCookie = 'timezone_offset';
+        const timezoneNameCookie = 'timezone_name';
+        const testCookie = 'test';
         const lang = navigator.languages != undefined ?
                         navigator.languages[0] :
                         undefined;
+        const today = new Date()
+        const zone = moment.tz.guess();
+        const offset = today.getTimezoneOffset();
+
+        if (!Cookies.get(timezoneOffsetCookie) || !Cookies.get(timezoneNameCookie)) {
+            Cookies.set(testCookie, true);
+            if (Cookies.get(testCookie)) {
+                Cookies.set(testCookie, null);
+                Cookies.set(timezoneOffsetCookie, offset);
+                Cookies.set(timezoneNameCookie, zone);
+                location.reload();
+            }
+        } else {
+            const storedOffset = parseInt(Cookies.get(timezoneOffsetCookie));
+            const storedZone = Cookies.get(timezoneNameCookie);
+            if (storedOffset !== offset || storedZone !== zone) {
+                Cookies.set(timezoneOffsetCookie, offset);
+                Cookies.set(timezoneNameCookie, zone);
+                location.reload();
+            }
+        }
 
         function humanize_timestamp(ts) {
             const options = {
@@ -105,23 +151,18 @@
                 month: 'long',
                 day: 'numeric',
                 hour12: true,
-                hour: "numeric",
-                minute: "numeric",
-                timeZoneName: "short",
+                hour: 'numeric',
+                minute: 'numeric',
+                timeZoneName: 'short',
             };
             return (new Date(ts)).toLocaleDateString(lang, options);
         }
 
-        els = document.getElementsByClassName("timestamp");
+        const els = document.getElementsByClassName('timestamp');
         Array.from(els).forEach((el) => {
             el.innerHTML = humanize_timestamp(Number(el.innerHTML));
         });
     </script>
-
-    <script
-        src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
-        integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI="
-        crossorigin="anonymous"></script>
 
     <script>
         {% include "table2CSV.js" %}
@@ -130,8 +171,8 @@
     <script>
         $('table').each(function() {
             const $table = $(this);
-            const $button = $("<a href='#' class='button'>");
-            $button.text("Export to spreadsheet");
+            const $button = $('<a href="#" class="button">');
+            $button.text('Export to spreadsheet');
             $button.insertAfter($table);
 
             $button.click(function() {

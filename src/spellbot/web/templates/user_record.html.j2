@@ -16,7 +16,11 @@
         {% for record in records %}
             <tr>
                 <td><a href="https://discordapp.com/channels/{{record.guild}}/{{record.channel}}/{{record.message}}">SB#{{record.id}}</a></td>
-                <td class="timestamp">{{record.updated_at}}</td>
+                {% if tz_offset and tz_name %}
+                    <td>{{record.updated_at | humanize(tz_offset, tz_name)}}</td>
+                {% else %}
+                    <td class="timestamp">{{record.updated_at}}</td>
+                {% endif %}
                 <td><a href="https://discordapp.com/channels/{{record.guild}}">{{record.guild_name}}</a></td>
                 <td><a href="https://discordapp.com/channels/{{record.guild}}/{{record.channel}}">#{{record.channel_name}}</a></td>
                 <td>{{record.format}}</td>
