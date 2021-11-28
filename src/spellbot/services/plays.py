@@ -9,7 +9,8 @@ from sqlalchemy.sql.expression import and_, text
 from ..database import DatabaseSession
 from ..models import Channel, Game, GameFormat, Guild, Play
 
-PAGE_SIZE = 100
+USER_PAGE_SIZE = 25
+CHANNEL_PAGE_SIZE = 10
 
 USER_RECORDS_SQL = r"""
     WITH game_plays AS (
@@ -25,6 +26,9 @@ USER_RECORDS_SQL = r"""
         WHERE
             games.guild_xid = :guild_xid AND
             plays.user_xid = :user_xid
+        ORDER BY games.updated_at DESC
+        OFFSET :offset
+        LIMIT :page_size
     )
     SELECT
         game_plays.game_id,
@@ -58,8 +62,6 @@ USER_RECORDS_SQL = r"""
         game_plays.format,
         channels.name
     ORDER BY game_plays.updated_at DESC
-    OFFSET :offset
-    LIMIT :page_size
     ;
 """
 
@@ -164,8 +166,8 @@ class PlaysService:
             {
                 "guild_xid": guild_xid,
                 "user_xid": user_xid,
-                "offset": page * PAGE_SIZE,
-                "page_size": PAGE_SIZE,
+                "offset": page * USER_PAGE_SIZE,
+                "page_size": USER_PAGE_SIZE,
             },
         )
         return [
@@ -207,8 +209,8 @@ class PlaysService:
             {
                 "guild_xid": guild_xid,
                 "channel_xid": channel_xid,
-                "offset": page * PAGE_SIZE,
-                "page_size": PAGE_SIZE,
+                "offset": page * CHANNEL_PAGE_SIZE,
+                "page_size": CHANNEL_PAGE_SIZE,
             },
         )
         combined_data = [
