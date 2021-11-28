@@ -48,30 +48,6 @@
                   el.style.cursor = 'pointer';
               }, 1200)
           }
-  
-          function page_impl(offset) {
-              const urlSearchParams = new URLSearchParams(window.location.search);
-              const params = Object.fromEntries(urlSearchParams.entries());
-              let {page} = params;
-              page = parseInt(page);
-              if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
-                  page = offset > 0 ? 1 : 0;
-              } else {
-                  page += offset;
-                  if (page < 0) page = 0;
-              }
-              window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
-          }
-  
-          function next_page(event) {
-              page_impl(1);
-              event.preventDefault();
-          }
-  
-          function prev_page(event) {
-              page_impl(-1);
-              event.preventDefault();
-          }
       </script>
   
       <style>
@@ -545,8 +521,8 @@
       </tbody>
   </table>
   
-                      <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
-                      <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                      <a style="float:right" href="/g/201/c/301?page=1" class="button">Next page</a>
+                      <a style="float:right" href="/g/201/c/301?page=0" class="button">Previous page</a>
                   </div>
               </div>
           </div>
@@ -762,30 +738,6 @@
                   el.style.cursor = 'pointer';
               }, 1200)
           }
-  
-          function page_impl(offset) {
-              const urlSearchParams = new URLSearchParams(window.location.search);
-              const params = Object.fromEntries(urlSearchParams.entries());
-              let {page} = params;
-              page = parseInt(page);
-              if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
-                  page = offset > 0 ? 1 : 0;
-              } else {
-                  page += offset;
-                  if (page < 0) page = 0;
-              }
-              window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
-          }
-  
-          function next_page(event) {
-              page_impl(1);
-              event.preventDefault();
-          }
-  
-          function prev_page(event) {
-              page_impl(-1);
-              event.preventDefault();
-          }
       </script>
   
       <style>
@@ -1163,8 +1115,8 @@
       </tbody>
   </table>
   
-                      <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
-                      <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                      <a style="float:right" href="/g/201/c/101?page=1" class="button">Next page</a>
+                      <a style="float:right" href="/g/201/c/101?page=0" class="button">Previous page</a>
                   </div>
               </div>
           </div>
@@ -1380,30 +1332,6 @@
                   el.style.cursor = 'pointer';
               }, 1200)
           }
-  
-          function page_impl(offset) {
-              const urlSearchParams = new URLSearchParams(window.location.search);
-              const params = Object.fromEntries(urlSearchParams.entries());
-              let {page} = params;
-              page = parseInt(page);
-              if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
-                  page = offset > 0 ? 1 : 0;
-              } else {
-                  page += offset;
-                  if (page < 0) page = 0;
-              }
-              window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
-          }
-  
-          function next_page(event) {
-              page_impl(1);
-              event.preventDefault();
-          }
-  
-          function prev_page(event) {
-              page_impl(-1);
-              event.preventDefault();
-          }
       </script>
   
       <style>
@@ -1877,8 +1805,8 @@
       </tbody>
   </table>
   
-                      <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
-                      <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                      <a style="float:right" href="/g/201/c/301?page=1" class="button">Next page</a>
+                      <a style="float:right" href="/g/201/c/301?page=0" class="button">Previous page</a>
                   </div>
               </div>
           </div>
@@ -2094,30 +2022,6 @@
                   el.style.cursor = 'pointer';
               }, 1200)
           }
-  
-          function page_impl(offset) {
-              const urlSearchParams = new URLSearchParams(window.location.search);
-              const params = Object.fromEntries(urlSearchParams.entries());
-              let {page} = params;
-              page = parseInt(page);
-              if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
-                  page = offset > 0 ? 1 : 0;
-              } else {
-                  page += offset;
-                  if (page < 0) page = 0;
-              }
-              window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
-          }
-  
-          function next_page(event) {
-              page_impl(1);
-              event.preventDefault();
-          }
-  
-          function prev_page(event) {
-              page_impl(-1);
-              event.preventDefault();
-          }
       </script>
   
       <style>
@@ -2591,8 +2495,8 @@
       </tbody>
   </table>
   
-                      <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
-                      <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                      <a style="float:right" href="/g/201/c/301?page=1" class="button">Next page</a>
+                      <a style="float:right" href="/g/201/c/301?page=0" class="button">Previous page</a>
                   </div>
               </div>
           </div>
@@ -2808,30 +2712,6 @@
                   el.style.cursor = 'pointer';
               }, 1200)
           }
-  
-          function page_impl(offset) {
-              const urlSearchParams = new URLSearchParams(window.location.search);
-              const params = Object.fromEntries(urlSearchParams.entries());
-              let {page} = params;
-              page = parseInt(page);
-              if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
-                  page = offset > 0 ? 1 : 0;
-              } else {
-                  page += offset;
-                  if (page < 0) page = 0;
-              }
-              window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
-          }
-  
-          function next_page(event) {
-              page_impl(1);
-              event.preventDefault();
-          }
-  
-          function prev_page(event) {
-              page_impl(-1);
-              event.preventDefault();
-          }
       </script>
   
       <style>
@@ -3342,8 +3222,8 @@
       </tbody>
   </table>
   
-                      <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
-                      <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                      <a style="float:right" href="/g/201/u/101?page=1" class="button">Next page</a>
+                      <a style="float:right" href="/g/201/u/101?page=0" class="button">Previous page</a>
                   </div>
               </div>
           </div>
@@ -3559,30 +3439,6 @@
                   el.style.cursor = 'pointer';
               }, 1200)
           }
-  
-          function page_impl(offset) {
-              const urlSearchParams = new URLSearchParams(window.location.search);
-              const params = Object.fromEntries(urlSearchParams.entries());
-              let {page} = params;
-              page = parseInt(page);
-              if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
-                  page = offset > 0 ? 1 : 0;
-              } else {
-                  page += offset;
-                  if (page < 0) page = 0;
-              }
-              window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
-          }
-  
-          function next_page(event) {
-              page_impl(1);
-              event.preventDefault();
-          }
-  
-          function prev_page(event) {
-              page_impl(-1);
-              event.preventDefault();
-          }
       </script>
   
       <style>
@@ -3958,8 +3814,8 @@
       </tbody>
   </table>
   
-                      <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
-                      <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                      <a style="float:right" href="/g/201/u/101?page=1" class="button">Next page</a>
+                      <a style="float:right" href="/g/201/u/101?page=0" class="button">Previous page</a>
                   </div>
               </div>
           </div>
@@ -4174,30 +4030,6 @@
                   el.style.pointerEvents = 'auto';
                   el.style.cursor = 'pointer';
               }, 1200)
-          }
-  
-          function page_impl(offset) {
-              const urlSearchParams = new URLSearchParams(window.location.search);
-              const params = Object.fromEntries(urlSearchParams.entries());
-              let {page} = params;
-              page = parseInt(page);
-              if (page == null || isNaN(page) || !isFinite(page) || page < 0) {
-                  page = offset > 0 ? 1 : 0;
-              } else {
-                  page += offset;
-                  if (page < 0) page = 0;
-              }
-              window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
-          }
-  
-          function next_page(event) {
-              page_impl(1);
-              event.preventDefault();
-          }
-  
-          function prev_page(event) {
-              page_impl(-1);
-              event.preventDefault();
           }
       </script>
   
@@ -4709,8 +4541,8 @@
       </tbody>
   </table>
   
-                      <a style="float:right" href="#" class="button" onclick="next_page()">Next page</a>
-                      <a style="float:right" href="#" class="button" onclick="prev_page()">Previous page</a>
+                      <a style="float:right" href="/g/201/u/101?page=1" class="button">Next page</a>
+                      <a style="float:right" href="/g/201/u/101?page=0" class="button">Previous page</a>
                   </div>
               </div>
           </div>

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Generate previous and next page buttons' href values rather than use onclick.
+
 ## [v7.8.2](https://github.com/lexicalunit/spellbot/releases/tag/v7.8.2) - 2021-11-28
 
 ### Changed
