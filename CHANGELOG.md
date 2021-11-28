@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Smaller page size on play records pages.
+- Use browser's locale when humanizing timestamps.
 
 ## [v7.7.3](https://github.com/lexicalunit/spellbot/releases/tag/v7.7.3) - 2021-11-27
 

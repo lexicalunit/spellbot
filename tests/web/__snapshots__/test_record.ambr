@@ -539,6 +539,10 @@
       </div>
   
       <script>
+          const lang = navigator.languages != undefined ?
+                          navigator.languages[0] :
+                          undefined;
+  
           function humanize_timestamp(ts) {
               const options = {
                   weekday: 'long',
@@ -550,7 +554,7 @@
                   minute: "numeric",
                   timeZoneName: "short",
               };
-              return (new Date(ts)).toLocaleDateString(undefined, options);
+              return (new Date(ts)).toLocaleDateString(lang, options);
           }
   
           els = document.getElementsByClassName("timestamp");
@@ -1110,6 +1114,10 @@
       </div>
   
       <script>
+          const lang = navigator.languages != undefined ?
+                          navigator.languages[0] :
+                          undefined;
+  
           function humanize_timestamp(ts) {
               const options = {
                   weekday: 'long',
@@ -1121,7 +1129,7 @@
                   minute: "numeric",
                   timeZoneName: "short",
               };
-              return (new Date(ts)).toLocaleDateString(undefined, options);
+              return (new Date(ts)).toLocaleDateString(lang, options);
           }
   
           els = document.getElementsByClassName("timestamp");
@@ -1808,6 +1816,10 @@
       </div>
   
       <script>
+          const lang = navigator.languages != undefined ?
+                          navigator.languages[0] :
+                          undefined;
+  
           function humanize_timestamp(ts) {
               const options = {
                   weekday: 'long',
@@ -1819,7 +1831,7 @@
                   minute: "numeric",
                   timeZoneName: "short",
               };
-              return (new Date(ts)).toLocaleDateString(undefined, options);
+              return (new Date(ts)).toLocaleDateString(lang, options);
           }
   
           els = document.getElementsByClassName("timestamp");
@@ -2377,6 +2389,10 @@
       </div>
   
       <script>
+          const lang = navigator.languages != undefined ?
+                          navigator.languages[0] :
+                          undefined;
+  
           function humanize_timestamp(ts) {
               const options = {
                   weekday: 'long',
@@ -2388,7 +2404,7 @@
                   minute: "numeric",
                   timeZoneName: "short",
               };
-              return (new Date(ts)).toLocaleDateString(undefined, options);
+              return (new Date(ts)).toLocaleDateString(lang, options);
           }
   
           els = document.getElementsByClassName("timestamp");
