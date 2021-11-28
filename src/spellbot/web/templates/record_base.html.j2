@@ -61,12 +61,14 @@
             window.location.href = window.location.origin + window.location.pathname + `?page=${page}`;
         }
 
-        function next_page() {
+        function next_page(event) {
             page_impl(1);
+            event.preventDefault();
         }
 
-        function prev_page() {
+        function prev_page(event) {
             page_impl(-1);
+            event.preventDefault();
         }
     </script>
 

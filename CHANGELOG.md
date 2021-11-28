@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Prevent page jumping to top before redirect.
+
 ## [v7.8.0](https://github.com/lexicalunit/spellbot/releases/tag/v7.8.0) - 2021-11-28
 
 ### Changed
