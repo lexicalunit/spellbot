@@ -75,7 +75,13 @@ async def impl(request: web.Request, kind: RecordKind) -> WebResponse:
         return WebResponse(status=404)
 
     path = f"{'channel' if kind is RecordKind.CHANNEL else 'user'}_record.html.j2"
-    context = {"records": records, "tz_offset": opts.tz_offset, "tz_name": opts.tz_name}
+    context = {
+        "records": records,
+        "tz_offset": opts.tz_offset,
+        "tz_name": opts.tz_name,
+        "prev_page": f"{request.path}?page={max(opts.page - 1, 0)}",
+        "next_page": f"{request.path}?page={opts.page + 1}",
+    }
     return aiohttp_jinja2.render_template(path, request, context)
 
 
