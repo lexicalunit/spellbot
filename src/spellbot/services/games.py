@@ -376,6 +376,7 @@ class GamesService:
             and_(
                 Game.status == GameStatus.PENDING.value,
                 Game.updated_at <= limit,
+                Game.deleted_at.is_(None),
             ),
         )
         return [record.to_dict() for record in records]
