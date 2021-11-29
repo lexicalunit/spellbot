@@ -17,6 +17,22 @@ enableTypeIgnoreComments = true
 reportMissingTypeStubs = false
 typeCheckingMode = "basic"
 
+[tool.pylic]
+safe_licenses = [
+  "Apache License 2.0",
+  "Apache Software License",
+  "Artistic License",
+  "BSD License",
+  "BSD-derived (http://www.repoze.org/LICENSE.txt)",
+  "GNU Library or Lesser General Public License (LGPL)",
+  "GNU Library or Lesser General Public License (LGPL)",
+  "MIT License",
+  "MIT",
+  "Mozilla Public License 2.0 (MPL 2.0)",
+  "Public Domain",
+  "Python Software Foundation License",
+]
+
 [tool.pytest.ini_options]
 addopts = """
     -W ignore::DeprecationWarning
@@ -114,7 +130,7 @@ flake8 = "^4.0.1"
 flake8-commas = "^2.1.0"
 flake8-print = "^4.0.0"
 isort = "^5.10.1"
-pylint = "^2.12.1"
+pylic = "^2.1.0"
 pyright = "^0.0.13"
 pytest = "^6.2.5"
 pytest-aiohttp = "^0.3.0"

@@ -91,13 +91,15 @@ def main(
     if dev:
         hupper.start_reloader("spellbot.main")
 
-    from .client import build_bot
     from .settings import Settings
-    from .web import launch_web_server
 
+    # Ensure that configure_logging() is called as early as possible
     settings = Settings()
     level = log_level if log_level is not None else (getenv("LOG_LEVEL") or "INFO")
     configure_logging(level)
+
+    from .client import build_bot
+    from .web import launch_web_server
 
     loop = asyncio.get_event_loop()
     if debug:
