@@ -92,3 +92,9 @@ fi
 # tag and push changes to origin/main
 run "git tag '$VERSION'"
 run "git push --tags origin main"
+
+# build and push updates to docker hub
+TAG="lexicalunit/spellbot"
+run "docker build -t '$TAG' ."
+run "docker push '$TAG'"
+echo "Note: Any changes to README.md must be made manually at https://hub.docker.com/r/lexicalunit/spellbot ..."
