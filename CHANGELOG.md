@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Ensure that only non-deleted games are selected for inactivity.
+
 ## [v7.8.3](https://github.com/lexicalunit/spellbot/releases/tag/v7.8.3) - 2021-11-28
 
 ### Changed
