@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Completely remove pylint from project dependencies just to make it totally clear
+  that no source code from pylint nor any modules are being used within SpellBot.
+  Tests using pylint will now require that you've installed it on your own.
+
 ### Added
 
 - Adds publishing to docker hub as part of publish script.

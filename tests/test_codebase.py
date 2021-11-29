@@ -1,5 +1,6 @@
 import re
 import sys
+import warnings
 from os import chdir
 from subprocess import run
 
@@ -39,8 +40,19 @@ class TestCodebase:
         chdir(REPO_ROOT)
         cmd = ["pylint", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        try:
+            proc = run(cmd, capture_output=True)
+            assert proc.returncode == 0, f"pylint issues:\n{proc.stdout.decode('utf-8')}"
+        except FileNotFoundError:
+            warnings.warn(UserWarning("test skipped: pylint not installed"))
+
+    def test_pylic(self):
+        """Checks that the Python codebase passes configured pylic checks."""
+        chdir(REPO_ROOT)
+        cmd = ["pylic", "check"]
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, f"pylint issues:\n{proc.stdout.decode('utf-8')}"
+        assert proc.returncode == 0, f"pylic issues:\n{proc.stderr.decode('utf-8')}"
 
     def test_isort(self):
         """Checks that the Python codebase imports are correctly sorted."""
