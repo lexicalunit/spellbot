@@ -17,4 +17,5 @@ class TestModelChannel:
             "unverified_only": channel.unverified_only,
             "verified_only": channel.verified_only,
             "motd": channel.motd,
+            "voice_category": channel.voice_category,
         }

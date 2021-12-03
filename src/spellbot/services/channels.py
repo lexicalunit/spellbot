@@ -104,3 +104,17 @@ class ChannelsService:
         DatabaseSession.execute(query)
         DatabaseSession.commit()
         return motd
+
+    @sync_to_async()
+    def set_voice_category(self, xid: int, value: str) -> str:
+        max_len = Channel.voice_category.property.columns[0].type.length  # type: ignore
+        name = value[:max_len]
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(voice_category=name)
+            .execution_options(synchronize_session=False)
+        )
+        DatabaseSession.execute(query)
+        DatabaseSession.commit()
+        return name

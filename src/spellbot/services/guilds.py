@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
 from ..database import DatabaseSession
-from ..models import Guild, GuildAward
+from ..models import Channel, Guild, GuildAward
 
 
 class GuildsService:
@@ -97,6 +97,17 @@ class GuildsService:
     def current_name(self) -> str:
         assert self.guild
         return self.guild.name or ""
+
+    @sync_to_async
+    def voice_category_prefixes(self) -> list[str]:
+        assert self.guild
+        return [
+            str(row[0])
+            for row in DatabaseSession.query(Channel.voice_category)
+            .filter(Channel.guild_xid == self.guild.xid)
+            .distinct()
+            .all()
+        ]
 
     @sync_to_async
     def voiced(self) -> list[int]:

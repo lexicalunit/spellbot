@@ -40,6 +40,7 @@ class TestSpellBot(BaseMixin):
             "motd",
             "unverified_only",
             "verified_only",
+            "voice_category",
         }
         assert self.bot.slash.components[None].keys() == {
             "join",
