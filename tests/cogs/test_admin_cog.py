@@ -258,6 +258,18 @@ class TestCogAdminChannels(InteractionContextMixin):
         channel = DatabaseSession.query(Channel).one()
         assert channel.unverified_only != default_value
 
+    async def test_voice_category(self):
+        cog = AdminCog(self.bot)
+        default_value = Channel.voice_category.default.arg  # type: ignore
+        new_value = "wotnot" + default_value
+        await cog.voice_category.func(cog, self.ctx, new_value)
+        self.ctx.send.assert_called_once_with(
+            f"Voice category prefix for this channel has been set to: {new_value}",
+            hidden=True,
+        )
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.voice_category != default_value
+
     async def test_channel_motd(self):
         cog = AdminCog(self.bot)
         motd = "this is a channel message of the day"

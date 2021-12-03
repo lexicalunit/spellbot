@@ -257,10 +257,11 @@ class LookingForGameInteraction(BaseInteraction):
         if not await self.services.guilds.should_voice_create():
             return
 
+        category_prefix = self.channel_data["voice_category"]
         category = await safe_ensure_voice_category(
             self.bot,
             guild_xid,
-            self.settings.VOICE_CATEGORY_PREFIX,
+            category_prefix,
         )
         if not category:
             return

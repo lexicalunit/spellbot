@@ -7,8 +7,7 @@ import pytest
 from spellbot import SpellBot
 from spellbot.database import DatabaseSession
 from spellbot.interactions import TaskInteraction, task_interaction
-from spellbot.models import Game, Guild
-from spellbot.settings import Settings
+from spellbot.models import Channel, Game, Guild
 from tests.fixtures import Factories
 from tests.mixins import BaseMixin
 from tests.mocks import (
@@ -19,8 +18,10 @@ from tests.mocks import (
     mock_operations,
 )
 
+VOICE_CATEGORY_PREFIX = Channel.voice_category.default.arg  # type: ignore
 
-def create_bot_guilds(settings, db_guilds: list[Guild]) -> dict:
+
+def create_bot_guilds(db_guilds: list[Guild]) -> dict:
     bot_guilds = {}
     for i, db_guild in enumerate(db_guilds):
         voice_channel = MagicMock(spec=discord.VoiceChannel)
@@ -31,7 +32,7 @@ def create_bot_guilds(settings, db_guilds: list[Guild]) -> dict:
         voice_channel.delete = AsyncMock()
 
         category = MagicMock(spec=discord.CategoryChannel)
-        category.name = settings.VOICE_CATEGORY_PREFIX
+        category.name = VOICE_CATEGORY_PREFIX
         category.voice_channels = [voice_channel]
 
         discord_guild = MagicMock(spec=discord.Guild)
@@ -71,10 +72,9 @@ class TestInteractionTaskExpireInactiveGames(BaseMixin):
     async def test_delete_all(
         self,
         bot: SpellBot,
-        settings: Settings,
         factories: Factories,
     ):
-        long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
+        long_ago = datetime.utcnow() - timedelta(minutes=self.settings.EXPIRE_TIME_M + 1)
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         factories.game.create_batch(5, guild=guild, channel=channel, updated_at=long_ago)
@@ -121,10 +121,9 @@ class TestInteractionTaskExpireInactiveGames(BaseMixin):
     async def test_delete_when_fetch_channel_fails(
         self,
         bot: SpellBot,
-        settings: Settings,
         factories: Factories,
     ):
-        long_ago = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M + 1)
+        long_ago = datetime.utcnow() - timedelta(minutes=self.settings.EXPIRE_TIME_M + 1)
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         factories.game.create(guild=guild, channel=channel, updated_at=long_ago)
@@ -178,7 +177,9 @@ class TestInteractionTaskExpireInactiveGames(BaseMixin):
 class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
     async def test_happy_path(self):
         db_guilds = self.factories.guild.create_batch(5, voice_create=True)
-        bot_guilds = create_bot_guilds(self.settings, db_guilds)
+        for db_guild in db_guilds:
+            self.factories.channel.create(guild=db_guild)
+        bot_guilds = create_bot_guilds(db_guilds)
 
         class BotMock(SpellBot):
             guilds = list(bot_guilds.values())  # type: ignore
@@ -197,7 +198,8 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
 
     async def test_channel_grace_period(self):
         db_guild = self.factories.guild.create(voice_create=True)
-        bot_guilds = create_bot_guilds(self.settings, [db_guild])
+        self.factories.channel.create(guild=db_guild)
+        bot_guilds = create_bot_guilds([db_guild])
 
         voice_channel = MagicMock(spec=discord.VoiceChannel)
         voice_channel.name = "Game-SB1"
@@ -207,7 +209,7 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
         voice_channel.delete = AsyncMock()
 
         category = MagicMock(spec=discord.CategoryChannel)
-        category.name = self.settings.VOICE_CATEGORY_PREFIX
+        category.name = VOICE_CATEGORY_PREFIX
         category.voice_channels = [voice_channel]
 
         discord_guild = MagicMock(spec=discord.Guild)
@@ -231,6 +233,7 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
 
     async def test_channel_occupied(self):
         db_guild = self.factories.guild.create(voice_create=True)
+        self.factories.channel.create(guild=db_guild)
 
         bot_guilds = {}
 
@@ -242,7 +245,7 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
         voice_channel.delete = AsyncMock()
 
         category = MagicMock(spec=discord.CategoryChannel)
-        category.name = self.settings.VOICE_CATEGORY_PREFIX
+        category.name = VOICE_CATEGORY_PREFIX
         category.voice_channels = [voice_channel]
 
         discord_guild = MagicMock(spec=discord.Guild)
@@ -266,6 +269,7 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
 
     async def test_channel_occupied_past_limit(self):
         db_guild = self.factories.guild.create(voice_create=True)
+        self.factories.channel.create(guild=db_guild)
 
         bot_guilds = {}
 
@@ -277,7 +281,7 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
         voice_channel.delete = AsyncMock()
 
         category = MagicMock(spec=discord.CategoryChannel)
-        category.name = self.settings.VOICE_CATEGORY_PREFIX
+        category.name = VOICE_CATEGORY_PREFIX
         category.voice_channels = [voice_channel]
 
         discord_guild = MagicMock(spec=discord.Guild)
@@ -301,6 +305,7 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
 
     async def test_channel_with_bad_permissions(self):
         db_guild = self.factories.guild.create(voice_create=True)
+        self.factories.channel.create(guild=db_guild)
 
         bot_guilds = {}
 
@@ -313,7 +318,7 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
         del voice_channel.type
 
         category = MagicMock(spec=discord.CategoryChannel)
-        category.name = self.settings.VOICE_CATEGORY_PREFIX
+        category.name = VOICE_CATEGORY_PREFIX
         category.voice_channels = [voice_channel]
 
         discord_guild = MagicMock(spec=discord.Guild)
@@ -354,7 +359,7 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
         voice_channel.delete = AsyncMock()
 
         category = MagicMock(spec=discord.CategoryChannel)
-        category.name = self.settings.VOICE_CATEGORY_PREFIX
+        category.name = VOICE_CATEGORY_PREFIX
         category.voice_channels = [voice_channel]
 
         discord_guild = MagicMock(spec=discord.Guild)
@@ -396,7 +401,7 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
         voice_channel.delete = AsyncMock()
 
         category = MagicMock(spec=discord.CategoryChannel)
-        category.name = self.settings.VOICE_CATEGORY_PREFIX
+        category.name = VOICE_CATEGORY_PREFIX
         category.voice_channels = [voice_channel]
 
         discord_guild = MagicMock(spec=discord.Guild)
@@ -421,7 +426,9 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
 
     async def test_non_active_guilds(self):
         db_guilds = self.factories.guild.create_batch(5, voice_create=True)
-        bot_guilds = create_bot_guilds(self.settings, db_guilds)
+        for db_guild in db_guilds:
+            self.factories.channel.create(guild=db_guild)
+        bot_guilds = create_bot_guilds(db_guilds)
 
         class BotMock(SpellBot):
             guilds = []  # type: ignore
@@ -440,7 +447,9 @@ class TestInteractionTaskCleanupOldVoicChannels(BaseMixin):
 
     async def test_when_guild_cache_failure(self):
         db_guilds = self.factories.guild.create_batch(5, voice_create=True)
-        bot_guilds = create_bot_guilds(self.settings, db_guilds)
+        for db_guild in db_guilds:
+            self.factories.channel.create(guild=db_guild)
+        bot_guilds = create_bot_guilds(db_guilds)
 
         class BotMock(SpellBot):
             guilds = list(bot_guilds.values())  # type: ignore
