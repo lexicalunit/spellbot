@@ -83,6 +83,13 @@ class Channel(Base):
         String(255),
         doc="Channel message of the day",
     )
+    voice_category = Column(
+        String(50),
+        doc="Category name for voice channels for games in this channel.",
+        nullable=True,
+        default="SpellBot Voice Channels",
+        server_default=text("'SpellBot Voice Channels'"),
+    )
 
     guild = relationship(
         "Guild",
@@ -108,4 +115,5 @@ class Channel(Base):
             "unverified_only": self.unverified_only,
             "verified_only": self.verified_only,
             "motd": self.motd,
+            "voice_category": self.voice_category,
         }

@@ -86,6 +86,7 @@ class TaskInteraction(BaseInteraction):
             await self.services.guilds.select(guild_xid)
             guild_name = await self.services.guilds.current_name()
             logger.info("looking in guild %s(%s)", guild_name, guild_xid)
+            prefixes = await self.services.guilds.voice_category_prefixes()
 
             if guild_xid not in active_guild_xids:
                 logger.warning("guild is not active")
@@ -97,7 +98,7 @@ class TaskInteraction(BaseInteraction):
                 continue
 
             voice_categories = filter(
-                lambda c: c.name.startswith(settings.VOICE_CATEGORY_PREFIX),
+                lambda c, ps=prefixes: any(c.name.startswith(prefix) for prefix in ps),
                 guild.categories,
             )
             for category in voice_categories:

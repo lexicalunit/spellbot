@@ -245,6 +245,23 @@ class AdminCog(commands.Cog):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.info(game_id)
 
+    @cog_ext.cog_subcommand(
+        base="set",
+        name="voice_category",
+        description="Set the voice category prefix for games in this channel.",
+        options=[
+            {
+                "name": "prefix",
+                "required": True,
+                "description": "Setting",
+                "type": SlashCommandOptionType.STRING.value,
+            },
+        ],
+    )
+    async def voice_category(self, ctx: SlashContext, prefix: str):
+        async with AdminInteraction.create(self.bot, ctx) as interaction:
+            await interaction.set_voice_category(prefix)
+
 
 def setup(bot: SpellBot):
     bot.add_cog(AdminCog(bot))

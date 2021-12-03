@@ -55,6 +55,7 @@ class AdminInteraction(BaseInteraction):
             update_channel_settings(channel, channel_settings, "auto_verify")
             update_channel_settings(channel, channel_settings, "unverified_only")
             update_channel_settings(channel, channel_settings, "verified_only")
+            update_channel_settings(channel, channel_settings, "voice_category")
             if channel_settings:
                 all_default = False
                 deets = ", ".join(
@@ -361,5 +362,17 @@ class AdminInteraction(BaseInteraction):
         await safe_send_channel(
             self.ctx,
             f"Message of the day for this channel has been set to: {motd}",
+            hidden=True,
+        )
+
+    async def set_voice_category(self, value: str):
+        assert self.ctx
+        name = await self.services.channels.set_voice_category(
+            self.ctx.channel_id,
+            value,
+        )
+        await safe_send_channel(
+            self.ctx,
+            f"Voice category prefix for this channel has been set to: {name}",
             hidden=True,
         )

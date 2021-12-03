@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds publishing to docker hub as part of publish script.
+- Admins can set the preferred voice category name prefix for created voice channels
+  on a per-channel basis.
 
 ## [v7.8.4](https://github.com/lexicalunit/spellbot/releases/tag/v7.8.4) - 2021-11-28
 
