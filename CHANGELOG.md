@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Fill in the transparent center of the SpellBot avatar.
+
 ## [v7.9.0](https://github.com/lexicalunit/spellbot/releases/tag/v7.9.0) - 2021-12-03
 
 ### Removed
