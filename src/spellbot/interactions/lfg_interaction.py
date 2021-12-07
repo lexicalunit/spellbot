@@ -131,11 +131,17 @@ class LookingForGameInteraction(BaseInteraction):
         format: Optional[int] = None,
         message_xid: Optional[int] = None,
     ):
-        if not self.ctx or not self.guild or not self.channel:  # pragma: no cover
-            # I have no idea how this is possible but I keep seeing
-            # random cases where self.channel is None here, so let's
-            # just ignore these kinds of interactions.
-            return
+        assert self.ctx
+        if not self.guild or not self.channel:
+            # Once we move to discord.py "version 2.0" and discord-interactions v4,
+            # we should have access to a Thread's parent ID (the guild channel).
+            # Then we will be able to properly handle these kinds of requests.
+            # See: https://github.com/lexicalunit/spellbot/issues/681
+            return await safe_send_channel(
+                self.ctx,
+                "Sorry, that command is not supported in this context.",
+                hidden=True,
+            )
 
         # True if user clicked on a Join Game button.
         # False if user issued a /lfg command in chat.

@@ -6,7 +6,7 @@ from spellbot.database import DatabaseSession
 from spellbot.interactions import LookingForGameInteraction, lfg_interaction
 from spellbot.models import User
 from tests.mixins import InteractionContextMixin
-from tests.mocks import build_author
+from tests.mocks import build_author, mock_discord_user, mock_operations
 
 
 @pytest.mark.asyncio
@@ -88,3 +88,21 @@ class TestInteractionLookingForGame(InteractionContextMixin):
             )
 
         assert DatabaseSession.query(User).count() == 3
+
+    async def test_lfg_in_a_thread(self, monkeypatch):
+        guild = self.factories.guild.create(xid=self.ctx.guild_id)
+        self.factories.channel.create(xid=self.ctx.channel_id, guild=guild)
+        author_user = self.factories.user.create(xid=self.ctx.author_id)
+        author_player = mock_discord_user(author_user)
+
+        # ctx.channel is None when handling an interaction in a Thread.
+        monkeypatch.setattr(self.ctx, "channel", None)
+
+        async with LookingForGameInteraction.create(self.bot, self.ctx) as interaction:
+            with mock_operations(lfg_interaction, users=[author_player]):
+                await interaction.execute()
+                lfg_interaction.safe_send_channel.assert_called_once_with(
+                    self.ctx,
+                    "Sorry, that command is not supported in this context.",
+                    hidden=True,
+                )
