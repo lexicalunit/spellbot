@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Handle `/lfg` in a thread by informing the user that it's not supported.
+
 ### Changed
 
 - Fill in the transparent center of the SpellBot avatar.
