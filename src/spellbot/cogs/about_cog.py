@@ -1,5 +1,6 @@
 import logging
 
+from ddtrace import tracer
 from discord import Color, Embed
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
@@ -18,6 +19,7 @@ class AboutCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_slash(name="about", description="Get information about SpellBot.")
+    @tracer.wrap()
     async def about(self, ctx: SlashContext):
         settings = Settings()
         embed = Embed(title="SpellBot")

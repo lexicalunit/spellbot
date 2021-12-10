@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 
+from ddtrace import tracer
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 from discord_slash.context import ComponentContext
@@ -21,12 +22,14 @@ class LookingForGameCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_component()
+    @tracer.wrap()
     async def leave(self, ctx: ComponentContext):
         async with self.bot.channel_lock(ctx.channel_id):
             async with LeaveInteraction.create(self.bot, ctx) as interaction:
                 await interaction.execute(origin=True)
 
     @cog_ext.cog_component()
+    @tracer.wrap()
     async def join(self, ctx: ComponentContext):
         assert ctx.origin_message_id
         async with self.bot.channel_lock(ctx.channel_id):
@@ -34,6 +37,7 @@ class LookingForGameCog(commands.Cog):
                 await interaction.execute(message_xid=ctx.origin_message_id)
 
     @cog_ext.cog_component()
+    @tracer.wrap()
     async def points(self, ctx: ComponentContext):
         await ctx.defer(ignore=True)
         assert ctx.origin_message
@@ -79,6 +83,7 @@ class LookingForGameCog(commands.Cog):
             },
         ],
     )
+    @tracer.wrap()
     async def lfg(
         self,
         ctx: SlashContext,

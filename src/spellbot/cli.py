@@ -1,7 +1,6 @@
 # pylint: disable=too-many-arguments
 
 import asyncio
-import sys
 from os import getenv
 from typing import Optional
 
@@ -11,10 +10,11 @@ import uvloop
 from dotenv import load_dotenv
 
 from ._version import __version__
+from .environment import running_in_pytest
 from .logs import configure_logging
 
 # load .env environment variables as early as possible
-if not getenv("PYTEST_CURRENT_TEST") and "pytest" not in sys.modules:  # pragma: no cover
+if not running_in_pytest():  # pragma: no cover
     load_dotenv()
 
 uvloop.install()
@@ -98,16 +98,17 @@ def main(
     level = log_level if log_level is not None else (getenv("LOG_LEVEL") or "INFO")
     configure_logging(level)
 
-    from .client import build_bot
-    from .web import launch_web_server
-
     loop = asyncio.get_event_loop()
     if debug:
         loop.set_debug(True)
     if api:
+        from .web import launch_web_server
+
         launch_web_server(settings, loop, port or settings.PORT)
         loop.run_forever()
     else:
+        from .client import build_bot
+
         assert settings.BOT_TOKEN is not None
         bot = build_bot(
             loop=loop,

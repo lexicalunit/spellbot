@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import sys
 from datetime import datetime
 from os import getenv
 from typing import Generic, Type, TypeVar
+
+from .environment import running_in_pytest
 
 T = TypeVar("T", bound="Singleton")
 
@@ -41,9 +42,13 @@ class Settings(metaclass=Singleton):  # pylint: disable=R0902
         self.DEBUG_GUILD = getenv("DEBUG_GUILD")
         self.API_BASE_URL = getenv("API_BASE_URL", "https://bot.spellbot.io")
 
+        # datadog
+        self.DD_API_KEY = getenv("DD_API_KEY")
+        self.DD_APP_KEY = getenv("DD_APP_KEY")
+
         # database
         default_database_url = f"postgresql://postgres@{self.HOST}:5432/postgres"
-        if getenv("PYTEST_CURRENT_TEST") or "pytest" in sys.modules:  # pragma: no cover
+        if running_in_pytest():  # pragma: no cover
             default_database_url += "-test"
         database_url = getenv("DATABASE_URL") or default_database_url
         if database_url.startswith("postgres://"):  # pragma: no cover

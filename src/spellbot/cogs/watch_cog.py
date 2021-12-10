@@ -2,6 +2,7 @@ import logging
 from typing import Optional, Union
 
 import discord
+from ddtrace import tracer
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 from discord_slash.model import SlashCommandOptionType
@@ -23,6 +24,7 @@ class WatchCog(commands.Cog):
         name="watched",
         description="View the current list of watched users with notes.",
     )
+    @tracer.wrap()
     async def watched(self, ctx: SlashContext):
         async with WatchInteraction.create(self.bot, ctx) as interaction:
             await interaction.watched()
@@ -45,6 +47,7 @@ class WatchCog(commands.Cog):
             },
         ],
     )
+    @tracer.wrap()
     async def watch(
         self,
         ctx: SlashContext,
@@ -66,6 +69,7 @@ class WatchCog(commands.Cog):
             },
         ],
     )
+    @tracer.wrap()
     async def unwatch(
         self,
         ctx: SlashContext,

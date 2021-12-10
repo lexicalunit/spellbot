@@ -1,5 +1,6 @@
 import logging
 
+from ddtrace import tracer
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 from discord_slash.context import MenuContext
@@ -18,12 +19,14 @@ class ScoreCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_context_menu(target=ContextMenuType.USER, name="View Score")
+    @tracer.wrap()
     async def view_score(self, ctx: MenuContext):
         assert ctx.target_author
         async with ScoreInteraction.create(self.bot, ctx) as interaction:
             await interaction.execute(target=ctx.target_author)
 
     @cog_ext.cog_slash(name="score", description="View your game record on this server.")
+    @tracer.wrap()
     async def score(self, ctx: SlashContext):
         async with ScoreInteraction.create(self.bot, ctx) as interaction:
             await interaction.execute(target=ctx.author)
@@ -32,6 +35,7 @@ class ScoreCog(commands.Cog):
         name="history",
         description="View historical game records in this channel.",
     )
+    @tracer.wrap()
     async def history(self, ctx: SlashContext):
         async with ScoreInteraction.create(self.bot, ctx) as interaction:
             await interaction.history()

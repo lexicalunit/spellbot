@@ -7,6 +7,7 @@ from typing import Optional, Type, TypeVar, cast
 
 import discord
 from asgiref.sync import sync_to_async
+from ddtrace import tracer
 from discord_slash.context import InteractionContext
 
 from .. import SpellBot
@@ -103,9 +104,10 @@ class BaseInteraction:
         ctx: Optional[InteractionContext] = None,
     ) -> AsyncGenerator[InteractionType, None]:
         interaction = cls(bot, ctx) if ctx else cls(bot)
-        async with db_session_manager():
-            try:
-                await interaction.upsert_request_objects()
-                yield interaction
-            except Exception as ex:
-                await interaction.handle_exception(ex)
+        with tracer.trace(name=f"spellbot.interactions.{cls.__name__}.create"):
+            async with db_session_manager():
+                try:
+                    await interaction.upsert_request_objects()
+                    yield interaction
+                except Exception as ex:
+                    await interaction.handle_exception(ex)

@@ -6,6 +6,8 @@ from dateutil import tz
 from discord.channel import VoiceChannel
 
 from .. import SpellBot
+from ..database import rollback_session
+from ..metrics import alert_error
 from ..operations import (
     bot_can_delete_channel,
     safe_delete_channel,
@@ -74,8 +76,10 @@ class TaskInteraction(BaseInteraction):
         try:
             channels = await self.gather_channels()
             await self.delete_channels(channels)
-        except BaseException as e:
+        except BaseException as e:  # Catch EVERYTHING so tasks don't die
+            alert_error("exception in background task cleanup_old_voice_channels", str(e))
             logger.exception("error: exception in background task: %s", e)
+            await rollback_session()
 
     async def gather_channels(self) -> list[VoiceChannel]:
         channels: list[VoiceChannel] = []
@@ -126,8 +130,10 @@ class TaskInteraction(BaseInteraction):
         try:
             games = await self.services.games.inactive_games()
             await self.expire_games(games)
-        except BaseException as e:
+        except BaseException as e:  # Catch EVERYTHING so tasks don't die
+            alert_error("exception in background task expire_inactive_games", str(e))
             logger.exception("error: exception in background task: %s", e)
+            await rollback_session()
 
     async def expire_games(self, games: list[dict]):
         game_ids = [game["id"] for game in games]

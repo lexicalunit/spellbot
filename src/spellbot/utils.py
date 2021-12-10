@@ -7,6 +7,7 @@ from discord_slash.context import InteractionContext
 from discord_slash.model import CallbackObject
 
 from .errors import AdminOnlyError
+from .metrics import alert_error
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -156,6 +157,7 @@ class suppress(AbstractContextManager):
 
     def __exit__(self, exctype, excinst, exctb):
         if captured := exctype is not None and issubclass(exctype, self._exceptions):
+            alert_error("safe_message_reply error", str(excinst))
             log_warning(self._log, exec_info=True, **self._kwargs)
         return captured
 

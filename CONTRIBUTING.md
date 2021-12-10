@@ -261,6 +261,60 @@ directory with a name like `REVISIONID_some_description_of_your_changes.py`.
 You may have to edit this script manually to ensure that it is correct as
 the autogenerate facility of `alembic revision` is not perfect.
 
+## Metrics
+
+SpellBot is set up to integrate with [DataDog][datadog] for system and service
+metrics. This requires a few things:
+
+1. [In the container](Dockerfile), we install and configure to run the
+   following services:
+    - [`dd-agent`][dd-agent]
+    - [`trace-agent`][trace-agent]
+    - [`process-agent`][process-agent]
+1. A source dependency on the python [Datadog APM Client: ddtrace][ddtrace].
+1. Instrumentation of code using the [`ddtrace` tracer interface][tracer].
+1. A deployment with the correct environment variables to configure `dd-agent`.
+    - `DD_API_KEY` = Your DataDog API key.
+    - `DD_APP_KEY` = Your DataDog application key.
+    - `DD_AGENT_MAJOR_VERSION` = "7"
+    - `DD_HOSTNAME` = "spellbot"
+    - `DD_ENV` = "dev", "stage", or "prod"
+1. A `datadog.yaml` file including the following configuration:
+
+    ```yaml
+    apm_config:
+      enabled: true
+      apm_non_local_traffic: true
+    ```
+
+1. When starting the `spellbot` process, start it via `ddtrace-run spellbot`
+   so that the APM client hooks are properly installed.
+
+Locally in development you can use the following invocation to quickly spin
+up a `dd-agent`. And to set up your environment you should use the `.env` file.
+
+```shell
+docker run --rm \
+    --name dd-agent \
+    -p8125:8125 \
+    -p8126:8126 \
+    -v /var/run/docker.sock:/var/run/docker.sock:ro \
+    -v /proc/:/host/proc/:ro \
+    -v /sys/fs/cgroup/:/host/sys/fs/cgroup:ro \
+    -e DD_API_KEY="Your DataDog API key" \
+    -e DD_APP_KEY="Your DataDog application key" \
+    -e DD_AGENT_MAJOR_VERSION="7" \
+    -e DD_HOSTNAME="spellbot" \
+    -e DD_ENV="dev" \
+    gcr.io/datadoghq/agent:7
+```
+
 [alembic]: https://alembic.sqlalchemy.org/
 [black]: https://github.com/psf/black
+[datadog]: https://www.datadoghq.com/
+[dd-agent]: https://github.com/DataDog/dd-agent
+[ddtrace]: https://ddtrace.readthedocs.io/en/stable/index.html
+[process-agent]: https://docs.datadoghq.com/infrastructure/process/
+[trace-agent]: https://docs.datadoghq.com/tracing/setup_overview/
+[tracer]: https://ddtrace.readthedocs.io/en/stable/advanced_usage.html
 [wiki]: https://animalcrossing.fandom.com/

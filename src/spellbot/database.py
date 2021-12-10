@@ -80,7 +80,7 @@ def initialize_connection(
     SpellBot follows the "thread-local scoped database sessions per request" model
     of typical web applications except that instead of web requests, we're dealing
     with bot interactions. And instead of thread local, we have context local aysnc
-    contextx. SpellBot maintains a database connection for the lifetime of the bot,
+    context. SpellBot maintains a database connection for the lifetime of the bot,
     which is created in this function.
 
     Subsequent interactions then will create their own transaction and session
@@ -121,6 +121,11 @@ def initialize_connection(
 def begin_session():
     db_session = db_session_maker()
     DatabaseSession.set(db_session)  # type: ignore
+
+
+@sync_to_async
+def rollback_session():
+    DatabaseSession.rollback()
 
 
 @sync_to_async

@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import sys
 from os import getenv, getpid
 
 from dotenv import load_dotenv
@@ -12,9 +11,10 @@ from ..logs import configure_logging
 configure_logging(getenv("LOG_LEVEL") or "INFO")
 
 from ..database import initialize_connection
+from ..environment import running_in_pytest
 from .builder import build_web_app
 
-if not getenv("PYTEST_CURRENT_TEST") and "pytest" not in sys.modules:
+if not running_in_pytest():  # pragma: no cover
     load_dotenv()
 
 logger = logging.getLogger(__name__)

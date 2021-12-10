@@ -5,6 +5,7 @@ import discord
 from discord.errors import DiscordException
 from discord_slash.context import ComponentContext, InteractionContext
 
+from .metrics import alert_error
 from .utils import (
     CANT_SEND_CODE,
     DiscordChannel,
@@ -272,31 +273,31 @@ async def safe_message_reply(message: discord.Message, *args, **kwargs):
     try:
         await message.reply(*args, **kwargs)
     except Exception as ex:
+        alert_error("safe_message_reply error", str(ex))
         logger.debug("debug: %s", ex, exc_info=True)
 
 
-async def safe_send_user(
-    user: Union[discord.User, discord.Member],
-    *args,
-    **kwargs,
-):
+async def safe_send_user(user: Union[discord.User, discord.Member], *args, **kwargs):
     if not hasattr(user, "send"):
         return log_warning("no send method on user %(user)s", user=user)
     try:
         return await user.send(*args, **kwargs)
-    except discord.errors.DiscordServerError:
+    except discord.errors.DiscordServerError as ex:
+        alert_error("safe_send_user error", str(ex))
         return log_warning(
             "discord server error sending to user %(user)s",
             user=user,
             exec_info=True,
         )
-    except discord.errors.InvalidArgument:
+    except discord.errors.InvalidArgument as ex:
+        alert_error("safe_send_user error", str(ex))
         return log_warning(
             "could not send message to user %(user)s",
             user=user,
             exec_info=True,
         )
     except (discord.errors.Forbidden, discord.errors.HTTPException) as ex:
+        alert_error("safe_send_user error", str(ex))
         if isinstance(ex, discord.errors.Forbidden) or ex.code == CANT_SEND_CODE:
             # User may have the bot blocked or they may have DMs only allowed for friends.
             # Generally speaking, we can safely ignore this sort of error. However, too
@@ -357,11 +358,12 @@ async def safe_add_role(
     except (
         discord.errors.Forbidden,
         discord.errors.HTTPException,
-    ) as e:
+    ) as ex:
+        alert_error("safe_add_role error", str(ex))
         logger.exception(
             "warning: in guild %s, could not add role to member %s: %s",
             guild.id,
             str(user_or_member),
-            e,
+            ex,
             exc_info=True,
         )

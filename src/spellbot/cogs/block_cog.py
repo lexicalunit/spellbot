@@ -1,5 +1,6 @@
 import logging
 
+from ddtrace import tracer
 from discord.ext import commands
 from discord_slash import cog_ext
 from discord_slash.context import MenuContext
@@ -18,12 +19,14 @@ class BlockCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_context_menu(target=ContextMenuType.USER, name="Block")
+    @tracer.wrap()
     async def block(self, ctx: MenuContext):
         assert ctx.target_author
         async with BlockInteraction.create(self.bot, ctx) as interaction:
             await interaction.block(target=ctx.target_author)
 
     @cog_ext.cog_context_menu(target=ContextMenuType.USER, name="Unblock")
+    @tracer.wrap()
     async def unblock(self, ctx: MenuContext):
         assert ctx.target_author
         async with BlockInteraction.create(self.bot, ctx) as interaction:

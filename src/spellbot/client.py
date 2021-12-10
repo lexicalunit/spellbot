@@ -8,6 +8,7 @@ from typing import Optional
 from uuid import uuid4
 
 import discord
+from ddtrace import tracer
 from discord.ext.commands import Bot, errors
 from discord_slash import SlashCommand, context
 from expiringdict import ExpiringDict
@@ -19,6 +20,7 @@ from .errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
+from .metrics import alert_error, setup_metrics
 from .operations import safe_send_channel
 from .services import ChannelsService, GuildsService, VerifiesService
 from .settings import Settings
@@ -56,6 +58,7 @@ class SpellBot(Bot):
         async with self.channel_locks[channel_xid]:  # type: ignore
             yield
 
+    @tracer.wrap()
     async def create_spelltable_link(self) -> Optional[str]:
         if self.mock_games:
             return f"http://exmaple.com/game/{uuid4()}"
@@ -93,6 +96,7 @@ class SpellBot(Bot):
                 hidden=True,
             )
 
+        alert_error("unhandled exception", str(ex))
         ref = (
             f"command `{ctx.name}`"
             if isinstance(ctx, context.SlashContext)
@@ -118,6 +122,7 @@ class SpellBot(Bot):
     async def on_slash_command_error(self, ctx: context.SlashContext, ex: Exception):
         return await self.handle_errors(ctx, ex)
 
+    @tracer.wrap()
     async def on_message(self, message: discord.Message):
         if not message.guild or not hasattr(message.guild, "id"):
             return await super().on_message(message)  # handle DMs normally
@@ -132,6 +137,7 @@ class SpellBot(Bot):
         async with db_session_manager():
             await self.handle_verification(message)
 
+    @tracer.wrap()
     async def handle_verification(self, message: discord.Message):
         # To verify users we need their user id, so just give up if it's not available
         if not hasattr(message.author, "id"):
@@ -164,6 +170,8 @@ def build_bot(
     create_connection: bool = True,
 ) -> SpellBot:
     bot = SpellBot(loop=loop, mock_games=mock_games)
+
+    setup_metrics()
 
     # setup slash commands extension
     debug_guild: Optional[int] = None
