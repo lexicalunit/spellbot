@@ -19,11 +19,13 @@ typeCheckingMode = "basic"
 
 [tool.pylic]
 safe_licenses = [
+  "3-Clause BSD License",
   "Apache License 2.0",
   "Apache Software License",
   "Artistic License",
   "BSD License",
   "BSD-derived (http://www.repoze.org/LICENSE.txt)",
+  "BSD",
   "GNU Library or Lesser General Public License (LGPL)",
   "GNU Library or Lesser General Public License (LGPL)",
   "MIT License",
@@ -97,6 +99,8 @@ alembic = "^1.7.5"
 asgiref = "^3.4.1"
 click = "^8.0.3"
 coloredlogs = "^15.0.1"
+datadog = "^0.43.0"
+ddtrace = "^0.56.1"
 discord-py-interactions = "^3.0.2"
 "discord.py" = "1.7.3"
 dunamai = "^1.7.0"

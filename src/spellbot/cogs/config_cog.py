@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 
+from ddtrace import tracer
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 from discord_slash.model import SlashCommandOptionType
@@ -41,6 +42,7 @@ class ConfigCog(commands.Cog):
             },
         ],
     )
+    @tracer.wrap()
     async def power(self, ctx: SlashContext, level: Optional[int] = None):
         async with self.bot.channel_lock(ctx.channel_id):
             async with ConfigInteraction.create(self.bot, ctx) as interaction:
