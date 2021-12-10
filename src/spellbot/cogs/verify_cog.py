@@ -2,6 +2,7 @@ import logging
 from typing import Union
 
 import discord
+from ddtrace import tracer
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 from discord_slash.model import SlashCommandOptionType
@@ -31,6 +32,7 @@ class VerifyCog(commands.Cog):
             },
         ],
     )
+    @tracer.wrap()
     async def verify(
         self,
         ctx: SlashContext,
@@ -51,6 +53,7 @@ class VerifyCog(commands.Cog):
             },
         ],
     )
+    @tracer.wrap()
     async def unverify(
         self,
         ctx: SlashContext,

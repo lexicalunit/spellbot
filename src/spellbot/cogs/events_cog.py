@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 
+from ddtrace import tracer
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 from discord_slash.model import SlashCommandOptionType
@@ -44,6 +45,7 @@ class EventsCog(commands.Cog):
             },
         ],
     )
+    @tracer.wrap()
     async def game(self, ctx: SlashContext, players: str, format: Optional[int] = None):
         async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
             await interaction.create_game(players, format)

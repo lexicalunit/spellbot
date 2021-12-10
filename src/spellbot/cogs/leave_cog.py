@@ -1,5 +1,6 @@
 import logging
 
+from ddtrace import tracer
 from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 
@@ -16,6 +17,7 @@ class LeaveGameCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_slash(name="leave", description="Leaves any game that you are in.")
+    @tracer.wrap()
     async def leave(self, ctx: SlashContext):
         async with LeaveInteraction.create(self.bot, ctx) as interaction:
             await interaction.execute()
