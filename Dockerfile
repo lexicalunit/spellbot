@@ -23,7 +23,7 @@ RUN apt-get update \
     && chmod +x /install_script.sh \
     && DD_API_KEY="fake" DD_INSTALL_ONLY="true" bash -c /install_script.sh \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    COPY conf/datadog.yaml /etc/datadog-agent/datadog.yaml
+    && rm -rf /var/lib/apt/lists/*
+COPY conf/datadog.yaml /etc/datadog-agent/datadog.yaml
 
 CMD ["supervisord"]

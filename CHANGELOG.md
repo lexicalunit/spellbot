@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes a typo in the Dockerfile.
+
 ## [v7.10.1](https://github.com/lexicalunit/spellbot/releases/tag/v7.10.1) - 2021-12-11
 
 ### Added
