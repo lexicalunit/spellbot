@@ -12,8 +12,7 @@ COPY --from=builder python-wheels /python-wheels
 RUN pip install --no-index --find-links /python-wheels --no-cache-dir /python-wheels/* \
     && rm -rf /python-wheels
 
-# install supervisord configuration
-COPY conf/supervisord.conf /usr/local/etc/
+COPY scripts/start-spellbot.sh /start-spellbot.sh
 
 # datadog (https://app.datadoghq.com/account/settings#agent/debian)
 RUN apt-get update \
@@ -26,4 +25,6 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 COPY conf/datadog.yaml /etc/datadog-agent/datadog.yaml
 
+# supervisord
+COPY conf/supervisord.conf /usr/local/etc/
 CMD ["supervisord"]

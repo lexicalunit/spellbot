@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Adds SpellBot version via DD_VERSION if metrics are configured.
+- Use DD_SERVICE to identify the service name (spellbot or spellapi).
+- Use DD_HOSTNAME to identify the DYNO (or localhost in development mode).
+
 ### Fixed
 
 - Fixes a typo in the Dockerfile.
