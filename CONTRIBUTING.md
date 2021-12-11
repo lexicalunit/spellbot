@@ -304,7 +304,8 @@ docker run --rm \
     -e DD_API_KEY="Your DataDog API key" \
     -e DD_APP_KEY="Your DataDog application key" \
     -e DD_AGENT_MAJOR_VERSION="7" \
-    -e DD_HOSTNAME="spellbot" \
+    -e DD_SERVICE="spellbot" \
+    -e DD_HOSTNAME="localhost" \
     -e DD_ENV="dev" \
     gcr.io/datadoghq/agent:7
 ```
