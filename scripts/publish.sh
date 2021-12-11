@@ -37,6 +37,12 @@ if [[ -n $CHANGES ]]; then
     exit 1
 fi
 
+REMOTE_CHANGES="$(git ls-remote origin -h refs/heads/master)"
+if [[ -n $REMOTE_CHANGES ]]; then
+    echo "error: can not publish when there are remote changes" 1>&2
+    exit 1
+fi
+
 # bump the version in pyproject.toml
 run "poetry version '$KIND'"
 
