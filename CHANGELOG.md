@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Group datadog traces under a "command" operation with multiple resources.
+- Add datadog tracing to spellapi deployment.
+
 ## [v7.10.3](https://github.com/lexicalunit/spellbot/releases/tag/v7.10.3) - 2021-12-11
 
 ### Fixed

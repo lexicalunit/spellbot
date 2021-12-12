@@ -42,7 +42,7 @@ class ConfigCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="power")
     async def power(self, ctx: SlashContext, level: Optional[int] = None):
         async with self.bot.channel_lock(ctx.channel_id):
             async with ConfigInteraction.create(self.bot, ctx) as interaction:

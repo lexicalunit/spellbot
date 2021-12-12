@@ -32,7 +32,7 @@ class VerifyCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="verify")
     async def verify(
         self,
         ctx: SlashContext,
@@ -53,7 +53,7 @@ class VerifyCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="unverify")
     async def unverify(
         self,
         ctx: SlashContext,
