@@ -19,14 +19,14 @@ class ScoreCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_context_menu(target=ContextMenuType.USER, name="View Score")
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="view_score")
     async def view_score(self, ctx: MenuContext):
         assert ctx.target_author
         async with ScoreInteraction.create(self.bot, ctx) as interaction:
             await interaction.execute(target=ctx.target_author)
 
     @cog_ext.cog_slash(name="score", description="View your game record on this server.")
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="score")
     async def score(self, ctx: SlashContext):
         async with ScoreInteraction.create(self.bot, ctx) as interaction:
             await interaction.execute(target=ctx.author)
@@ -35,7 +35,7 @@ class ScoreCog(commands.Cog):
         name="history",
         description="View historical game records in this channel.",
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="history")
     async def history(self, ctx: SlashContext):
         async with ScoreInteraction.create(self.bot, ctx) as interaction:
             await interaction.history()

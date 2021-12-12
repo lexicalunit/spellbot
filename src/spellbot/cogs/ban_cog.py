@@ -16,14 +16,14 @@ class BanCog(commands.Cog):
 
     @commands.command(name="ban")
     @commands.check(commands.is_owner())
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="ban")
     async def ban(self, ctx: commands.Context, arg: Optional[str] = None):
         async with BanInteraction.create(self.bot) as interaction:
             await interaction.set_banned(True, ctx, arg)
 
     @commands.command(name="unban")
     @commands.check(commands.is_owner())
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="unban")
     async def unban(self, ctx: commands.Context, arg: Optional[str] = None):
         async with BanInteraction.create(self.bot) as interaction:
             await interaction.set_banned(False, ctx, arg)

@@ -24,31 +24,31 @@ class AdminCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_slash(name="setup", description="Setup SpellBot on your server.")
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="setup")
     async def setup(self, ctx: SlashContext):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.setup()
 
     @cog_ext.cog_component()
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="refresh_setup")
     async def refresh_setup(self, ctx: ComponentContext):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.refresh_setup()
 
     @cog_ext.cog_component()
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="toggle_show_links")
     async def toggle_show_links(self, ctx: ComponentContext):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.toggle_show_links()
 
     @cog_ext.cog_component()
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="toggle_show_points")
     async def toggle_show_points(self, ctx: ComponentContext):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.toggle_show_points()
 
     @cog_ext.cog_component()
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="toggle_voice_create")
     async def toggle_voice_create(self, ctx: ComponentContext):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.toggle_voice_create()
@@ -66,7 +66,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="set_motd")
     async def motd(self, ctx: SlashContext, message: Optional[str] = None):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_motd(message)
@@ -84,7 +84,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="set_channel_motd")
     async def channel_motd(self, ctx: SlashContext, message: Optional[str] = None):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_channel_motd(message)
@@ -93,7 +93,7 @@ class AdminCog(commands.Cog):
         name="channels",
         description="Show the current configurations for channels on your server.",
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="channels")
     async def channels(self, ctx: SlashContext):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.channels()
@@ -102,7 +102,7 @@ class AdminCog(commands.Cog):
         name="awards",
         description="Setup player awards on your server.",
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="awards")
     async def awards(self, ctx: SlashContext):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.awards()
@@ -138,7 +138,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="award_add")
     async def award_add(
         self,
         ctx: SlashContext,
@@ -163,7 +163,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="award_delete")
     async def award_delete(self, ctx: SlashContext, id: int):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.award_delete(id)
@@ -186,7 +186,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="set_default_seats")
     async def default_seats(self, ctx: SlashContext, seats: int):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_default_seats(seats)
@@ -204,7 +204,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="set_auto_verify")
     async def auto_verify(self, ctx: SlashContext, setting: bool):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_auto_verify(setting)
@@ -222,7 +222,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="set_verified_only")
     async def verified_only(self, ctx: SlashContext, setting: bool):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_verified_only(setting)
@@ -240,7 +240,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="set_unverified_only")
     async def unverified_only(self, ctx: SlashContext, setting: bool):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_unverified_only(setting)
@@ -257,7 +257,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="info")
     async def info(self, ctx: SlashContext, game_id: str):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.info(game_id)
@@ -275,7 +275,7 @@ class AdminCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="set_voice_category")
     async def voice_category(self, ctx: SlashContext, prefix: str):
         async with AdminInteraction.create(self.bot, ctx) as interaction:
             await interaction.set_voice_category(prefix)

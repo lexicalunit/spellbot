@@ -45,7 +45,7 @@ class EventsCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="game")
     async def game(self, ctx: SlashContext, players: str, format: Optional[int] = None):
         async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
             await interaction.create_game(players, format)
