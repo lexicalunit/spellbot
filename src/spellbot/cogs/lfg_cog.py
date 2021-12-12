@@ -22,14 +22,14 @@ class LookingForGameCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_component()
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="leave")
     async def leave(self, ctx: ComponentContext):
         async with self.bot.channel_lock(ctx.channel_id):
             async with LeaveInteraction.create(self.bot, ctx) as interaction:
                 await interaction.execute(origin=True)
 
     @cog_ext.cog_component()
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="join")
     async def join(self, ctx: ComponentContext):
         assert ctx.origin_message_id
         async with self.bot.channel_lock(ctx.channel_id):
@@ -37,7 +37,7 @@ class LookingForGameCog(commands.Cog):
                 await interaction.execute(message_xid=ctx.origin_message_id)
 
     @cog_ext.cog_component()
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="points")
     async def points(self, ctx: ComponentContext):
         await ctx.defer(ignore=True)
         assert ctx.origin_message
@@ -83,7 +83,7 @@ class LookingForGameCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="lfg")
     async def lfg(
         self,
         ctx: SlashContext,

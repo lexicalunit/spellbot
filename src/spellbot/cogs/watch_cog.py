@@ -24,7 +24,7 @@ class WatchCog(commands.Cog):
         name="watched",
         description="View the current list of watched users with notes.",
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="watched")
     async def watched(self, ctx: SlashContext):
         async with WatchInteraction.create(self.bot, ctx) as interaction:
             await interaction.watched()
@@ -47,7 +47,7 @@ class WatchCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="watch")
     async def watch(
         self,
         ctx: SlashContext,
@@ -69,7 +69,7 @@ class WatchCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap()
+    @tracer.wrap(name="command", resource="unwatch")
     async def unwatch(
         self,
         ctx: SlashContext,
