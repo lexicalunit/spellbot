@@ -15,7 +15,7 @@ settings = Settings()
 class TasksCog(commands.Cog):  # pragma: no cover
     def __init__(self, bot: SpellBot):
         self.bot = bot
-        if not running_in_pytest:
+        if not running_in_pytest():
             self.cleanup_old_voice_channels.start()
             self.expire_inactive_games.start()
 
