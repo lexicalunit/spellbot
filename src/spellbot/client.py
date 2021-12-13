@@ -122,26 +122,35 @@ class SpellBot(Bot):
     async def on_slash_command_error(self, ctx: context.SlashContext, ex: Exception):
         return await self.handle_errors(ctx, ex)
 
-    @tracer.wrap()
+    @tracer.wrap(name="interaction", resource="on_message")
     async def on_message(self, message: discord.Message):
+        span = tracer.current_span()
+
+        # handle DMs normally
         if not message.guild or not hasattr(message.guild, "id"):
-            return await super().on_message(message)  # handle DMs normally
+            return await super().on_message(message)
+        span.set_tag("guild_id", message.guild.id)  # type: ignore
+
+        # ignore everything except messages in text channels
         if (
             not hasattr(message.channel, "type")
             or message.channel.type != discord.ChannelType.text
         ):
-            return  # ignore everything else, except messages in text channels...
-        if message.flags.value & 64:
-            return  # message is hidden, ignore it
+            return
+        span.set_tag("channel_id", message.channel.id)  # type: ignore
 
-        async with db_session_manager():
-            await self.handle_verification(message)
+        # ignore hidden or ephemeral messages
+        if message.flags.value & 64:
+            return
+
+        # to verify users we need their user id
+        if hasattr(message.author, "id"):
+            span.set_tag("author_id", message.author.id)  # type: ignore
+            async with db_session_manager():
+                await self.handle_verification(message)
 
     @tracer.wrap()
     async def handle_verification(self, message: discord.Message):
-        # To verify users we need their user id, so just give up if it's not available
-        if not hasattr(message.author, "id"):
-            return
         message_author_xid = message.author.id  # type: ignore
         verified: Optional[bool] = None
         guilds = GuildsService()

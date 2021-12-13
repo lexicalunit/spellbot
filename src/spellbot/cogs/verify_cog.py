@@ -9,6 +9,7 @@ from discord_slash.model import SlashCommandOptionType
 
 from .. import SpellBot
 from ..interactions import VerifyInteraction
+from ..metrics import add_span_context
 from ..utils import for_all_callbacks, is_admin
 
 logger = logging.getLogger(__name__)
@@ -32,12 +33,13 @@ class VerifyCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap(name="command", resource="verify")
+    @tracer.wrap(name="interaction", resource="verify")
     async def verify(
         self,
         ctx: SlashContext,
         target: Union[discord.User, discord.Member],
     ):
+        add_span_context(ctx)
         async with VerifyInteraction.create(self.bot, ctx) as interaction:
             await interaction.verify(target=target)
 
@@ -53,12 +55,13 @@ class VerifyCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap(name="command", resource="unverify")
+    @tracer.wrap(name="interaction", resource="unverify")
     async def unverify(
         self,
         ctx: SlashContext,
         target: Union[discord.User, discord.Member],
     ):
+        add_span_context(ctx)
         async with VerifyInteraction.create(self.bot, ctx) as interaction:
             await interaction.unverify(target=target)
 

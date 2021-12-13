@@ -9,6 +9,7 @@ from discord_slash.model import SlashCommandOptionType
 
 from .. import SpellBot
 from ..interactions import WatchInteraction
+from ..metrics import add_span_context
 from ..utils import for_all_callbacks, is_admin
 
 logger = logging.getLogger(__name__)
@@ -24,8 +25,9 @@ class WatchCog(commands.Cog):
         name="watched",
         description="View the current list of watched users with notes.",
     )
-    @tracer.wrap(name="command", resource="watched")
+    @tracer.wrap(name="interaction", resource="watched")
     async def watched(self, ctx: SlashContext):
+        add_span_context(ctx)
         async with WatchInteraction.create(self.bot, ctx) as interaction:
             await interaction.watched()
 
@@ -47,13 +49,14 @@ class WatchCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap(name="command", resource="watch")
+    @tracer.wrap(name="interaction", resource="watch")
     async def watch(
         self,
         ctx: SlashContext,
         target: Union[discord.User, discord.Member],
         note: Optional[str] = None,
     ):
+        add_span_context(ctx)
         async with WatchInteraction.create(self.bot, ctx) as interaction:
             await interaction.watch(target=target, note=note)
 
@@ -69,12 +72,13 @@ class WatchCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap(name="command", resource="unwatch")
+    @tracer.wrap(name="interaction", resource="unwatch")
     async def unwatch(
         self,
         ctx: SlashContext,
         target: Union[discord.User, discord.Member],
     ):
+        add_span_context(ctx)
         async with WatchInteraction.create(self.bot, ctx) as interaction:
             await interaction.unwatch(target=target)
 

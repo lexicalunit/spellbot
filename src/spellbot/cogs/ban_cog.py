@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from .. import SpellBot
 from ..interactions import BanInteraction
+from ..metrics import add_span_context
 
 logger = logging.getLogger(__name__)
 
@@ -16,15 +17,17 @@ class BanCog(commands.Cog):
 
     @commands.command(name="ban")
     @commands.check(commands.is_owner())
-    @tracer.wrap(name="command", resource="ban")
+    @tracer.wrap(name="interaction", resource="ban")
     async def ban(self, ctx: commands.Context, arg: Optional[str] = None):
+        add_span_context(ctx)
         async with BanInteraction.create(self.bot) as interaction:
             await interaction.set_banned(True, ctx, arg)
 
     @commands.command(name="unban")
     @commands.check(commands.is_owner())
-    @tracer.wrap(name="command", resource="unban")
+    @tracer.wrap(name="interaction", resource="unban")
     async def unban(self, ctx: commands.Context, arg: Optional[str] = None):
+        add_span_context(ctx)
         async with BanInteraction.create(self.bot) as interaction:
             await interaction.set_banned(False, ctx, arg)
 

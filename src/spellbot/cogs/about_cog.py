@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord_slash import SlashContext, cog_ext
 
 from .. import SpellBot, __version__
+from ..metrics import add_span_context
 from ..operations import safe_send_channel
 from ..settings import Settings
 from ..utils import for_all_callbacks
@@ -19,8 +20,9 @@ class AboutCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_slash(name="about", description="Get information about SpellBot.")
-    @tracer.wrap(name="command", resource="about")
+    @tracer.wrap(name="interaction", resource="about")
     async def about(self, ctx: SlashContext):
+        add_span_context(ctx)
         settings = Settings()
         embed = Embed(title="SpellBot")
         embed.set_thumbnail(url=settings.THUMB_URL)

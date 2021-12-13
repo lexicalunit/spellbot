@@ -6,6 +6,7 @@ from discord_slash import SlashContext, cog_ext
 
 from .. import SpellBot
 from ..interactions import LeaveInteraction
+from ..metrics import add_span_context
 from ..utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
@@ -17,8 +18,9 @@ class LeaveGameCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_slash(name="leave", description="Leaves any game that you are in.")
-    @tracer.wrap(name="command", resource="leave")
+    @tracer.wrap(name="interaction", resource="leave")
     async def leave(self, ctx: SlashContext):
+        add_span_context(ctx)
         async with LeaveInteraction.create(self.bot, ctx) as interaction:
             await interaction.execute()
 

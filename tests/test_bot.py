@@ -185,11 +185,20 @@ class TestSpellBot(BaseMixin):
 
 @pytest.mark.asyncio
 class TestSpellBotHandleVerification(BaseMixin):
-    async def test_missing_author_id(self):
+    async def test_missing_author_id(self, monkeypatch):
         message = MagicMock()
+        message.guild = MagicMock()
+        message.guild.id = 2
+        message.channel = MagicMock()
+        message.channel.type = discord.ChannelType.text
+        message.flags.value = 1
         message.author = MagicMock()
         del message.author.id
-        await self.bot.handle_verification(message)
+        monkeypatch.setattr(self.bot, "handle_verification", MagicMock())
+
+        await self.bot.on_message(message)
+
+        self.bot.handle_verification.assert_not_called()
 
     async def test_without_auto_verify(self, dpy_message: discord.Message):
         assert dpy_message.guild
