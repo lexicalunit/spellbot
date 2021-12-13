@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Group datadog traces under an "interaction" operation and include on_message with commands.
+- Add span context to each trace based on the discord interaction or message context.
+- Attempt to shrink the docker container image size a bit.
+
 ## [v7.10.4](https://github.com/lexicalunit/spellbot/releases/tag/v7.10.4) - 2021-12-12
 
 ### Changed

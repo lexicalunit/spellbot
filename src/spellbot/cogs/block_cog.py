@@ -8,6 +8,7 @@ from discord_slash.model import ContextMenuType
 
 from .. import SpellBot
 from ..interactions import BlockInteraction
+from ..metrics import add_span_context
 from ..utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
@@ -19,15 +20,17 @@ class BlockCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_context_menu(target=ContextMenuType.USER, name="Block")
-    @tracer.wrap(name="command", resource="block")
+    @tracer.wrap(name="interaction", resource="block")
     async def block(self, ctx: MenuContext):
+        add_span_context(ctx)
         assert ctx.target_author
         async with BlockInteraction.create(self.bot, ctx) as interaction:
             await interaction.block(target=ctx.target_author)
 
     @cog_ext.cog_context_menu(target=ContextMenuType.USER, name="Unblock")
-    @tracer.wrap(name="command", resource="unblock")
+    @tracer.wrap(name="interaction", resource="unblock")
     async def unblock(self, ctx: MenuContext):
+        add_span_context(ctx)
         assert ctx.target_author
         async with BlockInteraction.create(self.bot, ctx) as interaction:
             await interaction.unblock(target=ctx.target_author)

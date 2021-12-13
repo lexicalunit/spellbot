@@ -1,8 +1,9 @@
 from functools import wraps
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from datadog import initialize
 from datadog.api.events import Event
+from ddtrace import tracer
 
 from . import __version__
 from .environment import running_in_pytest
@@ -10,6 +11,18 @@ from .settings import Settings
 
 settings = Settings()
 IS_RUNNING_IN_PYTEST = running_in_pytest()
+CTX_PROPS = {
+    "author_id",
+    "channel_id",
+    "command_id",
+    "component_id",
+    "custom_id",
+    "guild_id",
+    "interaction_id",
+    "kwargs",
+    "origin_message_id",
+    "values",
+}
 
 
 def no_metrics() -> bool:
@@ -38,3 +51,11 @@ def alert_error(
     tags = tags or []
     tags.append(f"version:{__version__}")
     Event.create(alert_type="error", title=title, text=text, tags=tags)  # type: ignore
+
+
+@skip_if_no_metrics
+def add_span_context(ctx: Any):
+    span = tracer.current_span()
+    for prop in CTX_PROPS:
+        if value := getattr(ctx, prop, None):
+            span.set_tag(prop, value)

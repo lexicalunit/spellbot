@@ -54,6 +54,8 @@ python =
 whitelist_externals = poetry
 skip_install = true
 passenv = *
+setenv =
+  DD_TRACE_ENABLED=0
 commands =
     poetry install
     poetry run coverage erase

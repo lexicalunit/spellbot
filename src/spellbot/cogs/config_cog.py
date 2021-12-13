@@ -8,6 +8,7 @@ from discord_slash.model import SlashCommandOptionType
 
 from .. import SpellBot
 from ..interactions import ConfigInteraction
+from ..metrics import add_span_context
 from ..utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
@@ -42,8 +43,9 @@ class ConfigCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap(name="command", resource="power")
+    @tracer.wrap(name="interaction", resource="power")
     async def power(self, ctx: SlashContext, level: Optional[int] = None):
+        add_span_context(ctx)
         async with self.bot.channel_lock(ctx.channel_id):
             async with ConfigInteraction.create(self.bot, ctx) as interaction:
                 await interaction.power(level=level)

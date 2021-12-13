@@ -8,6 +8,7 @@ from discord_slash.model import SlashCommandOptionType
 
 from .. import SpellBot
 from ..interactions import LookingForGameInteraction
+from ..metrics import add_span_context
 from ..models import GameFormat
 from ..utils import for_all_callbacks, is_admin
 
@@ -45,8 +46,9 @@ class EventsCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap(name="command", resource="game")
+    @tracer.wrap(name="interaction", resource="game")
     async def game(self, ctx: SlashContext, players: str, format: Optional[int] = None):
+        add_span_context(ctx)
         async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
             await interaction.create_game(players, format)
 

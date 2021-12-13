@@ -10,6 +10,7 @@ from discord_slash.model import SlashCommandOptionType
 from .. import SpellBot
 from ..interactions.leave_interaction import LeaveInteraction
 from ..interactions.lfg_interaction import LookingForGameInteraction
+from ..metrics import add_span_context
 from ..models import GameFormat
 from ..utils import for_all_callbacks
 
@@ -22,23 +23,26 @@ class LookingForGameCog(commands.Cog):
         self.bot = bot
 
     @cog_ext.cog_component()
-    @tracer.wrap(name="command", resource="leave")
+    @tracer.wrap(name="interaction", resource="leave")
     async def leave(self, ctx: ComponentContext):
+        add_span_context(ctx)
         async with self.bot.channel_lock(ctx.channel_id):
             async with LeaveInteraction.create(self.bot, ctx) as interaction:
                 await interaction.execute(origin=True)
 
     @cog_ext.cog_component()
-    @tracer.wrap(name="command", resource="join")
+    @tracer.wrap(name="interaction", resource="join")
     async def join(self, ctx: ComponentContext):
+        add_span_context(ctx)
         assert ctx.origin_message_id
         async with self.bot.channel_lock(ctx.channel_id):
             async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
                 await interaction.execute(message_xid=ctx.origin_message_id)
 
     @cog_ext.cog_component()
-    @tracer.wrap(name="command", resource="points")
+    @tracer.wrap(name="interaction", resource="points")
     async def points(self, ctx: ComponentContext):
+        add_span_context(ctx)
         await ctx.defer(ignore=True)
         assert ctx.origin_message
         assert ctx.selected_options
@@ -83,7 +87,7 @@ class LookingForGameCog(commands.Cog):
             },
         ],
     )
-    @tracer.wrap(name="command", resource="lfg")
+    @tracer.wrap(name="interaction", resource="lfg")
     async def lfg(
         self,
         ctx: SlashContext,
@@ -91,6 +95,7 @@ class LookingForGameCog(commands.Cog):
         seats: Optional[int] = None,
         format: Optional[int] = None,
     ):
+        add_span_context(ctx)
         async with self.bot.channel_lock(ctx.channel_id):
             async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
                 await interaction.execute(friends=friends, seats=seats, format=format)
