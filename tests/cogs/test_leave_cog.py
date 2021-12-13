@@ -18,7 +18,7 @@ class TestCogLeaveGame(InteractionContextMixin):
             leave_interaction.safe_fetch_message.return_value = self.ctx.message
 
             cog = LeaveGameCog(self.bot)
-            await cog.leave.func(cog, self.ctx)
+            await cog.leave_command.func(cog, self.ctx)
 
             leave_interaction.safe_send_channel.assert_called_once_with(
                 self.ctx,
@@ -50,7 +50,7 @@ class TestCogLeaveGame(InteractionContextMixin):
             leave_interaction.safe_fetch_message.return_value = self.ctx.message
 
             cog = LeaveGameCog(self.bot)
-            await cog.leave.func(cog, self.ctx)
+            await cog.leave_command.func(cog, self.ctx)
 
             leave_interaction.safe_send_channel.assert_called_once_with(
                 self.ctx,
@@ -61,7 +61,7 @@ class TestCogLeaveGame(InteractionContextMixin):
     async def test_leave_when_not_in_game(self):
         with mock_operations(leave_interaction):
             cog = LeaveGameCog(self.bot)
-            await cog.leave.func(cog, self.ctx)
+            await cog.leave_command.func(cog, self.ctx)
 
             leave_interaction.safe_send_channel.assert_called_once_with(
                 self.ctx,
@@ -77,7 +77,7 @@ class TestCogLeaveGame(InteractionContextMixin):
             leave_interaction.safe_fetch_text_channel.return_value = None
 
             cog = LeaveGameCog(self.bot)
-            await cog.leave.func(cog, self.ctx)
+            await cog.leave_command.func(cog, self.ctx)
 
             leave_interaction.safe_send_channel.assert_called_once_with(
                 self.ctx,
@@ -94,7 +94,7 @@ class TestCogLeaveGame(InteractionContextMixin):
             leave_interaction.safe_fetch_message.return_value = None
 
             cog = LeaveGameCog(self.bot)
-            await cog.leave.func(cog, self.ctx)
+            await cog.leave_command.func(cog, self.ctx)
 
             leave_interaction.safe_send_channel.assert_called_once_with(
                 self.ctx,
