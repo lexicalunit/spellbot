@@ -21,6 +21,7 @@ CTX_PROPS = {
     "interaction_id",
     "kwargs",
     "origin_message_id",
+    "target_id",
     "values",
 }
 
