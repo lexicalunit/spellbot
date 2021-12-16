@@ -763,6 +763,33 @@ class TestCogLookingForGameLeaveButton(ComponentContextMixin):
                 "type": "rich",
             }
 
+    async def test_leave_when_not_in_game(self):
+        assert self.ctx.author
+        assert isinstance(self.ctx.author, discord.User)
+        ctx_user(self.ctx)
+
+        with mock_operations(leave_interaction, users=[self.ctx.author]):
+            cog = LookingForGameCog(self.bot)
+            await cog.leave.func(cog, self.ctx)
+
+            leave_interaction.safe_update_embed_origin.assert_not_called()
+            leave_interaction.safe_send_channel.assert_not_called()
+
+    async def test_leave_when_missing_game_post(self):
+        assert self.ctx.author
+        assert isinstance(self.ctx.author, discord.User)
+        guild = ctx_guild(self.ctx)
+        channel = ctx_channel(self.ctx, guild)
+        game = ctx_game(self.ctx, guild, channel, message_xid=None)
+        ctx_user(self.ctx, game=game)
+
+        with mock_operations(leave_interaction, users=[self.ctx.author]):
+            cog = LookingForGameCog(self.bot)
+            await cog.leave.func(cog, self.ctx)
+
+            leave_interaction.safe_update_embed_origin.assert_not_called()
+            leave_interaction.safe_send_channel.assert_not_called()
+
     async def test_leave_message_mismatch(self):
         assert self.ctx.message
         assert self.ctx.author
@@ -782,7 +809,7 @@ class TestCogLookingForGameLeaveButton(ComponentContextMixin):
 
             leave_interaction.safe_send_channel.assert_called_once_with(
                 self.ctx,
-                "You have been removed from any games your were signed up for.",
+                "You're not in that game. Use the /leave command to leave a game.",
                 hidden=True,
             )
 

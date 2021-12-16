@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Leave button only works if you click it for the game you're in.
+- The `/leave` command works globally to remove you from any game you're in.
+
 ## [v7.10.5](https://github.com/lexicalunit/spellbot/releases/tag/v7.10.5) - 2021-12-15
 
 ### Changed
