@@ -5,8 +5,8 @@ from discord_slash.context import InteractionContext
 
 from .. import SpellBot
 from ..operations import (
-    safe_fetch_message,
     safe_fetch_text_channel,
+    safe_get_partial_message,
     safe_send_channel,
     safe_update_embed,
 )
@@ -35,16 +35,14 @@ class ConfigInteraction(BaseInteraction):
             assert found
 
             data = await self.services.games.to_dict()
+            bot = self.bot
             guild_xid = self.ctx.guild_id
             channel_xid = data["channel_xid"]
             message_xid = data["message_xid"]
 
-            channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
-            if not channel:
+            if not (chan := await safe_fetch_text_channel(bot, guild_xid, channel_xid)):
                 return
-
-            message = await safe_fetch_message(channel, guild_xid, message_xid)
-            if not message:
+            if not (message := safe_get_partial_message(chan, guild_xid, message_xid)):
                 return
 
             embed = await self.services.games.to_embed()

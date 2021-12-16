@@ -1,9 +1,10 @@
 import logging
 import re
-from typing import Optional, cast
+from typing import Optional, Union, cast
 
 import discord
 import discord_slash.utils.manage_components as comp
+from ddtrace import tracer
 from discord.embeds import Embed
 from discord.message import Message
 from discord_slash.context import ComponentContext, InteractionContext
@@ -16,8 +17,8 @@ from ..operations import (
     safe_create_invite,
     safe_create_voice_channel,
     safe_ensure_voice_category,
-    safe_fetch_message,
     safe_fetch_user,
+    safe_get_partial_message,
     safe_send_channel,
     safe_send_user,
     safe_update_embed,
@@ -34,9 +35,11 @@ class LookingForGameInteraction(BaseInteraction):
         super().__init__(bot, ctx)
         self.settings = Settings()
 
+    @tracer.wrap()
     async def get_friends(self, friends: Optional[str] = None) -> str:
         return friends or ""
 
+    @tracer.wrap()
     async def get_seats(
         self,
         format: Optional[int] = None,
@@ -46,9 +49,11 @@ class LookingForGameInteraction(BaseInteraction):
             return GameFormat(format).players
         return seats or self.channel_data["default_seats"]
 
+    @tracer.wrap()
     async def get_format(self, format: Optional[int] = None) -> int:
         return format or GameFormat.COMMANDER.value  # type: ignore
 
+    @tracer.wrap()
     async def filter_friend_xids(self, friend_xids: list[int]) -> list[int]:
         assert self.ctx
         if friend_xids:
@@ -60,6 +65,7 @@ class LookingForGameInteraction(BaseInteraction):
             )
         return friend_xids
 
+    @tracer.wrap()
     async def upsert_game(
         self,
         friend_xids: list[int],
@@ -109,12 +115,11 @@ class LookingForGameInteraction(BaseInteraction):
             )
 
             # attempt to update the problematic game post
-            message = await safe_fetch_message(
+            if message := safe_get_partial_message(
                 self.channel,
                 self.guild.id,
                 message_xid,
-            )
-            if message:
+            ):
                 embed = await self.services.games.to_embed()
                 components = await self._fully_seated_components()
                 await safe_update_embed(message, embed=embed, components=components)
@@ -124,6 +129,7 @@ class LookingForGameInteraction(BaseInteraction):
         await self.services.games.add_player(self.ctx.author_id)
         return False
 
+    @tracer.wrap()
     async def execute(
         self,
         friends: Optional[str] = None,
@@ -193,6 +199,7 @@ class LookingForGameInteraction(BaseInteraction):
             await self.services.games.record_plays()
             await self._handle_direct_messages()
 
+    @tracer.wrap()
     async def add_points(self, message: Message, points: int):
         assert self.ctx
         found = await self.services.games.select_by_message_xid(message.id)
@@ -210,6 +217,7 @@ class LookingForGameInteraction(BaseInteraction):
         embed = await self.services.games.to_embed()
         await safe_update_embed(message, embed=embed)
 
+    @tracer.wrap()
     async def create_game(self, players: str, format: Optional[int] = None):
         assert self.ctx
         assert self.channel
@@ -255,10 +263,12 @@ class LookingForGameInteraction(BaseInteraction):
         await self.services.games.record_plays()
         await self._handle_direct_messages()
 
+    @tracer.wrap()
     async def _handle_link_creation(self):
         spelltable_link = await self.bot.create_spelltable_link()
         await self.services.games.make_ready(spelltable_link)
 
+    @tracer.wrap()
     async def _handle_voice_creation(self, guild_xid: int):
         if not await self.services.guilds.should_voice_create():
             return
@@ -291,6 +301,7 @@ class LookingForGameInteraction(BaseInteraction):
         )
         await self.services.games.set_voice(voice_channel.id, voice_invite_link)
 
+    @tracer.wrap()
     async def _pending_components(self):
         buttons = [
             comp.create_button(
@@ -309,6 +320,7 @@ class LookingForGameInteraction(BaseInteraction):
         action_row = comp.create_actionrow(*buttons)
         return [action_row]
 
+    @tracer.wrap()
     async def _fully_seated_components(self):
         if not await self.services.guilds.should_show_points():
             return []
@@ -332,6 +344,7 @@ class LookingForGameInteraction(BaseInteraction):
         action_row = comp.create_actionrow(select)
         return [action_row]
 
+    @tracer.wrap()
     async def _handle_embed_creation(self, new: bool, origin: bool, fully_seated: bool):
         assert self.ctx
         assert self.guild
@@ -355,11 +368,15 @@ class LookingForGameInteraction(BaseInteraction):
                 await self.services.games.set_message_xid(message.id)
             return
 
-        message: Optional[discord.Message] = None
+        message: Optional[Union[discord.Message, discord.PartialMessage]] = None
         game_data = await self.services.games.to_dict()
         message_xid = game_data["message_xid"]
         if message_xid:
-            message = await safe_fetch_message(self.channel, self.guild.id, message_xid)
+            message = safe_get_partial_message(
+                self.channel,
+                self.guild.id,
+                message_xid,
+            )
 
         if not message:  # repost the game post, we lost track of the original:
             message = await safe_send_channel(
@@ -394,6 +411,7 @@ class LookingForGameInteraction(BaseInteraction):
         if not origin:
             await self._reply_found_embed()
 
+    @tracer.wrap()
     async def _reply_found_embed(self):
         assert self.ctx
         embed = Embed()
@@ -405,6 +423,7 @@ class LookingForGameInteraction(BaseInteraction):
         embed.color = self.settings.EMBED_COLOR
         await safe_send_channel(self.ctx, embed=embed, hidden=True)
 
+    @tracer.wrap()
     async def _handle_direct_messages(self):
         assert self.ctx
         player_xids = await self.services.games.player_xids()
@@ -441,6 +460,7 @@ class LookingForGameInteraction(BaseInteraction):
 
         await self._handle_watched_players(player_xids)
 
+    @tracer.wrap()
     async def _handle_watched_players(self, player_xids: list[int]):
         """Notify moderators about watched players."""
         assert self.ctx
@@ -476,6 +496,7 @@ class LookingForGameInteraction(BaseInteraction):
         for member in mod_role.members:
             await safe_send_user(member, embed=embed)
 
+    @tracer.wrap()
     async def ensure_users_exist(
         self,
         user_xids: list[int],

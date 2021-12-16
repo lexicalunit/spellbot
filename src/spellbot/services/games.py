@@ -5,6 +5,7 @@ from typing import Optional
 
 import discord
 from asgiref.sync import sync_to_async
+from ddtrace import tracer
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_, asc, column, or_, select
@@ -27,11 +28,13 @@ class GamesService:
         self.game: Optional[Game] = None
 
     @sync_to_async
+    @tracer.wrap()
     def select(self, game_id: int) -> bool:
         self.game = DatabaseSession.query(Game).get(game_id)
         return bool(self.game)
 
     @sync_to_async
+    @tracer.wrap()
     def select_by_voice_xid(self, voice_xid: int) -> bool:
         self.game = (
             DatabaseSession.query(Game)
@@ -43,6 +46,7 @@ class GamesService:
         return bool(self.game)
 
     @sync_to_async
+    @tracer.wrap()
     def select_by_message_xid(self, message_xid: int) -> Optional[dict]:
         self.game = (
             DatabaseSession.query(Game)
@@ -54,6 +58,7 @@ class GamesService:
         return self.game.to_dict() if self.game else None
 
     @sync_to_async
+    @tracer.wrap()
     def add_player(self, player_xid: int) -> None:
         assert self.game
 
@@ -80,6 +85,7 @@ class GamesService:
         DatabaseSession.commit()
 
     @sync_to_async
+    @tracer.wrap()
     def upsert(
         self,
         *,
@@ -128,6 +134,7 @@ class GamesService:
         self.game = game
         return new
 
+    @tracer.wrap()
     def _find_existing(
         self,
         *,
@@ -188,23 +195,27 @@ class GamesService:
         return outer.first()
 
     @sync_to_async
+    @tracer.wrap()
     def to_embed(self, dm: bool = False) -> discord.Embed:
         assert self.game
         return self.game.to_embed(dm)
 
     @sync_to_async
+    @tracer.wrap()
     def set_message_xid(self, message_xid: int) -> None:
         assert self.game
         self.game.message_xid = message_xid  # type: ignore
         DatabaseSession.commit()
 
     @sync_to_async
+    @tracer.wrap()
     def fully_seated(self) -> bool:
         assert self.game
         rows = DatabaseSession.query(User).filter(User.game_id == self.game.id).count()
         return rows == self.game.seats
 
     @sync_to_async
+    @tracer.wrap()
     def make_ready(self, spelltable_link: Optional[str]) -> None:
         assert self.game
         assert len(spelltable_link or "") <= MAX_SPELLTABLE_LINK_LEN
@@ -214,12 +225,14 @@ class GamesService:
         DatabaseSession.commit()
 
     @sync_to_async
+    @tracer.wrap()
     def player_xids(self) -> list[int]:
         assert self.game
         rows = DatabaseSession.query(User.xid).filter(User.game_id == self.game.id)
         return [int(row[0]) for row in rows]
 
     @sync_to_async
+    @tracer.wrap()
     def watch_notes(self, player_xids: list[int]) -> dict[int, Optional[str]]:
         assert self.game
         watched = (
@@ -235,6 +248,7 @@ class GamesService:
         return {watch.user_xid: watch.note for watch in watched}
 
     @sync_to_async
+    @tracer.wrap()
     def record_plays(self) -> None:
         assert self.game
         assert self.game.status == GameStatus.STARTED.value
@@ -272,6 +286,7 @@ class GamesService:
         DatabaseSession.commit()
 
     @sync_to_async
+    @tracer.wrap()
     def set_voice(self, voice_xid: int, voice_invite_link: str) -> None:
         assert self.game
         assert len(voice_invite_link or "") <= MAX_VOICE_INVITE_LINK_LEN
@@ -280,6 +295,7 @@ class GamesService:
         DatabaseSession.commit()
 
     @sync_to_async
+    @tracer.wrap()
     def filter_blocked(self, author_xid: int, other_xids: list[int]) -> list[int]:
         blockers = (
             DatabaseSession.query(Block)
@@ -304,6 +320,7 @@ class GamesService:
         )
 
     @sync_to_async
+    @tracer.wrap()
     def blocked(self, author_xid: int) -> bool:
         assert self.game
         rows = DatabaseSession.query(User.xid).filter(User.game_id == self.game.id)
@@ -324,6 +341,7 @@ class GamesService:
         return bool(DatabaseSession.query(query.exists()).scalar())
 
     @sync_to_async
+    @tracer.wrap()
     def players_included(self, player_xid: int) -> bool:
         """
         Players that played this game.
@@ -344,6 +362,7 @@ class GamesService:
         return bool(record)
 
     @sync_to_async
+    @tracer.wrap()
     def add_points(self, player_xid: int, points: int):
         assert self.game
         values = {
@@ -364,11 +383,13 @@ class GamesService:
         DatabaseSession.commit()
 
     @sync_to_async
+    @tracer.wrap()
     def to_dict(self) -> dict:
         assert self.game
         return self.game.to_dict()
 
     @sync_to_async
+    @tracer.wrap()
     def inactive_games(self) -> list[dict]:
         settings = Settings()
         limit = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M)
@@ -382,6 +403,7 @@ class GamesService:
         return [record.to_dict() for record in records]
 
     @sync_to_async
+    @tracer.wrap()
     def delete_games(self, game_ids: list[int]):
         DatabaseSession.execute(
             update(Game)

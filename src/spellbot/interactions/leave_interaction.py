@@ -1,11 +1,12 @@
 import logging
 from typing import cast
 
+from ddtrace import tracer
 from discord_slash.context import ComponentContext
 
 from ..operations import (
-    safe_fetch_message,
     safe_fetch_text_channel,
+    safe_get_partial_message,
     safe_send_channel,
     safe_update_embed,
     safe_update_embed_origin,
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class LeaveInteraction(BaseInteraction):
+    @tracer.wrap()
     async def report_success(self):
         assert self.ctx
         await safe_send_channel(
@@ -24,28 +26,25 @@ class LeaveInteraction(BaseInteraction):
             hidden=True,
         )
 
+    @tracer.wrap()
     async def execute(self, origin: bool = False):
-        game_id = await self.services.users.current_game_id()
-        if not game_id:
+        if not (game_id := await self.services.users.current_game_id()):
             return await self.report_success()
 
         await self.services.games.select(game_id)
+
+        bot = self.bot
         game_data = await self.services.games.to_dict()
         channel_xid = game_data["channel_xid"]
         guild_xid = game_data["guild_xid"]
 
         await self.services.users.leave_game()
-        channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
 
-        if not channel:
+        if not (channel := await safe_fetch_text_channel(bot, guild_xid, channel_xid)):
             return await self.report_success()
-
-        message_xid = game_data["message_xid"]
-        if not message_xid:
+        if not (message_xid := game_data["message_xid"]):
             return await self.report_success()
-
-        message = await safe_fetch_message(channel, guild_xid, message_xid)
-        if not message:
+        if not (message := safe_get_partial_message(channel, guild_xid, message_xid)):
             return await self.report_success()
 
         embed = await self.services.games.to_embed()

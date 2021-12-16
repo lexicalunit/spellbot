@@ -16,9 +16,9 @@ from spellbot.operations import (
     safe_delete_channel,
     safe_ensure_voice_category,
     safe_fetch_guild,
-    safe_fetch_message,
     safe_fetch_text_channel,
     safe_fetch_user,
+    safe_get_partial_message,
     safe_message_reply,
     safe_send_user,
     safe_update_embed,
@@ -77,7 +77,7 @@ class TestOperationsFetchTextChannel:
 
 
 @pytest.mark.asyncio
-class TestOperationsFetchMessage:
+class TestOperationsGetPartialMessage:
     read_perms = discord.Permissions(
         discord.Permissions.read_messages.flag
         | discord.Permissions.read_message_history.flag,
@@ -94,11 +94,11 @@ class TestOperationsFetchMessage:
         self.channel = dpy_channel
         self.author = dpy_author
         self.message = build_message(self.guild, self.channel, self.author)
-        self.channel.fetch_message = AsyncMock(return_value=self.message)
+        self.channel.get_partial_message = MagicMock(return_value=self.message)
 
     async def test_happy_path(self):
         self.channel.permissions_for = MagicMock(return_value=self.read_perms)
-        found = await safe_fetch_message(self.channel, self.guild.id, self.message.id)
+        found = safe_get_partial_message(self.channel, self.guild.id, self.message.id)
         assert found is self.message
 
     async def test_not_text(self):
@@ -106,11 +106,11 @@ class TestOperationsFetchMessage:
         channel.type = discord.ChannelType.voice
         channel.guild = self.guild
         channel.permissions_for = MagicMock(return_value=self.read_perms)
-        assert not await safe_fetch_message(channel, self.guild.id, self.message.id)
+        assert not safe_get_partial_message(channel, self.guild.id, self.message.id)
 
     async def test_no_permissions(self):
         self.channel.permissions_for = MagicMock(return_value=discord.Permissions())
-        assert not await safe_fetch_message(self.channel, self.guild.id, self.message.id)
+        assert not safe_get_partial_message(self.channel, self.guild.id, self.message.id)
 
 
 @pytest.mark.asyncio
