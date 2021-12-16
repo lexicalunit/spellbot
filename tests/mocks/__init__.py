@@ -1,7 +1,6 @@
 # pylint: disable=inconsistent-return-statements
 
 import importlib
-import inspect
 from asyncio import AbstractEventLoop
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -90,10 +89,10 @@ def mock_operations(
         from spellbot.interactions import lfg_interaction
 
         with mock_operations(lfg_interaction):
-            lfg_interaction.safe_fetch_message.return_value = MagicMock()
+            lfg_interaction.safe_get_partial_message.return_value = MagicMock()
             cog = LookingForGameCog(bot)
             await cog.lfg.func(cog, ctx)
-            lfg_interaction.safe_fetch_message.assert_called_once()
+            lfg_interaction.safe_get_partial_message.assert_called_once()
 
     """
     from _pytest.monkeypatch import MonkeyPatch
@@ -103,9 +102,11 @@ def mock_operations(
     _users: list[discord.User] = users or []
 
     monkeypatch = MonkeyPatch()
-    for name, item in operations.__dict__.items():
-        if inspect.iscoroutinefunction(item):
-            if name in module.__dict__:
+    for name in operations.__dict__:
+        if name in module.__dict__:
+            if name.startswith("safe_get_"):  # special handling for non-async get
+                monkeypatch.setattr(module, name, MagicMock())
+            elif name.startswith("safe_"):  # all others we can assume are async
                 if name == "safe_fetch_user":
 
                     async def finder(_, xid):
@@ -258,6 +259,7 @@ def mock_discord_channel(
     else:
         discord_channel.guild = mock_discord_guild(channel.guild)
     discord_channel.fetch_message = AsyncMock()
+    discord_channel.get_partial_message = MagicMock()
     discord_channel.permissions_for = MagicMock()
     discord_channel.mention = f"<#{discord_channel.id}>"
     return discord_channel

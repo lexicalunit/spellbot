@@ -15,7 +15,7 @@ class TestCogLeaveGame(InteractionContextMixin):
 
         with mock_operations(leave_interaction):
             leave_interaction.safe_fetch_text_channel.return_value = self.ctx.channel
-            leave_interaction.safe_fetch_message.return_value = self.ctx.message
+            leave_interaction.safe_get_partial_message.return_value = self.ctx.message
 
             cog = LeaveGameCog(self.bot)
             await cog.leave_command.func(cog, self.ctx)
@@ -47,7 +47,7 @@ class TestCogLeaveGame(InteractionContextMixin):
 
         with mock_operations(leave_interaction):
             leave_interaction.safe_fetch_text_channel.return_value = self.ctx.channel
-            leave_interaction.safe_fetch_message.return_value = self.ctx.message
+            leave_interaction.safe_get_partial_message.return_value = self.ctx.message
 
             cog = LeaveGameCog(self.bot)
             await cog.leave_command.func(cog, self.ctx)
@@ -91,7 +91,7 @@ class TestCogLeaveGame(InteractionContextMixin):
 
         with mock_operations(leave_interaction):
             leave_interaction.safe_fetch_text_channel.return_value = self.ctx.channel
-            leave_interaction.safe_fetch_message.return_value = None
+            leave_interaction.safe_get_partial_message.return_value = None
 
             cog = LeaveGameCog(self.bot)
             await cog.leave_command.func(cog, self.ctx)

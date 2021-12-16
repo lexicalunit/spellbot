@@ -2,6 +2,7 @@ import logging
 from typing import Optional, Union, cast
 
 import discord
+from ddtrace import tracer
 from discord.errors import DiscordException
 from discord_slash.context import ComponentContext, InteractionContext
 
@@ -20,6 +21,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
+@tracer.wrap()
 async def safe_fetch_user(
     client: discord.Client,
     user_xid: int,
@@ -36,6 +38,7 @@ async def safe_fetch_user(
     return user
 
 
+@tracer.wrap()
 async def safe_fetch_guild(
     client: discord.Client,
     guild_xid: int,
@@ -52,6 +55,7 @@ async def safe_fetch_guild(
     return guild
 
 
+@tracer.wrap()
 async def safe_fetch_text_channel(
     client: discord.Client,
     guild_xid: int,
@@ -79,11 +83,12 @@ async def safe_fetch_text_channel(
     return None
 
 
-async def safe_fetch_message(
+@tracer.wrap()
+def safe_get_partial_message(
     channel: DiscordChannel,
     guild_xid: int,
     message_xid: int,
-) -> Optional[discord.Message]:
+) -> Optional[discord.PartialMessage]:
     if (
         not hasattr(channel, "type")
         or getattr(channel, "type") != discord.ChannelType.text
@@ -91,19 +96,24 @@ async def safe_fetch_message(
         return None
     if not bot_can_read(channel):
         return None
-    message: Optional[discord.Message] = None
+    message: Optional[discord.PartialMessage] = None
     text_channel = cast(discord.TextChannel, channel)
     with suppress(
         DiscordException,
-        log="in guild %(guild_xid)s, could not fetch message %(message_xid)s",
+        log="in guild %(guild_xid)s, could not get partial message %(message_xid)s",
         guild_xid=guild_xid,
         message_xid=message_xid,
     ):
-        message = await text_channel.fetch_message(message_xid)
+        message = text_channel.get_partial_message(message_xid)
     return message
 
 
-async def safe_update_embed(message: discord.Message, *args, **kwargs) -> None:
+@tracer.wrap()
+async def safe_update_embed(
+    message: Union[discord.Message, discord.PartialMessage],
+    *args,
+    **kwargs,
+) -> None:
     with suppress(
         DiscordException,
         log="could not update embed in message %(message_xid)s",
@@ -112,6 +122,7 @@ async def safe_update_embed(message: discord.Message, *args, **kwargs) -> None:
         await message.edit(*args, **kwargs)
 
 
+@tracer.wrap()
 async def safe_update_embed_origin(ctx: ComponentContext, *args, **kwargs) -> bool:
     assert hasattr(ctx, "origin_message_id")
     success = False
@@ -125,6 +136,7 @@ async def safe_update_embed_origin(ctx: ComponentContext, *args, **kwargs) -> bo
     return success
 
 
+@tracer.wrap()
 async def safe_create_category_channel(
     client: discord.Client,
     guild_xid: int,
@@ -143,6 +155,7 @@ async def safe_create_category_channel(
     return channel
 
 
+@tracer.wrap()
 async def safe_create_voice_channel(
     client: discord.Client,
     guild_xid: int,
@@ -162,6 +175,7 @@ async def safe_create_voice_channel(
     return channel
 
 
+@tracer.wrap()
 async def safe_ensure_voice_category(
     client: discord.Client,
     guild_xid: int,
@@ -213,6 +227,7 @@ async def safe_ensure_voice_category(
     return category
 
 
+@tracer.wrap()
 async def safe_create_invite(
     channel: discord.VoiceChannel,
     guild_xid: int,
@@ -230,6 +245,7 @@ async def safe_create_invite(
     return invite
 
 
+@tracer.wrap()
 async def safe_delete_channel(
     channel: discord.abc.GuildChannel,
     guild_xid: int,
@@ -251,6 +267,7 @@ async def safe_delete_channel(
     return success
 
 
+@tracer.wrap()
 async def safe_send_channel(
     ctx: InteractionContext,
     *args,
@@ -267,6 +284,7 @@ async def safe_send_channel(
     return message
 
 
+@tracer.wrap()
 async def safe_message_reply(message: discord.Message, *args, **kwargs):
     if not bot_can_reply_to(message):
         return
@@ -277,6 +295,7 @@ async def safe_message_reply(message: discord.Message, *args, **kwargs):
         logger.debug("debug: %s", ex, exc_info=True)
 
 
+@tracer.wrap()
 async def safe_send_user(user: Union[discord.User, discord.Member], *args, **kwargs):
     if not hasattr(user, "send"):
         return log_warning("no send method on user %(user)s", user=user)
@@ -315,6 +334,7 @@ async def safe_send_user(user: Union[discord.User, discord.Member], *args, **kwa
         )
 
 
+@tracer.wrap()
 async def safe_add_role(
     user_or_member: Union[discord.User, discord.Member],
     guild: discord.Guild,

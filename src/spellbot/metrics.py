@@ -55,7 +55,7 @@ def alert_error(
 
 
 @skip_if_no_metrics
-def add_span_context(ctx: Any):
+def add_span_context(ctx: Any):  # pragma: no cover
     span = tracer.current_span()
     for prop in CTX_PROPS:
         if value := getattr(ctx, prop, None):

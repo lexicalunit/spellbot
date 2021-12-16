@@ -103,7 +103,7 @@ class TestInteractionTaskExpireInactiveGames(BaseMixin):
                 task_interaction.safe_fetch_text_channel = AsyncMock(
                     return_value=discord_channel,
                 )
-                task_interaction.safe_fetch_message = AsyncMock(
+                task_interaction.safe_get_partial_message = MagicMock(
                     return_value=discord_message,
                 )
 
@@ -149,7 +149,7 @@ class TestInteractionTaskExpireInactiveGames(BaseMixin):
                 task_interaction.safe_fetch_text_channel = AsyncMock(
                     return_value=discord_channel,
                 )
-                task_interaction.safe_fetch_message = AsyncMock(return_value=None)
+                task_interaction.safe_get_partial_message = MagicMock(return_value=None)
 
                 await interaction.expire_inactive_games()
 

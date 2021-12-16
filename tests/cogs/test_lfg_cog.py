@@ -61,7 +61,7 @@ class TestCogLookingForGame(InteractionContextMixin):
         with mock_operations(lfg_interaction, users=[author_player, other_player]):
             message = MagicMock(spec=discord.Message)
             message.id = game.message_xid
-            lfg_interaction.safe_fetch_message.return_value = message
+            lfg_interaction.safe_get_partial_message.return_value = message
 
             cog = LookingForGameCog(self.bot)
             await cog.lfg.func(cog, self.ctx)
@@ -114,7 +114,7 @@ class TestCogLookingForGame(InteractionContextMixin):
         game = self.factories.game.create(guild=guild, channel=channel, message_xid=100)
 
         with mock_operations(lfg_interaction, users=[user, other]):
-            lfg_interaction.safe_fetch_message.return_value = None
+            lfg_interaction.safe_get_partial_message.return_value = None
 
             message = MagicMock(spec=discord.Message)
             message.id = game.message_xid + 1
@@ -334,7 +334,7 @@ class TestCogLookingForGameJoinButton(ComponentContextMixin):
         user = ctx_user(self.ctx)
 
         with mock_operations(lfg_interaction, users=[self.ctx.author]):
-            lfg_interaction.safe_fetch_message.return_value = self.ctx.message
+            lfg_interaction.safe_get_partial_message.return_value = self.ctx.message
 
             cog = LookingForGameCog(self.bot)
             await cog.join.func(cog, self.ctx)
@@ -434,7 +434,7 @@ class TestCogLookingForGameJoinButton(ComponentContextMixin):
         ctx_game(self.ctx, guild, channel, status=GameStatus.STARTED.value)
 
         with mock_operations(lfg_interaction, users=[self.ctx.author]):
-            lfg_interaction.safe_fetch_message.return_value = self.ctx.message
+            lfg_interaction.safe_get_partial_message.return_value = self.ctx.message
 
             cog = LookingForGameCog(self.bot)
             await cog.join.func(cog, self.ctx)
@@ -458,7 +458,7 @@ class TestCogLookingForGameJoinButton(ComponentContextMixin):
         ctx_game(self.ctx, guild, channel, status=GameStatus.STARTED.value)
 
         with mock_operations(lfg_interaction, users=[self.ctx.author]):
-            lfg_interaction.safe_fetch_message.return_value = None
+            lfg_interaction.safe_get_partial_message.return_value = None
 
             cog = LookingForGameCog(self.bot)
             await cog.join.func(cog, self.ctx)
@@ -479,13 +479,13 @@ class TestCogLookingForGameJoinButton(ComponentContextMixin):
         user = ctx_user(self.ctx)
 
         with mock_operations(lfg_interaction, users=[self.ctx.author]):
-            lfg_interaction.safe_fetch_message.return_value = self.ctx.message
+            lfg_interaction.safe_get_partial_message.return_value = self.ctx.message
             lfg_interaction.safe_update_embed_origin.return_value = False
 
             cog = LookingForGameCog(self.bot)
             await cog.join.func(cog, self.ctx)
 
-            mock_call = lfg_interaction.safe_update_embed
+            mock_call = lfg_interaction.safe_update_embed_origin
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": self.settings.EMBED_COLOR,
                 "description": (
@@ -742,7 +742,7 @@ class TestCogLookingForGameLeaveButton(ComponentContextMixin):
 
         with mock_operations(leave_interaction, users=[self.ctx.author]):
             leave_interaction.safe_fetch_text_channel.return_value = self.ctx.channel
-            leave_interaction.safe_fetch_message.return_value = self.ctx.message
+            leave_interaction.safe_get_partial_message.return_value = self.ctx.message
 
             cog = LookingForGameCog(self.bot)
             await cog.leave.func(cog, self.ctx)
@@ -775,7 +775,7 @@ class TestCogLookingForGameLeaveButton(ComponentContextMixin):
 
         with mock_operations(leave_interaction, users=[self.ctx.author]):
             leave_interaction.safe_fetch_text_channel.return_value = self.ctx.channel
-            leave_interaction.safe_fetch_message.return_value = self.ctx.message
+            leave_interaction.safe_get_partial_message.return_value = self.ctx.message
 
             cog = LookingForGameCog(self.bot)
             await cog.leave.func(cog, self.ctx)
@@ -800,7 +800,7 @@ class TestCogLookingForGameVoiceCreate(ComponentContextMixin):
         other_player = mock_discord_user(other_user)
 
         with mock_operations(lfg_interaction, users=[self.ctx.author, other_player]):
-            lfg_interaction.safe_fetch_message.return_value = self.ctx.message
+            lfg_interaction.safe_get_partial_message.return_value = self.ctx.message
             voice_channel = build_voice_channel(self.ctx.guild)
             lfg_interaction.safe_create_voice_channel.return_value = voice_channel
             lfg_interaction.safe_create_invite.return_value = "http://invite"
@@ -822,7 +822,7 @@ class TestCogLookingForGameVoiceCreate(ComponentContextMixin):
         other_player = mock_discord_user(other_user)
 
         with mock_operations(lfg_interaction, users=[self.ctx.author, other_player]):
-            lfg_interaction.safe_fetch_message.return_value = self.ctx.message
+            lfg_interaction.safe_get_partial_message.return_value = self.ctx.message
             lfg_interaction.safe_ensure_voice_category.return_value = None
 
             cog = LookingForGameCog(self.bot)
@@ -842,7 +842,7 @@ class TestCogLookingForGameVoiceCreate(ComponentContextMixin):
         other_player = mock_discord_user(other_user)
 
         with mock_operations(lfg_interaction, users=[self.ctx.author, other_player]):
-            lfg_interaction.safe_fetch_message.return_value = self.ctx.message
+            lfg_interaction.safe_get_partial_message.return_value = self.ctx.message
             lfg_interaction.safe_create_voice_channel.return_value = None
 
             cog = LookingForGameCog(self.bot)
@@ -863,7 +863,7 @@ class TestCogLookingForGameVoiceCreate(ComponentContextMixin):
         other_player = mock_discord_user(other_user)
 
         with mock_operations(lfg_interaction, users=[self.ctx.author, other_player]):
-            lfg_interaction.safe_fetch_message.return_value = self.ctx.message
+            lfg_interaction.safe_get_partial_message.return_value = self.ctx.message
             voice_channel = build_voice_channel(self.ctx.guild)
             lfg_interaction.safe_create_voice_channel.return_value = voice_channel
             lfg_interaction.safe_create_invite.return_value = None

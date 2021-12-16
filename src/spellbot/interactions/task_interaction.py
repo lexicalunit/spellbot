@@ -11,8 +11,8 @@ from ..metrics import alert_error
 from ..operations import (
     bot_can_delete_channel,
     safe_delete_channel,
-    safe_fetch_message,
     safe_fetch_text_channel,
+    safe_get_partial_message,
     safe_update_embed,
 )
 from ..services import GamesService
@@ -152,8 +152,7 @@ class TaskInteraction(BaseInteraction):
         if not chan:
             return
 
-        post = await safe_fetch_message(chan, guild_xid, message_xid)
-        if not post:
+        if not (post := safe_get_partial_message(chan, guild_xid, message_xid)):
             return
 
         await safe_update_embed(

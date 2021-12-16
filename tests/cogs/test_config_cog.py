@@ -33,7 +33,7 @@ class TestCogConfigPowerLevelWhenUserWaiting(InteractionContextMixin):
 
         with mock_operations(config_interaction):
             config_interaction.safe_fetch_text_channel.return_value = self.ctx.channel
-            config_interaction.safe_fetch_message.return_value = self.ctx.message
+            config_interaction.safe_get_partial_message.return_value = self.ctx.message
 
             cog = ConfigCog(self.bot)
             await cog.power.func(cog, self.ctx, level=10)
@@ -81,7 +81,7 @@ class TestCogConfigPowerLevelWhenUserWaiting(InteractionContextMixin):
 
         with mock_operations(config_interaction):
             config_interaction.safe_fetch_text_channel.return_value = self.ctx.channel
-            config_interaction.safe_fetch_message.return_value = None
+            config_interaction.safe_get_partial_message.return_value = None
 
             cog = ConfigCog(self.bot)
             await cog.power.func(cog, self.ctx, level=10)
