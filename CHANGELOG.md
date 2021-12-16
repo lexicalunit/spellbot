@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add span context to each trace based on the discord interaction or message context.
 - Attempt to shrink the docker container image size a bit.
 - Break out the leave button and leave command traces.
+- Avoid API calls to fetch messages by using `discord.PartialMessage`.
+- Added detailed trace metrics for operations, lfg cog, and leave cog.
 
 ## [v7.10.4](https://github.com/lexicalunit/spellbot/releases/tag/v7.10.4) - 2021-12-12
 
