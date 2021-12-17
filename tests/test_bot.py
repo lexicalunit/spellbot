@@ -172,7 +172,7 @@ class TestSpellBot(BaseMixin):
         await self.bot.on_message(message)
         super_on_message_mock.assert_not_called()
 
-    async def test_on_message(self, dpy_message: discord.Message, monkeypatch):
+    async def test_on_message_happy_path(self, dpy_message: discord.Message, monkeypatch):
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
         monkeypatch.setattr(self.bot, "handle_verification", AsyncMock())

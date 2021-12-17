@@ -144,10 +144,18 @@ class SpellBot(Bot):
             return
 
         # to verify users we need their user id
-        if hasattr(message.author, "id"):
-            span.set_tag("author_id", message.author.id)  # type: ignore
-            async with db_session_manager():
-                await self.handle_verification(message)
+        if not hasattr(message.author, "id"):
+            return
+
+        message_author_xid = message.author.id  # type: ignore
+        span.set_tag("author_id", message_author_xid)
+
+        # don't try to verify the bot itself
+        if self.user and message_author_xid == self.user.id:  # pragma: no cover
+            return
+
+        async with db_session_manager():
+            await self.handle_verification(message)
 
     @tracer.wrap()
     async def handle_verification(self, message: discord.Message):

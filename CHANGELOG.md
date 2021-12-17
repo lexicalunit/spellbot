@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Don't run verification on messages from SpellBot itself.
+- Added some missing awaits in `ctx.defer(ignore=True)` calls in error handling code.
+
 ## [v7.10.6](https://github.com/lexicalunit/spellbot/releases/tag/v7.10.6) - 2021-12-16
 
 ### Changed

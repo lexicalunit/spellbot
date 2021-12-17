@@ -23,14 +23,14 @@ class LeaveInteraction(BaseInteraction):
         ctx: ComponentContext = cast(ComponentContext, self.ctx)
 
         if not (game_id := await self.services.users.current_game_id()):
-            return ctx.defer(ignore=True)
+            return await ctx.defer(ignore=True)
 
         found = await self.services.games.select(game_id)
         assert found
 
         game_data = await self.services.games.to_dict()
         if not (message_xid := game_data["message_xid"]):
-            return ctx.defer(ignore=True)
+            return await ctx.defer(ignore=True)
 
         if ctx.origin_message_id != message_xid:
             return await safe_send_channel(
