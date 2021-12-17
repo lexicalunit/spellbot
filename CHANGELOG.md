@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v7.10.6](https://github.com/lexicalunit/spellbot/releases/tag/v7.10.6) - 2021-12-16
+
 ### Changed
 
 - Leave button only works if you click it for the game you're in.
