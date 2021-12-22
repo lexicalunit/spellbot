@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Adds errors to tracer spans rather than using alerting events.
+
 ### Fixed
 
 - Don't run verification on messages from SpellBot itself.
