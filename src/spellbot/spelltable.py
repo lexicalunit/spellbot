@@ -5,7 +5,7 @@ from aiohttp.client_exceptions import ClientError
 from aiohttp_retry import ExponentialRetry, RetryClient
 
 from . import __version__
-from .metrics import alert_error
+from .metrics import add_span_error
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -41,6 +41,6 @@ async def generate_link() -> Optional[str]:
                 )
                 return wizards_url
     except ClientError as ex:
+        add_span_error(ex)
         logger.warning("warning: SpellTable API failure: %s", ex, exc_info=True)
-        alert_error("SpellTable API failure", str(ex))
         return None

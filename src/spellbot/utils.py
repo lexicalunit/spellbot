@@ -3,11 +3,11 @@ from contextlib import AbstractContextManager
 from typing import Any, Optional, Union, cast
 
 import discord
+from ddtrace import tracer
 from discord_slash.context import InteractionContext
 from discord_slash.model import CallbackObject
 
 from .errors import AdminOnlyError
-from .metrics import alert_error
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -156,8 +156,9 @@ class suppress(AbstractContextManager):
         pass
 
     def __exit__(self, exctype, excinst, exctb):
+        if span := tracer.current_span():  # pragma: no cover
+            span.set_exc_info(exctype, excinst, exctb)
         if captured := exctype is not None and issubclass(exctype, self._exceptions):
-            alert_error("safe_message_reply error", str(excinst))
             log_warning(self._log, exec_info=True, **self._kwargs)
         return captured
 

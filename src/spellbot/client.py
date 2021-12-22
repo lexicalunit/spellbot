@@ -20,7 +20,7 @@ from .errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
-from .metrics import alert_error, setup_metrics
+from .metrics import add_span_error, setup_metrics
 from .operations import safe_send_channel
 from .services import ChannelsService, GuildsService, VerifiesService
 from .settings import Settings
@@ -96,7 +96,7 @@ class SpellBot(Bot):
                 hidden=True,
             )
 
-        alert_error("unhandled exception", str(ex))
+        add_span_error(ex)
         ref = (
             f"command `{ctx.name}`"
             if isinstance(ctx, context.SlashContext)

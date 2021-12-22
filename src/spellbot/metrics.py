@@ -4,6 +4,7 @@ from typing import Any, Callable, Optional
 from datadog import initialize
 from datadog.api.events import Event
 from ddtrace import tracer
+from ddtrace.constants import ERROR_MSG, ERROR_TYPE
 
 from . import __version__
 from .environment import running_in_pytest
@@ -60,3 +61,15 @@ def add_span_context(ctx: Any):  # pragma: no cover
     for prop in CTX_PROPS:
         if value := getattr(ctx, prop, None):
             span.set_tag(prop, value)
+
+
+@skip_if_no_metrics
+def add_span_error(ex: BaseException):  # pragma: no cover
+    span = tracer.current_span()
+    span.set_tags(
+        {
+            ERROR_TYPE: ex.__class__.__name__,
+            ERROR_MSG: f"{ex}",
+        },
+    )
+    span.set_traceback()

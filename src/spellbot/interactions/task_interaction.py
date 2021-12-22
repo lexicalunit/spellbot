@@ -7,7 +7,7 @@ from discord.channel import VoiceChannel
 
 from .. import SpellBot
 from ..database import rollback_session
-from ..metrics import alert_error
+from ..metrics import add_span_error
 from ..operations import (
     bot_can_delete_channel,
     safe_delete_channel,
@@ -77,7 +77,7 @@ class TaskInteraction(BaseInteraction):
             channels = await self.gather_channels()
             await self.delete_channels(channels)
         except BaseException as e:  # Catch EVERYTHING so tasks don't die
-            alert_error("exception in background task cleanup_old_voice_channels", str(e))
+            add_span_error(e)
             logger.exception("error: exception in background task: %s", e)
             await rollback_session()
 
@@ -131,7 +131,7 @@ class TaskInteraction(BaseInteraction):
             games = await self.services.games.inactive_games()
             await self.expire_games(games)
         except BaseException as e:  # Catch EVERYTHING so tasks don't die
-            alert_error("exception in background task expire_inactive_games", str(e))
+            add_span_error(e)
             logger.exception("error: exception in background task: %s", e)
             await rollback_session()
 
