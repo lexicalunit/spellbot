@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a test to ensure we use non-relative imports in spellbot package.
+
 ## [v7.10.7](https://github.com/lexicalunit/spellbot/releases/tag/v7.10.7) - 2021-12-21
 
 ### Changed

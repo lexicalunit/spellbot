@@ -72,6 +72,16 @@ class TestCodebase:
         deps = list(pyproject["tool"]["poetry"]["dependencies"].keys())
         assert deps == sorted(deps)
 
+    def test_relative_imports(self):
+        """Checks that relative imports are used in spellbot package."""
+        chdir(REPO_ROOT / "src")
+        cmd = ["/usr/bin/grep", "-HIRn", "--exclude-dir=migrations", "from spellbot", "."]
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        proc = run(cmd, capture_output=True)
+        assert (
+            proc.returncode == 1
+        ), f"non-relative imports:\n{proc.stdout.decode('utf-8')}"
+
     def test_whitespace(self):
         """Checks for problematic trailing whitespace and missing ending newlines."""
         EXCLUDE_EXTS = (".gif", ".ico", ".ics", ".jpg", ".lock", ".svg", ".png")
