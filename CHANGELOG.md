@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Adds error info on the root span when an error happens in a child span.
+
 ### Added
 
 - Adds a test to ensure we use non-relative imports in spellbot package.
