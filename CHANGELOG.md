@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Flag users as bad if we get a 403 when trying to send a DM to them.
+- Adds a lot more tracer tags for Discord operation functions.
+
 ## [v7.10.8](https://github.com/lexicalunit/spellbot/releases/tag/v7.10.8) - 2021-12-27
 
 ### Changed
