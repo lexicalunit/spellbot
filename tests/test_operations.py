@@ -259,10 +259,16 @@ class TestOperationsSendUser:
         exception = discord.errors.HTTPException(MagicMock(), "msg")
         setattr(exception, "code", CANT_SEND_CODE)
         user = MagicMock(spec=Union[discord.User, discord.Member])
+        user.id = 1234
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.send = AsyncMock(side_effect=exception)
         await safe_send_user(user, "content")
         assert "not allowed to send message to user#1234" in caplog.text
+
+        # user should now be on the "bad users" list
+        user.send = AsyncMock(side_effect=exception)
+        await safe_send_user(user, "content")
+        assert "not sending to bad user user#1234" in caplog.text
 
     async def test_http_failure(self, caplog):
         exception = discord.errors.HTTPException(MagicMock(), "msg")
