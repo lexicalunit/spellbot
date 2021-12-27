@@ -66,10 +66,12 @@ def add_span_context(ctx: Any):  # pragma: no cover
 @skip_if_no_metrics
 def add_span_error(ex: BaseException):  # pragma: no cover
     span = tracer.current_span()
-    span.set_tags(
+    span.set_exc_info(ex.__class__, ex, getattr(ex, "__traceback__", None))
+
+    root = tracer.current_root_span()
+    root.set_tags(
         {
-            ERROR_TYPE: ex.__class__.__name__,
-            ERROR_MSG: f"{ex}",
+            ERROR_TYPE: "OperationalError",
+            ERROR_MSG: "An error occurred during bot operation",
         },
     )
-    span.set_traceback()
