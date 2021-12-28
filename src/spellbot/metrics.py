@@ -5,6 +5,8 @@ from datadog import initialize
 from datadog.api.events import Event
 from ddtrace import tracer
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
+from discord.http import Route
+from wrapt import wrap_function_wrapper
 
 from . import __version__
 from .environment import running_in_pytest
@@ -40,8 +42,30 @@ def skip_if_no_metrics(f) -> Callable[..., None]:  # pragma: no cover
 
 
 @skip_if_no_metrics
+def patch_discord() -> None:  # pragma: no cover
+    def request(wrapped: Callable, instance, args, kwargs):  # pragma: no cover
+        with tracer.trace(name="discord.http", resource="HTTPClient.request") as span:
+            route: Route = args[0]
+            span.set_tags(
+                {
+                    "base": route.BASE,
+                    "channel_id": route.channel_id,
+                    "data": kwargs,
+                    "guild_id": route.guild_id,
+                    "instance": instance,
+                    "method": route.method,
+                    "path": route.path,
+                },
+            )
+            return wrapped(*args, **kwargs)
+
+    wrap_function_wrapper("discord.http", "HTTPClient.request", request)
+
+
+@skip_if_no_metrics
 def setup_metrics() -> None:  # pragma: no cover
     initialize(api_key=settings.DD_API_KEY, app_key=settings.DD_APP_KEY)
+    patch_discord()
 
 
 @skip_if_no_metrics
