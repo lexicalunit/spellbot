@@ -54,8 +54,8 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
         <td align="center"><a href="https://disboard.org/server/848414032398516264"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863856-00482a5a-7fe5-4cbb-8c4b-2442504925ea.jpg" alt="Commander en Español" /><br />Commander&nbsp;en&nbsp;Español</a></td>
     </tr>
     <tr>
-        <td align="center">&nbsp;</td>
-        <td align="center"><a href="https://disboard.org/server/752261529390284870"><img src="https://user-images.githubusercontent.com/1903876/140845571-12e391d0-4cc8-4766-bf40-071f32503a7d.jpg" alt="Commander SpellTable (DE)" /><br />Commander&nbsp;SpellTable&nbsp;(DE)</a></td>
+        <td align="center"><a href="https://discord.gg/commander"><img height="130" src="https://user-images.githubusercontent.com/1903876/147596500-3cd08eef-84ad-4c02-a219-2eef0642a973.jpg" alt="Commander RC" /><br />Commander&nbsp;RC</td>
+        <td align="center"><a href="https://disboard.org/server/752261529390284870"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845571-12e391d0-4cc8-4766-bf40-071f32503a7d.jpg" alt="Commander SpellTable (DE)" /><br />Commander&nbsp;SpellTable&nbsp;(DE)</a></td>
         <td align="center">&nbsp;</td>
     </tr>
 </table>
