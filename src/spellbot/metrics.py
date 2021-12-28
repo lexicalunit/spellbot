@@ -44,7 +44,11 @@ def skip_if_no_metrics(f) -> Callable[..., None]:  # pragma: no cover
 @skip_if_no_metrics
 def patch_discord() -> None:  # pragma: no cover
     def request(wrapped: Callable, instance, args, kwargs):  # pragma: no cover
-        with tracer.trace(name="discord.http", resource="HTTPClient.request") as span:
+        with tracer.trace(
+            "discord",
+            name="discord.http",
+            resource="HTTPClient.request",
+        ) as span:
             route: Route = args[0]
             span.set_tags(
                 {
