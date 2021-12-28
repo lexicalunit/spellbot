@@ -140,3 +140,7 @@ code {
   text-align: center;
   vertical-align: middle;
 }
+
+.small {
+  font-size: smaller;
+}
