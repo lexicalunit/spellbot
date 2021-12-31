@@ -45,6 +45,7 @@ class Settings(metaclass=Singleton):  # pylint: disable=R0902
         # datadog
         self.DD_API_KEY = getenv("DD_API_KEY")
         self.DD_APP_KEY = getenv("DD_APP_KEY")
+        self.DD_TRACE_ENABLED = getenv("DD_TRACE_ENABLED", "true").lower() == "true"
 
         # database
         default_database_url = f"postgresql://postgres@{self.HOST}:5432/postgres"
