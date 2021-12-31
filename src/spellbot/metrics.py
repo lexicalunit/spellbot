@@ -30,7 +30,12 @@ CTX_PROPS = {
 
 
 def no_metrics() -> bool:
-    return IS_RUNNING_IN_PYTEST or not settings.DD_API_KEY or not settings.DD_APP_KEY
+    return (
+        IS_RUNNING_IN_PYTEST
+        or not settings.DD_API_KEY
+        or not settings.DD_APP_KEY
+        or not settings.DD_TRACE_ENABLED
+    )
 
 
 def skip_if_no_metrics(f) -> Callable[..., None]:  # pragma: no cover
@@ -44,12 +49,12 @@ def skip_if_no_metrics(f) -> Callable[..., None]:  # pragma: no cover
 @skip_if_no_metrics
 def patch_discord() -> None:  # pragma: no cover
     def request(wrapped: Callable, instance, args, kwargs):  # pragma: no cover
+        route: Route = args[0]
         with tracer.trace(
-            "discord",
-            name="discord.http",
-            resource="HTTPClient.request",
+            service="discord",
+            name="http",
+            resource=route.path,
         ) as span:
-            route: Route = args[0]
             span.set_tags(
                 {
                     "base": route.BASE,
@@ -58,7 +63,6 @@ def patch_discord() -> None:  # pragma: no cover
                     "guild_id": route.guild_id,
                     "instance": instance,
                     "method": route.method,
-                    "path": route.path,
                 },
             )
             return wrapped(*args, **kwargs)
