@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Puts discord request metrics into their own service.
+- Add HTTP request path to resource name in dd trace for discord spans.
+- Capture DD_TRACE_ENABLED env var in settings an use to turn metrics on/off.
+
 ## [v7.10.10](https://github.com/lexicalunit/spellbot/releases/tag/v7.10.10) - 2021-12-27
 
 ### Added
