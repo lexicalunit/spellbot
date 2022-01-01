@@ -11,6 +11,7 @@ class TestModelAward:
             "guild_xid": guild_award.guild_xid,
             "count": guild_award.count,
             "repeating": guild_award.repeating,
+            "remove": guild_award.remove,
             "role": guild_award.role,
             "message": guild_award.message,
         }
