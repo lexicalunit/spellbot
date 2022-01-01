@@ -8,7 +8,7 @@ from sqlalchemy.sql.expression import and_, or_
 from ..database import DatabaseSession
 from ..models import GuildAward, Play, UserAward
 
-NewAward = namedtuple("NewAward", ["role", "message"])
+NewAward = namedtuple("NewAward", ["role", "message", "remove"])
 
 
 class AwardsService:
@@ -57,7 +57,11 @@ class AwardsService:
                         and next_award.repeating
                     )
                 ):
-                    new_roles[player_xid] = NewAward(next_award.role, next_award.message)
+                    new_roles[player_xid] = NewAward(
+                        next_award.role,
+                        next_award.message,
+                        next_award.remove,
+                    )
                     user_award.guild_award_id = next_award.id  # type: ignore
         DatabaseSession.commit()
 

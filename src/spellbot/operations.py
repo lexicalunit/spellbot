@@ -403,6 +403,7 @@ async def safe_add_role(
     user_or_member: Union[discord.User, discord.Member],
     guild: discord.Guild,
     role: str,
+    remove: Optional[bool] = False,
 ) -> None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags(
@@ -410,6 +411,7 @@ async def safe_add_role(
                 "user_xid": getattr(user_or_member, "id", None),
                 "guild_xid": guild.id,
                 "role": role,
+                "remove": remove,
             },
         )
 
@@ -447,7 +449,10 @@ async def safe_add_role(
                 str(role),
             )
             return
-        await member.add_roles(discord_role)
+        if remove:
+            await member.remove_roles(discord_role)
+        else:
+            await member.add_roles(discord_role)
     except (
         discord.errors.Forbidden,
         discord.errors.HTTPException,

@@ -597,11 +597,13 @@ class TestCogLookingForGameUserAwards(InteractionContextMixin):
                 self.ctx.author,
                 self.ctx.guild,
                 guild_award.role,
+                False,
             )
             lfg_interaction.safe_add_role.assert_any_call(
                 other_player,
                 self.ctx.guild,
                 guild_award.role,
+                False,
             )
             lfg_interaction.safe_send_user.assert_any_call(
                 self.ctx.author,

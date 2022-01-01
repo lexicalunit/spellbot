@@ -103,10 +103,11 @@ class AdminInteraction(BaseInteraction):
         for award in guild.get("awards", []):
             has_at_least_one_award = True
             kind = "every" if award["repeating"] else "after"
+            give_or_take = "take" if award["remove"] else "give"
             next_line = (
                 f"• **ID {award['id']}** — "
                 f"_{kind} {award['count']} games_"
-                f" — `@{award['role']}`"
+                f" — {give_or_take} `@{award['role']}`"
                 f" — {award['message']}\n"
             )
             if len(description) + len(next_line) >= EMBED_DESCRIPTION_SIZE_LIMIT:
@@ -250,9 +251,11 @@ class AdminInteraction(BaseInteraction):
         count: int,
         role: str,
         message: str,
-        repeating: Optional[bool] = False,
+        **options: Optional[bool],
     ):
         assert self.ctx
+        repeating = bool(options.get("repeating", False))
+        remove = bool(options.get("remove", False))
         if count < 1:
             return await safe_send_channel(
                 self.ctx,
@@ -265,12 +268,20 @@ class AdminInteraction(BaseInteraction):
                 "There's already an award for players who reach that many games.",
                 hidden=True,
             )
-        await self.services.guilds.award_add(count, role, message, repeating)
+        await self.services.guilds.award_add(
+            count,
+            role,
+            message,
+            repeating=repeating,
+            remove=remove,
+        )
         embed = Embed()
         embed.set_thumbnail(url=self.settings.ICO_URL)
         embed.set_author(name="Award added!")
+        every_or_after = "every" if repeating else "after"
+        give_or_take = "take" if remove else "give"
         description = (
-            f"• _{'every' if repeating else 'after'} {count} games_ — `@{role}`"
+            f"• _{every_or_after} {count} games_ — {give_or_take} `@{role}`"
             f" — {message}\n\nYou can view all awards with the `/set awards` command."
         )
         embed.description = description
