@@ -42,7 +42,14 @@ class GuildAward(Base):
         nullable=False,
         default=False,
         server_default=false(),
-        doc="If true, this award should  be given every 'count' number of games",
+        doc="If true, this award should be given every 'count' number of games",
+    )
+    remove = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="If true, this award should be removed from instead of given to the player",
     )
     role = Column(
         String(100),
@@ -67,6 +74,7 @@ class GuildAward(Base):
             "guild_xid": self.guild_xid,
             "count": self.count,
             "repeating": self.repeating,
+            "remove": self.remove,
             "role": self.role,
             "message": self.message,
         }

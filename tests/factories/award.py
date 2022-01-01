@@ -8,6 +8,7 @@ class GuildAwardFactory(factory.alchemy.SQLAlchemyModelFactory):
     message = factory.Faker("sentence")
     count = factory.Faker("random_int", min=1, max=100)
     role = factory.Faker("color_name")
+    remove = False
 
     class Meta:
         model = GuildAward

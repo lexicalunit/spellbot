@@ -424,11 +424,11 @@ class TestCogAdminAwards(InteractionContextMixin):
             "color": self.settings.EMBED_COLOR,
             "description": (
                 f"• **ID {award1.id}** — _after {award1.count}"
-                f" games_ — `@{award1.role}` — {award1.message}\n"
+                f" games_ — give `@{award1.role}` — {award1.message}\n"
                 f"• **ID {award2.id}** — _after {award2.count}"
-                f" games_ — `@{award2.role}` — {award2.message}\n"
+                f" games_ — give `@{award2.role}` — {award2.message}\n"
                 f"• **ID {award3.id}** — _after {award3.count}"
-                f" games_ — `@{award3.role}` — {award3.message}\n"
+                f" games_ — give `@{award3.role}` — {award3.message}\n"
             ),
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": f"SpellBot Player Awards for {self.ctx.guild.name}",
@@ -534,7 +534,7 @@ class TestCogAdminAwards(InteractionContextMixin):
             "author": {"name": "Award added!"},
             "color": self.settings.EMBED_COLOR,
             "description": (
-                "• _every 10 games_ — `@role` — message\n\n"
+                "• _every 10 games_ — give `@role` — message\n\n"
                 "You can view all awards with the `/set awards` command."
             ),
             "thumbnail": {"url": self.settings.ICO_URL},

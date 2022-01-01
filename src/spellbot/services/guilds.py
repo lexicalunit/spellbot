@@ -141,15 +141,18 @@ class GuildsService:
         count: int,
         role: str,
         message: str,
-        repeating: Optional[bool] = False,
+        **options: Optional[bool],
     ) -> int:
         assert self.guild
+        repeating = bool(options.get("repeating", False))
+        remove = bool(options.get("remove", False))
         award = GuildAward(
             guild_xid=self.guild.xid,
             count=count,
             role=role,
             message=message,
             repeating=repeating,
+            remove=remove,
         )  # type: ignore
         DatabaseSession.add(award)
         DatabaseSession.commit()

@@ -24,7 +24,7 @@ class TestServiceAwards:
         )
         awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
-        assert give_outs == {user.xid: NewAward(role="one", message="msg")}
+        assert give_outs == {user.xid: NewAward(role="one", message="msg", remove=False)}
 
     async def test_give_awards_no_plays(
         self,
@@ -86,8 +86,8 @@ class TestServiceAwards:
         )
         awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
-        assert give_outs == {user.xid: NewAward(role="one", message="msg")}
+        assert give_outs == {user.xid: NewAward(role="one", message="msg", remove=False)}
         game2 = factories.game.create(guild=guild, channel=channel)
         factories.play.create(user_xid=user.xid, game_id=game2.id)
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
-        assert give_outs == {user.xid: NewAward(role="one", message="msg")}
+        assert give_outs == {user.xid: NewAward(role="one", message="msg", remove=False)}

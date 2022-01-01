@@ -314,6 +314,21 @@ class TestOperationsAddRole:
         await safe_add_role(member, guild, "role")
         member.add_roles.assert_called_once_with(role)
 
+    async def test_remove(self):
+        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member.id = 101
+        member.roles = []
+        member.remove_roles = AsyncMock()
+        role = MagicMock()
+        role.name = "role"
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 201
+        guild.me = MagicMock()
+        guild.me.guild_permissions = self.role_perms
+        guild.roles = [role]
+        await safe_add_role(member, guild, "role", remove=True)
+        member.remove_roles.assert_called_once_with(role)
+
     async def test_no_roles_attribute(self):
         user = MagicMock(spec=Union[discord.User, discord.Member])
         user.id = 101

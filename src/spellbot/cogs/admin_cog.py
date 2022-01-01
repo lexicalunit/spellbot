@@ -146,6 +146,12 @@ class AdminCog(commands.Cog):
                 "description": "Repeatedly give this award every X games?",
                 "type": SlashCommandOptionType.BOOLEAN.value,
             },
+            {
+                "name": "remove",
+                "required": False,
+                "description": "Instead of assigning the role, remove it from the player",
+                "type": SlashCommandOptionType.BOOLEAN.value,
+            },
         ],
     )
     @tracer.wrap(name="interaction", resource="award_add")
@@ -156,10 +162,17 @@ class AdminCog(commands.Cog):
         role: discord.Role,
         message: str,
         repeating: Optional[bool] = False,
+        remove: Optional[bool] = False,
     ):
         add_span_context(ctx)
         async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.award_add(count, str(role), message, repeating)
+            await interaction.award_add(
+                count,
+                str(role),
+                message,
+                repeating=repeating,
+                remove=remove,
+            )
 
     @cog_ext.cog_subcommand(
         base="award",
