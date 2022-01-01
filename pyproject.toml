@@ -87,7 +87,7 @@ packages = [
 ]
 readme = 'README.md'
 repository = 'https://github.com/lexicalunit/spellbot'
-version = "7.10.11"
+version = "7.11.0"
 
 [tool.poetry.dependencies]
 Babel = "^2.9.1"

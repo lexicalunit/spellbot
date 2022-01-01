@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v7.11.0](https://github.com/lexicalunit/spellbot/releases/tag/v7.11.0) - 2021-12-31
+
 ### Added
 
 - Allow "award" level to **remove** a role, rather than give a role to a player.
