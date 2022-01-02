@@ -1,3 +1,4 @@
+import re
 from functools import wraps
 from typing import Any, Callable, Optional
 
@@ -48,13 +49,26 @@ def skip_if_no_metrics(f) -> Callable[..., None]:  # pragma: no cover
 
 @skip_if_no_metrics
 def patch_discord() -> None:  # pragma: no cover
+    interaction_callback = re.compile(r"/interactions/([0-9]+)/([^/]+)/callback")
+    webhook_message = re.compile(r"/webhooks/([0-9]+)/([^/]+)/messages/@original")
+
     def request(wrapped: Callable, instance, args, kwargs):  # pragma: no cover
         route: Route = args[0]
-        with tracer.trace(
-            service="discord",
-            name="http",
-            resource=route.path,
-        ) as span:
+        path: str = route.path
+        additional_tags = {}
+        if matches := interaction_callback.match(path):
+            resource = r"/interactions/{interaction_id}/{interaction_token}/callback"
+            additional_tags["interaction_id"] = matches[1]
+            additional_tags["interaction_token"] = matches[2]
+        elif matches := webhook_message.match(path):
+            resource = (
+                r"/webhooks/{application_id}/{interaction_token}/messages/@original"
+            )
+            additional_tags["application_id"] = matches[1]
+            additional_tags["interaction_token"] = matches[2]
+        else:
+            resource = path
+        with tracer.trace(service="discord", name="http", resource=resource) as span:
             span.set_tags(
                 {
                     "base": route.BASE,
@@ -63,6 +77,7 @@ def patch_discord() -> None:  # pragma: no cover
                     "guild_id": route.guild_id,
                     "instance": instance,
                     "method": route.method,
+                    **additional_tags,
                 },
             )
             return wrapped(*args, **kwargs)
