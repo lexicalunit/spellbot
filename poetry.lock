@@ -455,7 +455,7 @@ smmap = ">=3.0.1,<6"
 
 [[package]]
 name = "gitpython"
-version = "3.1.24"
+version = "3.1.25"
 description = "GitPython is a python library used to interact with Git repositories"
 category = "dev"
 optional = false
@@ -463,7 +463,6 @@ python-versions = ">=3.7"
 
 [package.dependencies]
 gitdb = ">=4.0.1,<5"
-typing-extensions = {version = ">=3.7.4.3", markers = "python_version < \"3.10\""}
 
 [[package]]
 name = "greenlet"
@@ -1251,7 +1250,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<4"
-content-hash = "02acd17c7cb48b42f7f67655d027ad2580d6d1859f85f74f0086e1e9bf93de4c"
+content-hash = "452a89a283a1a43ff16d100d0f47d7b324024c9dc78127caf536454ef6f319d3"
 
 [metadata.files]
 aiohttp = [
@@ -1541,8 +1540,8 @@ gitdb = [
     {file = "gitdb-4.0.9.tar.gz", hash = "sha256:bac2fd45c0a1c9cf619e63a90d62bdc63892ef92387424b855792a6cabe789aa"},
 ]
 gitpython = [
-    {file = "GitPython-3.1.24-py3-none-any.whl", hash = "sha256:dc0a7f2f697657acc8d7f89033e8b1ea94dd90356b2983bca89dc8d2ab3cc647"},
-    {file = "GitPython-3.1.24.tar.gz", hash = "sha256:df83fdf5e684fef7c6ee2c02fc68a5ceb7e7e759d08b694088d0cacb4eba59e5"},
+    {file = "GitPython-3.1.25-py3-none-any.whl", hash = "sha256:4f8b0e51713642b83f1eb10136d36a7f2c5278d188c5ae82b144cb1f4e848f0c"},
+    {file = "GitPython-3.1.25.tar.gz", hash = "sha256:b923e8952c2fe0d70b129fddd8511acc90b3070c8dddb20d86ca9911a5d0c248"},
 ]
 greenlet = [
     {file = "greenlet-1.1.2-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:58df5c2a0e293bf665a51f8a100d3e9956febfbf1d9aaf8c0677cf70218910c6"},
