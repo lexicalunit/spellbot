@@ -13,11 +13,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from ..models import Config, GameStatus, Play
-from .base import Base, now
+from . import Base, Config, GameStatus, Play, now
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .game import Game  # noqa
+    from . import Game  # noqa
 
 
 class User(Base):

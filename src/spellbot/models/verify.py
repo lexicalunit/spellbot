@@ -1,6 +1,6 @@
 from sqlalchemy import BigInteger, Boolean, Column, false
 
-from .base import Base
+from . import Base
 
 
 class Verify(Base):

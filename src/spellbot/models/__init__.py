@@ -17,7 +17,7 @@ def import_models():  # pragma: no cover
 
 
 from .award import GuildAward, UserAward
-from .base import Base, create_all, literalquery, reverse_all
+from .base import Base, create_all, literalquery, now, reverse_all
 from .block import Block
 from .channel import Channel
 from .config import Config
@@ -41,6 +41,7 @@ __all__ = [
     "GuildAward",
     "import_models",
     "literalquery",
+    "now",
     "Play",
     "reverse_all",
     "User",

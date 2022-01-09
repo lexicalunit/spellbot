@@ -5,8 +5,7 @@ from sqlalchemy import BigInteger, Column, ForeignKey, Integer
 from .base import Base
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .game import Game  # noqa
-    from .user import User  # noqa
+    from . import Game, User  # noqa
 
 
 class Play(Base):

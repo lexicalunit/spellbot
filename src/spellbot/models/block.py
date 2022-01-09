@@ -5,7 +5,7 @@ from sqlalchemy import BigInteger, Column, ForeignKey
 from .base import Base
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .user import User  # noqa
+    from . import User  # noqa
 
 
 class Block(Base):
