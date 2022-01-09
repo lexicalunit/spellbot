@@ -10,8 +10,7 @@ from sqlalchemy.sql.sqltypes import Boolean, Integer
 from .base import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .game import Game  # noqa
-    from .guild import Guild  # noqa
+    from . import Game, Guild  # noqa
 
 
 class Channel(Base):

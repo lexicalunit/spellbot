@@ -2,11 +2,10 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Column, ForeignKey, String
 
-from .base import Base
+from . import Base
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .guild import Guild  # noqa
-    from .user import User  # noqa
+    from . import Guild, User  # noqa
 
 
 class Watch(Base):

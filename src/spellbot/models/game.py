@@ -13,9 +13,7 @@ from ..settings import Settings
 from .base import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .channel import Channel  # noqa
-    from .guild import Guild  # noqa
-    from .user import User  # noqa
+    from . import Channel, Guild, User  # noqa
 
 
 class GameStatus(Enum):

@@ -8,8 +8,7 @@ from sqlalchemy.sql.sqltypes import Boolean
 from .base import Base
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .guild import Guild  # noqa
-    from .user import User  # noqa
+    from . import Guild, User  # noqa
 
 
 class GuildAward(Base):

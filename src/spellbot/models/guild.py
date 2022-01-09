@@ -7,9 +7,7 @@ from sqlalchemy.orm import relationship
 from .base import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .award import GuildAward  # noqa
-    from .channel import Channel  # noqa
-    from .game import Game  # noqa
+    from . import Channel, Game, GuildAward  # noqa
 
 
 class Guild(Base):
