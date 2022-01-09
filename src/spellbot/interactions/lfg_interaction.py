@@ -59,7 +59,7 @@ class LookingForGameInteraction(BaseInteraction):
         if friend_xids:
             friend_xids = await self.ensure_users_exist(friend_xids)
         if friend_xids:
-            friend_xids = await self.services.games.filter_blocked(
+            friend_xids = await self.services.games.filter_blocked_list(
                 self.ctx.author_id,
                 friend_xids,
             )

@@ -552,6 +552,44 @@ class TestCogLookingForGameUserNotifications(InteractionContextMixin):
                 "type": "rich",
             }
 
+    async def test_lfg_when_mentioned_friend_is_blocked_by_current_player(self):
+        assert self.ctx.author
+        assert isinstance(self.ctx.author, discord.User)
+        guild = ctx_guild(self.ctx, motd=None, show_links=False)
+        channel = ctx_channel(self.ctx, guild, default_seats=4, motd=None)
+        game = ctx_game(self.ctx, guild, channel)
+        blocking_user = self.factories.user.create(
+            xid=self.ctx.author_id + 2,
+            game=game,
+        )
+        blocking_discord_user = mock_discord_user(blocking_user)
+
+        blocked_user = self.factories.user.create(xid=self.ctx.author_id + 1)
+        blocked_discord_user = mock_discord_user(blocked_user)
+
+        self.factories.block.create(
+            user_xid=blocking_user.xid,
+            blocked_user_xid=blocked_user.xid,
+        )
+
+        with mock_operations(
+            lfg_interaction,
+            users=[self.ctx.author, blocking_discord_user, blocked_discord_user],
+        ):
+            new_post = MagicMock(spec=discord.Message)
+            new_post.id = game.message_xid + 1
+            lfg_interaction.safe_send_channel.return_value = new_post
+
+            cog = LookingForGameCog(self.bot)
+            await cog.lfg.func(cog, self.ctx, friends=f"<@{blocked_user.xid}>")
+
+        DatabaseSession.expire_all()
+        assert DatabaseSession.query(Game).count() == 2
+        blocked_user = DatabaseSession.query(User).get(blocked_discord_user.id)
+        blocking_user = DatabaseSession.query(User).get(blocking_discord_user.id)
+        assert blocked_user and blocked_user.game_id is not None
+        assert blocking_user and blocking_user.game_id != blocked_user.game_id
+
     async def test_when_fetch_user_fails(self):
         assert self.ctx.author
         assert isinstance(self.ctx.author, discord.User)
