@@ -146,6 +146,19 @@ class GamesService:
         format: int,
     ):
         required_seats = 1 + len(friends)
+        blockings = (
+            DatabaseSession.query(Block.blocked_user_xid)
+            .filter(
+                Block.user_xid.in_([User.xid, author_xid, *friends]),
+            )
+            .union(
+                DatabaseSession.query(Block.user_xid).filter(
+                    Block.blocked_user_xid.in_(
+                        [User.xid, author_xid, *friends],
+                    ),
+                ),
+            )
+        )
         inner = (
             select(
                 [
@@ -163,17 +176,12 @@ class GamesService:
                     Game.format == format,
                     Game.status == GameStatus.PENDING.value,
                     Game.deleted_at.is_(None),
+                    ~User.xid.in_(blockings),
                 ),
             )
             .group_by(Game, User.xid)
             .order_by(asc(Game.updated_at))
             .alias("inner")
-        )
-        user_blocks = DatabaseSession.query(Block.blocked_user_xid).filter_by(
-            user_xid=author_xid,
-        )
-        blocks_user = DatabaseSession.query(Block.user_xid).filter_by(
-            blocked_user_xid=author_xid,
         )
         outer = (
             DatabaseSession.query(Game)
@@ -186,8 +194,6 @@ class GamesService:
                     and_(
                         column("player_count") > 0,
                         column("player_count") <= seats - required_seats,
-                        ~inner.c.users_xid.in_(user_blocks),
-                        ~inner.c.users_xid.in_(blocks_user),
                     ),
                 ),
             )
@@ -296,7 +302,8 @@ class GamesService:
 
     @sync_to_async
     @tracer.wrap()
-    def filter_blocked(self, author_xid: int, other_xids: list[int]) -> list[int]:
+    def filter_blocked_list(self, author_xid: int, other_xids: list[int]) -> list[int]:
+        """Given an author, filters out any blocked players from a list of others."""
         blockers = (
             DatabaseSession.query(Block)
             .filter(

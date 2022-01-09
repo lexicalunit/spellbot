@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Ensures that users who have blocked each other can not be added to a game via friends.
+
 ## [v7.11.0](https://github.com/lexicalunit/spellbot/releases/tag/v7.11.0) - 2021-12-31
 
 ### Added
