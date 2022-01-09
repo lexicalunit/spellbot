@@ -214,7 +214,7 @@ class TestServiceGamesFilterBlocked:
 
         games = GamesService()
         await games.select(game.id)
-        assert await games.filter_blocked(user2.xid, [user1.xid]) == []
+        assert await games.filter_blocked_list(user2.xid, [user1.xid]) == []
 
     async def test_when_blocker_outside_game(self, game):
         user1 = UserFactory.create(game=game)
@@ -224,7 +224,7 @@ class TestServiceGamesFilterBlocked:
 
         games = GamesService()
         await games.select(game.id)
-        assert await games.filter_blocked(user2.xid, [user1.xid]) == []
+        assert await games.filter_blocked_list(user2.xid, [user1.xid]) == []
 
     async def test_when_no_blockers(self, game):
         UserFactory.create(game=game)
@@ -232,7 +232,7 @@ class TestServiceGamesFilterBlocked:
 
         games = GamesService()
         await games.select(game.id)
-        assert await games.filter_blocked(user3.xid, [1, 2, 3]) == [1, 2, 3]
+        assert await games.filter_blocked_list(user3.xid, [1, 2, 3]) == [1, 2, 3]
 
 
 @pytest.mark.asyncio
