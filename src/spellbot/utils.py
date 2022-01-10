@@ -4,6 +4,7 @@ from typing import Any, Optional, Union, cast
 
 import discord
 from ddtrace import tracer
+from ddtrace.constants import ERROR_MSG, ERROR_TYPE
 from discord_slash.context import InteractionContext
 from discord_slash.model import CallbackObject
 
@@ -158,6 +159,14 @@ class suppress(AbstractContextManager):
     def __exit__(self, exctype, excinst, exctb):
         if span := tracer.current_span():  # pragma: no cover
             span.set_exc_info(exctype, excinst, exctb)
+        if root := tracer.current_root_span():  # pragma: no cover
+            root.set_tags(
+                {
+                    ERROR_TYPE: "OperationalError",
+                    ERROR_MSG: "An error occurred during bot operation",
+                },
+            )
+            root.error = 1
         if captured := exctype is not None and issubclass(exctype, self._exceptions):
             log_warning(self._log, exec_info=True, **self._kwargs)
         return captured

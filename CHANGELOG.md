@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added root error status when an exception is suppressed in a Discord operation.
+
 ## [v7.11.2](https://github.com/lexicalunit/spellbot/releases/tag/v7.11.2) - 2022-01-10
 
 ### Fixed
