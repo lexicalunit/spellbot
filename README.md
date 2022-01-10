@@ -58,6 +58,11 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
         <td align="center"><a href="https://disboard.org/server/752261529390284870"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845571-12e391d0-4cc8-4766-bf40-071f32503a7d.jpg" alt="Commander SpellTable (DE)" /><br />Commander&nbsp;SpellTable&nbsp;(DE)</a></td>
         <td align="center"><a href="https://discord.gg/7gJDYU44gM"><img height="130" src="https://user-images.githubusercontent.com/1903876/147705994-909a94cc-ce70-431b-823a-127d257cdb52.png" alt="MTG let's play!!" /><br />MTG&nbsp;let&apos;s&nbsp;play!!</td>
     </tr>
+    <tr>
+        <td align="center">&nbsp;</td>
+        <td align="center"><a href="https://discord.gg/Rgp3xaV7HU"><img height="130" src="https://user-images.githubusercontent.com/1903876/148823767-5e1feb59-37d8-4340-ae23-148d8415699f.png" alt="Torre de Mando" /><br />Torre&nbsp;de&nbsp;Mando&nbsp;</a></td>
+        <td align="center">&nbsp;</td>
+    </tr>
 </table>
 
 Want your community to be featured here as well? Please contact me at [spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com)!
