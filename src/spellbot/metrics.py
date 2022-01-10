@@ -104,22 +104,22 @@ def alert_error(
 
 @skip_if_no_metrics
 def add_span_context(ctx: Any):  # pragma: no cover
-    span = tracer.current_span()
-    for prop in CTX_PROPS:
-        if value := getattr(ctx, prop, None):
-            span.set_tag(prop, value)
+    if span := tracer.current_span():
+        for prop in CTX_PROPS:
+            if value := getattr(ctx, prop, None):
+                span.set_tag(prop, value)
 
 
 @skip_if_no_metrics
 def add_span_error(ex: BaseException):  # pragma: no cover
-    span = tracer.current_span()
-    span.set_exc_info(ex.__class__, ex, getattr(ex, "__traceback__", None))
+    if span := tracer.current_span():
+        span.set_exc_info(ex.__class__, ex, getattr(ex, "__traceback__", None))
 
-    root = tracer.current_root_span()
-    root.set_tags(
-        {
-            ERROR_TYPE: "OperationalError",
-            ERROR_MSG: "An error occurred during bot operation",
-        },
-    )
-    root.error = 1
+    if root := tracer.current_root_span():
+        root.set_tags(
+            {
+                ERROR_TYPE: "OperationalError",
+                ERROR_MSG: "An error occurred during bot operation",
+            },
+        )
+        root.error = 1
