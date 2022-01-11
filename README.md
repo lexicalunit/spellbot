@@ -46,22 +46,22 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
     <tr>
         <td align="center"><a href="https://www.patreon.com/ihateyourdeck"><img width="230" src="https://user-images.githubusercontent.com/1903876/140844363-e07a5552-d2de-47d3-b1f7-faf6fbbd5b78.png" alt="I Hate Your Deck" /><br />I&nbsp;Hate&nbsp;Your&nbsp;Deck</a></td>
         <td align="center"><a href="https://www.patreon.com/NitpickingNerds"><img height="141" src="https://user-images.githubusercontent.com/1903876/140844623-8d8528a9-b60c-49c6-be0f-1d627b85adba.png" alt="The Nitpicking Nerds" /><br />The&nbsp;Nitpicking&nbsp;Nerds</a></td>
+        <td align="center"><a href="https://www.facebook.com/EDHTambayan/"><img height="130" src="https://user-images.githubusercontent.com/1903876/148892328-335ab0ea-633f-44c2-b59e-61b5a38c9fdd.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></td>
+    </tr>
+    <tr>
+        <td align="center"><a href="https://disboard.org/server/752261529390284870"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845571-12e391d0-4cc8-4766-bf40-071f32503a7d.jpg" alt="Commander SpellTable (DE)" /><br />Commander&nbsp;SpellTable&nbsp;(DE)</a></td>
+        <td align="center"><a href="https://www.patreon.com/PlayingWithPowerMTG"><img height="130" src="https://user-images.githubusercontent.com/1903876/148892809-60b7d7f0-d773-4667-a863-829338d6aaed.png" alt="Playing with Power MTG" /><br />Playing&nbsp;with&nbsp;Power&nbsp;MTG</a></td>
+        <td align="center"><a href="https://disboard.org/server/815001383979450368"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863859-9ec1997b-9983-498e-9295-fa594d242b4d.jpg" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
+    </tr>
+    <tr>
+        <td align="center"><a href="https://disboard.org/server/806995731268632596"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845585-8053037f-a42b-4c1c-88f2-1b3c403fea09.jpg" alt="The Mages Guild" /><br />The&nbsp;Mages&nbsp;Guild</a></td>
+        <td align="center"><a href="https://discord.gg/commander"><img height="130" src="https://user-images.githubusercontent.com/1903876/147596500-3cd08eef-84ad-4c02-a219-2eef0642a973.jpg" alt="Commander RC" /><br />Commander&nbsp;RC</td>
         <td align="center"><a href="https://www.patreon.com/asylumgamingmtg"><img height="141" src="https://user-images.githubusercontent.com/1903876/140862514-5057c356-c166-48a0-a71c-329d33480003.png" alt="Asylum Gaming" /><br />Asylum&nbsp;Gaming</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://disboard.org/server/815001383979450368"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863859-9ec1997b-9983-498e-9295-fa594d242b4d.jpg" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
-        <td align="center"><a href="https://disboard.org/server/806995731268632596"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845585-8053037f-a42b-4c1c-88f2-1b3c403fea09.jpg" alt="The Mages Guild" /><br />The&nbsp;Mages&nbsp;Guild</a></td>
         <td align="center"><a href="https://disboard.org/server/848414032398516264"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863856-00482a5a-7fe5-4cbb-8c4b-2442504925ea.jpg" alt="Commander en Español" /><br />Commander&nbsp;en&nbsp;Español</a></td>
-    </tr>
-    <tr>
-        <td align="center"><a href="https://discord.gg/commander"><img height="130" src="https://user-images.githubusercontent.com/1903876/147596500-3cd08eef-84ad-4c02-a219-2eef0642a973.jpg" alt="Commander RC" /><br />Commander&nbsp;RC</td>
-        <td align="center"><a href="https://disboard.org/server/752261529390284870"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845571-12e391d0-4cc8-4766-bf40-071f32503a7d.jpg" alt="Commander SpellTable (DE)" /><br />Commander&nbsp;SpellTable&nbsp;(DE)</a></td>
         <td align="center"><a href="https://discord.gg/7gJDYU44gM"><img height="130" src="https://user-images.githubusercontent.com/1903876/147705994-909a94cc-ce70-431b-823a-127d257cdb52.png" alt="MTG let's play!!" /><br />MTG&nbsp;let&apos;s&nbsp;play!!</td>
-    </tr>
-    <tr>
-        <td align="center">&nbsp;</td>
         <td align="center"><a href="https://discord.gg/Rgp3xaV7HU"><img height="130" src="https://user-images.githubusercontent.com/1903876/148823767-5e1feb59-37d8-4340-ae23-148d8415699f.png" alt="Torre de Mando" /><br />Torre&nbsp;de&nbsp;Mando&nbsp;</a></td>
-        <td align="center">&nbsp;</td>
     </tr>
 </table>
 
@@ -138,4 +138,3 @@ Any usage of SpellBot implies that you accept the following policies.
 [spelltable]: https://spelltable.wizards.com/
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]: https://uptimerobot.com/dashboard#785764282
-<!-- [heroku-badge]: https://heroku-badge.herokuapp.com/?app=lexicalunit-spellbot&style=flat&svg=1 -->
