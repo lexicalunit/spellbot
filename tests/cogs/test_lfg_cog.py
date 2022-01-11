@@ -212,6 +212,26 @@ class TestCogLookingForGame(InteractionContextMixin):
 
         assert not DatabaseSession.query(Game).one_or_none()
 
+    async def test_lfg_when_inital_post_fails(self):
+        assert self.ctx.author
+        assert isinstance(self.ctx.author, discord.User)
+
+        with mock_operations(lfg_interaction, users=[self.ctx.author]):
+            lfg_interaction.safe_send_channel.return_value = None
+
+            cog = LookingForGameCog(self.bot)
+            await cog.lfg.func(cog, self.ctx)
+
+            lfg_interaction.safe_channel_reply.assert_called_once_with(
+                self.ctx.channel,
+                (
+                    "Sorry, a temporary issue prevented me from creating a new game"
+                    " post. Be assured that you are in a game and others can join it"
+                    " by running the lfg command. When they do I will re-attempt to"
+                    " create the game post."
+                ),
+            )
+
 
 @pytest.mark.asyncio
 class TestCogLookingForGameCrossContext(BaseMixin):

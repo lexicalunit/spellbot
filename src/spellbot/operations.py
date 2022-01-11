@@ -330,6 +330,28 @@ async def safe_send_channel(
 
 
 @tracer.wrap()
+async def safe_channel_reply(
+    channel: discord.TextChannel,
+    *args,
+    **kwargs,
+) -> Optional[discord.Message]:
+    guild_xid = channel.guild.id
+    channel_xid = channel.id
+    if span := tracer.current_span():  # pragma: no cover
+        span.set_tags({"guild_xid": guild_xid, "channel_xid": channel_xid})
+
+    message: Optional[discord.Message] = None
+    with suppress(
+        DiscordException,
+        log="in guild %(guild_xid)s, could not reply to channel %(channel_xid)s",
+        guild_xid=guild_xid,
+        channel_xid=channel_xid,
+    ):
+        message = await channel.send(*args, **kwargs)
+    return message
+
+
+@tracer.wrap()
 async def safe_message_reply(message: discord.Message, *args, **kwargs) -> None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"messsage_xid": message.id})

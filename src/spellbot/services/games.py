@@ -8,7 +8,8 @@ from asgiref.sync import sync_to_async
 from ddtrace import tracer
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.sql.expression import and_, asc, column, or_, select
+from sqlalchemy.orm.query import Query
+from sqlalchemy.sql.expression import and_, asc, column, or_, select, text
 from sqlalchemy.sql.functions import count
 
 from ..database import DatabaseSession
@@ -134,6 +135,24 @@ class GamesService:
         self.game = game
         return new
 
+    def _block_filter(
+        self,
+        author_xid: int,
+        friends: list[int],
+    ) -> Query:
+        # Note: This is not ideal but there appears not to be any way to bind lists.
+        #       This should be safe as the list of xids here are just some ints, and
+        #       these user inputs have been validated.
+        ids = [author_xid, *friends]
+        ids_s = ", ".join(str(i) for i in ids)
+        blocks_user_q = DatabaseSession.query(Block.blocked_user_xid).filter(
+            text(f"blocks.user_xid IN (users.xid, {ids_s})"),
+        )
+        user_blocks_q = DatabaseSession.query(Block.user_xid).filter(
+            text(f"blocks.blocked_user_xid IN (users.xid, {ids_s})"),
+        )
+        return blocks_user_q.union(user_blocks_q)
+
     @tracer.wrap()
     def _find_existing(
         self,
@@ -146,19 +165,7 @@ class GamesService:
         format: int,
     ):
         required_seats = 1 + len(friends)
-        blockings = (
-            DatabaseSession.query(Block.blocked_user_xid)
-            .filter(
-                Block.user_xid.in_([User.xid, author_xid, *friends]),
-            )
-            .union(
-                DatabaseSession.query(Block.user_xid).filter(
-                    Block.blocked_user_xid.in_(
-                        [User.xid, author_xid, *friends],
-                    ),
-                ),
-            )
-        )
+        blockings = self._block_filter(author_xid, friends)
         inner = (
             select(
                 [
