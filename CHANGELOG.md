@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v7.11.3](https://github.com/lexicalunit/spellbot/releases/tag/v7.11.3) - 2022-01-10
+
 ### Fixed
 
 - Fixes a massive performance issue when users `/lfg` with a friends list.
