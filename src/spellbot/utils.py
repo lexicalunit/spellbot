@@ -157,18 +157,18 @@ class suppress(AbstractContextManager):
         pass
 
     def __exit__(self, exctype, excinst, exctb):
-        if span := tracer.current_span():  # pragma: no cover
-            span.set_exc_info(exctype, excinst, exctb)
-        if root := tracer.current_root_span():  # pragma: no cover
-            root.set_tags(
-                {
-                    ERROR_TYPE: "OperationalError",
-                    ERROR_MSG: "An error occurred during bot operation",
-                },
-            )
-            root.error = 1
         if captured := exctype is not None and issubclass(exctype, self._exceptions):
             log_warning(self._log, exec_info=True, **self._kwargs)
+            if span := tracer.current_span():  # pragma: no cover
+                span.set_exc_info(exctype, excinst, exctb)
+            if root := tracer.current_root_span():  # pragma: no cover
+                root.set_tags(
+                    {
+                        ERROR_TYPE: "OperationalError",
+                        ERROR_MSG: "An error occurred during bot operation",
+                    },
+                )
+                root.error = 1
         return captured
 
 
