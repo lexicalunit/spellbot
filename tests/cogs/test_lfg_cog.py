@@ -94,18 +94,6 @@ class TestCogLookingForGame(InteractionContextMixin):
                 "type": "rich",
             }
 
-    async def test_lfg_when_initial_post_fails(self):
-        user = self.factories.user.create(xid=self.ctx.author_id)
-
-        with mock_operations(lfg_interaction, users=[user]):
-            lfg_interaction.safe_send_channel.return_value = None
-
-            cog = LookingForGameCog(self.bot)
-            await cog.lfg.func(cog, self.ctx)
-
-        game = DatabaseSession.query(Game).one()
-        assert game.message_xid is None
-
     async def test_lfg_when_fetch_post_fails(self):
         guild = self.factories.guild.create(xid=self.ctx.guild_id)
         channel = self.factories.channel.create(xid=self.ctx.channel_id, guild=guild)
@@ -212,25 +200,59 @@ class TestCogLookingForGame(InteractionContextMixin):
 
         assert not DatabaseSession.query(Game).one_or_none()
 
-    async def test_lfg_when_inital_post_fails(self):
+    async def test_lfg_when_initial_post_fails(self):
         assert self.ctx.author
         assert isinstance(self.ctx.author, discord.User)
 
         with mock_operations(lfg_interaction, users=[self.ctx.author]):
             lfg_interaction.safe_send_channel.return_value = None
 
+            post = MagicMock(spec=discord.Message)
+            post.id = 12345
+            lfg_interaction.safe_channel_reply.return_value = post
+
             cog = LookingForGameCog(self.bot)
             await cog.lfg.func(cog, self.ctx)
 
-            lfg_interaction.safe_channel_reply.assert_called_once_with(
-                self.ctx.channel,
-                (
-                    "Sorry, a temporary issue prevented me from creating a new game"
-                    " post. Be assured that you are in a game and others can join it"
-                    " by running the lfg command. When they do I will re-attempt to"
-                    " create the game post."
+            game = DatabaseSession.query(Game).one()
+            mock_call = lfg_interaction.safe_channel_reply
+            mock_call.assert_called_once()
+            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
+                "color": self.settings.EMBED_COLOR,
+                "description": (
+                    "**A temporary issue prevented buttons from being added to this game"
+                    " post. To join or leave this game use `/lfg` or `/leave`.**\n\n"
+                    "_A SpellTable link will be created when all players have joined._"
                 ),
-            )
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": f"<@{self.ctx.author_id}>",
+                    },
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "thumbnail": {"url": self.settings.THUMB_URL},
+                "title": "**Waiting for 3 more players to join...**",
+                "type": "rich",
+            }
+
+    async def test_lfg_when_initial_post_and_reply_fails(self):
+        assert self.ctx.author
+        assert isinstance(self.ctx.author, discord.User)
+
+        with mock_operations(lfg_interaction, users=[self.ctx.author]):
+            lfg_interaction.safe_send_channel.return_value = None
+            lfg_interaction.safe_channel_reply.return_value = None
+
+            cog = LookingForGameCog(self.bot)
+            await cog.lfg.func(cog, self.ctx)
+
+            lfg_interaction.safe_send_channel.assert_called_once()
+            lfg_interaction.safe_channel_reply.assert_called_once()
+            game = DatabaseSession.query(Game).one()
+            assert game.message_xid is None
 
 
 @pytest.mark.asyncio
