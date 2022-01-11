@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes a massive performance issue when users `/lfg` with a friends list.
+
 ### Added
 
 - Added root error status when an exception is suppressed in a Discord operation.
+- Adds a fallback notification when we have an interaction failure.
 
 ## [v7.11.2](https://github.com/lexicalunit/spellbot/releases/tag/v7.11.2) - 2022-01-10
 

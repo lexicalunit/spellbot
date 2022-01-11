@@ -10,6 +10,7 @@ from discord.errors import DiscordException
 
 from spellbot.operations import (
     safe_add_role,
+    safe_channel_reply,
     safe_create_category_channel,
     safe_create_invite,
     safe_create_voice_channel,
@@ -230,6 +231,16 @@ class TestOperationsDeleteChannel:
 
         assert not await safe_delete_channel(channel, guild.id)
         channel.delete.assert_not_called()
+
+
+@pytest.mark.asyncio
+class TestOperationsChannelReply:
+    async def test_happy_path(self):
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.send = AsyncMock()
+        embed = discord.Embed()
+        await safe_channel_reply(channel, "content", embed=embed)
+        channel.send.assert_called_once_with("content", embed=embed)
 
 
 @pytest.mark.asyncio

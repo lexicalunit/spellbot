@@ -14,6 +14,7 @@ from .. import SpellBot
 from ..models import GameFormat, GameStatus
 from ..operations import (
     safe_add_role,
+    safe_channel_reply,
     safe_create_invite,
     safe_create_voice_channel,
     safe_ensure_voice_category,
@@ -359,13 +360,23 @@ class LookingForGameInteraction(BaseInteraction):
         )
 
         if new:  # create the initial game post:
-            message = await safe_send_channel(
+            if message := await safe_send_channel(
                 self.ctx,
                 embed=embed,
                 components=components,
-            )
-            if message:
+            ):
                 await self.services.games.set_message_xid(message.id)
+            else:
+                # somehow the initial game post creation failed, notify users
+                await safe_channel_reply(
+                    self.channel,
+                    (
+                        "Sorry, a temporary issue prevented me from creating a new game"
+                        " post. Be assured that you are in a game and others can join it"
+                        " by running the lfg command. When they do I will re-attempt to"
+                        " create the game post."
+                    ),
+                )
             return
 
         message: Optional[Union[discord.Message, discord.PartialMessage]] = None
