@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v7.11.5](https://github.com/lexicalunit/spellbot/releases/tag/v7.11.5) - 2022-01-10
+
 ### Fixed
 
 - Ensure that `suppress` only pushes error metrics when an error is captured.
