@@ -59,9 +59,14 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
         <td align="center"><a href="https://www.patreon.com/asylumgamingmtg"><img height="141" src="https://user-images.githubusercontent.com/1903876/140862514-5057c356-c166-48a0-a71c-329d33480003.png" alt="Asylum Gaming" /><br />Asylum&nbsp;Gaming</a></td>
     </tr>
     <tr>
+        <td align="center"><a href="https://discord.gg/YeFrEqae3N"><img height="130" src="https://user-images.githubusercontent.com/1903876/148895425-0c72426c-d7dd-4974-99d7-21949f80e893.png" alt="コマンドフェストオンライン" /><br />コマンドフェストオンライン</a></td>
         <td align="center"><a href="https://disboard.org/server/848414032398516264"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863856-00482a5a-7fe5-4cbb-8c4b-2442504925ea.jpg" alt="Commander en Español" /><br />Commander&nbsp;en&nbsp;Español</a></td>
         <td align="center"><a href="https://discord.gg/7gJDYU44gM"><img height="130" src="https://user-images.githubusercontent.com/1903876/147705994-909a94cc-ce70-431b-823a-127d257cdb52.png" alt="MTG let's play!!" /><br />MTG&nbsp;let&apos;s&nbsp;play!!</td>
+    </tr>
+    <tr>
+        <td align="center">&nbsp;</td>
         <td align="center"><a href="https://discord.gg/Rgp3xaV7HU"><img height="130" src="https://user-images.githubusercontent.com/1903876/148823767-5e1feb59-37d8-4340-ae23-148d8415699f.png" alt="Torre de Mando" /><br />Torre&nbsp;de&nbsp;Mando&nbsp;</a></td>
+        <td align="center">&nbsp;</td>
     </tr>
 </table>
 
