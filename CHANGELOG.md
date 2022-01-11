@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Workaround slow interaction responses for `/lfg` command by posting game without buttons.
+
 ## [v7.11.3](https://github.com/lexicalunit/spellbot/releases/tag/v7.11.3) - 2022-01-10
 
 ### Fixed

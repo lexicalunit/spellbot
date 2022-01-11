@@ -367,16 +367,15 @@ class LookingForGameInteraction(BaseInteraction):
             ):
                 await self.services.games.set_message_xid(message.id)
             else:
-                # somehow the initial game post creation failed, notify users
-                await safe_channel_reply(
-                    self.channel,
-                    (
-                        "Sorry, a temporary issue prevented me from creating a new game"
-                        " post. Be assured that you are in a game and others can join it"
-                        " by running the lfg command. When they do I will re-attempt to"
-                        " create the game post."
-                    ),
+                # Somehow the initial game post creation failed, workaround it by
+                # informing users of the issue and just posting directly to the channel.
+                embed.description = (
+                    "**A temporary issue prevented buttons from being added to this game"
+                    " post. To join or leave this game use `/lfg` or `/leave`.**\n\n"
+                    f"{embed.description}"
                 )
+                if message := await safe_channel_reply(self.channel, embed=embed):
+                    await self.services.games.set_message_xid(message.id)
             return
 
         message: Optional[Union[discord.Message, discord.PartialMessage]] = None
