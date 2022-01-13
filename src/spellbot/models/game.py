@@ -10,7 +10,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
 from ..settings import Settings
-from .base import Base, now
+from . import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
     from . import Channel, Guild, User  # noqa

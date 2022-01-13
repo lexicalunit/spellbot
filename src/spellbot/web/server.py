@@ -12,7 +12,7 @@ configure_logging(getenv("LOG_LEVEL") or "INFO")
 
 from ..database import initialize_connection
 from ..environment import running_in_pytest
-from .builder import build_web_app
+from . import build_web_app
 
 if not running_in_pytest():  # pragma: no cover
     load_dotenv()

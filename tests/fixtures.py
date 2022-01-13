@@ -14,7 +14,8 @@ from aiohttp.client import ClientSession
 from click.testing import CliRunner
 from discord_slash.context import InteractionContext
 
-from spellbot import SpellBot, build_bot
+from spellbot import SpellBot
+from spellbot.client import build_bot
 from spellbot.database import (
     DatabaseSession,
     db_session_maker,

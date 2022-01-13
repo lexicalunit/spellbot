@@ -1,7 +1,5 @@
 # pylint: disable=too-many-instance-attributes
 
-from __future__ import annotations
-
 from datetime import datetime
 from os import getenv
 from typing import Optional
