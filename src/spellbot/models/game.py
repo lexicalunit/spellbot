@@ -268,7 +268,7 @@ class Game(Base):
         return GameFormat(self.format).name.replace("_", " ").title()
 
     def to_embed(self, dm: bool = False) -> discord.Embed:
-        settings = Settings()
+        settings = Settings(self.guild_xid)
         embed = discord.Embed(title=self.embed_title)
         embed.set_thumbnail(url=settings.THUMB_URL)
         embed.description = self.embed_description(dm)

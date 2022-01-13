@@ -1,39 +1,20 @@
+# pylint: disable=too-many-instance-attributes
+
 from __future__ import annotations
 
 from datetime import datetime
 from os import getenv
-from typing import Generic, Type, TypeVar
+from typing import Optional
 
 from .environment import running_in_pytest
 
-T = TypeVar("T", bound="Singleton")
 
+class Settings:
+    def __init__(self, guild_xid: Optional[int] = None):
+        self.guild_xid = guild_xid
 
-class Singleton(Generic[T], type):
-    _instances: dict[Type[T], T] = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(  # type: ignore
-                *args,
-                **kwargs,
-            )
-
-        return cls._instances[cls]  # type: ignore
-
-
-class Settings(metaclass=Singleton):  # pylint: disable=R0902
-    def __init__(self):
         # content
         self.CONTENT_ROOT = "https://raw.githubusercontent.com/lexicalunit"
-        self.THUMB_URL = (
-            f"{self.CONTENT_ROOT}/spellbot/main/spellbot.png"
-            f"?{datetime.today().strftime('%Y-%m-%d')}"  # workaround over-eager caching
-        )
-        self.ICO_URL = (
-            f"{self.CONTENT_ROOT}/spellbot/main/spellbot-sm.png"
-            f"?{datetime.today().strftime('%Y-%m-%d')}"  # workaround over-eager caching
-        )
 
         # application
         self.BOT_TOKEN = getenv("BOT_TOKEN")
@@ -82,3 +63,28 @@ class Settings(metaclass=Singleton):  # pylint: disable=R0902
         self.VOICE_CLEANUP_LOOP_M = 30  # 30 minutes
         self.VOICE_CLEANUP_BATCH = 40  # batch size
         self.EXPIRE_GAMES_LOOP_M = 10  # 10 minutes
+
+    def workaround_over_eager_caching(self, url: str) -> str:
+        return f"{url}?{datetime.today().strftime('%Y-%m-%d')}"
+
+    @property
+    def THUMB_URL(self) -> str:
+        if self.guild_xid == 757455940009328670:  # pragma: no cover
+            return self.workaround_over_eager_caching(
+                "https://user-images.githubusercontent.com/1903876/"
+                "149257079-e3efe74f-482b-4410-a0ea-dd988a4d3c63.png",
+            )
+        return self.workaround_over_eager_caching(
+            f"{self.CONTENT_ROOT}/spellbot/main/spellbot.png",
+        )
+
+    @property
+    def ICO_URL(self) -> str:
+        if self.guild_xid == 757455940009328670:  # pragma: no cover
+            return self.workaround_over_eager_caching(
+                "https://user-images.githubusercontent.com/1903876/"
+                "149257564-86595c81-82a5-4558-ae40-c03d29a95d1f.png",
+            )
+        return self.workaround_over_eager_caching(
+            f"{self.CONTENT_ROOT}/spellbot/main/spellbot-sm.png",
+        )
