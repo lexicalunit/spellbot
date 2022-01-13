@@ -23,7 +23,7 @@ class AboutCog(commands.Cog):
     @tracer.wrap(name="interaction", resource="about")
     async def about(self, ctx: SlashContext):
         add_span_context(ctx)
-        settings = Settings()
+        settings = Settings(ctx.guild_id)
         embed = Embed(title="SpellBot")
         embed.set_thumbnail(url=settings.THUMB_URL)
         version = f"[{__version__}](https://pypi.org/project/spellbot/{__version__}/)"
