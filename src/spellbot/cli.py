@@ -9,7 +9,7 @@ import hupper
 import uvloop
 from dotenv import load_dotenv
 
-from ._version import __version__
+from . import __version__
 from .environment import running_in_pytest
 from .logs import configure_logging
 
