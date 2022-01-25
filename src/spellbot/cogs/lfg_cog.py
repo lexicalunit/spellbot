@@ -26,6 +26,7 @@ class LookingForGameCog(commands.Cog):
     @tracer.wrap(name="interaction", resource="leave")
     async def leave(self, ctx: ComponentContext):
         add_span_context(ctx)
+        await ctx.defer(edit_origin=True)
         async with self.bot.channel_lock(ctx.channel_id):
             async with LeaveInteraction.create(self.bot, ctx) as interaction:
                 await interaction.execute(origin=True)
@@ -35,6 +36,7 @@ class LookingForGameCog(commands.Cog):
     async def join(self, ctx: ComponentContext):
         add_span_context(ctx)
         assert ctx.origin_message_id
+        await ctx.defer(edit_origin=True)
         async with self.bot.channel_lock(ctx.channel_id):
             async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
                 await interaction.execute(message_xid=ctx.origin_message_id)
@@ -43,7 +45,7 @@ class LookingForGameCog(commands.Cog):
     @tracer.wrap(name="interaction", resource="points")
     async def points(self, ctx: ComponentContext):
         add_span_context(ctx)
-        await ctx.defer(ignore=True)
+        await ctx.defer(edit_origin=True)
         assert ctx.origin_message
         assert ctx.selected_options
         assert isinstance(ctx.selected_options, list)
@@ -96,6 +98,7 @@ class LookingForGameCog(commands.Cog):
         format: Optional[int] = None,
     ):
         add_span_context(ctx)
+        await ctx.defer()
         async with self.bot.channel_lock(ctx.channel_id):
             async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
                 await interaction.execute(friends=friends, seats=seats, format=format)

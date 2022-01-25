@@ -6,9 +6,11 @@ from discord_slash.context import ComponentContext
 from spellbot import SpellBot
 from spellbot.cogs.lfg_cog import LookingForGameCog
 from spellbot.database import DatabaseSession
+from spellbot.interactions import lfg_interaction
 from spellbot.models import GameStatus, Play
 from spellbot.settings import Settings
 from tests.fixtures import Factories
+from tests.mocks import mock_discord_user, mock_operations
 
 
 @pytest.mark.asyncio
@@ -115,7 +117,7 @@ class TestCogLookingForGamePoints:
             status=GameStatus.STARTED.value,
             message_xid=12345,
         )
-        factories.user.create(xid=ctx.author_id)
+        user1 = factories.user.create(xid=ctx.author_id)
         user2 = factories.user.create(game=game)
         factories.play.create(user_xid=user2.xid, game_id=game.id, points=0)
 
@@ -126,10 +128,15 @@ class TestCogLookingForGamePoints:
         ctx.selected_options = [5]
         ctx.defer = AsyncMock()
         ctx.origin_message = message
-        cog = LookingForGameCog(bot)
-        await cog.points.func(cog, ctx)
 
-        ctx.send.assert_called_once_with(
-            "You are not one of the players in this game.",
-            hidden=True,
-        )
+        player1 = mock_discord_user(user1)
+        player2 = mock_discord_user(user2)
+
+        with mock_operations(lfg_interaction, users=[player1, player2]):
+            cog = LookingForGameCog(bot)
+            await cog.points.func(cog, ctx)
+
+            lfg_interaction.safe_send_user.assert_called_once_with(
+                ctx.author,
+                "You are not one of the players in this game.",
+            )
