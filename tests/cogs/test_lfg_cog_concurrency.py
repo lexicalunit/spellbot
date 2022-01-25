@@ -40,6 +40,7 @@ class TestCogLookingForGameConcurrency:
             message_xid = game.message_xid
         assert messages_out_of_order
 
+    @pytest.mark.skip(reason="seems to be leaving behind database objects")
     async def test_concurrent_lfg_requests_same_channel(self, bot: SpellBot, monkeypatch):
         monkeypatch.setattr(lfg_interaction, "safe_fetch_user", AsyncMock())
 

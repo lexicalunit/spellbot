@@ -91,37 +91,32 @@ class TestSpellBot(BaseMixin):
 
     async def test_handle_error_dm(self, ctx: InteractionContext):
         await self.bot.handle_errors(ctx, MagicMock(spec=errors.NoPrivateMessage))
-        ctx.send.assert_called_once_with(
+        ctx.author.send.assert_called_once_with(
             "This command is not supported via Direct Message.",
-            hidden=True,
         )
 
     async def test_handle_error_permissions(self, ctx: InteractionContext):
         await self.bot.handle_errors(ctx, MagicMock(spec=AdminOnlyError))
-        ctx.send.assert_called_once_with(
+        ctx.author.send.assert_called_once_with(
             "You do not have permission to do that.",
-            hidden=True,
         )
 
     async def test_handle_error_banned(self, ctx: InteractionContext):
         await self.bot.handle_errors(ctx, MagicMock(spec=UserBannedError))
-        ctx.send.assert_called_once_with(
+        ctx.author.send.assert_called_once_with(
             "You have been banned from using SpellBot.",
-            hidden=True,
         )
 
     async def test_handle_error_unverified(self, ctx: InteractionContext):
         await self.bot.handle_errors(ctx, MagicMock(spec=UserUnverifiedError))
-        ctx.send.assert_called_once_with(
+        ctx.author.send.assert_called_once_with(
             "Only verified users can do that in this channel.",
-            hidden=True,
         )
 
     async def test_handle_error_verified(self, ctx: InteractionContext):
         await self.bot.handle_errors(ctx, MagicMock(spec=UserVerifiedError))
-        ctx.send.assert_called_once_with(
+        ctx.author.send.assert_called_once_with(
             "Only unverified users can do that in this channel.",
-            hidden=True,
         )
 
     async def test_handle_error_unhandled_exception(self, caplog):

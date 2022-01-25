@@ -21,7 +21,7 @@ from .errors import (
     UserVerifiedError,
 )
 from .metrics import add_span_error, setup_metrics
-from .operations import safe_send_channel
+from .operations import safe_send_user
 from .services import ChannelsService, GuildsService, VerifiesService
 from .settings import Settings
 from .spelltable import generate_link
@@ -66,34 +66,29 @@ class SpellBot(Bot):
 
     async def handle_errors(self, ctx: context.InteractionContext, ex: Exception):
         if isinstance(ex, errors.NoPrivateMessage):
-            return await safe_send_channel(
-                ctx,
+            return await safe_send_user(
+                ctx.author,
                 "This command is not supported via Direct Message.",
-                hidden=True,
             )
         if isinstance(ex, AdminOnlyError):
-            return await safe_send_channel(
-                ctx,
+            return await safe_send_user(
+                ctx.author,
                 "You do not have permission to do that.",
-                hidden=True,
             )
         if isinstance(ex, UserBannedError):
-            return await safe_send_channel(
-                ctx,
+            return await safe_send_user(
+                ctx.author,
                 "You have been banned from using SpellBot.",
-                hidden=True,
             )
         if isinstance(ex, UserVerifiedError):
-            return await safe_send_channel(
-                ctx,
+            return await safe_send_user(
+                ctx.author,
                 "Only unverified users can do that in this channel.",
-                hidden=True,
             )
         if isinstance(ex, UserUnverifiedError):
-            return await safe_send_channel(
-                ctx,
+            return await safe_send_user(
+                ctx.author,
                 "Only verified users can do that in this channel.",
-                hidden=True,
             )
 
         add_span_error(ex)

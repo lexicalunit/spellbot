@@ -56,7 +56,6 @@ class TestCogEvents:
             lfg_interaction.safe_send_channel.assert_called_once_with(
                 ctx,
                 "You can't create a Legacy game with 1 players.",
-                hidden=True,
             )
 
     async def test_game_with_banned_player(self, bot: SpellBot, ctx: InteractionContext):
@@ -79,5 +78,4 @@ class TestCogEvents:
                     "Some of the players you mentioned can not"
                     f" be added to a game: <@{banned_user.xid}>"
                 ),
-                hidden=True,
             )

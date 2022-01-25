@@ -8,6 +8,7 @@ from ..operations import (
     safe_fetch_text_channel,
     safe_get_partial_message,
     safe_send_channel,
+    safe_send_user,
     safe_update_embed,
     safe_update_embed_origin,
 )
@@ -23,20 +24,19 @@ class LeaveInteraction(BaseInteraction):
         ctx: ComponentContext = cast(ComponentContext, self.ctx)
 
         if not (game_id := await self.services.users.current_game_id()):
-            return await ctx.defer(ignore=True)
+            return
 
         found = await self.services.games.select(game_id)
         assert found
 
         game_data = await self.services.games.to_dict()
         if not (message_xid := game_data["message_xid"]):
-            return await ctx.defer(ignore=True)
+            return
 
         if ctx.origin_message_id != message_xid:
-            return await safe_send_channel(
-                ctx,
+            return await safe_send_user(
+                ctx.author,
                 "You're not in that game. Use the /leave command to leave a game.",
-                hidden=True,
             )
 
         await self.services.users.leave_game()
@@ -45,6 +45,7 @@ class LeaveInteraction(BaseInteraction):
 
     async def _removed(self):
         assert self.ctx
+        # Note: Ok to use safe_send_channel() so long as this is not an origin context!
         await safe_send_channel(
             self.ctx,
             "You have been removed from any games your were signed up for.",

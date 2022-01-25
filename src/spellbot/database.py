@@ -44,14 +44,14 @@ class ContextLocal(Generic[ProxiedObject]):
 
 class TypedProxy(Generic[ProxiedObject], CallableObjectProxy):
     def __init__(self):
-        super().__init__(None)
+        super().__init__(None)  # type: ignore
 
     @classmethod
     def of_type(cls, _: Type[ProxiedObject]) -> ProxiedObject:
         return cls()  # type: ignore
 
     def set(self, obj: ProxiedObject):
-        super().__init__(obj)
+        super().__init__(obj)  # type: ignore
 
     def __copy__(self):
         raise NotImplementedError()

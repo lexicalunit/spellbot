@@ -49,6 +49,7 @@ class EventsCog(commands.Cog):
     @tracer.wrap(name="interaction", resource="game")
     async def game(self, ctx: SlashContext, players: str, format: Optional[int] = None):
         add_span_context(ctx)
+        await ctx.defer()
         async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
             await interaction.create_game(players, format)
 
