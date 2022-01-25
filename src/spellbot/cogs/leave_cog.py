@@ -25,6 +25,7 @@ class LeaveGameCog(commands.Cog):
     @tracer.wrap(name="interaction", resource="leave_command")
     async def leave_command(self, ctx: SlashContext):
         add_span_context(ctx)
+        await ctx.defer(hidden=True)
         async with LeaveInteraction.create(self.bot, ctx) as interaction:
             await interaction.execute()
 

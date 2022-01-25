@@ -130,16 +130,19 @@ async def safe_update_embed(
     message: Union[discord.Message, discord.PartialMessage],
     *args,
     **kwargs,
-) -> None:
+) -> bool:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"messsage_xid": message.id})
 
+    success: bool = False
     with suppress(
         DiscordException,
         log="could not update embed in message %(message_xid)s",
         message_xid=message.id,
     ):
         await message.edit(*args, **kwargs)
+        success = True
+    return success
 
 
 @tracer.wrap()

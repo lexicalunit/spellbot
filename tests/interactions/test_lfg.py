@@ -101,8 +101,7 @@ class TestInteractionLookingForGame(InteractionContextMixin):
         async with LookingForGameInteraction.create(self.bot, self.ctx) as interaction:
             with mock_operations(lfg_interaction, users=[author_player]):
                 await interaction.execute()
-                lfg_interaction.safe_send_channel.assert_called_once_with(
-                    self.ctx,
+                lfg_interaction.safe_send_user.assert_called_once_with(
+                    self.ctx.author,
                     "Sorry, that command is not supported in this context.",
-                    hidden=True,
                 )

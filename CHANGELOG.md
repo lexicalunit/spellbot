@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Adds workaround for recurring Discord rate limit issue.
+- This issue seems to occur when /lfg, join, and leave commands take longer than expected.
+- As such, always defer /lfg, join, and leave. This should allow more flexibility.
+- However, this has the following knock-on consequences:
+- Can't use hidden messages in /lfg.
+- Many errors are now reported by sending a message to the user instead of to the channel.
+- Until it can be fixed later, error reporting on role and DM failures is disabled.
+
 ## [v7.11.6](https://github.com/lexicalunit/spellbot/releases/tag/v7.11.6) - 2022-01-12
 
 ### Added
