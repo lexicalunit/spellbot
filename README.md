@@ -56,7 +56,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
     <tr>
         <td align="center"><a href="https://disboard.org/server/806995731268632596"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845585-8053037f-a42b-4c1c-88f2-1b3c403fea09.jpg" alt="The Mages Guild" /><br />The&nbsp;Mages&nbsp;Guild</a></td>
         <td align="center"><a href="https://discord.gg/commander"><img height="130" src="https://user-images.githubusercontent.com/1903876/147596500-3cd08eef-84ad-4c02-a219-2eef0642a973.jpg" alt="Commander RC" /><br />Commander&nbsp;RC</td>
-        <td align="center"><a href="https://www.patreon.com/asylumgamingmtg"><img height="141" src="https://user-images.githubusercontent.com/1903876/140862514-5057c356-c166-48a0-a71c-329d33480003.png" alt="Asylum Gaming" /><br />Asylum&nbsp;Gaming</a></td>
+        <td align="center"><a href="https://www.patreon.com/asylumgamingmtg"><img height="141" src="https://user-images.githubusercontent.com/1903876/153262568-521cf214-0602-4118-b2fa-957bba2bfa4f.png" alt="Asylum Gaming" /><br />Asylum&nbsp;Gaming</a></td>
     </tr>
     <tr>
         <td align="center"><a href="https://discord.gg/YeFrEqae3N"><img height="130" src="https://user-images.githubusercontent.com/1903876/148895425-0c72426c-d7dd-4974-99d7-21949f80e893.png" alt="コマンドフェストオンライン" /><br />コマンドフェストオンライン</a></td>
