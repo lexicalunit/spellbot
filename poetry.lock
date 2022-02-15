@@ -1111,7 +1111,7 @@ testing = ["flaky (>=3.4.0)", "freezegun (>=0.3.11)", "pytest (>=4.0.0)", "pytes
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.8.8"
+version = "2.8.9"
 description = "Typing stubs for python-dateutil"
 category = "main"
 optional = false
@@ -2081,8 +2081,8 @@ tox = [
     {file = "tox-3.24.5.tar.gz", hash = "sha256:67e0e32c90e278251fea45b696d0fef3879089ccbe979b0c556d35d5a70e2993"},
 ]
 types-python-dateutil = [
-    {file = "types-python-dateutil-2.8.8.tar.gz", hash = "sha256:efe0207836d3b09e3a2986064a5c7f36e79ea423ab9b6676a62bf5dd51fb261b"},
-    {file = "types_python_dateutil-2.8.8-py3-none-any.whl", hash = "sha256:f704c2b7981e140eac7d626424e6232c1594d392c57c252d81a90fe53c2be896"},
+    {file = "types-python-dateutil-2.8.9.tar.gz", hash = "sha256:90f95a6b6d4faba359287f17a2cae511ccc9d4abc89b01969bdac1185815c05d"},
+    {file = "types_python_dateutil-2.8.9-py3-none-any.whl", hash = "sha256:d60db7f5d40ce85ce54e7fb14e4157daf33e24f5a4bfb5f44ee7a5b790dfabd0"},
 ]
 types-pytz = [
     {file = "types-pytz-2021.3.4.tar.gz", hash = "sha256:101da53091013bb07403468c20d36930d749d3918054ac46f9c1bfc607dadf7d"},
