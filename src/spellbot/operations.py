@@ -440,6 +440,9 @@ async def safe_add_role(
             },
         )
 
+    if role == "@everyone":  # you can't assign the default role!
+        return
+
     try:
         member = cast(
             Optional[discord.Member],
