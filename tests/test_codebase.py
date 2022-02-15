@@ -4,6 +4,7 @@ import warnings
 from os import chdir
 from subprocess import run
 
+import pytest
 import toml
 from git.repo import Repo
 
@@ -46,6 +47,7 @@ class TestCodebase:
         except FileNotFoundError:
             warnings.warn(UserWarning("test skipped: pylint not installed"))
 
+    @pytest.mark.xfail(reason="flakey in CI")
     def test_pylic(self):
         """Checks that the Python codebase passes configured pylic checks."""
         chdir(REPO_ROOT)
