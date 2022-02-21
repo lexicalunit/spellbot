@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 import re
 from functools import wraps
 from typing import Any, Callable, Optional
@@ -6,11 +8,18 @@ from datadog import initialize
 from datadog.api.events import Event
 from ddtrace import tracer
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
+from ddtrace.span import Span
 from discord.http import Route
 from wrapt import wrap_function_wrapper
 
 from . import __version__
 from .environment import running_in_pytest
+from .errors import (
+    AdminOnlyError,
+    UserBannedError,
+    UserUnverifiedError,
+    UserVerifiedError,
+)
 from .settings import Settings
 
 settings = Settings()
@@ -123,3 +132,11 @@ def add_span_error(ex: BaseException):  # pragma: no cover
             },
         )
         root.error = 1
+
+
+@skip_if_no_metrics
+def setup_ignored_errors(span: Span):  # pragma: no cover
+    span._ignore_exception(UserBannedError)  # type: ignore
+    span._ignore_exception(UserVerifiedError)  # type: ignore
+    span._ignore_exception(UserUnverifiedError)  # type: ignore
+    span._ignore_exception(AdminOnlyError)  # type: ignore

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Do not treat user errors as error traces in datadog.
+
 ## [v7.12.2](https://github.com/lexicalunit/spellbot/releases/tag/v7.12.2) - 2022-02-20
 
 ### Fixed
@@ -16,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Updated outdated dependencies.
+- Do not send exception metrics about user errors.
 
 ## [v7.12.1](https://github.com/lexicalunit/spellbot/releases/tag/v7.12.1) - 2022-02-15
 

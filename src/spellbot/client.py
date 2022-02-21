@@ -20,7 +20,7 @@ from .errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
-from .metrics import add_span_error, setup_metrics
+from .metrics import add_span_error, setup_ignored_errors, setup_metrics
 from .operations import safe_send_user
 from .services import ChannelsService, GuildsService, VerifiesService
 from .settings import Settings
@@ -120,6 +120,7 @@ class SpellBot(Bot):
     @tracer.wrap(name="interaction", resource="on_message")
     async def on_message(self, message: discord.Message):
         span = tracer.current_span()
+        setup_ignored_errors(span)
 
         # handle DMs normally
         if not message.guild or not hasattr(message.guild, "id"):
