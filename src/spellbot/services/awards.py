@@ -6,7 +6,7 @@ from asgiref.sync import sync_to_async
 from sqlalchemy.sql.expression import and_, or_
 
 from ..database import DatabaseSession
-from ..models import GuildAward, Play, UserAward
+from ..models import Game, GuildAward, Play, UserAward
 
 NewAward = namedtuple("NewAward", ["role", "message", "remove"])
 
@@ -19,12 +19,19 @@ class AwardsService:
 
         for player_xid in player_xids:
             plays = (
-                DatabaseSession.query(Play)
+                DatabaseSession.query(Game)
+                .join(Play)
                 .filter(
-                    Play.user_xid == player_xid,
+                    and_(
+                        Game.guild_xid == guild_xid,
+                        Play.user_xid == player_xid,
+                    ),
                 )
                 .count()
             )
+            if not plays:
+                continue
+
             user_award = (
                 DatabaseSession.query(UserAward)
                 .filter(
@@ -35,7 +42,8 @@ class AwardsService:
                 )
                 .one_or_none()
             )
-            assert user_award
+            if not user_award:
+                continue
 
             award_q = DatabaseSession.query(GuildAward).filter(
                 GuildAward.guild_xid == guild_xid,

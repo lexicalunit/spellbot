@@ -26,6 +26,29 @@ class TestServiceAwards:
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {user.xid: NewAward(role="one", message="msg", remove=False)}
 
+    async def test_give_awards_when_plays_from_different_server(
+        self,
+        guild: Guild,
+        channel: Channel,
+        factories: Factories,
+    ):
+        user = factories.user.create()
+        factories.guild_award.create(guild=guild, count=1, role="one", message="msg")
+        factories.user_award.create(
+            user_xid=user.xid,
+            guild_xid=guild.xid,
+            guild_award_id=None,
+        )
+
+        other_guild = factories.guild.create(xid=guild.xid + 1)
+        other_channel = factories.channel.create(xid=channel.xid + 1, guild=other_guild)
+        other_game = factories.game.create(guild=other_guild, channel=other_channel)
+        factories.play.create(user_xid=user.xid, game_id=other_game.id)
+
+        awards = AwardsService()
+        give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
+        assert give_outs == {}
+
     async def test_give_awards_no_plays(
         self,
         guild: Guild,
