@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Ensure that plays counts for awards are only counted on a per-server basis.
+
 ### Changed
 
 - Updated outdated dependencies.
