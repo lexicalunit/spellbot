@@ -15,6 +15,7 @@
 [![black][black-badge]][black]
 [![mit][mit-badge]][mit]
 [![metrics][metrics-badge]][metrics]
+[![datadog][datadog-badge]][datadog]
 [![patreon][patreon-button]][patreon]
 [![follow][follow-badge]][follow]
 
@@ -114,6 +115,8 @@ Any usage of SpellBot implies that you accept the following policies.
 [codecov-badge]: https://codecov.io/gh/lexicalunit/spellbot/branch/main/graph/badge.svg
 [codecov]: https://codecov.io/gh/lexicalunit/spellbot
 [contributors]: https://github.com/lexicalunit/spellbot/graphs/contributors
+[datadog-badge]: https://img.shields.io/badge/monitors-datadog-blueviolet.svg
+[datadog]: https://app.datadoghq.com/apm/home
 [discord-interactions-badge]: https://img.shields.io/badge/discord--interactions-3.x-blue
 [discord-interactions]: https://github.com/goverfl0w/discord-interactions
 [discord-invite]: https://discord.gg/zXzgqMN
