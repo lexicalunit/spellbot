@@ -105,7 +105,9 @@ class BaseInteraction:
         ctx: Optional[InteractionContext] = None,
     ) -> AsyncGenerator[InteractionType, None]:
         interaction = cls(bot, ctx) if ctx else cls(bot)
-        with tracer.trace(name=f"spellbot.interactions.{cls.__name__}.create") as span:
+        with tracer.trace(  # type: ignore
+            name=f"spellbot.interactions.{cls.__name__}.create",
+        ) as span:
             setup_ignored_errors(span)
             async with db_session_manager():
                 try:

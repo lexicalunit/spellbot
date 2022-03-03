@@ -21,7 +21,10 @@ class TasksCog(commands.Cog):  # pragma: no cover
 
     @tasks.loop(minutes=settings.VOICE_CLEANUP_LOOP_M)
     async def cleanup_old_voice_channels(self):
-        with tracer.trace(name="command", resource="cleanup_old_voice_channels"):
+        with tracer.trace(  # type: ignore
+            name="command",
+            resource="cleanup_old_voice_channels",
+        ):
             async with TaskInteraction.create(self.bot) as interaction:
                 await interaction.cleanup_old_voice_channels()
 
@@ -31,7 +34,10 @@ class TasksCog(commands.Cog):  # pragma: no cover
 
     @tasks.loop(minutes=settings.EXPIRE_GAMES_LOOP_M)
     async def expire_inactive_games(self):
-        with tracer.trace(name="command", resource="expire_inactive_games"):
+        with tracer.trace(  # type: ignore
+            name="command",
+            resource="expire_inactive_games",
+        ):
             async with TaskInteraction.create(self.bot) as interaction:
                 await interaction.expire_inactive_games()
 

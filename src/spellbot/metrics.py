@@ -77,13 +77,17 @@ def patch_discord() -> None:  # pragma: no cover
             additional_tags["interaction_token"] = matches[2]
         else:
             resource = path
-        with tracer.trace(service="discord", name="http", resource=resource) as span:
+        with tracer.trace(  # type: ignore
+            service="discord",
+            name="http",
+            resource=resource,
+        ) as span:
             span.set_tags(
                 {
                     "base": route.BASE,
-                    "channel_id": route.channel_id,
+                    "channel_id": str(route.channel_id),
                     "data": kwargs,
-                    "guild_id": route.guild_id,
+                    "guild_id": str(route.guild_id),
                     "instance": instance,
                     "method": route.method,
                     **additional_tags,
