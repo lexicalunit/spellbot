@@ -23,10 +23,10 @@ class MockClient:
         *,
         user: discord.User = MagicMock(spec=discord.User),
         loop: AbstractEventLoop = MagicMock(spec=AbstractEventLoop),
-        channels: list[discord.TextChannel] = None,
-        guilds: list[discord.Guild] = None,
-        users: list[discord.User] = None,
-        categories: list[discord.CategoryChannel] = None,
+        channels: Optional[list[discord.TextChannel]] = None,
+        guilds: Optional[list[discord.Guild]] = None,
+        users: Optional[list[discord.User]] = None,
+        categories: Optional[list[discord.CategoryChannel]] = None,
     ):
         self.user = user
         self.loop = loop

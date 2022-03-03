@@ -28,7 +28,7 @@ async def safe_fetch_user(
     user_xid: int,
 ) -> Optional[discord.User]:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"user_xid": user_xid})
+        span.set_tags({"user_xid": str(user_xid)})
 
     user: Optional[discord.User]
     if user := client.get_user(user_xid):
@@ -49,7 +49,7 @@ async def safe_fetch_guild(
     guild_xid: int,
 ) -> Optional[discord.Guild]:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"guild_xid": guild_xid})
+        span.set_tags({"guild_xid": str(guild_xid)})
 
     guild: Optional[discord.Guild]
     if guild := client.get_guild(guild_xid):
@@ -71,7 +71,7 @@ async def safe_fetch_text_channel(
     channel_xid: int,
 ) -> Optional[discord.TextChannel]:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"guild_xid": guild_xid, "channel_xid": channel_xid})
+        span.set_tags({"guild_xid": str(guild_xid), "channel_xid": str(channel_xid)})
 
     # first check our channel cache
     channel: Optional[DiscordChannel]
@@ -102,7 +102,7 @@ def safe_get_partial_message(
     message_xid: int,
 ) -> Optional[discord.PartialMessage]:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"guild_xid": guild_xid, "message_xid": message_xid})
+        span.set_tags({"guild_xid": str(guild_xid), "message_xid": str(message_xid)})
 
     if (
         not hasattr(channel, "type")
@@ -132,7 +132,7 @@ async def safe_update_embed(
     **kwargs,
 ) -> bool:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"messsage_xid": message.id})
+        span.set_tags({"messsage_xid": str(message.id)})
 
     success: bool = False
     with suppress(
@@ -150,7 +150,7 @@ async def safe_update_embed_origin(ctx: ComponentContext, *args, **kwargs) -> bo
     assert hasattr(ctx, "origin_message_id")
 
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"origin_messsage_xid": ctx.origin_message_id})
+        span.set_tags({"origin_messsage_xid": str(ctx.origin_message_id)})
 
     success: bool = False
     with suppress(
@@ -170,7 +170,7 @@ async def safe_create_category_channel(
     name: str,
 ) -> Optional[discord.CategoryChannel]:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"guild_xid": guild_xid, "name": name})
+        span.set_tags({"guild_xid": str(guild_xid), "name": name})
 
     guild: Optional[discord.Guild]
     if not (guild := await safe_fetch_guild(client, guild_xid)):
@@ -194,7 +194,7 @@ async def safe_create_voice_channel(
     category: Optional[discord.CategoryChannel] = None,
 ) -> Optional[discord.VoiceChannel]:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"guild_xid": guild_xid, "name": name})
+        span.set_tags({"guild_xid": str(guild_xid), "name": name})
 
     guild: Optional[discord.Guild]
     if not (guild := await safe_fetch_guild(client, guild_xid)):
@@ -217,7 +217,7 @@ async def safe_ensure_voice_category(
     prefix: str,
 ) -> Optional[discord.CategoryChannel]:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"guild_xid": guild_xid, "prefix": prefix})
+        span.set_tags({"guild_xid": str(guild_xid), "prefix": prefix})
 
     guild: Optional[discord.Guild]
     if not (guild := await safe_fetch_guild(client, guild_xid)):
@@ -268,7 +268,7 @@ async def safe_create_invite(
     max_age: int = 0,
 ) -> Optional[str]:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"guild_xid": guild_xid, "channel_xid": channel.id})
+        span.set_tags({"guild_xid": str(guild_xid), "channel_xid": str(channel.id)})
 
     invite: Optional[str] = None
     with suppress(
@@ -319,7 +319,12 @@ async def safe_send_channel(
     **kwargs,
 ) -> Optional[discord.Message]:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"guild_xid": ctx.guild_id, "channel_xid": ctx.channel_id})
+        span.set_tags(
+            {
+                "guild_xid": str(ctx.guild_id),
+                "channel_xid": str(ctx.channel_id),
+            },
+        )
 
     message: Optional[discord.Message] = None
     with suppress(
@@ -341,7 +346,7 @@ async def safe_channel_reply(
     guild_xid = channel.guild.id
     channel_xid = channel.id
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"guild_xid": guild_xid, "channel_xid": channel_xid})
+        span.set_tags({"guild_xid": str(guild_xid), "channel_xid": str(channel_xid)})
 
     message: Optional[discord.Message] = None
     with suppress(
@@ -357,7 +362,7 @@ async def safe_channel_reply(
 @tracer.wrap()
 async def safe_message_reply(message: discord.Message, *args, **kwargs) -> None:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"messsage_xid": message.id})
+        span.set_tags({"messsage_xid": str(message.id)})
 
     if not bot_can_reply_to(message):
         return
@@ -377,7 +382,7 @@ async def safe_send_user(
 ) -> None:
     user_xid = getattr(user, "id", None)
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"user_xid": user_xid})
+        span.set_tags({"user_xid": str(user_xid)})
 
     if user_xid in bad_users:
         return log_warning("not sending to bad user %(user)s", user=user)
@@ -433,10 +438,10 @@ async def safe_add_role(
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags(
             {
-                "user_xid": getattr(user_or_member, "id", None),
-                "guild_xid": guild.id,
+                "user_xid": str(getattr(user_or_member, "id", None)),
+                "guild_xid": str(guild.id),
                 "role": role,
-                "remove": remove,
+                "remove": str(remove),
             },
         )
 

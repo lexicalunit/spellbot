@@ -120,12 +120,14 @@ class SpellBot(Bot):
     @tracer.wrap(name="interaction", resource="on_message")
     async def on_message(self, message: discord.Message):
         span = tracer.current_span()
-        setup_ignored_errors(span)
+        if span:  # noqa
+            setup_ignored_errors(span)
 
         # handle DMs normally
         if not message.guild or not hasattr(message.guild, "id"):
             return await super().on_message(message)
-        span.set_tag("guild_id", message.guild.id)  # type: ignore
+        if span:  # noqa
+            span.set_tag("guild_id", message.guild.id)  # type: ignore
 
         # ignore everything except messages in text channels
         if (
@@ -133,7 +135,8 @@ class SpellBot(Bot):
             or message.channel.type != discord.ChannelType.text
         ):
             return
-        span.set_tag("channel_id", message.channel.id)  # type: ignore
+        if span:  # noqa
+            span.set_tag("channel_id", message.channel.id)  # type: ignore
 
         # ignore hidden or ephemeral messages
         if message.flags.value & 64:
@@ -144,7 +147,8 @@ class SpellBot(Bot):
             return
 
         message_author_xid = message.author.id  # type: ignore
-        span.set_tag("author_id", message_author_xid)
+        if span:  # noqa
+            span.set_tag("author_id", message_author_xid)
 
         # don't try to verify the bot itself
         if self.user and message_author_xid == self.user.id:  # pragma: no cover

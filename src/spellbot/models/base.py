@@ -58,7 +58,7 @@ class StringLiteral(String):  # pragma: no cover
                 value = text(value)
             result = super_processor(value)  # type: ignore
             if isinstance(result, bytes):
-                result = result.decode(dialect.encoding)
+                result = result.decode(dialect.encoding)  # type: ignore
             return result
 
         return process
