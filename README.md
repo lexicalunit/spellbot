@@ -1,4 +1,9 @@
-<img align="right" width="200" alt="spellbot" src="https://raw.githubusercontent.com/lexicalunit/spellbot/main/spellbot.png" />
+<img
+    align="right"
+    width="200"
+    alt="spellbot"
+    src="https://raw.githubusercontent.com/lexicalunit/spellbot/main/spellbot.png"
+/>
 
 # SpellBot
 
@@ -23,16 +28,35 @@
 <br />
 <br />
 <br />
-<p align="center"><a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot"><img align="center" alt="Add to Discord" src="https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png" /></a><br />The Discord bot for <a href="https://spelltable.wizards.com/">SpellTable</a></p>
+<p align="center">
+    <a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot">
+        <img
+            align="center"
+            alt="Add to Discord"
+            src="https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png"
+        />
+    </a>
+    <br />
+    The Discord bot for <a href="https://spelltable.wizards.com/">SpellTable</a>
+</p>
 <br />
 
 ## 🤖 Using SpellBot
 
-Just looking to play a game of Magic? Run the command `/lfg` and SpellBot will help you out!
+SpellBot helps you find _Magic: The Gathering_ games on [SpellTable][spelltable]. Just looking to
+play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
 
-<p align="center"><img src="https://user-images.githubusercontent.com/1903876/137987904-6fcdf273-5b60-4692-9389-a51d65c0a424.png" width="600" alt="/lfg" /></p>
+<p align="center">
+    <img
+        src="https://user-images.githubusercontent.com/1903876/137987904-6fcdf273-5b60-4692-9389-a51d65c0a424.png"
+        width="600"
+        alt="/lfg"
+    />
+</p>
 
-SpellBot uses [Discord slash commands](https://discord.com/blog/slash-commands-are-here). Each command provides its own help documentation that you can view directly within Discord itself before running the command. Take a look and see what's available by typing `/` and browsing the commands for SpellBot!
+SpellBot uses [Discord slash commands][slash]. Each command provides its own help documentation that
+you can view directly within Discord itself before running the command. Take a look and see what's
+available by typing `/` and browsing the commands for SpellBot!
 
 ## 🔭 Where to Play?
 
@@ -71,25 +95,25 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
     </tr>
 </table>
 
-Want your community to be featured here as well? Please contact me at [spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com)!
+Want your community to be featured here as well? Please contact me at
+[spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com)!
 
 ## 🎤 Feedback
 
-Thoughts and suggestions? Come join us on the
-[SpellTable Discord server][discord-invite]! Please also feel free
-to [directly report any bugs][issues] that you encounter.
+Thoughts and suggestions? Come join us on the [SpellTable Discord server][discord-invite]! Please
+also feel free to [directly report any bugs][issues] that you encounter. Or reach out to me on
+Twitter at [@SpellBotIO][follow].
 
 ## 🙌 Support Me
 
-I'm keeping SpellBot running using my own money but if you like the bot and want
-to help me out, please consider [becoming a patron][patreon].
+I'm keeping SpellBot running using my own money but if you like the bot and want to help me out,
+please consider [becoming a patron][patreon].
 
 ## ❤️ Contributing
 
-If you'd like to become a part of the SpellBot development community please
-first know that we have a documented [code of conduct](CODE_OF_CONDUCT.md) and
-then see our [documentation on how to contribute](CONTRIBUTING.md) for details
-on how to get started.
+If you'd like to become a part of the SpellBot development community please first know that we have
+a documented [code of conduct](CODE_OF_CONDUCT.md) and then see our
+[documentation on how to contribute](CONTRIBUTING.md) for details on how to get started.
 
 ## 🐳 Docker Support
 
@@ -143,6 +167,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [python-badge]: https://img.shields.io/badge/python-3.8+-blue.svg
 [python]: https://www.python.org/
 [security]: https://github.com/lexicalunit/spellbot/security
+[slash]: https://discord.com/blog/slash-commands-are-here
 [spelltable]: https://spelltable.wizards.com/
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]: https://uptimerobot.com/dashboard#785764282
