@@ -100,7 +100,7 @@ Want your community to be featured here as well? Please contact me at
 
 ## 🎤 Feedback
 
-Thoughts and suggestions? Come join us on the [SpellTable Discord server][discord-invite]! Please
+Thoughts and suggestions? Come join us on the [SpellBot Discord server][discord-invite]! Please
 also feel free to [directly report any bugs][issues] that you encounter. Or reach out to me on
 Twitter at [@SpellBotIO][follow].
 
@@ -143,7 +143,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [datadog]: https://app.datadoghq.com/apm/home
 [discord-interactions-badge]: https://img.shields.io/badge/discord--interactions-3.x-blue
 [discord-interactions]: https://github.com/goverfl0w/discord-interactions
-[discord-invite]: https://discord.gg/zXzgqMN
+[discord-invite]: https://discord.gg/HuzTQYpYH4
 [discord-py-badge]: https://img.shields.io/badge/discord.py-1.7.3-blue
 [discord-py]: https://github.com/Rapptz/discord.py
 [docker-badge]: https://img.shields.io/docker/pulls/lexicalunit/spellbot.svg
