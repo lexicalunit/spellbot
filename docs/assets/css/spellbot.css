@@ -144,3 +144,9 @@ code {
 .small {
   font-size: smaller;
 }
+
+.support {
+  width: 350px;
+  margin-left: auto;
+  margin-right: auto;
+}
