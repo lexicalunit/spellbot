@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Refactoring how user blocks work to ensure no one is placed in a game with someone they've blocked.
+
 ## [v7.12.3](https://github.com/lexicalunit/spellbot/releases/tag/v7.12.3) - 2022-02-22
 
 ### Changed

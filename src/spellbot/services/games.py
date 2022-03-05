@@ -8,8 +8,7 @@ from asgiref.sync import sync_to_async
 from ddtrace import tracer
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm.query import Query
-from sqlalchemy.sql.expression import and_, asc, column, or_, select, text
+from sqlalchemy.sql.expression import and_, asc, column, or_, select
 from sqlalchemy.sql.functions import count
 
 from ..database import DatabaseSession
@@ -135,24 +134,6 @@ class GamesService:
         self.game = game
         return new
 
-    def _block_filter(
-        self,
-        author_xid: int,
-        friends: list[int],
-    ) -> Query:
-        # Note: This is not ideal but there appears not to be any way to bind lists.
-        #       This should be safe as the list of xids here are just some ints, and
-        #       these user inputs have been validated.
-        ids = [author_xid, *friends]
-        ids_s = ", ".join(str(i) for i in ids)
-        blocks_user_q = DatabaseSession.query(Block.blocked_user_xid).filter(
-            text(f"blocks.user_xid IN (users.xid, {ids_s})"),
-        )
-        user_blocks_q = DatabaseSession.query(Block.user_xid).filter(
-            text(f"blocks.blocked_user_xid IN (users.xid, {ids_s})"),
-        )
-        return blocks_user_q.union(user_blocks_q)
-
     @tracer.wrap()
     def _find_existing(
         self,
@@ -163,9 +144,8 @@ class GamesService:
         friends: list[int],
         seats: int,
         format: int,
-    ):
+    ) -> Optional[Game]:
         required_seats = 1 + len(friends)
-        blockings = self._block_filter(author_xid, friends)
         inner = (
             select(
                 [
@@ -183,7 +163,6 @@ class GamesService:
                     Game.format == format,
                     Game.status == GameStatus.PENDING.value,
                     Game.deleted_at.is_(None),
-                    ~User.xid.in_(blockings),
                 ),
             )
             .group_by(Game, User.xid)
@@ -205,7 +184,30 @@ class GamesService:
                 ),
             )
         )
-        return outer.first()
+        joiners = [author_xid, *friends]
+        xids_blocked_by_joiners = [
+            row.blocked_user_xid
+            for row in DatabaseSession.query(Block).filter(Block.user_xid.in_(joiners))
+        ]
+
+        game: Game
+        for game in outer.all():
+            players = [player.xid for player in game.players]
+            if any(xid in players for xid in xids_blocked_by_joiners):
+                continue  # a joiner has blocked one of the players
+
+            xids_blocked_by_players = [
+                row.blocked_user_xid
+                for row in DatabaseSession.query(Block).filter(
+                    Block.user_xid.in_(players),
+                )
+            ]
+            if any(xid in joiners for xid in xids_blocked_by_players):
+                continue  # a player has blocked one of the joiners
+
+            return game
+
+        return None
 
     @sync_to_async
     @tracer.wrap()
@@ -311,48 +313,45 @@ class GamesService:
     @tracer.wrap()
     def filter_blocked_list(self, author_xid: int, other_xids: list[int]) -> list[int]:
         """Given an author, filters out any blocked players from a list of others."""
-        blockers = (
-            DatabaseSession.query(Block)
-            .filter(
-                or_(
-                    and_(
-                        Block.user_xid == author_xid,
-                        Block.blocked_user_xid.in_(other_xids),
-                    ),
-                    and_(
-                        Block.blocked_user_xid == author_xid,
-                        Block.user_xid.in_(other_xids),
-                    ),
-                ),
+        users_author_has_blocked = [
+            row.blocked_user_xid
+            for row in DatabaseSession.query(Block).filter(Block.user_xid == author_xid)
+        ]
+        users_who_blocked_author_or_other = [
+            row.user_xid
+            for row in DatabaseSession.query(Block).filter(
+                Block.blocked_user_xid.in_([author_xid, *other_xids]),
             )
-            .all()
-        )
+        ]
         return list(
             set(other_xids)
-            - set(blocker.user_xid for blocker in blockers)
-            - set(blocker.blocked_user_xid for blocker in blockers),
+            - set(users_author_has_blocked)
+            - set(users_who_blocked_author_or_other),
         )
 
     @sync_to_async
     @tracer.wrap()
     def blocked(self, author_xid: int) -> bool:
         assert self.game
-        rows = DatabaseSession.query(User.xid).filter(User.game_id == self.game.id)
-        other_player_xids = [int(row[0]) for row in rows]
-
-        query = DatabaseSession.query(Block).filter(
-            or_(
-                and_(
-                    Block.user_xid == author_xid,
-                    Block.blocked_user_xid.in_(other_player_xids),
-                ),
-                and_(
-                    Block.blocked_user_xid == author_xid,
-                    Block.user_xid.in_(other_player_xids),
-                ),
-            ),
-        )
-        return bool(DatabaseSession.query(query.exists()).scalar())
+        users_author_has_blocked = [
+            row.blocked_user_xid
+            for row in DatabaseSession.query(Block).filter(Block.user_xid == author_xid)
+        ]
+        users_who_blocked_author = [
+            row.user_xid
+            for row in DatabaseSession.query(Block).filter(
+                Block.blocked_user_xid == author_xid,
+            )
+        ]
+        player_xids = [
+            row.xid
+            for row in DatabaseSession.query(User).filter(User.game_id == self.game.id)
+        ]
+        if any(xid in player_xids for xid in users_author_has_blocked):
+            return True
+        if any(xid in player_xids for xid in users_who_blocked_author):
+            return True
+        return False
 
     @sync_to_async
     @tracer.wrap()
