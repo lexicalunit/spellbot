@@ -39,9 +39,10 @@ docker run -it --rm -p 8080:80 \
     -e HOST="0.0.0.0" \
     -e PORT="80" \
     -e DATABASE_URL="postgresql://postgres@host.docker.internal:5432/postgres" \
+    -e API_BASE_URL="http://localhost:8080" \
+    -e DD_TRACE_ENABLED="false" \
     -e BOT_TOKEN="<Your Discord provided bot token>" \
     -e SPELLTABLE_AUTH_KEY="<Your SpellTable API auth token>" \
     -e DEBUG_GUILD="<optional: Debug guild id to use>" \
-    -e API_BASE_URL="http://localhost:8080" \
-    spellbot
+    lexicalunit/spellbot
 ```
