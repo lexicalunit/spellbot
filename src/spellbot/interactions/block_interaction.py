@@ -31,6 +31,14 @@ class BlockInteraction(BaseInteraction):
 
         assert hasattr(target, "id")
         target_xid = target.id  # type: ignore
+
+        if self.ctx.author_id == target_xid:
+            return await safe_send_channel(
+                self.ctx,
+                "You can not block yourself.",
+                hidden=True,
+            )
+
         if action is ActionType.BLOCK:
             await self.services.users.block(self.ctx.author_id, target_xid)
         else:
