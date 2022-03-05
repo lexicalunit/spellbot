@@ -15,6 +15,7 @@ RUN pip install --no-index --find-links /python-wheels --no-cache-dir /python-wh
     && rm -rf /python-wheels
 
 COPY scripts/start-spellbot.sh /start-spellbot.sh
+RUN chmod +x /start-spellbot.sh
 
 # datadog (https://app.datadoghq.com/account/settings#agent/debian)
 RUN apt-get update \
