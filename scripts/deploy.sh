@@ -31,13 +31,13 @@ shift $((OPTIND - 1))
 
 ENV="$1"
 
-if [[ $ENV != "stage" && $ENV != "prod" || -z "$APP" ]]; then
+if [[ $ENV != "stage" && $ENV != "prod" || -z $APP ]]; then
     usage
 fi
 
 [[ $ENV == "stage" ]] && APP="$APP-staging"
 TAG="registry.heroku.com/$APP/web"
 
-run "docker build -t '$TAG' ."
+run "docker buildx build --platform linux/amd64 -t '$TAG' ."
 run "docker push '$TAG'"
 run "heroku container:release web --app '$APP'"
