@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import BigInteger, Column, ForeignKey, Integer
 
@@ -35,7 +35,7 @@ class Config(Base):
         doc="User's current power level",
     )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "user_xid": self.user_xid,
             "guild_xid": self.guild_xid,

@@ -4,312 +4,184 @@ from typing import Optional
 
 import discord
 from ddtrace import tracer
+from discord import app_commands
+from discord.app_commands import Choice
 from discord.ext import commands
-from discord_slash import SlashContext, cog_ext
-from discord_slash.context import ComponentContext
-from discord_slash.model import SlashCommandOptionType
 
 from .. import SpellBot
-from ..interactions import AdminInteraction
+from ..actions import AdminAction
 from ..metrics import add_span_context
 from ..utils import for_all_callbacks, is_admin
 
 logger = logging.getLogger(__name__)
 
 
-@for_all_callbacks(commands.check(is_admin))
-@for_all_callbacks(commands.guild_only())
+@for_all_callbacks(app_commands.check(is_admin))
+@for_all_callbacks(app_commands.guild_only())
 class AdminCog(commands.Cog):
     def __init__(self, bot: SpellBot):
         self.bot = bot
 
-    @cog_ext.cog_slash(name="setup", description="Setup SpellBot on your server.")
+    @app_commands.command(name="setup", description="Setup SpellBot on your server.")
     @tracer.wrap(name="interaction", resource="setup")
-    async def setup(self, ctx: SlashContext):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.setup()
+    async def setup(self, interaction: discord.Interaction) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.setup()
 
-    @cog_ext.cog_component()
-    @tracer.wrap(name="interaction", resource="refresh_setup")
-    async def refresh_setup(self, ctx: ComponentContext):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.refresh_setup()
+    set_group = app_commands.Group(name="set", description="...")
 
-    @cog_ext.cog_component()
-    @tracer.wrap(name="interaction", resource="toggle_show_links")
-    async def toggle_show_links(self, ctx: ComponentContext):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.toggle_show_links()
-
-    @cog_ext.cog_component()
-    @tracer.wrap(name="interaction", resource="toggle_show_points")
-    async def toggle_show_points(self, ctx: ComponentContext):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.toggle_show_points()
-
-    @cog_ext.cog_component()
-    @tracer.wrap(name="interaction", resource="toggle_voice_create")
-    async def toggle_voice_create(self, ctx: ComponentContext):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.toggle_voice_create()
-
-    @cog_ext.cog_subcommand(
-        base="set",
+    @set_group.command(
         name="motd",
         description="Set your server's message of the day. Leave blank to unset.",
-        options=[
-            {
-                "name": "message",
-                "required": False,
-                "description": "Message content",
-                "type": SlashCommandOptionType.STRING.value,
-            },
-        ],
     )
+    @app_commands.describe(message="Message content")
     @tracer.wrap(name="interaction", resource="set_motd")
-    async def motd(self, ctx: SlashContext, message: Optional[str] = None):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.set_motd(message)
+    async def motd(self, interaction: discord.Interaction, message: Optional[str] = None) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_motd(message)
 
-    @cog_ext.cog_subcommand(
-        base="set",
+    @set_group.command(
         name="channel_motd",
         description="Set this channel's message of the day. Leave blank to unset.",
-        options=[
-            {
-                "name": "message",
-                "required": False,
-                "description": "Message content",
-                "type": SlashCommandOptionType.STRING.value,
-            },
-        ],
     )
     @tracer.wrap(name="interaction", resource="set_channel_motd")
-    async def channel_motd(self, ctx: SlashContext, message: Optional[str] = None):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.set_channel_motd(message)
+    async def channel_motd(
+        self,
+        interaction: discord.Interaction,
+        message: Optional[str] = None,
+    ) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_channel_motd(message)
 
-    @cog_ext.cog_slash(
+    @app_commands.command(
         name="channels",
         description="Show the current configurations for channels on your server.",
     )
+    @app_commands.describe(page="If there are multiple pages of output, which one?")
     @tracer.wrap(name="interaction", resource="channels")
-    async def channels(self, ctx: SlashContext):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.channels()
+    async def channels(self, interaction: discord.Interaction, page: Optional[int] = 1) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            assert page and page >= 1
+            await action.channels(page=page)
 
-    @cog_ext.cog_slash(
-        name="awards",
-        description="Setup player awards on your server.",
-    )
+    @app_commands.command(name="awards", description="Setup player awards on your server.")
+    @app_commands.describe(page="If there are multiple pages of output, which one?")
     @tracer.wrap(name="interaction", resource="awards")
-    async def awards(self, ctx: SlashContext):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.awards()
+    async def awards(self, interaction: discord.Interaction, page: Optional[int] = 1) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            assert page and page >= 1
+            await action.awards(page=page)
 
-    @cog_ext.cog_subcommand(
-        base="award",
-        name="add",
-        description="Add a new award level to the list of awards.",
-        options=[
-            {
-                "name": "count",
-                "required": True,
-                "description": "The number of games needed for this award",
-                "type": SlashCommandOptionType.INTEGER.value,
-            },
-            {
-                "name": "role",
-                "required": True,
-                "description": "The role to assign when a player gets this award",
-                "type": SlashCommandOptionType.ROLE.value,
-            },
-            {
-                "name": "message",
-                "required": True,
-                "description": "The message to send players you get this award",
-                "type": SlashCommandOptionType.STRING.value,
-            },
-            {
-                "name": "repeating",
-                "required": False,
-                "description": "Repeatedly give this award every X games?",
-                "type": SlashCommandOptionType.BOOLEAN.value,
-            },
-            {
-                "name": "remove",
-                "required": False,
-                "description": "Instead of assigning the role, remove it from the player",
-                "type": SlashCommandOptionType.BOOLEAN.value,
-            },
-        ],
+    award_group = app_commands.Group(name="award", description="...")
+
+    @award_group.command(name="add", description="Add a new award level to the list of awards.")
+    @app_commands.describe(count="The number of games needed for this award")
+    @app_commands.describe(role="The role to assign when a player gets this award")
+    @app_commands.describe(message="The message to send players you get this award")
+    @app_commands.describe(repeating="Repeatedly give this award every X games?")
+    @app_commands.describe(
+        remove="Instead of assigning the role, remove it from the player",
     )
     @tracer.wrap(name="interaction", resource="award_add")
     async def award_add(
         self,
-        ctx: SlashContext,
+        interaction: discord.Interaction,
         count: int,
         role: discord.Role,
         message: str,
         repeating: Optional[bool] = False,
         remove: Optional[bool] = False,
-    ):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.award_add(
-                count,
-                str(role),
-                message,
-                repeating=repeating,
-                remove=remove,
-            )
+    ) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.award_add(count, str(role), message, repeating=repeating, remove=remove)
 
-    @cog_ext.cog_subcommand(
-        base="award",
+    @award_group.command(
         name="delete",
         description="Delete an existing award level from the server.",
-        options=[
-            {
-                "name": "id",
-                "required": True,
-                "description": "The ID number of the award to delete",
-                "type": SlashCommandOptionType.INTEGER.value,
-            },
-        ],
     )
+    @app_commands.describe(id="The ID number of the award to delete")
     @tracer.wrap(name="interaction", resource="award_delete")
-    async def award_delete(self, ctx: SlashContext, id: int):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.award_delete(id)
+    async def award_delete(self, interaction: discord.Interaction, id: int) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.award_delete(id)
 
-    @cog_ext.cog_subcommand(
-        base="set",
+    @set_group.command(
         name="default_seats",
         description="Set the default number of seats for new games in this channel.",
-        options=[
-            {
-                "name": "seats",
-                "required": True,
-                "description": "Default number of seats",
-                "type": SlashCommandOptionType.INTEGER.value,
-                "choices": [
-                    {"name": "2", "value": 2},
-                    {"name": "3", "value": 3},
-                    {"name": "4", "value": 4},
-                ],
-            },
+    )
+    @app_commands.describe(seats="Default number of seats")
+    @app_commands.choices(
+        seats=[
+            Choice(name="2", value=2),
+            Choice(name="3", value=3),
+            Choice(name="4", value=4),
         ],
     )
     @tracer.wrap(name="interaction", resource="set_default_seats")
-    async def default_seats(self, ctx: SlashContext, seats: int):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.set_default_seats(seats)
+    async def default_seats(self, interaction: discord.Interaction, seats: int) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_default_seats(seats)
 
-    @cog_ext.cog_subcommand(
-        base="set",
+    @set_group.command(
         name="auto_verify",
         description="Should posting in this channel automatically verify users?",
-        options=[
-            {
-                "name": "setting",
-                "required": True,
-                "description": "Setting",
-                "type": SlashCommandOptionType.BOOLEAN.value,
-            },
-        ],
     )
+    @app_commands.describe(setting="Setting")
     @tracer.wrap(name="interaction", resource="set_auto_verify")
-    async def auto_verify(self, ctx: SlashContext, setting: bool):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.set_auto_verify(setting)
+    async def auto_verify(self, interaction: discord.Interaction, setting: bool) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_auto_verify(setting)
 
-    @cog_ext.cog_subcommand(
-        base="set",
+    @set_group.command(
         name="verified_only",
         description="Should only verified users be allowed to post in this channel?",
-        options=[
-            {
-                "name": "setting",
-                "required": True,
-                "description": "Setting",
-                "type": SlashCommandOptionType.BOOLEAN.value,
-            },
-        ],
     )
+    @app_commands.describe(setting="Setting")
     @tracer.wrap(name="interaction", resource="set_verified_only")
-    async def verified_only(self, ctx: SlashContext, setting: bool):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.set_verified_only(setting)
+    async def verified_only(self, interaction: discord.Interaction, setting: bool) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_verified_only(setting)
 
-    @cog_ext.cog_subcommand(
-        base="set",
+    @set_group.command(
         name="unverified_only",
         description="Should only unverified users be allowed to post in this channel?",
-        options=[
-            {
-                "name": "setting",
-                "required": True,
-                "description": "Setting",
-                "type": SlashCommandOptionType.BOOLEAN.value,
-            },
-        ],
     )
+    @app_commands.describe(setting="Setting")
     @tracer.wrap(name="interaction", resource="set_unverified_only")
-    async def unverified_only(self, ctx: SlashContext, setting: bool):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.set_unverified_only(setting)
+    async def unverified_only(self, interaction: discord.Interaction, setting: bool) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_unverified_only(setting)
 
-    @cog_ext.cog_slash(
-        name="info",
-        description="Request a DM with full game information.",
-        options=[
-            {
-                "name": "game_id",
-                "required": True,
-                "description": "SpellBot ID of the game",
-                "type": SlashCommandOptionType.STRING.value,
-            },
-        ],
-    )
+    @app_commands.command(name="info", description="Request a DM with full game information.")
+    @app_commands.describe(game_id="SpellBot ID of the game")
     @tracer.wrap(name="interaction", resource="info")
-    async def info(self, ctx: SlashContext, game_id: str):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.info(game_id)
+    async def info(self, interaction: discord.Interaction, game_id: str) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.info(game_id)
 
-    @cog_ext.cog_subcommand(
-        base="set",
+    @set_group.command(
         name="voice_category",
         description="Set the voice category prefix for games in this channel.",
-        options=[
-            {
-                "name": "prefix",
-                "required": True,
-                "description": "Setting",
-                "type": SlashCommandOptionType.STRING.value,
-            },
-        ],
     )
+    @app_commands.describe(prefix="Setting")
     @tracer.wrap(name="interaction", resource="set_voice_category")
-    async def voice_category(self, ctx: SlashContext, prefix: str):
-        add_span_context(ctx)
-        async with AdminInteraction.create(self.bot, ctx) as interaction:
-            await interaction.set_voice_category(prefix)
+    async def voice_category(self, interaction: discord.Interaction, prefix: str) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_voice_category(prefix)
 
 
-def setup(bot: SpellBot):
-    bot.add_cog(AdminCog(bot))
+async def setup(bot: SpellBot):  # pragma: no cover
+    await bot.add_cog(AdminCog(bot), guild=bot.settings.GUILD_OBJECT)

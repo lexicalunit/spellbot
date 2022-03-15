@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 import discord
 from asgiref.sync import sync_to_async
@@ -14,7 +14,7 @@ from ..models import Channel
 
 class ChannelsService:
     @sync_to_async()
-    def upsert(self, channel: discord.TextChannel) -> dict:
+    def upsert(self, channel: discord.TextChannel) -> dict[str, Any]:
         name_max_len = Channel.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(channel, "name", "")
         name = raw_name[:name_max_len]
@@ -40,7 +40,7 @@ class ChannelsService:
         return channel.to_dict()
 
     @sync_to_async
-    def select(self, xid: int) -> Optional[dict]:
+    def select(self, xid: int) -> Optional[dict[str, Any]]:
         channel = DatabaseSession.query(Channel).filter(Channel.xid == xid).one_or_none()
         return channel.to_dict() if channel else None
 

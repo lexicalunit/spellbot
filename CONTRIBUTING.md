@@ -18,7 +18,7 @@ curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-
 The easiest thing to do is to set up a virtual python environment specifically for spellbot.
 
 ```shell
-python3.9 -m venv env
+python3.10 -m venv env
 ```
 
 Then you can install `poetry` into this environment with:

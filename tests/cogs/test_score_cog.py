@@ -1,155 +1,119 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from typing import Callable, cast
 
 import discord
 import pytest
-from discord_slash.context import InteractionContext, MenuContext
 
 from spellbot import SpellBot
 from spellbot.cogs import ScoreCog
-from spellbot.settings import Settings
-from tests.factories.game import GameFactory
-from tests.factories.play import PlayFactory
-from tests.mocks import build_channel, build_ctx, build_guild
+from spellbot.models import Channel, User
+from tests.mixins import InteractionMixin
+from tests.mocks import build_channel, build_guild, build_interaction, mock_discord_object
+
+
+@pytest.fixture
+async def cog(bot: SpellBot) -> ScoreCog:
+    return ScoreCog(bot)
 
 
 @pytest.mark.asyncio
-class TestCogScore:
-    async def test_score(
-        self,
-        bot: SpellBot,
-        ctx: InteractionContext,
-        settings: Settings,
-    ):
-        assert ctx.guild
-        assert ctx.author
-        assert isinstance(ctx.author, discord.User)
-        cog = ScoreCog(bot)
-        await cog.score.func(cog, ctx)
-        ctx.send.assert_called_once()
-        embed = ctx.send.call_args.kwargs.get("embed")
-        assert embed is not None
-        assert embed.to_dict() == {
-            "author": {"name": f"Record of games played on {ctx.guild.name}"},
-            "color": settings.EMBED_COLOR,
-            "description": f"<@{ctx.author_id}> has played 0 games on this server.\n"
+class TestCogScore(InteractionMixin):
+    async def test_score(self, cog: ScoreCog, user: User, channel: Channel) -> None:
+        await self.run(cog.score)
+
+        assert self.last_send_message("embed") == {
+            "author": {"name": f"Record of games played on {self.guild.name}"},
+            "color": self.settings.EMBED_COLOR,
+            "description": f"<@{user.xid}> has played 0 games on this server.\n"
             "View more [details on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{ctx.guild.id}/u/{ctx.author_id}).",
-            "thumbnail": {"url": settings.ICO_URL},
+            f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{user.xid}).",
+            "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
         }
 
-        game = GameFactory.create(
+        game = self.factories.game.create(
             seats=2,
-            guild_xid=ctx.guild.id,
-            channel_xid=ctx.channel_id,
+            guild_xid=self.guild.xid,
+            channel_xid=channel.xid,
         )
-        PlayFactory.create(user_xid=ctx.author_id, game_id=game.id)
+        self.factories.play.create(user_xid=user.xid, game_id=game.id)
 
-        ctx.send = AsyncMock()
-        await cog.score.func(cog, ctx)
-        ctx.send.assert_called_once()
-        embed = ctx.send.call_args.kwargs.get("embed")
-        assert embed is not None
-        assert embed.to_dict() == {
-            "author": {"name": f"Record of games played on {ctx.guild.name}"},
-            "color": settings.EMBED_COLOR,
-            "description": f"<@{ctx.author_id}> has played 1 game on this server.\n"
+        self.interaction.response.send_message.reset_mock()
+        await self.run(cog.score)
+
+        assert self.last_send_message("embed") == {
+            "author": {"name": f"Record of games played on {self.guild.name}"},
+            "color": self.settings.EMBED_COLOR,
+            "description": f"<@{user.xid}> has played 1 game on this server.\n"
             "View more [details on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{ctx.guild.id}/u/{ctx.author_id}).",
-            "thumbnail": {"url": settings.ICO_URL},
+            f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{user.xid}).",
+            "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
         }
 
-        game = GameFactory.create(
+        game = self.factories.game.create(
             seats=2,
-            guild_xid=ctx.guild.id,
-            channel_xid=ctx.channel_id,
+            guild_xid=self.guild.xid,
+            channel_xid=channel.xid,
         )
-        PlayFactory.create(user_xid=ctx.author_id, game_id=game.id)
+        self.factories.play.create(user_xid=user.xid, game_id=game.id)
 
-        ctx.send = AsyncMock()
-        await cog.score.func(cog, ctx)
-        ctx.send.assert_called_once()
-        embed = ctx.send.call_args.kwargs.get("embed")
-        assert embed is not None
-        assert embed.to_dict() == {
-            "author": {"name": f"Record of games played on {ctx.guild.name}"},
-            "color": settings.EMBED_COLOR,
-            "description": f"<@{ctx.author_id}> has played 2 games on this server.\n"
+        self.interaction.response.send_message.reset_mock()
+        await self.run(cog.score)
+        assert self.last_send_message("embed") == {
+            "author": {"name": f"Record of games played on {self.guild.name}"},
+            "color": self.settings.EMBED_COLOR,
+            "description": f"<@{user.xid}> has played 2 games on this server.\n"
             "View more [details on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{ctx.guild.id}/u/{ctx.author_id}).",
-            "thumbnail": {"url": settings.ICO_URL},
+            f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{user.xid}).",
+            "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
         }
 
         new_guild = build_guild(2)
         new_channel = build_channel(new_guild, 2)
-        new_ctx = build_ctx(new_guild, new_channel, ctx.author, 2)
-        await cog.score.func(cog, new_ctx)
-        new_ctx.send.assert_called_once()
-        assert new_ctx.guild
-        embed = new_ctx.send.call_args.kwargs.get("embed")
+        discord_user = mock_discord_object(user)
+        new_interaction = build_interaction(new_guild, new_channel, discord_user)
+        await self.run(cog.score, interaction=new_interaction)
+
+        send_message = new_interaction.response.send_message
+        send_message.assert_called_once()
+        embed = send_message.call_args.kwargs.get("embed")
         assert embed is not None
         assert embed.to_dict() == {
-            "author": {"name": f"Record of games played on {new_ctx.guild.name}"},
-            "color": settings.EMBED_COLOR,
-            "description": f"<@{new_ctx.author_id}> has played 0 games on this server.\n"
+            "author": {"name": f"Record of games played on {new_guild.name}"},
+            "color": self.settings.EMBED_COLOR,
+            "description": f"<@{user.xid}> has played 0 games on this server.\n"
             "View more [details on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{new_ctx.guild.id}/u/{new_ctx.author_id}).",
-            "thumbnail": {"url": settings.ICO_URL},
+            f"(https://bot.spellbot.io/g/{new_guild.id}/u/{user.xid}).",
+            "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
         }
 
-    async def test_view_score(
-        self,
-        bot: SpellBot,
-        ctx: MenuContext,
-        settings: Settings,
-    ):
-        assert ctx.guild
-        target_author = MagicMock()
-        target_author.id = 1002
-        target_author.display_name = "target-author-display-name"
-        target_author.mention = f"<@{target_author.id}>"
-        ctx.target_author = target_author
+    async def test_score_for_other_user(self, cog: ScoreCog, add_user: Callable[..., User]) -> None:
+        target_user = add_user()
+        target_member = cast(discord.Member, mock_discord_object(target_user))
+        await self.run(cog.score, user=target_member)
 
-        cog = ScoreCog(bot)
-        await cog.view_score.func(cog, ctx)
-
-        ctx.send.assert_called_once()
-        embed = ctx.send.call_args.kwargs.get("embed")
-        assert embed is not None
-        assert embed.to_dict() == {
-            "author": {"name": f"Record of games played on {ctx.guild.name}"},
-            "color": settings.EMBED_COLOR,
-            "description": f"<@{target_author.id}> has played 0 games on this server.\n"
+        assert self.last_send_message("embed") == {
+            "author": {"name": f"Record of games played on {self.guild.name}"},
+            "color": self.settings.EMBED_COLOR,
+            "description": f"<@{target_member.id}> has played 0 games on this server.\n"
             "View more [details on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{ctx.guild.id}/u/{target_author.id}).",
-            "thumbnail": {"url": settings.ICO_URL},
+            f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{target_member.id}).",
+            "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
         }
 
-    async def test_history(
-        self,
-        bot: SpellBot,
-        ctx: InteractionContext,
-        settings: Settings,
-    ):
-        assert ctx.channel
-        assert isinstance(ctx.channel, discord.TextChannel)
-        cog = ScoreCog(bot)
-        await cog.history.func(cog, ctx)
+    async def test_history(self, cog: ScoreCog, channel: Channel) -> None:
+        await self.run(cog.history)
 
-        ctx.send.assert_called_once()
-        embed = ctx.send.call_args.kwargs.get("embed")
-        assert embed is not None
-        assert embed.to_dict() == {
-            "author": {"name": f"Recent games played in {ctx.channel.name}"},
-            "color": settings.EMBED_COLOR,
+        assert self.last_send_message("embed") == {
+            "author": {"name": f"Recent games played in {channel.name}"},
+            "color": self.settings.EMBED_COLOR,
             "description": "View [game history on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{ctx.guild_id}/c/{ctx.channel_id}).",
-            "thumbnail": {"url": settings.ICO_URL},
+            f"(https://bot.spellbot.io/g/{self.guild.xid}/c/{channel.xid}).",
+            "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
         }

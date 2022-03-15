@@ -5,6 +5,9 @@ from datetime import datetime
 from os import getenv
 from typing import Optional
 
+from discord import Object
+from discord.abc import Snowflake
+
 from .environment import running_in_pytest
 
 
@@ -17,6 +20,7 @@ class Settings:
 
         # application
         self.BOT_TOKEN = getenv("BOT_TOKEN")
+        self.BOT_APPLICATION_ID = getenv("BOT_APPLICATION_ID")
         self.PORT = int(getenv("PORT", "3008"))
         self.HOST = getenv("HOST") or "localhost"
         self.DEBUG_GUILD = getenv("DEBUG_GUILD")
@@ -88,3 +92,7 @@ class Settings:
         return self.workaround_over_eager_caching(
             f"{self.CONTENT_ROOT}/spellbot/main/spellbot-sm.png",
         )
+
+    @property
+    def GUILD_OBJECT(self) -> Optional[Snowflake]:
+        return Object(id=self.DEBUG_GUILD) if self.DEBUG_GUILD else None

@@ -1,11 +1,12 @@
 import logging
 
+import discord
 from ddtrace import tracer
+from discord import app_commands
 from discord.ext import commands
-from discord_slash import SlashContext, cog_ext
 
 from .. import SpellBot
-from ..interactions import LeaveInteraction
+from ..actions import LeaveAction
 from ..metrics import add_span_context
 from ..utils import for_all_callbacks
 
@@ -19,16 +20,14 @@ class LeaveGameCog(commands.Cog):
 
     # Normally this function would be named "leave" to match the command name like
     # in all the other cogs. But in this case we're using `leave_command` to
-    # differentiate it from the `leave` button in the LFG cog, which must be called
-    # leave in order for the button's custom_id hook to work properly.
-    @cog_ext.cog_slash(name="leave", description="Leaves any game that you are in.")
+    # differentiate it from the `leave` button in the LFG cog.
+    @app_commands.command(name="leave", description="Leaves any game that you are in.")
     @tracer.wrap(name="interaction", resource="leave_command")
-    async def leave_command(self, ctx: SlashContext):
-        add_span_context(ctx)
-        await ctx.defer(hidden=True)
-        async with LeaveInteraction.create(self.bot, ctx) as interaction:
-            await interaction.execute()
+    async def leave_command(self, interaction: discord.Interaction) -> None:
+        add_span_context(interaction)
+        async with LeaveAction.create(self.bot, interaction) as action:
+            await action.execute()
 
 
-def setup(bot: SpellBot):
-    bot.add_cog(LeaveGameCog(bot))
+async def setup(bot: SpellBot):  # pragma: no cover
+    await bot.add_cog(LeaveGameCog(bot), guild=bot.settings.GUILD_OBJECT)

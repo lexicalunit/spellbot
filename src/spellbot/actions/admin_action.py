@@ -1,22 +1,19 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional, cast
+from typing import Any, Optional
 
 import discord
-import discord_slash.utils.manage_components as comp
 from discord.embeds import Embed
-from discord_slash.context import ComponentContext, InteractionContext
-from discord_slash.model import ButtonStyle
-from pygicord import Config, Paginator
 
 from .. import SpellBot
-from ..models import Channel
+from ..models import Channel, GuildAward
 from ..operations import safe_send_channel, safe_update_embed_origin
 from ..services import GamesService
 from ..settings import Settings
-from ..utils import EMBED_DESCRIPTION_SIZE_LIMIT, log_warning
-from .base_interaction import BaseInteraction
+from ..utils import EMBED_DESCRIPTION_SIZE_LIMIT
+from ..views import SetupView
+from .base_action import BaseAction
 
 logger = logging.getLogger(__name__)
 
@@ -25,14 +22,17 @@ def humanize_bool(setting: bool) -> str:
     return "✅ On" if setting else "❌ Off"
 
 
-class AdminInteraction(BaseInteraction):
-    def __init__(self, bot: SpellBot, ctx: InteractionContext):
-        super().__init__(bot, ctx)
+class AdminAction(BaseAction):
+    def __init__(self, bot: SpellBot, interaction: discord.Interaction):
+        super().__init__(bot, interaction)
         self.settings = Settings()
 
-    async def _report_failure(self):
-        assert self.ctx
-        await safe_send_channel(self.ctx, "There is no game with that ID.", hidden=True)
+    async def _report_failure(self) -> None:
+        await safe_send_channel(
+            self.interaction,
+            "There is no game with that ID.",
+            ephemeral=True,
+        )
 
     async def _build_channels_embeds(self) -> list[Embed]:
         guild = await self.services.guilds.to_dict()
@@ -44,15 +44,19 @@ class AdminInteraction(BaseInteraction):
             embed.color = discord.Color(self.settings.EMBED_COLOR)
             return embed
 
-        def update_channel_settings(channel, channel_settings, col):
+        def update_channel_settings(
+            channel: dict[str, Any],
+            channel_settings: dict[str, Any],
+            col: str,
+        ):
             if channel[col] != getattr(Channel, col).default.arg:
                 channel_settings[col] = channel[col]
 
         all_default = True
         embed = new_embed()
         description = ""
-        for channel in guild.get("channels", []):
-            channel_settings: dict = {}
+        for channel in sorted(guild.get("channels", []), key=lambda g: g["xid"]):
+            channel_settings: dict[str, Any] = {}
             update_channel_settings(channel, channel_settings, "default_seats")
             update_channel_settings(channel, channel_settings, "auto_verify")
             update_channel_settings(channel, channel_settings, "unverified_only")
@@ -168,42 +172,7 @@ class AdminInteraction(BaseInteraction):
         embed.color = discord.Color(self.settings.EMBED_COLOR)
         return embed
 
-    async def build_setup_components(self):
-        components = []
-        buttons = [
-            comp.create_button(
-                style=ButtonStyle.primary,
-                label="Toggle Public Links",
-                custom_id="toggle_show_links",
-            ),
-            comp.create_button(
-                style=ButtonStyle.primary,
-                label="Toggle Show Points",
-                custom_id="toggle_show_points",
-            ),
-            comp.create_button(
-                style=ButtonStyle.primary,
-                label="Toggle Create Voice Channels",
-                custom_id="toggle_voice_create",
-            ),
-        ]
-        action_row = comp.create_actionrow(*buttons)
-        components.append(action_row)
-
-        buttons = [
-            comp.create_button(
-                style=ButtonStyle.secondary,
-                label="Refresh",
-                custom_id="refresh_setup",
-            ),
-        ]
-        action_row = comp.create_actionrow(*buttons)
-        components.append(action_row)
-        return components
-
-    async def info(self, game_id: str):
-        assert self.ctx
-
+    async def info(self, game_id: str) -> None:
         numeric_filter = filter(str.isdigit, game_id)
         numeric_string = "".join(numeric_filter)
         if not numeric_string:
@@ -216,37 +185,20 @@ class AdminInteraction(BaseInteraction):
             return await self._report_failure()
 
         embed = await games.to_embed(dm=True)
-        await safe_send_channel(self.ctx, embed=embed, hidden=True)
+        await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
-    async def setup(self):
-        assert self.ctx
+    async def setup(self) -> None:
         embed = await self._build_setup_embed()
-        components = await self.build_setup_components()
-        await safe_send_channel(self.ctx, embed=embed, components=components)
+        view = SetupView(self.bot)
+        await safe_send_channel(self.interaction, embed=embed, view=view)
 
-    async def channels(self):
-        assert self.ctx
+    async def channels(self, page: int) -> None:
         embeds = await self._build_channels_embeds()
-        if len(embeds) > 1:
-            paginator = Paginator(pages=embeds, config=Config.MINIMAL)
-            try:
-                await paginator.start(self.ctx)  # type: ignore
-            except Exception as e:
-                log_warning("pagination error: %(err)s", err=e, exec_info=True)
-        else:
-            await safe_send_channel(self.ctx, embed=embeds[0])
+        await safe_send_channel(self.interaction, embed=embeds[page - 1])
 
-    async def awards(self):
-        assert self.ctx
+    async def awards(self, page: int) -> None:
         embeds = await self._build_awards_embeds()
-        if len(embeds) > 1:
-            paginator = Paginator(pages=embeds, config=Config.MINIMAL)
-            try:
-                await paginator.start(self.ctx)  # type: ignore
-            except Exception as e:
-                log_warning("pagination error: %(err)s", err=e, exec_info=True)
-        else:
-            await safe_send_channel(self.ctx, embed=embeds[0])
+        await safe_send_channel(self.interaction, embed=embeds[page - 1])
 
     async def award_add(
         self,
@@ -254,22 +206,31 @@ class AdminInteraction(BaseInteraction):
         role: str,
         message: str,
         **options: Optional[bool],
-    ):
-        assert self.ctx
+    ) -> None:
         repeating = bool(options.get("repeating", False))
         remove = bool(options.get("remove", False))
+        max_message_len = GuildAward.message.property.columns[0].type.length  # type: ignore
+        if len(message) > max_message_len:
+            await safe_send_channel(
+                self.interaction,
+                f"Your message can't be longer than {max_message_len} characters.",
+                ephemeral=True,
+            )
+            return
         if count < 1:
-            return await safe_send_channel(
-                self.ctx,
+            await safe_send_channel(
+                self.interaction,
                 "You can't create an award for zero games played.",
-                hidden=True,
+                ephemeral=True,
             )
+            return
         if await self.services.guilds.has_award_with_count(count):
-            return await safe_send_channel(
-                self.ctx,
+            await safe_send_channel(
+                self.interaction,
                 "There's already an award for players who reach that many games.",
-                hidden=True,
+                ephemeral=True,
             )
+            return
         await self.services.guilds.award_add(
             count,
             role,
@@ -288,10 +249,9 @@ class AdminInteraction(BaseInteraction):
         )
         embed.description = description
         embed.color = self.settings.EMBED_COLOR
-        await safe_send_channel(self.ctx, embed=embed, hidden=True)
+        await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
-    async def award_delete(self, guild_award_id: int):
-        assert self.ctx
+    async def award_delete(self, guild_award_id: int) -> None:
         await self.services.guilds.award_delete(guild_award_id)
         embed = Embed()
         embed.set_thumbnail(url=self.settings.ICO_URL)
@@ -299,93 +259,80 @@ class AdminInteraction(BaseInteraction):
         description = "You can view all awards with the `/set awards` command."
         embed.description = description
         embed.color = self.settings.EMBED_COLOR
-        await safe_send_channel(self.ctx, embed=embed, hidden=True)
+        await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
-    async def set_motd(self, message: Optional[str] = None):
-        assert self.ctx
+    async def set_motd(self, message: Optional[str] = None) -> None:
         await self.services.guilds.set_motd(message)
-        await safe_send_channel(self.ctx, "Message of the day updated.", hidden=True)
+        await safe_send_channel(self.interaction, "Message of the day updated.", ephemeral=True)
 
     async def refresh_setup(self):
         embed = await self._build_setup_embed()
-        components = await self.build_setup_components()
-        ctx = cast(ComponentContext, self.ctx)
-        await safe_update_embed_origin(ctx, embed=embed, components=components)
+        view = SetupView(self.bot)
+        await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_show_links(self):
         await self.services.guilds.toggle_show_links()
         embed = await self._build_setup_embed()
-        components = await self.build_setup_components()
-        ctx = cast(ComponentContext, self.ctx)
-        await safe_update_embed_origin(ctx, embed=embed, components=components)
+        view = SetupView(self.bot)
+        await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_show_points(self):
         await self.services.guilds.toggle_show_points()
         embed = await self._build_setup_embed()
-        components = await self.build_setup_components()
-        ctx = cast(ComponentContext, self.ctx)
-        await safe_update_embed_origin(ctx, embed=embed, components=components)
+        view = SetupView(self.bot)
+        await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_voice_create(self):
         await self.services.guilds.toggle_voice_create()
         embed = await self._build_setup_embed()
-        components = await self.build_setup_components()
-        ctx = cast(ComponentContext, self.ctx)
-        await safe_update_embed_origin(ctx, embed=embed, components=components)
+        view = SetupView(self.bot)
+        await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def set_default_seats(self, seats: int):
-        assert self.ctx
-        await self.services.channels.set_default_seats(self.ctx.channel_id, seats)
+        await self.services.channels.set_default_seats(self.interaction.channel_id, seats)
         await safe_send_channel(
-            self.ctx,
+            self.interaction,
             f"Default seats set to {seats} for this channel.",
-            hidden=True,
+            ephemeral=True,
         )
 
     async def set_auto_verify(self, setting: bool):
-        assert self.ctx
-        await self.services.channels.set_auto_verify(self.ctx.channel_id, setting)
+        await self.services.channels.set_auto_verify(self.interaction.channel_id, setting)
         await safe_send_channel(
-            self.ctx,
+            self.interaction,
             f"Auto verification set to {setting} for this channel.",
-            hidden=True,
+            ephemeral=True,
         )
 
     async def set_verified_only(self, setting: bool):
-        assert self.ctx
-        await self.services.channels.set_verified_only(self.ctx.channel_id, setting)
+        await self.services.channels.set_verified_only(self.interaction.channel_id, setting)
         await safe_send_channel(
-            self.ctx,
+            self.interaction,
             f"Verified only set to {setting} for this channel.",
-            hidden=True,
+            ephemeral=True,
         )
 
     async def set_unverified_only(self, setting: bool):
-        assert self.ctx
-        await self.services.channels.set_unverified_only(self.ctx.channel_id, setting)
+        assert self.interaction
+        await self.services.channels.set_unverified_only(self.interaction.channel_id, setting)
         await safe_send_channel(
-            self.ctx,
+            self.interaction,
             f"Unverified only set to {setting} for this channel.",
-            hidden=True,
+            ephemeral=True,
         )
 
     async def set_channel_motd(self, message: Optional[str] = None):
-        assert self.ctx
-        motd = await self.services.channels.set_motd(self.ctx.channel_id, message)
+        motd = await self.services.channels.set_motd(self.interaction.channel_id, message)
         await safe_send_channel(
-            self.ctx,
+            self.interaction,
             f"Message of the day for this channel has been set to: {motd}",
-            hidden=True,
+            ephemeral=True,
         )
 
     async def set_voice_category(self, value: str):
-        assert self.ctx
-        name = await self.services.channels.set_voice_category(
-            self.ctx.channel_id,
-            value,
-        )
+        name = await self.services.channels.set_voice_category(self.interaction.channel_id, value)
         await safe_send_channel(
-            self.ctx,
+            self.interaction,
             f"Voice category prefix for this channel has been set to: {name}",
-            hidden=True,
+            ephemeral=True,
         )

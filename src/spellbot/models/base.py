@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import alembic
 import alembic.command
@@ -50,10 +51,10 @@ def reverse_all(DATABASE_URL: str) -> None:
 
 
 class StringLiteral(String):  # pragma: no cover
-    def literal_processor(self, dialect):
+    def literal_processor(self, dialect: Any):
         super_processor = super().literal_processor(dialect)
 
-        def process(value):
+        def process(value: Any):
             if isinstance(value, int):
                 return text(value)  # type: ignore
             if not isinstance(value, str):
@@ -66,7 +67,7 @@ class StringLiteral(String):  # pragma: no cover
         return process
 
 
-def literalquery(statement):  # pragma: no cover
+def literalquery(statement: Any):  # pragma: no cover
     """WARNING: This is **insecure**. DO NOT execute returned strings."""
     import sqlalchemy.orm
 

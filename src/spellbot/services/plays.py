@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from asgiref.sync import sync_to_async
 from dateutil import tz
@@ -65,7 +65,6 @@ USER_RECORDS_SQL = r"""
     ;
 """
 
-
 CHANNEL_RECORDS_SQL = r"""
     SELECT
         games.id,
@@ -103,7 +102,7 @@ CHANNEL_RECORDS_SQL = r"""
 """
 
 
-def make_scores(data: str) -> dict:
+def make_scores(data: str) -> dict[str, Any]:
     scores = {}
     records = data.split("@")
     for record in records:
@@ -112,7 +111,7 @@ def make_scores(data: str) -> dict:
     return scores
 
 
-def decomposed(combined_data: list[dict]) -> list[dict]:
+def decomposed(combined_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
     decomposed_data = []
     for data in combined_data:
         for name, score_data in data["scores"].items():
@@ -156,7 +155,7 @@ class PlaysService:
         guild_xid: int,
         user_xid: int,
         page: int = 0,
-    ) -> Optional[list[dict]]:
+    ) -> Optional[list[dict[str, Any]]]:
         guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
         if not guild:
             return None
@@ -192,7 +191,7 @@ class PlaysService:
         guild_xid: int,
         channel_xid: int,
         page: int = 0,
-    ) -> Optional[list[dict]]:
+    ) -> Optional[list[dict[str, Any]]]:
         guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
         if not guild:
             return None

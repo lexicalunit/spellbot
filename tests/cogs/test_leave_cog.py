@@ -1,105 +1,109 @@
 from __future__ import annotations
 
+import discord
 import pytest
 
+from spellbot.actions import leave_action
+from spellbot.client import SpellBot
 from spellbot.cogs import LeaveGameCog
-from spellbot.interactions import leave_interaction
-from spellbot.models import Channel, Guild
-from tests.mixins import InteractionContextMixin
-from tests.mocks import ctx_game, ctx_user, mock_operations
+from spellbot.database import DatabaseSession
+from spellbot.models import User
+from tests.mixins import InteractionMixin
+from tests.mocks import mock_operations
+
+
+@pytest.fixture
+async def cog(bot: SpellBot) -> LeaveGameCog:
+    return LeaveGameCog(bot)
 
 
 @pytest.mark.asyncio
-class TestCogLeaveGame(InteractionContextMixin):
-    async def test_leave(self, guild: Guild, channel: Channel):
-        game = ctx_game(self.ctx, guild, channel)
-        ctx_user(self.ctx, game=game)
+class TestCogLeaveGame(InteractionMixin):
+    async def test_leave(self, cog: LeaveGameCog, message: discord.Message, player: User) -> None:
+        with mock_operations(leave_action):
+            leave_action.safe_fetch_text_channel.return_value = self.interaction.channel
+            leave_action.safe_get_partial_message.return_value = message
 
-        with mock_operations(leave_interaction):
-            leave_interaction.safe_fetch_text_channel.return_value = self.ctx.channel
-            leave_interaction.safe_get_partial_message.return_value = self.ctx.message
+            await self.run(cog.leave_command)
 
-            cog = LeaveGameCog(self.bot)
-            await cog.leave_command.func(cog, self.ctx)
-
-            leave_interaction.safe_send_channel.assert_called_once_with(
-                self.ctx,
+            leave_action.safe_send_channel.assert_called_once_with(
+                self.interaction,
                 "You have been removed from any games your were signed up for.",
-                hidden=True,
+                ephemeral=True,
             )
-            leave_interaction.safe_update_embed.assert_called_once()
-            safe_update_embed_call = leave_interaction.safe_update_embed.call_args_list[0]
+            leave_action.safe_update_embed.assert_called_once()
+            safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
             assert safe_update_embed_call.kwargs["embed"].to_dict() == {
                 "color": self.settings.EMBED_COLOR,
                 "description": (
                     "_A SpellTable link will be created when all players have joined._\n"
                     "\n"
-                    f"{guild.motd}\n\n{channel.motd}"
+                    f"{self.guild.motd}\n\n{self.channel.motd}"
                 ),
                 "fields": [{"inline": True, "name": "Format", "value": "Commander"}],
-                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "footer": {"text": f"SpellBot Game ID: #SB{self.game.id}"},
                 "thumbnail": {"url": self.settings.THUMB_URL},
                 "title": "**Waiting for 4 more players to join...**",
                 "type": "rich",
             }
 
-    async def test_leave_when_no_message_xid(self, guild: Guild, channel: Channel):
-        game = ctx_game(self.ctx, guild, channel, message_xid=None)
-        ctx_user(self.ctx, game=game)
+    async def test_leave_when_no_message_xid(
+        self,
+        cog: LeaveGameCog,
+        message: discord.Message,
+        player: User,
+    ) -> None:
+        self.game.message_xid = None
+        DatabaseSession.commit()
 
-        with mock_operations(leave_interaction):
-            leave_interaction.safe_fetch_text_channel.return_value = self.ctx.channel
-            leave_interaction.safe_get_partial_message.return_value = self.ctx.message
+        with mock_operations(leave_action):
+            leave_action.safe_fetch_text_channel.return_value = self.channel
+            leave_action.safe_get_partial_message.return_value = message
 
-            cog = LeaveGameCog(self.bot)
-            await cog.leave_command.func(cog, self.ctx)
+            await self.run(cog.leave_command)
 
-            leave_interaction.safe_send_channel.assert_called_once_with(
-                self.ctx,
+            leave_action.safe_send_channel.assert_called_once_with(
+                self.interaction,
                 "You have been removed from any games your were signed up for.",
-                hidden=True,
+                ephemeral=True,
             )
 
-    async def test_leave_when_not_in_game(self):
-        with mock_operations(leave_interaction):
-            cog = LeaveGameCog(self.bot)
-            await cog.leave_command.func(cog, self.ctx)
+    async def test_leave_when_not_in_game(self, cog: LeaveGameCog, user: User) -> None:
+        with mock_operations(leave_action):
+            await self.run(cog.leave_command)
 
-            leave_interaction.safe_send_channel.assert_called_once_with(
-                self.ctx,
+            leave_action.safe_send_channel.assert_called_once_with(
+                self.interaction,
                 "You have been removed from any games your were signed up for.",
-                hidden=True,
+                ephemeral=True,
             )
 
-    async def test_leave_when_no_channel(self, guild: Guild, channel: Channel):
-        game = ctx_game(self.ctx, guild, channel)
-        ctx_user(self.ctx, game=game)
+    async def test_leave_when_no_channel(
+        self,
+        cog: LeaveGameCog,
+        message: discord.Message,
+        player: User,
+    ) -> None:
+        with mock_operations(leave_action):
+            leave_action.safe_fetch_text_channel.return_value = None
 
-        with mock_operations(leave_interaction):
-            leave_interaction.safe_fetch_text_channel.return_value = None
+            await self.run(cog.leave_command)
 
-            cog = LeaveGameCog(self.bot)
-            await cog.leave_command.func(cog, self.ctx)
-
-            leave_interaction.safe_send_channel.assert_called_once_with(
-                self.ctx,
+            leave_action.safe_send_channel.assert_called_once_with(
+                self.interaction,
                 "You have been removed from any games your were signed up for.",
-                hidden=True,
+                ephemeral=True,
             )
 
-    async def test_leave_when_no_message(self, guild: Guild, channel: Channel):
-        game = ctx_game(self.ctx, guild, channel)
-        ctx_user(self.ctx, game=game)
+    async def test_leave_when_no_message(self, cog: LeaveGameCog, player: User) -> None:
+        with mock_operations(leave_action):
+            leave_action.safe_fetch_text_channel.return_value = self.channel
+            leave_action.safe_get_partial_message.return_value = None
 
-        with mock_operations(leave_interaction):
-            leave_interaction.safe_fetch_text_channel.return_value = self.ctx.channel
-            leave_interaction.safe_get_partial_message.return_value = None
+            await self.run(cog.leave_command)
 
-            cog = LeaveGameCog(self.bot)
-            await cog.leave_command.func(cog, self.ctx)
-
-            leave_interaction.safe_send_channel.assert_called_once_with(
-                self.ctx,
+            leave_action.safe_send_channel.assert_called_once_with(
+                self.interaction,
                 "You have been removed from any games your were signed up for.",
-                hidden=True,
+                ephemeral=True,
             )

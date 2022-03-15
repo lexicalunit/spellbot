@@ -51,20 +51,6 @@ uvloop.install()
     help="Produce mock game urls instead of real ones",
 )
 @click.option(
-    "-s",
-    "--sync-commands",
-    default=False,
-    is_flag=True,
-    help="Force sync all slash commands at startup",
-)
-@click.option(
-    "-c",
-    "--clean-commands",
-    default=False,
-    is_flag=True,
-    help="Cleanup all unused slash commands at startup",
-)
-@click.option(
     "-a",
     "--api",
     default=False,
@@ -84,8 +70,6 @@ def main(
     dev: bool,
     debug: bool,
     mock_games: bool,
-    sync_commands: bool,
-    clean_commands: bool,
     api: bool,
     port: Optional[int] = None,
 ) -> None:
@@ -99,7 +83,7 @@ def main(
     level = log_level if log_level is not None else (getenv("LOG_LEVEL") or "INFO")
     configure_logging(level)
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
     if debug:
         loop.set_debug(True)
     if api:
@@ -111,10 +95,5 @@ def main(
         from .client import build_bot
 
         assert settings.BOT_TOKEN is not None
-        bot = build_bot(
-            loop=loop,
-            mock_games=mock_games,
-            force_sync_commands=sync_commands,
-            clean_commands=clean_commands,
-        )
+        bot = build_bot(loop=loop, mock_games=mock_games)
         bot.run(settings.BOT_TOKEN)

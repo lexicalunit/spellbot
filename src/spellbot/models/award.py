@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
@@ -69,7 +69,7 @@ class GuildAward(Base):
         doc="The guild where this award is available",
     )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "guild_xid": self.guild_xid,

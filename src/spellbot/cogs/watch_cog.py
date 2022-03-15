@@ -3,85 +3,67 @@ from typing import Optional, Union
 
 import discord
 from ddtrace import tracer
+from discord import app_commands
 from discord.ext import commands
-from discord_slash import SlashContext, cog_ext
-from discord_slash.model import SlashCommandOptionType
 
 from .. import SpellBot
-from ..interactions import WatchInteraction
+from ..actions import WatchAction
 from ..metrics import add_span_context
 from ..utils import for_all_callbacks, is_admin
 
 logger = logging.getLogger(__name__)
 
 
-@for_all_callbacks(commands.check(is_admin))
-@for_all_callbacks(commands.guild_only())
+@for_all_callbacks(app_commands.check(is_admin))
+@for_all_callbacks(app_commands.guild_only())
 class WatchCog(commands.Cog):
     def __init__(self, bot: SpellBot):
         self.bot = bot
 
-    @cog_ext.cog_slash(
+    @app_commands.command(
         name="watched",
         description="View the current list of watched users with notes.",
     )
+    @app_commands.describe(page="If there are multiple pages of output, which one?")
     @tracer.wrap(name="interaction", resource="watched")
-    async def watched(self, ctx: SlashContext):
-        add_span_context(ctx)
-        async with WatchInteraction.create(self.bot, ctx) as interaction:
-            await interaction.watched()
+    async def watched(self, interaction: discord.Interaction, page: Optional[int] = 1):
+        add_span_context(interaction)
+        async with WatchAction.create(self.bot, interaction) as action:
+            assert page and page >= 1
+            await action.watched(page=page)
 
-    @cog_ext.cog_slash(
+    @app_commands.command(
         name="watch",
         description="Moderators should receive notifications about this user's activity.",
-        options=[
-            {
-                "name": "target",
-                "required": True,
-                "description": "User to watch",
-                "type": SlashCommandOptionType.USER.value,
-            },
-            {
-                "name": "note",
-                "required": False,
-                "description": "A note about why this using is being watched",
-                "type": SlashCommandOptionType.STRING.value,
-            },
-        ],
     )
+    @app_commands.describe(target="User to watch")
+    @app_commands.describe(note="A note about why this using is being watched")
     @tracer.wrap(name="interaction", resource="watch")
     async def watch(
         self,
-        ctx: SlashContext,
+        interaction: discord.Interaction,
         target: Union[discord.User, discord.Member],
         note: Optional[str] = None,
     ):
-        add_span_context(ctx)
-        async with WatchInteraction.create(self.bot, ctx) as interaction:
-            await interaction.watch(target=target, note=note)
+        add_span_context(interaction)
+        async with WatchAction.create(self.bot, interaction) as action:
+            await action.watch(target=target, note=note)
 
-    @cog_ext.cog_slash(
+    @app_commands.command(
         name="unwatch",
         description="No longer receive notifications about this user's activity.",
-        options=[
-            {
-                "name": "target",
-                "required": True,
-                "description": "User to unwatch",
-                "type": SlashCommandOptionType.USER.value,
-            },
-        ],
     )
+    @app_commands.describe(target="User to unwatch")
     @tracer.wrap(name="interaction", resource="unwatch")
     async def unwatch(
         self,
-        ctx: SlashContext,
+        interaction: discord.Interaction,
         target: Union[discord.User, discord.Member],
     ):
-        add_span_context(ctx)
-        async with WatchInteraction.create(self.bot, ctx) as interaction:
-            await interaction.unwatch(target=target)
+        add_span_context(interaction)
+        async with WatchAction.create(self.bot, interaction) as action:
+            await action.unwatch(target=target)
 
 
-def setup(bot: SpellBot):
-    bot.add_cog(WatchCog(bot))
+async def setup(bot: SpellBot):  # pragma: no cover
+    await bot.add_cog(WatchCog(bot), guild=bot.settings.GUILD_OBJECT)

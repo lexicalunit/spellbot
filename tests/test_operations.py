@@ -24,10 +24,8 @@ from spellbot.operations import (
     safe_message_reply,
     safe_send_user,
     safe_update_embed,
-    safe_update_embed_origin,
 )
 from spellbot.utils import CANT_SEND_CODE
-from tests.mixins import ComponentContextMixin
 from tests.mocks import build_message, mock_client
 
 
@@ -37,7 +35,7 @@ class TestOperationsFetchUser:
         client = mock_client(users=[dpy_author])
         assert await safe_fetch_user(client, dpy_author.id) is dpy_author
 
-    async def test_uncached(self, dpy_author: discord.User, monkeypatch):
+    async def test_uncached(self, dpy_author: discord.User, monkeypatch: pytest.MonkeyPatch):
         client = mock_client(users=[dpy_author])
         monkeypatch.setattr(client, "get_user", MagicMock(return_value=None))
         assert await safe_fetch_user(client, dpy_author.id) is dpy_author
@@ -45,11 +43,11 @@ class TestOperationsFetchUser:
 
 @pytest.mark.asyncio
 class TestOperationsFetchGuild:
-    async def test_cached(self, dpy_guild):
+    async def test_cached(self, dpy_guild: discord.Guild):
         client = mock_client(guilds=[dpy_guild])
         assert await safe_fetch_guild(client, dpy_guild.id) is dpy_guild
 
-    async def test_uncached(self, dpy_guild, monkeypatch):
+    async def test_uncached(self, dpy_guild: discord.Guild, monkeypatch: pytest.MonkeyPatch):
         client = mock_client(guilds=[dpy_guild])
         monkeypatch.setattr(client, "get_guild", MagicMock(return_value=None))
         assert await safe_fetch_guild(client, dpy_guild.id) is dpy_guild
@@ -57,11 +55,15 @@ class TestOperationsFetchGuild:
 
 @pytest.mark.asyncio
 class TestOperationsFetchTextChannel:
-    async def test_cached(self, dpy_channel):
+    async def test_cached(self, dpy_channel: discord.TextChannel):
         client = mock_client(channels=[dpy_channel])
         assert await safe_fetch_text_channel(client, ANY, dpy_channel.id) is dpy_channel
 
-    async def test_uncached(self, dpy_channel, monkeypatch):
+    async def test_uncached(
+        self,
+        dpy_channel: discord.TextChannel,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
         client = mock_client(channels=[dpy_channel])
         monkeypatch.setattr(client, "get_channel", MagicMock(return_value=None))
         assert await safe_fetch_text_channel(client, ANY, dpy_channel.id) is dpy_channel
@@ -71,7 +73,7 @@ class TestOperationsFetchTextChannel:
         client = mock_client(channels=[channel])
         assert await safe_fetch_text_channel(client, ANY, channel.id) is None
 
-    async def test_uncached_non_text(self, monkeypatch):
+    async def test_uncached_non_text(self, monkeypatch: pytest.MonkeyPatch):
         channel = MagicMock(spec=discord.DMChannel)
         client = mock_client(channels=[channel])
         monkeypatch.setattr(client, "get_channel", MagicMock(return_value=None))
@@ -81,7 +83,8 @@ class TestOperationsFetchTextChannel:
 @pytest.mark.asyncio
 class TestOperationsGetPartialMessage:
     read_perms = discord.Permissions(
-        discord.Permissions.read_messages.flag | discord.Permissions.read_message_history.flag,
+        discord.Permissions.read_messages.flag  # pylint: disable=no-member
+        | discord.Permissions.read_message_history.flag,  # pylint: disable=no-member
     )
 
     @pytest.fixture(autouse=True)
@@ -123,11 +126,12 @@ class TestOperationsUpdateEmbed:
         message.edit.assert_called_once_with("content", flags=1)
 
 
-@pytest.mark.asyncio
-class TestOperationsUpdateEmbedOrigin(ComponentContextMixin):
-    async def test_happy_path(self):
-        await safe_update_embed_origin(self.ctx, "content", hidden=True)
-        self.ctx.edit_origin.assert_called_once_with("content", hidden=True)
+# TODO
+# @pytest.mark.asyncio
+# class TestOperationsUpdateEmbedOrigin(ComponentContextMixin):
+#     async def test_happy_path(self):
+#         await safe_update_embed_origin(self.ctx, "content", hidden=True)
+#         self.ctx.edit_origin.assert_called_once_with("content", hidden=True)
 
 
 @pytest.mark.asyncio
@@ -137,7 +141,7 @@ class TestOperationsCreateCategoryChannel:
         await safe_create_category_channel(client, dpy_guild.id, "name")
         dpy_guild.create_category_channel.assert_called_once_with("name")
 
-    async def test_uncached(self, dpy_guild: discord.Guild, monkeypatch):
+    async def test_uncached(self, dpy_guild: discord.Guild, monkeypatch: pytest.MonkeyPatch):
         client = mock_client(guilds=[dpy_guild])
         monkeypatch.setattr(client, "get_guild", MagicMock(return_value=None))
         await safe_create_category_channel(client, dpy_guild.id, "name")
@@ -157,7 +161,7 @@ class TestOperationsCreateVoiceChannel:
         await safe_create_voice_channel(client, dpy_guild.id, "name", category=category)
         dpy_guild.create_voice_channel.assert_called_once_with("name", category=category)
 
-    async def test_uncached(self, dpy_guild: discord.Guild, monkeypatch):
+    async def test_uncached(self, dpy_guild: discord.Guild, monkeypatch: pytest.MonkeyPatch):
         category = MagicMock(spec=discord.CategoryChannel)
         client = mock_client(guilds=[dpy_guild])
         monkeypatch.setattr(client, "get_guild", MagicMock(return_value=None))
@@ -185,7 +189,9 @@ class TestOperationsCreateInvite:
 
 @pytest.mark.asyncio
 class TestOperationsDeleteChannel:
-    delete_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
+    delete_perms = discord.Permissions(
+        discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
+    )
 
     async def test_happy_path(self):
         guild = MagicMock(spec=discord.Guild)
@@ -252,21 +258,21 @@ class TestOperationsSendUser:
         await safe_send_user(user, "content", embed=embed)
         user.send.assert_called_once_with("content", embed=embed)
 
-    async def test_not_sendable(self, caplog):
+    async def test_not_sendable(self, caplog: pytest.LogCaptureFixture):
         user = Mock()
         del user.send
         user.__str__ = lambda self: "user#1234"  # type: ignore
         await safe_send_user(user, "content")
         assert "no send method on user user#1234" in caplog.text
 
-    async def test_forbidden(self, caplog):
+    async def test_forbidden(self, caplog: pytest.LogCaptureFixture):
         user = MagicMock(spec=Union[discord.User, discord.Member])
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.send = AsyncMock(side_effect=discord.errors.Forbidden(MagicMock(), "msg"))
         await safe_send_user(user, "content")
         assert "not allowed to send message to user#1234" in caplog.text
 
-    async def test_cant_send(self, caplog):
+    async def test_cant_send(self, caplog: pytest.LogCaptureFixture):
         exception = discord.errors.HTTPException(MagicMock(), "msg")
         setattr(exception, "code", CANT_SEND_CODE)
         user = MagicMock(spec=Union[discord.User, discord.Member])
@@ -281,7 +287,7 @@ class TestOperationsSendUser:
         await safe_send_user(user, "content")
         assert "not sending to bad user user#1234" in caplog.text
 
-    async def test_http_failure(self, caplog):
+    async def test_http_failure(self, caplog: pytest.LogCaptureFixture):
         exception = discord.errors.HTTPException(MagicMock(), "msg")
         user = MagicMock(spec=Union[discord.User, discord.Member])
         user.__str__ = lambda self: "user#1234"  # type: ignore
@@ -289,7 +295,7 @@ class TestOperationsSendUser:
         await safe_send_user(user, "content")
         assert "failed to send message to user user#1234" in caplog.text
 
-    async def test_server_error(self, caplog):
+    async def test_server_error(self, caplog: pytest.LogCaptureFixture):
         exception = discord.errors.DiscordServerError(MagicMock(), "msg")
         user = MagicMock(spec=Union[discord.User, discord.Member])
         user.__str__ = lambda self: "user#1234"  # type: ignore
@@ -297,18 +303,21 @@ class TestOperationsSendUser:
         await safe_send_user(user, "content")
         assert "discord server error sending to user user#1234" in caplog.text
 
-    async def test_invalid_argument(self, caplog):
-        exception = discord.errors.InvalidArgument(MagicMock(), "msg")
-        user = MagicMock(spec=Union[discord.User, discord.Member])
-        user.__str__ = lambda self: "user#1234"  # type: ignore
-        user.send = AsyncMock(side_effect=exception)
-        await safe_send_user(user, "content")
-        assert "could not send message to user user#1234" in caplog.text
+    # TODO
+    # async def test_invalid_argument(self, caplog: pytest.LogCaptureFixture):
+    #     exception = discord.errors.InvalidArgument(MagicMock(), "msg")
+    #     user = MagicMock(spec=Union[discord.User, discord.Member])
+    #     user.__str__ = lambda self: "user#1234"  # type: ignore
+    #     user.send = AsyncMock(side_effect=exception)
+    #     await safe_send_user(user, "content")
+    #     assert "could not send message to user user#1234" in caplog.text
 
 
 @pytest.mark.asyncio
 class TestOperationsAddRole:
-    role_perms = discord.Permissions(discord.Permissions.manage_roles.flag)
+    role_perms = discord.Permissions(
+        discord.Permissions.manage_roles.flag,  # pylint: disable=no-member
+    )
 
     async def test_happy_path(self):
         member = MagicMock(spec=Union[discord.User, discord.Member])
@@ -373,7 +382,7 @@ class TestOperationsAddRole:
         await safe_add_role(member, guild, "role")
         member.add_roles.assert_called_once_with(role)
 
-    async def test_no_member(self, caplog):
+    async def test_no_member(self, caplog: pytest.LogCaptureFixture):
         user = MagicMock(spec=Union[discord.User, discord.Member])
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 101
@@ -388,7 +397,7 @@ class TestOperationsAddRole:
             f"warning: in guild {guild.id}, could not add role:" " could not find member: user#1234"
         ) in caplog.text
 
-    async def test_no_role(self, caplog):
+    async def test_no_role(self, caplog: pytest.LogCaptureFixture):
         member = MagicMock(spec=Union[discord.User, discord.Member])
         member.id = 101
         member.roles = []
@@ -403,7 +412,7 @@ class TestOperationsAddRole:
             f"warning: in guild {guild.id}, could not add role:" " could not find role: role"
         ) in caplog.text
 
-    async def test_no_permissions(self, caplog):
+    async def test_no_permissions(self, caplog: pytest.LogCaptureFixture):
         member = MagicMock(spec=Union[discord.User, discord.Member])
         member.id = 101
         member.roles = []
@@ -420,7 +429,7 @@ class TestOperationsAddRole:
             f"warning: in guild {guild.id}, could not add role:" " no permissions to add role: role"
         ) in caplog.text
 
-    async def test_forbidden(self, caplog):
+    async def test_forbidden(self, caplog: pytest.LogCaptureFixture):
         member = MagicMock(spec=Union[discord.User, discord.Member])
         member.id = 101
         member.roles = []
@@ -443,7 +452,9 @@ class TestOperationsAddRole:
 @pytest.mark.asyncio
 class TestOperationsMessageReply:
     async def test_happy_path(self):
-        send_permisions = discord.Permissions(discord.Permissions.send_messages.flag)
+        send_permisions = discord.Permissions(
+            discord.Permissions.send_messages.flag,  # pylint: disable=no-member
+        )
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
         channel = MagicMock(spec=discord.TextChannel)
@@ -474,9 +485,11 @@ class TestOperationsMessageReply:
         await safe_message_reply(message, "content", embed=embed)
         message.reply.assert_not_called()
 
-    async def test_reply_failure(self, caplog):
+    async def test_reply_failure(self, caplog: pytest.LogCaptureFixture):
         caplog.set_level(logging.DEBUG)
-        send_permisions = discord.Permissions(discord.Permissions.send_messages.flag)
+        send_permisions = discord.Permissions(
+            discord.Permissions.send_messages.flag,  # pylint: disable=no-member
+        )
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
         channel = MagicMock(spec=discord.TextChannel)

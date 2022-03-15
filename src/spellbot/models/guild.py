@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
 from sqlalchemy.orm import relationship
@@ -83,7 +83,7 @@ class Guild(Base):
         doc="Awards available in this guild",
     )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "xid": self.xid,
             "created_at": self.created_at,

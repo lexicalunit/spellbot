@@ -5,14 +5,13 @@ import importlib
 from asyncio import AbstractEventLoop
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Optional, Union, cast
+from types import ModuleType
+from typing import Any, Optional, Union, cast, overload
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
-from discord_slash.context import InteractionContext
 
-from spellbot.models import Channel, Game, Guild, User
-from tests.factories import ChannelFactory, GameFactory, GuildFactory, UserFactory
+from spellbot.models import Channel, Guild, User
 
 CLIENT_USER_ID = 1  # id of the test bot itself
 OWNER_USER_ID = 2  # id of the test guild owner
@@ -36,47 +35,47 @@ class MockClient:
         self.users = users or []
         self.categoies = categories or []
 
-    def __get_user(self, xid) -> Optional[discord.User]:
+    def __get_user(self, xid: int) -> Optional[discord.User]:
         for user in self.users:
             if user.id == xid:
                 return user
 
-    def get_user(self, xid) -> Optional[discord.User]:
+    def get_user(self, xid: int) -> Optional[discord.User]:
         return self.__get_user(xid)
 
-    async def fetch_user(self, xid) -> Optional[discord.User]:
+    async def fetch_user(self, xid: int) -> Optional[discord.User]:
         return self.__get_user(xid)
 
-    def __get_channel(self, xid) -> Optional[discord.TextChannel]:
+    def __get_channel(self, xid: int) -> Optional[discord.TextChannel]:
         for channel in self.channels:
             if channel.id == xid:
                 return channel
 
-    def get_channel(self, xid) -> Optional[discord.TextChannel]:
+    def get_channel(self, xid: int) -> Optional[discord.TextChannel]:
         return self.__get_channel(xid)
 
-    async def fetch_channel(self, xid) -> Optional[discord.TextChannel]:
+    async def fetch_channel(self, xid: int) -> Optional[discord.TextChannel]:
         return self.__get_channel(xid)
 
-    def __get_guild(self, xid) -> Optional[discord.Guild]:
+    def __get_guild(self, xid: int) -> Optional[discord.Guild]:
         for guild in self.guilds:
             if guild.id == xid:
                 return guild
 
-    def get_guild(self, xid) -> Optional[discord.Guild]:
+    def get_guild(self, xid: int) -> Optional[discord.Guild]:
         return self.__get_guild(xid)
 
-    async def fetch_guild(self, xid) -> Optional[discord.Guild]:
+    async def fetch_guild(self, xid: int) -> Optional[discord.Guild]:
         return self.__get_guild(xid)
 
 
-def mock_client(*args, **kwargs) -> discord.Client:
+def mock_client(*args: Any, **kwargs: Any) -> discord.Client:
     return cast(discord.Client, MockClient(*args, **kwargs))
 
 
 @contextmanager
 def mock_operations(
-    module,
+    module: ModuleType,
     users: Optional[list[discord.User]] = None,
 ) -> Generator[None, None, None]:
     """
@@ -110,7 +109,7 @@ def mock_operations(
             elif name.startswith("safe_"):  # all others we can assume are async
                 if name == "safe_fetch_user":
 
-                    async def finder(_, xid):
+                    async def finder(_, xid: int):
                         return next((user for user in _users if user.id == xid), None)
 
                     monkeypatch.setattr(module, name, AsyncMock(side_effect=finder))
@@ -184,20 +183,6 @@ def build_message(
     return message
 
 
-def build_response(
-    guild: discord.Guild,
-    channel: discord.TextChannel,
-    offset: int = 1,
-) -> discord.Message:
-    message = MagicMock(spec=discord.Message)
-    message.id = 5000 + offset
-    message.name = f"message-{message.id}"
-    message.guild = guild
-    message.channel = channel
-    message.author = build_client_user()
-    return message
-
-
 def build_voice_channel(guild: discord.Guild, offset: int = 1) -> discord.VoiceChannel:
     channel = MagicMock(spec=discord.VoiceChannel)
     channel.id = 6000 + offset
@@ -206,30 +191,21 @@ def build_voice_channel(guild: discord.Guild, offset: int = 1) -> discord.VoiceC
     return channel
 
 
-def build_ctx(
+def build_interaction(
     guild: discord.Guild,
     channel: discord.TextChannel,
     author: discord.User,
-    offset: int = 1,
-    origin: bool = False,
-) -> InteractionContext:
-    ctx = MagicMock(spec=InteractionContext)
-    ctx.author = author
-    ctx.author_id = author.id
-    ctx.guild = guild
-    ctx.guild_id = guild.id
-    ctx.channel = channel
-    ctx.channel_id = channel.id
-    ctx.message = build_message(guild, channel, author, offset)
-    ctx.send = AsyncMock(return_value=build_response(guild, channel, offset))
-    ctx.defer = AsyncMock()
-
-    if origin:
-        ctx.edit_origin = AsyncMock()
-        ctx.origin_message = ctx.message
-        ctx.origin_message_id = ctx.message.id
-
-    return ctx
+) -> discord.Interaction:
+    stub = AsyncMock(spec=discord.Interaction)
+    stub.response = AsyncMock()
+    stub.followup = AsyncMock()
+    stub.guild = guild
+    stub.guild_id = guild.id
+    stub.channel = channel
+    stub.channel_id = channel.id
+    stub.user = author
+    stub.original_message = AsyncMock(return_value=build_message(guild, channel, author))
+    return stub
 
 
 ###########################################################
@@ -273,26 +249,28 @@ def mock_discord_guild(guild: Guild) -> discord.Guild:
     return discord_guild
 
 
-###########################################################
-# Database object builders that build from a ctx
-###########################################################
+@overload
+def mock_discord_object(obj: User) -> discord.User:  # pragma: no cover
+    ...
 
 
-def ctx_guild(ctx_fixture, **kwargs) -> Guild:
-    kwargs["xid"] = kwargs.get("xid", ctx_fixture.guild.id)
-    return GuildFactory.create(**kwargs)
+@overload
+def mock_discord_object(obj: Channel) -> discord.TextChannel:  # pragma: no cover
+    ...
 
 
-def ctx_channel(ctx_fixture, guild: Guild, **kwargs) -> Channel:
-    kwargs["xid"] = kwargs.get("xid", ctx_fixture.channel.id)
-    return ChannelFactory.create(guild=guild, **kwargs)
+@overload
+def mock_discord_object(obj: Guild) -> discord.Guild:  # pragma: no cover
+    ...
 
 
-def ctx_game(ctx_fixture, guild: Guild, channel: Channel, **kwargs) -> Game:
-    kwargs["message_xid"] = kwargs.get("message_xid", ctx_fixture.message.id)
-    return GameFactory.create(guild=guild, channel=channel, **kwargs)
-
-
-def ctx_user(ctx_fixture, **kwargs) -> User:
-    kwargs["xid"] = kwargs.get("xid", ctx_fixture.author.id)
-    return UserFactory.create(**kwargs)
+def mock_discord_object(
+    obj: Union[User, Channel, Guild],
+) -> Union[discord.User, discord.TextChannel, discord.Guild]:
+    if isinstance(obj, User):
+        return mock_discord_user(obj)
+    if isinstance(obj, Channel):
+        return mock_discord_channel(obj)
+    if isinstance(obj, Guild):
+        return mock_discord_guild(obj)
+    raise NotImplementedError()

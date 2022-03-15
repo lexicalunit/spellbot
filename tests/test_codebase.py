@@ -60,7 +60,7 @@ class TestCodebase:
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
 
-    @pytest.mark.skip(reason="This will be fixed after migration to Discord.py 2.0")
+    @pytest.mark.xfail(run=True, reason="Expect TODO errors until 2.0 refactor is done")
     def test_pylint(self):
         """Checks that the Python codebase passes configured pylint checks."""
         chdir(REPO_ROOT)
@@ -70,10 +70,9 @@ class TestCodebase:
             proc = run(cmd, capture_output=True)
             exitcode: int = cast(int, proc.returncode)
             assert exitcode == 0, f"pylint issues:\n{proc.stdout.decode('utf-8')}"
-        except FileNotFoundError:
+        except FileNotFoundError:  # pragma: no cover
             warnings.warn(UserWarning("test skipped: pylint not installed"))
 
-    @pytest.mark.xfail(reason="flakey in CI")
     def test_pylic(self):
         """Checks that the Python codebase passes configured pylic checks."""
         chdir(REPO_ROOT)

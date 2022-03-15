@@ -14,10 +14,10 @@ SUITE_ORDER = [
 
 def pytest_collection_modifyitems(session: Session, config: Config, items: list[Item]):
     def order(item: Item):
-        if not item:
+        if not item:  # pragma: no cover
             return 0
         cls = getattr(item, "cls", None)
-        if not cls:
+        if not cls:  # pragma: no cover
             return 0
         suite = cls.__name__
         return SUITE_ORDER.index(suite) + 1 if suite in SUITE_ORDER else 0

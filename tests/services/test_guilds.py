@@ -189,7 +189,7 @@ class TestServiceGuilds:
         assert award.message == "a-message"
         assert award.guild_xid == discord_guild.id
 
-    async def test_guilds_award_delete(self, guild):
+    async def test_guilds_award_delete(self, guild: Guild):
         award1 = GuildAwardFactory.create(guild=guild)
         award2 = GuildAwardFactory.create(guild=guild)
 
@@ -203,7 +203,7 @@ class TestServiceGuilds:
         assert not DatabaseSession.query(GuildAward).get(award1_id)
         assert DatabaseSession.query(GuildAward).get(award2.id)
 
-    async def test_guilds_has_award_with_count(self, guild):
+    async def test_guilds_has_award_with_count(self, guild: Guild):
         award1 = GuildAwardFactory.create(guild=guild, count=10)
         award2 = GuildAwardFactory.create(guild=guild, count=20)
 

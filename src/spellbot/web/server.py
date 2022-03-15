@@ -19,7 +19,7 @@ if not running_in_pytest():  # pragma: no cover
 
 logger = logging.getLogger(__name__)
 app = build_web_app()
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
 loop.run_until_complete(
     initialize_connection(
         f"spellbot-web-{getpid()}",

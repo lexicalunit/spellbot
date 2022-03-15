@@ -5,14 +5,14 @@ from unittest.mock import MagicMock
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Channel
+from spellbot.models import Channel, Guild
 from spellbot.services import ChannelsService
 from tests.factories import ChannelFactory
 
 
 @pytest.mark.asyncio
 class TestServiceChannels:
-    async def test_channels_upsert(self, guild):
+    async def test_channels_upsert(self, guild: Guild):
         channels = ChannelsService()
         discord_channel = MagicMock()
         discord_channel.id = 201
@@ -35,19 +35,19 @@ class TestServiceChannels:
         assert channel and channel.xid == discord_channel.id
         assert channel.name == "new-name"
 
-    async def test_channels_select(self, guild):
+    async def test_channels_select(self, guild: Guild):
         channels = ChannelsService()
         assert not await channels.select(404)
 
         ChannelFactory.create(guild=guild, xid=404)
         assert await channels.select(404)
 
-    async def test_channels_current_default_seats(self, channel):
+    async def test_channels_current_default_seats(self, channel: Channel):
         channels = ChannelsService()
         data = await channels.select(channel.xid)
         assert data["default_seats"] == channel.default_seats
 
-    async def test_channels_set_default_seats(self, channel):
+    async def test_channels_set_default_seats(self, channel: Channel):
         channels = ChannelsService()
         data = await channels.select(channel.xid)
         assert data["default_seats"] != 2
@@ -56,28 +56,28 @@ class TestServiceChannels:
         data = await channels.select(channel.xid)
         assert data["default_seats"] == 2
 
-    async def test_channels_should_auto_verify(self, guild):
+    async def test_channels_should_auto_verify(self, guild: Guild):
         channel = ChannelFactory.create(guild=guild, auto_verify=True)
 
         channels = ChannelsService()
         data = await channels.select(channel.xid)
         assert data["auto_verify"]
 
-    async def test_channels_verified_only(self, guild):
+    async def test_channels_verified_only(self, guild: Guild):
         channel = ChannelFactory.create(guild=guild, verified_only=True)
 
         channels = ChannelsService()
         data = await channels.select(channel.xid)
         assert data["verified_only"]
 
-    async def test_channels_unverified_only(self, guild):
+    async def test_channels_unverified_only(self, guild: Guild):
         channel = ChannelFactory.create(guild=guild, unverified_only=True)
 
         channels = ChannelsService()
         data = await channels.select(channel.xid)
         assert data["unverified_only"]
 
-    async def test_channels_set_auto_verify(self, guild):
+    async def test_channels_set_auto_verify(self, guild: Guild):
         channel = ChannelFactory.create(guild=guild, auto_verify=False)
 
         channels = ChannelsService()
@@ -85,7 +85,7 @@ class TestServiceChannels:
         data = await channels.select(channel.xid)
         assert data["auto_verify"]
 
-    async def test_channels_set_verified_only(self, guild):
+    async def test_channels_set_verified_only(self, guild: Guild):
         channel = ChannelFactory.create(guild=guild, verified_only=False)
 
         channels = ChannelsService()
@@ -93,7 +93,7 @@ class TestServiceChannels:
         data = await channels.select(channel.xid)
         assert data["verified_only"]
 
-    async def test_channels_set_unverified_only(self, guild):
+    async def test_channels_set_unverified_only(self, guild: Guild):
         channel = ChannelFactory.create(guild=guild, unverified_only=False)
 
         channels = ChannelsService()
@@ -101,7 +101,7 @@ class TestServiceChannels:
         data = await channels.select(channel.xid)
         assert data["unverified_only"]
 
-    async def test_channels_set_motd(self, guild):
+    async def test_channels_set_motd(self, guild: Guild):
         channels = ChannelsService()
 
         channel = ChannelFactory.create(guild=guild, motd="whatever")

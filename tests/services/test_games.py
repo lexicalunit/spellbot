@@ -3,33 +3,33 @@ from __future__ import annotations
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Game, GameFormat, GameStatus, Play, User
+from spellbot.models import Channel, Game, GameFormat, GameStatus, Guild, Play, User
 from spellbot.services import GamesService
 from tests.factories import BlockFactory, GameFactory, PlayFactory, UserFactory, WatchFactory
 
 
 @pytest.mark.asyncio
 class TestServiceGames:
-    async def test_games_select(self, game):
+    async def test_games_select(self, game: Game):
         games = GamesService()
         assert await games.select(game.id)
         assert not await games.select(404)
 
-    async def test_games_select_by_voice_xid(self, guild, channel):
+    async def test_games_select_by_voice_xid(self, guild: Guild, channel: Channel):
         game = GameFactory.create(guild=guild, channel=channel, voice_xid=12345)
 
         games = GamesService()
         assert await games.select_by_voice_xid(game.voice_xid)
         assert not await games.select_by_voice_xid(404)
 
-    async def test_games_select_by_message_xid(self, guild, channel):
+    async def test_games_select_by_message_xid(self, guild: Guild, channel: Channel):
         game = GameFactory.create(guild=guild, channel=channel)
 
         games = GamesService()
         assert await games.select_by_message_xid(game.message_xid)
         assert not await games.select_by_message_xid(404)
 
-    async def test_games_add_player(self, game):
+    async def test_games_add_player(self, game: Game):
         user = UserFactory.create()
 
         games = GamesService()
@@ -40,7 +40,7 @@ class TestServiceGames:
         found = DatabaseSession.query(User).get(user.xid)
         assert found and found.game.id == game.id
 
-    async def test_games_to_embed(self, game):
+    async def test_games_to_embed(self, game: Game):
         public_embed = game.to_embed().to_dict()
         private_embed = game.to_embed(True).to_dict()
 
@@ -49,7 +49,7 @@ class TestServiceGames:
         assert (await games.to_embed()).to_dict() == public_embed
         assert (await games.to_embed()).to_dict() == private_embed
 
-    async def test_games_set_message_xid(self, game):
+    async def test_games_set_message_xid(self, game: Game):
         games = GamesService()
         await games.select(game.id)
         await games.set_message_xid(12345)
@@ -58,7 +58,7 @@ class TestServiceGames:
         found = DatabaseSession.query(Game).filter_by(message_xid=12345).one_or_none()
         assert found and found.id == game.id
 
-    async def test_games_fully_seated(self, guild, channel):
+    async def test_games_fully_seated(self, guild: Guild, channel: Channel):
         started_game = GameFactory.create(guild=guild, channel=channel)
         pending_game = GameFactory.create(guild=guild, channel=channel)
         for _ in range(started_game.seats):
@@ -71,7 +71,7 @@ class TestServiceGames:
         await games.select(pending_game.id)
         assert not await games.fully_seated()
 
-    async def test_games_make_ready(self, game):
+    async def test_games_make_ready(self, game: Game):
         games = GamesService()
         await games.select(game.id)
         await games.make_ready("http://link")
@@ -81,7 +81,7 @@ class TestServiceGames:
         assert found and found.spelltable_link == "http://link"
         assert found.status == GameStatus.STARTED.value
 
-    async def test_games_player_xids(self, game):
+    async def test_games_player_xids(self, game: Game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
 
@@ -89,7 +89,7 @@ class TestServiceGames:
         await games.select(game.id)
         assert set(await games.player_xids()) == {user1.xid, user2.xid}
 
-    async def test_games_watch_notes(self, game):
+    async def test_games_watch_notes(self, game: Game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
         user3 = UserFactory.create()
@@ -102,7 +102,7 @@ class TestServiceGames:
             user1.xid: watch.note,
         }
 
-    async def test_games_set_voice(self, game):
+    async def test_games_set_voice(self, game: Game):
         games = GamesService()
         await games.select(game.id)
         await games.set_voice(12345, "http://link")
@@ -112,7 +112,7 @@ class TestServiceGames:
         assert found and found.voice_xid == 12345
         assert found.voice_invite_link == "http://link"
 
-    async def test_games_to_dict(self, game):
+    async def test_games_to_dict(self, game: Game):
         games = GamesService()
         await games.select(game.id)
         assert await games.to_dict() == game.to_dict()
@@ -120,7 +120,7 @@ class TestServiceGames:
 
 @pytest.mark.asyncio
 class TestServiceGamesPlays:
-    async def test_games_players_included(self, game):
+    async def test_games_players_included(self, game: Game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
         PlayFactory.create(user_xid=user1.xid, game_id=game.id)
@@ -130,7 +130,7 @@ class TestServiceGamesPlays:
         assert await games.players_included(user1.xid)
         assert not await games.players_included(user2.xid)
 
-    async def test_games_add_points(self, game):
+    async def test_games_add_points(self, game: Game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
         PlayFactory.create(user_xid=user1.xid, game_id=game.id, points=5)
@@ -146,7 +146,7 @@ class TestServiceGamesPlays:
         found = DatabaseSession.query(Play).filter(Play.user_xid == user2.xid).one()
         assert found.points is None
 
-    async def test_games_record_plays(self, guild, channel):
+    async def test_games_record_plays(self, guild: Guild, channel: Channel):
         game = GameFactory.create(
             guild=guild,
             channel=channel,
@@ -171,7 +171,7 @@ class TestServiceGamesPlays:
 
 @pytest.mark.asyncio
 class TestServiceGamesBlocked:
-    async def test_when_blocker_in_game(self, game):
+    async def test_when_blocker_in_game(self, game: Game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
 
@@ -181,7 +181,7 @@ class TestServiceGamesBlocked:
         await games.select(game.id)
         assert await games.blocked(user2.xid)
 
-    async def test_when_blocker_outside_game(self, game):
+    async def test_when_blocker_outside_game(self, game: Game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
 
@@ -191,7 +191,7 @@ class TestServiceGamesBlocked:
         await games.select(game.id)
         assert await games.blocked(user2.xid)
 
-    async def test_when_no_blockers(self, game):
+    async def test_when_no_blockers(self, game: Game):
         UserFactory.create(game=game)
         user3 = UserFactory.create()
 
@@ -202,7 +202,7 @@ class TestServiceGamesBlocked:
 
 @pytest.mark.asyncio
 class TestServiceGamesFilterBlocked:
-    async def test_when_blocker_in_game(self, game):
+    async def test_when_blocker_in_game(self, game: Game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
 
@@ -212,7 +212,7 @@ class TestServiceGamesFilterBlocked:
         await games.select(game.id)
         assert await games.filter_blocked_list(user2.xid, [user1.xid]) == []
 
-    async def test_when_blocker_outside_game(self, game):
+    async def test_when_blocker_outside_game(self, game: Game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
 
@@ -222,7 +222,7 @@ class TestServiceGamesFilterBlocked:
         await games.select(game.id)
         assert await games.filter_blocked_list(user2.xid, [user1.xid]) == []
 
-    async def test_when_no_blockers(self, game):
+    async def test_when_no_blockers(self, game: Game):
         UserFactory.create(game=game)
         user3 = UserFactory.create()
 
@@ -233,7 +233,7 @@ class TestServiceGamesFilterBlocked:
 
 @pytest.mark.asyncio
 class TestServiceGamesUpsert:
-    async def test_lfg_alone_when_existing_game(self, game, user):
+    async def test_lfg_alone_when_existing_game(self, game: Game, user: User):
         games = GamesService()
         new = await games.upsert(
             guild_xid=game.guild.xid,
@@ -249,7 +249,7 @@ class TestServiceGamesUpsert:
         found = DatabaseSession.query(User).one()
         assert found.game_id == game.id
 
-    async def test_lfg_with_friend_when_existing_game(self, game):
+    async def test_lfg_with_friend_when_existing_game(self, game: Game):
         user1 = UserFactory.create(xid=101)
         user2 = UserFactory.create(xid=102)
 
@@ -268,7 +268,7 @@ class TestServiceGamesUpsert:
         rows = DatabaseSession.query(User.xid).filter(User.game_id == game.id).all()
         assert set(row[0] for row in rows) == {101, 102}
 
-    async def test_lfg_alone_when_no_game(self, guild, channel, user):
+    async def test_lfg_alone_when_no_game(self, guild: Guild, channel: Channel, user: User):
         games = GamesService()
         new = await games.upsert(
             guild_xid=guild.xid,
@@ -287,7 +287,7 @@ class TestServiceGamesUpsert:
         assert found_game.channel_xid == channel.xid
         assert found_user.game_id == found_game.id
 
-    async def test_lfg_with_friend_when_no_game(self, guild, channel):
+    async def test_lfg_with_friend_when_no_game(self, guild: Guild, channel: Channel):
         user1 = UserFactory.create(xid=101)
         user2 = UserFactory.create(xid=102)
 
@@ -309,7 +309,7 @@ class TestServiceGamesUpsert:
         rows = DatabaseSession.query(User.xid).filter(User.game_id == game.id).all()
         assert set(row[0] for row in rows) == {101, 102}
 
-    async def test_lfg_with_friend_when_full_game(self, guild, channel):
+    async def test_lfg_with_friend_when_full_game(self, guild: Guild, channel: Channel):
         user1 = UserFactory.create(xid=101)
         user2 = UserFactory.create(xid=102)
         user3 = UserFactory.create(xid=103)
@@ -333,7 +333,7 @@ class TestServiceGamesUpsert:
         rows = DatabaseSession.query(User.xid).filter(User.game_id == game.id).all()
         assert set(row[0] for row in rows) == {101, 102, 103}
 
-    async def test_lfg_with_friend_when_game_wrong_format(self, guild, channel):
+    async def test_lfg_with_friend_when_game_wrong_format(self, guild: Guild, channel: Channel):
         user1 = UserFactory.create(xid=101)
         user2 = UserFactory.create(xid=102)
         user3 = UserFactory.create(xid=103)

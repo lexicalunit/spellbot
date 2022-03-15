@@ -1,17 +1,28 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Optional
-from unittest.mock import AsyncMock
+from functools import partial
+from typing import Any, Awaitable, Callable, Optional, cast
+from unittest.mock import AsyncMock, MagicMock
 
+import discord
 import pytest
 
 from spellbot import SpellBot
+from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
-from spellbot.interactions import lfg_interaction
 from spellbot.models import Game
-from tests.mocks import build_author, build_channel, build_ctx, build_guild
+from tests.mocks import build_author, build_channel, build_guild, build_interaction
+
+
+async def run_lfg(cog: LookingForGameCog, interaction: discord.Interaction) -> None:
+    command = cog.lfg
+    callback = command.callback
+    if command.binding:
+        callback = partial(callback, command.binding)
+    callback = cast(Callable[..., Awaitable[None]], callback)
+    return await callback(interaction=interaction)
 
 
 @pytest.mark.asyncio
@@ -20,9 +31,15 @@ class TestCogLookingForGameConcurrency:
         cog = LookingForGameCog(bot)
         guild = build_guild()
         n = 100
-        contexts = [build_ctx(guild, build_channel(guild, i), build_author(i), i) for i in range(n)]
-        tasks = [cog.lfg.func(cog, contexts[i]) for i in range(n)]
-        await asyncio.wait(tasks)
+        interactions = [
+            build_interaction(guild, build_channel(guild, i), build_author(i)) for i in range(n)
+        ]
+        tasks = [run_lfg(cog, interactions[i]) for i in range(n)]
+
+        done, pending = await asyncio.wait(tasks)
+        assert not pending
+        for future in done:
+            future.result()
 
         games = DatabaseSession.query(Game).order_by(Game.created_at).all()
         assert len(games) == n
@@ -39,18 +56,46 @@ class TestCogLookingForGameConcurrency:
             message_xid = game.message_xid
         assert messages_out_of_order
 
-    @pytest.mark.skip(reason="seems to be leaving behind database objects")
-    async def test_concurrent_lfg_requests_same_channel(self, bot: SpellBot, monkeypatch):
-        monkeypatch.setattr(lfg_interaction, "safe_fetch_user", AsyncMock())
+    async def test_concurrent_lfg_requests_same_channel(
+        self,
+        bot: SpellBot,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        next_message_xid = 1
+
+        def get_next_message(*args: Any, **kwargs: Any):
+            nonlocal next_message_xid
+            message = MagicMock(spec=discord.Message)
+            message.id = next_message_xid
+            next_message_xid += 1
+            return message
+
+        monkeypatch.setattr(lfg_action, "safe_fetch_user", AsyncMock())
+        monkeypatch.setattr(
+            lfg_action,
+            "safe_followup_channel",
+            AsyncMock(side_effect=get_next_message),
+        )
+        monkeypatch.setattr(
+            lfg_action,
+            "safe_get_partial_message",
+            MagicMock(side_effect=get_next_message),
+        )
+        monkeypatch.setattr(lfg_action, "safe_update_embed_origin", AsyncMock(return_value=True))
+        monkeypatch.setattr(lfg_action, "safe_update_embed", AsyncMock(return_value=True))
 
         cog = LookingForGameCog(bot)
         guild = build_guild()
         channel = build_channel(guild)
         default_seats = 4
         n = default_seats * 25
-        contexts = [build_ctx(guild, channel, build_author(i), i) for i in range(n)]
-        tasks = [cog.lfg.func(cog, contexts[i]) for i in range(n)]
-        await asyncio.wait(tasks)
+        interactions = [build_interaction(guild, channel, build_author(i)) for i in range(n)]
+        tasks = [run_lfg(cog, interactions[i]) for i in range(n)]
+
+        done, pending = await asyncio.wait(tasks)
+        assert not pending
+        for future in done:
+            future.result()
 
         games = DatabaseSession.query(Game).order_by(Game.created_at).all()
         assert len(games) == n / default_seats

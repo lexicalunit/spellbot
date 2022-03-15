@@ -1,15 +1,14 @@
 import logging
 from typing import Optional
 
+import discord
 from ddtrace import tracer
+from discord import app_commands
+from discord.app_commands import Choice
 from discord.ext import commands
-from discord_slash import SlashContext, cog_ext
-from discord_slash.context import ComponentContext
-from discord_slash.model import SlashCommandOptionType
 
 from .. import SpellBot
-from ..interactions.leave_interaction import LeaveInteraction
-from ..interactions.lfg_interaction import LookingForGameInteraction
+from ..actions.lfg_action import LookingForGameAction
 from ..metrics import add_span_context
 from ..models import GameFormat
 from ..utils import for_all_callbacks
@@ -22,87 +21,35 @@ class LookingForGameCog(commands.Cog):
     def __init__(self, bot: SpellBot):
         self.bot = bot
 
-    @cog_ext.cog_component()
-    @tracer.wrap(name="interaction", resource="leave")
-    async def leave(self, ctx: ComponentContext):
-        add_span_context(ctx)
-        await ctx.defer(edit_origin=True)
-        async with self.bot.channel_lock(ctx.channel_id):
-            async with LeaveInteraction.create(self.bot, ctx) as interaction:
-                await interaction.execute(origin=True)
-
-    @cog_ext.cog_component()
-    @tracer.wrap(name="interaction", resource="join")
-    async def join(self, ctx: ComponentContext):
-        add_span_context(ctx)
-        assert ctx.origin_message_id
-        await ctx.defer(edit_origin=True)
-        async with self.bot.channel_lock(ctx.channel_id):
-            async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
-                await interaction.execute(message_xid=ctx.origin_message_id)
-
-    @cog_ext.cog_component()
-    @tracer.wrap(name="interaction", resource="points")
-    async def points(self, ctx: ComponentContext):
-        add_span_context(ctx)
-        await ctx.defer(edit_origin=True)
-        assert ctx.origin_message
-        assert ctx.selected_options
-        assert isinstance(ctx.selected_options, list)
-        points = int(ctx.selected_options[0])
-        async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
-            await interaction.add_points(ctx.origin_message, points)
-
-    @cog_ext.cog_slash(
-        name="lfg",
-        description="Looking for game.",
-        options=[
-            {
-                "name": "friends",
-                "description": "Mention friends to join this game with.",
-                "required": False,
-                "type": SlashCommandOptionType.STRING.value,
-            },
-            {
-                "name": "seats",
-                "description": "How many players can be seated at this game?",
-                "required": False,
-                "type": SlashCommandOptionType.INTEGER.value,
-                "choices": [
-                    {"name": "2 players", "value": 2},
-                    {"name": "3 players", "value": 3},
-                    {"name": "4 players", "value": 4},
-                ],
-            },
-            {
-                "name": "format",
-                "description": "What game format do you want to play?",
-                "required": False,
-                "type": SlashCommandOptionType.INTEGER.value,
-                "choices": [
-                    {
-                        "name": str(format),
-                        "value": format.value,
-                    }
-                    for format in GameFormat
-                ],
-            },
+    @app_commands.command(name="lfg", description="Looking for game.")
+    @app_commands.describe(friends="Mention friends to join this game with.")
+    @app_commands.describe(seats="How many players can be seated at this game?")
+    @app_commands.choices(
+        seats=[
+            Choice(name="2", value=2),
+            Choice(name="3", value=3),
+            Choice(name="4", value=4),
         ],
+    )
+    @app_commands.describe(format="What game format do you want to play?")
+    @app_commands.choices(
+        format=[Choice(name=str(format), value=format.value) for format in GameFormat],
     )
     @tracer.wrap(name="interaction", resource="lfg")
     async def lfg(
         self,
-        ctx: SlashContext,
+        interaction: discord.Interaction,
         friends: Optional[str] = None,
         seats: Optional[int] = None,
         format: Optional[int] = None,
     ):
-        add_span_context(ctx)
-        await ctx.defer()
-        async with self.bot.channel_lock(ctx.channel_id):
-            async with LookingForGameInteraction.create(self.bot, ctx) as interaction:
-                await interaction.execute(friends=friends, seats=seats, format=format)
+        assert interaction.channel_id is not None
+        add_span_context(interaction)
+        await interaction.response.defer()
+        async with self.bot.channel_lock(interaction.channel_id):
+            async with LookingForGameAction.create(self.bot, interaction) as action:
+                await action.execute(friends=friends, seats=seats, format=format)
 
 
-def setup(bot: SpellBot):
-    bot.add_cog(LookingForGameCog(bot))
+async def setup(bot: SpellBot):  # pragma: no cover
+    await bot.add_cog(LookingForGameCog(bot), guild=bot.settings.GUILD_OBJECT)

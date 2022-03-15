@@ -1,9 +1,9 @@
 import logging
 
+import discord
 from ddtrace import tracer
-from discord import Color, Embed
+from discord import Color, Embed, app_commands
 from discord.ext import commands
-from discord_slash import SlashContext, cog_ext
 
 from .. import SpellBot, __version__
 from ..metrics import add_span_context
@@ -13,17 +13,20 @@ from ..utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
 
+ISSUES = "https://github.com/lexicalunit/spellbot/issues"
+PATREON = "https://www.patreon.com/lexicalunit"
+
 
 @for_all_callbacks(commands.guild_only())
 class AboutCog(commands.Cog):
     def __init__(self, bot: SpellBot):
         self.bot = bot
 
-    @cog_ext.cog_slash(name="about", description="Get information about SpellBot.")
+    @app_commands.command(name="about", description="Get information about SpellBot.")
     @tracer.wrap(name="interaction", resource="about")
-    async def about(self, ctx: SlashContext):
-        add_span_context(ctx)
-        settings = Settings(ctx.guild_id)
+    async def about(self, interaction: discord.Interaction) -> None:
+        add_span_context(interaction)
+        settings = Settings(interaction.guild_id)
         embed = Embed(title="SpellBot")
         embed.set_thumbnail(url=settings.THUMB_URL)
         version = f"[{__version__}](https://pypi.org/project/spellbot/{__version__}/)"
@@ -33,18 +36,16 @@ class AboutCog(commands.Cog):
         embed.description = (
             "_The Discord bot for [SpellTable](https://spelltable.wizards.com/)._\n"
             "\n"
-            "Having issues with SpellBot? "
-            "Please [report bugs](https://github.com/lexicalunit/spellbot/issues)!\n"
+            f"Having issues with SpellBot? Please [report bugs]({ISSUES})!\n"
             "\n"
             f"[🔗 Add SpellBot to your Discord!]({settings.BOT_INVITE_LINK})\n"
             "\n"
-            "💜 Help keep SpellBot running by "
-            "[becoming a patron!](https://www.patreon.com/lexicalunit)"
+            f"💜 Help keep SpellBot running by [becoming a patron!]({PATREON})"
         )
         embed.url = "http://spellbot.io/"
         embed.color = Color(settings.EMBED_COLOR)
-        await safe_send_channel(ctx, embed=embed)
+        await safe_send_channel(interaction, embed=embed)
 
 
-def setup(bot: SpellBot):
-    bot.add_cog(AboutCog(bot))
+async def setup(bot: SpellBot):  # pragma: no cover
+    await bot.add_cog(AboutCog(bot), guild=bot.settings.GUILD_OBJECT)

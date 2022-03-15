@@ -3,14 +3,17 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
+from typing import Any, AsyncGenerator
 
 from dateutil import tz
+from ddtrace import tracer
 from discord.channel import VoiceChannel
 
 from .. import SpellBot
-from ..database import rollback_session
-from ..metrics import add_span_error
+from ..database import db_session_manager, rollback_session
+from ..metrics import add_span_error, setup_ignored_errors
 from ..operations import (
     bot_can_delete_channel,
     safe_delete_channel,
@@ -18,9 +21,9 @@ from ..operations import (
     safe_get_partial_message,
     safe_update_embed,
 )
-from ..services import GamesService
+from ..services import GamesService, ServicesRegistry
 from ..settings import Settings
-from .base_interaction import BaseInteraction
+from .base_action import handle_exception
 
 settings = Settings()
 logger = logging.getLogger(__name__)
@@ -70,9 +73,22 @@ class VoiceChannelFilterer:
         return channels
 
 
-class TaskInteraction(BaseInteraction):
+class TaskAction:
     def __init__(self, bot: SpellBot):
-        super().__init__(bot)
+        self.bot = bot
+        self.services = ServicesRegistry()
+
+    @classmethod
+    @asynccontextmanager
+    async def create(cls, bot: SpellBot) -> AsyncGenerator[TaskAction, None]:
+        action = cls(bot)
+        with tracer.trace(name=f"spellbot.interactions.{cls.__name__}.create") as span:
+            setup_ignored_errors(span)
+            async with db_session_manager():
+                try:
+                    yield action
+                except Exception as ex:  # pragma: no cover
+                    await handle_exception(ex)
 
     async def cleanup_old_voice_channels(self):
         logger.info("starting task cleanup_old_voice_channels")
@@ -139,13 +155,13 @@ class TaskInteraction(BaseInteraction):
             logger.exception("error: exception in background task: %s", e)
             await rollback_session()
 
-    async def expire_games(self, games: list[dict]):
+    async def expire_games(self, games: list[dict[str, Any]]):
         game_ids = [game["id"] for game in games]
         await self.services.games.delete_games(game_ids)
         for game in games:
             await self.expire_game(game)
 
-    async def expire_game(self, game: dict):
+    async def expire_game(self, game: dict[str, Any]):
         message_xid = game["message_xid"]
         if message_xid is None:
             return

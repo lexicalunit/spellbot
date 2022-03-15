@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 import discord
 from asgiref.sync import sync_to_async
@@ -117,7 +117,7 @@ class GuildsService:
         return [int(row[0]) for row in rows]
 
     @sync_to_async
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         assert self.guild
         return self.guild.to_dict()
 
