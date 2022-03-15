@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Any, Optional
 
 import discord
 from asgiref.sync import sync_to_async
@@ -43,7 +43,7 @@ class GamesService:
 
     @sync_to_async
     @tracer.wrap()
-    def select_by_message_xid(self, message_xid: int) -> Optional[dict]:
+    def select_by_message_xid(self, message_xid: int) -> Optional[dict[str, Any]]:
         self.game = (
             DatabaseSession.query(Game)
             .filter(
@@ -386,13 +386,13 @@ class GamesService:
 
     @sync_to_async
     @tracer.wrap()
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         assert self.game
         return self.game.to_dict()
 
     @sync_to_async
     @tracer.wrap()
-    def inactive_games(self) -> list[dict]:
+    def inactive_games(self) -> list[dict[str, Any]]:
         settings = Settings()
         limit = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M)
         records = DatabaseSession.query(Game).filter(

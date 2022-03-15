@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from typing import Generic, Type, TypeVar
+from typing import Any, Generic, NoReturn, Type, TypeVar
 from uuid import uuid4
 
 from asgiref.sync import sync_to_async
@@ -17,7 +17,7 @@ from .models import create_all
 
 logger = logging.getLogger(__name__)
 ProxiedObject = TypeVar("ProxiedObject")
-context_vars: dict["ContextLocal", ContextVar] = {}
+context_vars: dict["ContextLocal", ContextVar] = {}  # type: ignore
 
 
 class ContextLocal(Generic[ProxiedObject]):
@@ -31,14 +31,14 @@ class ContextLocal(Generic[ProxiedObject]):
     def set(self, obj: ProxiedObject):
         context_vars[self].set(obj)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
         obj = context_vars[self].get()
         return getattr(obj, name)
 
-    def __copy__(self):
+    def __copy__(self) -> NoReturn:
         raise NotImplementedError()
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: Any) -> NoReturn:
         raise NotImplementedError()
 
 
@@ -53,10 +53,10 @@ class TypedProxy(Generic[ProxiedObject], CallableObjectProxy):
     def set(self, obj: ProxiedObject):
         super().__init__(obj)  # type: ignore
 
-    def __copy__(self):
+    def __copy__(self) -> NoReturn:
         raise NotImplementedError()
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: Any) -> NoReturn:
         raise NotImplementedError()
 
 
@@ -124,7 +124,7 @@ def begin_session():
 
 
 @sync_to_async
-def rollback_session():
+def rollback_session():  # pragma: no cover
     DatabaseSession.rollback()
 
 

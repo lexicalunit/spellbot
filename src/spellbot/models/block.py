@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import BigInteger, Column, ForeignKey
 
@@ -32,7 +32,7 @@ class Block(Base):
         doc="The user who is being blocked by someone",
     )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "user_xid": self.user_xid,
             "blocked_user_xid": self.blocked_user_xid,

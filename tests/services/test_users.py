@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Block, User, Watch
+from spellbot.models import Block, Game, Guild, User, Watch
 from spellbot.services import UsersService
 from tests.factories import UserFactory
 
@@ -67,14 +67,14 @@ class TestServiceUsers:
         await users.set_banned(True, user.xid)
         assert await users.is_banned(user.xid)
 
-    async def test_users_current_game_id(self, game):
+    async def test_users_current_game_id(self, game: Game):
         user = UserFactory.create(game=game)
 
         users = UsersService()
         await users.select(user.xid)
         assert await users.current_game_id() == game.id
 
-    async def test_users_leave_game(self, game):
+    async def test_users_leave_game(self, game: Game):
         user = UserFactory.create(game=game)
 
         users = UsersService()
@@ -82,7 +82,7 @@ class TestServiceUsers:
         await users.leave_game()
         assert await users.current_game_id() is None
 
-    async def test_users_is_waiting(self, game):
+    async def test_users_is_waiting(self, game: Game):
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
 
@@ -120,7 +120,7 @@ class TestServiceUsers:
         blocks = [b.to_dict() for b in DatabaseSession.query(Block).all()]
         assert blocks == []
 
-    async def test_users_watch(self, guild):
+    async def test_users_watch(self, guild: Guild):
         user = UserFactory.create()
 
         users = UsersService()
@@ -130,7 +130,7 @@ class TestServiceUsers:
         watches = [w.to_dict() for w in DatabaseSession.query(Watch).all()]
         assert watches == [{"guild_xid": guild.xid, "user_xid": user.xid, "note": "note"}]
 
-    async def test_users_watch_upsert(self, guild):
+    async def test_users_watch_upsert(self, guild: Guild):
         user = UserFactory.create()
 
         users = UsersService()
@@ -147,7 +147,7 @@ class TestServiceUsers:
             },
         ]
 
-    async def test_users_watch_without_note(self, guild):
+    async def test_users_watch_without_note(self, guild: Guild):
         user = UserFactory.create()
 
         users = UsersService()
@@ -157,7 +157,7 @@ class TestServiceUsers:
         watches = [w.to_dict() for w in DatabaseSession.query(Watch).all()]
         assert watches == [{"guild_xid": guild.xid, "user_xid": user.xid, "note": None}]
 
-    async def test_users_unwatch(self, guild):
+    async def test_users_unwatch(self, guild: Guild):
         user = UserFactory.create()
 
         users = UsersService()

@@ -18,7 +18,7 @@ class UsersService:
         self.user: Optional[User] = None
 
     @sync_to_async
-    def upsert(self, target: Union[discord.User, discord.Member]) -> dict:
+    def upsert(self, target: Union[discord.User, discord.Member]) -> dict[str, Any]:
         assert hasattr(target, "id")
         xid = target.id  # type: ignore
         max_name_len = User.name.property.columns[0].type.length  # type: ignore

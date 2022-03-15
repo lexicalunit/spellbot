@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from aiohttp.client import ClientSession
+from freezegun.api import FrozenDateTimeFactory
 from syrupy.assertion import SnapshotAssertion
 
 from spellbot.models import GameFormat, GameStatus
@@ -15,7 +16,7 @@ class TestWebRecord:
         client: ClientSession,
         snapshot: SnapshotAssertion,
         factories: Factories,
-        freezer,
+        freezer: FrozenDateTimeFactory,
     ):
         freezer.move_to(datetime(2020, 1, 1))
         user1 = factories.user.create(xid=101, name="user:1")
@@ -72,7 +73,7 @@ class TestWebRecord:
         client: ClientSession,
         snapshot: SnapshotAssertion,
         factories: Factories,
-        freezer,
+        freezer: FrozenDateTimeFactory,
     ):
         freezer.move_to(datetime(2020, 1, 1))
         user1 = factories.user.create(xid=101, name="user:1")
@@ -149,7 +150,7 @@ class TestWebRecord:
         client: ClientSession,
         snapshot: SnapshotAssertion,
         factories: Factories,
-        freezer,
+        freezer: FrozenDateTimeFactory,
     ):
         freezer.move_to(datetime(2020, 1, 1))
         user1 = factories.user.create(xid=101, name="user1")
@@ -206,7 +207,7 @@ class TestWebRecord:
         client: ClientSession,
         snapshot: SnapshotAssertion,
         factories: Factories,
-        freezer,
+        freezer: FrozenDateTimeFactory,
     ):
         freezer.move_to(datetime(2020, 1, 1))
         user1 = factories.user.create(xid=101, name="user1")
@@ -269,7 +270,7 @@ class TestWebRecord:
         client: ClientSession,
         snapshot: SnapshotAssertion,
         factories: Factories,
-        freezer,
+        freezer: FrozenDateTimeFactory,
     ):
         freezer.move_to(datetime(2020, 1, 1))
         user1 = factories.user.create(xid=101, name="user1")

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
@@ -11,7 +11,7 @@ from ..models import Config
 
 
 class ConfigsService:
-    def _select(self, guild_xid: int, user_xid: int) -> Optional[dict]:
+    def _select(self, guild_xid: int, user_xid: int) -> Optional[dict[str, Any]]:
         config = (
             DatabaseSession.query(Config)
             .filter(
@@ -30,7 +30,7 @@ class ConfigsService:
         guild_xid: int,
         user_xid: int,
         power_level: Optional[int] = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         values = {
             "user_xid": user_xid,
             "guild_xid": guild_xid,

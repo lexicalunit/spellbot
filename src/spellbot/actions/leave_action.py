@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import logging
-from typing import cast
 
 from ddtrace import tracer
-from discord_slash.context import ComponentContext
 
 from ..operations import (
     safe_fetch_text_channel,
@@ -14,17 +12,14 @@ from ..operations import (
     safe_update_embed,
     safe_update_embed_origin,
 )
-from .base_interaction import BaseInteraction
+from .base_action import BaseAction
 
 logger = logging.getLogger(__name__)
 
 
-class LeaveInteraction(BaseInteraction):
+class LeaveAction(BaseAction):
     @tracer.wrap()
-    async def _handle_click(self):
-        assert self.ctx
-        ctx: ComponentContext = cast(ComponentContext, self.ctx)
-
+    async def _handle_click(self) -> None:
         if not (game_id := await self.services.users.current_game_id()):
             return
 
@@ -35,29 +30,27 @@ class LeaveInteraction(BaseInteraction):
         if not (message_xid := game_data["message_xid"]):
             return
 
-        if ctx.origin_message_id != message_xid:
+        original_message = await self.interaction.original_message()
+        if original_message.id != message_xid:
             return await safe_send_user(
-                ctx.author,
+                self.interaction.user,
                 "You're not in that game. Use the /leave command to leave a game.",
             )
 
         await self.services.users.leave_game()
         embed = await self.services.games.to_embed()
-        await safe_update_embed_origin(ctx, embed=embed)
+        await safe_update_embed_origin(self.interaction, embed=embed)
 
-    async def _removed(self):
-        assert self.ctx
+    async def _removed(self) -> None:
         # Note: Ok to use safe_send_channel() so long as this is not an origin context!
         await safe_send_channel(
-            self.ctx,
+            self.interaction,
             "You have been removed from any games your were signed up for.",
-            hidden=True,
+            ephemeral=True,
         )
 
     @tracer.wrap()
-    async def _handle_command(self):
-        assert self.ctx
-
+    async def _handle_command(self) -> None:
         if not (game_id := await self.services.users.current_game_id()):
             return await self._removed()
 
@@ -82,7 +75,7 @@ class LeaveInteraction(BaseInteraction):
         await self._removed()
 
     @tracer.wrap()
-    async def execute(self, origin: bool = False):
+    async def execute(self, origin: bool = False) -> None:
         if origin:
             return await self._handle_click()
         return await self._handle_command()

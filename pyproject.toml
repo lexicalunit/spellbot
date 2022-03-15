@@ -14,7 +14,8 @@ max-line-length = 100
 
 [tool.pyright]
 enableTypeIgnoreComments = true
-reportMissingTypeStubs = false
+reportMissingParameterType = true
+reportMissingTypeArgument = true
 typeCheckingMode = "basic"
 
 [tool.pylic]
@@ -25,13 +26,12 @@ ignore_packages = [
 ]
 safe_licenses = [
   "3-Clause BSD License",
-  "Apache License 2.0",
   "Apache Software License",
-  "Artistic License",
   "BSD License",
   "BSD-derived (http://www.repoze.org/LICENSE.txt)",
   "BSD",
   "GNU Library or Lesser General Public License (LGPL)",
+  "ISC License (ISCL)",
   "MIT License",
   "MIT",
   "Mozilla Public License 2.0 (MPL 2.0)",
@@ -54,7 +54,7 @@ classifiers = [
   "Topic :: Communications :: Chat",
   "Topic :: Games/Entertainment :: Board Games",
   "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
 ]
 description = 'The Discord bot for SpellTable'
 homepage = 'http://spellbot.io/'
@@ -69,43 +69,37 @@ repository = 'https://github.com/lexicalunit/spellbot'
 version = "7.12.5"
 
 [tool.poetry.dependencies]
-# discord.py depends on "aiohttp<3.8.0" yet works just fine with later versions.
-# poetry won't let us install the latest aiohttp due to this dependency, so in
-# order to install newer versions of aiohttp we have to drop down to pip:
-# $ pip install -U "aiohttp==3.8.1"
-# $ pip install -U "pytest-aiohttp==1.0.4"
-# So we do this in .github/workflows/ci.yaml, Dockerfile, and scripts/setup.sh.
 Babel = "^2.10.3"
 PyYAML = "^6.0"
 SQLAlchemy = "^1.4.39"
 SQLAlchemy-Utils = "^0.38.2"
+aiohttp = "^3.8.1"
 aiohttp-jinja2 = "^1.5"
 aiohttp-retry = "^2.4.8"
 alembic = "^1.8.0"
 asgiref = "^3.5.2"
+charset-normalizer = "2.0.12"
 click = "^8.1.3"
 coloredlogs = "^15.0.1"
 datadog = "^0.44.0"
 ddtrace = "^1.2.1"
 discord-py-interactions = "^3.0.2"
-"discord.py" = "1.7.3"
+"discord.py" = {git = "https://github.com/Rapptz/discord.py.git", rev = "master"}
 dunamai = "^1.12.0"
 expiringdict = "^1.2.2"
 gunicorn = "^20.1.0"
 humanize = "^4.2.1"
 hupper = "^1.10.3"
 importlib-resources = "^5.8.0"
+packaging = "20.9"
 psycopg2-binary = "^2.9.3"
-pygicord = "^1.0.1"
-python = '>=3.9,<4'
+python = '>=3.10,<4'
 python-dateutil = "^2.8.2"
 python-dotenv = "^0.20.0"
 pytz = "^2022.1"
+requests = "2.28.0"
 supervisor = "^4.2.4"
-types-PyYAML = "^6.0.4"
-types-python-dateutil = "^2.8.9"
-types-pytz = "^2022.1.1"
-types-toml = "^0.10.4"
+toml = "^0.10.2"
 uvloop = "^0.16.0"
 wrapt = "^1.14.1"
 
@@ -120,20 +114,30 @@ flake8 = "^4.0.1"
 flake8-commas = "^2.1.0"
 flake8-print = "^5.0.0"
 isort = "^5.10.1"
+pexpect = "^4.8.0"
+ptyprocess = "^0.7.0"
 pylic = "^3.1.0"
 pylint = "2.14.0"
 pyright = "^1.1.255"
 pytest = "^7.1.2"
+pytest-aiohttp = "^1.0.4"
 pytest-asyncio = "^0.18.3"
 pytest-cov = "^3.0.0"
 pytest-freezegun = "^0.4.2"
 pytest-mock = "^3.8.1"
+shellingham = "^1.4.0"
 sqlalchemy-stubs = "^0.4"
 syrupy = "^2.3.0"
+types-PyYAML = "^6.0.8"
+types-freezegun = "^1.1.9"
+types-python-dateutil = "^2.8.17"
+types-pytz = "^2022.1.1"
+types-toml = "^0.10.7"
+virtualenv = "^20.14.1"
 
 [tool.poetry.scripts]
 spellbot = 'spellbot:main'
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.4"]
+requires = ["poetry-core>=1.0.8"]

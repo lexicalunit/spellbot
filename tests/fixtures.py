@@ -1,19 +1,16 @@
-# pylint: disable=redefined-outer-name, protected-access
+# pylint: disable=protected-access
 from __future__ import annotations
 
 import contextvars
 from asyncio import AbstractEventLoop
-from collections.abc import AsyncGenerator, Generator
-from contextlib import asynccontextmanager
-from datetime import datetime
-from typing import Any
-from unittest.mock import MagicMock, patch
+from typing import Awaitable, Callable, Generator
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
-from aiohttp.client import ClientSession
+from aiohttp.test_utils import TestClient
 from click.testing import CliRunner
-from discord_slash.context import InteractionContext
+from discord.ext import commands
 
 from spellbot import SpellBot
 from spellbot.client import build_bot
@@ -39,7 +36,7 @@ from tests.factories import (
     VerifyFactory,
     WatchFactory,
 )
-from tests.mocks import build_author, build_channel, build_ctx, build_guild, build_message
+from tests.mocks import build_author, build_channel, build_guild, build_interaction, build_message
 
 
 class Factories:
@@ -61,74 +58,76 @@ async def factories() -> Factories:
     return Factories()
 
 
-@asynccontextmanager
-async def _session_context_manager(nosession: bool = False) -> AsyncGenerator[None, None]:
-    if nosession:
-        yield
-        return
+@pytest.fixture(autouse=True)
+async def session_context(
+    request: pytest.FixtureRequest,
+    event_loop: AbstractEventLoop,
+) -> contextvars.Context:
+    if "nosession" not in request.keywords:
+        await initialize_connection("spellbot-test", use_transaction=True)
 
-    await initialize_connection("spellbot-test", use_transaction=True)
+        test_session = db_session_maker()
+        DatabaseSession.set(test_session)  # type: ignore
 
-    test_session = db_session_maker()
-    DatabaseSession.set(test_session)  # type: ignore
+        BlockFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        ChannelFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        ConfigFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        GameFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        GuildAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        GuildFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        PlayFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        UserAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        UserFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        VerifyFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        WatchFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
 
-    BlockFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-    ChannelFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-    ConfigFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-    GameFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-    GuildAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-    GuildFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-    PlayFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-    UserAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-    UserFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-    VerifyFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-    WatchFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        def cleanup_session():
+            async def finalizer() -> None:
+                try:
+                    await rollback_transaction()
+                except Exception:  # pragma: no cover
+                    pass
 
-    try:
-        yield
-    finally:
-        await rollback_transaction()
+            event_loop.run_until_complete(finalizer())
 
+        request.addfinalizer(cleanup_session)
 
-@pytest.fixture(scope="function", autouse=True)
-async def session_context(request: Any) -> AsyncGenerator[contextvars.Context, None]:
-    nosession = "nosession" in request.keywords
-    async with _session_context_manager(nosession):
-        context = contextvars.copy_context()
-        yield context
+    context = contextvars.copy_context()
+
+    def cleanup_context():
+        nonlocal context
         for c in context:
             c.set(context[c])
 
+    request.addfinalizer(cleanup_context)
+
+    return context
+
 
 @pytest.fixture(autouse=True)
-def use_session_context(session_context: contextvars.Context):
+def use_session_context(session_context: contextvars.Context) -> None:
     for cvar in session_context:
         cvar.set(session_context[cvar])
-    yield
 
 
 @pytest.fixture
-async def bot() -> AsyncGenerator[SpellBot, None]:
+async def bot() -> SpellBot:
     # In tests we create the connection using fixtures.
-    yield build_bot(mock_games=True, create_connection=False)
+    return build_bot(mock_games=True, create_connection=False)
 
 
 @pytest.fixture
-def client(event_loop: AbstractEventLoop, aiohttp_client) -> ClientSession:
+def client(
+    loop: AbstractEventLoop,
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
+) -> TestClient:
     app = build_web_app()
-    return event_loop.run_until_complete(aiohttp_client(app))
+    return loop.run_until_complete(aiohttp_client(app))
 
 
 @pytest.fixture
 def settings() -> Settings:
     return Settings()
-
-
-@pytest.fixture
-def frozen_now(freezer) -> Generator[datetime, None, None]:
-    now = datetime.utcnow()
-    freezer.move_to(now)
-    yield now
 
 
 @pytest.fixture
@@ -176,41 +175,45 @@ def dpy_message(
 
 
 @pytest.fixture
-def ctx(
+def interaction(
     dpy_guild: discord.Guild,
     dpy_channel: discord.TextChannel,
     dpy_author: discord.User,
-) -> InteractionContext:
-    return build_ctx(dpy_guild, dpy_channel, dpy_author, origin=False)
+) -> discord.Interaction:
+    return build_interaction(dpy_guild, dpy_channel, dpy_author)
 
 
 @pytest.fixture
-def origin_ctx(
+def context(
     dpy_guild: discord.Guild,
     dpy_channel: discord.TextChannel,
     dpy_author: discord.User,
-) -> InteractionContext:
-    return build_ctx(dpy_guild, dpy_channel, dpy_author, origin=True)
+    dpy_message: discord.Message,
+) -> discord.Interaction:
+    stub = AsyncMock(spec=commands.Context)
+    stub.guild = dpy_guild
+    stub.channel = dpy_channel
+    stub.channel_id = dpy_channel.id
+    stub.author = dpy_author
+    stub.message = dpy_message
+    return stub
 
 
 @pytest.fixture
-def cli():
-    # Note: In python 3.10 this formatting can be improved:
-    #       https://bugs.python.org/issue12782
-    with patch("spellbot.cli.asyncio") as mock_asyncio, patch(
-        "spellbot.cli.configure_logging",
-    ) as mock_configure_logging, patch("spellbot.cli.hupper") as mock_hupper, patch(
-        "spellbot.client.build_bot",
-    ) as mock_build_bot, patch(
-        "spellbot.settings.Settings",
-    ) as mock_Settings, patch(
-        "spellbot.web.launch_web_server",
-    ) as mock_launch_web_server:
+def cli() -> Generator[MagicMock, None, None]:
+    with (
+        patch("spellbot.cli.asyncio") as mock_asyncio,
+        patch("spellbot.cli.configure_logging") as mock_configure_logging,
+        patch("spellbot.cli.hupper") as mock_hupper,
+        patch("spellbot.client.build_bot") as mock_build_bot,
+        patch("spellbot.settings.Settings") as mock_Settings,
+        patch("spellbot.web.launch_web_server") as mock_launch_web_server,
+    ):
         mock_loop = MagicMock(name="loop")
         mock_loop.run_forever = MagicMock(name="run_forever")
-        mock_asyncio.get_event_loop = MagicMock(
+        mock_asyncio.new_event_loop = MagicMock(
             return_value=mock_loop,
-            name="get_event_loop",
+            name="new_event_loop",
         )
         mock_bot = MagicMock(name="bot")
         mock_bot.run = MagicMock(name="run")

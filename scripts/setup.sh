@@ -19,16 +19,15 @@ if echo "$*" | grep -Eq -- '--help\b|-h\b'; then
 fi
 
 run "rm -rf env"
-run "python3.9 -m venv env"
+run "python3.10 -m venv env"
 run "source env/bin/activate" # pick up new env
 
-run "env/bin/pip install --upgrade pip"
-run "env/bin/pip install poetry"
+run "env/bin/pip install -U pip"
+run "env/bin/pip install -U poetry"
 run "source env/bin/activate" # pick up poetry
 
 run "env/bin/poetry config virtualenvs.create false"
 run "env/bin/poetry env use env/bin/python"
 run "env/bin/poetry install"
-run "env/bin/pip install -U 'aiohttp==3.8.1' 'pytest-aiohttp==1.0.4'"
 
 echo "$(tput bold)now please run: source env/bin/activate$(tput sgr0)"

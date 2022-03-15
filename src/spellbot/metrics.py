@@ -44,9 +44,9 @@ def no_metrics() -> bool:
     )
 
 
-def skip_if_no_metrics(f) -> Callable[..., None]:  # pragma: no cover
+def skip_if_no_metrics(f: Any) -> Callable[..., None]:  # pragma: no cover
     @wraps(f)
-    def wrapper(*args, **kwargs) -> None:
+    def wrapper(*args: Any, **kwargs: Any) -> None:
         return None if no_metrics() else f(*args, **kwargs)
 
     return wrapper
@@ -57,7 +57,7 @@ def patch_discord() -> None:  # pragma: no cover
     interaction_callback = re.compile(r"/interactions/([0-9]+)/([^/]+)/callback")
     webhook_message = re.compile(r"/webhooks/([0-9]+)/([^/]+)/messages/@original")
 
-    def request(wrapped: Callable, instance, args, kwargs):  # pragma: no cover
+    def request(wrapped: Callable, instance, args, kwargs):  # type: ignore # pragma: no cover
         route: Route = args[0]
         path: str = route.path
         additional_tags = {}
@@ -71,11 +71,7 @@ def patch_discord() -> None:  # pragma: no cover
             additional_tags["interaction_token"] = matches[2]
         else:
             resource = path
-        with tracer.trace(  # type: ignore
-            service="discord",
-            name="http",
-            resource=resource,
-        ) as span:
+        with tracer.trace(service="discord", name="http", resource=resource) as span:
             span.set_tags(
                 {
                     "base": route.BASE,
@@ -110,10 +106,10 @@ def alert_error(
 
 
 @skip_if_no_metrics
-def add_span_context(ctx: Any):  # pragma: no cover
+def add_span_context(interaction: Any):  # pragma: no cover
     if span := tracer.current_span():
         for prop in CTX_PROPS:
-            if value := getattr(ctx, prop, None):
+            if value := getattr(interaction, prop, None):
                 span.set_tag(prop, value)
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String, false
 from sqlalchemy.orm import relationship
@@ -100,7 +100,7 @@ class User(Base):
         play = self.plays.filter(Play.game_id == game_id).one_or_none()
         return play.points if play else None
 
-    def config(self, guild_xid: int) -> Optional[dict]:
+    def config(self, guild_xid: int) -> Optional[dict[str, Any]]:
         guild_config = self.configs.filter(Config.guild_xid == guild_xid).one_or_none()
         return guild_config.to_dict() if guild_config else None
 
@@ -110,7 +110,7 @@ class User(Base):
             self.game and self.game.status == GameStatus.PENDING.value and not self.game.deleted_at,
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "xid": self.xid,
             "created_at": self.created_at,

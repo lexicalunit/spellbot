@@ -16,6 +16,7 @@ from .events_cog import EventsCog
 from .leave_cog import LeaveGameCog
 from .lfg_cog import LookingForGameCog
 from .score_cog import ScoreCog
+from .sync_cog import SyncCog
 from .tasks_cog import TasksCog
 from .verify_cog import VerifyCog
 from .watch_cog import WatchCog
@@ -33,13 +34,14 @@ __all__ = [
     "LeaveGameCog",
     "LookingForGameCog",
     "ScoreCog",
+    "SyncCog",
     "TasksCog",
     "VerifyCog",
     "WatchCog",
 ]
 
 
-def load_all_cogs(bot: Bot) -> Bot:
+async def load_all_cogs(bot: Bot) -> Bot:
     # iterate through the modules in the current package
     package_dir = Path(__file__).resolve().parent
     for info in iter_modules([str(package_dir)]):
@@ -57,9 +59,9 @@ def load_all_cogs(bot: Bot) -> Bot:
             ):
                 if module.__name__ in bot.extensions:
                     logger.info("reloading extension %s...", module.__name__)
-                    bot.reload_extension(module.__name__)
+                    await bot.reload_extension(module.__name__)
                 else:
                     logger.info("loading extension %s...", module.__name__)
-                    bot.load_extension(module.__name__)
+                    await bot.load_extension(module.__name__)
                 break
     return bot

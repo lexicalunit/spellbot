@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import BigInteger, Column, DateTime, String
 from sqlalchemy.orm import relationship
@@ -104,7 +104,7 @@ class Channel(Base):
         doc="The games created in this channel",
     )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "xid": self.xid,
             "created_at": self.created_at,

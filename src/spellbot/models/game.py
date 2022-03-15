@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import discord
 from dateutil import tz
@@ -30,7 +30,7 @@ FormatDetails = namedtuple("FormatDetails", ["players"])
 class GameFormat(Enum):
     """A Magic: The Gathering game format."""
 
-    def __new__(cls, *args, **kwargs):  # pylint: disable=W0613
+    def __new__(cls, *args: Any, **kwargs: Any):  # pylint: disable=W0613
         """Give each enum value an increasing numerical value starting at 1."""
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
@@ -279,7 +279,7 @@ class Game(Base):
         embed.color = discord.Color(settings.EMBED_COLOR)
         return embed
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "created_at": self.created_at,

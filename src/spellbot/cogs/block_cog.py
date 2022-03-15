@@ -1,13 +1,12 @@
 import logging
 
+import discord
 from ddtrace import tracer
+from discord import app_commands
 from discord.ext import commands
-from discord_slash import cog_ext
-from discord_slash.context import MenuContext
-from discord_slash.model import ContextMenuType
 
 from .. import SpellBot
-from ..interactions import BlockInteraction
+from ..actions import BlockAction
 from ..metrics import add_span_context
 from ..utils import for_all_callbacks
 
@@ -19,22 +18,28 @@ class BlockCog(commands.Cog):
     def __init__(self, bot: SpellBot):
         self.bot = bot
 
-    @cog_ext.cog_context_menu(target=ContextMenuType.USER, name="Block")
+    @app_commands.command(
+        name="block",
+        description="Block another user from joining your games.",
+    )
+    @app_commands.describe(target="The user to block")
     @tracer.wrap(name="interaction", resource="block")
-    async def block(self, ctx: MenuContext):
-        add_span_context(ctx)
-        assert ctx.target_author
-        async with BlockInteraction.create(self.bot, ctx) as interaction:
-            await interaction.block(target=ctx.target_author)
+    async def block(self, interaction: discord.Interaction, target: discord.Member):
+        add_span_context(interaction)
+        async with BlockAction.create(self.bot, interaction) as action:
+            await action.block(target=target)
 
-    @cog_ext.cog_context_menu(target=ContextMenuType.USER, name="Unblock")
+    @app_commands.command(
+        name="unblock",
+        description="Unblock a user you've previously blocked.",
+    )
+    @app_commands.describe(target="The user to unblock")
     @tracer.wrap(name="interaction", resource="unblock")
-    async def unblock(self, ctx: MenuContext):
-        add_span_context(ctx)
-        assert ctx.target_author
-        async with BlockInteraction.create(self.bot, ctx) as interaction:
-            await interaction.unblock(target=ctx.target_author)
+    async def unblock(self, interaction: discord.Interaction, target: discord.Member):
+        add_span_context(interaction)
+        async with BlockAction.create(self.bot, interaction) as action:
+            await action.unblock(target=target)
 
 
-def setup(bot: SpellBot):
-    bot.add_cog(BlockCog(bot))
+async def setup(bot: SpellBot):  # pragma: no cover
+    await bot.add_cog(BlockCog(bot), guild=bot.settings.GUILD_OBJECT)

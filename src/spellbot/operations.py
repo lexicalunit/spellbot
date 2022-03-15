@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import discord
 from ddtrace import tracer
 from discord.errors import DiscordException
-from discord_slash.context import ComponentContext, InteractionContext
 
 from .metrics import add_span_error
 from .utils import (
     CANT_SEND_CODE,
-    DiscordChannel,
     bot_can_delete_channel,
     bot_can_read,
     bot_can_reply_to,
@@ -19,6 +17,14 @@ from .utils import (
     log_warning,
     suppress,
 )
+
+if TYPE_CHECKING:
+    from discord.abc import MessageableChannel, PrivateChannel
+    from discord.guild import GuildChannel
+    from discord.threads import Thread
+
+    # Good god why does discord.py type hinting suck so much ass?
+    GetChannelReturnType = Optional[Union[GuildChannel, Thread, PrivateChannel]]
 
 logger = logging.getLogger(__name__)
 bad_users: set[int] = set()
@@ -76,7 +82,7 @@ async def safe_fetch_text_channel(
         span.set_tags({"guild_xid": str(guild_xid), "channel_xid": str(channel_xid)})
 
     # first check our channel cache
-    channel: Optional[DiscordChannel]
+    channel: GetChannelReturnType
     if channel := client.get_channel(channel_xid):
         if not isinstance(channel, discord.TextChannel):
             return None
@@ -99,7 +105,7 @@ async def safe_fetch_text_channel(
 
 @tracer.wrap()
 def safe_get_partial_message(
-    channel: DiscordChannel,
+    channel: MessageableChannel,
     guild_xid: int,
     message_xid: int,
 ) -> Optional[discord.PartialMessage]:
@@ -127,8 +133,8 @@ def safe_get_partial_message(
 @tracer.wrap()
 async def safe_update_embed(
     message: Union[discord.Message, discord.PartialMessage],
-    *args,
-    **kwargs,
+    *args: Any,
+    **kwargs: Any,
 ) -> bool:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"messsage_xid": str(message.id)})
@@ -145,19 +151,24 @@ async def safe_update_embed(
 
 
 @tracer.wrap()
-async def safe_update_embed_origin(ctx: ComponentContext, *args, **kwargs) -> bool:
-    assert hasattr(ctx, "origin_message_id")
+async def safe_update_embed_origin(
+    interaction: discord.Interaction,
+    *args: Any,
+    **kwargs: Any,
+) -> bool:
+    assert hasattr(interaction, "message")
+    assert interaction.message
 
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"origin_messsage_xid": str(ctx.origin_message_id)})
+        span.set_tags({"interaction.message.id": str(interaction.message.id)})
 
     success: bool = False
     with suppress(
         DiscordException,
         log="could not update origin embed in message %(message_xid)s",
-        message_xid=ctx.origin_message_id,
+        message_xid=interaction.message.id,
     ):
-        await ctx.edit_origin(*args, **kwargs)
+        await interaction.edit_original_message(*args, **kwargs)
         success = True
     return success
 
@@ -283,7 +294,7 @@ async def safe_create_invite(
 
 @tracer.wrap()
 async def safe_delete_channel(
-    channel: discord.abc.GuildChannel,
+    channel: MessageableChannel,
     guild_xid: int,
 ) -> bool:
     if span := tracer.current_span():  # pragma: no cover
@@ -293,6 +304,9 @@ async def safe_delete_channel(
         return False
 
     if not hasattr(channel, "id"):
+        return False
+
+    if not hasattr(channel, "delete"):
         return False
 
     channel_xid: int = getattr(channel, "id")
@@ -306,22 +320,22 @@ async def safe_delete_channel(
         guild_xid=guild_xid,
         channel_xid=channel_xid,
     ):
-        await channel.delete()
+        await channel.delete()  # type: ignore
         success = True
     return success
 
 
 @tracer.wrap()
 async def safe_send_channel(
-    ctx: InteractionContext,
-    *args,
-    **kwargs,
+    interaction: discord.Interaction,
+    *args: Any,
+    **kwargs: Any,
 ) -> Optional[discord.Message]:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags(
             {
-                "guild_xid": str(ctx.guild_id),
-                "channel_xid": str(ctx.channel_id),
+                "guild_xid": str(interaction.guild_id),
+                "channel_xid": str(interaction.channel_id),
             },
         )
 
@@ -329,18 +343,45 @@ async def safe_send_channel(
     with suppress(
         DiscordException,
         log="in guild %(guild_xid)s, could not send message to channel %(channel_xid)s",
-        guild_xid=ctx.guild_id,
-        channel_xid=ctx.channel_id,
+        guild_xid=interaction.guild_id,
+        channel_xid=interaction.channel_id,
     ):
-        message = await ctx.send(*args, **kwargs)
+        await interaction.response.send_message(*args, **kwargs)
+        message = await interaction.original_message()
+    return message
+
+
+@tracer.wrap()
+async def safe_followup_channel(
+    interaction: discord.Interaction,
+    *args: Any,
+    **kwargs: Any,
+) -> Optional[discord.Message]:
+    if span := tracer.current_span():  # pragma: no cover
+        span.set_tags(
+            {
+                "guild_xid": str(interaction.guild_id),
+                "channel_xid": str(interaction.channel_id),
+            },
+        )
+
+    message: Optional[discord.Message] = None
+    with suppress(
+        DiscordException,
+        log="in guild %(guild_xid)s, could not send message to channel %(channel_xid)s",
+        guild_xid=interaction.guild_id,
+        channel_xid=interaction.channel_id,
+    ):
+        await interaction.followup.send(*args, **kwargs)
+        message = await interaction.original_message()
     return message
 
 
 @tracer.wrap()
 async def safe_channel_reply(
     channel: discord.TextChannel,
-    *args,
-    **kwargs,
+    *args: Any,
+    **kwargs: Any,
 ) -> Optional[discord.Message]:
     guild_xid = channel.guild.id
     channel_xid = channel.id
@@ -359,7 +400,7 @@ async def safe_channel_reply(
 
 
 @tracer.wrap()
-async def safe_message_reply(message: discord.Message, *args, **kwargs) -> None:
+async def safe_message_reply(message: discord.Message, *args: Any, **kwargs: Any) -> None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"messsage_xid": str(message.id)})
 
@@ -376,8 +417,8 @@ async def safe_message_reply(message: discord.Message, *args, **kwargs) -> None:
 @tracer.wrap()
 async def safe_send_user(
     user: Union[discord.User, discord.Member],
-    *args,
-    **kwargs,
+    *args: Any,
+    **kwargs: Any,
 ) -> None:
     user_xid = getattr(user, "id", None)
     if span := tracer.current_span():  # pragma: no cover
@@ -395,13 +436,6 @@ async def safe_send_user(
         add_span_error(ex)
         log_warning(
             "discord server error sending to user %(user)s",
-            user=user,
-            exec_info=True,
-        )
-    except discord.errors.InvalidArgument as ex:
-        add_span_error(ex)
-        log_warning(
-            "could not send message to user %(user)s",
             user=user,
             exec_info=True,
         )
@@ -473,7 +507,7 @@ async def safe_add_role(
             return
         if not bot_can_role(guild):
             logger.warning(
-                ("warning: in guild %s, could not add role: " "no permissions to add role: %s"),
+                "warning: in guild %s, could not add role: no permissions to add role: %s",
                 guild.id,
                 str(role),
             )

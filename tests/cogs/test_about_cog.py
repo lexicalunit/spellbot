@@ -1,34 +1,30 @@
 from __future__ import annotations
 
 import pytest
-from discord_slash.context import InteractionContext
 
-from spellbot import SpellBot, __version__
+from spellbot import __version__
 from spellbot.cogs import AboutCog
-from spellbot.settings import Settings
+from tests.mixins import InteractionMixin
 
 
 @pytest.mark.asyncio
-class TestCogAbout:
-    async def test_about(
-        self,
-        settings: Settings,
-        bot: SpellBot,
-        ctx: InteractionContext,
-    ):
-        cog = AboutCog(bot)
-        await cog.about.invoke(ctx)
+class TestCogAbout(InteractionMixin):
+    async def test_about(self) -> None:
+        cog = AboutCog(self.bot)
+        await self.run(cog.about)
 
-        ctx.send.assert_called_once()
-        assert ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
-            "color": settings.EMBED_COLOR,
+        self.interaction.response.send_message.assert_called_once()
+        assert self.interaction.response.send_message.call_args_list[0].kwargs[
+            "embed"
+        ].to_dict() == {
+            "color": self.settings.EMBED_COLOR,
             "description": (
                 "_The Discord bot for [SpellTable](https://spelltable.wizards.com/)._\n"
                 "\n"
                 "Having issues with SpellBot? Please [report bugs]"
                 "(https://github.com/lexicalunit/spellbot/issues)!\n"
                 "\n"
-                f"[🔗 Add SpellBot to your Discord!]({settings.BOT_INVITE_LINK})\n"
+                f"[🔗 Add SpellBot to your Discord!]({self.settings.BOT_INVITE_LINK})\n"
                 "\n"
                 "💜 Help keep SpellBot running by [becoming a patron!]"
                 "(https://www.patreon.com/lexicalunit)"
@@ -45,7 +41,7 @@ class TestCogAbout:
                     "value": "[@lexicalunit](https://github.com/lexicalunit)",
                 },
             ],
-            "thumbnail": {"url": settings.THUMB_URL},
+            "thumbnail": {"url": self.settings.THUMB_URL},
             "title": "SpellBot",
             "type": "rich",
             "url": "http://spellbot.io/",

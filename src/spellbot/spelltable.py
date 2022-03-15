@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from aiohttp.client_exceptions import ClientError
 from aiohttp_retry import ExponentialRetry, RetryClient
@@ -23,7 +23,7 @@ async def generate_link() -> Optional[str]:
         "key": settings.SPELLTABLE_AUTH_KEY,
     }
 
-    data: Optional[dict] = None
+    data: Optional[dict[str, Any]] = None
     raw_data: Optional[bytes] = None
     try:
         async with RetryClient(

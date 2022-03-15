@@ -1,35 +1,47 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from typing import Callable, cast
 
 import discord
 import pytest
 
+from spellbot import SpellBot
 from spellbot.cogs import VerifyCog
 from spellbot.database import DatabaseSession
-from spellbot.models import Verify
-from tests.mixins import InteractionContextMixin
+from spellbot.models import User, Verify
+from tests.mixins import InteractionMixin
+from tests.mocks import mock_discord_object
+
+
+@pytest.fixture
+async def cog(bot: SpellBot) -> VerifyCog:
+    return VerifyCog(bot)
 
 
 @pytest.mark.asyncio
-class TestCogVerify(InteractionContextMixin):
-    async def test_verify_and_unverify(self):
-        target = MagicMock(spec=discord.Member)
-        target.id = 1002
-        target.display_name = "user"
-        cog = VerifyCog(self.bot)
+class TestCogVerify(InteractionMixin):
+    @pytest.fixture
+    async def target(self, add_user: Callable[..., User]) -> discord.Member:
+        return cast(discord.Member, mock_discord_object(add_user()))
 
-        await cog.verify.func(cog, self.ctx, target)
-        self.ctx.send.assert_called_once_with(f"Verified <@{target.id}>.", hidden=True)
+    async def test_verify_and_unverify(self, cog: VerifyCog, target: discord.Member):
+        await self.run(cog.verify, target=target)
 
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Verified <@{target.id}>.",
+            ephemeral=True,
+        )
         found = DatabaseSession.query(Verify).filter(Verify.user_xid == target.id).one()
-        assert found.guild_xid == self.ctx.guild_id
+        assert found.guild_xid == self.guild.xid
         assert found.user_xid == target.id
         assert found.verified
 
-        self.ctx.send = AsyncMock()  # reset mock
-        await cog.unverify.func(cog, self.ctx, target)
-        self.ctx.send.assert_called_once_with(f"Unverified <@{target.id}>.", hidden=True)
+        self.interaction.response.send_message.reset_mock()
+        await self.run(cog.unverify, target=target)
 
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Unverified <@{target.id}>.",
+            ephemeral=True,
+        )
         found = DatabaseSession.query(Verify).filter(Verify.user_xid == target.id).one()
         assert not found.verified

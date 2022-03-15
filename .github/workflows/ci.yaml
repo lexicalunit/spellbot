@@ -31,7 +31,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.10"]
         database-url: ["postgresql://postgres:postgres@localhost:5432/postgres"]
 
     steps:
@@ -57,7 +57,6 @@ jobs:
         pip install poetry
         poetry --version
         poetry install
-        pip install -U "aiohttp==3.8.1" "pytest-aiohttp==1.0.4"
 
     - name: Run Tests
       run: |

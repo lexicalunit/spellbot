@@ -10,8 +10,6 @@
                                     when source changes
     -g, --debug                     Enable detailed asyncio debugging
     -m, --mock-games                Produce mock game urls instead of real ones
-    -s, --sync-commands             Force sync all slash commands at startup
-    -c, --clean-commands            Cleanup all unused slash commands at startup
     -a, --api                       Start the API web server instead of the bot
     -p, --port INTEGER              Use the given port number to serve the API
     --version                       Show the version and exit.

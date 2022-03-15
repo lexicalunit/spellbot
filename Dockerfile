@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.10
 
 # build dependencies
 RUN echo 'APT::Install-Recommends "false";' > /etc/apt/apt.conf.d/99no-install-recommends
@@ -10,9 +10,7 @@ RUN apt-get update \
 # spellbot
 COPY src /spellbot/src
 COPY LICENSE.md README.md pyproject.toml poetry.lock /spellbot/
-RUN pip install ./spellbot \
-    && pip install -U "aiohttp==3.8.1" "pytest-aiohttp==1.0.4"
-
+RUN pip install ./spellbot
 
 # datadog (https://app.datadoghq.com/account/settings#agent/debian)
 ADD https://s3.amazonaws.com/dd-agent/scripts/install_script.sh /tmp/install_script.sh

@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Optional, Union, cast
+from typing import Optional, Union
 
 import discord
-import discord_slash.utils.manage_components as comp
 from ddtrace import tracer
 from discord.embeds import Embed
 from discord.message import Message
-from discord_slash.context import ComponentContext, InteractionContext
-from discord_slash.model import ButtonStyle
 
 from .. import SpellBot
 from ..models import GameFormat, GameStatus
@@ -21,21 +18,22 @@ from ..operations import (
     safe_create_voice_channel,
     safe_ensure_voice_category,
     safe_fetch_user,
+    safe_followup_channel,
     safe_get_partial_message,
-    safe_send_channel,
     safe_send_user,
     safe_update_embed,
     safe_update_embed_origin,
 )
 from ..settings import Settings
-from .base_interaction import BaseInteraction
+from ..views import PendingGameView, StartedGameView
+from .base_action import BaseAction
 
 logger = logging.getLogger(__name__)
 
 
-class LookingForGameInteraction(BaseInteraction):
-    def __init__(self, bot: SpellBot, ctx: InteractionContext):
-        super().__init__(bot, ctx)
+class LookingForGameAction(BaseAction):
+    def __init__(self, bot: SpellBot, interaction: discord.Interaction):
+        super().__init__(bot, interaction)
         self.settings = Settings()
 
     @tracer.wrap()
@@ -58,12 +56,11 @@ class LookingForGameInteraction(BaseInteraction):
 
     @tracer.wrap()
     async def filter_friend_xids(self, friend_xids: list[int]) -> list[int]:
-        assert self.ctx
         if friend_xids:
             friend_xids = await self.ensure_users_exist(friend_xids)
         if friend_xids:
             friend_xids = await self.services.games.filter_blocked_list(
-                self.ctx.author_id,
+                self.interaction.user.id,
                 friend_xids,
             )
         return friend_xids
@@ -76,7 +73,6 @@ class LookingForGameInteraction(BaseInteraction):
         format: int,
         message_xid: Optional[int],
     ) -> Optional[bool]:
-        assert self.ctx
         assert self.guild
         assert self.channel
 
@@ -86,9 +82,9 @@ class LookingForGameInteraction(BaseInteraction):
 
         if not origin:
             return await self.services.games.upsert(
-                guild_xid=self.ctx.guild_id,
+                guild_xid=self.interaction.guild_id,
                 channel_xid=self.channel.id,
-                author_xid=self.ctx.author_id,
+                author_xid=self.interaction.user.id,
                 friends=friend_xids,
                 seats=seats,
                 format=format,
@@ -96,8 +92,8 @@ class LookingForGameInteraction(BaseInteraction):
 
         assert message_xid
         found = await self.services.games.select_by_message_xid(message_xid)
-        if not found or await self.services.games.blocked(self.ctx.author_id):
-            await safe_send_user(self.ctx.author, "You can not join this game.")
+        if not found or await self.services.games.blocked(self.interaction.user.id):
+            await safe_send_user(self.interaction.user, "You can not join this game.")
             return None
 
         # Sometimes game posts have Join/Leave buttons on them even though
@@ -107,7 +103,10 @@ class LookingForGameInteraction(BaseInteraction):
         # by informing the user and updating the game post they tried to join.
         if found["status"] == GameStatus.STARTED.value:
             # inform the player that their interaction failed
-            await safe_send_user(self.ctx.author, "Sorry, that game has already started.")
+            await safe_send_user(
+                self.interaction.user,
+                "Sorry, that game has already started.",
+            )
 
             # attempt to update the problematic game post
             if message := safe_get_partial_message(
@@ -116,12 +115,16 @@ class LookingForGameInteraction(BaseInteraction):
                 message_xid,
             ):
                 embed = await self.services.games.to_embed()
-                components = await self._fully_seated_components()
-                await safe_update_embed(message, embed=embed, components=components)
+                view = StartedGameView(self.bot)
+                await safe_update_embed(
+                    message,
+                    embed=embed,
+                    view=view,
+                )
 
             return None
 
-        await self.services.games.add_player(self.ctx.author_id)
+        await self.services.games.add_player(self.interaction.user.id)
         return False
 
     @tracer.wrap()
@@ -132,14 +135,10 @@ class LookingForGameInteraction(BaseInteraction):
         format: Optional[int] = None,
         message_xid: Optional[int] = None,
     ):
-        assert self.ctx
         if not self.guild or not self.channel:
-            # Once we move to discord.py "version 2.0" and discord-interactions v4,
-            # we should have access to a Thread's parent ID (the guild channel).
-            # Then we will be able to properly handle these kinds of requests.
-            # See: https://github.com/lexicalunit/spellbot/issues/681
+            # Someone tried to lfg in a Discord thread rather than in the channel itself.
             return await safe_send_user(
-                self.ctx.author,
+                self.interaction.user,
                 "Sorry, that command is not supported in this context.",
             )
 
@@ -153,14 +152,17 @@ class LookingForGameInteraction(BaseInteraction):
 
         if await self.services.users.is_waiting():
             if origin:
-                return await safe_send_user(self.ctx.author, "You're already in a game.")
-            return await safe_send_channel(self.ctx, "You're already in a game.")
+                return await safe_send_user(
+                    self.interaction.user,
+                    "You're already in a game.",
+                )
+            return await safe_followup_channel(self.interaction, "You're already in a game.")
 
         friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", actual_friends)))
 
         if len(friend_xids) + 1 > actual_seats:
             return await safe_send_user(
-                self.ctx.author,
+                self.interaction.user,
                 "You mentioned too many players.",
             )
 
@@ -192,32 +194,30 @@ class LookingForGameInteraction(BaseInteraction):
 
     @tracer.wrap()
     async def add_points(self, message: Message, points: int):
-        assert self.ctx
         found = await self.services.games.select_by_message_xid(message.id)
         if not found:
             return
 
-        if not await self.services.games.players_included(self.ctx.author_id):
+        if not await self.services.games.players_included(self.interaction.user.id):
             return await safe_send_user(
-                self.ctx.author,
+                self.interaction.user,
                 "You are not one of the players in this game.",
             )
 
-        await self.services.games.add_points(self.ctx.author_id, points)
+        await self.services.games.add_points(self.interaction.user.id, points)
         embed = await self.services.games.to_embed()
         await safe_update_embed(message, embed=embed)
 
     @tracer.wrap()
     async def create_game(self, players: str, format: Optional[int] = None):
-        assert self.ctx
         assert self.channel
 
         game_format = GameFormat(format or GameFormat.COMMANDER.value)  # type: ignore
         player_xids = list(map(int, re.findall(r"<@!?(\d+)>", players)))
         requested_seats = len(player_xids)
         if requested_seats < 2 or requested_seats > game_format.players:
-            return await safe_send_channel(
-                self.ctx,
+            return await safe_followup_channel(
+                self.interaction,
                 f"You can't create a {game_format} game with {requested_seats} players.",
             )
 
@@ -227,17 +227,17 @@ class LookingForGameInteraction(BaseInteraction):
         if len(found_players) != requested_seats:
             excluded_player_xids = set(player_xids) - set(found_players)
             excluded_players_s = ", ".join(f"<@{xid}>" for xid in excluded_player_xids)
-            return await safe_send_channel(
-                self.ctx,
+            return await safe_followup_channel(
+                self.interaction,
                 (
                     "Some of the players you mentioned can not"
                     f" be added to a game: {excluded_players_s}"
                 ),
             )
 
-        assert self.ctx.guild_id
+        assert self.interaction.guild_id
         await self.services.games.upsert(
-            guild_xid=self.ctx.guild_id,
+            guild_xid=self.interaction.guild_id,
             channel_xid=self.channel.id,
             author_xid=found_players[0],
             friends=found_players[1:],
@@ -246,7 +246,7 @@ class LookingForGameInteraction(BaseInteraction):
             create_new=True,
         )
         await self._handle_link_creation()
-        await self._handle_voice_creation(self.ctx.guild_id)
+        await self._handle_voice_creation(self.interaction.guild_id)
         await self._handle_embed_creation(new=True, origin=False, fully_seated=True)
         await self.services.games.record_plays()
         await self._handle_direct_messages()
@@ -290,70 +290,20 @@ class LookingForGameInteraction(BaseInteraction):
         await self.services.games.set_voice(voice_channel.id, voice_invite_link)
 
     @tracer.wrap()
-    async def _pending_components(self):
-        buttons = [
-            comp.create_button(
-                style=ButtonStyle.blurple,
-                emoji="✋",
-                label="Join this game!",
-                custom_id="join",
-            ),
-            comp.create_button(
-                style=ButtonStyle.gray,
-                emoji="🚫",
-                label="Leave",
-                custom_id="leave",
-            ),
-        ]
-        action_row = comp.create_actionrow(*buttons)
-        return [action_row]
-
-    @tracer.wrap()
-    async def _fully_seated_components(self):
-        if not await self.services.guilds.should_show_points():
-            return []
-        select = comp.create_select(
-            options=[
-                comp.create_select_option("No points", value="0", emoji="0️⃣"),
-                comp.create_select_option("One point", value="1", emoji="1️⃣"),
-                comp.create_select_option("Two points", value="2", emoji="2️⃣"),
-                comp.create_select_option("Three points", value="3", emoji="3️⃣"),
-                comp.create_select_option("Four points", value="4", emoji="4️⃣"),
-                comp.create_select_option("Five points", value="5", emoji="5️⃣"),
-                comp.create_select_option("Six points", value="6", emoji="6️⃣"),
-                comp.create_select_option("Seven points", value="7", emoji="7️⃣"),
-                comp.create_select_option("Eight points", value="8", emoji="8️⃣"),
-                comp.create_select_option("Nine points", value="9", emoji="9️⃣"),
-                comp.create_select_option("Ten points", value="10", emoji="🔟"),
-            ],
-            placeholder="How many points do you have to report?",
-            custom_id="points",
-        )
-        action_row = comp.create_actionrow(select)
-        return [action_row]
-
     @tracer.wrap()
     async def _handle_embed_creation(self, new: bool, origin: bool, fully_seated: bool):
-        assert self.ctx
         assert self.guild
         assert self.channel
 
         # build the game post's embed and components:
         embed: discord.Embed = await self.services.games.to_embed()
-        components: list[dict] = (
-            await self._fully_seated_components()
-            if fully_seated
-            else await self._pending_components()
-        )
+        view = StartedGameView(bot=self.bot) if fully_seated else PendingGameView(bot=self.bot)
 
         if new:  # create the initial game post:
-            # Note: Ok to use safe_send_channel() here beacause to create a new game the
-            # user must have used the /lfg command, which would have been deffered
-            # as a SlashContext.
-            if message := await safe_send_channel(
-                self.ctx,
+            if message := await safe_followup_channel(
+                self.interaction,
                 embed=embed,
-                components=components,
+                view=view,
             ):
                 await self.services.games.set_message_xid(message.id)
             else:
@@ -381,24 +331,25 @@ class LookingForGameInteraction(BaseInteraction):
         # update the existing game post:
 
         if origin:
-            # self.ctx should be a ComponentContext from a button click
-            ctx: ComponentContext = cast(ComponentContext, self.ctx)
-
             # Try to update the origin embed. Sometimes this can fail.
             # If it does fail, we will fallback to doing a standard
             # message.edit() call, which should hopefully at least update
             # the game embed, even if the interaction shows as "failed".
             success = await safe_update_embed_origin(
-                ctx,
+                self.interaction,
                 embed=embed,
-                components=components,
+                view=view,
             )
             if success:
                 return
 
         success: bool = False
         if message:
-            success = await safe_update_embed(message, embed=embed, components=components)
+            success = await safe_update_embed(
+                message,
+                embed=embed,
+                view=view,
+            )
 
         # Somehow the game post update failed, workaround it by informing users
         # of the issue and just posting directly to the channel.
@@ -416,7 +367,6 @@ class LookingForGameInteraction(BaseInteraction):
 
     @tracer.wrap()
     async def _reply_found_embed(self):
-        assert self.ctx
         embed = Embed()
         embed.set_thumbnail(url=self.settings.ICO_URL)
         embed.set_author(name="I found a game for you!")
@@ -424,14 +374,10 @@ class LookingForGameInteraction(BaseInteraction):
         link = game_data["jump_link"]
         embed.description = f"You can [jump to the game post]({link}) to see it!"
         embed.color = self.settings.EMBED_COLOR
-        # Note: Ok to use safe_send_channel() here beacause this function should
-        # only ever be called if we are NOT in an origin context. See call site,
-        # above, for check.
-        await safe_send_channel(self.ctx, embed=embed)
+        await safe_followup_channel(self.interaction, embed=embed)
 
     @tracer.wrap()
     async def _handle_direct_messages(self):
-        assert self.ctx
         player_xids = await self.services.games.player_xids()
         embed = await self.services.games.to_embed(dm=True)
         failed_xids: list[int] = []
@@ -447,45 +393,44 @@ class LookingForGameInteraction(BaseInteraction):
                 failed_xids.append(player_xid)
 
         # give out awards
-        new_roles = await self.services.awards.give_awards(self.ctx.guild_id, player_xids)
-        assert self.ctx.guild
+        new_roles = await self.services.awards.give_awards(
+            self.interaction.guild_id,
+            player_xids,
+        )
+        assert self.interaction.guild
         for player_xid, new_award in new_roles.items():
             if player_xid not in fetched_players:
-                # TODO: We can not safely call safe_send_channel() because we do not
-                #       know if we are in a slash context or a component context.
-                #       Interactions are deferred differently in each case. This
-                #       will have to be refactored somehow in the future to be fixed.
-                # warning = (
-                #     f"Unable to {'take' if new_award.remove else 'give'}"
-                #     f" role {new_award.role}"
-                #     f" {'from' if new_award.remove else 'to'}"
-                #     f" user <@{player_xid}>"
-                # )
-                # await safe_send_channel(self.ctx, warning)
+                warning = (
+                    f"Unable to {'take' if new_award.remove else 'give'}"
+                    f" role {new_award.role}"
+                    f" {'from' if new_award.remove else 'to'}"
+                    f" user <@{player_xid}>"
+                )
+                await safe_followup_channel(self.interaction, warning)
                 continue
             player = fetched_players[player_xid]
-            await safe_add_role(player, self.ctx.guild, new_award.role, new_award.remove)
+            await safe_add_role(
+                player,
+                self.interaction.guild,
+                new_award.role,
+                new_award.remove,
+            )
             await safe_send_user(player, new_award.message)
 
-        # TODO: We can not safely call safe_send_channel() because we do not
-        #       know if we are in a slash context or a component context.
-        #       Interactions are deferred differently in each case. This
-        #       will have to be refactored somehow in the future to be fixed.
         # notifiy issues with player permissions
-        # if failed_xids:
-        #     failures = ", ".join(f"<@!{xid}>" for xid in failed_xids)
-        #     warning = f"Unable to send Direct Messages to some players: {failures}"
-        #     await safe_send_channel(self.ctx, warning)
+        if failed_xids:
+            failures = ", ".join(f"<@!{xid}>" for xid in failed_xids)
+            warning = f"Unable to send Direct Messages to some players: {failures}"
+            await safe_followup_channel(self.interaction, warning)
 
         await self._handle_watched_players(player_xids)
 
     @tracer.wrap()
     async def _handle_watched_players(self, player_xids: list[int]):
         """Notify moderators about watched players."""
-        assert self.ctx
-        assert self.ctx.guild
+        assert self.interaction.guild
         mod_role: Optional[discord.Role] = None
-        for role in self.ctx.guild.roles:
+        for role in self.interaction.guild.roles:
             if role.name.startswith(self.settings.MOD_PREFIX):
                 mod_role = role
                 break
@@ -527,10 +472,9 @@ class LookingForGameInteraction(BaseInteraction):
 
         When exclude_self is True, don't create a user for IDs matching the author's.
         """
-        assert self.ctx
         found_users: list[int] = []
         for user_xid in user_xids:
-            if exclude_self and user_xid == self.ctx.author_id:
+            if exclude_self and user_xid == self.interaction.user.id:
                 continue
             user = await safe_fetch_user(self.bot, user_xid)
             if not user:
