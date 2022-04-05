@@ -66,7 +66,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
     <tr>
         <td align="center"><a href="https://www.playedh.com/"><img width="160" height="160" src="https://user-images.githubusercontent.com/1903876/140843874-78510411-dcc8-4a26-a59a-0d6856698dcc.png" alt="PlayEDH" /><br />PlayEDH</a></td>
         <td align="center"><a href="https://www.reddit.com/r/CompetitiveEDH/"><img height="160" src="https://user-images.githubusercontent.com/1903876/140865281-19774420-a49b-4d0e-bf0c-db3ad937022e.png" alt="r/cEDH" /><br />r/cEDH</a></td>
-        <td align="center"><a href="https://www.commandthecause.org/"><img height="160" src="https://user-images.githubusercontent.com/1903876/140864827-a56b9ee4-a545-41f1-90ea-06d35bce2bf9.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
+        <td align="center"><a href="https://www.commandthecause.org/"><img height="160" src="https://user-images.githubusercontent.com/1903876/161826326-43cbd3ff-976f-46ff-9608-dacea67d9c42.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
     </tr>
     <tr>
         <td align="center"><a href="https://www.patreon.com/NitpickingNerds"><img height="141" src="https://user-images.githubusercontent.com/1903876/140844623-8d8528a9-b60c-49c6-be0f-1d627b85adba.png" alt="The Nitpicking Nerds" /><br />The&nbsp;Nitpicking&nbsp;Nerds</a></td>
