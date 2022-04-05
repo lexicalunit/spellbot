@@ -70,7 +70,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
     </tr>
     <tr>
         <td align="center"><a href="https://www.patreon.com/NitpickingNerds"><img height="141" src="https://user-images.githubusercontent.com/1903876/140844623-8d8528a9-b60c-49c6-be0f-1d627b85adba.png" alt="The Nitpicking Nerds" /><br />The&nbsp;Nitpicking&nbsp;Nerds</a></td>
-        <td align="center"><a href="https://www.facebook.com/EDHTambayan/"><img height="130" src="https://user-images.githubusercontent.com/1903876/148892328-335ab0ea-633f-44c2-b59e-61b5a38c9fdd.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></td>
+        <td align="center"><a href="https://www.facebook.com/EDHTambayan/"><img height="130" src="https://user-images.githubusercontent.com/1903876/161825614-64e432d4-85e8-481e-8f41-f66ab8c940cc.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></td>
         <td align="center"><a href="https://disboard.org/server/752261529390284870"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845571-12e391d0-4cc8-4766-bf40-071f32503a7d.jpg" alt="Commander SpellTable (DE)" /><br />Commander&nbsp;SpellTable&nbsp;(DE)</a></td>
     </tr>
     <tr>
