@@ -24,7 +24,9 @@ class TestSpellTable:
 
         mock_response = MagicMock()
         game_url = "https://game"
-        mock_response.json = AsyncMock(return_value={"gameUrl": game_url})
+        mock_response.read = AsyncMock(
+            return_value=b'{"gameUrl": "' + game_url.encode() + b'" }',
+        )
 
         class MockClient:
             @asynccontextmanager
@@ -51,7 +53,34 @@ class TestSpellTable:
         monkeypatch.setattr(spelltable, "Settings", lambda: settings)
 
         mock_response = MagicMock()
-        mock_response.json = AsyncMock(return_value={"error": 123})
+        mock_response.read = AsyncMock(return_value=b'{"error": 123}')
+
+        class MockClient:
+            @asynccontextmanager
+            async def post(self, *args, **kwargs):  # pylint: disable=W0613
+                yield mock_response
+
+        mock_client = MockClient()
+
+        @asynccontextmanager
+        async def MockRetryClient(  # pylint: disable=W0613
+            *args,
+            **kwargs,
+        ) -> AsyncGenerator[RetryClient, None]:
+            yield cast(RetryClient, mock_client)
+
+        monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
+
+        assert await generate_link() is None
+
+    async def test_generate_link_non_json(self, monkeypatch):
+        settings = MagicMock(spec=Settings)
+        settings.SPELLTABLE_AUTH_KEY = "auth-key"
+        settings.SPELLTABLE_CREATE = "https://create"
+        monkeypatch.setattr(spelltable, "Settings", lambda: settings)
+
+        mock_response = MagicMock()
+        mock_response.read = AsyncMock(return_value=b"foobar")
 
         class MockClient:
             @asynccontextmanager
