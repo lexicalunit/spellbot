@@ -1,5 +1,5 @@
 # name: TestWebRecord.test_channel_record[pyloop]
-  '
+  '''
   <!DOCTYPE html>
   <html lang="en">
   <head>
@@ -686,10 +686,10 @@
   </body>
   
   </html>
-  '
----
+  '''
+# ---
 # name: TestWebRecord.test_channel_record_no_plays[pyloop]
-  '
+  '''
   <!DOCTYPE html>
   <html lang="en">
   <head>
@@ -1280,10 +1280,10 @@
   </body>
   
   </html>
-  '
----
+  '''
+# ---
 # name: TestWebRecord.test_channel_record_with_cookies[pyloop]
-  '
+  '''
   <!DOCTYPE html>
   <html lang="en">
   <head>
@@ -1970,10 +1970,10 @@
   </body>
   
   </html>
-  '
----
+  '''
+# ---
 # name: TestWebRecord.test_channel_record_with_invalid_cookies[pyloop]
-  '
+  '''
   <!DOCTYPE html>
   <html lang="en">
   <head>
@@ -2660,10 +2660,10 @@
   </body>
   
   </html>
-  '
----
+  '''
+# ---
 # name: TestWebRecord.test_user_record[pyloop]
-  '
+  '''
   <!DOCTYPE html>
   <html lang="en">
   <head>
@@ -3387,10 +3387,10 @@
   </body>
   
   </html>
-  '
----
+  '''
+# ---
 # name: TestWebRecord.test_user_record_no_plays[pyloop]
-  '
+  '''
   <!DOCTYPE html>
   <html lang="en">
   <head>
@@ -3979,10 +3979,10 @@
   </body>
   
   </html>
-  '
----
+  '''
+# ---
 # name: TestWebRecord.test_user_record_with_cookies[pyloop]
-  '
+  '''
   <!DOCTYPE html>
   <html lang="en">
   <head>
@@ -4706,5 +4706,5 @@
   </body>
   
   </html>
-  '
----
+  '''
+# ---
