@@ -1,5 +1,5 @@
 # name: TestCLI.test_help
-  '
+  '''
   Usage: main [OPTIONS]
   
   Options:
@@ -17,5 +17,5 @@
     --version                       Show the version and exit.
     --help                          Show this message and exit.
   
-  '
----
+  '''
+# ---
