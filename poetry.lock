@@ -753,7 +753,7 @@ dev = ["black", "isort", "flake8"]
 
 [[package]]
 name = "pylic"
-version = "3.0.2"
+version = "3.1.0"
 description = "A Python license checker"
 category = "dev"
 optional = false
@@ -1233,8 +1233,8 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 
 [metadata]
 lock-version = "1.1"
-python-versions = '>=3.9,<4'
-content-hash = "7c16fea8d4ab7275c70cc73394d6bbd0168c079f40cec5b982ef43f95b7864ee"
+python-versions = ">=3.9,<4"
+content-hash = "72d4d227e47f20ab4b048c83db2756b96f4b7ec3d6ebb064b6024817149d2e02"
 
 [metadata.files]
 aiohttp = [
@@ -1931,8 +1931,8 @@ pygicord = [
     {file = "pygicord-1.0.1.tar.gz", hash = "sha256:ef2ac8a658df2e3199997e834298a4b2d2f57e595de57f69b3f9f98074e830fd"},
 ]
 pylic = [
-    {file = "pylic-3.0.2-py3-none-any.whl", hash = "sha256:b5ceb0f7a9ac1ebccea4ba88f10e7b53d7d0d8e8f9e006fbdbb82c186dea9bf1"},
-    {file = "pylic-3.0.2.tar.gz", hash = "sha256:ca19eeb6bfea9b86869aeda38964cd65c6983250a8782601acf3ffa4e7fc72f2"},
+    {file = "pylic-3.1.0-py3-none-any.whl", hash = "sha256:cc79b160f7c546924ddaf5e5bd271ae0f31deed35aebe0b09f55e5a06413295b"},
+    {file = "pylic-3.1.0.tar.gz", hash = "sha256:e57ad2266bae18e5e0d75a25744eaff95bed5e3a6a78e33470972e6a807a96a1"},
 ]
 pylint = [
     {file = "pylint-2.14.0-py3-none-any.whl", hash = "sha256:ef64ce5d4c17b8906caeaf2c2914ef3036a3a1b7f4a86f5fbf6caff9067c5f63"},

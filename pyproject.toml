@@ -91,7 +91,7 @@ packages = [
 ]
 readme = 'README.md'
 repository = 'https://github.com/lexicalunit/spellbot'
-version = "7.12.4"
+version = "7.12.5"
 
 [tool.poetry.dependencies]
 Babel = "^2.9.1"
@@ -140,7 +140,7 @@ flake8 = "^4.0.1"
 flake8-commas = "^2.1.0"
 flake8-print = "^5.0.0"
 isort = "^5.10.1"
-pylic = "^3.0.2"
+pylic = "^3.1.0"
 pylint = "==2.14.0"
 pyright = "^1.1.241"
 pytest = "^7.0.1"
