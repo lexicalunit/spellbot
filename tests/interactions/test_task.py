@@ -21,6 +21,11 @@ from tests.mocks import (
 VOICE_CATEGORY_PREFIX = Channel.voice_category.default.arg  # type: ignore
 
 
+@pytest.fixture(autouse=True)
+def no_sleep(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(task_interaction, "asyncio", MagicMock(sleep=AsyncMock()))
+
+
 def create_bot_guilds(db_guilds: list[Guild]) -> dict:
     bot_guilds = {}
     for i, db_guild in enumerate(db_guilds):
