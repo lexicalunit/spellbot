@@ -1048,7 +1048,7 @@ testing = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "syrupy"
-version = "2.0.0"
+version = "2.3.0"
 description = "PyTest Snapshot Test Utility"
 category = "dev"
 optional = false
@@ -1233,8 +1233,8 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 
 [metadata]
 lock-version = "1.1"
-python-versions = '>=3.9,<4'
-content-hash = "7c16fea8d4ab7275c70cc73394d6bbd0168c079f40cec5b982ef43f95b7864ee"
+python-versions = ">=3.9,<4"
+content-hash = "e1385aaf4dd948460f5bb93520fe8dd14a1cc300b70e42c15d7d6a489c0969d2"
 
 [metadata.files]
 aiohttp = [
@@ -2081,8 +2081,8 @@ supervisor = [
     {file = "supervisor-4.2.4.tar.gz", hash = "sha256:40dc582ce1eec631c3df79420b187a6da276bbd68a4ec0a8f1f123ea616b97a2"},
 ]
 syrupy = [
-    {file = "syrupy-2.0.0-py3-none-any.whl", hash = "sha256:3977c48581b0a61bf88bb9c326e160262a38d41871aab92414c857728b780854"},
-    {file = "syrupy-2.0.0.tar.gz", hash = "sha256:af97abb47530e780e8746a791059f092ecbfc9d51b907e71d47b5e2ca103c68a"},
+    {file = "syrupy-2.3.0-py3-none-any.whl", hash = "sha256:86ace229f9c36d0727515fa03809f498e845b011d4e4401a996302e00f7c8444"},
+    {file = "syrupy-2.3.0.tar.gz", hash = "sha256:9991ff68de89254ab11c8c0956069b0d3ce8ba3f15ea477e3d86b8d3856f7fa0"},
 ]
 tenacity = [
     {file = "tenacity-8.0.1-py3-none-any.whl", hash = "sha256:f78f4ea81b0fabc06728c11dc2a8c01277bfc5181b321a4770471902e3eb844a"},
