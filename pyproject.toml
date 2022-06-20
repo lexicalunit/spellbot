@@ -18,6 +18,11 @@ reportMissingTypeStubs = false
 typeCheckingMode = "basic"
 
 [tool.pylic]
+ignore_packages = [
+  # only install these as part of dev tools to avoid GPL usage in main application
+  "astroid",
+  "pylint",
+]
 safe_licenses = [
   "3-Clause BSD License",
   "Apache License 2.0",
@@ -129,13 +134,14 @@ Faker = "^13.6.0"
 GitPython = "^3.1.27"
 black = "^22.1.0"
 callee = "^0.3.1"
-coverage = "^6.3.2"
+coverage = "^6.4.1"
 factory-boy = "^3.2.1"
 flake8 = "^4.0.1"
 flake8-commas = "^2.1.0"
 flake8-print = "^5.0.0"
 isort = "^5.10.1"
 pylic = "^3.0.2"
+pylint = "==2.14.0"
 pyright = "^1.1.241"
 pytest = "^7.0.1"
 pytest-aiohttp = "<1.0.4"
