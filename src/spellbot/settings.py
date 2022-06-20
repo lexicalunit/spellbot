@@ -59,7 +59,7 @@ class Settings:
         self.VOICE_GRACE_PERIOD_M = 10  # 10 minutes
         self.VOICE_AGE_LIMIT_H = 5  # 5 hours
         self.VOICE_CLEANUP_LOOP_M = 30  # 30 minutes
-        self.VOICE_CLEANUP_BATCH = 40  # batch size
+        self.VOICE_CLEANUP_BATCH = 30  # batch size
         self.EXPIRE_GAMES_LOOP_M = 10  # 10 minutes
 
     def workaround_over_eager_caching(self, url: str) -> str:

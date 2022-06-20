@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from datetime import datetime, timedelta
@@ -117,6 +118,7 @@ class TaskInteraction(BaseInteraction):
         for channel in sorted(channels, key=lambda c: c.created_at):
             logger.info("deleting channel %s(%s)", channel.name, channel.id)
             await safe_delete_channel(channel, channel.guild.id)
+            await asyncio.sleep(1)
 
             # Try to avoid rate limiting by the Discord API
             batch += 1
