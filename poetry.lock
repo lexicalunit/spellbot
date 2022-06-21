@@ -31,7 +31,7 @@ jinja2 = ">=3.0.0"
 
 [[package]]
 name = "aiohttp-retry"
-version = "2.4.6"
+version = "2.4.8"
 description = "Simple retry client for aiohttp"
 category = "main"
 optional = false
@@ -1233,8 +1233,8 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 
 [metadata]
 lock-version = "1.1"
-python-versions = '>=3.9,<4'
-content-hash = "7c16fea8d4ab7275c70cc73394d6bbd0168c079f40cec5b982ef43f95b7864ee"
+python-versions = ">=3.9,<4"
+content-hash = "7d055ca55c1b86658ec3013482f116d28164b34321cc3ba757ae44c407691dab"
 
 [metadata.files]
 aiohttp = [
@@ -1281,8 +1281,8 @@ aiohttp-jinja2 = [
     {file = "aiohttp_jinja2-1.5-py3-none-any.whl", hash = "sha256:b55c0ed167b0cc4b6d6a50fb2299a44beb5dc4aec9df21305b91a5484694cf74"},
 ]
 aiohttp-retry = [
-    {file = "aiohttp_retry-2.4.6-py3-none-any.whl", hash = "sha256:4c478be0f54a0e1bbe8ee3128122ff42c26ed2e1e16c13ca601a087004ec8bb7"},
-    {file = "aiohttp_retry-2.4.6.tar.gz", hash = "sha256:288c1a0d93b4b3ad92910c56a0326c6b055c7e1345027b26f173ac18594a97da"},
+    {file = "aiohttp_retry-2.4.8-py3-none-any.whl", hash = "sha256:1b2703e1de565f99715743ef14dfd66392b6e6db422d2eaf83a442bb75639579"},
+    {file = "aiohttp_retry-2.4.8.tar.gz", hash = "sha256:4ceb6eab329a97abca7a3e5038b35924c5ae57f6305f29f262d8ee646bc4e16a"},
 ]
 alembic = [
     {file = "alembic-1.7.7-py3-none-any.whl", hash = "sha256:29be0856ec7591c39f4e1cb10f198045d890e6e2274cf8da80cb5e721a09642b"},
