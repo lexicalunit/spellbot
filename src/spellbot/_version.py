@@ -8,7 +8,7 @@ def version_from_git() -> Optional[str]:
         choice = _dunamai.Version.from_any_vcs
         version = _dunamai.get_version("spellbot", first_choice=choice).serialize()
         return version if version is not None and version != "0.0.0" else None
-    except RuntimeError:
+    except Exception:
         return None
 
 
@@ -17,7 +17,7 @@ def version_from_package() -> Optional[str]:
         choice = _dunamai.Version.from_any_vcs
         version = _dunamai.get_version("spellbot", third_choice=choice).serialize()
         return version if version is not None and version != "0.0.0" else None
-    except RuntimeError:
+    except Exception:
         return None
 
 
