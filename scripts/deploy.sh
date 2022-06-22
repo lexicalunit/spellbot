@@ -38,6 +38,6 @@ fi
 [[ $ENV == "stage" ]] && APP="$APP-staging"
 TAG="registry.heroku.com/$APP/web"
 
-run "docker buildx build --platform linux/amd64 -t '$TAG' ."
+run "DOCKER_BUILDKIT=0 docker buildx build --ulimit nofile=1024000:1024000 --platform linux/amd64 -t '$TAG' ."
 run "docker push '$TAG'"
 run "heroku container:release web --app '$APP'"

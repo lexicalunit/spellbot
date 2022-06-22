@@ -30,6 +30,14 @@ from .utils import user_can_moderate
 logger = logging.getLogger(__name__)
 
 
+def patch_discord_proxy(PROXY_URL: str):
+    """Patch discord.http to use our Discord API proxy."""
+    from discord import http
+    from discord_slash import dpy_overrides
+
+    http.Route.BASE = dpy_overrides.Route.BASE = f"{PROXY_URL}/api/v7"  # type: ignore
+
+
 class SpellBot(Bot):
     slash: SlashCommand
 
@@ -50,6 +58,7 @@ class SpellBot(Bot):
         )
         self.mock_games = mock_games
         self.channel_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
+        patch_discord_proxy(self.settings.DISCORD_PROXY)
 
     @asynccontextmanager
     async def channel_lock(self, channel_xid: int) -> AsyncGenerator[None, None]:
