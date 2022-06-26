@@ -1147,7 +1147,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-pytz"
-version = "2022.1.0"
+version = "2022.1.1"
 description = "Typing stubs for pytz"
 category = "main"
 optional = false
@@ -1255,7 +1255,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 
 [metadata]
 lock-version = "1.1"
-python-versions = '>=3.9,<4'
+python-versions = ">=3.9,<4"
 content-hash = "265851d500ed76edd444cd7f439366081b53b60b5414b1def187d7942cf247d5"
 
 [metadata.files]
@@ -2055,6 +2055,7 @@ sqlalchemy = [
     {file = "SQLAlchemy-1.4.37-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:d9050b0c4a7f5538650c74aaba5c80cd64450e41c206f43ea6d194ae6d060ff9"},
     {file = "SQLAlchemy-1.4.37-cp27-cp27m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:b4c92823889cf9846b972ee6db30c0e3a92c0ddfc76c6060a6cda467aa5fb694"},
     {file = "SQLAlchemy-1.4.37-cp27-cp27m-win32.whl", hash = "sha256:b55932fd0e81b43f4aff397c8ad0b3c038f540af37930423ab8f47a20b117e4c"},
+    {file = "SQLAlchemy-1.4.37-cp27-cp27m-win_amd64.whl", hash = "sha256:4a17c1a1152ca4c29d992714aa9df3054da3af1598e02134f2e7314a32ef69d8"},
     {file = "SQLAlchemy-1.4.37-cp27-cp27mu-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:ffe487570f47536b96eff5ef2b84034a8ba4e19aab5ab7647e677d94a119ea55"},
     {file = "SQLAlchemy-1.4.37-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:78363f400fbda80f866e8e91d37d36fe6313ff847ded08674e272873c1377ea5"},
     {file = "SQLAlchemy-1.4.37-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7ee34c85cbda7779d66abac392c306ec78c13f5c73a1f01b8b767916d4895d23"},
@@ -2129,8 +2130,8 @@ types-python-dateutil = [
     {file = "types_python_dateutil-2.8.18-py3-none-any.whl", hash = "sha256:fd5ed97262b76ae684695ea38ace8dd7c1bc9491aba7eb4edf6654b7ecabc870"},
 ]
 types-pytz = [
-    {file = "types-pytz-2022.1.0.tar.gz", hash = "sha256:bbe7eaf93b4fbec4780323af925286d265a6681f50dba57d16dbd8695c3ed63d"},
-    {file = "types_pytz-2022.1.0-py3-none-any.whl", hash = "sha256:20984c0c321d312caac8fd0a0b5456b615cb9cce74473624a794851a606fabae"},
+    {file = "types-pytz-2022.1.1.tar.gz", hash = "sha256:4e7add70886dc2ee6ee7535c8184a26eeb0ac9dbafae9962cb882d74b9f67330"},
+    {file = "types_pytz-2022.1.1-py3-none-any.whl", hash = "sha256:581467742f32f15fff1098698b11fd511057a2a8a7568d33b604083f2b03c24f"},
 ]
 types-pyyaml = [
     {file = "types-PyYAML-6.0.8.tar.gz", hash = "sha256:d9495d377bb4f9c5387ac278776403eb3b4bb376851025d913eea4c22b4c6438"},
