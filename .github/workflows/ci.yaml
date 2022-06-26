@@ -51,7 +51,7 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install poetry pylint tox tox-gh-actions
+        pip install poetry pylint tox tox-gh-actions "aiohttp==3.8.1" "pytest-aiohttp==1.0.4"
 
     - name: Run Tests
       run: tox
