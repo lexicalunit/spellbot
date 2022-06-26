@@ -31,7 +31,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.9]
+        python-version: ["3.9"]
         database-url: ["postgresql://postgres:postgres@localhost:5432/postgres"]
 
     steps:
@@ -50,11 +50,18 @@ jobs:
 
     - name: Install Dependencies
       run: |
+        git --version
+        python --version
         python -m pip install --upgrade pip
-        pip install poetry pylint tox tox-gh-actions "aiohttp==3.8.1" "pytest-aiohttp==1.0.4"
+        pip --version
+        pip install poetry
+        poetry --version
+        poetry install
+        pip install -U "aiohttp==3.8.1" "pytest-aiohttp==1.0.4"
 
     - name: Run Tests
-      run: tox
+      run: |
+        poetry run pytest -vv --cov --cov-report=html --cov-report=xml
       env:
         DATABASE_URL: ${{ matrix.database-url }}
 

@@ -150,11 +150,11 @@ pylint = "2.14.0"
 pyright = "^1.1.255"
 pytest = "^7.1.2"
 pytest-asyncio = "^0.18.3"
+pytest-cov = "^3.0.0"
 pytest-freezegun = "^0.4.2"
 pytest-mock = "^3.8.1"
 sqlalchemy-stubs = "^0.4"
 syrupy = "^2.3.0"
-tox = "^3.25.0"
 
 [tool.poetry.scripts]
 spellbot = 'spellbot:main'

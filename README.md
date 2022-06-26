@@ -10,7 +10,6 @@
 [![build][build-badge]][build]
 [![uptime][uptime-badge]][uptime]
 [![codecov][codecov-badge]][codecov]
-[![CodeFactor][factor-badge]][factor]
 [![heroku][heroku-badge]][heroku]
 [![python][python-badge]][python]
 [![pypi][pypi-badge]][pypi]
@@ -148,8 +147,6 @@ Any usage of SpellBot implies that you accept the following policies.
 [discord-py]: https://github.com/Rapptz/discord.py
 [docker-badge]: https://img.shields.io/docker/pulls/lexicalunit/spellbot.svg
 [docker-hub]: https://hub.docker.com/r/lexicalunit/spellbot
-[factor-badge]: https://www.codefactor.io/repository/github/lexicalunit/spellbot/badge
-[factor]: https://www.codefactor.io/repository/github/lexicalunit/spellbot
 [follow-badge]: https://img.shields.io/twitter/follow/SpellBotIO?style=social
 [follow]: https://twitter.com/intent/follow?screen_name=SpellBotIO
 [heroku-badge]: https://img.shields.io/badge/heroku-deployed-green
