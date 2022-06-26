@@ -29,6 +29,7 @@ dist/
 DOCKER.md
 Dockerfile.*
 docs/
+env/
 grafana/
 logs/
 node_modules/

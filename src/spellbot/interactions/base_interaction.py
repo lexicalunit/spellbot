@@ -1,4 +1,4 @@
-# pylint: disable=wrong-import-order
+from __future__ import annotations
 
 import logging
 from collections.abc import AsyncGenerator
@@ -12,12 +12,7 @@ from discord_slash.context import InteractionContext
 
 from .. import SpellBot
 from ..database import DatabaseSession, db_session_manager
-from ..errors import (
-    SpellBotError,
-    UserBannedError,
-    UserUnverifiedError,
-    UserVerifiedError,
-)
+from ..errors import SpellBotError, UserBannedError, UserUnverifiedError, UserVerifiedError
 from ..metrics import setup_ignored_errors
 from ..services import ServicesRegistry, VerifiesService
 from ..utils import user_can_moderate

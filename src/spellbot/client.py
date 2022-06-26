@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import traceback
@@ -14,12 +16,7 @@ from discord_slash import SlashCommand, context
 from expiringdict import ExpiringDict
 
 from .database import db_session_manager, initialize_connection
-from .errors import (
-    AdminOnlyError,
-    UserBannedError,
-    UserUnverifiedError,
-    UserVerifiedError,
-)
+from .errors import AdminOnlyError, UserBannedError, UserUnverifiedError, UserVerifiedError
 from .metrics import add_span_error, setup_ignored_errors, setup_metrics
 from .operations import safe_send_user
 from .services import ChannelsService, GuildsService, VerifiesService
@@ -139,10 +136,7 @@ class SpellBot(Bot):
             span.set_tag("guild_id", message.guild.id)  # type: ignore
 
         # ignore everything except messages in text channels
-        if (
-            not hasattr(message.channel, "type")
-            or message.channel.type != discord.ChannelType.text
-        ):
+        if not hasattr(message.channel, "type") or message.channel.type != discord.ChannelType.text:
             return
         if span:  # noqa
             span.set_tag("channel_id", message.channel.id)  # type: ignore

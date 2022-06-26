@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from .admin_interaction import AdminInteraction
 from .ban_interaction import BanInteraction
+from .base_interaction import BaseInteraction
 from .block_interaction import BlockInteraction
 from .config_interaction import ConfigInteraction
 from .leave_interaction import LeaveInteraction
@@ -12,6 +15,7 @@ from .watch_interaction import WatchInteraction
 __all__ = [
     "AdminInteraction",
     "BanInteraction",
+    "BaseInteraction",
     "BlockInteraction",
     "ConfigInteraction",
     "LeaveInteraction",

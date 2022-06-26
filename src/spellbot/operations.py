@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Optional, Union, cast
 
@@ -104,10 +106,7 @@ def safe_get_partial_message(
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid), "message_xid": str(message_xid)})
 
-    if (
-        not hasattr(channel, "type")
-        or getattr(channel, "type") != discord.ChannelType.text
-    ):
+    if not hasattr(channel, "type") or getattr(channel, "type") != discord.ChannelType.text:
         return None
 
     if not bot_can_read(channel):
@@ -474,10 +473,7 @@ async def safe_add_role(
             return
         if not bot_can_role(guild):
             logger.warning(
-                (
-                    "warning: in guild %s, could not add role: "
-                    "no permissions to add role: %s"
-                ),
+                ("warning: in guild %s, could not add role: " "no permissions to add role: %s"),
                 guild.id,
                 str(role),
             )

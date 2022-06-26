@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum, auto
@@ -186,9 +188,7 @@ class Game(Base):
     def embed_description(self, dm: bool = False) -> str:
         description = ""
         if self.status == GameStatus.PENDING.value:
-            description += (
-                "_A SpellTable link will be created when all players have joined._"
-            )
+            description += "_A SpellTable link will be created when all players have joined._"
         else:
             if self.show_links(dm):
                 if self.spelltable_link:
@@ -210,18 +210,14 @@ class Game(Base):
                         f" (invite will expire in {expire_min} minutes)"
                     )
             else:
-                description += (
-                    "Please check your Direct Messages for your SpellTable link."
-                )
+                description += "Please check your Direct Messages for your SpellTable link."
             if dm:
                 description += (
                     "\n\nYou can also [jump to the original game post]"
                     f"({self.jump_link}) in <#{self.channel_xid}>."
                 )
             elif self.guild.show_points:
-                description += (
-                    "\n\nWhen your game is over use the drop down to report your points."
-                )
+                description += "\n\nWhen your game is over use the drop down to report your points."
         if self.guild.motd:
             description += f"\n\n{self.guild.motd}"
         if self.channel.motd:

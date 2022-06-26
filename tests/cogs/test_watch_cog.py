@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
 from pygicord import Config
 
-from spellbot.cogs.watch_cog import WatchCog
+from spellbot.cogs import WatchCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import watch_interaction
 from spellbot.models import Watch
@@ -57,8 +59,7 @@ class TestCogWatch(InteractionContextMixin):
         assert self.ctx.send.call_args_list[0].kwargs["embed"].to_dict() == {
             "color": self.settings.EMBED_COLOR,
             "description": (
-                f"• <@{user1.xid}> — {watch1.note}\n"
-                f"• <@{user2.xid}> — {watch2.note}\n"
+                f"• <@{user1.xid}> — {watch1.note}\n• <@{user2.xid}> — {watch2.note}\n"
             ),
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": "List of watched players on this server",

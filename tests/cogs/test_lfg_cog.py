@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest.mock import ANY, AsyncMock, MagicMock
 
 import discord
@@ -5,7 +7,7 @@ import pytest
 from sqlalchemy.sql.expression import update
 from syrupy.assertion import SnapshotAssertion
 
-from spellbot.cogs.lfg_cog import LookingForGameCog
+from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import leave_interaction, lfg_interaction
 from spellbot.models import Channel, Game, GameFormat, GameStatus, Guild, User, UserAward

@@ -13,11 +13,37 @@ You can install `poetry` with the script `install-poetry.py`:
 curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
 ```
 
+## Setting up environment
+
+The easiest thing to do is to set up a virtual python environment specifically for spellbot.
+
+```shell
+python3.9 -m venv env
+```
+
+Then you can install `poetry` into this environment with:
+
+```shell
+env/bin/pip install --upgrade pip
+env/bin/pip install poetry
+```
+
+Now configure `poetry` to use in the virtual environment we already created:
+
+```shell
+env/bin/poetry config virtualenvs.create false
+env/bin/poetry env use env/bin/python
+```
+
+To make this easier I've also included a [`scripts/setup.sh`](scripts/setup.sh)
+to do this automatically.
+
 ## Installing the application
 
 Install in development mode via `poetry`:
 
 ```shell
+source env/bin/activate
 poetry install
 ```
 
@@ -33,12 +59,14 @@ If you wish, you can use a [.env file](https://pypi.org/project/python-dotenv/).
 When your environmental variables are set, run:
 
 ```shell
+source env/bin/activate
 poetry run spellbot --help
 ```
 
 This will list some useful flags you can provide to run SpellBot. To get started developing, run:
 
 ```shell
+source env/bin/activate
 poetry run spellbot --dev
 ```
 
@@ -46,99 +74,10 @@ This will start SpellBot and reload it whenever the source code changes.
 
 ## Running tests
 
-We use [tox](https://tox.readthedocs.io/en/latest/) to manage test execution.
-It can be installed with `pip`:
-
 ```shell
-pip install -U tox
-```
-
-Whenever you ran the `poetry install` command for the first time it created a
-virtual environment for you based on which python environment you installed
-`poetry` into.
-
-Our `tox` configuration has tests set to run against multiple python
-environments. So you will need to manage multiple installs of python to be able
-to support testing in multiple environments. Thankfully
-[`pyenv`](https://github.com/pyenv/pyenv) and
-[`tox-pyenv`](https://pypi.org/project/tox-pyenv/) make this straightforward and
-seamless.
-
-First [install `pyenv`](https://github.com/pyenv/pyenv#installation) on your
-machine. There are various methods to do this, some easier than others. On macOS
-I'd use [Homebrew](https://brew.sh/) and for other systems I, and the author of
-`pyenv`, recommend
-[`pyenv-installer`](https://github.com/pyenv/pyenv-installer).
-
-Now install [`tox-pyenv`](https://pypi.org/project/tox-pyenv/) so that `tox` can
-automatically find your environments:
-
-```shell
-pip install -U tox-pyenv
-```
-
-Now let's create the python environments you'll need. The following commands
-will do this on any \*NIX system. For other systems hopefully what I'm doing here
-is instructive. Details on each command are given with inline comments.
-
-```shell
-# install a plugin that allows pyenv to know how to fetch the latest versions
-rm -rf "$(pyenv root)"/plugins/xxenv-latest
-git clone https://github.com/momo-lab/xxenv-latest.git "$(pyenv root)"/plugins/xxenv-latest
-
-# for each python environment in the tox configuration, create it using pyenv
-# this step takes a while, but you will only need to do this setup once
-tox -l | while read -r py; do
-    # translate a tox env name like "py39" into a number like "39"
-    number="$(echo "$py" | sed "s/^py//")"
-
-    # translate a number like "39" into a python version like "3.9"
-    version="${number:0:1}.${number:1:1}"
-
-    # install the latest python interpreter for that version
-    pyenv latest install "$version"
-done
-
-# configure tox-pyenv to use the interpreters we just installed
-pyenv local $(pyenv versions --bare | tr '\n' ' ')
-```
-
-The above script, **at the time of this writing**, amounts to running the
-following commands:
-
-```shell
-pyenv install 3.9.6
-pyenv local 3.9.6
-```
-
-But over time newer versions of python will become available and the above
-script should automatically handle that for you. Also not that over time
-you may need to run `pyenv uninstall` on old and unused python versions.
-
-> **Note:** If your `pyenv install` command fails, please read
-> [this](https://github.com/pyenv/pyenv/wiki/common-build-problems) help
-> documentation provided by `pyenv`. You probably need to install some
-> prerequisites on your system using your system's package manager.
-
-Now you should be able to run the entire test suite against all python
-environments with:
-
-```shell
-tox
-```
-
-Or a specific set of tests and environment. For example all tests pertaining to
-users using the `py39` environment:
-
-```shell
-tox -e py39 -- -k user
-```
-
-After running the _full test suite_ you can view code coverage reports in the
-`coverage` directory broken out by python environment.
-
-```shell
-open coverage/py39/index.html
+source env/bin/activate
+poetry run pytest --cov --cov-report=html
+open coverage/index.html
 ```
 
 ## Formatting and linting
@@ -150,7 +89,8 @@ to work alongside the formatter. Imports are kept in order by
 run these tools against the codebase and report on any errors:
 
 ```shell
-tox -- -k codebase
+source env/bin/activate
+poetry run pytest -k codebase
 ```
 
 ## Release process
@@ -166,6 +106,7 @@ directory to help. To use it you will need to have non-interactive
 `poetry publish` enabled by running:
 
 ```shell
+source env/bin/activate
 poetry config pypi-token.pypi "YOUR-PYPI-TOKEN-GOES-HERE"
 ```
 
@@ -196,8 +137,9 @@ make. But basically:
 To release a new version of `spellbot`, use `poetry`:
 
 ```shell
+source env/bin/activate
 poetry version [major|minor|patch]
-tox # verify that all tests pass for all environments
+poetry run pytest # verify that all tests pass
 # edit the CHANGELOG.md file to promote all unlreased changes to the new version
 poetry build
 git commit -am "Release vM.N.P"
@@ -206,7 +148,7 @@ git tag 'vM.N.P'
 git push --tags origin main
 ```
 
-> **Note:** The reason you should run `tox` after running the `poetry version`
+> **Note:** The reason you should run `pytest` after running the `poetry version`
 > command is to ensure that all test still pass after the version is updated.
 
 You can get the `M.N.P` version numbers from `pyproject.toml` after you've run
@@ -251,6 +193,7 @@ made to the models. To autogenerate migration scripts that will bring the
 database inline with the changes you've made to the models, run:
 
 ```shell
+source env/bin/activate
 poetry run scripts/create_db_revision.py \
     "<your-sqlalchemy-database-url>" \
     "<Some description of your changes>"

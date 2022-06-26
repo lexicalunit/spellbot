@@ -1,16 +1,9 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (
-    BigInteger,
-    Boolean,
-    Column,
-    DateTime,
-    ForeignKey,
-    Integer,
-    String,
-    false,
-)
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String, false
 from sqlalchemy.orm import relationship
 
 from . import Base, Config, GameStatus, Play, now
@@ -114,9 +107,7 @@ class User(Base):
     @property
     def waiting(self) -> bool:
         return bool(
-            self.game
-            and self.game.status == GameStatus.PENDING.value
-            and not self.game.deleted_at,
+            self.game and self.game.status == GameStatus.PENDING.value and not self.game.deleted_at,
         )
 
     def to_dict(self) -> dict:

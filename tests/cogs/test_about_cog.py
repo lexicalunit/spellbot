@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import pytest
 from discord_slash.context import InteractionContext
 
 from spellbot import SpellBot, __version__
-from spellbot.cogs.about_cog import AboutCog
+from spellbot.cogs import AboutCog
 from spellbot.settings import Settings
 
 
@@ -35,10 +37,7 @@ class TestCogAbout:
                 {
                     "inline": True,
                     "name": "Version",
-                    "value": (
-                        f"[{__version__}]"
-                        f"(https://pypi.org/project/spellbot/{__version__}/)"
-                    ),
+                    "value": (f"[{__version__}](https://pypi.org/project/spellbot/{__version__}/)"),
                 },
                 {
                     "inline": True,

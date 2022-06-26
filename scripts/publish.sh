@@ -46,10 +46,6 @@ fi
 # bump the version in pyproject.toml
 run "poetry version '$KIND'"
 
-# run tests to ensure the build is good
-# This is valuable, but let's lean on CI instead.
-# run "tox"
-
 # fetch the version from pyproject.toml
 VERSION="$(grep "^version" <pyproject.toml | cut -d= -f2 | sed 's/"//g;s/ //g;s/^/v/;')"
 

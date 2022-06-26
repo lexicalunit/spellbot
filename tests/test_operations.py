@@ -1,4 +1,5 @@
 # pylint: disable=attribute-defined-outside-init
+from __future__ import annotations
 
 import logging
 from typing import Union
@@ -80,8 +81,7 @@ class TestOperationsFetchTextChannel:
 @pytest.mark.asyncio
 class TestOperationsGetPartialMessage:
     read_perms = discord.Permissions(
-        discord.Permissions.read_messages.flag
-        | discord.Permissions.read_message_history.flag,
+        discord.Permissions.read_messages.flag | discord.Permissions.read_message_history.flag,
     )
 
     @pytest.fixture(autouse=True)
@@ -385,8 +385,7 @@ class TestOperationsAddRole:
         await safe_add_role(user, guild, "role")
         guild.get_member.assert_called_once()
         assert (
-            f"warning: in guild {guild.id}, could not add role:"
-            " could not find member: user#1234"
+            f"warning: in guild {guild.id}, could not add role:" " could not find member: user#1234"
         ) in caplog.text
 
     async def test_no_role(self, caplog):
@@ -401,8 +400,7 @@ class TestOperationsAddRole:
         guild.roles = []
         await safe_add_role(member, guild, "role")
         assert (
-            f"warning: in guild {guild.id}, could not add role:"
-            " could not find role: role"
+            f"warning: in guild {guild.id}, could not add role:" " could not find role: role"
         ) in caplog.text
 
     async def test_no_permissions(self, caplog):
@@ -419,8 +417,7 @@ class TestOperationsAddRole:
         guild.roles = [role]
         await safe_add_role(member, guild, "role")
         assert (
-            f"warning: in guild {guild.id}, could not add role:"
-            " no permissions to add role: role"
+            f"warning: in guild {guild.id}, could not add role:" " no permissions to add role: role"
         ) in caplog.text
 
     async def test_forbidden(self, caplog):
@@ -439,8 +436,7 @@ class TestOperationsAddRole:
         guild.roles = [role]
         await safe_add_role(member, guild, "role")
         assert (
-            f"warning: in guild {guild.id},"
-            f" could not add role to member user#1234: {exception}"
+            f"warning: in guild {guild.id}," f" could not add role to member user#1234: {exception}"
         ) in caplog.text
 
 

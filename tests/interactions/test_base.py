@@ -1,16 +1,12 @@
+from __future__ import annotations
+
 from unittest.mock import MagicMock
 
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.errors import (
-    AdminOnlyError,
-    UserBannedError,
-    UserUnverifiedError,
-    UserVerifiedError,
-)
-from spellbot.interactions import base_interaction
-from spellbot.interactions.base_interaction import BaseInteraction
+from spellbot.errors import AdminOnlyError, UserBannedError, UserUnverifiedError, UserVerifiedError
+from spellbot.interactions import BaseInteraction, base_interaction
 from spellbot.models import Verify
 from tests.mixins import InteractionContextMixin
 from tests.mocks import ctx_channel, ctx_guild, ctx_user

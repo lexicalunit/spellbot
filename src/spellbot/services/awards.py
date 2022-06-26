@@ -1,4 +1,4 @@
-# pylint: disable=wrong-import-order
+from __future__ import annotations
 
 from collections import namedtuple
 
@@ -60,10 +60,7 @@ class AwardsService:
                 ).one_or_none()
                 if next_award and (
                     (user_award.guild_award_id != next_award.id)
-                    or (
-                        user_award.guild_award_id == next_award.id
-                        and next_award.repeating
-                    )
+                    or (user_award.guild_award_id == next_award.id and next_award.repeating)
                 ):
                     new_roles[player_xid] = NewAward(
                         next_award.role,

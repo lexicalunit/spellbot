@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from contextlib import AbstractContextManager
 from typing import Any, Optional, Union, cast
@@ -101,8 +103,7 @@ def is_admin(ctx: InteractionContext) -> bool:
     author_roles = ctx.author.roles  # type: ignore
     settings = Settings()
     has_admin_role = any(
-        role.name == settings.ADMIN_ROLE
-        for role in cast(list[discord.Role], author_roles)
+        role.name == settings.ADMIN_ROLE for role in cast(list[discord.Role], author_roles)
     )
     if not has_admin_role:
         raise AdminOnlyError()

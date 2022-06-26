@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
 
-from spellbot.cogs.verify_cog import VerifyCog
+from spellbot.cogs import VerifyCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Verify
 from tests.mixins import InteractionContextMixin

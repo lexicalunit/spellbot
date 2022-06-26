@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name, protected-access
+from __future__ import annotations
 
 import contextvars
 from asyncio import AbstractEventLoop
@@ -113,9 +114,9 @@ async def bot() -> AsyncGenerator[SpellBot, None]:
 
 
 @pytest.fixture
-def client(loop: AbstractEventLoop, aiohttp_client) -> ClientSession:
+def client(event_loop: AbstractEventLoop, aiohttp_client) -> ClientSession:
     app = build_web_app()
-    return loop.run_until_complete(aiohttp_client(app))
+    return event_loop.run_until_complete(aiohttp_client(app))
 
 
 @pytest.fixture

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
@@ -8,12 +10,7 @@ from discord_slash.context import InteractionContext, SlashContext
 
 from spellbot import client
 from spellbot.database import DatabaseSession
-from spellbot.errors import (
-    AdminOnlyError,
-    UserBannedError,
-    UserUnverifiedError,
-    UserVerifiedError,
-)
+from spellbot.errors import AdminOnlyError, UserBannedError, UserUnverifiedError, UserVerifiedError
 from spellbot.models import Channel, Guild, Verify
 from tests.mixins import BaseMixin
 
