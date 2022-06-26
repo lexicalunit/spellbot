@@ -1,4 +1,5 @@
 # pylint: disable=too-many-arguments
+from __future__ import annotations
 
 import asyncio
 from os import getenv

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 from typing import Optional
 from unittest.mock import AsyncMock
@@ -5,7 +7,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from spellbot import SpellBot
-from spellbot.cogs.lfg_cog import LookingForGameCog
+from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import lfg_interaction
 from spellbot.models import Game
@@ -18,10 +20,7 @@ class TestCogLookingForGameConcurrency:
         cog = LookingForGameCog(bot)
         guild = build_guild()
         n = 100
-        contexts = [
-            build_ctx(guild, build_channel(guild, i), build_author(i), i)
-            for i in range(n)
-        ]
+        contexts = [build_ctx(guild, build_channel(guild, i), build_author(i), i) for i in range(n)]
         tasks = [cog.lfg.func(cog, contexts[i]) for i in range(n)]
         await asyncio.wait(tasks)
 

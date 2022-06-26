@@ -7,26 +7,59 @@ from pkgutil import iter_modules
 from discord.ext import commands
 from discord.ext.commands import Bot
 
+from .about_cog import AboutCog
+from .admin_cog import AdminCog
+from .ban_cog import BanCog
+from .block_cog import BlockCog
+from .config_cog import ConfigCog
+from .events_cog import EventsCog
+from .leave_cog import LeaveGameCog
+from .lfg_cog import LookingForGameCog
+from .score_cog import ScoreCog
+from .tasks_cog import TasksCog
+from .verify_cog import VerifyCog
+from .watch_cog import WatchCog
+
 logger = logging.getLogger(__name__)
-cog_module_names = set()
 
-# iterate through the modules in the current package
-package_dir = Path(__file__).resolve().parent
-for info in iter_modules([str(package_dir)]):
-
-    # import the module and iterate through its attributes
-    module = import_module(f"{__name__}.{info.name}")
-    for attribute_name in dir(module):  # pragma: no cover
-        attribute = getattr(module, attribute_name)
-
-        # Check if there's any cogs in this module
-        if isclass(attribute) and issubclass(attribute, commands.Cog):
-            cog_module_names.add(module.__name__)
-            break
+# Only exported cogs will be loaded into the bot at runtime.
+__all__ = [
+    "AboutCog",
+    "AdminCog",
+    "BanCog",
+    "BlockCog",
+    "ConfigCog",
+    "EventsCog",
+    "LeaveGameCog",
+    "LookingForGameCog",
+    "ScoreCog",
+    "TasksCog",
+    "VerifyCog",
+    "WatchCog",
+]
 
 
 def load_all_cogs(bot: Bot) -> Bot:
-    for module_name in cog_module_names:
-        logger.info("loading cog module %s into bot...", module_name)
-        bot.load_extension(module_name)
+    # iterate through the modules in the current package
+    package_dir = Path(__file__).resolve().parent
+    for info in iter_modules([str(package_dir)]):
+
+        # import the module and iterate through its attributes
+        module = import_module(f"{__name__}.{info.name}")
+        for attribute_name in dir(module):  # pragma: no cover
+            attribute = getattr(module, attribute_name)
+
+            # Only load cogs in this module if they're exported
+            if (
+                isclass(attribute)
+                and issubclass(attribute, commands.Cog)
+                and attribute.__name__ in __all__
+            ):
+                if module.__name__ in bot.extensions:
+                    logger.info("reloading extension %s...", module.__name__)
+                    bot.reload_extension(module.__name__)
+                else:
+                    logger.info("loading extension %s...", module.__name__)
+                    bot.load_extension(module.__name__)
+                break
     return bot

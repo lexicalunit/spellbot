@@ -1,4 +1,5 @@
 # pylint: disable=protected-access
+from __future__ import annotations
 
 import re
 from functools import wraps
@@ -14,12 +15,7 @@ from wrapt import wrap_function_wrapper
 
 from . import __version__
 from .environment import running_in_pytest
-from .errors import (
-    AdminOnlyError,
-    UserBannedError,
-    UserUnverifiedError,
-    UserVerifiedError,
-)
+from .errors import AdminOnlyError, UserBannedError, UserUnverifiedError, UserVerifiedError
 from .settings import Settings
 
 settings = Settings()
@@ -70,9 +66,7 @@ def patch_discord() -> None:  # pragma: no cover
             additional_tags["interaction_id"] = matches[1]
             additional_tags["interaction_token"] = matches[2]
         elif matches := webhook_message.match(path):
-            resource = (
-                r"/webhooks/{application_id}/{interaction_token}/messages/@original"
-            )
+            resource = r"/webhooks/{application_id}/{interaction_token}/messages/@original"
             additional_tags["application_id"] = matches[1]
             additional_tags["interaction_token"] = matches[2]
         else:

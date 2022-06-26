@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest.mock import AsyncMock
 
 import pytest
@@ -62,9 +64,7 @@ class TestInteractionLookingForGame(InteractionContextMixin):
 
         async with LookingForGameInteraction.create(self.bot, self.ctx) as interaction:
             created = await interaction.ensure_users_exist(user_xids, exclude_self=False)
-            assert set(created) == set(
-                user.id for user in user_list if user.id != user_list[-1].id
-            )
+            assert set(created) == set(user.id for user in user_list if user.id != user_list[-1].id)
 
         assert DatabaseSession.query(User).count() == 2
 
@@ -83,9 +83,7 @@ class TestInteractionLookingForGame(InteractionContextMixin):
 
         async with LookingForGameInteraction.create(self.bot, self.ctx) as interaction:
             created = await interaction.ensure_users_exist(user_xids, exclude_self=False)
-            assert set(created) == set(
-                user.id for user in user_list if user.id != banned_user_xid
-            )
+            assert set(created) == set(user.id for user in user_list if user.id != banned_user_xid)
 
         assert DatabaseSession.query(User).count() == 3
 

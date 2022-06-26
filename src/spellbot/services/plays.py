@@ -1,4 +1,4 @@
-# pylint: disable=wrong-import-order
+from __future__ import annotations
 
 from typing import Optional
 
@@ -196,11 +196,7 @@ class PlaysService:
         guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
         if not guild:
             return None
-        channel = (
-            DatabaseSession.query(Channel)
-            .filter(Channel.xid == channel_xid)
-            .one_or_none()
-        )
+        channel = DatabaseSession.query(Channel).filter(Channel.xid == channel_xid).one_or_none()
         if not channel:
             return None
 

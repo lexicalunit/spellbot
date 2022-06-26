@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import discord
 import pytest
 from discord_slash.context import InteractionContext
 
 from spellbot import SpellBot
-from spellbot.cogs.events_cog import EventsCog
+from spellbot.cogs import EventsCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import lfg_interaction
 from spellbot.models import Game, GameFormat, GameStatus, User

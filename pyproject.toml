@@ -1,16 +1,16 @@
 [tool.black]
 include = '\.pyi?$'
-line-length = 90
+line-length = 100
 
 [tool.isort]
 ensure_newline_before_comments = true
 include_trailing_comma = true
-line_length = 90
+line_length = 100
 multi_line_output = 3
 use_parentheses = true
 
 [tool.pylint]
-max-line-length = 90
+max-line-length = 100
 
 [tool.pyright]
 enableTypeIgnoreComments = true
@@ -41,32 +41,7 @@ safe_licenses = [
 
 [tool.pytest.ini_options]
 addopts = """
-    -W ignore::DeprecationWarning
-"""
-
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-isolated_build = true
-envlist = py{39}
-
-[gh-actions]
-python =
-    3.9: py39
-
-[testenv]
-whitelist_externals = poetry
-skip_install = true
-passenv = *
-setenv =
-  DD_TRACE_ENABLED=0
-commands =
-    poetry install
-    poetry run coverage erase
-    poetry run coverage run -m pytest {posargs}
-    poetry run coverage report -m
-    poetry run coverage html -d coverage/{envname}
-    poetry run coverage xml
+    -W ignore::DeprecationWarning --no-header --cov --cov-report=html -vv
 """
 
 [tool.poetry]
@@ -99,7 +74,7 @@ version = "7.12.5"
 # order to install newer versions of aiohttp we have to drop down to pip:
 # $ pip install -U "aiohttp==3.8.1"
 # $ pip install -U "pytest-aiohttp==1.0.4"
-# So we do this in .github/workflows/ci.yaml and Dockerfile.
+# So we do this in .github/workflows/ci.yaml, Dockerfile, and scripts/setup.sh.
 Babel = "^2.10.3"
 PyYAML = "^6.0"
 SQLAlchemy = "^1.4.39"

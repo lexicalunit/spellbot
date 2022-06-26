@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from unittest.mock import MagicMock
 
 import pytest
 from discord_slash.context import MenuContext
 
 from spellbot import SpellBot
-from spellbot.cogs.block_cog import BlockCog
+from spellbot.cogs import BlockCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, User
 

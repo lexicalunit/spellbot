@@ -1,4 +1,4 @@
-# pylint: disable=wrong-import-order
+from __future__ import annotations
 
 from asgiref.sync import sync_to_async
 

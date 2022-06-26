@@ -1,24 +1,46 @@
+from __future__ import annotations
+
 import re
 import sys
 import warnings
 from os import chdir
-from subprocess import run
+from pathlib import Path
+from subprocess import getoutput, run
+from typing import cast
 
 import pytest
 import toml
+from git.objects import Tree
 from git.repo import Repo
 
 from . import REPO_ROOT, SRC_DIRS
 
 
 class TestCodebase:
+    def test_annotations(self):
+        """Checks that all python modules import annotations from future."""
+        chdir(REPO_ROOT)
+        output = getoutput(
+            (
+                r"find . -type d \( "
+                r"    -path ./env -o "
+                r"    -path ./src/spellbot/migrations/versions -o "
+                r"    -path ./src/spellbot/cogs "
+                r"\) -prune -o -name '*.py' "
+                r" -exec grep -HEoc 'from __future__ import annotations' {} \; "
+                r" | grep 0"
+            ),
+        )
+        assert output == "", "ensure that these files import annotations from __future__"
+
     def test_pyright(self):
         """Checks that the Python codebase passes pyright static analysis checks."""
         chdir(REPO_ROOT)
         cmd = ["pyright", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, f"pyright issues:\n{proc.stdout.decode('utf-8')}"
+        exitcode: int = cast(int, proc.returncode)
+        assert exitcode == 0, f"pyright issues:\n{proc.stdout.decode('utf-8')}"
 
     def test_flake8(self):
         """Checks that the Python codebase passes configured flake8 checks."""
@@ -26,7 +48,8 @@ class TestCodebase:
         cmd = ["flake8", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, f"flake8 issues:\n{proc.stdout.decode('utf-8')}"
+        exitcode: int = cast(int, proc.returncode)
+        assert exitcode == 0, f"flake8 issues:\n{proc.stdout.decode('utf-8')}"
 
     def test_black(self):
         """Checks that the Python codebase passes configured black checks."""
@@ -34,7 +57,8 @@ class TestCodebase:
         cmd = ["black", "--check", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
+        exitcode: int = cast(int, proc.returncode)
+        assert exitcode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
 
     @pytest.mark.skip(reason="This will be fixed after migration to Discord.py 2.0")
     def test_pylint(self):
@@ -44,7 +68,8 @@ class TestCodebase:
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         try:
             proc = run(cmd, capture_output=True)
-            assert proc.returncode == 0, f"pylint issues:\n{proc.stdout.decode('utf-8')}"
+            exitcode: int = cast(int, proc.returncode)
+            assert exitcode == 0, f"pylint issues:\n{proc.stdout.decode('utf-8')}"
         except FileNotFoundError:
             warnings.warn(UserWarning("test skipped: pylint not installed"))
 
@@ -55,15 +80,17 @@ class TestCodebase:
         cmd = ["pylic", "check"]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, f"pylic issues:\n{proc.stderr.decode('utf-8')}"
+        exitcode: int = cast(int, proc.returncode)
+        assert exitcode == 0, f"pylic issues:\n{proc.stdout.decode('utf-8')}"
 
     def test_isort(self):
         """Checks that the Python codebase imports are correctly sorted."""
         chdir(REPO_ROOT)
-        cmd = ["isort", "--df", "-w90", "-c", *SRC_DIRS]
+        cmd = ["isort", "--df", "-w100", "-c", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
-        assert proc.returncode == 0, f"isort issues:\n{proc.stdout.decode('utf-8')}"
+        exitcode: int = cast(int, proc.returncode)
+        assert exitcode == 0, f"isort issues:\n{proc.stdout.decode('utf-8')}"
 
     def test_pyproject_dependencies(self):
         """Checks that pyproject.toml dependencies are sorted."""
@@ -81,11 +108,17 @@ class TestCodebase:
         cmd = ["/usr/bin/grep", "-HIRn", "--exclude-dir=migrations", "from spellbot", "."]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
-        assert (
-            proc.returncode == 1
-        ), f"non-relative imports:\n{proc.stdout.decode('utf-8')}"
+        exitcode: int = cast(int, proc.returncode)
+        assert exitcode == 1, f"non-relative imports:\n{proc.stdout.decode('utf-8')}"
 
-    def test_whitespace(self):
+        chdir(REPO_ROOT / "tests")
+        cmd = ["/usr/bin/grep", "-HIRn", "from spellbot.[a-z]*\\.", "."]
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        proc = run(cmd, capture_output=True)
+        exitcode: int = cast(int, proc.returncode)
+        assert exitcode == 1, f"non-exported imports:\n{proc.stdout.decode('utf-8')}"
+
+    def test_whitespace(self):  # pragma: no cover
         """Checks for problematic trailing whitespace and missing ending newlines."""
         EXCLUDE_EXTS = (".gif", ".ico", ".ics", ".jpg", ".lock", ".svg", ".png")
         repo = Repo(REPO_ROOT)
@@ -95,13 +128,13 @@ class TestCodebase:
         # Some sources from beautiful-jekyll have persistent whitespace issues.
         WHITESPACE_EXCEPTIONS = "docs/_includes/head.html"
 
-        def paths(tree, path):
+        def paths(tree: Tree, path: Path):
             for blob in tree.blobs:
                 yield path / blob.name
             for t in tree.trees:
                 yield from paths(t, path / t.name)
 
-        def check(path):
+        def check(path: Path):
             if path.suffix.lower() in EXCLUDE_EXTS:
                 return
             rels = str(path.relative_to(REPO_ROOT))

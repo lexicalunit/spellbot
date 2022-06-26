@@ -1,4 +1,4 @@
-# pylint: disable=wrong-import-order
+from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Optional, Union
@@ -98,11 +98,7 @@ class UsersService:
     @sync_to_async
     def is_banned(self, target_xid: Optional[int] = None) -> bool:
         if target_xid is not None:
-            row = (
-                DatabaseSession.query(User.banned)
-                .filter(User.xid == target_xid)
-                .one_or_none()
-            )
+            row = DatabaseSession.query(User.banned).filter(User.xid == target_xid).one_or_none()
             return bool(row[0]) if row else False
 
         assert self.user

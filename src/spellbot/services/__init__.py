@@ -1,4 +1,5 @@
 # pylint: disable=too-many-instance-attributes
+from __future__ import annotations
 
 from .awards import AwardsService, NewAward
 from .channels import ChannelsService

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .award import GuildAwardFactory, UserAwardFactory
 from .block import BlockFactory
 from .channel import ChannelFactory

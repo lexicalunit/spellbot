@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import pytest
 
-from spellbot.cogs.leave_cog import LeaveGameCog
+from spellbot.cogs import LeaveGameCog
 from spellbot.interactions import leave_interaction
 from spellbot.models import Channel, Guild
 from tests.mixins import InteractionContextMixin

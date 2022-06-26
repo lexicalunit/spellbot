@@ -1,4 +1,4 @@
-# pylint: disable=wrong-import-position
+from __future__ import annotations
 
 from importlib import import_module
 from inspect import getmembers, isclass

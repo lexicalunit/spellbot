@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from discord.ext.commands.errors import CheckFailure
 
 

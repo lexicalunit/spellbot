@@ -1,4 +1,6 @@
-from spellbot.web.builder import humanize
+from __future__ import annotations
+
+from spellbot.web import humanize
 
 
 class TestWebFilters:

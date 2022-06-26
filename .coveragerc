@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = src/spellbot
+source = .
 omit =
     src/spellbot/_version.py
     src/spellbot/migrations/env.py
@@ -12,3 +12,6 @@ exclude_lines =
     pragma: no cover
     raise NotImplementedError
     if __name__ == .__main__.:
+
+[html]
+skip_covered = True

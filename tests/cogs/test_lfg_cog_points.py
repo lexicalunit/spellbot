@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from discord_slash.context import ComponentContext
 
 from spellbot import SpellBot
-from spellbot.cogs.lfg_cog import LookingForGameCog
+from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import lfg_interaction
 from spellbot.models import GameStatus, Play

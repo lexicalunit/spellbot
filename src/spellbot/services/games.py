@@ -1,4 +1,4 @@
-# pylint: disable=wrong-import-order
+from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import Optional
@@ -15,12 +15,8 @@ from ..database import DatabaseSession
 from ..models import Block, Game, GameStatus, Play, User, UserAward, Watch
 from ..settings import Settings
 
-MAX_SPELLTABLE_LINK_LEN = Game.spelltable_link.property.columns[  # type: ignore
-    0
-].type.length
-MAX_VOICE_INVITE_LINK_LEN = Game.voice_invite_link.property.columns[  # type: ignore
-    0
-].type.length
+MAX_SPELLTABLE_LINK_LEN = Game.spelltable_link.property.columns[0].type.length  # type: ignore
+MAX_VOICE_INVITE_LINK_LEN = Game.voice_invite_link.property.columns[0].type.length  # type: ignore
 
 
 class GamesService:
@@ -278,10 +274,7 @@ class GamesService:
         DatabaseSession.execute(
             insert(Play)
             .values(
-                [
-                    dict(user_xid=player_xid, game_id=game_id)
-                    for player_xid in player_xids
-                ],
+                [dict(user_xid=player_xid, game_id=game_id) for player_xid in player_xids],
             )
             .on_conflict_do_nothing(),
         )
@@ -290,10 +283,7 @@ class GamesService:
         DatabaseSession.execute(
             insert(UserAward)
             .values(
-                [
-                    dict(guild_xid=guild_xid, user_xid=player_xid)
-                    for player_xid in player_xids
-                ],
+                [dict(guild_xid=guild_xid, user_xid=player_xid) for player_xid in player_xids],
             )
             .on_conflict_do_nothing(),
         )
@@ -344,8 +334,7 @@ class GamesService:
             )
         ]
         player_xids = [
-            row.xid
-            for row in DatabaseSession.query(User).filter(User.game_id == self.game.id)
+            row.xid for row in DatabaseSession.query(User).filter(User.game_id == self.game.id)
         ]
         if any(xid in player_xids for xid in users_author_has_blocked):
             return True
@@ -419,8 +408,6 @@ class GamesService:
     @tracer.wrap()
     def delete_games(self, game_ids: list[int]):
         DatabaseSession.execute(
-            update(Game)
-            .where(Game.id.in_(game_ids))
-            .values(deleted_at=datetime.utcnow()),
+            update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.utcnow()),
         )
         DatabaseSession.commit()

@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from discord_slash.model import ButtonStyle, ComponentType
 from pygicord import Config
 
-from spellbot.cogs.admin_cog import AdminCog
+from spellbot.cogs import AdminCog
 from spellbot.database import DatabaseSession
 from spellbot.interactions import admin_interaction
 from spellbot.models import Channel, Game, Guild, GuildAward

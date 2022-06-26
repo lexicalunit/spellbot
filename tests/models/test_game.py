@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 
 from spellbot.models import GameStatus
@@ -50,9 +52,7 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
-            "description": (
-                "_A SpellTable link will be created when all players have joined._"
-            ),
+            "description": ("_A SpellTable link will be created when all players have joined._"),
             "fields": [{"inline": True, "name": "Format", "value": "Commander"}],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {
@@ -70,9 +70,7 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
-            "description": (
-                "_A SpellTable link will be created when all players have joined._"
-            ),
+            "description": ("_A SpellTable link will be created when all players have joined._"),
             "fields": [
                 {"inline": False, "name": "Players", "value": f"<@{player.xid}>"},
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -102,9 +100,7 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,
-            "description": (
-                "_A SpellTable link will be created when all players have joined._"
-            ),
+            "description": ("_A SpellTable link will be created when all players have joined._"),
             "fields": [
                 {
                     "inline": False,
