@@ -10,7 +10,9 @@ RUN apt-get update \
 # spellbot
 COPY src /spellbot/src
 COPY LICENSE.md README.md pyproject.toml poetry.lock /spellbot/
-RUN pip install ./spellbot
+RUN pip install ./spellbot \
+    && pip install -U "aiohttp==3.8.1" "pytest-aiohttp==1.0.4"
+
 
 # datadog (https://app.datadoghq.com/account/settings#agent/debian)
 ADD https://s3.amazonaws.com/dd-agent/scripts/install_script.sh /tmp/install_script.sh

@@ -864,18 +864,6 @@ tomli = ">=1.0.0"
 testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "xmlschema"]
 
 [[package]]
-name = "pytest-aiohttp"
-version = "0.3.0"
-description = "pytest plugin for aiohttp support"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-aiohttp = ">=2.3.5"
-pytest = "*"
-
-[[package]]
 name = "pytest-asyncio"
 version = "0.18.3"
 description = "Pytest support for asyncio"
@@ -1256,7 +1244,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = '>=3.9,<4'
-content-hash = "1fbf1d885643f3aaae14c1f8c39d2005817d11adf3d693d8f5d8f0109d95e50b"
+content-hash = "d9c8b2790062719cc74b52d906a6e51880108278bc38aa494eb5ec5e973ceeda"
 
 [metadata.files]
 aiohttp = [
@@ -1974,10 +1962,6 @@ pyright = [
 pytest = [
     {file = "pytest-7.1.2-py3-none-any.whl", hash = "sha256:13d0e3ccfc2b6e26be000cb6568c832ba67ba32e719443bfe725814d3c42433c"},
     {file = "pytest-7.1.2.tar.gz", hash = "sha256:a06a0425453864a270bc45e71f783330a7428defb4230fb5e6a731fde06ecd45"},
-]
-pytest-aiohttp = [
-    {file = "pytest-aiohttp-0.3.0.tar.gz", hash = "sha256:c929854339637977375838703b62fef63528598bc0a9d451639eba95f4aaa44f"},
-    {file = "pytest_aiohttp-0.3.0-py3-none-any.whl", hash = "sha256:0b9b660b146a65e1313e2083d0d2e1f63047797354af9a28d6b7c9f0726fa33d"},
 ]
 pytest-asyncio = [
     {file = "pytest-asyncio-0.18.3.tar.gz", hash = "sha256:7659bdb0a9eb9c6e3ef992eef11a2b3e69697800ad02fb06374a210d85b29f91"},
