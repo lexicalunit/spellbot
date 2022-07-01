@@ -106,7 +106,7 @@ wrapt = "^1.14.1"
 [tool.poetry.dev-dependencies]
 Faker = "^13.14.0"
 GitPython = "^3.1.27"
-black = "^22.3.0"
+black = "^22.6.0"
 callee = "^0.3.1"
 coverage = "^6.4.1"
 factory-boy = "^3.2.1"
