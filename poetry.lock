@@ -32,7 +32,7 @@ jinja2 = ">=3.0.0"
 
 [[package]]
 name = "aiohttp-retry"
-version = "2.4.8"
+version = "2.5.0"
 description = "Simple retry client for aiohttp"
 category = "main"
 optional = false
@@ -315,7 +315,7 @@ readthedocs = ["sphinx", "sphinx-rtd-theme"]
 
 [[package]]
 name = "discord.py"
-version = "2.0.0a4385+gb3a24846"
+version = "2.0.0a4390+g482e3ead"
 description = "A Python wrapper for the Discord API"
 category = "main"
 optional = false
@@ -335,7 +335,7 @@ voice = ["PyNaCl (>=1.3.0,<1.6)"]
 type = "git"
 url = "https://github.com/Rapptz/discord.py.git"
 reference = "master"
-resolved_reference = "b3a24846bddc894ae6d9bfb49ed8ee93b2d12fcb"
+resolved_reference = "482e3ead9b939ab332f543363a2ede472491c27f"
 
 [[package]]
 name = "distlib"
@@ -1374,8 +1374,8 @@ aiohttp-jinja2 = [
     {file = "aiohttp_jinja2-1.5-py3-none-any.whl", hash = "sha256:b55c0ed167b0cc4b6d6a50fb2299a44beb5dc4aec9df21305b91a5484694cf74"},
 ]
 aiohttp-retry = [
-    {file = "aiohttp_retry-2.4.8-py3-none-any.whl", hash = "sha256:1b2703e1de565f99715743ef14dfd66392b6e6db422d2eaf83a442bb75639579"},
-    {file = "aiohttp_retry-2.4.8.tar.gz", hash = "sha256:4ceb6eab329a97abca7a3e5038b35924c5ae57f6305f29f262d8ee646bc4e16a"},
+    {file = "aiohttp_retry-2.5.0-py3-none-any.whl", hash = "sha256:c901f34992a65f67cc28bb0cb3191d2ca252fff5555dc47b24764e64721d73da"},
+    {file = "aiohttp_retry-2.5.0.tar.gz", hash = "sha256:3d5c11b65ea37b1c0b140da238bea26f463062df81f6e711423b59d593efeb1c"},
 ]
 aiosignal = [
     {file = "aiosignal-1.2.0-py3-none-any.whl", hash = "sha256:26e62109036cd181df6e6ad646f91f0dcfd05fe16d0cb924138ff2ab75d64e3a"},
