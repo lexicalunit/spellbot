@@ -91,7 +91,7 @@ gunicorn = "^20.1.0"
 humanize = "^4.2.1"
 hupper = "^1.10.3"
 importlib-resources = "^5.8.0"
-packaging = "20.9"
+packaging = "21.3"
 psycopg2-binary = "^2.9.3"
 python = '>=3.10,<4'
 python-dateutil = "^2.8.2"
