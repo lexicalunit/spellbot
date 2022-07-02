@@ -73,14 +73,14 @@ class VoiceChannelFilterer:
         return channels
 
 
-class TaskAction:
+class TasksAction:
     def __init__(self, bot: SpellBot):
         self.bot = bot
         self.services = ServicesRegistry()
 
     @classmethod
     @asynccontextmanager
-    async def create(cls, bot: SpellBot) -> AsyncGenerator[TaskAction, None]:
+    async def create(cls, bot: SpellBot) -> AsyncGenerator[TasksAction, None]:
         action = cls(bot)
         with tracer.trace(name=f"spellbot.interactions.{cls.__name__}.create") as span:
             setup_ignored_errors(span)
@@ -136,7 +136,7 @@ class TaskAction:
         for channel in sorted(channels, key=lambda c: c.created_at):
             logger.info("deleting channel %s(%s)", channel.name, channel.id)
             await safe_delete_channel(channel, channel.guild.id)
-            await asyncio.sleep(1)
+            await asyncio.sleep(5)
 
             # Try to avoid rate limiting by the Discord API
             batch += 1
@@ -156,10 +156,19 @@ class TaskAction:
             await rollback_session()
 
     async def expire_games(self, games: list[dict[str, Any]]):
-        game_ids = [game["id"] for game in games]
-        await self.services.games.delete_games(game_ids)
+        batch = 0
         for game in games:
+            game_id = game["id"]
+            logger.info(f"expiring game {game_id}...")
+            await self.services.games.delete_games([game_id])
             await self.expire_game(game)
+
+            batch += 1
+            if batch >= 5:
+                await asyncio.sleep(5)
+                batch = 0
+            else:
+                await asyncio.sleep(1)
 
     async def expire_game(self, game: dict[str, Any]):
         message_xid = game["message_xid"]

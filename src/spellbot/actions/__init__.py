@@ -6,7 +6,7 @@ from .config_action import ConfigAction
 from .leave_action import LeaveAction
 from .lfg_action import LookingForGameAction
 from .score_action import ScoreAction
-from .task_action import TaskAction
+from .tasks_action import TasksAction
 from .verify_action import VerifyAction
 from .watch_action import WatchAction
 
@@ -17,7 +17,7 @@ __all__ = [
     "LeaveAction",
     "LookingForGameAction",
     "ScoreAction",
-    "TaskAction",
+    "TasksAction",
     "VerifyAction",
     "WatchAction",
 ]
