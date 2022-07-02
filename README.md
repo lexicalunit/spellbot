@@ -14,7 +14,6 @@
 [![python][python-badge]][python]
 [![pypi][pypi-badge]][pypi]
 [![discord.py][discord-py-badge]][discord-py]
-[![discord-interactions][discord-interactions-badge]][discord-interactions]
 [![docker][docker-badge]][docker-hub]
 [![black][black-badge]][black]
 [![mit][mit-badge]][mit]
@@ -140,10 +139,8 @@ Any usage of SpellBot implies that you accept the following policies.
 [contributors]: https://github.com/lexicalunit/spellbot/graphs/contributors
 [datadog-badge]: https://img.shields.io/badge/monitors-datadog-blueviolet.svg
 [datadog]: https://app.datadoghq.com/apm/home
-[discord-interactions-badge]: https://img.shields.io/badge/discord--interactions-3.x-blue
-[discord-interactions]: https://github.com/goverfl0w/discord-interactions
 [discord-invite]: https://discord.gg/HuzTQYpYH4
-[discord-py-badge]: https://img.shields.io/badge/discord.py-1.7.3-blue
+[discord-py-badge]: https://img.shields.io/badge/discord.py-2.0.0-blue
 [discord-py]: https://github.com/Rapptz/discord.py
 [docker-badge]: https://img.shields.io/docker/pulls/lexicalunit/spellbot.svg
 [docker-hub]: https://hub.docker.com/r/lexicalunit/spellbot
