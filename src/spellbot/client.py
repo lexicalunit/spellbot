@@ -27,7 +27,7 @@ def patch_discord_proxy(PROXY_URL: str):
     """Patch discord.http to use our Discord API proxy."""
     from discord import http
 
-    http._set_api_version = lambda v: None
+    http._set_api_version = lambda v: None  # pylint: disable=protected-access
     http.Route.BASE = f"{PROXY_URL}/api/v7"  # type: ignore
 
 
@@ -52,7 +52,8 @@ class SpellBot(Bot):
         self.mock_games = mock_games
         self.create_connection = create_connection
         self.channel_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
-        patch_discord_proxy(self.settings.DISCORD_PROXY)
+        if self.settings.DISCORD_PROXY:  # pragma: no cover
+            patch_discord_proxy(self.settings.DISCORD_PROXY)
 
     async def setup_hook(self) -> None:
         # Note: In tests we create the connection using fixtures.

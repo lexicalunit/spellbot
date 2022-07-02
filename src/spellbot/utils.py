@@ -90,7 +90,7 @@ def bot_can_delete_channel(channel: MessageableChannel) -> bool:
         return False
     guild: discord.Guild = getattr(guild_channel, "guild")
     perms = guild_channel.permissions_for(guild.me)
-    logging.info(f"permissions: {perms.value}")
+    logger.info("permissions: %s", str(perms.value))
     for req in ("manage_channels",):
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
