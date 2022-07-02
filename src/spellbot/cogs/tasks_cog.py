@@ -16,8 +16,8 @@ class TasksCog(commands.Cog):  # pragma: no cover
     def __init__(self, bot: SpellBot):
         self.bot = bot
         if not running_in_pytest():
-            self.cleanup_old_voice_channels.start()
-            self.expire_inactive_games.start()
+            self.cleanup_old_voice_channels.start()  # pylint: disable=no-member
+            self.expire_inactive_games.start()  # pylint: disable=no-member
 
     @tasks.loop(minutes=settings.VOICE_CLEANUP_LOOP_M)
     async def cleanup_old_voice_channels(self):
