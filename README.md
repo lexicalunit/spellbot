@@ -158,7 +158,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [patreon]: https://www.patreon.com/lexicalunit
 [pypi-badge]: https://img.shields.io/pypi/v/spellbot
 [pypi]: https://pypi.org/project/spellbot/
-[python-badge]: https://img.shields.io/badge/python-3.8+-blue.svg
+[python-badge]: https://img.shields.io/badge/python-3.10-blue.svg
 [python]: https://www.python.org/
 [security]: https://github.com/lexicalunit/spellbot/security
 [slash]: https://discord.com/blog/slash-commands-are-here
