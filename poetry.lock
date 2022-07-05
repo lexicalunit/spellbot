@@ -32,7 +32,7 @@ jinja2 = ">=3.0.0"
 
 [[package]]
 name = "aiohttp-retry"
-version = "2.5.0"
+version = "2.5.1"
 description = "Simple retry client for aiohttp"
 category = "main"
 optional = false
@@ -1374,8 +1374,8 @@ aiohttp-jinja2 = [
     {file = "aiohttp_jinja2-1.5-py3-none-any.whl", hash = "sha256:b55c0ed167b0cc4b6d6a50fb2299a44beb5dc4aec9df21305b91a5484694cf74"},
 ]
 aiohttp-retry = [
-    {file = "aiohttp_retry-2.5.0-py3-none-any.whl", hash = "sha256:c901f34992a65f67cc28bb0cb3191d2ca252fff5555dc47b24764e64721d73da"},
-    {file = "aiohttp_retry-2.5.0.tar.gz", hash = "sha256:3d5c11b65ea37b1c0b140da238bea26f463062df81f6e711423b59d593efeb1c"},
+    {file = "aiohttp_retry-2.5.1-py3-none-any.whl", hash = "sha256:796bb1d54dc4f21f187463972086af6fd708dc3c88489f57f10d93ca5d736681"},
+    {file = "aiohttp_retry-2.5.1.tar.gz", hash = "sha256:91c0cd902cd0bdc63c3f5738cd574b42961f9364d10dbba2fbbdcdf283814543"},
 ]
 aiosignal = [
     {file = "aiosignal-1.2.0-py3-none-any.whl", hash = "sha256:26e62109036cd181df6e6ad646f91f0dcfd05fe16d0cb924138ff2ab75d64e3a"},
