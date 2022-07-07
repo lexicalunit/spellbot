@@ -104,7 +104,7 @@ uvloop = "^0.16.0"
 wrapt = "^1.14.1"
 
 [tool.poetry.dev-dependencies]
-Faker = "^13.14.0"
+Faker = "^13.15.0"
 GitPython = "^3.1.27"
 black = "^22.6.0"
 callee = "^0.3.1"
