@@ -315,7 +315,7 @@ readthedocs = ["sphinx", "sphinx-rtd-theme"]
 
 [[package]]
 name = "discord.py"
-version = "2.0.0a4396+g9fe19dcc"
+version = "2.0.0a4428+gfb8d5c15"
 description = "A Python wrapper for the Discord API"
 category = "main"
 optional = false
@@ -335,7 +335,7 @@ voice = ["PyNaCl (>=1.3.0,<1.6)"]
 type = "git"
 url = "https://github.com/Rapptz/discord.py.git"
 reference = "master"
-resolved_reference = "9fe19dcc6923e4b6133bdedafb33658bf37c9ab7"
+resolved_reference = "fb8d5c15d0ccdde369e4262fa5f9aad95e7989f2"
 
 [[package]]
 name = "distlib"
@@ -365,7 +365,7 @@ optional = false
 python-versions = "*"
 
 [package.extras]
-tests = ["dill", "coverage", "coveralls", "mock", "nose"]
+tests = ["nose", "mock", "coveralls", "coverage", "dill"]
 
 [[package]]
 name = "factory-boy"
@@ -746,8 +746,8 @@ optional = false
 python-versions = ">=3.6"
 
 [package.extras]
-dev = ["pre-commit", "tox"]
-testing = ["pytest", "pytest-benchmark"]
+testing = ["pytest-benchmark", "pytest"]
+dev = ["tox", "pre-commit"]
 
 [[package]]
 name = "protobuf"
@@ -852,7 +852,7 @@ python-versions = "*"
 
 [[package]]
 name = "pyright"
-version = "1.1.257"
+version = "1.1.263"
 description = "Command line wrapper for pyright"
 category = "dev"
 optional = false
@@ -900,7 +900,7 @@ pytest = ">=6.1.0"
 pytest-asyncio = ">=0.17.2"
 
 [package.extras]
-testing = ["coverage (==6.2)", "mypy (==0.931)"]
+testing = ["mypy (==0.931)", "coverage (==6.2)"]
 
 [[package]]
 name = "pytest-asyncio"
@@ -929,7 +929,7 @@ coverage = {version = ">=5.2.1", extras = ["toml"]}
 pytest = ">=4.6"
 
 [package.extras]
-testing = ["fields", "hunter", "process-tests", "six", "pytest-xdist", "virtualenv"]
+testing = ["virtualenv", "pytest-xdist", "six", "process-tests", "hunter", "fields"]
 
 [[package]]
 name = "pytest-freezegun"
@@ -1292,7 +1292,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<4"
-content-hash = "39638f86afeae6eb7a1b51e72c8626d7aa2582e454da5596ae371871d94adb25"
+content-hash = "4ca5ea43dc2d995ead966195a445116bbc03798375da185f8975fbc0f7484e85"
 
 [metadata.files]
 aiohttp = [
@@ -2101,8 +2101,8 @@ pyreadline3 = [
     {file = "pyreadline3-3.4.1.tar.gz", hash = "sha256:6f3d1f7b8a31ba32b73917cefc1f28cc660562f39aea8646d30bd6eff21f7bae"},
 ]
 pyright = [
-    {file = "pyright-1.1.257-py3-none-any.whl", hash = "sha256:e00b6601118f94554d62552605bebdd836d2e077552fdc578cecf4170fc25d9c"},
-    {file = "pyright-1.1.257.tar.gz", hash = "sha256:a0d566686292b49c2c578c0108cc31b6f228731c51a12b09242f9ff9fd1722e2"},
+    {file = "pyright-1.1.263-py3-none-any.whl", hash = "sha256:6b4061e124a5adead099d07e48d85bcab71b35aed3412f9afcaecffe70320459"},
+    {file = "pyright-1.1.263.tar.gz", hash = "sha256:faab59596f3fc9bcda8ab528e09ccbf5ebdb9d94e6e1b599109cc3ab4eaf00f1"},
 ]
 pytest = [
     {file = "pytest-7.1.2-py3-none-any.whl", hash = "sha256:13d0e3ccfc2b6e26be000cb6568c832ba67ba32e719443bfe725814d3c42433c"},
