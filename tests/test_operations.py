@@ -223,6 +223,20 @@ class TestOperationsDeleteChannel:
         assert not await safe_delete_channel(channel, guild.id)
         channel.delete.assert_not_called()
 
+    async def test_missing_channel_delete(self):
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 2
+        guild.me = MagicMock()
+
+        channel = MagicMock(spec=discord.TextChannel)
+        del channel.delete
+        channel.id = 3
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+        channel.permissions_for = MagicMock(return_value=self.delete_perms)
+
+        assert not await safe_delete_channel(channel, guild.id)
+
     async def test_missing_permissions(self):
         guild = MagicMock(spec=discord.Guild)
         guild.id = 2
@@ -346,7 +360,7 @@ class TestOperationsAddRole:
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
         guild.roles = [role]
-        await safe_add_role(member, guild, "role")
+        await safe_add_role(member, guild, "@everyone")
         member.add_roles.assert_not_called()
 
     async def test_remove(self):
