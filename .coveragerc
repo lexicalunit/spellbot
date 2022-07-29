@@ -12,6 +12,7 @@ exclude_lines =
     pragma: no cover
     raise NotImplementedError
     if __name__ == .__main__.:
+    if TYPE_CHECKING:
 
 [html]
 skip_covered = True

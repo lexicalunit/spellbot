@@ -290,7 +290,6 @@ class LookingForGameAction(BaseAction):
         await self.services.games.set_voice(voice_channel.id, voice_invite_link)
 
     @tracer.wrap()
-    @tracer.wrap()
     async def _handle_embed_creation(self, new: bool, origin: bool, fully_seated: bool):
         assert self.guild
         assert self.channel
@@ -300,11 +299,7 @@ class LookingForGameAction(BaseAction):
         view = StartedGameView(bot=self.bot) if fully_seated else PendingGameView(bot=self.bot)
 
         if new:  # create the initial game post:
-            if message := await safe_followup_channel(
-                self.interaction,
-                embed=embed,
-                view=view,
-            ):
+            if message := await safe_followup_channel(self.interaction, embed=embed, view=view):
                 await self.services.games.set_message_xid(message.id)
             else:
                 # Somehow the initial game post creation failed, workaround it by
@@ -322,11 +317,7 @@ class LookingForGameAction(BaseAction):
         game_data = await self.services.games.to_dict()
         message_xid = game_data["message_xid"]
         if message_xid:
-            message = safe_get_partial_message(
-                self.channel,
-                self.guild.id,
-                message_xid,
-            )
+            message = safe_get_partial_message(self.channel, self.guild.id, message_xid)
 
         # update the existing game post:
 
@@ -335,21 +326,13 @@ class LookingForGameAction(BaseAction):
             # If it does fail, we will fallback to doing a standard
             # message.edit() call, which should hopefully at least update
             # the game embed, even if the interaction shows as "failed".
-            success = await safe_update_embed_origin(
-                self.interaction,
-                embed=embed,
-                view=view,
-            )
+            success = await safe_update_embed_origin(self.interaction, embed=embed, view=view)
             if success:
                 return
 
         success: bool = False
         if message:
-            success = await safe_update_embed(
-                message,
-                embed=embed,
-                view=view,
-            )
+            success = await safe_update_embed(message, embed=embed, view=view)
 
         # Somehow the game post update failed, workaround it by informing users
         # of the issue and just posting directly to the channel.
