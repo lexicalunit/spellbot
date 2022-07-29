@@ -188,5 +188,5 @@ class TasksAction:
             post,
             content="Sorry, this game was expired due to inactivity.",
             embed=None,
-            components=[],
+            view=None,
         )

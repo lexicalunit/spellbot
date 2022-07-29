@@ -1,6 +1,6 @@
 # Docker Support
 
-SpellBot components can be run directly from docker so that you don't have
+SpellBot can be run directly from docker so that you don't have
 to worry about installing anything or managing your environment.
 
 ## Database
