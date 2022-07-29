@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Fixes toggle for show points setting.
+- Fixes issue of views not being properly cleared on game posts.
 - Fixes issue with expiring games.
 - Fixes issue with interaction in `/game` command.
 
