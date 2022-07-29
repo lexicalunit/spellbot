@@ -294,7 +294,7 @@ class LookingForGameAction(BaseAction):
         assert self.guild
         assert self.channel
 
-        # build the game post's embed and components:
+        # build the game post's embed and view:
         embed: discord.Embed = await self.services.games.to_embed()
         view = StartedGameView(bot=self.bot) if fully_seated else PendingGameView(bot=self.bot)
 
