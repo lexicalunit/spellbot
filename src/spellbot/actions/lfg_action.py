@@ -26,7 +26,7 @@ from ..operations import (
     safe_update_embed_origin,
 )
 from ..settings import Settings
-from ..views import PendingGameView, StartedGameView
+from ..views import BaseView, PendingGameView, StartedGameView
 from .base_action import BaseAction
 
 logger = logging.getLogger(__name__)
@@ -298,7 +298,7 @@ class LookingForGameAction(BaseAction):
         # build the game post's embed and view:
         embed: discord.Embed = await self.services.games.to_embed()
 
-        view = MISSING
+        view: Optional[BaseView] = None
         if fully_seated:
             if await self.services.guilds.should_show_points():
                 view = StartedGameView(bot=self.bot)
@@ -306,7 +306,13 @@ class LookingForGameAction(BaseAction):
             view = PendingGameView(bot=self.bot)
 
         if new:  # create the initial game post:
-            if message := await safe_followup_channel(self.interaction, embed=embed, view=view):
+            # interaction.followup.send() requires that view be MISSING rather than None.
+            view_hack = MISSING if view is None else view
+            if message := await safe_followup_channel(
+                self.interaction,
+                embed=embed,
+                view=view_hack,
+            ):
                 await self.services.games.set_message_xid(message.id)
             else:
                 # Somehow the initial game post creation failed, workaround it by
