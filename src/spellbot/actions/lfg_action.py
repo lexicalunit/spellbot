@@ -8,6 +8,7 @@ import discord
 from ddtrace import tracer
 from discord.embeds import Embed
 from discord.message import Message
+from discord.utils import MISSING
 
 from .. import SpellBot
 from ..models import GameFormat, GameStatus
@@ -296,7 +297,13 @@ class LookingForGameAction(BaseAction):
 
         # build the game post's embed and view:
         embed: discord.Embed = await self.services.games.to_embed()
-        view = StartedGameView(bot=self.bot) if fully_seated else PendingGameView(bot=self.bot)
+
+        view = MISSING
+        if fully_seated:
+            if await self.services.guilds.should_show_points():
+                view = StartedGameView(bot=self.bot)
+        else:
+            view = PendingGameView(bot=self.bot)
 
         if new:  # create the initial game post:
             if message := await safe_followup_channel(self.interaction, embed=embed, view=view):
