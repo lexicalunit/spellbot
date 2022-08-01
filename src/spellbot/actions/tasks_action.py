@@ -56,7 +56,7 @@ class VoiceChannelFilterer:
                 continue
 
             if not bot_can_delete_channel(channel):
-                logger.info("no permissions to delete channel")
+                logger.info("no permissions to delete channel (%s)", channel.id)
                 continue
 
             if re.match(r"\AGame-SB\d+\Z", channel.name):
