@@ -136,17 +136,42 @@ def permissions_for(
             remaining_overwrites = channel._overwrites
     except IndexError:
         remaining_overwrites = channel._overwrites
+    logger.info(
+        "permission_for (%s): permissions after @everyone applied: %s",
+        channel.id,
+        str(base),
+    )
 
     denies = 0
     allows = 0
 
     # Apply channel specific role permission overwrites
+    logger.info(
+        "permission_for (%s): remaining overwrites: %s",
+        channel.id,
+        str([o._asdict() for o in remaining_overwrites]),
+    )
     for overwrite in remaining_overwrites:
         if overwrite.is_role() and roles.has(overwrite.id):
             denies |= overwrite.deny
             allows |= overwrite.allow
+            logger.info(
+                "permission_for (%s): allowing channel specific overwrite: %s",
+                channel.id,
+                str(overwrite.allow),
+            )
+            logger.info(
+                "permission_for (%s): denying channel specific overwrite: %s",
+                channel.id,
+                str(overwrite.deny),
+            )
 
     base.handle_overwrite(allow=allows, deny=denies)
+    logger.info(
+        "permission_for (%s): base permissions after overwrites: %s",
+        channel.id,
+        str(base),
+    )
 
     # Apply member specific permission overwrites
     for overwrite in remaining_overwrites:
@@ -241,7 +266,8 @@ def bot_can_delete_channel(channel: MessageableChannel) -> bool:
     # Using my own permissions_for() with way more logging.
     # perms = guild_channel.permissions_for(guild.me)
     perms = permissions_for(guild_channel, guild.me)
-    logger.info("bot permissions: %s", str(perms.value))
+    channel_id = getattr(channel, "id", None)
+    logger.info("bot permissions (%s): %s", channel_id, str(perms.value))
 
     for req in ("manage_channels",):
         if not hasattr(perms, req) or not getattr(perms, req):
