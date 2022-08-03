@@ -56,7 +56,7 @@ class BaseAction:
         if self.guild:
             await self.services.guilds.upsert(self.guild)
 
-        if self.channel:
+        if self.guild and self.channel:
             self.channel_data = await self.services.channels.upsert(self.channel)
 
         await self.services.users.upsert(self.member)
