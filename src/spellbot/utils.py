@@ -194,10 +194,10 @@ def permissions_for(
         base.attach_files = False
 
     # if you can't read a channel then you have no permissions there
-    if not base.read_messages:
-        logger.info("permission_for (%s): obj can not read messages", channel.id)
-        denied = discord.Permissions.all_channel()
-        base.value &= ~denied.value
+    # if not base.read_messages:
+    #     logger.info("permission_for (%s): obj can not read messages", channel.id)
+    #     denied = discord.Permissions.all_channel()
+    #     base.value &= ~denied.value
 
     if obj.is_timed_out():
         logger.info("permission_for (%s): obj is timed out", channel.id)
