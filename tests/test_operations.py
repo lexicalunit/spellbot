@@ -8,7 +8,6 @@ from unittest.mock import ANY, AsyncMock, MagicMock, Mock
 import discord
 import pytest
 from discord.errors import DiscordException
-from pytest_mock import MockerFixture
 
 from spellbot.operations import (
     safe_add_role,
@@ -194,11 +193,7 @@ class TestOperationsDeleteChannel:
         discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
     )
 
-    @pytest.fixture(autouse=True)
-    def permissions_for(self, mocker: MockerFixture) -> MagicMock:
-        return mocker.patch("spellbot.utils.permissions_for")
-
-    async def test_happy_path(self, permissions_for: MagicMock):
+    async def test_happy_path(self):
         guild = MagicMock(spec=discord.Guild)
         guild.id = 2
         guild.me = MagicMock()
@@ -208,13 +203,12 @@ class TestOperationsDeleteChannel:
         channel.type = discord.ChannelType.text
         channel.guild = guild
         channel.delete = AsyncMock()
-        # channel.permissions_for = MagicMock(return_value=self.delete_perms)
-        permissions_for.return_value = self.delete_perms
+        channel.permissions_for = MagicMock(return_value=self.delete_perms)
 
         assert await safe_delete_channel(channel, guild.id)
         channel.delete.assert_called_once_with()
 
-    async def test_missing_channel_id(self, permissions_for: MagicMock):
+    async def test_missing_channel_id(self):
         guild = MagicMock(spec=discord.Guild)
         guild.id = 2
         guild.me = MagicMock()
@@ -224,13 +218,12 @@ class TestOperationsDeleteChannel:
         channel.type = discord.ChannelType.text
         channel.guild = guild
         channel.delete = AsyncMock()
-        # channel.permissions_for = MagicMock(return_value=self.delete_perms)
-        permissions_for.return_value = self.delete_perms
+        channel.permissions_for = MagicMock(return_value=self.delete_perms)
 
         assert not await safe_delete_channel(channel, guild.id)
         channel.delete.assert_not_called()
 
-    async def test_missing_channel_delete(self, permissions_for: MagicMock):
+    async def test_missing_channel_delete(self):
         guild = MagicMock(spec=discord.Guild)
         guild.id = 2
         guild.me = MagicMock()
@@ -240,12 +233,11 @@ class TestOperationsDeleteChannel:
         channel.id = 3
         channel.type = discord.ChannelType.text
         channel.guild = guild
-        # channel.permissions_for = MagicMock(return_value=self.delete_perms)
-        permissions_for.return_value = self.delete_perms
+        channel.permissions_for = MagicMock(return_value=self.delete_perms)
 
         assert not await safe_delete_channel(channel, guild.id)
 
-    async def test_missing_permissions(self, permissions_for: MagicMock):
+    async def test_missing_permissions(self):
         guild = MagicMock(spec=discord.Guild)
         guild.id = 2
         guild.me = MagicMock()
@@ -255,8 +247,7 @@ class TestOperationsDeleteChannel:
         channel.type = discord.ChannelType.text
         channel.guild = guild
         channel.delete = AsyncMock()
-        # channel.permissions_for = MagicMock(return_value=discord.Permissions())
-        permissions_for.return_value = discord.Permissions()
+        channel.permissions_for = MagicMock(return_value=discord.Permissions())
 
         assert not await safe_delete_channel(channel, guild.id)
         channel.delete.assert_not_called()
