@@ -15,18 +15,9 @@ RUN chmod +x /tmp/install_script.sh \
     && rm -rf /var/lib/apt/lists/*
 COPY conf/datadog.yaml /etc/datadog-agent/datadog.yaml
 
-# twilight-http-proxy
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
-RUN git clone https://github.com/twilight-rs/http-proxy.git
-RUN cd http-proxy \
-    && . $HOME/.cargo/env \
-    && cargo +nightly build --release -Z sparse-registry
-
 # supervisord
 COPY scripts/start-spellbot.sh /start-spellbot.sh
 RUN chmod +x /start-spellbot.sh
-COPY scripts/start-proxy.sh /start-proxy.sh
-RUN chmod +x /start-proxy.sh
 COPY conf/supervisord.conf /usr/local/etc/
 
 # spellbot
