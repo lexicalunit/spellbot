@@ -4,6 +4,7 @@ from typing import Callable, cast
 
 import discord
 import pytest
+import pytest_asyncio
 
 from spellbot import SpellBot
 from spellbot.cogs import VerifyCog
@@ -13,14 +14,14 @@ from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> VerifyCog:
     return VerifyCog(bot)
 
 
 @pytest.mark.asyncio
 class TestCogVerify(InteractionMixin):
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def target(self, add_user: Callable[..., User]) -> discord.Member:
         return cast(discord.Member, mock_discord_object(add_user()))
 
