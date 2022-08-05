@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import pytest
 from aiohttp.client import ClientSession
 
 
+@pytest.mark.asyncio
 class TestWebPing:
     async def test_ping(self, client: ClientSession):
         resp = await client.get("/")
