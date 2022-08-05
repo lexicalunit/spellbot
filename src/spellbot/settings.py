@@ -25,7 +25,6 @@ class Settings:
         self.HOST = getenv("HOST") or "localhost"
         self.DEBUG_GUILD = getenv("DEBUG_GUILD")
         self.API_BASE_URL = getenv("API_BASE_URL", "https://bot.spellbot.io")
-        self.DISCORD_PROXY = getenv("DISCORD_PROXY", "http://localhost:3000")
 
         # datadog
         self.DD_API_KEY = getenv("DD_API_KEY")

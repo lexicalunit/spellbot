@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import logging
+
 from discord.abc import _Overwrites
+
+logger = logging.getLogger(__name__)
 
 
 def patch_discord_overwrites() -> None:  # pragma: no cover
@@ -10,6 +14,7 @@ def patch_discord_overwrites() -> None:  # pragma: no cover
     """
 
     def _Overwrites_is_role(self: _Overwrites) -> bool:
+        logger.info("is_role: type = {self.type}")
         return self.type == _Overwrites.ROLE or str(self.type) == "role"
 
     def _Overwrites_is_member(self: _Overwrites) -> bool:
