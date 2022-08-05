@@ -16,7 +16,6 @@ from discord.ui import Item
 
 from .errors import AdminOnlyError, UserBannedError, UserUnverifiedError, UserVerifiedError
 from .metrics import add_span_error
-from .patches import patch_discord_overwrites
 from .settings import Settings
 
 if TYPE_CHECKING:
@@ -30,8 +29,6 @@ logger = logging.getLogger(__name__)
 CANT_SEND_CODE = 50007
 
 EMBED_DESCRIPTION_SIZE_LIMIT = 4096
-
-patch_discord_overwrites()
 
 
 def log_warning(log: str, exec_info: bool = False, **kwargs: Any):
