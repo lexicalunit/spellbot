@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import discord
 import pytest
+import pytest_asyncio
 
 from spellbot.actions import leave_action
 from spellbot.client import SpellBot
@@ -12,7 +13,7 @@ from tests.mixins import InteractionMixin
 from tests.mocks import mock_operations
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> LeaveGameCog:
     return LeaveGameCog(bot)
 

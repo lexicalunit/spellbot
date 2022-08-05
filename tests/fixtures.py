@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
+import pytest_asyncio
 from aiohttp.test_utils import TestClient
 from click.testing import CliRunner
 from discord.ext import commands
@@ -53,12 +54,12 @@ class Factories:
     watch = WatchFactory
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def factories() -> Factories:
     return Factories()
 
 
-@pytest.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 async def session_context(
     request: pytest.FixtureRequest,
     event_loop: AbstractEventLoop,
@@ -104,13 +105,13 @@ async def session_context(
     return context
 
 
-@pytest.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 def use_session_context(session_context: contextvars.Context) -> None:
     for cvar in session_context:
         cvar.set(session_context[cvar])
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def bot() -> SpellBot:
     # In tests we create the connection using fixtures.
     return build_bot(mock_games=True, create_connection=False)

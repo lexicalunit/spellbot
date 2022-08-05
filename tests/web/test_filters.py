@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import pytest
+
 from spellbot.web import humanize
 
 
+@pytest.mark.asyncio
 class TestWebFilters:
     async def test_humanize_happy_path(self):
         s = humanize(1638137981, 480, "America/Los_Angeles")

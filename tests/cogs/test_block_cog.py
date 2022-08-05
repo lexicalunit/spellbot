@@ -3,6 +3,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
+import pytest_asyncio
 
 from spellbot import SpellBot
 from spellbot.cogs import BlockCog
@@ -11,7 +12,7 @@ from spellbot.models import Block, User
 from tests.mixins import InteractionMixin
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> BlockCog:
     return BlockCog(bot)
 

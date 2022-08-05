@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 import pytest
+import pytest_asyncio
 from discord import ButtonStyle, ComponentType
 
 from spellbot.client import SpellBot
@@ -13,12 +14,12 @@ from spellbot.views import SetupView
 from tests.mixins import InteractionMixin
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> AdminCog:
     return AdminCog(bot)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def view(bot: SpellBot) -> SetupView:
     return SetupView(bot)
 
