@@ -175,21 +175,21 @@ class TestCogAdminSetupView(InteractionMixin):
     async def test_toggle_show_links(self, view: SetupView) -> None:
         await view.toggle_show_links.callback(self.interaction)
 
-        self.interaction.edit_original_message.assert_called_once()
+        self.interaction.edit_original_response.assert_called_once()
         guild = DatabaseSession.query(Guild).one()
         assert guild.show_links != Guild.show_links.default.arg  # type: ignore
 
     async def test_toggle_show_points(self, view: SetupView) -> None:
         await view.toggle_show_points.callback(self.interaction)
 
-        self.interaction.edit_original_message.assert_called_once()
+        self.interaction.edit_original_response.assert_called_once()
         guild = DatabaseSession.query(Guild).one()
         assert guild.show_points != Guild.show_points.default.arg  # type: ignore
 
     async def test_toggle_voice_create(self, view: SetupView) -> None:
         await view.toggle_voice_create.callback(self.interaction)
 
-        self.interaction.edit_original_message.assert_called_once()
+        self.interaction.edit_original_response.assert_called_once()
         guild = DatabaseSession.query(Guild).one()
         assert guild.voice_create != Guild.voice_create.default.arg  # type: ignore
 

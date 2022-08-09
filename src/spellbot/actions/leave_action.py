@@ -30,8 +30,8 @@ class LeaveAction(BaseAction):
         if not (message_xid := game_data["message_xid"]):
             return
 
-        original_message = await self.interaction.original_message()
-        if original_message.id != message_xid:
+        original_response = await self.interaction.original_response()
+        if original_response.id != message_xid:
             return await safe_send_user(
                 self.interaction.user,
                 "You're not in that game. Use the /leave command to leave a game.",

@@ -26,12 +26,12 @@ class PendingGameView(BaseView):
         assert interaction.channel_id is not None
         with tracer.trace(name="interaction", resource="join"):  # type: ignore
             add_span_context(interaction)
-            assert interaction.original_message
+            assert interaction.original_response
             await interaction.response.defer()
             async with self.bot.channel_lock(interaction.channel_id):
                 async with LookingForGameAction.create(self.bot, interaction) as action:
-                    original_message = await interaction.original_message()
-                    await action.execute(message_xid=original_message.id)
+                    original_response = await interaction.original_response()
+                    await action.execute(message_xid=original_response.id)
 
     @ui.button(
         custom_id="leave",
@@ -88,8 +88,8 @@ class StartedGameSelect(ui.Select[StartedGameView]):
         with tracer.trace(name="interaction", resource="points"):  # type: ignore
             add_span_context(interaction)
             await interaction.response.defer()
-            assert interaction.original_message
+            assert interaction.original_response
             points = int(self.values[0])
             async with LookingForGameAction.create(self.bot, interaction) as action:
-                original_message = await interaction.original_message()
-                await action.add_points(original_message, points)
+                original_response = await interaction.original_response()
+                await action.add_points(original_response, points)

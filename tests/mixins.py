@@ -140,7 +140,7 @@ class InteractionMixin(BaseMixin):
         ...
 
     def last_edit_message(self, kwarg: str) -> Union[dict[str, Any], list[dict[str, Any]], Any]:
-        edit_message = self.interaction.edit_original_message
+        edit_message = self.interaction.edit_original_response
         edit_message.assert_called_once()
         edit_message_call = edit_message.call_args_list[0]
         actual = edit_message_call.kwargs[kwarg]
