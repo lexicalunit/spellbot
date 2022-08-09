@@ -10,7 +10,7 @@ from uuid import uuid4
 
 import discord
 from ddtrace import tracer
-from discord.ext.commands import Bot
+from discord.ext.commands import Bot, CommandError, CommandNotFound, Context
 from expiringdict import ExpiringDict
 
 from .database import db_session_manager, initialize_connection
@@ -112,6 +112,15 @@ class SpellBot(Bot):
 
         async with db_session_manager():
             await self.handle_verification(message)
+
+    async def on_command_error(
+        self,
+        context: Context[SpellBot],
+        exception: CommandError,
+    ) -> None:
+        if isinstance(exception, CommandNotFound):
+            return
+        return await super().on_command_error(context, exception)
 
     @tracer.wrap()
     async def handle_verification(self, message: discord.Message):
