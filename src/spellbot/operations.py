@@ -168,7 +168,7 @@ async def safe_update_embed_origin(
         log="could not update origin embed in message %(message_xid)s",
         message_xid=interaction.message.id,
     ):
-        await interaction.edit_original_message(*args, **kwargs)
+        await interaction.edit_original_response(*args, **kwargs)
         success = True
     return success
 
@@ -347,7 +347,7 @@ async def safe_send_channel(
         channel_xid=interaction.channel_id,
     ):
         await interaction.response.send_message(*args, **kwargs)
-        message = await interaction.original_message()
+        message = await interaction.original_response()
     return message
 
 
@@ -373,7 +373,7 @@ async def safe_followup_channel(
         channel_xid=interaction.channel_id,
     ):
         await interaction.followup.send(*args, **kwargs)
-        message = await interaction.original_message()
+        message = await interaction.original_response()
     return message
 
 
