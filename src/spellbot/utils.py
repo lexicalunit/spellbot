@@ -265,5 +265,4 @@ async def load_extensions(bot: Bot, do_sync: bool = False) -> None:
         logger.info("syncing commands...")
         await bot.tree.sync(guild=guild)
 
-    logger.info("setting up error handler...")
     bot.tree.on_error = handle_command_errors
