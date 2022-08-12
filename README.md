@@ -64,32 +64,37 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
     <tr>
         <td align="center"><a href="https://www.playedh.com/"><img width="160" height="160" src="https://user-images.githubusercontent.com/1903876/140843874-78510411-dcc8-4a26-a59a-0d6856698dcc.png" alt="PlayEDH" /><br />PlayEDH</a></td>
         <td align="center"><a href="https://www.reddit.com/r/CompetitiveEDH/"><img height="160" src="https://user-images.githubusercontent.com/1903876/140865281-19774420-a49b-4d0e-bf0c-db3ad937022e.png" alt="r/cEDH" /><br />r/cEDH</a></td>
-        <td align="center"><a href="https://www.commandthecause.org/"><img height="160" src="https://user-images.githubusercontent.com/1903876/161826326-43cbd3ff-976f-46ff-9608-dacea67d9c42.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
+        <td align="center"><a href="https://www.patreon.com/tolariancommunitycollege"><img height="160" src="https://user-images.githubusercontent.com/1903876/184271392-39ca23ba-36d9-4aa0-a6e5-26af5e0acfc1.jpg" alt="Tolarian Community College" /><br />Tolarian&nbsp;Community&nbsp;College</a></td>
     </tr>
     <tr>
+        <td align="center"><a href="https://www.commandthecause.org/"><img height="160" src="https://user-images.githubusercontent.com/1903876/161826326-43cbd3ff-976f-46ff-9608-dacea67d9c42.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
         <td align="center"><a href="https://www.patreon.com/NitpickingNerds"><img height="141" src="https://user-images.githubusercontent.com/1903876/140844623-8d8528a9-b60c-49c6-be0f-1d627b85adba.png" alt="The Nitpicking Nerds" /><br />The&nbsp;Nitpicking&nbsp;Nerds</a></td>
         <td align="center"><a href="https://www.facebook.com/EDHTambayan/"><img height="130" src="https://user-images.githubusercontent.com/1903876/161825614-64e432d4-85e8-481e-8f41-f66ab8c940cc.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></td>
-        <td align="center"><a href="https://disboard.org/server/752261529390284870"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845571-12e391d0-4cc8-4766-bf40-071f32503a7d.jpg" alt="Commander SpellTable (DE)" /><br />Commander&nbsp;SpellTable&nbsp;(DE)</a></td>
     </tr>
     <tr>
+        <td align="center"><a href="https://disboard.org/server/752261529390284870"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845571-12e391d0-4cc8-4766-bf40-071f32503a7d.jpg" alt="Commander SpellTable (DE)" /><br />Commander&nbsp;SpellTable&nbsp;(DE)</a></td>
         <td align="center"><a href="https://www.patreon.com/PlayingWithPowerMTG"><img height="130" src="https://user-images.githubusercontent.com/1903876/148892809-60b7d7f0-d773-4667-a863-829338d6aaed.png" alt="Playing with Power" /><br />Playing&nbsp;with&nbsp;Power</a></td>
         <td align="center"><a href="https://disboard.org/server/815001383979450368"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863859-9ec1997b-9983-498e-9295-fa594d242b4d.jpg" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
-        <td align="center"><a href="https://disboard.org/server/806995731268632596"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845585-8053037f-a42b-4c1c-88f2-1b3c403fea09.jpg" alt="The Mages Guild" /><br />The&nbsp;Mages&nbsp;Guild</a></td>
     </tr>
     <tr>
+        <td align="center"><a href="https://disboard.org/server/806995731268632596"><img height="130" src="https://user-images.githubusercontent.com/1903876/140845585-8053037f-a42b-4c1c-88f2-1b3c403fea09.jpg" alt="The Mages Guild" /><br />The&nbsp;Mages&nbsp;Guild</a></td>
         <td align="center"><a href="https://discord.gg/commander"><img height="130" src="https://user-images.githubusercontent.com/1903876/147596500-3cd08eef-84ad-4c02-a219-2eef0642a973.jpg" alt="Commander RC" /><br />Commander&nbsp;RC</td>
         <td align="center"><a href="https://www.patreon.com/asylumgamingmtg"><img height="141" src="https://user-images.githubusercontent.com/1903876/153262568-521cf214-0602-4118-b2fa-957bba2bfa4f.png" alt="Asylum Gaming" /><br />Asylum&nbsp;Gaming</a></td>
-        <td align="center"><a href="https://discord.gg/YeFrEqae3N"><img height="130" src="https://user-images.githubusercontent.com/1903876/148895425-0c72426c-d7dd-4974-99d7-21949f80e893.png" alt="コマンドフェストオンライン" /><br />コマンドフェストオンライン</a></td>
     </tr>
     <tr>
+        <td align="center"><a href="https://discord.gg/YeFrEqae3N"><img height="130" src="https://user-images.githubusercontent.com/1903876/148895425-0c72426c-d7dd-4974-99d7-21949f80e893.png" alt="コマンドフェストオンライン" /><br />コマンドフェストオンライン</a></td>
         <td align="center"><a href="https://disboard.org/server/848414032398516264"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863856-00482a5a-7fe5-4cbb-8c4b-2442504925ea.jpg" alt="Commander en Español" /><br />Commander&nbsp;en&nbsp;Español</a></td>
         <td align="center"><a href="https://discord.gg/7gJDYU44gM"><img height="130" src="https://user-images.githubusercontent.com/1903876/147705994-909a94cc-ce70-431b-823a-127d257cdb52.png" alt="MTG let's play!!" /><br />MTG&nbsp;let&apos;s&nbsp;play!!</td>
-        <td align="center"><a href="https://www.mtglandfall.com/"><img height="130" src="https://user-images.githubusercontent.com/1903876/152042910-af34b521-bba2-43d1-a033-d7fd7c387673.png" alt="Landfall" /><br />Landfall</a></td>
     </tr>
     <tr>
+        <td align="center"><a href="https://www.mtglandfall.com/"><img height="130" src="https://user-images.githubusercontent.com/1903876/152042910-af34b521-bba2-43d1-a033-d7fd7c387673.png" alt="Landfall" /><br />Landfall</a></td>
         <td align="center"><a href="https://discord.gg/Rgp3xaV7HU"><img height="130" src="https://user-images.githubusercontent.com/1903876/148823767-5e1feb59-37d8-4340-ae23-148d8415699f.png" alt="Torre de Mando" /><br />Torre&nbsp;de&nbsp;Mando&nbsp;</a></td>
         <td align="center"><a href="https://discord.gg/xcnRz86vkb"><img height="130" src="https://user-images.githubusercontent.com/1903876/156637022-c8847db5-9cf5-4d00-a5b0-ecbaaec27802.jpg" alt="Your Virtual LGS" /><br />Your&nbsp;Virtual&nbsp;LGS</a></td>
+    </tr>
+    <tr>
+        <td>&nbsp;</td>
         <td align="center"><a href="https://discord.gg/ygMty27a"><img height="130" src="https://user-images.githubusercontent.com/1903876/167959269-64a2632e-bd1c-4527-895d-1778801c083e.png" alt="Commander's Crypt" /><br />Commander&apos;s&nbsp;Crypt</a></td>
+        <td>&nbsp;</td>
     </tr>
 </table>
 
