@@ -14,6 +14,7 @@ from .utils import (
     bot_can_read,
     bot_can_reply_to,
     bot_can_role,
+    log_info,
     log_warning,
     suppress,
 )
@@ -449,11 +450,7 @@ async def safe_send_user(
             # by flagging the user until the next time we restart.
             if user_xid is not None:
                 bad_users.add(user_xid)
-            return log_warning(
-                "not allowed to send message to %(user)s",
-                user=user,
-                exec_info=True,
-            )
+            return log_info("not allowed to send message to %(user)s", user=user)
         log_warning(
             "failed to send message to user %(user)s",
             user=user,

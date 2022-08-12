@@ -31,9 +31,14 @@ CANT_SEND_CODE = 50007
 EMBED_DESCRIPTION_SIZE_LIMIT = 4096
 
 
-def log_warning(log: str, exec_info: bool = False, **kwargs: Any):
+def log_warning(log: str, exec_info: bool = False, **kwargs: Any) -> None:
     message = f"warning: discord: {log}"
     logger.warning(message, kwargs, exc_info=exec_info)
+
+
+def log_info(log: str, exec_info: bool = False, **kwargs: Any) -> None:
+    message = f"info: discord: {log}"
+    logger.info(message, kwargs, exc_info=exec_info)
 
 
 def bot_can_reply_to(message: discord.Message) -> bool:

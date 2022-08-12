@@ -280,6 +280,7 @@ class TestOperationsSendUser:
         assert "no send method on user user#1234" in caplog.text
 
     async def test_forbidden(self, caplog: pytest.LogCaptureFixture):
+        caplog.set_level(logging.INFO)
         user = MagicMock(spec=Union[discord.User, discord.Member])
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.send = AsyncMock(side_effect=discord.errors.Forbidden(MagicMock(), "msg"))
@@ -287,6 +288,7 @@ class TestOperationsSendUser:
         assert "not allowed to send message to user#1234" in caplog.text
 
     async def test_cant_send(self, caplog: pytest.LogCaptureFixture):
+        caplog.set_level(logging.INFO)
         exception = discord.errors.HTTPException(MagicMock(), "msg")
         setattr(exception, "code", CANT_SEND_CODE)
         user = MagicMock(spec=Union[discord.User, discord.Member])
