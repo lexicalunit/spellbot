@@ -91,11 +91,6 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
         <td align="center"><a href="https://discord.gg/Rgp3xaV7HU"><img height="130" src="https://user-images.githubusercontent.com/1903876/148823767-5e1feb59-37d8-4340-ae23-148d8415699f.png" alt="Torre de Mando" /><br />Torre&nbsp;de&nbsp;Mando&nbsp;</a></td>
         <td align="center"><a href="https://discord.gg/xcnRz86vkb"><img height="130" src="https://user-images.githubusercontent.com/1903876/156637022-c8847db5-9cf5-4d00-a5b0-ecbaaec27802.jpg" alt="Your Virtual LGS" /><br />Your&nbsp;Virtual&nbsp;LGS</a></td>
     </tr>
-    <tr>
-        <td>&nbsp;</td>
-        <td align="center"><a href="https://discord.gg/ygMty27a"><img height="130" src="https://user-images.githubusercontent.com/1903876/167959269-64a2632e-bd1c-4527-895d-1778801c083e.png" alt="Commander's Crypt" /><br />Commander&apos;s&nbsp;Crypt</a></td>
-        <td>&nbsp;</td>
-    </tr>
 </table>
 
 Want your community to be featured here as well? Please contact me at
