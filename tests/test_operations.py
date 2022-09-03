@@ -24,8 +24,10 @@ from spellbot.operations import (
     safe_message_reply,
     safe_send_user,
     safe_update_embed,
+    safe_update_embed_origin,
 )
 from spellbot.utils import CANT_SEND_CODE
+from tests.mixins import InteractionMixin
 from tests.mocks import build_message, mock_client
 
 
@@ -122,16 +124,31 @@ class TestOperationsUpdateEmbed:
     async def test_happy_path(self):
         message = MagicMock(spec=discord.Message)
         message.edit = AsyncMock()
-        await safe_update_embed(message, "content", flags=1)
+        success = await safe_update_embed(message, "content", flags=1)
         message.edit.assert_called_once_with("content", flags=1)
+        assert success
+
+    async def test_exception(self):
+        message = MagicMock(spec=discord.Message)
+        message.edit = AsyncMock()
+        message.edit.side_effect = DiscordException
+        success = await safe_update_embed(message, "content", flags=1)
+        message.edit.assert_called_once_with("content", flags=1)
+        assert not success
 
 
-# TODO
-# @pytest.mark.asyncio
-# class TestOperationsUpdateEmbedOrigin(ComponentContextMixin):
-#     async def test_happy_path(self):
-#         await safe_update_embed_origin(self.ctx, "content", hidden=True)
-#         self.ctx.edit_origin.assert_called_once_with("content", hidden=True)
+@pytest.mark.asyncio
+class TestOperationsUpdateEmbedOrigin(InteractionMixin):
+    async def test_happy_path(self):
+        success = await safe_update_embed_origin(self.interaction, "content", flags=1)
+        assert success
+        self.interaction.edit_original_response.assert_called_once_with("content", flags=1)
+
+    async def test_exception(self):
+        self.interaction.edit_original_response.side_effect = DiscordException
+        success = await safe_update_embed_origin(self.interaction, "content", flags=1)
+        self.interaction.edit_original_response.assert_called_once_with("content", flags=1)
+        assert not success
 
 
 @pytest.mark.asyncio

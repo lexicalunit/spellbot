@@ -113,7 +113,7 @@ class SpellBot(Bot):
         async with db_session_manager():
             await self.handle_verification(message)
 
-    async def on_command_error(
+    async def on_command_error(  # pylint: disable=arguments-differ
         self,
         context: Context[SpellBot],
         exception: CommandError,

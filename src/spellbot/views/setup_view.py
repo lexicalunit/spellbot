@@ -13,7 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 class SetupView(BaseView):
-    async def interaction_check(self, interaction: discord.Interaction):
+    async def interaction_check(  # pylint: disable=arguments-differ
+        self,
+        interaction: discord.Interaction,
+    ) -> bool:
         return is_admin(interaction)
 
     @discord.ui.button(
@@ -25,7 +28,7 @@ class SetupView(BaseView):
     async def toggle_show_links(
         self,
         interaction: discord.Interaction,
-        button: discord.ui.Button["SetupView"],
+        button: discord.ui.Button[SetupView],
     ) -> None:
         from ..actions.admin_action import AdminAction
 
@@ -44,7 +47,7 @@ class SetupView(BaseView):
     async def toggle_show_points(
         self,
         interaction: discord.Interaction,
-        button: discord.ui.Button["SetupView"],
+        button: discord.ui.Button[SetupView],
     ) -> None:
         from ..actions.admin_action import AdminAction
 
@@ -63,7 +66,7 @@ class SetupView(BaseView):
     async def toggle_voice_create(
         self,
         interaction: discord.Interaction,
-        button: discord.ui.Button["SetupView"],
+        button: discord.ui.Button[SetupView],
     ) -> None:
         from ..actions.admin_action import AdminAction
 
@@ -82,7 +85,7 @@ class SetupView(BaseView):
     async def refresh_setup(
         self,
         interaction: discord.Interaction,
-        button: discord.ui.Button["SetupView"],
+        button: discord.ui.Button[SetupView],
     ) -> None:
         from ..actions.admin_action import AdminAction
 

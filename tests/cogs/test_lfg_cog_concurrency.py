@@ -20,7 +20,7 @@ from tests.mocks import build_author, build_channel, build_guild, build_interact
 async def run_lfg(cog: LookingForGameCog, interaction: discord.Interaction) -> None:
     command = cog.lfg
     callback = command.callback
-    if command.binding:
+    if command.binding:  # pragma: no cover
         callback = partial(callback, command.binding)
     callback = cast(Callable[..., Awaitable[None]], callback)
     return await callback(interaction=interaction)
@@ -49,7 +49,7 @@ class TestCogLookingForGameConcurrency:
         # see message_xids OUT of order in the created games (as ordered by created at).
         messages_out_of_order = False
         message_xid: Optional[int] = None
-        for game in games:
+        for game in games:  # pragma: no cover
             if message_xid is not None and game.message_xid != message_xid + 1:
                 # At leat one game is out of order, this is good!
                 messages_out_of_order = True
@@ -105,7 +105,7 @@ class TestCogLookingForGameConcurrency:
         # see message_xids OUT of order in the created games (as ordered by created at).
         messages_out_of_order = False
         message_xid: Optional[int] = None
-        for game in games:
+        for game in games:  # pragma: no cover
             if message_xid is not None and game.message_xid != message_xid + 1:
                 # At leat one game is out of order, this is good!
                 messages_out_of_order = True

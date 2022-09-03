@@ -47,3 +47,17 @@ class TestCogBlock(InteractionMixin):
         await self.run(cog.unblock, target=target)
         blocks = list(DatabaseSession.query(Block).all())
         assert len(blocks) == 0
+
+    async def test_block_self(self, cog: BlockCog):
+        target = MagicMock()
+        target.id = self.interaction.user.id
+        target.display_name = self.interaction.user.display_name
+
+        await self.run(cog.block, target=target)
+
+        self.interaction.response.send_message.assert_called_once_with(
+            "You can not block yourself.",
+            ephemeral=True,
+        )
+        blocks = list(DatabaseSession.query(Block).all())
+        assert len(blocks) == 0

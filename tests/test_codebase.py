@@ -2,13 +2,11 @@ from __future__ import annotations
 
 import re
 import sys
-import warnings
 from os import chdir
 from pathlib import Path
 from subprocess import getoutput, run
 from typing import cast
 
-import pytest
 import toml
 from git.objects import Tree
 from git.repo import Repo
@@ -60,18 +58,17 @@ class TestCodebase:
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
 
-    @pytest.mark.xfail(run=True, reason="Expect TODO errors until 2.0 refactor is done")
-    def test_pylint(self):
-        """Checks that the Python codebase passes configured pylint checks."""
-        chdir(REPO_ROOT)
-        cmd = ["pylint", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
-        try:
-            proc = run(cmd, capture_output=True)
-            exitcode: int = cast(int, proc.returncode)
-            assert exitcode == 0, f"pylint issues:\n{proc.stdout.decode('utf-8')}"
-        except FileNotFoundError:  # pragma: no cover
-            warnings.warn(UserWarning("test skipped: pylint not installed"))
+    # def test_pylint(self):
+    #     """Checks that the Python codebase passes configured pylint checks."""
+    #     chdir(REPO_ROOT)
+    #     cmd = ["pylint", *SRC_DIRS]
+    #     print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+    #     try:
+    #         proc = run(cmd, capture_output=True)
+    #         exitcode: int = cast(int, proc.returncode)
+    #         assert exitcode == 0, f"pylint issues:\n{proc.stdout.decode('utf-8')}"
+    #     except FileNotFoundError:  # pragma: no cover
+    #         warnings.warn(UserWarning("test skipped: pylint not installed"))
 
     def test_pylic(self):
         """Checks that the Python codebase passes configured pylic checks."""
