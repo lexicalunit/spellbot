@@ -1,17 +1,22 @@
 from __future__ import annotations
 
 from typing import Callable
+from unittest.mock import MagicMock
 
+import discord
 import pytest
 import pytest_asyncio
-from discord import ButtonStyle, ComponentType
+from pytest_mock import MockerFixture
 
 from spellbot.client import SpellBot
 from spellbot.cogs import AdminCog
 from spellbot.database import DatabaseSession
+from spellbot.errors import AdminOnlyError
 from spellbot.models import Channel, Game, Guild, GuildAward
 from spellbot.views import SetupView
+from tests.fixtures import Factories
 from tests.mixins import InteractionMixin
+from tests.mocks import mock_discord_user
 
 
 @pytest_asyncio.fixture
@@ -35,38 +40,38 @@ class TestCogAdminSetup(InteractionMixin):
                     {
                         "custom_id": "toggle_show_links",
                         "label": "Toggle Public Links",
-                        "style": ButtonStyle.primary.value,
-                        "type": ComponentType.button.value,
+                        "style": discord.ButtonStyle.primary.value,
+                        "type": discord.ComponentType.button.value,
                         "disabled": False,
                     },
                     {
                         "custom_id": "toggle_show_points",
                         "label": "Toggle Show Points",
-                        "style": ButtonStyle.primary.value,
-                        "type": ComponentType.button.value,
+                        "style": discord.ButtonStyle.primary.value,
+                        "type": discord.ComponentType.button.value,
                         "disabled": False,
                     },
                     {
                         "custom_id": "toggle_voice_create",
                         "label": "Toggle Create Voice Channels",
-                        "style": ButtonStyle.primary.value,
-                        "type": ComponentType.button.value,
+                        "style": discord.ButtonStyle.primary.value,
+                        "type": discord.ComponentType.button.value,
                         "disabled": False,
                     },
                 ],
-                "type": ComponentType.action_row.value,
+                "type": discord.ComponentType.action_row.value,
             },
             {
                 "components": [
                     {
                         "custom_id": "refresh_setup",
                         "label": "Refresh",
-                        "style": ButtonStyle.secondary.value,
-                        "type": ComponentType.button.value,
+                        "style": discord.ButtonStyle.secondary.value,
+                        "type": discord.ComponentType.button.value,
                         "disabled": False,
                     },
                 ],
-                "type": ComponentType.action_row.value,
+                "type": discord.ComponentType.action_row.value,
             },
         ]
         assert self.last_send_message("embed") == {
@@ -88,6 +93,27 @@ class TestCogAdminSetup(InteractionMixin):
             "title": f"SpellBot Setup for {self.guild.name}",
             "type": "rich",
         }
+
+
+@pytest.mark.asyncio
+class TestSetupView(InteractionMixin):
+    @pytest_asyncio.fixture
+    async def admin(self, factories: Factories, mocker: MockerFixture) -> discord.User:
+        mocker.patch("spellbot.views.setup_view.is_admin", MagicMock(return_value=True))
+        return mock_discord_user(factories.user.create())
+
+    @pytest_asyncio.fixture
+    async def non_admin(self, factories: Factories) -> discord.User:
+        return mock_discord_user(factories.user.create())
+
+    async def test_setup_when_admin(self, view: SetupView, admin: discord.User) -> None:
+        self.interaction.user = admin
+        await view.interaction_check(self.interaction)
+
+    async def test_setup_when_not_admin(self, view: SetupView, non_admin: discord.User) -> None:
+        self.interaction.user = non_admin
+        with pytest.raises(AdminOnlyError):
+            await view.interaction_check(self.interaction)
 
 
 @pytest.mark.asyncio
@@ -118,38 +144,38 @@ class TestCogAdminSetupView(InteractionMixin):
                     {
                         "custom_id": "toggle_show_links",
                         "label": "Toggle Public Links",
-                        "style": ButtonStyle.primary.value,
-                        "type": ComponentType.button.value,
+                        "style": discord.ButtonStyle.primary.value,
+                        "type": discord.ComponentType.button.value,
                         "disabled": False,
                     },
                     {
                         "custom_id": "toggle_show_points",
                         "label": "Toggle Show Points",
-                        "style": ButtonStyle.primary.value,
-                        "type": ComponentType.button.value,
+                        "style": discord.ButtonStyle.primary.value,
+                        "type": discord.ComponentType.button.value,
                         "disabled": False,
                     },
                     {
                         "custom_id": "toggle_voice_create",
                         "label": "Toggle Create Voice Channels",
-                        "style": ButtonStyle.primary.value,
-                        "type": ComponentType.button.value,
+                        "style": discord.ButtonStyle.primary.value,
+                        "type": discord.ComponentType.button.value,
                         "disabled": False,
                     },
                 ],
-                "type": ComponentType.action_row.value,
+                "type": discord.ComponentType.action_row.value,
             },
             {
                 "components": [
                     {
                         "custom_id": "refresh_setup",
                         "label": "Refresh",
-                        "style": ButtonStyle.secondary.value,
-                        "type": ComponentType.button.value,
+                        "style": discord.ButtonStyle.secondary.value,
+                        "type": discord.ComponentType.button.value,
                         "disabled": False,
                     },
                 ],
-                "type": ComponentType.action_row.value,
+                "type": discord.ComponentType.action_row.value,
             },
         ]
         assert self.last_edit_message("embed") == {

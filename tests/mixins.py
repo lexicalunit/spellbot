@@ -104,20 +104,16 @@ class InteractionMixin(BaseMixin):
         DatabaseSession.commit()
         return user
 
-    @pytest.fixture
-    def add_player(self, game: Game, add_user: Callable[..., User]) -> Callable[..., User]:
-        return partial(add_user, game=game)
-
-    @overload
-    def last_send_message(self, kwarg: Literal["embed"]) -> dict[str, Any]:  # pragma: no cover
+    @overload  # pragma: no cover
+    def last_send_message(self, kwarg: Literal["embed"]) -> dict[str, Any]:
         ...
 
-    @overload
-    def last_send_message(self, kwarg: Literal["view"]) -> list[dict[str, Any]]:  # pragma: no cover
+    @overload  # pragma: no cover
+    def last_send_message(self, kwarg: Literal["view"]) -> list[dict[str, Any]]:
         ...
 
-    @overload
-    def last_send_message(self, kwarg: str) -> Any:  # pragma: no cover
+    @overload  # pragma: no cover
+    def last_send_message(self, kwarg: str) -> Any:
         ...
 
     def last_send_message(self, kwarg: str) -> Union[dict[str, Any], list[dict[str, Any]], Any]:
@@ -131,12 +127,12 @@ class InteractionMixin(BaseMixin):
             actual = actual.to_components()
         return actual
 
-    @overload
-    def last_edit_message(self, kwarg: Literal["embed"]) -> dict[str, Any]:  # pragma: no cover
+    @overload  # pragma: no cover
+    def last_edit_message(self, kwarg: Literal["embed"]) -> dict[str, Any]:
         ...
 
-    @overload
-    def last_edit_message(self, kwarg: Literal["view"]) -> list[dict[str, Any]]:  # pragma: no cover
+    @overload  # pragma: no cover
+    def last_edit_message(self, kwarg: Literal["view"]) -> list[dict[str, Any]]:
         ...
 
     def last_edit_message(self, kwarg: str) -> Union[dict[str, Any], list[dict[str, Any]], Any]:
@@ -158,7 +154,7 @@ class InteractionMixin(BaseMixin):
         if not interaction:
             kwargs["interaction"] = self.interaction
         callback = command.callback
-        if command.binding:
+        if command.binding:  # pragma: no cover
             callback = partial(callback, command.binding)
         callback = cast(Callable[..., Awaitable[None]], callback)
         return await callback(**kwargs)

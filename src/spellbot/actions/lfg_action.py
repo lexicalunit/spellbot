@@ -291,7 +291,12 @@ class LookingForGameAction(BaseAction):
         await self.services.games.set_voice(voice_channel.id, voice_invite_link)
 
     @tracer.wrap()
-    async def _handle_embed_creation(self, new: bool, origin: bool, fully_seated: bool):
+    async def _handle_embed_creation(  # pylint: disable=too-many-branches
+        self,
+        new: bool,
+        origin: bool,
+        fully_seated: bool,
+    ) -> None:
         assert self.guild
         assert self.channel
 

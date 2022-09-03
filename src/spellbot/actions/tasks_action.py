@@ -159,7 +159,7 @@ class TasksAction:
         batch = 0
         for game in games:
             game_id = game["id"]
-            logger.info(f"expiring game {game_id}...")
+            logger.info("expiring game %s...", game_id)
             await self.services.games.delete_games([game_id])
             await self.expire_game(game)
 
