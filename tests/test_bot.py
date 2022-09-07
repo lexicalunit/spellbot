@@ -8,69 +8,18 @@ from discord import app_commands
 from discord.ext.commands.bot import Bot
 
 from spellbot import SpellBot, client
-from spellbot.errors import AdminOnlyError, UserBannedError, UserUnverifiedError, UserVerifiedError
+from spellbot.errors import (
+    AdminOnlyError,
+    GuildOnlyError,
+    UserBannedError,
+    UserUnverifiedError,
+    UserVerifiedError,
+)
 from spellbot.utils import handle_interaction_errors
 
 
 @pytest.mark.asyncio
 class TestSpellBot:
-    # TODO:
-    # async def test_commands_loaded(self):
-    #     assert self.bot.all_commands.keys() == {
-    #         "ban",
-    #         "unban",
-    #     }
-    #     assert self.bot.slash.subcommands.keys() == {
-    #         "award",
-    #         "set",
-    #     }
-    #     assert self.bot.slash.subcommands["award"].keys() == {
-    #         "add",
-    #         "delete",
-    #     }
-    #     assert self.bot.slash.subcommands["set"].keys() == {
-    #         "auto_verify",
-    #         "channel_motd",
-    #         "default_seats",
-    #         "motd",
-    #         "unverified_only",
-    #         "verified_only",
-    #         "voice_category",
-    #     }
-    #     assert self.bot.slash.components[None].keys() == {
-    #         "join",
-    #         "leave",
-    #         "points",
-    #         "refresh_setup",
-    #         "toggle_show_links",
-    #         "toggle_show_points",
-    #         "toggle_voice_create",
-    #     }
-    #     assert self.bot.slash.commands.keys() == {
-    #         "about",
-    #         "award",
-    #         "awards",
-    #         "Block",
-    #         "channels",
-    #         "context",
-    #         "game",
-    #         "history",
-    #         "info",
-    #         "leave",
-    #         "lfg",
-    #         "power",
-    #         "score",
-    #         "set",
-    #         "setup",
-    #         "Unblock",
-    #         "unverify",
-    #         "unwatch",
-    #         "verify",
-    #         "View Score",
-    #         "watch",
-    #         "watched",
-    #     }
-
     async def test_create_spelltable_link_mock(self, bot: SpellBot):
         link = await bot.create_spelltable_link()
         assert link is not None
@@ -96,6 +45,11 @@ class TestSpellBot:
                 AdminOnlyError(),
                 "You do not have permission to do that.",
                 id="admin-only",
+            ),
+            pytest.param(
+                GuildOnlyError(),
+                "This command only works in a guild.",
+                id="guild-only",
             ),
             pytest.param(
                 UserBannedError(),
