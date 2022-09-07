@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Custom "guild-only" handling for application commands.
+
 ## [v8.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v8.0.1) - 2022-08-19
 
 ### Fixed

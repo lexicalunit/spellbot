@@ -9,12 +9,12 @@ from discord.ext import commands
 from .. import SpellBot
 from ..actions import ScoreAction
 from ..metrics import add_span_context
-from ..utils import for_all_callbacks
+from ..utils import for_all_callbacks, is_guild
 
 logger = logging.getLogger(__name__)
 
 
-@for_all_callbacks(commands.guild_only())
+@for_all_callbacks(app_commands.check(is_guild))
 class ScoreCog(commands.Cog):
     def __init__(self, bot: SpellBot):
         self.bot = bot

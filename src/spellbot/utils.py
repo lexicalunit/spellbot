@@ -14,7 +14,13 @@ from discord.app_commands import AppCommandError, Command, ContextMenu, NoPrivat
 from discord.ext.commands import Bot
 from discord.ui import Item
 
-from .errors import AdminOnlyError, UserBannedError, UserUnverifiedError, UserVerifiedError
+from .errors import (
+    AdminOnlyError,
+    GuildOnlyError,
+    UserBannedError,
+    UserUnverifiedError,
+    UserVerifiedError,
+)
 from .metrics import add_span_error
 from .settings import Settings
 
@@ -126,6 +132,13 @@ def is_admin(interaction: discord.Interaction) -> bool:
     return True
 
 
+def is_guild(interaction: discord.Interaction) -> bool:
+    guild = getattr(interaction, "guild", None)
+    if guild is None:
+        raise GuildOnlyError()
+    return True
+
+
 def user_can_moderate(
     author: Optional[Union[discord.User, discord.Member]],
     guild: Optional[discord.Guild],
@@ -207,16 +220,18 @@ def for_all_callbacks(decorator: Any) -> Any:
 async def handle_interaction_errors(interaction: discord.Interaction, error: Exception) -> None:
     from .operations import safe_send_user
 
-    if isinstance(error, NoPrivateMessage):
-        return await safe_send_user(interaction.user, "This command is not supported in DMs.")
     if isinstance(error, AdminOnlyError):
         return await safe_send_user(interaction.user, "You do not have permission to do that.")
+    if isinstance(error, GuildOnlyError):
+        return await safe_send_user(interaction.user, "This command only works in a guild.")
+    if isinstance(error, NoPrivateMessage):
+        return await safe_send_user(interaction.user, "This command is not supported in DMs.")
     if isinstance(error, UserBannedError):
         return await safe_send_user(interaction.user, "You have been banned from using SpellBot.")
-    if isinstance(error, UserVerifiedError):
-        return await safe_send_user(interaction.user, "Only unverified users can do that here.")
     if isinstance(error, UserUnverifiedError):
         return await safe_send_user(interaction.user, "Only verified users can do that here.")
+    if isinstance(error, UserVerifiedError):
+        return await safe_send_user(interaction.user, "Only unverified users can do that here.")
 
     add_span_error(error)
     ref = (

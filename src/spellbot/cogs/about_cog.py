@@ -9,7 +9,7 @@ from .. import SpellBot, __version__
 from ..metrics import add_span_context
 from ..operations import safe_send_channel
 from ..settings import Settings
-from ..utils import for_all_callbacks
+from ..utils import for_all_callbacks, is_guild
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ ISSUES = "https://github.com/lexicalunit/spellbot/issues"
 PATREON = "https://www.patreon.com/lexicalunit"
 
 
-@for_all_callbacks(commands.guild_only())
+@for_all_callbacks(app_commands.check(is_guild))
 class AboutCog(commands.Cog):
     def __init__(self, bot: SpellBot):
         self.bot = bot

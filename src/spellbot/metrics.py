@@ -15,7 +15,13 @@ from wrapt import wrap_function_wrapper
 
 from . import __version__
 from .environment import running_in_pytest
-from .errors import AdminOnlyError, UserBannedError, UserUnverifiedError, UserVerifiedError
+from .errors import (
+    AdminOnlyError,
+    GuildOnlyError,
+    UserBannedError,
+    UserUnverifiedError,
+    UserVerifiedError,
+)
 from .settings import Settings
 
 settings = Settings()
@@ -130,7 +136,8 @@ def add_span_error(ex: BaseException):  # pragma: no cover
 
 @skip_if_no_metrics
 def setup_ignored_errors(span: Span):  # pragma: no cover
-    span._ignore_exception(UserBannedError)  # type: ignore
-    span._ignore_exception(UserVerifiedError)  # type: ignore
-    span._ignore_exception(UserUnverifiedError)  # type: ignore
     span._ignore_exception(AdminOnlyError)  # type: ignore
+    span._ignore_exception(GuildOnlyError)  # type: ignore
+    span._ignore_exception(UserBannedError)  # type: ignore
+    span._ignore_exception(UserUnverifiedError)  # type: ignore
+    span._ignore_exception(UserVerifiedError)  # type: ignore

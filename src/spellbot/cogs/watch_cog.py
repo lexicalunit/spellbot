@@ -9,13 +9,13 @@ from discord.ext import commands
 from .. import SpellBot
 from ..actions import WatchAction
 from ..metrics import add_span_context
-from ..utils import for_all_callbacks, is_admin
+from ..utils import for_all_callbacks, is_admin, is_guild
 
 logger = logging.getLogger(__name__)
 
 
 @for_all_callbacks(app_commands.check(is_admin))
-@for_all_callbacks(app_commands.guild_only())
+@for_all_callbacks(app_commands.check(is_guild))
 class WatchCog(commands.Cog):
     def __init__(self, bot: SpellBot):
         self.bot = bot

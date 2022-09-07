@@ -11,12 +11,12 @@ from .. import SpellBot
 from ..actions.lfg_action import LookingForGameAction
 from ..metrics import add_span_context
 from ..models import GameFormat
-from ..utils import for_all_callbacks
+from ..utils import for_all_callbacks, is_guild
 
 logger = logging.getLogger(__name__)
 
 
-@for_all_callbacks(commands.guild_only())
+@for_all_callbacks(app_commands.check(is_guild))
 class LookingForGameCog(commands.Cog):
     def __init__(self, bot: SpellBot):
         self.bot = bot
