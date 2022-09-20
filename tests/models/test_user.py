@@ -31,6 +31,7 @@ class TestModelUser:
             "name": user1.name,
             "banned": user1.banned,
             "game_id": user1.game_id,
+            "tourney_id": None,
         }
         assert user2.waiting
         assert user2.to_dict() == {
@@ -40,6 +41,7 @@ class TestModelUser:
             "name": user2.name,
             "banned": user2.banned,
             "game_id": game1.id,
+            "tourney_id": None,
         }
         assert player1.points(game2.id) == play1.points
         assert player2.points(game2.id) == play2.points

@@ -7,6 +7,7 @@ from .configs import ConfigsService
 from .games import GamesService
 from .guilds import GuildsService
 from .plays import PlaysService
+from .tourneys import TourneysService
 from .users import UsersService
 from .verifies import VerifiesService
 from .watches import WatchesService
@@ -20,6 +21,7 @@ class ServicesRegistry:
         self.games = GamesService()
         self.guilds = GuildsService()
         self.plays = PlaysService()
+        self.tourneys = TourneysService()
         self.users = UsersService()
         self.verifies = VerifiesService()
         self.watches = WatchesService()
@@ -34,6 +36,7 @@ __all__ = [
     "NewAward",
     "PlaysService",
     "ServicesRegistry",
+    "TourneysService",
     "UsersService",
     "VerifiesService",
     "WatchesService",

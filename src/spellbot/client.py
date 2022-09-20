@@ -52,11 +52,12 @@ class SpellBot(Bot):
             await initialize_connection("spellbot-bot")
 
         # register persistant views
-        from .views import PendingGameView, SetupView, StartedGameView
+        from .views import PendingGameView, SetupView, StartedGameView, TourneyView
 
         self.add_view(PendingGameView(self))
         self.add_view(SetupView(self))
         self.add_view(StartedGameView(self))
+        self.add_view(TourneyView(self))
 
         # load all cog extensions and application commands
         from .utils import load_extensions

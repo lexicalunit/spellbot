@@ -74,7 +74,7 @@ class Game(Base):
         nullable=False,
         default=datetime.utcnow,
         server_default=now,
-        doc="UTC timestamp when this games was first created",
+        doc="UTC timestamp when this game was first created",
     )
     updated_at = Column(
         DateTime,
@@ -82,7 +82,7 @@ class Game(Base):
         default=datetime.utcnow,
         server_default=now,
         onupdate=datetime.utcnow,
-        doc="UTC timestamp when this games was last updated",
+        doc="UTC timestamp when this game was last updated",
     )
     started_at = Column(
         DateTime,
@@ -93,7 +93,7 @@ class Game(Base):
         DateTime,
         nullable=True,
         index=True,
-        doc="UTC timestamp when this games was deleted",
+        doc="UTC timestamp when this game was deleted",
     )
     guild_xid = Column(
         BigInteger,
@@ -151,6 +151,13 @@ class Game(Base):
         String(255),
         doc="The generate voice channel invite link for this game",
     )
+    tourney_id = Column(
+        Integer,
+        ForeignKey("tourneys.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        doc="The tourney ID that this game is a part of",
+    )
 
     players = relationship(
         "User",
@@ -167,6 +174,11 @@ class Game(Base):
         "Channel",
         back_populates="games",
         doc="The channel this game was created in",
+    )
+    tourney = relationship(
+        "Tourney",
+        back_populates="games",
+        doc="Tourney that this game is a part of",
     )
 
     @property
@@ -275,6 +287,8 @@ class Game(Base):
             embed.add_field(name="Started at", value=f"<t:{self.started_at_timestamp}>")
         if self.voice_xid and self.show_links(dm):
             embed.add_field(name="Voice Channel", value=f"<#{self.voice_xid}>")
+        if self.tourney:
+            embed.add_field(name="Tourney", value=self.tourney.name, inline=False)
         embed.set_footer(text=self.embed_footer)
         embed.color = discord.Color(settings.EMBED_COLOR)
         return embed
@@ -297,4 +311,5 @@ class Game(Base):
             "spectate_link": self.spectate_link,
             "voice_invite_link": self.voice_invite_link,
             "jump_link": self.jump_link,
+            "tourney_id": self.tourney_id,
         }

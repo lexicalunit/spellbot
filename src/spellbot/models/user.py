@@ -57,11 +57,23 @@ class User(Base):
         index=True,
         doc="The game ID that this user is current signed up for",
     )
+    tourney_id = Column(
+        Integer,
+        ForeignKey("tourneys.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        doc="The tourney ID that this user is current signed up for",
+    )
 
     game = relationship(
         "Game",
         back_populates="players",
         doc="Game that this player is currently in",
+    )
+    tourney = relationship(
+        "Tourney",
+        back_populates="players",
+        doc="Tourney that this player is currently in",
     )
 
     plays = relationship(
@@ -118,4 +130,5 @@ class User(Base):
             "name": self.name,
             "banned": self.banned,
             "game_id": self.game_id,
+            "tourney_id": self.tourney_id,
         }

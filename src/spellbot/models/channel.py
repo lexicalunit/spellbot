@@ -12,7 +12,7 @@ from sqlalchemy.sql.sqltypes import Boolean, Integer
 from . import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
-    from . import Game, Guild  # noqa
+    from . import Game, Guild, Tourney  # noqa
 
 
 class Channel(Base):
@@ -109,6 +109,12 @@ class Channel(Base):
         back_populates="channel",
         uselist=True,
         doc="The games created in this channel",
+    )
+    tourneys = relationship(
+        "Tourney",
+        back_populates="channel",
+        uselist=True,
+        doc="The tourneys created in this channel",
     )
 
     def to_dict(self) -> dict[str, Any]:

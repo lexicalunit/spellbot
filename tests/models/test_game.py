@@ -30,6 +30,7 @@ class TestModelGame:
             "voice_invite_link": game.voice_invite_link,
             "jump_link": game.jump_link,
             "spectate_link": game.spectate_link,
+            "tourney_id": None,
         }
 
     def test_game_show_links(self, factories: Factories):

@@ -25,6 +25,7 @@ from .config import Config
 from .game import Game, GameFormat, GameStatus
 from .guild import Guild
 from .play import Play
+from .tourney import Tourney
 from .user import User
 from .verify import Verify
 from .watch import Watch
@@ -45,6 +46,7 @@ __all__ = [
     "now",
     "Play",
     "reverse_all",
+    "Tourney",
     "User",
     "UserAward",
     "Verify",

@@ -9,7 +9,7 @@ from sqlalchemy.orm import relationship
 from . import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
-    from . import Channel, Game, GuildAward  # noqa
+    from . import Channel, Game, GuildAward, Tourney  # noqa
 
 
 class Guild(Base):
@@ -68,6 +68,12 @@ class Guild(Base):
         back_populates="guild",
         uselist=True,
         doc="Games played on this guild",
+    )
+    tourneys = relationship(
+        "Tourney",
+        back_populates="guild",
+        uselist=True,
+        doc="Tourneys played on this guild",
     )
     channels = relationship(
         "Channel",

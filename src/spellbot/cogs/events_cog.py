@@ -8,7 +8,7 @@ from discord.app_commands import Choice
 from discord.ext import commands
 
 from .. import SpellBot
-from ..actions import LookingForGameAction
+from ..actions import LookingForGameAction, ToruneyAction
 from ..metrics import add_span_context
 from ..models import GameFormat
 from ..utils import for_all_callbacks, is_admin, is_guild
@@ -40,6 +40,19 @@ class EventsCog(commands.Cog):
         await interaction.response.defer()
         async with LookingForGameAction.create(self.bot, interaction) as action:
             await action.create_game(players, format)
+
+    @app_commands.command(name="tourney", description="Create a new tourney in this channel.")
+    @app_commands.describe(name="The name of this tourney.")
+    @tracer.wrap(name="interaction", resource="toruney")
+    async def tourney(
+        self,
+        interaction: discord.Interaction,
+        name: str,
+    ) -> None:
+        assert interaction.channel_id is not None
+        add_span_context(interaction)
+        async with ToruneyAction.create(self.bot, interaction) as action:
+            await action.create_tourney(name, GameFormat.COMMANDER, "")
 
 
 async def setup(bot: SpellBot):  # pragma: no cover
