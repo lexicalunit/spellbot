@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 import discord
 from ddtrace import tracer
 from discord import ui
@@ -13,9 +15,12 @@ from . import BaseView
 
 
 class TourneyView(BaseView):
-    def __init__(self, bot: SpellBot, initial_format: GameFormat = GameFormat.COMMANDER):
+    def __init__(
+        self,
+        bot: SpellBot,
+    ):
         super().__init__(bot)
-        self.add_item(FormatSelect(self.bot, initial_format=initial_format))
+        self.add_item(FormatSelect(self.bot))
 
     @ui.button(
         custom_id="signup",
@@ -61,11 +66,11 @@ class TourneyView(BaseView):
 
 
 class FormatSelect(ui.Select[TourneyView]):
-    def __init__(self, bot: SpellBot, initial_format: GameFormat):
+    def __init__(self, bot: SpellBot):
         self.bot = bot
         super().__init__(
             custom_id="format",
-            placeholder=f"Format: {initial_format}",
+            placeholder=f"Format: {GameFormat.COMMANDER}",
             options=[
                 discord.SelectOption(label=f"Format: {format}", value=f"{format.value}")
                 for format in GameFormat
@@ -79,8 +84,11 @@ class FormatSelect(ui.Select[TourneyView]):
         with tracer.trace(name="interaction", resource="drop"):  # type: ignore
             add_span_context(interaction)
             await interaction.response.defer()
+            assert interaction.original_response
             async with self.bot.channel_lock(interaction.channel_id):
                 async with ToruneyAction.create(self.bot, interaction) as action:
                     format_id = int(self.values[0])
                     format = GameFormat(format_id)
-                    await action.set_format(format)
+                    original_response = await interaction.original_response()
+                    message_xid = original_response.id
+                    await action.set_format(message_xid, format)

@@ -61,22 +61,20 @@ def upgrade():
         ["id"],
         ondelete="SET NULL",
     )
-    op.add_column("users", sa.Column("tourney_id", sa.Integer(), nullable=True))
-    op.create_index(op.f("ix_users_tourney_id"), "users", ["tourney_id"], unique=False)
-    op.create_foreign_key(
-        "users_tourney_id_fkey",
-        "users",
-        "tourneys",
-        ["tourney_id"],
-        ["id"],
-        ondelete="SET NULL",
+    op.create_table(
+        "signups",
+        sa.Column("user_xid", sa.BigInteger(), nullable=False),
+        sa.Column("tourney_id", sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(["tourney_id"], ["games.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["user_xid"], ["users.xid"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("user_xid", "tourney_id"),
     )
+    op.create_index(op.f("ix_signups_tourney_id"), "signups", ["tourney_id"], unique=False)
 
 
 def downgrade():
-    op.drop_constraint("users_tourney_id_fkey", "users", type_="foreignkey")
-    op.drop_index(op.f("ix_users_tourney_id"), table_name="users")
-    op.drop_column("users", "tourney_id")
+    op.drop_index(op.f("ix_signups_tourney_id"), table_name="signups")
+    op.drop_table("signups")
     op.drop_constraint("games_tourney_id_fkey", "games", type_="foreignkey")
     op.drop_index(op.f("ix_games_tourney_id"), table_name="games")
     op.drop_column("games", "tourney_id")

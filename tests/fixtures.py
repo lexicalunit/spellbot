@@ -38,6 +38,7 @@ from tests.factories import (
     VerifyFactory,
     WatchFactory,
 )
+from tests.factories.signup import SignupFactory
 from tests.mocks import build_author, build_channel, build_guild, build_interaction, build_message
 
 
@@ -49,6 +50,7 @@ class Factories:
     guild = GuildFactory
     guild_award = GuildAwardFactory
     play = PlayFactory
+    signup = SignupFactory
     tourney = TourneyFactory
     user = UserFactory
     user_award = UserAwardFactory
@@ -79,6 +81,7 @@ async def session_context(
         GuildAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         GuildFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         PlayFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        SignupFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         TourneyFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         UserAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         UserFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore

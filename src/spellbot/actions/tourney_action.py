@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 import discord
 
@@ -33,8 +34,10 @@ class ToruneyAction(BaseAction):
             format=format.value,
         )
         embed = await self.services.tourneys.to_embed()
-        view = TourneyView(self.bot, initial_format=format)
-        await safe_send_channel(self.interaction, embed=embed, view=view)
+        view = TourneyView(self.bot)
+        post = await safe_send_channel(self.interaction, embed=embed, view=view)
+        assert post
+        await self.services.tourneys.set_message_xid(post.id)
 
     async def signup(self) -> None:
         await safe_followup_channel(self.interaction, "signup")
@@ -42,5 +45,5 @@ class ToruneyAction(BaseAction):
     async def drop(self) -> None:
         await safe_followup_channel(self.interaction, "drop")
 
-    async def set_format(self, format: GameFormat) -> None:
-        await safe_followup_channel(self.interaction, f"format: {format}")
+    async def set_format(self, message_xid: int, format: GameFormat) -> None:
+        await safe_followup_channel(self.interaction, f"({message_xid})format: {format}")

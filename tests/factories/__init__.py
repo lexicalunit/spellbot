@@ -7,6 +7,7 @@ from .config import ConfigFactory
 from .game import GameFactory
 from .guild import GuildFactory
 from .play import PlayFactory
+from .signup import SignupFactory
 from .tourney import TourneyFactory
 from .user import UserFactory
 from .verify import VerifyFactory
@@ -20,6 +21,7 @@ __all__ = [
     "GuildAwardFactory",
     "GuildFactory",
     "PlayFactory",
+    "SignupFactory",
     "TourneyFactory",
     "UserAwardFactory",
     "UserFactory",

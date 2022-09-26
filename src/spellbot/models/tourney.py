@@ -111,12 +111,6 @@ class Tourney(Base):
         doc="The current round for this tourney if it has started",
     )
 
-    players = relationship(
-        "User",
-        back_populates="tourney",
-        uselist=True,
-        doc="Players in this tourney",
-    )
     guild = relationship(
         "Guild",
         back_populates="tourneys",
@@ -173,8 +167,9 @@ class Tourney(Base):
         embed = discord.Embed(title=self.name)
         embed.set_thumbnail(url=settings.THUMB_URL)
         embed.description = self.description
-        if self.players:
-            embed.add_field(name="Players", value=self.embed_players, inline=False)
+        # TODO: Show players
+        # if self.players:
+        #     embed.add_field(name="Players", value=self.embed_players, inline=False)
         embed.add_field(name="Format", value=self.format_name)
         if self.started_at:
             embed.add_field(name="Started at", value=f"<t:{self.started_at_timestamp}>")
