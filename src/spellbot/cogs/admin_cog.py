@@ -182,6 +182,17 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_voice_category(prefix)
 
+    @set_group.command(
+        name="delete_expired",
+        description="Set the option for deleting expired games in this channel.",
+    )
+    @app_commands.describe(setting="Setting")
+    @tracer.wrap(name="interaction", resource="set_delete_expired")
+    async def delete_expired(self, interaction: discord.Interaction, setting: bool) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_delete_expired(setting)
+
 
 async def setup(bot: SpellBot):  # pragma: no cover
     await bot.add_cog(AdminCog(bot), guild=bot.settings.GUILD_OBJECT)

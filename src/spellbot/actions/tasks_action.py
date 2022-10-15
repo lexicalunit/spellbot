@@ -17,6 +17,7 @@ from ..metrics import add_span_error, setup_ignored_errors
 from ..operations import (
     bot_can_delete_channel,
     safe_delete_channel,
+    safe_delete_message,
     safe_fetch_text_channel,
     safe_get_partial_message,
     safe_update_embed,
@@ -184,9 +185,13 @@ class TasksAction:
         if not (post := safe_get_partial_message(chan, guild_xid, message_xid)):
             return
 
-        await safe_update_embed(
-            post,
-            content="Sorry, this game was expired due to inactivity.",
-            embed=None,
-            view=None,
-        )
+        channel_data = await self.services.channels.select(channel_xid)
+        if channel_data["delete_expired"]:
+            await safe_delete_message(post)
+        else:
+            await safe_update_embed(
+                post,
+                content="Sorry, this game was expired due to inactivity.",
+                embed=None,
+                view=None,
+            )

@@ -152,6 +152,22 @@ async def safe_update_embed(
 
 
 @tracer.wrap()
+async def safe_delete_message(message: Union[discord.Message, discord.PartialMessage]) -> bool:
+    if span := tracer.current_span():  # pragma: no cover
+        span.set_tags({"messsage_xid": str(message.id)})
+
+    success: bool = False
+    with suppress(
+        DiscordException,
+        log="could not delete message %(message_xid)s",
+        message_xid=message.id,
+    ):
+        await message.delete()
+        success = True
+    return success
+
+
+@tracer.wrap()
 async def safe_update_embed_origin(
     interaction: discord.Interaction,
     *args: Any,

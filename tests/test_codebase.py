@@ -47,7 +47,9 @@ class TestCodebase:
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
         proc = run(cmd, capture_output=True)
         exitcode: int = cast(int, proc.returncode)
-        assert exitcode == 0, f"flake8 issues:\n{proc.stdout.decode('utf-8')}"
+        assert (
+            exitcode == 0
+        ), f"flake8 issues:\n{proc.stderr.decode('utf-8')}\n{proc.stdout.decode('utf-8')}"
 
     def test_black(self):
         """Checks that the Python codebase passes configured black checks."""

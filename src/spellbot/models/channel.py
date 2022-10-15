@@ -91,6 +91,13 @@ class Channel(Base):
         default="SpellBot Voice Channels",
         server_default=text("'SpellBot Voice Channels'"),
     )
+    delete_expired = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="If true delete any expired games rather than updating them to show their expiration.",
+    )
 
     guild = relationship(
         "Guild",
@@ -117,4 +124,5 @@ class Channel(Base):
             "verified_only": self.verified_only,
             "motd": self.motd,
             "voice_category": self.voice_category,
+            "delete_expired": self.delete_expired,
         }

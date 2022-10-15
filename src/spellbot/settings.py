@@ -58,7 +58,6 @@ class Settings:
         self.DATABASE_ECHO = False
         self.ADMIN_ROLE = "SpellBot Admin"
         self.MOD_PREFIX = "Moderator"
-        self.EXPIRE_TIME_M = 45  # 45 minutes
 
         # tasks
         self.VOICE_GRACE_PERIOD_M = 10  # 10 minutes
@@ -66,6 +65,7 @@ class Settings:
         self.VOICE_CLEANUP_LOOP_M = 30  # 30 minutes
         self.VOICE_CLEANUP_BATCH = 30  # batch size
         self.EXPIRE_GAMES_LOOP_M = 10  # 10 minutes
+        self.EXPIRE_TIME_M = 45  # 45 minutes
 
     def workaround_over_eager_caching(self, url: str) -> str:
         return f"{url}?{datetime.today().strftime('%Y-%m-%d')}"

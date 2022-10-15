@@ -111,3 +111,14 @@ class TestServiceChannels:
         await channels.set_motd(channel.xid, "something else")
         data = await channels.select(channel.xid)
         assert data["motd"] == "something else"
+
+    async def test_channels_set_delete_expired(self, guild: Guild):
+        channels = ChannelsService()
+
+        channel = ChannelFactory.create(guild=guild, delete_expired=False)
+        data = await channels.select(channel.xid)
+        assert not data["delete_expired"]
+
+        await channels.set_delete_expired(channel.xid, True)
+        data = await channels.select(channel.xid)
+        assert data["delete_expired"]
