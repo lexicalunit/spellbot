@@ -118,3 +118,15 @@ class ChannelsService:
         DatabaseSession.execute(query)
         DatabaseSession.commit()
         return name
+
+    @sync_to_async()
+    def set_delete_expired(self, xid: int, value: bool) -> bool:
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(delete_expired=value)
+            .execution_options(synchronize_session=False)
+        )
+        DatabaseSession.execute(query)
+        DatabaseSession.commit()
+        return value

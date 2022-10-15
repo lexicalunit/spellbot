@@ -336,3 +336,11 @@ class AdminAction(BaseAction):
             f"Voice category prefix for this channel has been set to: {name}",
             ephemeral=True,
         )
+
+    async def set_delete_expired(self, value: bool):
+        name = await self.services.channels.set_delete_expired(self.interaction.channel_id, value)
+        await safe_send_channel(
+            self.interaction,
+            f"Delete expired setting for this channel has been set to: {name}",
+            ephemeral=True,
+        )

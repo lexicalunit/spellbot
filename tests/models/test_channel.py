@@ -20,4 +20,5 @@ class TestModelChannel:
             "verified_only": channel.verified_only,
             "motd": channel.motd,
             "voice_category": channel.voice_category,
+            "delete_expired": channel.delete_expired,
         }
