@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v8.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v8.1.0) - 2022-10-15
+
 ### Added
 
 - Adds the `/set delete_expired setting:[True|False]` channel setting.
