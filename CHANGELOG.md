@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v8.2.1](https://github.com/lexicalunit/spellbot/releases/tag/v8.2.1) - 2022-10-16
+
 ### Fixed
 
 - Fixes a bug in the new award logic.
