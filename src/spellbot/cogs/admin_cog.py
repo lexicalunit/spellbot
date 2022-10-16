@@ -96,10 +96,20 @@ class AdminCog(commands.Cog):
         message: str,
         repeating: Optional[bool] = False,
         remove: Optional[bool] = False,
+        verified_only: Optional[bool] = False,
+        unverified_only: Optional[bool] = False,
     ) -> None:
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
-            await action.award_add(count, str(role), message, repeating=repeating, remove=remove)
+            await action.award_add(
+                count,
+                str(role),
+                message,
+                repeating=repeating,
+                remove=remove,
+                verified_only=verified_only,
+                unverified_only=unverified_only,
+            )
 
     @award_group.command(
         name="delete",

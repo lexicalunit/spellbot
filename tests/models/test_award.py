@@ -16,4 +16,6 @@ class TestModelAward:
             "remove": guild_award.remove,
             "role": guild_award.role,
             "message": guild_award.message,
+            "unverified_only": guild_award.unverified_only,
+            "verified_only": guild_award.verified_only,
         }

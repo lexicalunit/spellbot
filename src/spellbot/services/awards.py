@@ -6,7 +6,7 @@ from asgiref.sync import sync_to_async
 from sqlalchemy.sql.expression import and_, or_
 
 from ..database import DatabaseSession
-from ..models import Game, GuildAward, Play, UserAward
+from ..models import Game, GuildAward, Play, UserAward, Verify
 
 NewAward = namedtuple("NewAward", ["role", "message", "remove"])
 
@@ -31,6 +31,13 @@ class AwardsService:
             )
             if not plays:
                 continue
+
+            verified = (
+                DatabaseSession.query(Verify.verified)
+                .filter(Verify.user_xid == player_xid)
+                .scalar()
+            )
+            verified = True if verified else False  # because it could be None
 
             user_award = (
                 DatabaseSession.query(UserAward)
@@ -62,6 +69,10 @@ class AwardsService:
                     (user_award.guild_award_id != next_award.id)
                     or (user_award.guild_award_id == next_award.id and next_award.repeating)
                 ):
+                    if next_award.unverified_only and verified:
+                        continue
+                    if next_award.verified_only and not verified:
+                        continue
                     new_roles[player_xid] = NewAward(
                         next_award.role,
                         next_award.message,

@@ -450,18 +450,18 @@ class TestCogAdminAwards(InteractionMixin):
 
     async def test_award_add(self, cog: AdminCog):
         await self.run(cog.award_add, count=10, role="role", message="message", repeating=True)
+        award = DatabaseSession.query(GuildAward).one()
         assert self.last_send_message("embed") == {
             "author": {"name": "Award added!"},
             "color": self.settings.EMBED_COLOR,
             "description": (
-                "• _every 10 games_ — give `@role` — message\n\n"
+                f"• **ID {award.id}** — _every 10 games_ — give `@role` — message\n\n"
                 "You can view all awards with the `/set awards` command."
             ),
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
         }
         assert self.last_send_message("ephemeral")
-        award = DatabaseSession.query(GuildAward).one()
         assert award.count == 10
         assert award.role == "role"
         assert award.message == "message"

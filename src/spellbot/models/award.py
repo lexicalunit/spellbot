@@ -52,6 +52,20 @@ class GuildAward(Base):
         server_default=false(),
         doc="If true, this award should be removed from instead of given to the player",
     )
+    verified_only = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="If true, this award will only ever apply to verified users",
+    )
+    unverified_only = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="If true, this award will only ever apply to unverified users",
+    )
     role = Column(
         String(100),
         nullable=False,
@@ -78,6 +92,8 @@ class GuildAward(Base):
             "remove": self.remove,
             "role": self.role,
             "message": self.message,
+            "verified_only": self.verified_only,
+            "unverified_only": self.unverified_only,
         }
 
 

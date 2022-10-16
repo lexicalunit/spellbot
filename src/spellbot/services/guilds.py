@@ -142,10 +142,12 @@ class GuildsService:
         role: str,
         message: str,
         **options: Optional[bool],
-    ) -> int:
+    ) -> dict[str, Any]:
         assert self.guild
         repeating = bool(options.get("repeating", False))
         remove = bool(options.get("remove", False))
+        verified_only = bool(options.get("verified_only", False))
+        unverified_only = bool(options.get("unverified_only", False))
         award = GuildAward(
             guild_xid=self.guild.xid,
             count=count,
@@ -153,10 +155,12 @@ class GuildsService:
             message=message,
             repeating=repeating,
             remove=remove,
+            verified_only=verified_only,
+            unverified_only=unverified_only,
         )  # type: ignore
         DatabaseSession.add(award)
         DatabaseSession.commit()
-        return award.id
+        return award.to_dict()
 
     @sync_to_async
     def award_delete(self, guild_award_id: int):
