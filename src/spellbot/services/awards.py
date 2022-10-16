@@ -34,7 +34,10 @@ class AwardsService:
 
             verified = (
                 DatabaseSession.query(Verify.verified)
-                .filter(Verify.user_xid == player_xid)
+                .filter(
+                    Verify.user_xid == player_xid,
+                    Verify.guild_xid == guild_xid,
+                )
                 .scalar()
             )
             verified = True if verified else False  # because it could be None
