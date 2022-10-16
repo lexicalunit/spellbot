@@ -22,6 +22,21 @@ def humanize_bool(setting: bool) -> str:
     return "✅ On" if setting else "❌ Off"
 
 
+def award_line(award: dict[str, Any]) -> str:
+    kind = "every" if award["repeating"] else "after"
+    give_or_take = "take" if award["remove"] else "give"
+    verified_only = "verified only" if award["verified_only"] else ""
+    unverified_only = "unverified only" if award["unverified_only"] else ""
+    verify_status = (
+        f" ({verified_only}{unverified_only}) " if verified_only or unverified_only else " "
+    )
+    return (
+        f"• **ID {award['id']}** — _{kind} {award['count']} games_ "
+        f"— {give_or_take} `@{award['role']}`{verify_status}"
+        f"— {award['message']}"
+    )
+
+
 class AdminAction(BaseAction):
     def __init__(self, bot: SpellBot, interaction: discord.Interaction):
         super().__init__(bot, interaction)
@@ -108,14 +123,7 @@ class AdminAction(BaseAction):
         description = ""
         for award in guild.get("awards", []):
             has_at_least_one_award = True
-            kind = "every" if award["repeating"] else "after"
-            give_or_take = "take" if award["remove"] else "give"
-            next_line = (
-                f"• **ID {award['id']}** — "
-                f"_{kind} {award['count']} games_"
-                f" — {give_or_take} `@{award['role']}`"
-                f" — {award['message']}\n"
-            )
+            next_line = f"{award_line(award)}\n"
             if len(description) + len(next_line) >= EMBED_DESCRIPTION_SIZE_LIMIT:
                 embed.description = description
                 embeds.append(embed)
@@ -209,6 +217,17 @@ class AdminAction(BaseAction):
     ) -> None:
         repeating = bool(options.get("repeating", False))
         remove = bool(options.get("remove", False))
+        verified_only = bool(options.get("verified_only", False))
+        unverified_only = bool(options.get("unverified_only", False))
+
+        if verified_only and unverified_only:
+            await safe_send_channel(
+                self.interaction,
+                "Your award can't be both verified and unverifed only.",
+                ephemeral=True,
+            )
+            return
+
         max_message_len = GuildAward.message.property.columns[0].type.length  # type: ignore
         if len(message) > max_message_len:
             await safe_send_channel(
@@ -217,6 +236,7 @@ class AdminAction(BaseAction):
                 ephemeral=True,
             )
             return
+
         if count < 1:
             await safe_send_channel(
                 self.interaction,
@@ -224,6 +244,7 @@ class AdminAction(BaseAction):
                 ephemeral=True,
             )
             return
+
         if await self.services.guilds.has_award_with_count(count):
             await safe_send_channel(
                 self.interaction,
@@ -231,22 +252,22 @@ class AdminAction(BaseAction):
                 ephemeral=True,
             )
             return
-        await self.services.guilds.award_add(
+
+        award = await self.services.guilds.award_add(
             count,
             role,
             message,
             repeating=repeating,
             remove=remove,
+            verified_only=verified_only,
+            unverified_only=unverified_only,
         )
+
         embed = Embed()
         embed.set_thumbnail(url=self.settings.ICO_URL)
         embed.set_author(name="Award added!")
-        every_or_after = "every" if repeating else "after"
-        give_or_take = "take" if remove else "give"
-        description = (
-            f"• _{every_or_after} {count} games_ — {give_or_take} `@{role}`"
-            f" — {message}\n\nYou can view all awards with the `/set awards` command."
-        )
+        line = award_line(award)
+        description = f"{line}\n\nYou can view all awards with the `/set awards` command."
         embed.description = description
         embed.color = self.settings.EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
