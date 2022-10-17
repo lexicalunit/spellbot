@@ -1061,7 +1061,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "sqlalchemy"
-version = "1.4.41"
+version = "1.4.42"
 description = "Database Abstraction Library"
 category = "main"
 optional = false
@@ -1196,7 +1196,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.8.19"
+version = "2.8.19.2"
 description = "Typing stubs for python-dateutil"
 category = "dev"
 optional = false
