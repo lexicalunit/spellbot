@@ -54,15 +54,17 @@ class WatchCog(commands.Cog):
         description="No longer receive notifications about this user's activity.",
     )
     @app_commands.describe(target="User to unwatch")
+    @app_commands.describe(id="ID of a user to unwatch")
     @tracer.wrap(name="interaction", resource="unwatch")
     async def unwatch(
         self,
         interaction: discord.Interaction,
-        target: Union[discord.User, discord.Member],
+        target: Optional[Union[discord.User, discord.Member]] = None,
+        id: Optional[str] = None,
     ):
         add_span_context(interaction)
         async with WatchAction.create(self.bot, interaction) as action:
-            await action.unwatch(target=target)
+            await action.unwatch(target=target, id=id)
 
 
 async def setup(bot: SpellBot):  # pragma: no cover
