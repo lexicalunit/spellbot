@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Allow removal of users from the watch list by mention _or_ ID.
+
 ## [v8.2.1](https://github.com/lexicalunit/spellbot/releases/tag/v8.2.1) - 2022-10-16
 
 ### Fixed

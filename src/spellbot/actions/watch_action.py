@@ -24,14 +24,20 @@ class ActionType(Enum):
 class WatchAction(BaseAction):
     async def execute(
         self,
-        target: Union[discord.User, discord.Member],
         action: ActionType,
+        target: Optional[Union[discord.User, discord.Member]] = None,
+        id: Optional[int] = None,
         note: Optional[str] = None,
     ):
-        await self.services.users.upsert(target)
+        if target:
+            await self.services.users.upsert(target)
 
-        assert hasattr(target, "id")
-        target_xid = target.id  # type: ignore
+        target_xid: Optional[int] = None
+        if target and hasattr(target, "id"):
+            target_xid = target.id
+        elif id:
+            target_xid = id
+        assert target_xid is not None
 
         if action is ActionType.UNWATCH:
             await self.services.users.unwatch(self.interaction.guild_id, target_xid)
@@ -41,26 +47,38 @@ class WatchAction(BaseAction):
                 ephemeral=True,
             )
         else:
-            await self.services.users.watch(
-                self.interaction.guild_id,
-                target_xid,
-                note=note,
-            )
+            await self.services.users.watch(self.interaction.guild_id, target_xid, note=note)
+            await safe_send_channel(self.interaction, f"Watching <@{target_xid}>.", ephemeral=True)
+
+    async def watch(self, target: Union[discord.User, discord.Member], note: Optional[str] = None):
+        await self.execute(ActionType.WATCH, target=target, note=note)
+
+    async def unwatch(
+        self,
+        target: Optional[Union[discord.User, discord.Member]] = None,
+        id: Optional[str] = None,
+    ):
+        if not target and not id:
             await safe_send_channel(
                 self.interaction,
-                f"Watching <@{target_xid}>.",
+                "You must provide either a target User or their ID",
                 ephemeral=True,
             )
+            return
 
-    async def watch(
-        self,
-        target: Union[discord.User, discord.Member],
-        note: Optional[str] = None,
-    ):
-        await self.execute(target, ActionType.WATCH, note)
+        xid: Optional[int] = None
+        if id:
+            try:
+                xid = int(id)
+            except ValueError:
+                await safe_send_channel(
+                    self.interaction,
+                    "You must provide a valid integer for an ID",
+                    ephemeral=True,
+                )
+                return
 
-    async def unwatch(self, target: Union[discord.User, discord.Member]):
-        await self.execute(target, ActionType.UNWATCH)
+        await self.execute(ActionType.UNWATCH, target=target, id=xid)
 
     async def get_watched_embeds(self) -> list[Embed]:
         settings = Settings()
