@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Workaround annoying datadog statsd errors at every startup.
+
 ## [v8.2.2](https://github.com/lexicalunit/spellbot/releases/tag/v8.2.2) - 2022-10-17
 
 ### Added
