@@ -119,6 +119,30 @@ def main(
         launch_web_server(settings, loop, port or settings.PORT)
         loop.run_forever()
     else:
+        # Ensure that datadog-agent is running before starting the bot
+        if not no_metrics():  # pragma: no cover
+            import logging
+
+            logger = logging.root
+            conn: Optional[socket] = None
+            connected = False
+
+            logger.info("metrics enabled, checking for connection to statsd server...")
+            while not connected:
+                try:
+                    conn = socket()
+                    conn.connect(("127.0.0.1", 8126))
+
+                    logger.info("statsd server connection established, waiting for init...")
+                    connected = True
+                    time.sleep(5)  # wait for dogstatsd initialization
+                except Exception as e:
+                    logger.info(f"statsd connection error: {e}, retrying...")
+                    time.sleep(1)
+                finally:
+                    assert conn is not None
+                    conn.close()
+
         from .client import build_bot
 
         assert settings.BOT_TOKEN is not None
