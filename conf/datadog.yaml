@@ -1,4 +1,4 @@
-log_level: CRITICAL
+log_level: "CRITICAL"
 apm_config:
   enabled: true
   apm_non_local_traffic: true

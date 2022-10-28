@@ -86,6 +86,13 @@ def main(
     level = log_level if log_level is not None else (getenv("LOG_LEVEL") or "INFO")
     configure_logging(level)
 
+    import logging
+
+    # ddtrace logging is awful and spammy
+    ddtrace_logger = logging.getLogger("ddtrace")
+    ddtrace_logger.propagate = False
+    ddtrace_logger.setLevel(logging.CRITICAL)
+
     # When metrics are enabled, let's ensure that datadog-agent is running first...
     if not no_metrics():  # pragma: no cover
         import logging

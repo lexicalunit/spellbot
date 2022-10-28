@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "starting spellbot..."
+export DD_LOG_LEVEL="CRITICAL"
 
 if [[ -n $DD_API_KEY ]] && [[ -n $DD_APP_KEY ]]; then
     echo "running with ddtrace enabled..."
