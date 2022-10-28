@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from os import getenv
+from socket import socket
 from typing import Optional
 
 import click
@@ -13,6 +15,7 @@ from dotenv import load_dotenv
 from . import __version__
 from .environment import running_in_pytest
 from .logs import configure_logging
+from .metrics import no_metrics
 
 # load .env environment variables as early as possible
 if not running_in_pytest():  # pragma: no cover
@@ -82,6 +85,30 @@ def main(
     settings = Settings()
     level = log_level if log_level is not None else (getenv("LOG_LEVEL") or "INFO")
     configure_logging(level)
+
+    # When metrics are enabled, let's ensure that datadog-agent is running first...
+    if not no_metrics():  # pragma: no cover
+        import logging
+
+        logger = logging.root
+        conn: Optional[socket] = None
+        connected = False
+
+        logger.info("metrics enabled, checking for connection to statsd server...")
+        while not connected:
+            try:
+                conn = socket()
+                conn.connect(("127.0.0.1", 8126))
+                logger.info("statsd server connection established")
+                connected = True
+                logger.info("waiting for statsd server to finish initialization...")
+                time.sleep(5)
+            except Exception as e:
+                logger.info(f"statsd connection error: {e}, retrying...")
+                time.sleep(1)
+            finally:
+                assert conn is not None
+                conn.close()
 
     loop = asyncio.new_event_loop()
     if debug:

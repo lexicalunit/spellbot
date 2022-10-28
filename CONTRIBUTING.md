@@ -50,6 +50,20 @@ poetry install
 > **Note:** On some systems such as most Linux ones you may also need to install
 > `python3-venv` using your system's package manager as `poetry` depends on it.
 
+## Launch Dependencies
+
+SpellBot requires a database to run properly. The connection string for the
+database you want to use must be stored in the environment variable `DATABASE_URL`.
+
+You can start a local database via Docker by running:
+
+```shell
+docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:12.9
+```
+
+Using this locally will allow you to use the default value for `DATABASE_URL`
+without having to manually set it to anything.
+
 ## Running the application
 
 Make sure that you have [set up your environmental variables](/README.md#-running-spellbot-yourself).
@@ -164,24 +178,6 @@ When you use the `poetry publish` command you will be prompted for your
 After publishing you can view the package at its
 [pypi.org project page](https://pypi.org/project/spellbot/) to see that
 everything looks good.
-
-## Deployment Process
-
-Below is a script for deploying SpellBot to Heroku. You can also use the `publish.sh`
-script included in this repository rather than running these manually.
-
-```shell
-# You have to be logged into the Heroku container registry
-docker login
-heroku login
-heroku container:login
-
-APP="<the name of your heroku app>"
-
-docker build -t "registry.heroku.com/$APP/web" .
-docker push "registry.heroku.com/$APP/web"
-heroku container:release web --app $APP
-```
 
 ## Database migrations
 
