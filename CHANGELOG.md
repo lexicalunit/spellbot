@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v8.3.1](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.1) - 2022-11-02
 
+### Fixed
+
+- Fixed a bug in the last migration script.
+
 ## [v8.3.0](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.0) - 2022-11-02
 
 ### Fixed
