@@ -77,6 +77,7 @@ class AdminAction(BaseAction):
             update_channel_settings(channel, channel_settings, "unverified_only")
             update_channel_settings(channel, channel_settings, "verified_only")
             update_channel_settings(channel, channel_settings, "voice_category")
+            update_channel_settings(channel, channel_settings, "show_points")
             if channel_settings:
                 all_default = False
                 deets = ", ".join(
@@ -168,10 +169,6 @@ class AdminAction(BaseAction):
         embed.add_field(
             name="Public Links",
             value=humanize_bool(guild["show_links"]),
-        )
-        embed.add_field(
-            name="Show Points on Games",
-            value=humanize_bool(guild["show_points"]),
         )
         embed.add_field(
             name="Create Voice Channels",
@@ -297,12 +294,6 @@ class AdminAction(BaseAction):
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
-    async def toggle_show_points(self):
-        await self.services.guilds.toggle_show_points()
-        embed = await self._build_setup_embed()
-        view = SetupView(self.bot)
-        await safe_update_embed_origin(self.interaction, embed=embed, view=view)
-
     async def toggle_voice_create(self):
         await self.services.guilds.toggle_voice_create()
         embed = await self._build_setup_embed()
@@ -363,5 +354,13 @@ class AdminAction(BaseAction):
         await safe_send_channel(
             self.interaction,
             f"Delete expired setting for this channel has been set to: {name}",
+            ephemeral=True,
+        )
+
+    async def set_show_points(self, value: bool):
+        name = await self.services.channels.set_show_points(self.interaction.channel_id, value)
+        await safe_send_channel(
+            self.interaction,
+            f"Show points setting for this channel has been set to: {name}",
             ephemeral=True,
         )

@@ -130,3 +130,15 @@ class ChannelsService:
         DatabaseSession.execute(query)
         DatabaseSession.commit()
         return value
+
+    @sync_to_async()
+    def set_show_points(self, xid: int, value: bool) -> bool:
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(show_points=value)
+            .execution_options(synchronize_session=False)
+        )
+        DatabaseSession.execute(query)
+        DatabaseSession.commit()
+        return value
