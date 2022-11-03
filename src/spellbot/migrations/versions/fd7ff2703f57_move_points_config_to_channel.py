@@ -24,9 +24,8 @@ def upgrade():
         """
         UPDATE channels
         SET show_points = g.show_points
-        FROM channels c
-            INNER JOIN guilds g
-                ON c.guild_xid = g.xid;
+        FROM guilds g
+        WHERE channels.guild_xid = g.xid;
         """,
     )
     op.drop_column("guilds", "show_points")
