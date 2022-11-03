@@ -117,7 +117,7 @@ tests_no_zope = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>
 
 [[package]]
 name = "babel"
-version = "2.10.3"
+version = "2.11.0"
 description = "Internationalization utilities"
 category = "main"
 optional = false
@@ -394,7 +394,7 @@ doc = ["sphinx", "sphinx-rtd-theme", "sphinxcontrib-spelling"]
 
 [[package]]
 name = "faker"
-version = "15.1.1"
+version = "15.1.3"
 description = "Faker is a Python package that generates fake data for you."
 category = "dev"
 optional = false
@@ -483,14 +483,15 @@ gitdb = ">=4.0.1,<5"
 
 [[package]]
 name = "greenlet"
-version = "1.1.3.post0"
+version = "2.0.0"
 description = "Lightweight in-process concurrent programming"
 category = "main"
 optional = false
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
 
 [package.extras]
-docs = ["sphinx"]
+docs = ["sphinx", "docutils (<0.18)"]
+test = ["objgraph", "faulthandler"]
 
 [[package]]
 name = "gunicorn"
@@ -614,7 +615,7 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "jsonschema"
-version = "4.16.0"
+version = "4.17.0"
 description = "An implementation of JSON Schema validation for Python"
 category = "main"
 optional = false
@@ -859,7 +860,7 @@ python-versions = "*"
 
 [[package]]
 name = "pyright"
-version = "1.1.277"
+version = "1.1.278"
 description = "Command line wrapper for pyright"
 category = "dev"
 optional = false
@@ -874,7 +875,7 @@ dev = ["twine (>=3.4.1)"]
 
 [[package]]
 name = "pyrsistent"
-version = "0.18.1"
+version = "0.19.1"
 description = "Persistent/Functional/Immutable data structures"
 category = "main"
 optional = false
@@ -995,7 +996,7 @@ cli = ["click (>=5.0)"]
 
 [[package]]
 name = "pytz"
-version = "2022.5"
+version = "2022.6"
 description = "World timezone definitions, modern and historical"
 category = "main"
 optional = false
@@ -1196,7 +1197,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-pytz"
-version = "2022.5.0.0"
+version = "2022.6.0.1"
 description = "Typing stubs for pytz"
 category = "dev"
 optional = false
@@ -1312,7 +1313,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = '>=3.10,<4'
-content-hash = "24ddb150dab23129e0de481be95a498289c3bcad828de51c62420362559416f4"
+content-hash = "5e54d4a09653df30efa2e6f07b6baf8e1e8aa668cd9fceba23dc4ab1b0e2e6b3"
 
 [metadata.files]
 aiohttp = []
@@ -1330,10 +1331,7 @@ asgiref = [
 astroid = []
 async-timeout = []
 attrs = []
-babel = [
-    {file = "Babel-2.10.3-py3-none-any.whl", hash = "sha256:ff56f4892c1c4bf0d814575ea23471c230d544203c7748e8c68f0089478d48eb"},
-    {file = "Babel-2.10.3.tar.gz", hash = "sha256:7614553711ee97490f732126dc077f8d0ae084ebc6a96e23db1482afabdb2c51"},
-]
+babel = []
 black = []
 bytecode = [
     {file = "bytecode-0.13.0-py3-none-any.whl", hash = "sha256:e69f92e7d27f99d5d7d76e6a824bd3d9ff857c72b59927aaf87e1a620f67fe50"},
