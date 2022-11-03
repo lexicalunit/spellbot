@@ -50,16 +50,6 @@ class TestServiceGuilds:
         await guilds.select(guild2.xid)
         assert await guilds.should_voice_create()
 
-    async def test_guilds_should_show_points(self):
-        guild1 = GuildFactory.create()
-        guild2 = GuildFactory.create(show_points=True)
-
-        guilds = GuildsService()
-        await guilds.select(guild1.xid)
-        assert not await guilds.should_show_points()
-        await guilds.select(guild2.xid)
-        assert await guilds.should_show_points()
-
     async def test_guilds_set_motd(self):
         guilds = GuildsService()
         assert not await guilds.select(101)
@@ -97,27 +87,6 @@ class TestServiceGuilds:
         DatabaseSession.expire_all()
         guild = DatabaseSession.query(Guild).get(101)
         assert guild and not guild.show_links
-
-    async def test_guilds_toggle_show_points(self):
-        guilds = GuildsService()
-        assert not await guilds.select(101)
-
-        guild = GuildFactory.create(xid=101, name="guild-name")
-
-        guilds = GuildsService()
-        await guilds.select(101)
-        await guilds.toggle_show_points()
-
-        DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).get(101)
-        assert guild and guild.show_points
-
-        await guilds.select(101)
-        await guilds.toggle_show_points()
-
-        DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).get(101)
-        assert guild and not guild.show_points
 
     async def test_guilds_toggle_voice_create(self):
         guilds = GuildsService()

@@ -39,25 +39,6 @@ class SetupView(BaseView):
                 await action.toggle_show_links()
 
     @discord.ui.button(
-        label="Toggle Show Points",
-        style=discord.ButtonStyle.primary,
-        custom_id="toggle_show_points",
-        row=1,
-    )
-    async def toggle_show_points(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button[SetupView],
-    ) -> None:
-        from ..actions.admin_action import AdminAction
-
-        with tracer.trace(name="interaction", resource="toggle_show_points"):
-            await interaction.response.defer()
-            add_span_context(interaction)
-            async with AdminAction.create(self.bot, interaction) as action:
-                await action.toggle_show_points()
-
-    @discord.ui.button(
         label="Toggle Create Voice Channels",
         style=discord.ButtonStyle.primary,
         custom_id="toggle_voice_create",
