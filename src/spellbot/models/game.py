@@ -216,7 +216,7 @@ class Game(Base):
                     "\n\nYou can also [jump to the original game post]"
                     f"({self.jump_link}) in <#{self.channel_xid}>."
                 )
-            elif self.guild.show_points:
+            elif self.channel.show_points:
                 description += "\n\nWhen your game is over use the drop down to report your points."
         if self.guild.motd:
             description += f"\n\n{self.guild.motd}"

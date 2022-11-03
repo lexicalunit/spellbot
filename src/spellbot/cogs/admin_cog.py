@@ -203,6 +203,17 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_delete_expired(setting)
 
+    @set_group.command(
+        name="show_points",
+        description="Set the option for showing points on games in this channel.",
+    )
+    @app_commands.describe(setting="Setting")
+    @tracer.wrap(name="interaction", resource="set_show_points")
+    async def show_points(self, interaction: discord.Interaction, setting: bool) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_show_points(setting)
+
 
 async def setup(bot: SpellBot):  # pragma: no cover
     await bot.add_cog(AdminCog(bot), guild=bot.settings.GUILD_OBJECT)

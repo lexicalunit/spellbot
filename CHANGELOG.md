@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed issue where sometimes points dropdown was shown even if "Show Points" if off.
+
+### Changed
+
+- Moved the "Show Points" setting to a per-channel config rather than per guild.
+
 ## [v8.2.3](https://github.com/lexicalunit/spellbot/releases/tag/v8.2.3) - 2022-10-28
 
 ### Fixed

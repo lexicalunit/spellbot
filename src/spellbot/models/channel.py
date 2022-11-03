@@ -98,6 +98,13 @@ class Channel(Base):
         server_default=false(),
         doc="If true delete any expired games rather than updating them to show their expiration.",
     )
+    show_points = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="Configuration for showing points reporting on started games",
+    )
 
     guild = relationship(
         "Guild",
@@ -125,4 +132,5 @@ class Channel(Base):
             "motd": self.motd,
             "voice_category": self.voice_category,
             "delete_expired": self.delete_expired,
+            "show_points": self.show_points,
         }

@@ -51,7 +51,7 @@ class SpellBot(Bot):
             logger.info("initializing database connection...")
             await initialize_connection("spellbot-bot")
 
-        # register persistant views
+        # register persistent views
         from .views import PendingGameView, SetupView, StartedGameView
 
         self.add_view(PendingGameView(self))

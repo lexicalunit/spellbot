@@ -62,11 +62,6 @@ class GuildsService:
         return self.guild.voice_create
 
     @sync_to_async()
-    def should_show_points(self) -> bool:
-        assert self.guild
-        return self.guild.show_points
-
-    @sync_to_async()
     def set_motd(self, message: Optional[str] = None) -> None:
         if message:
             motd = message[: Guild.motd.property.columns[0].type.length]  # type: ignore
@@ -79,12 +74,6 @@ class GuildsService:
     def toggle_show_links(self) -> None:
         assert self.guild
         self.guild.show_links = not self.guild.show_links  # type: ignore
-        DatabaseSession.commit()
-
-    @sync_to_async()
-    def toggle_show_points(self) -> None:
-        assert self.guild
-        self.guild.show_points = not self.guild.show_points  # type: ignore
         DatabaseSession.commit()
 
     @sync_to_async()

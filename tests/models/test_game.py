@@ -183,8 +183,8 @@ class TestModelGame:
         settings: Settings,
         factories: Factories,
     ):
-        guild = factories.guild.create(show_points=True, motd=None)
-        channel = factories.channel.create(guild=guild, motd=None)
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, show_points=True, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,

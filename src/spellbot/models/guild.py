@@ -55,13 +55,6 @@ class Guild(Base):
         server_default=false(),
         doc="Configuration for automatically created voice channels for games",
     )
-    show_points = Column(
-        Boolean,
-        nullable=False,
-        default=False,
-        server_default=false(),
-        doc="Configuration for showing points reporting on started games",
-    )
 
     games = relationship(
         "Game",
@@ -92,7 +85,6 @@ class Guild(Base):
             "motd": self.motd,
             "show_links": self.show_links,
             "voice_create": self.voice_create,
-            "show_points": self.show_points,
             "channels": [channel.to_dict() for channel in self.channels],
             "awards": [award.to_dict() for award in self.awards],
         }

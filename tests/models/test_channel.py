@@ -21,4 +21,5 @@ class TestModelChannel:
             "motd": channel.motd,
             "voice_category": channel.voice_category,
             "delete_expired": channel.delete_expired,
+            "show_points": channel.show_points,
         }

@@ -116,7 +116,13 @@ class LookingForGameAction(BaseAction):
                 message_xid,
             ):
                 embed = await self.services.games.to_embed()
-                view = StartedGameView(self.bot)
+                fully_seated = await self.services.games.fully_seated()
+                view: Optional[BaseView] = None
+                if fully_seated:
+                    if self.channel_data.get("show_points", False):
+                        view = StartedGameView(bot=self.bot)
+                else:
+                    view = PendingGameView(bot=self.bot)
                 await safe_update_embed(
                     message,
                     embed=embed,
@@ -305,7 +311,7 @@ class LookingForGameAction(BaseAction):
 
         view: Optional[BaseView] = None
         if fully_seated:
-            if await self.services.guilds.should_show_points():
+            if self.channel_data.get("show_points", False):
                 view = StartedGameView(bot=self.bot)
         else:
             view = PendingGameView(bot=self.bot)

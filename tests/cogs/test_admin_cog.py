@@ -45,13 +45,6 @@ class TestCogAdminSetup(InteractionMixin):
                         "disabled": False,
                     },
                     {
-                        "custom_id": "toggle_show_points",
-                        "label": "Toggle Show Points",
-                        "style": discord.ButtonStyle.primary.value,
-                        "type": discord.ComponentType.button.value,
-                        "disabled": False,
-                    },
-                    {
                         "custom_id": "toggle_voice_create",
                         "label": "Toggle Create Voice Channels",
                         "style": discord.ButtonStyle.primary.value,
@@ -86,7 +79,6 @@ class TestCogAdminSetup(InteractionMixin):
             "fields": [
                 {"inline": False, "name": "MOTD", "value": self.guild.motd},
                 {"inline": True, "name": "Public Links", "value": "❌ Off"},
-                {"inline": True, "name": "Show Points on Games", "value": "❌ Off"},
                 {"inline": True, "name": "Create Voice Channels", "value": "❌ Off"},
             ],
             "thumbnail": {"url": self.settings.ICO_URL},
@@ -149,13 +141,6 @@ class TestCogAdminSetupView(InteractionMixin):
                         "disabled": False,
                     },
                     {
-                        "custom_id": "toggle_show_points",
-                        "label": "Toggle Show Points",
-                        "style": discord.ButtonStyle.primary.value,
-                        "type": discord.ComponentType.button.value,
-                        "disabled": False,
-                    },
-                    {
                         "custom_id": "toggle_voice_create",
                         "label": "Toggle Create Voice Channels",
                         "style": discord.ButtonStyle.primary.value,
@@ -190,7 +175,6 @@ class TestCogAdminSetupView(InteractionMixin):
             "fields": [
                 {"inline": False, "name": "MOTD", "value": self.guild.motd},
                 {"inline": True, "name": "Public Links", "value": "❌ Off"},
-                {"inline": True, "name": "Show Points on Games", "value": "❌ Off"},
                 {"inline": True, "name": "Create Voice Channels", "value": "❌ Off"},
             ],
             "thumbnail": {"url": self.settings.ICO_URL},
@@ -204,13 +188,6 @@ class TestCogAdminSetupView(InteractionMixin):
         self.interaction.edit_original_response.assert_called_once()
         guild = DatabaseSession.query(Guild).one()
         assert guild.show_links != Guild.show_links.default.arg  # type: ignore
-
-    async def test_toggle_show_points(self, view: SetupView) -> None:
-        await view.toggle_show_points.callback(self.interaction)
-
-        self.interaction.edit_original_response.assert_called_once()
-        guild = DatabaseSession.query(Guild).one()
-        assert guild.show_points != Guild.show_points.default.arg  # type: ignore
 
     async def test_toggle_voice_create(self, view: SetupView) -> None:
         await view.toggle_voice_create.callback(self.interaction)
