@@ -460,13 +460,3 @@ class TestCogAdminAwards(InteractionMixin):
             ephemeral=True,
         )
         assert DatabaseSession.query(GuildAward).count() == 0
-
-    async def test_award_add_dupe(self, cog: AdminCog):
-        await self.run(cog.award_add, count=10, role="role", message="message")
-        self.interaction.response.send_message.reset_mock()
-        await self.run(cog.award_add, count=10, role="role", message="message")
-        self.interaction.response.send_message.assert_called_once_with(
-            "There's already an award for players who reach that many games.",
-            ephemeral=True,
-        )
-        assert DatabaseSession.query(GuildAward).count() == 1
