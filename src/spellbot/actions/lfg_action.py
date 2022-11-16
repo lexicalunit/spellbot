@@ -405,24 +405,26 @@ class LookingForGameAction(BaseAction):
             player_xids,
         )
         assert self.interaction.guild
-        for player_xid, new_award in new_roles.items():
-            if player_xid not in fetched_players:
-                warning = (
-                    f"Unable to {'take' if new_award.remove else 'give'}"
-                    f" role {new_award.role}"
-                    f" {'from' if new_award.remove else 'to'}"
-                    f" user <@{player_xid}>"
+        for player_xid, new_awards in new_roles.items():
+            for new_award in new_awards:
+                if player_xid not in fetched_players:
+                    warning = (
+                        f"Unable to {'take' if new_award.remove else 'give'}"
+                        f" role {new_award.role}"
+                        f" {'from' if new_award.remove else 'to'}"
+                        f" user <@{player_xid}>"
+                    )
+                    await safe_followup_channel(self.interaction, warning)
+                    continue
+                player = fetched_players[player_xid]
+                print(f"adding role {new_award} to {player}")
+                await safe_add_role(
+                    player,
+                    self.interaction.guild,
+                    new_award.role,
+                    new_award.remove,
                 )
-                await safe_followup_channel(self.interaction, warning)
-                continue
-            player = fetched_players[player_xid]
-            await safe_add_role(
-                player,
-                self.interaction.guild,
-                new_award.role,
-                new_award.remove,
-            )
-            await safe_send_user(player, new_award.message)
+                await safe_send_user(player, new_award.message)
 
         # notifiy issues with player permissions
         if failed_xids:
