@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds the ability to have multiple guild awards with the same count number. Each award with the same count number that applies to a player will be granted when they reach that play count.
+
 ### Changed
 
 - Updated dependencies.
