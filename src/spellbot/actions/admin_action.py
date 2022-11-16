@@ -242,14 +242,6 @@ class AdminAction(BaseAction):
             )
             return
 
-        if await self.services.guilds.has_award_with_count(count):
-            await safe_send_channel(
-                self.interaction,
-                "There's already an award for players who reach that many games.",
-                ephemeral=True,
-            )
-            return
-
         award = await self.services.guilds.award_add(
             count,
             role,
