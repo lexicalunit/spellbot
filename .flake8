@@ -1,4 +1,0 @@
-[flake8]
-ignore = E,W
-select = F,E101,E111,E501,T001,C812,C813
-max-line-length = 100

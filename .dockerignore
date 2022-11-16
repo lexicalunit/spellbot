@@ -3,7 +3,6 @@
 .dockerignore
 .env*
 .eslintcache
-.flake8
 .git
 .gitattributes
 .github/

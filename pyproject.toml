@@ -18,6 +18,13 @@ reportMissingParameterType = true
 reportMissingTypeArgument = true
 typeCheckingMode = "basic"
 
+[tool.ruff]
+exclude = [".git", "env"]
+ignore = ["E", "W"]
+line-length = 100
+select = ["F", "E501"]
+target-version = "py310"
+
 [tool.pylic]
 ignore_packages = [
   # only install these as part of dev tools to avoid GPL usage in main application
@@ -71,7 +78,7 @@ version = "8.3.1"
 [tool.poetry.dependencies]
 Babel = "^2.11.0"
 PyYAML = "^6.0"
-SQLAlchemy = "^1.4.42"
+SQLAlchemy = "^1.4.44"
 SQLAlchemy-Utils = "^0.38.3"
 aiohttp = "^3.8.1"
 aiohttp-jinja2 = "^1.5"
@@ -82,9 +89,9 @@ charset-normalizer = "2.1.1"
 click = "^8.1.3"
 coloredlogs = "^15.0.1"
 datadog = "^0.44.0"
-ddtrace = "^1.4.4"
+ddtrace = "==1.4.5"
 "discord.py" = "^2.0.1"
-dunamai = "^1.13.2"
+dunamai = "^1.14.1"
 expiringdict = "^1.2.2"
 gunicorn = "^20.1.0"
 humanize = "^4.3.0"
@@ -103,14 +110,12 @@ uvloop = ">=0.16,<0.18"
 wrapt = "^1.14.1"
 
 [tool.poetry.dev-dependencies]
-Faker = "^15.1.3"
+Faker = "^15.3.2"
 GitPython = "^3.1.27"
 black = "^22.6.0"
 callee = "^0.3.1"
 coverage = "^6.4.3"
 factory-boy = "^3.2.1"
-flake8 = "^5.0.4"
-flake8-print = "^5.0.0"
 isort = "^5.10.1"
 pexpect = "^4.8.0"
 ptyprocess = "^0.7.0"
@@ -123,9 +128,10 @@ pytest-asyncio = "^0.20.1"
 pytest-cov = "^4.0.0"
 pytest-freezegun = "^0.4.2"
 pytest-mock = "^3.8.2"
+ruff = "^0.0.121"
 shellingham = "^1.4.0"
 sqlalchemy-stubs = "^0.4"
-syrupy = "^3.0.2"
+syrupy = "^3.0.5"
 types-PyYAML = "^6.0.8"
 types-freezegun = "^1.1.9"
 types-python-dateutil = "^2.8.19.2"
