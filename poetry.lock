@@ -43,11 +43,11 @@ aiohttp = "*"
 
 [[package]]
 name = "aiosignal"
-version = "1.2.0"
+version = "1.3.1"
 description = "aiosignal: a list of registered asynchronous callbacks"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 
 [package.dependencies]
 frozenlist = ">=1.1.0"
@@ -164,18 +164,6 @@ optional = false
 python-versions = "*"
 
 [[package]]
-name = "cattrs"
-version = "22.2.0"
-description = "Composable complex class support for attrs and dataclasses."
-category = "main"
-optional = false
-python-versions = ">=3.7"
-
-[package.dependencies]
-attrs = ">=20"
-exceptiongroup = {version = "*", markers = "python_version < \"3.11\""}
-
-[[package]]
 name = "certifi"
 version = "2022.9.24"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -215,7 +203,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7
 
 [[package]]
 name = "colored"
-version = "1.4.3"
+version = "1.4.4"
 description = "Simple library for color and formatting to terminal"
 category = "dev"
 optional = false
@@ -274,25 +262,21 @@ six = "*"
 
 [[package]]
 name = "ddtrace"
-version = "1.5.3"
+version = "1.4.5"
 description = "Datadog APM client library"
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [package.dependencies]
-attrs = {version = ">=19.2.0", markers = "python_version > \"2.7\""}
+attrs = ">=19.2.0"
 bytecode = {version = "*", markers = "python_version >= \"3.8\""}
-cattrs = "*"
 ddsketch = ">=2.0.1"
-envier = "*"
-jsonschema = "*"
 packaging = ">=17.1"
 protobuf = {version = ">=3", markers = "python_version >= \"3.7\""}
 six = ">=1.12.0"
 tenacity = ">=5"
 typing-extensions = "*"
-xmltodict = ">=0.12"
 
 [package.extras]
 opentracing = ["opentracing (>=2.0.0)"]
@@ -310,7 +294,7 @@ graph = ["objgraph (>=1.7.2)"]
 
 [[package]]
 name = "discord.py"
-version = "2.0.1"
+version = "2.1.0"
 description = "A Python wrapper for the Discord API"
 category = "main"
 optional = false
@@ -320,10 +304,10 @@ python-versions = ">=3.8.0"
 aiohttp = ">=3.7.4,<4"
 
 [package.extras]
+docs = ["sphinx (==4.4.0)", "sphinxcontrib-trio (==1.1.2)", "sphinxcontrib-websupport", "typing-extensions (>=4.3,<5)"]
+speed = ["orjson (>=3.5.4)", "aiodns (>=1.1)", "brotli", "cchardet (==2.1.7)"]
+test = ["coverage", "pytest", "pytest-asyncio", "pytest-cov", "pytest-mock", "typing-extensions (>=4.3,<5)"]
 voice = ["PyNaCl (>=1.3.0,<1.6)"]
-test = ["typing-extensions (>=4.3,<5)", "pytest-mock", "pytest-cov", "pytest-asyncio", "pytest", "coverage"]
-speed = ["cchardet (==2.1.7)", "brotli", "aiodns (>=1.1)", "orjson (>=3.5.4)"]
-docs = ["typing-extensions (>=4.3,<5)", "sphinxcontrib-websupport", "sphinxcontrib-trio (==1.1.2)", "sphinx (==4.4.0)"]
 
 [[package]]
 name = "distlib"
@@ -335,7 +319,7 @@ python-versions = "*"
 
 [[package]]
 name = "dunamai"
-version = "1.13.2"
+version = "1.14.1"
 description = "Dynamic version generation"
 category = "main"
 optional = false
@@ -345,21 +329,10 @@ python-versions = ">=3.5,<4.0"
 packaging = ">=20.9"
 
 [[package]]
-name = "envier"
-version = "0.4.0"
-description = "Python application configuration via the environment"
-category = "main"
-optional = false
-python-versions = ">=2.7"
-
-[package.extras]
-mypy = ["mypy"]
-
-[[package]]
 name = "exceptiongroup"
-version = "1.0.0"
+version = "1.0.4"
 description = "Backport of PEP 654 (exception groups)"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 
@@ -394,7 +367,7 @@ doc = ["sphinx", "sphinx-rtd-theme", "sphinxcontrib-spelling"]
 
 [[package]]
 name = "faker"
-version = "15.1.3"
+version = "15.3.2"
 description = "Faker is a Python package that generates fake data for you."
 category = "dev"
 optional = false
@@ -416,31 +389,6 @@ testing = ["pytest-timeout (>=2.1)", "pytest-cov (>=3)", "pytest (>=7.1.2)", "co
 docs = ["sphinx-autodoc-typehints (>=1.19.1)", "sphinx (>=5.1.1)", "furo (>=2022.6.21)"]
 
 [[package]]
-name = "flake8"
-version = "5.0.4"
-description = "the modular source code checker: pep8 pyflakes and co"
-category = "dev"
-optional = false
-python-versions = ">=3.6.1"
-
-[package.dependencies]
-mccabe = ">=0.7.0,<0.8.0"
-pycodestyle = ">=2.9.0,<2.10.0"
-pyflakes = ">=2.5.0,<2.6.0"
-
-[[package]]
-name = "flake8-print"
-version = "5.0.0"
-description = "print statement checker plugin for flake8"
-category = "dev"
-optional = false
-python-versions = ">=3.7"
-
-[package.dependencies]
-flake8 = ">=3.0"
-pycodestyle = "*"
-
-[[package]]
 name = "freezegun"
 version = "1.2.2"
 description = "Let your Python tests travel through time"
@@ -453,7 +401,7 @@ python-dateutil = ">=2.7"
 
 [[package]]
 name = "frozenlist"
-version = "1.3.1"
+version = "1.3.3"
 description = "A list-like structure which implements collections.abc.MutableSequence"
 category = "main"
 optional = false
@@ -483,7 +431,7 @@ gitdb = ">=4.0.1,<5"
 
 [[package]]
 name = "greenlet"
-version = "2.0.0"
+version = "2.0.1"
 description = "Lightweight in-process concurrent programming"
 category = "main"
 optional = false
@@ -491,7 +439,7 @@ python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
 
 [package.extras]
 docs = ["sphinx", "docutils (<0.18)"]
-test = ["objgraph", "faulthandler"]
+test = ["objgraph", "psutil", "faulthandler"]
 
 [[package]]
 name = "gunicorn"
@@ -551,7 +499,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "importlib-metadata"
-version = "4.13.0"
+version = "5.0.0"
 description = "Read metadata from Python packages"
 category = "dev"
 optional = false
@@ -614,22 +562,6 @@ MarkupSafe = ">=2.0"
 i18n = ["Babel (>=2.7)"]
 
 [[package]]
-name = "jsonschema"
-version = "4.17.0"
-description = "An implementation of JSON Schema validation for Python"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-
-[package.dependencies]
-attrs = ">=17.4.0"
-pyrsistent = ">=0.14.0,<0.17.0 || >0.17.0,<0.17.1 || >0.17.1,<0.17.2 || >0.17.2"
-
-[package.extras]
-format = ["fqdn", "idna", "isoduration", "jsonpointer (>1.13)", "rfc3339-validator", "rfc3987", "uri-template", "webcolors (>=1.11)"]
-format-nongpl = ["fqdn", "idna", "isoduration", "jsonpointer (>1.13)", "rfc3339-validator", "rfc3986-validator (>0.1.0)", "uri-template", "webcolors (>=1.11)"]
-
-[[package]]
 name = "lazy-object-proxy"
 version = "1.8.0"
 description = "A fast and thorough lazy object proxy."
@@ -639,7 +571,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "mako"
-version = "1.2.3"
+version = "1.2.4"
 description = "A super-fast templating language that borrows the best ideas from the existing templating languages."
 category = "main"
 optional = false
@@ -679,7 +611,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "mypy"
-version = "0.982"
+version = "0.991"
 description = "Optional static typing for Python"
 category = "dev"
 optional = false
@@ -692,6 +624,7 @@ typing-extensions = ">=3.10"
 
 [package.extras]
 dmypy = ["psutil (>=4.0)"]
+install-types = ["pip"]
 python2 = ["typed-ast (>=1.4.0,<2)"]
 reports = ["lxml"]
 
@@ -724,7 +657,7 @@ pyparsing = ">=2.0.2,<3.0.5 || >3.0.5"
 
 [[package]]
 name = "pathspec"
-version = "0.10.1"
+version = "0.10.2"
 description = "Utility library for gitignore style pattern matching of file paths."
 category = "dev"
 optional = false
@@ -743,15 +676,15 @@ ptyprocess = ">=0.5"
 
 [[package]]
 name = "platformdirs"
-version = "2.5.2"
-description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
+version = "2.5.4"
+description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 
 [package.extras]
-docs = ["furo (>=2021.7.5b38)", "proselint (>=0.10.2)", "sphinx-autodoc-typehints (>=1.12)", "sphinx (>=4)"]
-test = ["appdirs (==1.4.4)", "pytest-cov (>=2.7)", "pytest-mock (>=3.6)", "pytest (>=6)"]
+docs = ["furo (>=2022.9.29)", "proselint (>=0.13)", "sphinx-autodoc-typehints (>=1.19.4)", "sphinx (>=5.3)"]
+test = ["appdirs (==1.4.4)", "pytest-cov (>=4)", "pytest-mock (>=3.10)", "pytest (>=7.2)"]
 
 [[package]]
 name = "pluggy"
@@ -790,31 +723,15 @@ optional = false
 python-versions = "*"
 
 [[package]]
-name = "pycodestyle"
-version = "2.9.1"
-description = "Python style guide checker"
-category = "dev"
-optional = false
-python-versions = ">=3.6"
-
-[[package]]
-name = "pyflakes"
-version = "2.5.0"
-description = "passive checker of Python programs"
-category = "dev"
-optional = false
-python-versions = ">=3.6"
-
-[[package]]
 name = "pylic"
-version = "3.2.0"
+version = "3.3.0"
 description = "A Python license checker"
 category = "dev"
 optional = false
 python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
-importlib-metadata = ">=4.12.0,<5.0.0"
+importlib-metadata = ">=5.0.0,<6.0.0"
 toml = ">=0.10.2,<0.11.0"
 
 [[package]]
@@ -860,7 +777,7 @@ python-versions = "*"
 
 [[package]]
 name = "pyright"
-version = "1.1.278"
+version = "1.1.279"
 description = "Command line wrapper for pyright"
 category = "dev"
 optional = false
@@ -872,14 +789,6 @@ nodeenv = ">=1.6.0"
 [package.extras]
 all = ["twine (>=3.4.1)"]
 dev = ["twine (>=3.4.1)"]
-
-[[package]]
-name = "pyrsistent"
-version = "0.19.1"
-description = "Persistent/Functional/Immutable data structures"
-category = "main"
-optional = false
-python-versions = ">=3.7"
 
 [[package]]
 name = "pytest"
@@ -919,7 +828,7 @@ testing = ["coverage (==6.2)", "mypy (==0.931)"]
 
 [[package]]
 name = "pytest-asyncio"
-version = "0.20.1"
+version = "0.20.2"
 description = "Pytest support for asyncio"
 category = "dev"
 optional = false
@@ -1029,6 +938,14 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use_chardet_on_py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
+name = "ruff"
+version = "0.0.121"
+description = "An extremely fast Python linter, written in Rust."
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
 name = "shellingham"
 version = "1.5.0"
 description = "Tool to Detect Surrounding Shell"
@@ -1054,7 +971,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "sqlalchemy"
-version = "1.4.42"
+version = "1.4.44"
 description = "Database Abstraction Library"
 category = "main"
 optional = false
@@ -1134,7 +1051,7 @@ testing = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "syrupy"
-version = "3.0.2"
+version = "3.0.5"
 description = "Pytest Snapshot Test Utility"
 category = "dev"
 optional = false
@@ -1189,7 +1106,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.8.19.2"
+version = "2.8.19.3"
 description = "Typing stubs for python-dateutil"
 category = "dev"
 optional = false
@@ -1205,7 +1122,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-pyyaml"
-version = "6.0.12.1"
+version = "6.0.12.2"
 description = "Typing stubs for PyYAML"
 category = "dev"
 optional = false
@@ -1213,7 +1130,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-toml"
-version = "0.10.8"
+version = "0.10.8.1"
 description = "Typing stubs for toml"
 category = "dev"
 optional = false
@@ -1255,7 +1172,7 @@ test = ["flake8 (>=3.9.2,<3.10.0)", "psutil", "pycodestyle (>=2.7.0,<2.8.0)", "p
 
 [[package]]
 name = "virtualenv"
-version = "20.16.6"
+version = "20.16.7"
 description = "Virtual Python Environment builder"
 category = "dev"
 optional = false
@@ -1277,14 +1194,6 @@ description = "Module for decorators, wrappers and monkey patching."
 category = "main"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
-
-[[package]]
-name = "xmltodict"
-version = "0.13.0"
-description = "Makes working with XML feel like you are working with JSON"
-category = "main"
-optional = false
-python-versions = ">=3.4"
 
 [[package]]
 name = "yarl"
@@ -1313,7 +1222,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = '>=3.10,<4'
-content-hash = "5e54d4a09653df30efa2e6f07b6baf8e1e8aa668cd9fceba23dc4ab1b0e2e6b3"
+content-hash = "b149bc2eb121617749a3f5e5400f10bb12056aa5dd797999321dabf9cf130490"
 
 [metadata.files]
 aiohttp = []
@@ -1340,14 +1249,11 @@ bytecode = [
 callee = [
     {file = "callee-0.3.1.tar.gz", hash = "sha256:056f95d7760c87ce470aa4ab83bab5f9bdf090d4ecf77d52efe9c4559c0aefd3"},
 ]
-cattrs = []
 certifi = []
 charset-normalizer = []
 click = []
 colorama = []
-colored = [
-    {file = "colored-1.4.3.tar.gz", hash = "sha256:b7b48b9f40e8a65bbb54813d5d79dd008dc8b8c5638d5bbfd30fc5a82e6def7a"},
-]
+colored = []
 coloredlogs = []
 coverage = []
 datadog = [
@@ -1360,7 +1266,6 @@ dill = []
 "discord.py" = []
 distlib = []
 dunamai = []
-envier = []
 exceptiongroup = []
 expiringdict = [
     {file = "expiringdict-1.2.2-py3-none-any.whl", hash = "sha256:09a5d20bc361163e6432a874edd3179676e935eb81b925eccef48d409a8a45e8"},
@@ -1372,8 +1277,6 @@ factory-boy = [
 ]
 faker = []
 filelock = []
-flake8 = []
-flake8-print = []
 freezegun = []
 frozenlist = []
 gitdb = []
@@ -1395,7 +1298,6 @@ jinja2 = [
     {file = "Jinja2-3.1.2-py3-none-any.whl", hash = "sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61"},
     {file = "Jinja2-3.1.2.tar.gz", hash = "sha256:31351a702a408a9e7595a8fc6150fc3f43bb6bf7e319770cbc0db9df9437e852"},
 ]
-jsonschema = []
 lazy-object-proxy = []
 mako = []
 markupsafe = [
@@ -1459,14 +1361,11 @@ ptyprocess = [
     {file = "ptyprocess-0.7.0-py2.py3-none-any.whl", hash = "sha256:4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35"},
     {file = "ptyprocess-0.7.0.tar.gz", hash = "sha256:5c5d0a3b48ceee0b48485e0c26037c0acd7d29765ca3fbb5cb3831d347423220"},
 ]
-pycodestyle = []
-pyflakes = []
 pylic = []
 pylint = []
 pyparsing = []
 pyreadline3 = []
 pyright = []
-pyrsistent = []
 pytest = []
 pytest-aiohttp = [
     {file = "pytest-aiohttp-1.0.4.tar.gz", hash = "sha256:39ff3a0d15484c01d1436cbedad575c6eafbf0f57cdf76fb94994c97b5b8c5a4"},
@@ -1484,6 +1383,7 @@ python-dotenv = []
 pytz = []
 pyyaml = []
 requests = []
+ruff = []
 shellingham = []
 six = []
 smmap = []
@@ -1580,6 +1480,5 @@ wrapt = [
     {file = "wrapt-1.14.1-cp39-cp39-win_amd64.whl", hash = "sha256:dee60e1de1898bde3b238f18340eec6148986da0455d8ba7848d50470a7a32fb"},
     {file = "wrapt-1.14.1.tar.gz", hash = "sha256:380a85cf89e0e69b7cfbe2ea9f765f004ff419f34194018a6827ac0e3edfed4d"},
 ]
-xmltodict = []
 yarl = []
 zipp = []
