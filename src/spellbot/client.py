@@ -34,6 +34,7 @@ class SpellBot(Bot):
         intents = discord.Intents().default()
         intents.members = True  # pylint: disable=E0237
         intents.message_content = True  # pylint: disable=E0237
+        logger.info(f"{intents.value=}")
         super().__init__(
             command_prefix="!",
             help_command=None,
