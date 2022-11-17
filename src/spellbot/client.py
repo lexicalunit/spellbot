@@ -45,6 +45,10 @@ class SpellBot(Bot):
         self.mock_games = mock_games
         self.create_connection = create_connection
         self.channel_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
+        self.event
+
+    async def on_ready(self):
+        logger.info("client ready")
 
     async def setup_hook(self) -> None:
         # Note: In tests we create the connection using fixtures.
