@@ -35,7 +35,7 @@ class TestCodebase:
         """Checks that the Python codebase passes pyright static analysis checks."""
         chdir(REPO_ROOT)
         cmd = ["pyright", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True)
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"pyright issues:\n{proc.stdout.decode('utf-8')}"
@@ -44,7 +44,7 @@ class TestCodebase:
         """Checks that the Python codebase passes configured ruff checks."""
         chdir(REPO_ROOT)
         cmd = ["ruff", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True)
         exitcode: int = cast(int, proc.returncode)
         assert (
@@ -55,7 +55,7 @@ class TestCodebase:
         """Checks that the Python codebase passes configured black checks."""
         chdir(REPO_ROOT)
         cmd = ["black", "--check", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True)
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
@@ -64,7 +64,7 @@ class TestCodebase:
     #     """Checks that the Python codebase passes configured pylint checks."""
     #     chdir(REPO_ROOT)
     #     cmd = ["pylint", *SRC_DIRS]
-    #     print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+    #     print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
     #     try:
     #         proc = run(cmd, capture_output=True)
     #         exitcode: int = cast(int, proc.returncode)
@@ -76,7 +76,7 @@ class TestCodebase:
         """Checks that the Python codebase passes configured pylic checks."""
         chdir(REPO_ROOT)
         cmd = ["pylic", "check"]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True)
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"pylic issues:\n{proc.stdout.decode('utf-8')}"
@@ -85,7 +85,7 @@ class TestCodebase:
         """Checks that the Python codebase imports are correctly sorted."""
         chdir(REPO_ROOT)
         cmd = ["isort", "--df", "-w100", "-c", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True)
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"isort issues:\n{proc.stdout.decode('utf-8')}"
@@ -104,14 +104,14 @@ class TestCodebase:
         """Checks that relative imports are used in spellbot package."""
         chdir(REPO_ROOT / "src")
         cmd = ["/usr/bin/grep", "-HIRn", "--exclude-dir=migrations", "from spellbot", "."]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True)
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 1, f"non-relative imports:\n{proc.stdout.decode('utf-8')}"
 
         chdir(REPO_ROOT / "tests")
         cmd = ["/usr/bin/grep", "-HIRn", "from spellbot.[a-z]*\\.", "."]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T001
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True)
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 1, f"non-exported imports:\n{proc.stdout.decode('utf-8')}"
@@ -157,7 +157,7 @@ class TestCodebase:
             check(REPO_ROOT / change.a_path)
 
         if errors:
-            print("Files with trailing whitespace:", file=sys.stderr)  # noqa: T001
+            print("Files with trailing whitespace:", file=sys.stderr)  # noqa: T201
             for error in sorted(errors):
-                print(error, file=sys.stderr)  # noqa: T001
+                print(error, file=sys.stderr)  # noqa: T201
             assert False, "Trailing whitespace is not allowed."
