@@ -14,7 +14,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Updated dependencies.
-- Did not update ddtrace to 1.6.0 because it has a GPL dependency that will be removed in the next release. Waiting for that release to land before updating.
 - Removed flake8 in favor of ruff, which is a lot faster.
 
 ## [v8.3.1](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.1) - 2022-11-02
