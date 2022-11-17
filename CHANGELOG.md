@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v8.3.3](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.3) - 2022-11-16
+
 ### Added
 
 - Adds a log for ready signal to help debug https://github.com/Rapptz/discord.py/issues/9074.
