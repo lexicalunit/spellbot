@@ -22,7 +22,7 @@ typeCheckingMode = "basic"
 exclude = [".git", "env"]
 ignore = ["E", "W"]
 line-length = 100
-select = ["F", "E501"]
+select = ["F", "E501", "T201", "T203"]
 target-version = "py310"
 
 [tool.pylic]
@@ -116,6 +116,7 @@ black = "^22.6.0"
 callee = "^0.3.1"
 coverage = "^6.4.3"
 factory-boy = "^3.2.1"
+flake8-print = "^5.0.0"
 isort = "^5.10.1"
 pexpect = "^4.8.0"
 ptyprocess = "^0.7.0"

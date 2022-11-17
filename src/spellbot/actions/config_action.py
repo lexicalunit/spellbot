@@ -25,7 +25,6 @@ class ConfigAction(BaseAction):
         await self._handle_update()
 
     async def _handle_update(self) -> None:
-        print(await self.services.users.is_waiting())
         if await self.services.users.is_waiting() and self.interaction.guild_id:
             game_id = await self.services.users.current_game_id()
             assert game_id

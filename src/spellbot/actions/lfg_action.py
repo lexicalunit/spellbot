@@ -417,7 +417,6 @@ class LookingForGameAction(BaseAction):
                     await safe_followup_channel(self.interaction, warning)
                     continue
                 player = fetched_players[player_xid]
-                print(f"adding role {new_award} to {player}")
                 await safe_add_role(
                     player,
                     self.interaction.guild,
@@ -426,7 +425,7 @@ class LookingForGameAction(BaseAction):
                 )
                 await safe_send_user(player, new_award.message)
 
-        # notifiy issues with player permissions
+        # notify issues with player permissions
         if failed_xids:
             failures = ", ".join(f"<@!{xid}>" for xid in failed_xids)
             warning = f"Unable to send Direct Messages to some players: {failures}"
