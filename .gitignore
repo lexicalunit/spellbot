@@ -2,6 +2,7 @@
 # spellbot
 ########################################################################
 /.python-version
+/.ruff_cache
 /.vscode
 /coverage
 /db
