@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v8.3.2](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.2) - 2022-11-16
+
 ### Added
 
 - Adds the ability to have multiple guild awards with the same count number. Each award with the same count number that applies to a player will be granted when they reach that play count.
