@@ -55,6 +55,11 @@ class GameFormat(Enum):
     TWO_HEADED_GIANT = FormatDetails(players=4)
     PAUPER = FormatDetails(players=2)
     PIONEER = FormatDetails(players=2)
+    EDH_MAX = FormatDetails(players=4)
+    EDH_HIGH = FormatDetails(players=4)
+    EDH_MID = FormatDetails(players=4)
+    EDH_LOW = FormatDetails(players=4)
+    EDH_BATTLE_CRUISER = FormatDetails(players=4)
 
 
 class Game(Base):
