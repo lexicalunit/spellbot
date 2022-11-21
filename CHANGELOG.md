@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v8.3.5](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.5) - 2022-11-21
+
 ### Changed
 
 - Changed how the bot and api are started by the supervisord process to avoid ddtrace errors.
