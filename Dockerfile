@@ -17,7 +17,9 @@ COPY conf/datadog.yaml /etc/datadog-agent/datadog.yaml
 
 # supervisord
 COPY scripts/start-spellbot.sh /start-spellbot.sh
-RUN chmod +x /start-spellbot.sh
+COPY scripts/start-spellapi.sh /start-spellapi.sh
+COPY scripts/start.sh /start.sh
+RUN chmod +x /start-spellbot.sh /start-spellapi.sh /start.sh
 COPY conf/supervisord.conf /usr/local/etc/
 
 # spellbot
