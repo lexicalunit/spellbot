@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v8.3.4](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.4) - 2022-11-20
+
 ### Added
 
 - Adds EDH bc, low, mid, high, and max formats to /lfg format list.
