@@ -517,8 +517,9 @@ async def safe_add_role(
         )
         if not member or not hasattr(member, "roles"):
             logger.warning(
-                "warning: in guild %s, could not add role: could not find member: %s",
+                "warning: in guild %s, could not add role %s: could not find member: %s",
                 guild.id,
+                str(role),
                 str(user_or_member),
             )
             return
