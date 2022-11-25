@@ -8,7 +8,6 @@ import discord
 from ddtrace import tracer
 from discord.embeds import Embed
 from discord.message import Message
-from discord.utils import MISSING
 
 from .. import SpellBot
 from ..models import GameFormat, GameStatus
@@ -317,24 +316,10 @@ class LookingForGameAction(BaseAction):
             view = PendingGameView(bot=self.bot)
 
         if new:  # create the initial game post:
-            # interaction.followup.send() requires that view be MISSING rather than None.
-            view_hack = MISSING if view is None else view
-            if message := await safe_followup_channel(
-                self.interaction,
-                embed=embed,
-                view=view_hack,
-            ):
+            if message := await safe_followup_channel(self.interaction, embed=embed, view=view):
                 await self.services.games.set_message_xid(message.id)
-            else:
-                # Somehow the initial game post creation failed, workaround it by
-                # informing users of the issue and just posting directly to the channel.
-                embed.description = (
-                    "**A temporary issue prevented buttons from being added to this game"
-                    " post. To join or leave this game use `/lfg` or `/leave`.**\n\n"
-                    f"{embed.description}"
-                )
-                if message := await safe_channel_reply(self.channel, embed=embed):
-                    await self.services.games.set_message_xid(message.id)
+            elif message := await safe_channel_reply(self.channel, embed=embed, view=view):
+                await self.services.games.set_message_xid(message.id)
             return
 
         message: Optional[Union[discord.Message, discord.PartialMessage]] = None
@@ -350,24 +335,14 @@ class LookingForGameAction(BaseAction):
             # If it does fail, we will fallback to doing a standard
             # message.edit() call, which should hopefully at least update
             # the game embed, even if the interaction shows as "failed".
-            success = await safe_update_embed_origin(self.interaction, embed=embed, view=view)
-            if success:
+            if await safe_update_embed_origin(self.interaction, embed=embed, view=view):
                 return
 
-        success: bool = False
         if message:
-            success = await safe_update_embed(message, embed=embed, view=view)
-
-        # Somehow the game post update failed, workaround it by informing users
-        # of the issue and just posting directly to the channel.
-        if not success:
-            embed.description = (
-                "**A temporary issue prevented buttons from being added to this game"
-                " post. To join or leave this game use `/lfg` or `/leave`.**\n\n"
-                f"{embed.description}"
-            )
-            if message := await safe_channel_reply(self.channel, embed=embed):
-                await self.services.games.set_message_xid(message.id)
+            if await safe_update_embed(message, embed=embed, view=view):
+                pass
+            elif updated := await safe_channel_reply(self.channel, embed=embed, view=view):
+                await self.services.games.set_message_xid(updated.id)
 
         if not origin:
             await self._reply_found_embed()
