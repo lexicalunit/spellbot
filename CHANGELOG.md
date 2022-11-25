@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v8.3.7](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.7) - 2022-11-25
+
 ### Changed
 
 - Log role name if not able to give a role because user is unknown.
