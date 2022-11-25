@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Log role name if not able to give a role because user is unknown.
+- Fixed span context from interaction for discord.py 2.0.
+
 ## [v8.3.6](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.6) - 2022-11-25
 
 ### Changed

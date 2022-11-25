@@ -427,7 +427,8 @@ class TestOperationsAddRole:
         await safe_add_role(user, guild, "role")
         guild.get_member.assert_called_once()
         assert (
-            f"warning: in guild {guild.id}, could not add role:" " could not find member: user#1234"
+            f"warning: in guild {guild.id}, could not add role role:"
+            " could not find member: user#1234"
         ) in caplog.text
 
     async def test_no_role(self, caplog: pytest.LogCaptureFixture):

@@ -26,19 +26,6 @@ from .settings import Settings
 
 settings = Settings()
 IS_RUNNING_IN_PYTEST = running_in_pytest()
-CTX_PROPS = {
-    "author_id",
-    "channel_id",
-    "command_id",
-    "component_id",
-    "custom_id",
-    "guild_id",
-    "interaction_id",
-    "kwargs",
-    "origin_message_id",
-    "target_id",
-    "values",
-}
 
 
 def no_metrics() -> bool:
@@ -114,7 +101,12 @@ def alert_error(
 @skip_if_no_metrics
 def add_span_context(interaction: Any):  # pragma: no cover
     if span := tracer.current_span():
-        for prop in CTX_PROPS:
+        span.set_tag("interaction_id", interaction.id)
+        if interaction.command:
+            span.set_tag("command_id", interaction.command.id)
+        if interaction.user:
+            span.set_tag("user_id", interaction.user.id)
+        for prop in {"data", "channel_id", "component_id", "guild_id", "application_id"}:
             if value := getattr(interaction, prop, None):
                 span.set_tag(prop, value)
 
