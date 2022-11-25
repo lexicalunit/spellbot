@@ -101,12 +101,18 @@ def alert_error(
 @skip_if_no_metrics
 def add_span_context(interaction: Any):  # pragma: no cover
     if span := tracer.current_span():
-        span.set_tag("interaction_id", interaction.id)
-        if interaction.command:
-            span.set_tag("command_id", interaction.command.id)
-        if interaction.user:
-            span.set_tag("user_id", interaction.user.id)
-        for prop in {"data", "channel_id", "component_id", "guild_id", "application_id"}:
+        if interaction_id := getattr(interaction, "id", None):
+            span.set_tag("interaction_id", interaction_id)
+        if user := getattr(interaction, "user", None):
+            if user_id := getattr(user, "id", None):
+                span.set_tag("user_id", user_id)
+        for prop in {
+            "application_id",
+            "channel_id",
+            "component_id",
+            "data",
+            "guild_id",
+        }:
             if value := getattr(interaction, prop, None):
                 span.set_tag(prop, value)
 
