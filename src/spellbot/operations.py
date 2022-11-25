@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 import discord
 from ddtrace import tracer
 from discord.errors import DiscordException
+from discord.utils import MISSING
 
 from .metrics import add_span_error
 from .utils import (
@@ -136,25 +137,28 @@ async def safe_update_embed(
     message: Union[discord.Message, discord.PartialMessage],
     *args: Any,
     **kwargs: Any,
-) -> bool:
+) -> Optional[discord.Message]:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"messsage_xid": str(message.id)})
+        span.set_tags({"message_xid": str(message.id)})
 
-    success: bool = False
+    updated_message: Optional[discord.Message] = None
     with suppress(
         DiscordException,
         log="could not update embed in message %(message_xid)s",
         message_xid=message.id,
     ):
-        await message.edit(*args, **kwargs)
-        success = True
-    return success
+        try:
+            updated_message = await message.edit(*args, **kwargs)
+        except discord.errors.NotFound:
+            guild_xid = message.guild.id if message.guild else None
+            logger.warning(f"in guild {guild_xid}, unknown message {message.id}")
+    return updated_message
 
 
 @tracer.wrap()
 async def safe_delete_message(message: Union[discord.Message, discord.PartialMessage]) -> bool:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"messsage_xid": str(message.id)})
+        span.set_tags({"message_xid": str(message.id)})
 
     success: bool = False
     with suppress(
@@ -337,8 +341,11 @@ async def safe_delete_channel(
         guild_xid=guild_xid,
         channel_xid=channel_xid,
     ):
-        await channel.delete()  # type: ignore
-        success = True
+        try:
+            await channel.delete()  # type: ignore
+            success = True
+        except discord.errors.NotFound:
+            logger.warning(f"in guild {guild_xid}, unknown channel {channel_xid}")
     return success
 
 
@@ -382,6 +389,11 @@ async def safe_followup_channel(
             },
         )
 
+    # interaction.followup.send() requires that view be MISSING rather than None.
+    if "view" in kwargs:
+        view_hack = MISSING if kwargs["view"] is None else kwargs["view"]
+        kwargs["view"] = view_hack
+
     message: Optional[discord.Message] = None
     with suppress(
         DiscordException,
@@ -419,7 +431,7 @@ async def safe_channel_reply(
 @tracer.wrap()
 async def safe_message_reply(message: discord.Message, *args: Any, **kwargs: Any) -> None:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"messsage_xid": str(message.id)})
+        span.set_tags({"message_xid": str(message.id)})
 
     if not bot_can_reply_to(message):
         return

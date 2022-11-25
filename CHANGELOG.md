@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- Rename battle cruiser to one word
+- Rename battle cruiser to one word.
+- Cleaned up some code in reply/followup/send code in LFG action.
+- Log unknown channel/message as warnings.
 
 ## [v8.3.5](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.5) - 2022-11-21
 
