@@ -168,9 +168,9 @@ class suppress(AbstractContextManager[None]):
     """
     Suppresses any exceptions from the given set.
 
-    Logs the given log message whenever an exception is suppressed. String interpolation
+    Logs the given message whenever an exception is suppressed. String interpolation
     parameters should be embedded into the log message as `%(name)s` and provided
-    coresponding values via keyword argument. For example:
+    corresponding values via keyword argument. For example:
 
         with suppress(YourError, log="whatever %s(wotnot)s", wotnot="I don't know"):
             ...
