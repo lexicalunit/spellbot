@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed a bug in moderation role detection.
+
 ## [v8.3.8](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.8) - 2022-11-25
 
 ### Fixed
