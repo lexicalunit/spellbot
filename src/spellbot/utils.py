@@ -161,6 +161,7 @@ def user_can_moderate(
     return any(
         role.name == settings.ADMIN_ROLE or role.name.startswith(settings.MOD_PREFIX)
         for role in cast(list[discord.Role], author_roles)
+        if role is not None
     )
 
 
