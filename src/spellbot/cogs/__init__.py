@@ -9,12 +9,12 @@ from discord.ext.commands import Bot
 
 from .about_cog import AboutCog
 from .admin_cog import AdminCog
-from .ban_cog import BanCog
 from .block_cog import BlockCog
 from .config_cog import ConfigCog
 from .events_cog import EventsCog
 from .leave_cog import LeaveGameCog
 from .lfg_cog import LookingForGameCog
+from .owner_cog import OwnerCog
 from .score_cog import ScoreCog
 from .sync_cog import SyncCog
 from .tasks_cog import TasksCog
@@ -27,12 +27,12 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "AboutCog",
     "AdminCog",
-    "BanCog",
     "BlockCog",
     "ConfigCog",
     "EventsCog",
     "LeaveGameCog",
     "LookingForGameCog",
+    "OwnerCog",
     "ScoreCog",
     "SyncCog",
     "TasksCog",
