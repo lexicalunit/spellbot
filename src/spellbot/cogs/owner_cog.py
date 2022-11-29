@@ -1,4 +1,5 @@
 import logging
+from inspect import cleandoc
 from typing import Optional
 
 from ddtrace import tracer
@@ -10,6 +11,7 @@ from ..database import db_session_manager
 from ..metrics import add_span_context
 from ..operations import safe_send_user
 from ..services import UsersService
+from ..utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
 
@@ -30,12 +32,12 @@ async def set_banned(banned: bool, ctx: commands.Context[SpellBot], arg: Optiona
     )
 
 
-class BanCog(commands.Cog):
+@for_all_callbacks(commands.is_owner())
+class OwnerCog(commands.Cog):
     def __init__(self, bot: SpellBot):
         self.bot = bot
 
     @commands.command(name="ban")
-    @commands.is_owner()
     @tracer.wrap(name="interaction", resource="ban")
     async def ban(self, ctx: commands.Context[SpellBot], arg: Optional[str] = None):
         add_span_context(ctx)
@@ -46,7 +48,6 @@ class BanCog(commands.Cog):
                 await handle_exception(ex)
 
     @commands.command(name="unban")
-    @commands.is_owner()
     @tracer.wrap(name="interaction", resource="unban")
     async def unban(self, ctx: commands.Context[SpellBot], arg: Optional[str] = None):
         add_span_context(ctx)
@@ -56,6 +57,25 @@ class BanCog(commands.Cog):
             except Exception as ex:
                 await handle_exception(ex)
 
+    @commands.command(name="stats")
+    @tracer.wrap(name="interaction", resource="stats")
+    async def stats(self, ctx: commands.Context[SpellBot]):
+        add_span_context(ctx)
+        await safe_send_user(
+            ctx.message.author,
+            cleandoc(
+                f"""
+                    ```
+                    status:   {self.bot.status}
+                    activity: {self.bot.activity}
+                    ready:    {self.bot.is_ready()}
+                    guilds:   {len(self.bot.guilds)}
+                    users:    {len(self.bot.users)}
+                    ```
+                """
+            ),
+        )
+
 
 async def setup(bot: SpellBot):  # pragma: no cover
-    await bot.add_cog(BanCog(bot), guild=bot.settings.GUILD_OBJECT)
+    await bot.add_cog(OwnerCog(bot), guild=bot.settings.GUILD_OBJECT)
