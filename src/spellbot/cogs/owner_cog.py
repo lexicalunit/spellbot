@@ -69,6 +69,7 @@ class OwnerCog(commands.Cog):
                     status:   {self.bot.status}
                     activity: {self.bot.activity}
                     ready:    {self.bot.is_ready()}
+                    shards:   {self.bot.shard_count}
                     guilds:   {len(self.bot.guilds)}
                     users:    {len(self.bot.users)}
                     ```
