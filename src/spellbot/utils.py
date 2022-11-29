@@ -13,7 +13,7 @@ from ddtrace.constants import ERROR_MSG, ERROR_TYPE
 from discord.app_commands import AppCommandError
 from discord.app_commands import Command as AppCommand
 from discord.app_commands import ContextMenu, NoPrivateMessage
-from discord.ext.commands import Bot
+from discord.ext.commands import AutoShardedBot
 from discord.ext.commands import Command as ExtCommand
 from discord.ui import Item
 
@@ -261,7 +261,7 @@ async def handle_command_errors(interaction: discord.Interaction, error: AppComm
     return await handle_interaction_errors(interaction, error)
 
 
-async def load_extensions(bot: Bot, do_sync: bool = False) -> None:
+async def load_extensions(bot: AutoShardedBot, do_sync: bool = False) -> None:
     from .cogs import load_all_cogs
 
     settings = Settings()
