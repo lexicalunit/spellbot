@@ -10,8 +10,11 @@ from typing import TYPE_CHECKING, Any, Optional, Type, Union, cast
 import discord
 from ddtrace import tracer
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
-from discord.app_commands import AppCommandError, Command, ContextMenu, NoPrivateMessage
+from discord.app_commands import AppCommandError
+from discord.app_commands import Command as AppCommand
+from discord.app_commands import ContextMenu, NoPrivateMessage
 from discord.ext.commands import Bot
+from discord.ext.commands import Command as ExtCommand
 from discord.ui import Item
 
 from .errors import (
@@ -205,12 +208,12 @@ class suppress(AbstractContextManager[None]):
         return captured
 
 
-# I have no idea how to propery type hint this.
+# I have no idea how to properly type hint this.
 def for_all_callbacks(decorator: Any) -> Any:
     def decorate(cls: Any):
         for attr in cls.__dict__:
             method = getattr(cls, attr)
-            if isinstance(method, Command):
+            if isinstance(method, (AppCommand, ExtCommand)):
                 setattr(cls, attr, decorator(method))
 
         return cls
@@ -237,7 +240,7 @@ async def handle_interaction_errors(interaction: discord.Interaction, error: Exc
     add_span_error(error)
     ref = (
         f"command `{interaction.command.qualified_name}`"
-        if interaction.command is not None and isinstance(interaction, Command)
+        if interaction.command is not None and isinstance(interaction, (AppCommand, ExtCommand))
         else f"component `{interaction.command.qualified_name}`"
         if interaction.command is not None and isinstance(interaction, ContextMenu)
         else f"interaction `{interaction.id}`"
