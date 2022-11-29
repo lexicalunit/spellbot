@@ -5,7 +5,7 @@ from pathlib import Path
 from pkgutil import iter_modules
 
 from discord.ext import commands
-from discord.ext.commands import Bot
+from discord.ext.commands import AutoShardedBot
 
 from .about_cog import AboutCog
 from .admin_cog import AdminCog
@@ -41,7 +41,7 @@ __all__ = [
 ]
 
 
-async def load_all_cogs(bot: Bot) -> Bot:
+async def load_all_cogs(bot: AutoShardedBot) -> AutoShardedBot:
     # iterate through the modules in the current package
     package_dir = Path(__file__).resolve().parent
     for info in iter_modules([str(package_dir)]):

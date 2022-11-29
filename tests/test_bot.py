@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import discord
 import pytest
 from discord import app_commands
-from discord.ext.commands.bot import Bot
+from discord.ext.commands.bot import AutoShardedBot
 
 from spellbot import SpellBot, client
 from spellbot.errors import (
@@ -88,7 +88,7 @@ class TestSpellBot:
 
     async def test_on_message_no_guild(self, bot: SpellBot, monkeypatch: pytest.MonkeyPatch):
         super_on_message_mock = AsyncMock()
-        monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
+        monkeypatch.setattr(AutoShardedBot, "on_message", super_on_message_mock)
         message = MagicMock()
         message.guild = None
         await bot.on_message(message)
@@ -96,7 +96,7 @@ class TestSpellBot:
 
     async def test_on_message_no_channel_type(self, bot: SpellBot, monkeypatch: pytest.MonkeyPatch):
         super_on_message_mock = AsyncMock()
-        monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
+        monkeypatch.setattr(AutoShardedBot, "on_message", super_on_message_mock)
         message = MagicMock()
         message.guild = MagicMock()
         message.channel = MagicMock()
@@ -106,7 +106,7 @@ class TestSpellBot:
 
     async def test_on_message_hidden(self, bot: SpellBot, monkeypatch: pytest.MonkeyPatch):
         super_on_message_mock = AsyncMock()
-        monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
+        monkeypatch.setattr(AutoShardedBot, "on_message", super_on_message_mock)
         message = MagicMock()
         message.guild = MagicMock()
         message.channel = MagicMock()
@@ -122,7 +122,7 @@ class TestSpellBot:
         monkeypatch: pytest.MonkeyPatch,
     ):
         super_on_message_mock = AsyncMock()
-        monkeypatch.setattr(Bot, "on_message", super_on_message_mock)
+        monkeypatch.setattr(AutoShardedBot, "on_message", super_on_message_mock)
         monkeypatch.setattr(bot, "handle_verification", AsyncMock())
         dpy_message.flags.value = 16
         await bot.on_message(dpy_message)

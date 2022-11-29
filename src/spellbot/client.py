@@ -10,7 +10,7 @@ from uuid import uuid4
 
 import discord
 from ddtrace import tracer
-from discord.ext.commands import Bot, CommandError, CommandNotFound, Context
+from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, Context
 from expiringdict import ExpiringDict
 
 from .database import db_session_manager, initialize_connection
@@ -23,7 +23,7 @@ from .utils import user_can_moderate
 logger = logging.getLogger(__name__)
 
 
-class SpellBot(Bot):
+class SpellBot(AutoShardedBot):
     def __init__(
         self,
         loop: Optional[Loop] = None,
