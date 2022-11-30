@@ -857,7 +857,7 @@ python-versions = "*"
 
 [[package]]
 name = "pyright"
-version = "1.1.281"
+version = "1.1.282"
 description = "Command line wrapper for pyright"
 category = "dev"
 optional = false
@@ -1332,7 +1332,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.11"
-content-hash = "60e20e7cc10bb6b16a23de916dee44a05a03b093d972b536dd7856012b38ddb0"
+content-hash = "d0c1d380bc3976b0660b7981790558647636cffff80575285a4b2aa0627dc1ef"
 
 [metadata.files]
 aiohttp = [
@@ -2200,8 +2200,8 @@ pyreadline3 = [
     {file = "pyreadline3-3.4.1.tar.gz", hash = "sha256:6f3d1f7b8a31ba32b73917cefc1f28cc660562f39aea8646d30bd6eff21f7bae"},
 ]
 pyright = [
-    {file = "pyright-1.1.281-py3-none-any.whl", hash = "sha256:9e52d460c5201c8870a3aa053289a0595874b739314d67b0fdf531c25f17ca01"},
-    {file = "pyright-1.1.281.tar.gz", hash = "sha256:21be27aa562d3e2f1563515a118dcf9a3fd197747604ed47277d36cfe5376c7a"},
+    {file = "pyright-1.1.282-py3-none-any.whl", hash = "sha256:f899fda0a6449d81687ea0e1ad5b25e268845b8a0c98080ada93a6050d9696b8"},
+    {file = "pyright-1.1.282.tar.gz", hash = "sha256:ec615b1e4242e5657bb69f46bbc1cc600d0628bc7fed988bfd9d1c8e0257eb4b"},
 ]
 pyrsistent = [
     {file = "pyrsistent-0.19.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:d6982b5a0237e1b7d876b60265564648a69b14017f3b5f908c5be2de3f9abb7a"},
