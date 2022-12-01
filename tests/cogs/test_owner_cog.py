@@ -92,6 +92,7 @@ class TestCogOwner(ContextMixin):
                     status:   online
                     activity: None
                     ready:    False
+                    shards:   None
                     guilds:   0
                     users:    0
                     ```
