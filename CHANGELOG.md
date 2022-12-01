@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds owner command: !stats.
+- Added a process killer that check for bot readiness every 30 minutes.
 
 ## [v8.3.9](https://github.com/lexicalunit/spellbot/releases/tag/v8.3.9) - 2022-11-25
 
