@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated dependencies.
+
+### Removed
+
+- Removed isort and replaced with ruff.
+- Removed passing of `loop` into SpellBot, discord.py ignores it anyway.
+- Applied ruff import sorting to all files.
+
 ## [v8.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v8.4.0) - 2022-12-01
 
 ### Changed

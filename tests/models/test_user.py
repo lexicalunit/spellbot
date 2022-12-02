@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from spellbot.models import GameStatus
+
 from tests.fixtures import Factories
 
 

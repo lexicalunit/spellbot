@@ -4,11 +4,11 @@ from unittest.mock import MagicMock
 
 import pytest
 import pytest_asyncio
-
 from spellbot import SpellBot
 from spellbot.cogs import BlockCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, User
+
 from tests.mixins import InteractionMixin
 
 

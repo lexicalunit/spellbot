@@ -5,9 +5,9 @@ from datetime import datetime
 import pytest
 from aiohttp.client import ClientSession
 from freezegun.api import FrozenDateTimeFactory
+from spellbot.models import GameFormat, GameStatus
 from syrupy.assertion import SnapshotAssertion
 
-from spellbot.models import GameFormat, GameStatus
 from tests.fixtures import Factories
 
 

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from unittest.mock import ANY, MagicMock
+from unittest.mock import MagicMock
 
 from click.testing import CliRunner
-from syrupy.assertion import SnapshotAssertion
-
 from spellbot.cli import main
+from syrupy.assertion import SnapshotAssertion
 
 
 class TestCLI:
@@ -54,7 +53,7 @@ class TestCLI:
         assert result.output == ""
         cli.hupper.start_reloader.assert_not_called()
         cli.configure_logging.assert_called_once_with("INFO")
-        cli.build_bot.assert_called_once_with(loop=cli.loop, mock_games=False)
+        cli.build_bot.assert_called_once_with(mock_games=False)
         cli.bot.run.assert_called_once_with("facedeadbeef")
 
     def test_run_bot_with_log_level(
@@ -81,11 +80,7 @@ class TestCLI:
 
     def test_run_bot_with_mock_games(self, cli: MagicMock, runner: CliRunner) -> None:
         runner.invoke(main, ["--mock-games"])
-        cli.build_bot.assert_called_once_with(loop=ANY, mock_games=True)
-
-    def test_run_bot_with_debug(self, cli: MagicMock, runner: CliRunner) -> None:
-        runner.invoke(main, ["--debug"])
-        cli.loop.set_debug.assert_called_once_with(True)
+        cli.build_bot.assert_called_once_with(mock_games=True)
 
     def test_run_bot_with_dev(self, cli: MagicMock, runner: CliRunner) -> None:
         runner.invoke(main, ["--dev"])

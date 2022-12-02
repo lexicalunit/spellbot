@@ -4,12 +4,12 @@ from typing import Callable, cast
 
 import discord
 import pytest
-
 from spellbot.actions import lfg_action
 from spellbot.client import SpellBot
 from spellbot.cogs import EventsCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Game, GameFormat, GameStatus, User
+
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
 
