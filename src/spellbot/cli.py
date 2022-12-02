@@ -118,12 +118,11 @@ def main(
                 assert conn is not None
                 conn.close()
 
-    loop = asyncio.new_event_loop()
-    if debug:
-        loop.set_debug(True)
     if api:
         from .web import launch_web_server
 
+        loop = asyncio.new_event_loop()
+        loop.set_debug(debug)
         launch_web_server(settings, loop, port or settings.PORT)
         loop.run_forever()
     else:
@@ -131,7 +130,7 @@ def main(
         from .client import build_bot
 
         assert settings.BOT_TOKEN is not None
-        bot = build_bot(loop=loop, mock_games=mock_games)
+        bot = build_bot(mock_games=mock_games)
 
         if not debug and not running_in_pytest:
             # Sometimes the bot gets into a weird state where it doesn't properly

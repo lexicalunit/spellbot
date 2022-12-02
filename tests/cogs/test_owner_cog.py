@@ -8,10 +8,10 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from discord.ext import commands
 from pytest_mock import MockerFixture
-
 from spellbot.cogs import OwnerCog
 from spellbot.database import DatabaseSession
 from spellbot.models import User
+
 from tests.mixins import ContextMixin
 
 

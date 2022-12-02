@@ -3,10 +3,10 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-
 from spellbot.database import DatabaseSession
 from spellbot.models import Guild, GuildAward
 from spellbot.services import GuildsService
+
 from tests.factories import GuildAwardFactory, GuildFactory
 
 

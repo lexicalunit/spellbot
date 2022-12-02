@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import importlib
-from asyncio import AbstractEventLoop
 from collections.abc import Generator
 from contextlib import contextmanager
 from types import ModuleType
@@ -10,7 +9,6 @@ from typing import Any, Optional, Union, cast, overload
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
-
 from spellbot.models import Channel, Guild, User
 
 CLIENT_USER_ID = 1  # id of the test bot itself
@@ -22,14 +20,12 @@ class MockClient:
         self,
         *,
         user: discord.User = MagicMock(spec=discord.User),
-        loop: AbstractEventLoop = MagicMock(spec=AbstractEventLoop),
         channels: Optional[list[discord.TextChannel]] = None,
         guilds: Optional[list[discord.Guild]] = None,
         users: Optional[list[discord.User]] = None,
         categories: Optional[list[discord.CategoryChannel]] = None,
     ):
         self.user = user
-        self.loop = loop
         self.channels = channels or []
         self.guilds = guilds or []
         self.users = users or []
@@ -96,7 +92,6 @@ def mock_operations(
 
     """
     from _pytest.monkeypatch import MonkeyPatch
-
     from spellbot import operations
 
     _users: list[discord.User] = users or []

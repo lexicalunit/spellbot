@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import pytest
-
 from spellbot.database import DatabaseSession
 from spellbot.services import WatchesService
+
 from tests.factories import GuildFactory, UserFactory, WatchFactory
 
 

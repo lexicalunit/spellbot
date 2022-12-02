@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import pytest
-
 from spellbot.models import Channel, Guild
 from spellbot.services import AwardsService, NewAward
+
 from tests.fixtures import Factories
 
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from asyncio import AbstractEventLoop as Loop
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -26,7 +25,6 @@ logger = logging.getLogger(__name__)
 class SpellBot(AutoShardedBot):
     def __init__(
         self,
-        loop: Optional[Loop] = None,
         mock_games: bool = False,
         create_connection: bool = True,
     ):
@@ -38,7 +36,6 @@ class SpellBot(AutoShardedBot):
         super().__init__(
             command_prefix="!",
             help_command=None,
-            loop=loop,
             intents=intents,
             application_id=self.settings.BOT_APPLICATION_ID,
         )
@@ -149,11 +146,7 @@ class SpellBot(AutoShardedBot):
                 await message.delete()
 
 
-def build_bot(
-    loop: Optional[Loop] = None,
-    mock_games: bool = False,
-    create_connection: bool = True,
-) -> SpellBot:
-    bot = SpellBot(loop=loop, mock_games=mock_games, create_connection=create_connection)
+def build_bot(mock_games: bool = False, create_connection: bool = True) -> SpellBot:
+    bot = SpellBot(mock_games=mock_games, create_connection=create_connection)
     setup_metrics()
     return bot

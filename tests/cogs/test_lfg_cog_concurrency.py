@@ -8,12 +8,12 @@ from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
-
 from spellbot import SpellBot
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Game
+
 from tests.mocks import build_author, build_channel, build_guild, build_interaction
 
 

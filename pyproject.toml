@@ -22,7 +22,7 @@ typeCheckingMode = "basic"
 exclude = [".git", "env"]
 ignore = ["E", "W"]
 line-length = 100
-select = ["F", "E501", "T201", "T203"]
+select = ["F", "E501", "T201", "T203", "I001"]
 target-version = "py310"
 
 [tool.pylic]
@@ -106,7 +106,7 @@ pytz = "^2022.6"
 requests = "2.28.1"
 supervisor = "^4.2.4"
 toml = "^0.10.2"
-uvloop = ">=0.16,<0.18"
+uvloop = "^0.17.0"
 wrapt = "^1.14.1"
 
 [tool.poetry.dev-dependencies]

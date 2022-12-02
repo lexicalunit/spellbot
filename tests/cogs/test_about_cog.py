@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import pytest
-
 from spellbot import __version__
 from spellbot.cogs import AboutCog
+
 from tests.mixins import InteractionMixin
 
 

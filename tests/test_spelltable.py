@@ -9,7 +9,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from aiohttp.client_exceptions import ClientError
 from aiohttp_retry.client import RetryClient
-
 from spellbot import spelltable
 from spellbot.settings import Settings
 from spellbot.spelltable import generate_link
