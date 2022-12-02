@@ -8,11 +8,11 @@ import discord
 import pytest
 from discord.app_commands import Command
 from discord.ext import commands
-
 from spellbot import SpellBot
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Game, Guild, User
 from spellbot.settings import Settings
+
 from tests.fixtures import Factories
 from tests.mocks import build_message
 

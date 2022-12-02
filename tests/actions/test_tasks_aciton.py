@@ -9,13 +9,13 @@ import discord
 import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
-
 from spellbot import SpellBot
 from spellbot.actions import TasksAction
 from spellbot.client import build_bot
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Game, Guild
 from spellbot.services import GamesService, GuildsService, ServicesRegistry
+
 from tests.fixtures import Factories
 from tests.mocks import mock_discord_object
 

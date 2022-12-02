@@ -8,7 +8,6 @@ from unittest.mock import ANY, AsyncMock, MagicMock, Mock
 import discord
 import pytest
 from discord.errors import DiscordException
-
 from spellbot.operations import (
     safe_add_role,
     safe_channel_reply,
@@ -27,6 +26,7 @@ from spellbot.operations import (
     safe_update_embed_origin,
 )
 from spellbot.utils import CANT_SEND_CODE
+
 from tests.mixins import InteractionMixin
 from tests.mocks import build_message, mock_client
 

@@ -81,15 +81,6 @@ class TestCodebase:
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"pylic issues:\n{proc.stdout.decode('utf-8')}"
 
-    def test_isort(self):
-        """Checks that the Python codebase imports are correctly sorted."""
-        chdir(REPO_ROOT)
-        cmd = ["isort", "--df", "-w100", "-c", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
-        proc = run(cmd, capture_output=True)
-        exitcode: int = cast(int, proc.returncode)
-        assert exitcode == 0, f"isort issues:\n{proc.stdout.decode('utf-8')}"
-
     def test_pyproject_dependencies(self):
         """Checks that pyproject.toml dependencies are sorted."""
         pyproject = toml.load("pyproject.toml")

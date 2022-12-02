@@ -4,11 +4,11 @@ from typing import Callable, cast
 
 import discord
 import pytest
-
 from spellbot import SpellBot
 from spellbot.cogs import WatchCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Guild, User, Watch
+
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object
 

@@ -5,11 +5,11 @@ from typing import Callable, cast
 import discord
 import pytest
 import pytest_asyncio
-
 from spellbot import SpellBot
 from spellbot.cogs import VerifyCog
 from spellbot.database import DatabaseSession
 from spellbot.models import User, Verify
+
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object
 

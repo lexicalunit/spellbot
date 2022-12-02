@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 from pytest_mock import MockerFixture
-
 from spellbot.cogs import SyncCog
+
 from tests.mixins import ContextMixin
 
 

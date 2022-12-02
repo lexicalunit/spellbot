@@ -5,10 +5,10 @@ from typing import Callable, cast
 import discord
 import pytest
 import pytest_asyncio
-
 from spellbot import SpellBot
 from spellbot.cogs import ScoreCog
 from spellbot.models import Channel, User
+
 from tests.mixins import InteractionMixin
 from tests.mocks import build_channel, build_guild, build_interaction, mock_discord_object
 

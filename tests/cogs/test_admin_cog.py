@@ -7,13 +7,13 @@ import discord
 import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
-
 from spellbot.client import SpellBot
 from spellbot.cogs import AdminCog
 from spellbot.database import DatabaseSession
 from spellbot.errors import AdminOnlyError
 from spellbot.models import Channel, Game, Guild, GuildAward
 from spellbot.views import SetupView
+
 from tests.fixtures import Factories
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_user

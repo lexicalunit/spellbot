@@ -3,12 +3,12 @@ from __future__ import annotations
 import discord
 import pytest
 import pytest_asyncio
-
 from spellbot.actions import leave_action
 from spellbot.client import SpellBot
 from spellbot.cogs import LeaveGameCog
 from spellbot.database import DatabaseSession
 from spellbot.models import User
+
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_operations
 

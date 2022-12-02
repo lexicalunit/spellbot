@@ -10,9 +10,8 @@ from typing import TYPE_CHECKING, Any, Optional, Type, Union, cast
 import discord
 from ddtrace import tracer
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
-from discord.app_commands import AppCommandError
+from discord.app_commands import AppCommandError, ContextMenu, NoPrivateMessage
 from discord.app_commands import Command as AppCommand
-from discord.app_commands import ContextMenu, NoPrivateMessage
 from discord.ext.commands import AutoShardedBot
 from discord.ext.commands import Command as ExtCommand
 from discord.ui import Item

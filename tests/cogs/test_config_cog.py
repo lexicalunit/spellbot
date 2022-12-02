@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import pytest
-
 from spellbot.actions import config_action
 from spellbot.client import SpellBot
 from spellbot.cogs import ConfigCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Config, User
+
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_operations
 

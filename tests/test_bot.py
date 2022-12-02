@@ -6,7 +6,6 @@ import discord
 import pytest
 from discord import app_commands
 from discord.ext.commands.bot import AutoShardedBot
-
 from spellbot import SpellBot, client
 from spellbot.errors import (
     AdminOnlyError,

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import pytest
-
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Game, GameFormat, GameStatus, Guild, Play, User
 from spellbot.services import GamesService
+
 from tests.factories import BlockFactory, GameFactory, PlayFactory, UserFactory, WatchFactory
 
 
