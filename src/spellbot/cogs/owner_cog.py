@@ -9,7 +9,7 @@ from .. import SpellBot
 from ..actions.base_action import handle_exception
 from ..database import db_session_manager
 from ..metrics import add_span_context
-from ..operations import safe_send_user
+from ..operations import bad_users, safe_send_user
 from ..services import UsersService
 from ..utils import for_all_callbacks
 
@@ -76,6 +76,13 @@ class OwnerCog(commands.Cog):
                 """
             ),
         )
+
+    @commands.command(name="naughty")
+    @tracer.wrap(name="interaction", resource="naughty")
+    async def naughty(self, ctx: commands.Context[SpellBot]):
+        add_span_context(ctx)
+        resp = "\n".join([f"<@{xid}> ({xid})" for xid in bad_users])
+        await safe_send_user(ctx.message.author, f"Naughty users: {resp}")
 
 
 async def setup(bot: SpellBot):  # pragma: no cover

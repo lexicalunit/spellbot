@@ -7,7 +7,10 @@ from unittest.mock import ANY, AsyncMock, MagicMock, Mock
 
 import discord
 import pytest
+import pytest_asyncio
 from discord.errors import DiscordException
+from pytest_mock import MockerFixture
+from spellbot import operations
 from spellbot.operations import (
     safe_add_role,
     safe_channel_reply,
@@ -282,6 +285,10 @@ class TestOperationsChannelReply:
 
 @pytest.mark.asyncio
 class TestOperationsSendUser:
+    @pytest_asyncio.fixture(autouse=True)
+    def mock_bad_users(self, mocker: MockerFixture) -> set[int]:
+        return mocker.patch.object(operations, "bad_users", set())
+
     async def test_happy_path(self):
         user = MagicMock(spec=Union[discord.User, discord.Member])
         user.send = AsyncMock()
@@ -293,16 +300,18 @@ class TestOperationsSendUser:
         user = Mock()
         del user.send
         user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.id = 1234
         await safe_send_user(user, "content")
-        assert "no send method on user user#1234" in caplog.text
+        assert "no send method on user user#1234 1234" in caplog.text
 
     async def test_forbidden(self, caplog: pytest.LogCaptureFixture):
         caplog.set_level(logging.INFO)
         user = MagicMock(spec=Union[discord.User, discord.Member])
         user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.id = 1234
         user.send = AsyncMock(side_effect=discord.errors.Forbidden(MagicMock(), "msg"))
         await safe_send_user(user, "content")
-        assert "not allowed to send message to user#1234" in caplog.text
+        assert "not allowed to send message to user#1234 1234" in caplog.text
 
     async def test_cant_send(self, caplog: pytest.LogCaptureFixture):
         caplog.set_level(logging.INFO)
@@ -313,7 +322,7 @@ class TestOperationsSendUser:
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.send = AsyncMock(side_effect=exception)
         await safe_send_user(user, "content")
-        assert "not allowed to send message to user#1234" in caplog.text
+        assert "not allowed to send message to user#1234 1234" in caplog.text
 
         # user should now be on the "bad users" list
         user.send = AsyncMock(side_effect=exception)
@@ -324,17 +333,19 @@ class TestOperationsSendUser:
         exception = discord.errors.HTTPException(MagicMock(), "msg")
         user = MagicMock(spec=Union[discord.User, discord.Member])
         user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.id = 1234
         user.send = AsyncMock(side_effect=exception)
         await safe_send_user(user, "content")
-        assert "failed to send message to user user#1234" in caplog.text
+        assert "failed to send message to user user#1234 1234" in caplog.text
 
     async def test_server_error(self, caplog: pytest.LogCaptureFixture):
         exception = discord.errors.DiscordServerError(MagicMock(), "msg")
         user = MagicMock(spec=Union[discord.User, discord.Member])
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.send = AsyncMock(side_effect=exception)
+        user.id = 1234
         await safe_send_user(user, "content")
-        assert "discord server error sending to user user#1234" in caplog.text
+        assert "discord server error sending to user user#1234 1234" in caplog.text
 
     # TODO
     # async def test_invalid_argument(self, caplog: pytest.LogCaptureFixture):

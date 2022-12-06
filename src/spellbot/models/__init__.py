@@ -16,7 +16,7 @@ def import_models():  # pragma: no cover
                     globals()[name] = _object
 
 
-from .base import Base, create_all, literalquery, now, reverse_all  # isort:skip
+from .base import Base, create_all, literalquery, now, reverse_all  # noqa: I001
 
 from .award import GuildAward, UserAward
 from .block import Block

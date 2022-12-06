@@ -42,8 +42,8 @@ safe_licenses = [
   "MIT License",
   "MIT",
   "Mozilla Public License 2.0 (MPL 2.0)",
-  "Public Domain",
   "Python Software Foundation License",
+  "The Unlicense (Unlicense)",
 ]
 
 [tool.pytest.ini_options]
