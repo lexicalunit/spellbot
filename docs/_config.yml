@@ -41,6 +41,7 @@ social-network-links:
   email: "spellbot@lexicalunit.com"
   github: lexicalunit
   twitter: SpellBotIO
+  mastodon: mstdn.ca/@lexicalunit
 #  facebook: deanattali
 #  patreon: DeanAttali
 #  youtube: c/daattali
@@ -57,7 +58,6 @@ social-network-links:
 #  yelp: yourname
 #  telegram: yourname
 #  calendly: yourname
-#  mastodon: instance.url/@username
 #  ORCID: your ORCID ID
 #  google-scholar: your google scholar
 
