@@ -454,18 +454,19 @@ async def safe_send_user(
         span.set_tags({"user_xid": str(user_xid)})
 
     if user_xid in bad_users:
-        return log_warning("not sending to bad user %(user)s", user=user)
+        return log_warning("not sending to bad user %(user)s %(xid)s", user=user, xid=user.id)
 
     if not hasattr(user, "send"):
-        return log_warning("no send method on user %(user)s", user=user)
+        return log_warning("no send method on user %(user)s %(xid)s", user=user, xid=user.id)
 
     try:
         await user.send(*args, **kwargs)
     except discord.errors.DiscordServerError as ex:
         add_span_error(ex)
         log_warning(
-            "discord server error sending to user %(user)s",
+            "discord server error sending to user %(user)s %(xid)s",
             user=user,
+            xid=user.id,
             exec_info=True,
         )
     except (discord.errors.Forbidden, discord.errors.HTTPException) as ex:
@@ -478,10 +479,15 @@ async def safe_send_user(
             # by flagging the user until the next time we restart.
             if user_xid is not None:
                 bad_users.add(user_xid)
-            return log_info("not allowed to send message to %(user)s", user=user)
+            return log_info(
+                "not allowed to send message to %(user)s %(xid)s",
+                user=user,
+                xid=user.id,
+            )
         log_warning(
-            "failed to send message to user %(user)s",
+            "failed to send message to user %(user)s %(xid)s",
             user=user,
+            xid=user.id,
             exec_info=True,
         )
 
