@@ -318,8 +318,8 @@ class TestOperationsSendUser:
         exception = discord.errors.HTTPException(MagicMock(), "msg")
         setattr(exception, "code", CANT_SEND_CODE)
         user = MagicMock(spec=Union[discord.User, discord.Member])
-        user.id = 1234
         user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.id = 1234
         user.send = AsyncMock(side_effect=exception)
         await safe_send_user(user, "content")
         assert "not allowed to send message to user#1234 1234" in caplog.text
@@ -342,19 +342,10 @@ class TestOperationsSendUser:
         exception = discord.errors.DiscordServerError(MagicMock(), "msg")
         user = MagicMock(spec=Union[discord.User, discord.Member])
         user.__str__ = lambda self: "user#1234"  # type: ignore
-        user.send = AsyncMock(side_effect=exception)
         user.id = 1234
+        user.send = AsyncMock(side_effect=exception)
         await safe_send_user(user, "content")
         assert "discord server error sending to user user#1234 1234" in caplog.text
-
-    # TODO
-    # async def test_invalid_argument(self, caplog: pytest.LogCaptureFixture):
-    #     exception = discord.errors.InvalidArgument(MagicMock(), "msg")
-    #     user = MagicMock(spec=Union[discord.User, discord.Member])
-    #     user.__str__ = lambda self: "user#1234"  # type: ignore
-    #     user.send = AsyncMock(side_effect=exception)
-    #     await safe_send_user(user, "content")
-    #     assert "could not send message to user user#1234" in caplog.text
 
 
 @pytest.mark.asyncio
