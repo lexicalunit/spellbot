@@ -27,4 +27,6 @@ COPY src /spellbot/src
 COPY LICENSE.md README.md pyproject.toml poetry.lock /spellbot/
 RUN pip install ./spellbot
 
+EXPOSE 80
+
 CMD ["supervisord"]
