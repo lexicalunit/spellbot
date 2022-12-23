@@ -40,7 +40,7 @@ class AwardsService:
                 )
                 .scalar()
             )
-            verified = True if verified else False  # because it could be None
+            verified = bool(verified)  # because it could be None
 
             user_award = (
                 DatabaseSession.query(UserAward)
