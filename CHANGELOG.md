@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds admin command `/forget_channel` to forget about deleted channels.
+
+### Changed
+
+- Changed `/channels` to list the Discord Channel IDs for channels listed.
+  These IDs can be used in the `/forget_channel` command to forget settings
+  for a channel. For example if the channel has been deleted.
+
 ## [v8.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v8.5.0) - 2022-12-06
 
 ### Changed

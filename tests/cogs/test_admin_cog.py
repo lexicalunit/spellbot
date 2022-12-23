@@ -310,15 +310,41 @@ class TestCogAdminChannels(InteractionMixin):
         assert self.last_send_message("embed") == {
             "color": self.settings.EMBED_COLOR,
             "description": (
-                f"• <#{channel1.xid}> — `auto_verify`\n"
-                f"• <#{channel2.xid}> — `unverified_only`\n"
-                f"• <#{channel3.xid}> — `verified_only`\n"
-                f"• <#{channel4.xid}> — `default_seats=2`\n"
+                f"• <#{channel1.xid}> ({channel1.xid}) — `auto_verify`\n"
+                f"• <#{channel2.xid}> ({channel2.xid}) — `unverified_only`\n"
+                f"• <#{channel3.xid}> ({channel3.xid}) — `verified_only`\n"
+                f"• <#{channel4.xid}> ({channel4.xid}) — `default_seats=2`\n"
             ),
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": f"Configuration for channels in {self.guild.name}",
             "type": "rich",
         }
+
+    async def test_forget_channel(self, cog: AdminCog, add_channel: Callable[..., Channel]):
+        channel = add_channel(auto_verify=True)
+
+        await self.run(cog.forget_channel, channel=str(channel.xid))
+        self.interaction.response.send_message.reset_mock()
+        await self.run(cog.channels)
+
+        assert self.last_send_message("embed") == {
+            "color": self.settings.EMBED_COLOR,
+            "description": (
+                "**All channels on this server have a default configuration.**\n\n"
+                "Use may use channel specific `/set` commands within a channel "
+                "to change that channel's configuration."
+            ),
+            "thumbnail": {"url": self.settings.ICO_URL},
+            "title": f"Configuration for channels in {self.guild.name}",
+            "type": "rich",
+        }
+
+    async def test_forget_channel_when_channel_invalid(self, cog: AdminCog, channel: Channel):
+        await self.run(cog.forget_channel, channel="foobar")
+        self.interaction.response.send_message.assert_called_once_with(
+            "Invalid ID.",
+            ephemeral=True,
+        )
 
     async def test_channels_when_no_non_default_channels(self, cog: AdminCog, channel: Channel):
         await self.run(cog.channels)
@@ -345,7 +371,7 @@ class TestCogAdminChannels(InteractionMixin):
             verified_only=True,
         )
         await self.run(cog.channels, page=page)
-        assert self.last_send_message("embed")["footer"]["text"] == f"page {page} of 2"
+        assert self.last_send_message("embed")["footer"]["text"] == f"page {page} of 3"
 
 
 @pytest.mark.asyncio

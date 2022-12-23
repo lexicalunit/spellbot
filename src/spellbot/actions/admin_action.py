@@ -84,7 +84,7 @@ class AdminAction(BaseAction):
                     (f"`{k}`" if isinstance(v, bool) and v else f"`{k}={v}`")
                     for k, v in channel_settings.items()
                 )
-                next_line = f"• <#{channel['xid']}> — {deets}\n"
+                next_line = f"• <#{channel['xid']}> ({channel['xid']}) — {deets}\n"
                 if len(description) + len(next_line) >= EMBED_DESCRIPTION_SIZE_LIMIT:
                     embed.description = description
                     embeds.append(embed)
@@ -176,6 +176,16 @@ class AdminAction(BaseAction):
         )
         embed.color = discord.Color(self.settings.EMBED_COLOR)
         return embed
+
+    async def forget_channel(self, channel_str: str) -> None:
+        try:
+            channel_xid = int(channel_str)
+        except ValueError:
+            await safe_send_channel(self.interaction, "Invalid ID.", ephemeral=True)
+            return
+
+        await self.services.channels.forget(channel_xid)
+        await safe_send_channel(self.interaction, "Done.", ephemeral=True)
 
     async def info(self, game_id: str) -> None:
         numeric_filter = filter(str.isdigit, game_id)

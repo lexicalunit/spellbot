@@ -29,6 +29,14 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.setup()
 
+    @app_commands.command(name="forget_channel", description="Forget settings for a channel.")
+    @app_commands.describe(channel="What is the Discord ID of the channel?")
+    @tracer.wrap(name="interaction", resource="forget_channel")
+    async def forget_channel(self, interaction: discord.Interaction, channel: str) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.forget_channel(channel)
+
     set_group = app_commands.Group(name="set", description="...")
 
     @set_group.command(

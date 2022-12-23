@@ -40,6 +40,10 @@ class ChannelsService:
         return channel.to_dict()
 
     @sync_to_async
+    def forget(self, xid: int) -> None:
+        DatabaseSession.query(Channel).filter(Channel.xid == xid).delete(synchronize_session=False)
+
+    @sync_to_async
     def select(self, xid: int) -> Optional[dict[str, Any]]:
         channel = DatabaseSession.query(Channel).filter(Channel.xid == xid).one_or_none()
         return channel.to_dict() if channel else None

@@ -12,7 +12,6 @@ import pytest_asyncio
 from aiohttp.test_utils import TestClient
 from click.testing import CliRunner
 from discord.ext import commands
-
 from spellbot import SpellBot
 from spellbot.client import build_bot
 from spellbot.database import (
@@ -24,6 +23,7 @@ from spellbot.database import (
 from spellbot.models import Channel, Game, Guild
 from spellbot.settings import Settings
 from spellbot.web import build_web_app
+
 from tests.factories import (
     BlockFactory,
     ChannelFactory,
