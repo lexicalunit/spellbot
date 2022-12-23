@@ -145,7 +145,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [datadog-badge]: https://img.shields.io/badge/monitors-datadog-blueviolet.svg
 [datadog]: https://app.datadoghq.com/apm/home
 [discord-invite]: https://discord.gg/HuzTQYpYH4
-[discord-py-badge]: https://img.shields.io/badge/discord.py-2.0.1-blue
+[discord-py-badge]: https://img.shields.io/badge/discord.py-2.1.0-blue
 [discord-py]: https://github.com/Rapptz/discord.py
 [docker-badge]: https://img.shields.io/docker/pulls/lexicalunit/spellbot.svg
 [docker-hub]: https://hub.docker.com/r/lexicalunit/spellbot
@@ -165,7 +165,6 @@ Any usage of SpellBot implies that you accept the following policies.
 [pypi]: https://pypi.org/project/spellbot/
 [python-badge]: https://img.shields.io/badge/python-3.10-blue.svg
 [python]: https://www.python.org/
-[security]: https://github.com/lexicalunit/spellbot/security
 [slash]: https://discord.com/blog/slash-commands-are-here
 [spelltable]: https://spelltable.wizards.com/
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
