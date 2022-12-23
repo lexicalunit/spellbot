@@ -32,7 +32,7 @@ class SpellBot(AutoShardedBot):
         intents = discord.Intents().default()
         intents.members = True  # pylint: disable=E0237
         intents.message_content = True  # pylint: disable=E0237
-        logger.info(f"{intents.value=}")
+        logger.info("intents.value: %s", intents.value)
         super().__init__(
             command_prefix="!",
             help_command=None,
@@ -42,7 +42,6 @@ class SpellBot(AutoShardedBot):
         self.mock_games = mock_games
         self.create_connection = create_connection
         self.channel_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
-        self.event
 
     async def on_ready(self):
         logger.info("client ready")

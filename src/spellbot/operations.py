@@ -151,7 +151,7 @@ async def safe_update_embed(
             updated_message = await message.edit(*args, **kwargs)
         except discord.errors.NotFound:
             guild_xid = message.guild.id if message.guild else None
-            logger.warning(f"in guild {guild_xid}, unknown message {message.id}")
+            logger.warning("in guild %s, unknown message %s", guild_xid, message.id)
     return updated_message
 
 
@@ -345,7 +345,7 @@ async def safe_delete_channel(
             await channel.delete()  # type: ignore
             success = True
         except discord.errors.NotFound:
-            logger.warning(f"in guild {guild_xid}, unknown channel {channel_xid}")
+            logger.warning("in guild  %s, unknown channel %s", guild_xid, channel_xid)
     return success
 
 

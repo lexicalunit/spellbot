@@ -1,4 +1,4 @@
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments,too-many-locals,too-many-statements
 from __future__ import annotations
 
 import asyncio
@@ -96,8 +96,6 @@ def main(
 
     # When metrics are enabled, let's ensure that datadog-agent is running first...
     if not no_metrics():  # pragma: no cover
-        import logging
-
         logger = logging.root
         conn: Optional[socket] = None
         connected = False
@@ -112,7 +110,7 @@ def main(
                 logger.info("waiting for statsd server to finish initialization...")
                 time.sleep(5)
             except Exception as e:
-                logger.info(f"statsd connection error: {e}, retrying...")
+                logger.info("statsd connection error: %s, retrying...", str(e))
                 time.sleep(1)
             finally:
                 assert conn is not None

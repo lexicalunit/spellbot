@@ -1,3 +1,4 @@
+# pylint: disable=too-many-arguments
 from __future__ import annotations
 
 import logging
@@ -212,7 +213,9 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
+        manage_perms = discord.Permissions(
+            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+        )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
@@ -240,7 +243,9 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
+        manage_perms = discord.Permissions(
+            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+        )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
@@ -298,7 +303,9 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
+        manage_perms = discord.Permissions(
+            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+        )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"XXX-Game-SB{game.id}",
@@ -328,7 +335,9 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
+        manage_perms = discord.Permissions(
+            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+        )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"XXX-Game-SB{game.id}",
@@ -358,7 +367,9 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
+        manage_perms = discord.Permissions(
+            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+        )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
@@ -387,7 +398,9 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
+        manage_perms = discord.Permissions(
+            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+        )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
@@ -420,7 +433,9 @@ class TestTaskCleanupOldVoiceChannels:
         import spellbot.actions.tasks_action as mod
 
         mocker.patch.object(mod.settings, "VOICE_CLEANUP_BATCH", 0)
-        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
+        manage_perms = discord.Permissions(
+            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+        )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",

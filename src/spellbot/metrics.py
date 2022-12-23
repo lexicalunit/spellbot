@@ -106,13 +106,13 @@ def add_span_context(interaction: Any):  # pragma: no cover
         if user := getattr(interaction, "user", None):
             if user_id := getattr(user, "id", None):
                 span.set_tag("user_id", user_id)
-        for prop in {
+        for prop in (
             "application_id",
             "channel_id",
             "component_id",
             "data",
             "guild_id",
-        }:
+        ):
             if value := getattr(interaction, prop, None):
                 span.set_tag(prop, value)
 

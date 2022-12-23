@@ -46,7 +46,9 @@ class TestUtilsBotCanRole:
 
 class TestUtilsBotCanReplyTo:
     def test_happy_path(self):
-        send_permisions = discord.Permissions(discord.Permissions.send_messages.flag)
+        send_permisions = discord.Permissions(
+            discord.Permissions.send_messages.flag  # pylint: disable=no-member
+        )
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
         channel = MagicMock(spec=discord.TextChannel)
@@ -58,7 +60,9 @@ class TestUtilsBotCanReplyTo:
         assert bot_can_reply_to(message)
 
     def test_missing_guild(self):
-        send_permisions = discord.Permissions(discord.Permissions.send_messages.flag)
+        send_permisions = discord.Permissions(
+            discord.Permissions.send_messages.flag  # pylint: disable=no-member
+        )
         channel = MagicMock(spec=discord.TextChannel)
         channel.type = discord.ChannelType.text
         del channel.guild
@@ -83,7 +87,8 @@ class TestUtilsBotCanReplyTo:
 class TestUtilsBotCanRead:
     def test_happy_path(self):
         read_permisions = discord.Permissions(
-            discord.Permissions.read_messages.flag | discord.Permissions.read_message_history.flag,
+            discord.Permissions.read_messages.flag  # pylint: disable=no-member
+            | discord.Permissions.read_message_history.flag,  # pylint: disable=no-member
         )
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
@@ -95,7 +100,8 @@ class TestUtilsBotCanRead:
 
     def test_missing_channel_type(self):
         read_permisions = discord.Permissions(
-            discord.Permissions.read_messages.flag | discord.Permissions.read_message_history.flag,
+            discord.Permissions.read_messages.flag  # pylint: disable=no-member
+            | discord.Permissions.read_message_history.flag,  # pylint: disable=no-member
         )
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
@@ -129,7 +135,9 @@ class TestUtilsBotCanRead:
 
 class TestUtilsBotCanDeleteChannel:
     def test_happy_path(self):
-        del_permisions = discord.Permissions(discord.Permissions.manage_channels.flag)
+        del_permisions = discord.Permissions(
+            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+        )
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
         channel = MagicMock(spec=discord.TextChannel)
@@ -139,7 +147,9 @@ class TestUtilsBotCanDeleteChannel:
         assert bot_can_delete_channel(channel)
 
     def test_missing_channel_type(self):
-        del_permisions = discord.Permissions(discord.Permissions.manage_channels.flag)
+        del_permisions = discord.Permissions(
+            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+        )
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
         channel = MagicMock(spec=discord.TextChannel)
@@ -176,7 +186,9 @@ class TestUtilsIsAdmin:
         role.name = settings.ADMIN_ROLE
         guild = MagicMock(spec=discord.Guild)
         guild.owner_id = 2
-        admin_perms = discord.Permissions(discord.Permissions.administrator.flag)
+        admin_perms = discord.Permissions(
+            discord.Permissions.administrator.flag  # pylint: disable=no-member
+        )
         channel = MagicMock(spec=discord.TextChannel)
         channel.permissions_for = MagicMock(return_value=admin_perms)
         author = MagicMock()
@@ -281,7 +293,9 @@ class TestUtilsUserCanModerate:
         role.name = f"{settings.MOD_PREFIX}-whatever"
         guild = MagicMock(spec=discord.Guild)
         guild.owner_id = 2
-        admin_perms = discord.Permissions(discord.Permissions.administrator.flag)
+        admin_perms = discord.Permissions(
+            discord.Permissions.administrator.flag  # pylint: disable=no-member
+        )
         channel = MagicMock(spec=discord.TextChannel)
         channel.permissions_for = MagicMock(return_value=admin_perms)
         author = MagicMock()
