@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Changed `/channels` to list the Discord Channel IDs for channels listed.
   These IDs can be used in the `/forget_channel` command to forget settings
   for a channel. For example if the channel has been deleted.
+- Adds dependency on certifi rather directly (rather than thru requests).
+- Fixed a number of pylint reported issues.
+- Updates packaging and pylint versions.
+- Mark pylint codebase test as skipped rather than commenting it out.
 
 ## [v8.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v8.5.0) - 2022-12-06
 
