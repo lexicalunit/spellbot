@@ -65,7 +65,7 @@ class AdminCog(commands.Cog):
     async def channels(self, interaction: discord.Interaction, page: Optional[int] = 1) -> None:
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
-            assert page and page >= 1
+            page = page or 1
             await action.channels(page=page)
 
     @app_commands.command(name="awards", description="Setup player awards on your server.")
@@ -74,7 +74,7 @@ class AdminCog(commands.Cog):
     async def awards(self, interaction: discord.Interaction, page: Optional[int] = 1) -> None:
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
-            assert page and page >= 1
+            page = page or 1
             await action.awards(page=page)
 
     award_group = app_commands.Group(name="award", description="...")
