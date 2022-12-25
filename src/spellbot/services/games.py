@@ -407,7 +407,6 @@ class GamesService:
     @sync_to_async
     @tracer.wrap()
     def delete_games(self, game_ids: list[int]):
-        DatabaseSession.execute(
-            update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.utcnow()),
-        )
+        query = update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.utcnow())
+        DatabaseSession.execute(query)
         DatabaseSession.commit()

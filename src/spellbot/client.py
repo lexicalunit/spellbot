@@ -14,7 +14,7 @@ from expiringdict import ExpiringDict
 
 from .database import db_session_manager, initialize_connection
 from .metrics import setup_ignored_errors, setup_metrics
-from .services import ChannelsService, GuildsService, VerifiesService
+from .services import ChannelsService, GamesService, GuildsService, VerifiesService
 from .settings import Settings
 from .spelltable import generate_link
 from .utils import user_can_moderate
@@ -32,6 +32,7 @@ class SpellBot(AutoShardedBot):
         intents = discord.Intents().default()
         intents.members = True  # pylint: disable=E0237
         intents.message_content = True  # pylint: disable=E0237
+        intents.messages = True  # pylint: disable=E0237
         logger.info("intents.value: %s", intents.value)
         super().__init__(
             command_prefix="!",
@@ -114,6 +115,14 @@ class SpellBot(AutoShardedBot):
         async with db_session_manager():
             await self.handle_verification(message)
 
+    @tracer.wrap(name="interaction", resource="on_message_delete")
+    async def on_message_delete(self, message: discord.Message) -> None:
+        message_xid: Optional[int] = getattr(message, "id", None)
+        if not message_xid:
+            return
+        async with db_session_manager():
+            await self.handle_message_deleted(message)
+
     async def on_command_error(  # pylint: disable=arguments-differ
         self,
         context: Context[SpellBot],
@@ -143,6 +152,17 @@ class SpellBot(AutoShardedBot):
                 await message.delete()
             if not user_is_verified and channel_data["verified_only"]:
                 await message.delete()
+
+    @tracer.wrap()
+    async def handle_message_deleted(self, message: discord.Message):
+        games = GamesService()
+        data = await games.select_by_message_xid(message.id)
+        if not data:
+            return
+        game_id = data["id"]
+        logger.info("Game %s was deleted manually.", game_id)
+        if not data["started_at"]:  # someone deleted a pending game
+            await games.delete_games([game_id])
 
 
 def build_bot(mock_games: bool = False, create_connection: bool = True) -> SpellBot:
