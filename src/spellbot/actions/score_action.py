@@ -37,13 +37,35 @@ class ScoreAction(BaseAction):
         assert self.interaction.channel
         assert hasattr(self.interaction.channel, "name")
         channel_name = self.interaction.channel.name  # type: ignore
-        channel_id = self.interaction.channel.id
+        channel_xid = self.interaction.channel.id
 
         settings = Settings()
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name=f"Recent games played in {channel_name}")
-        link = f"{settings.API_BASE_URL}/g/{self.interaction.guild_id}/c/{channel_id}"
+        link = f"{settings.API_BASE_URL}/g/{self.interaction.guild_id}/c/{channel_xid}"
         embed.description = f"View [game history on spellbot.io]({link})."
+        embed.color = settings.EMBED_COLOR
+        await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
+
+    async def top(self, monthly: bool):
+        assert self.interaction.channel
+        assert hasattr(self.interaction.channel, "name")
+        channel_name = self.interaction.channel.name  # type: ignore
+        channel_xid = self.interaction.channel.id
+        guild_xid = self.interaction.guild_id
+
+        data = await self.services.plays.top_records(guild_xid, channel_xid, monthly)
+
+        settings = Settings()
+        embed = discord.Embed()
+        embed.set_thumbnail(url=settings.ICO_URL)
+        embed.title = f"Top players in #{channel_name} ({'this month' if monthly else 'all time'})"
+        description = ""
+        description += "Rank \xa0\xa0\xa0 Games \xa0\xa0\xa0 Player\n"
+        for rank, datum in enumerate(data):
+            user_xid, count = datum
+            description += f"{rank+1:\xa0>6}\xa0{count:\xa0>20}\xa0\xa0\xa0<@{user_xid}>\n"
+        embed.description = description
         embed.color = settings.EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)

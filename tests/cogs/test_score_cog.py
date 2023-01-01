@@ -118,3 +118,45 @@ class TestCogScore(InteractionMixin):
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
         }
+
+    async def test_top(
+        self,
+        cog: ScoreCog,
+        channel: Channel,
+        add_user: Callable[..., User],
+    ) -> None:
+        user1 = add_user()
+        for _ in range(5):
+            game = self.factories.game.create(guild_xid=self.guild.xid, channel_xid=channel.xid)
+            self.factories.play.create(user_xid=user1.xid, game_id=game.id)
+
+        user2 = add_user()
+        for _ in range(10):
+            game = self.factories.game.create(guild_xid=self.guild.xid, channel_xid=channel.xid)
+            self.factories.play.create(user_xid=user2.xid, game_id=game.id)
+
+        user3 = add_user()
+        for _ in range(15):
+            game = self.factories.game.create(guild_xid=self.guild.xid, channel_xid=channel.xid)
+            self.factories.play.create(user_xid=user3.xid, game_id=game.id)
+
+        await self.run(cog.top, monthly=False)
+        assert self.last_send_message("embed") == {
+            "title": f"Top players in #{channel.name} (all time)",
+            "color": self.settings.EMBED_COLOR,
+            "description": (
+                "Rank \xa0\xa0\xa0 Games \xa0\xa0\xa0 Player\n"
+                f"{1:\xa0>6}\xa0{15:\xa0>20}\xa0\xa0\xa0<@{user3.xid}>\n"
+                f"{2:\xa0>6}\xa0{10:\xa0>20}\xa0\xa0\xa0<@{user2.xid}>\n"
+                f"{3:\xa0>6}\xa0{5:\xa0>20}\xa0\xa0\xa0<@{user1.xid}>\n"
+            ),
+            "thumbnail": {"url": self.settings.ICO_URL},
+            "type": "rich",
+        }
+
+        self.interaction.response.send_message.reset_mock()
+        await self.run(cog.top)
+        assert (
+            self.last_send_message("embed")["title"]
+            == f"Top players in #{channel.name} (this month)"
+        )

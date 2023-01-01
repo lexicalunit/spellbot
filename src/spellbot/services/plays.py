@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import datetime
 from typing import Any, Optional
 
 from asgiref.sync import sync_to_async
 from dateutil import tz
-from sqlalchemy.sql.expression import and_, text
+from sqlalchemy.sql.expression import and_, extract, func, text
 
 from ..database import DatabaseSession
 from ..models import Channel, Game, GameFormat, Guild, Play
@@ -224,3 +225,28 @@ class PlaysService:
             for row in rows
         ]
         return decomposed(combined_data)
+
+    @sync_to_async()
+    def top_records(
+        self,
+        guild_xid: int,
+        channel_xid: int,
+        monthly: bool,
+    ) -> Optional[list[dict[str, Any]]]:
+        filters = [
+            Play.game_id == Game.id,
+            Game.guild_xid == guild_xid,
+            Game.channel_xid == channel_xid,
+        ]
+        if monthly:
+            today = datetime.date.today()
+            filters.append(extract("year", Game.started_at) == today.year)
+            filters.append(extract("month", Game.started_at) == today.month)
+        result = (
+            DatabaseSession.query(Play.user_xid, func.count(Play.game_id).label("count"))
+            .filter(*filters)
+            .group_by(Play.user_xid)
+            .order_by(text("count DESC"))
+            .limit(10)
+        )
+        return result.all()
