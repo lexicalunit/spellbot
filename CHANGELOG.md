@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a `/top` command that gives you a top 10 list of players in a channel.
+
+### Changed
+
+- Updated all dependencies.
+
 ## [v8.7.0](https://github.com/lexicalunit/spellbot/releases/tag/v8.7.0) - 2022-12-24
 
 ### Added
