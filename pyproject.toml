@@ -78,7 +78,7 @@ version = "8.8.0"
 [tool.poetry.dependencies]
 Babel = "^2.11.0"
 PyYAML = "^6.0"
-SQLAlchemy = "^1.4.44"
+SQLAlchemy = ">=1.4.44,<3.0.0"
 SQLAlchemy-Utils = "^0.39.0"
 aiohttp = "^3.8.1"
 aiohttp-jinja2 = "^1.5"
