@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 from asgiref.sync import sync_to_async
 from dateutil import tz
+from dateutil.relativedelta import relativedelta
 from sqlalchemy.sql.expression import and_, extract, func, text
 
 from ..database import DatabaseSession
@@ -232,6 +233,7 @@ class PlaysService:
         guild_xid: int,
         channel_xid: int,
         monthly: bool,
+        ago: int,
     ) -> Optional[list[dict[str, Any]]]:
         filters = [
             Play.game_id == Game.id,
@@ -239,9 +241,9 @@ class PlaysService:
             Game.channel_xid == channel_xid,
         ]
         if monthly:
-            today = datetime.date.today()
-            filters.append(extract("year", Game.started_at) == today.year)
-            filters.append(extract("month", Game.started_at) == today.month)
+            target = datetime.date.today() + relativedelta(months=-ago)
+            filters.append(extract("year", Game.started_at) == target.year)
+            filters.append(extract("month", Game.started_at) == target.month)
         result = (
             DatabaseSession.query(Play.user_xid, func.count(Play.game_id).label("count"))
             .filter(*filters)

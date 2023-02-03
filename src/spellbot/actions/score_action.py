@@ -48,19 +48,23 @@ class ScoreAction(BaseAction):
         embed.color = settings.EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
-    async def top(self, monthly: bool):
+    async def top(self, monthly: bool, ago: int):
+        if not monthly:
+            ago = 0  # "months ago" doesn't make sense for "all time" range
+
         assert self.interaction.channel
         assert hasattr(self.interaction.channel, "name")
         channel_name = self.interaction.channel.name  # type: ignore
         channel_xid = self.interaction.channel.id
         guild_xid = self.interaction.guild_id
 
-        data = await self.services.plays.top_records(guild_xid, channel_xid, monthly)
+        data = await self.services.plays.top_records(guild_xid, channel_xid, monthly, ago)
 
         settings = Settings()
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
-        embed.title = f"Top players in #{channel_name} ({'this month' if monthly else 'all time'})"
+        range = f"{ago} months ago" if ago else "this month" if monthly else "all time"
+        embed.title = f"Top players in #{channel_name} ({range})"
         description = ""
         description += "Rank \xa0\xa0\xa0 Games \xa0\xa0\xa0 Player\n"
         for rank, datum in enumerate(data):

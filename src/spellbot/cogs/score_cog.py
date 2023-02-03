@@ -46,11 +46,17 @@ class ScoreCog(commands.Cog):
 
     @app_commands.command(name="top", description="View the top players in this channel.")
     @app_commands.describe(monthly="Ranks for this month only?")
+    @app_commands.describe(ago="How many months ago?")
     @tracer.wrap(name="interaction", resource="top")
-    async def top(self, interaction: discord.Interaction, monthly: bool = True) -> None:
+    async def top(
+        self,
+        interaction: discord.Interaction,
+        monthly: bool = True,
+        ago: int = 0,
+    ) -> None:
         add_span_context(interaction)
         async with ScoreAction.create(self.bot, interaction) as action:
-            await action.top(monthly)
+            await action.top(monthly, ago)
 
 
 async def setup(bot: SpellBot):  # pragma: no cover
