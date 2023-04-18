@@ -365,6 +365,7 @@ class TestOperationsAddRole:
         guild.id = 201
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
+        guild.me.top_role = role
         guild.roles = [role]
         await safe_add_role(member, guild, "role")
         member.add_roles.assert_called_once_with(role)
@@ -395,6 +396,7 @@ class TestOperationsAddRole:
         guild.id = 201
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
+        guild.me.top_role = role
         guild.roles = [role]
         await safe_add_role(member, guild, "role", remove=True)
         member.remove_roles.assert_called_once_with(role)
@@ -412,6 +414,7 @@ class TestOperationsAddRole:
         guild.id = 201
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
+        guild.me.top_role = role
         guild.get_member = MagicMock(return_value=member)
         guild.roles = [role]
         await safe_add_role(member, guild, "role")
@@ -429,7 +432,7 @@ class TestOperationsAddRole:
         await safe_add_role(user, guild, "role")
         guild.get_member.assert_called_once()
         assert (
-            f"warning: in guild {guild.id}, could not add role role:"
+            f"warning: in guild {guild.name} ({guild.id}), could not manage role role:"
             " could not find member: user#1234"
         ) in caplog.text
 
@@ -445,7 +448,8 @@ class TestOperationsAddRole:
         guild.roles = []
         await safe_add_role(member, guild, "role")
         assert (
-            f"warning: in guild {guild.id}, could not add role:" " could not find role: role"
+            f"warning: in guild {guild.name} ({guild.id}), could not manage role:"
+            " could not find role: role"
         ) in caplog.text
 
     async def test_no_permissions(self, caplog: pytest.LogCaptureFixture):
@@ -462,7 +466,29 @@ class TestOperationsAddRole:
         guild.roles = [role]
         await safe_add_role(member, guild, "role")
         assert (
-            f"warning: in guild {guild.id}, could not add role:" " no permissions to add role: role"
+            f"warning: in guild {guild.name} ({guild.id}), could not manage role:"
+            " no permissions to manage role: role"
+        ) in caplog.text
+
+    async def test_bad_role_hierarchy(self, caplog: pytest.LogCaptureFixture):
+        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member.id = 101
+        member.roles = []
+        member.add_roles = AsyncMock()
+        admin_role = MagicMock()
+        admin_role.name = "admin_role"
+        user_role = MagicMock()
+        user_role.name = "user_role"
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 201
+        guild.me = MagicMock()
+        guild.me.guild_permissions = self.role_perms
+        guild.me.top_role = user_role
+        guild.roles = [user_role, admin_role]
+        await safe_add_role(member, guild, "admin_role")
+        assert (
+            f"warning: in guild {guild.name} ({guild.id}), could not manage role:"
+            " no permissions to manage role: admin_role"
         ) in caplog.text
 
     async def test_forbidden(self, caplog: pytest.LogCaptureFixture):
@@ -478,10 +504,12 @@ class TestOperationsAddRole:
         guild.id = 201
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
+        guild.me.top_role = role
         guild.roles = [role]
         await safe_add_role(member, guild, "role")
         assert (
-            f"warning: in guild {guild.id}," f" could not add role to member user#1234: {exception}"
+            f"warning: in guild {guild.name} ({guild.id}),"
+            f" could not add role to member user#1234: {exception}"
         ) in caplog.text
 
 

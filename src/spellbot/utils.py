@@ -65,12 +65,19 @@ def bot_can_reply_to(message: discord.Message) -> bool:
     return True
 
 
-def bot_can_role(guild: discord.Guild) -> bool:
+def bot_can_role(guild: discord.Guild, role: Optional[discord.Role] = None) -> bool:
     if not guild.me:
         return False
     perms = guild.me.guild_permissions
-    for req in ("manage_roles",):
-        if not hasattr(perms, req) or not getattr(perms, req):
+    req = "manage_roles"
+    if not hasattr(perms, req) or not getattr(perms, req):
+        return False
+    if role is not None:
+        try:
+            role_hierarchy = list(guild.roles)
+            if role_hierarchy.index(role) > role_hierarchy.index(guild.me.top_role):
+                return False
+        except ValueError:
             return False
     return True
 

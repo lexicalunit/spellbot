@@ -523,7 +523,8 @@ async def safe_add_role(
         )
         if not member or not hasattr(member, "roles"):
             logger.warning(
-                "warning: in guild %s, could not add role %s: could not find member: %s",
+                "warning: in guild %s (%s), could not manage role %s: could not find member: %s",
+                guild.name,
                 guild.id,
                 str(role),
                 str(user_or_member),
@@ -532,14 +533,19 @@ async def safe_add_role(
         discord_role = discord.utils.find(lambda m: m.name == role, guild.roles)
         if not discord_role:
             logger.warning(
-                "warning: in guild %s, could not add role: could not find role: %s",
+                "warning: in guild %s (%s), could not manage role: could not find role: %s",
+                guild.name,
                 guild.id,
                 str(role),
             )
             return
-        if not bot_can_role(guild):
+        if not bot_can_role(guild, discord_role):
             logger.warning(
-                "warning: in guild %s, could not add role: no permissions to add role: %s",
+                (
+                    "warning: in guild %s (%s), could not manage role:"
+                    " no permissions to manage role: %s"
+                ),
+                guild.name,
                 guild.id,
                 str(role),
             )
@@ -554,7 +560,8 @@ async def safe_add_role(
     ) as ex:
         add_span_error(ex)
         logger.exception(
-            "warning: in guild %s, could not add role to member %s: %s",
+            "warning: in guild %s (%s), could not add role to member %s: %s",
+            guild.name,
             guild.id,
             str(user_or_member),
             ex,
