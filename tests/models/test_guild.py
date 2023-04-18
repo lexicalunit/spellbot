@@ -19,6 +19,12 @@ class TestModelGuild:
             "motd": guild.motd,
             "show_links": guild.show_links,
             "voice_create": guild.voice_create,
-            "channels": [channel1.to_dict(), channel2.to_dict()],
-            "awards": [award1.to_dict(), award2.to_dict()],
+            "channels": sorted(
+                [channel1.to_dict(), channel2.to_dict()],
+                key=lambda c: c["xid"],
+            ),
+            "awards": sorted(
+                [award1.to_dict(), award2.to_dict()],
+                key=lambda c: c["id"],
+            ),
         }

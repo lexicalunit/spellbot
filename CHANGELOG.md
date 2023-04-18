@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Checks role hierarchy before attempting to manage roles.
+
 ## [v8.9.0](https://github.com/lexicalunit/spellbot/releases/tag/v8.9.0) - 2023-02-02
 
 ### Added

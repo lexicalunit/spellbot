@@ -127,6 +127,7 @@ def build_client_user() -> discord.User:
     client_user.id = CLIENT_USER_ID
     client_user.display_name = "SpellBot"
     client_user.mention = f"<@{client_user.id}>"
+    client_user.top_role = None
     return client_user
 
 
@@ -137,6 +138,7 @@ def build_author(offset: int = 1) -> discord.User:
     author.mention = f"<@{author.id}>"
     author.send = AsyncMock()
     author.roles = []
+    author.top_role = None
     return author
 
 

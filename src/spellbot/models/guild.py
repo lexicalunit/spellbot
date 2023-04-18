@@ -85,6 +85,12 @@ class Guild(Base):
             "motd": self.motd,
             "show_links": self.show_links,
             "voice_create": self.voice_create,
-            "channels": [channel.to_dict() for channel in self.channels],
-            "awards": [award.to_dict() for award in self.awards],
+            "channels": sorted(
+                [channel.to_dict() for channel in self.channels],
+                key=lambda c: c["xid"],
+            ),
+            "awards": sorted(
+                [award.to_dict() for award in self.awards],
+                key=lambda c: c["id"],
+            ),
         }
