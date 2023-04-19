@@ -359,12 +359,15 @@ class TestOperationsAddRole:
         member.id = 101
         member.roles = []
         member.add_roles = AsyncMock()
-        role = MagicMock()
-        role.name = "role"
         guild = MagicMock(spec=discord.Guild)
         guild.id = 201
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
+        role = discord.Role(
+            guild=guild,
+            state=MagicMock(),
+            data={"id": 2, "name": "role"},  # type: ignore
+        )
         guild.me.top_role = role
         guild.roles = [role]
         await safe_add_role(member, guild, "role")
@@ -375,12 +378,15 @@ class TestOperationsAddRole:
         member.id = 101
         member.roles = []
         member.add_roles = AsyncMock()
-        role = MagicMock()
-        role.name = "@everyone"
         guild = MagicMock(spec=discord.Guild)
         guild.id = 201
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
+        role = discord.Role(
+            guild=guild,
+            state=MagicMock(),
+            data={"id": 1, "name": "@everyone"},  # type: ignore
+        )
         guild.roles = [role]
         await safe_add_role(member, guild, "@everyone")
         member.add_roles.assert_not_called()
@@ -390,12 +396,15 @@ class TestOperationsAddRole:
         member.id = 101
         member.roles = []
         member.remove_roles = AsyncMock()
-        role = MagicMock()
-        role.name = "role"
         guild = MagicMock(spec=discord.Guild)
         guild.id = 201
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
+        role = discord.Role(
+            guild=guild,
+            state=MagicMock(),
+            data={"id": 2, "name": "role"},  # type: ignore
+        )
         guild.me.top_role = role
         guild.roles = [role]
         await safe_add_role(member, guild, "role", remove=True)
@@ -408,12 +417,15 @@ class TestOperationsAddRole:
         member.id = user.id
         member.roles = []
         member.add_roles = AsyncMock()
-        role = MagicMock()
-        role.name = "role"
         guild = MagicMock(spec=discord.Guild)
         guild.id = 201
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
+        role = discord.Role(
+            guild=guild,
+            state=MagicMock(),
+            data={"id": 2, "name": "role"},  # type: ignore
+        )
         guild.me.top_role = role
         guild.get_member = MagicMock(return_value=member)
         guild.roles = [role]
@@ -457,12 +469,15 @@ class TestOperationsAddRole:
         member.id = 101
         member.roles = []
         member.add_roles = AsyncMock()
-        role = MagicMock()
-        role.name = "role"
         guild = MagicMock(spec=discord.Guild)
         guild.id = 201
         guild.me = MagicMock()
         guild.me.guild_permissions = discord.Permissions()
+        role = discord.Role(
+            guild=guild,
+            state=MagicMock(),
+            data={"id": 2, "name": "role"},  # type: ignore
+        )
         guild.roles = [role]
         await safe_add_role(member, guild, "role")
         assert (
@@ -475,14 +490,20 @@ class TestOperationsAddRole:
         member.id = 101
         member.roles = []
         member.add_roles = AsyncMock()
-        admin_role = MagicMock()
-        admin_role.name = "admin_role"
-        user_role = MagicMock()
-        user_role.name = "user_role"
         guild = MagicMock(spec=discord.Guild)
         guild.id = 201
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
+        admin_role = discord.Role(
+            guild=guild,
+            state=MagicMock(),
+            data={"id": 3, "name": "admin_role"},  # type: ignore
+        )
+        user_role = discord.Role(
+            guild=guild,
+            state=MagicMock(),
+            data={"id": 4, "name": "user_role"},  # type: ignore
+        )
         guild.me.top_role = user_role
         guild.roles = [user_role, admin_role]
         await safe_add_role(member, guild, "admin_role")
@@ -498,12 +519,15 @@ class TestOperationsAddRole:
         member.__str__ = lambda self: "user#1234"  # type: ignore
         exception = discord.errors.Forbidden(MagicMock(), "msg")
         member.add_roles = AsyncMock(side_effect=exception)
-        role = MagicMock()
-        role.name = "role"
         guild = MagicMock(spec=discord.Guild)
         guild.id = 201
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
+        role = discord.Role(
+            guild=guild,
+            state=MagicMock(),
+            data={"id": 2, "name": "role"},  # type: ignore
+        )
         guild.me.top_role = role
         guild.roles = [role]
         await safe_add_role(member, guild, "role")

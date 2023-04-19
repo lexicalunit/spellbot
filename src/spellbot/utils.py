@@ -72,13 +72,8 @@ def bot_can_role(guild: discord.Guild, role: Optional[discord.Role] = None) -> b
     req = "manage_roles"
     if not hasattr(perms, req) or not getattr(perms, req):
         return False
-    if role is not None:
-        try:
-            role_hierarchy = list(guild.roles)
-            if role_hierarchy.index(role) > role_hierarchy.index(guild.me.top_role):
-                return False
-        except ValueError:
-            return False
+    if role is not None and role > guild.me.top_role:
+        return False
     return True
 
 
