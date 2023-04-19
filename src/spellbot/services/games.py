@@ -8,6 +8,7 @@ from asgiref.sync import sync_to_async
 from ddtrace import tracer
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import and_, asc, column, or_, select
 from sqlalchemy.sql.functions import count
 
@@ -144,14 +145,14 @@ class GamesService:
         required_seats = 1 + len(friends)
         inner = (
             select(
-                [
-                    Game,
-                    User.xid.label("users_xid"),
-                    count(User.xid).over(partition_by=Game.id).label("player_count"),
-                ],
+                Game,
+                User.xid.label("users_xid"),
+                count(User.xid)
+                .over(partition_by=Game.id)  # type: ignore .over()
+                .label("player_count"),
             )
             .join(User, isouter=True)
-            .filter(  # type: ignore
+            .filter(  # type: ignore .filter()
                 and_(
                     Game.guild_xid == guild_xid,
                     Game.channel_xid == channel_xid,
@@ -165,21 +166,17 @@ class GamesService:
             .order_by(asc(Game.updated_at))
             .alias("inner")
         )
-        outer = (
-            DatabaseSession.query(Game)
-            # Note: select_entity_from() is deprecated and may need to be replaced
-            #       with an altenative method eventually. See: https://docs.sqlalchemy.org
-            #       /en/latest/orm/query.html#sqlalchemy.orm.Query.select_entity_from
-            .select_entity_from(inner).filter(
-                or_(
-                    column("player_count") == 0,
-                    and_(
-                        column("player_count") > 0,
-                        column("player_count") <= seats - required_seats,
-                    ),
+        outer = aliased(Game, inner)
+        found = DatabaseSession.query(outer).filter(
+            or_(
+                column("player_count") == 0,
+                and_(
+                    column("player_count") > 0,
+                    column("player_count") <= seats - required_seats,
                 ),
-            )
+            ),
         )
+
         joiners = [author_xid, *friends]
         xids_blocked_by_joiners = [
             row.blocked_user_xid
@@ -187,7 +184,7 @@ class GamesService:
         ]
 
         game: Game
-        for game in outer.all():
+        for game in found.all():
             players = [player.xid for player in game.players]
             if any(xid in players for xid in xids_blocked_by_joiners):
                 continue  # a joiner has blocked one of the players
