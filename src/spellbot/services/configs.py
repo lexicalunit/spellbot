@@ -43,7 +43,7 @@ class ConfigsService:
                 Config.guild_xid == values["guild_xid"],
                 Config.user_xid == values["user_xid"],
             ),
-            set_=dict(power_level=upsert.excluded.power_level),
+            set_={"power_level": upsert.excluded.power_level},
         )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()

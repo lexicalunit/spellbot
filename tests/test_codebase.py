@@ -88,7 +88,7 @@ class TestCodebase:
         """Checks that pyproject.toml dependencies are sorted."""
         pyproject = toml.load("pyproject.toml")
 
-        dev_deps = list(pyproject["tool"]["poetry"]["dev-dependencies"].keys())
+        dev_deps = list(pyproject["tool"]["poetry"]["group"]["dev"]["dependencies"].keys())
         assert dev_deps == sorted(dev_deps)
 
         deps = list(pyproject["tool"]["poetry"]["dependencies"].keys())

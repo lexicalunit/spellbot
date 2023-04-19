@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: TestWebRecord.test_channel_record
   '''
   <!DOCTYPE html>
@@ -1712,7 +1713,7 @@
               <tr>
                   <td><a href="https://discordapp.com/channels/201/301/901">SB#1</a></td>
                   
-                      <td>December 31, 2019 at 4:00:00 PM PST</td>
+                      <td>December 31, 2019, 4:00:00 PM PST</td>
                   
                   <td><a href="https://discordapp.com/channels/201">guild</a></td>
                   <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
@@ -1728,7 +1729,7 @@
               <tr>
                   <td><a href="https://discordapp.com/channels/201/301/901">SB#1</a></td>
                   
-                      <td>December 31, 2019 at 4:00:00 PM PST</td>
+                      <td>December 31, 2019, 4:00:00 PM PST</td>
                   
                   <td><a href="https://discordapp.com/channels/201">guild</a></td>
                   <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
@@ -1744,7 +1745,7 @@
               <tr>
                   <td><a href="https://discordapp.com/channels/201/301/902">SB#2</a></td>
                   
-                      <td>December 31, 2019 at 4:00:00 PM PST</td>
+                      <td>December 31, 2019, 4:00:00 PM PST</td>
                   
                   <td><a href="https://discordapp.com/channels/201">guild</a></td>
                   <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
@@ -1760,7 +1761,7 @@
               <tr>
                   <td><a href="https://discordapp.com/channels/201/301/902">SB#2</a></td>
                   
-                      <td>December 31, 2019 at 4:00:00 PM PST</td>
+                      <td>December 31, 2019, 4:00:00 PM PST</td>
                   
                   <td><a href="https://discordapp.com/channels/201">guild</a></td>
                   <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
@@ -1776,7 +1777,7 @@
               <tr>
                   <td><a href="https://discordapp.com/channels/201/301/903">SB#3</a></td>
                   
-                      <td>December 31, 2019 at 4:00:00 PM PST</td>
+                      <td>December 31, 2019, 4:00:00 PM PST</td>
                   
                   <td><a href="https://discordapp.com/channels/201">guild</a></td>
                   <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
@@ -1792,7 +1793,7 @@
               <tr>
                   <td><a href="https://discordapp.com/channels/201/301/903">SB#3</a></td>
                   
-                      <td>December 31, 2019 at 4:00:00 PM PST</td>
+                      <td>December 31, 2019, 4:00:00 PM PST</td>
                   
                   <td><a href="https://discordapp.com/channels/201">guild</a></td>
                   <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
@@ -4413,7 +4414,7 @@
               <tr>
                   <td><a href="https://discordapp.com/channels/201/301/901">SB#1</a></td>
                   
-                      <td>December 31, 2019 at 4:00:00 PM PST</td>
+                      <td>December 31, 2019, 4:00:00 PM PST</td>
                   
                   <td><a href="https://discordapp.com/channels/201">guild</a></td>
                   <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
@@ -4458,7 +4459,7 @@
               <tr>
                   <td><a href="https://discordapp.com/channels/201/301/902">SB#2</a></td>
                   
-                      <td>December 31, 2019 at 4:00:00 PM PST</td>
+                      <td>December 31, 2019, 4:00:00 PM PST</td>
                   
                   <td><a href="https://discordapp.com/channels/201">guild</a></td>
                   <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>
@@ -4503,7 +4504,7 @@
               <tr>
                   <td><a href="https://discordapp.com/channels/201/301/903">SB#3</a></td>
                   
-                      <td>December 31, 2019 at 4:00:00 PM PST</td>
+                      <td>December 31, 2019, 4:00:00 PM PST</td>
                   
                   <td><a href="https://discordapp.com/channels/201">guild</a></td>
                   <td><a href="https://discordapp.com/channels/201/301">#channel</a></td>

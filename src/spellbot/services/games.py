@@ -274,7 +274,13 @@ class GamesService:
         DatabaseSession.execute(
             insert(Play)
             .values(
-                [dict(user_xid=player_xid, game_id=game_id) for player_xid in player_xids],
+                [
+                    {
+                        "user_xid": player_xid,
+                        "game_id": game_id,
+                    }
+                    for player_xid in player_xids
+                ],
             )
             .on_conflict_do_nothing(),
         )
@@ -283,7 +289,13 @@ class GamesService:
         DatabaseSession.execute(
             insert(UserAward)
             .values(
-                [dict(guild_xid=guild_xid, user_xid=player_xid) for player_xid in player_xids],
+                [
+                    {
+                        "guild_xid": guild_xid,
+                        "user_xid": player_xid,
+                    }
+                    for player_xid in player_xids
+                ],
             )
             .on_conflict_do_nothing(),
         )
@@ -379,7 +391,7 @@ class GamesService:
                 Play.user_xid == values["user_xid"],
                 Play.game_id == values["game_id"],
             ),
-            set_=dict(points=upsert.excluded.points),
+            set_={"points": upsert.excluded.points},
         )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()

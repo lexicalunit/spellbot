@@ -30,10 +30,10 @@ class GuildsService:
         upsert = upsert.on_conflict_do_update(
             index_elements=[Guild.xid],
             index_where=Guild.xid == values["xid"],
-            set_=dict(
-                name=upsert.excluded.name,
-                updated_at=upsert.excluded.updated_at,
-            ),
+            set_={
+                "name": upsert.excluded.name,
+                "updated_at": upsert.excluded.updated_at,
+            },
         )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()

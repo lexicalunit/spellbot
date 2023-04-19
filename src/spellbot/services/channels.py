@@ -28,10 +28,10 @@ class ChannelsService:
         upsert = upsert.on_conflict_do_update(
             index_elements=[Channel.xid],
             index_where=Channel.xid == values["xid"],
-            set_=dict(
-                name=upsert.excluded.name,
-                updated_at=upsert.excluded.updated_at,
-            ),
+            set_={
+                "name": upsert.excluded.name,
+                "updated_at": upsert.excluded.updated_at,
+            },
         )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
