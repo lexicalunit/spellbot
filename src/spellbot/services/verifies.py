@@ -37,7 +37,7 @@ class VerifiesService:
                     Verify.guild_xid == values["guild_xid"],
                     Verify.user_xid == values["user_xid"],
                 ),
-                set_=dict(verified=upsert.excluded.verified),
+                set_={"verified": upsert.excluded.verified},
             )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
