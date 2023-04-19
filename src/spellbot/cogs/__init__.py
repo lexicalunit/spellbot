@@ -45,7 +45,6 @@ async def load_all_cogs(bot: AutoShardedBot) -> AutoShardedBot:
     # iterate through the modules in the current package
     package_dir = Path(__file__).resolve().parent
     for info in iter_modules([str(package_dir)]):
-
         # import the module and iterate through its attributes
         module = import_module(f"{__name__}.{info.name}")
         for attribute_name in dir(module):  # pragma: no cover

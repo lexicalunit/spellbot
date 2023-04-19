@@ -63,8 +63,8 @@ class ScoreAction(BaseAction):
         settings = Settings()
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
-        range = f"{ago} months ago" if ago else "this month" if monthly else "all time"
-        embed.title = f"Top players in #{channel_name} ({range})"
+        range_s = f"{ago} months ago" if ago else "this month" if monthly else "all time"
+        embed.title = f"Top players in #{channel_name} ({range_s})"
         description = ""
         description += "Rank \xa0\xa0\xa0 Games \xa0\xa0\xa0 Player\n"
         for rank, datum in enumerate(data):

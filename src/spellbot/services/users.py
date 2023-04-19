@@ -29,10 +29,10 @@ class UsersService:
         upsert = upsert.on_conflict_do_update(
             index_elements=[User.xid],
             index_where=User.xid == values["xid"],
-            set_=dict(
-                name=upsert.excluded.name,
-                updated_at=upsert.excluded.updated_at,
-            ),
+            set_={
+                "name": upsert.excluded.name,
+                "updated_at": upsert.excluded.updated_at,
+            },
         )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
@@ -57,10 +57,10 @@ class UsersService:
         upsert = upsert.on_conflict_do_update(
             index_elements=[User.xid],
             index_where=User.xid == values["xid"],
-            set_=dict(
-                updated_at=upsert.excluded.updated_at,
-                banned=upsert.excluded.banned,
-            ),
+            set_={
+                "updated_at": upsert.excluded.updated_at,
+                "banned": upsert.excluded.banned,
+            },
         )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
@@ -141,7 +141,7 @@ class UsersService:
                     Watch.guild_xid == values["guild_xid"],
                     Watch.user_xid == values["user_xid"],
                 ),
-                set_=dict(note=upsert.excluded.note),
+                set_={"note": upsert.excluded.note},
             )
         else:
             upsert = upsert.on_conflict_do_nothing()
