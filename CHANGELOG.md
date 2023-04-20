@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed issue with command description length being over 100 characters.
+
 ## [v8.10.0](https://github.com/lexicalunit/spellbot/releases/tag/v8.10.0) - 2023-04-19
 
 ### Added
