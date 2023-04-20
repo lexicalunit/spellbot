@@ -18,6 +18,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
     services:
       postgres:
         image: postgres:12.6
@@ -35,16 +39,11 @@ jobs:
         database-url: ["postgresql://postgres:postgres@localhost:5432/postgres"]
 
     steps:
-    - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.7.0
-      with:
-        access_token: ${{ github.token }}
-
     - name: Checkout Source
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -65,7 +64,7 @@ jobs:
         DATABASE_URL: ${{ matrix.database-url }}
 
     - name: Send Reports to Codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v3
       env:
         PYTHON: ${{ matrix.python-version }}
         DB_URL: ${{ matrix.database-url }}
