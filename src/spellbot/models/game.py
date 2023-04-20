@@ -223,11 +223,32 @@ class Game(Base):
                 )
             elif self.channel.show_points:
                 description += "\n\nWhen your game is over use the drop down to report your points."
+        placeholders = self.placeholders
         if self.guild.motd:
-            description += f"\n\n{self.guild.motd}"
+            description += f"\n\n{self.apply_placeholders(placeholders, self.guild.motd)}"
         if self.channel.motd:
-            description += f"\n\n{self.channel.motd}"
+            description += f"\n\n{self.apply_placeholders(placeholders, self.channel.motd)}"
         return description
+
+    @property
+    def placeholders(self) -> dict[str, str]:
+        if self.started_at:
+            game_start = f"<t:{self.started_at_timestamp}>"
+        else:
+            game_start = "pending"
+        placeholders = {
+            "game_id": str(self.id),
+            "game_format": self.format_name,
+            "game_start": game_start,
+        }
+        for i, player in enumerate(self.players):
+            placeholders[f"player_name_{i+1}"] = player.name
+        return placeholders
+
+    def apply_placeholders(self, placeholders: dict[str, str], text: str) -> str:
+        for k, v in placeholders.items():
+            text = text.replace(f"${{{k}}}", v)
+        return text
 
     @property
     def embed_players(self) -> str:
@@ -266,10 +287,11 @@ class Game(Base):
 
     @property
     def format_name(self) -> str:
-        return GameFormat(self.format).name.replace("_", " ").title()
+        format = GameFormat(self.format)  # type: ignore
+        return format.name.replace("_", " ").title()
 
     def to_embed(self, dm: bool = False) -> discord.Embed:
-        settings = Settings(self.guild_xid)
+        settings = Settings(self.guild_xid)  # type: ignore
         embed = discord.Embed(title=self.embed_title)
         embed.set_thumbnail(url=settings.THUMB_URL)
         embed.description = self.embed_description(dm)

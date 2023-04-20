@@ -41,7 +41,10 @@ class AdminCog(commands.Cog):
 
     @set_group.command(
         name="motd",
-        description="Set your server's message of the day. Leave blank to unset.",
+        description=(
+            "Set your server's message of the day. Leave blank to unset. Supported placeholders:"
+            " ${game_id}, ${game_format}, ${game_start}, ${player_name_1}, ..., ${player_name_N}"
+        ),
     )
     @app_commands.describe(message="Message content")
     @tracer.wrap(name="interaction", resource="set_motd")
@@ -52,7 +55,10 @@ class AdminCog(commands.Cog):
 
     @set_group.command(
         name="channel_motd",
-        description="Set this channel's message of the day. Leave blank to unset.",
+        description=(
+            "Set this channel's message of the day. Leave blank to unset. Supported placeholders:"
+            " ${game_id}, ${game_format}, ${game_start}, ${player_name_1}, ..., ${player_name_N}"
+        ),
     )
     @tracer.wrap(name="interaction", resource="set_channel_motd")
     async def channel_motd(

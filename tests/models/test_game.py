@@ -84,6 +84,31 @@ class TestModelGame:
             "type": "rich",
         }
 
+    def test_game_embed_placeholders(self, settings: Settings, factories: Factories):
+        guild = factories.guild.create(motd="player 1: ${player_name_1}")
+        channel = factories.channel.create(guild=guild, motd="game id: ${game_id}")
+        game = factories.game.create(guild=guild, channel=channel)
+        player = factories.user.create(game=game)
+
+        assert game.to_embed().to_dict() == {
+            "color": settings.EMBED_COLOR,
+            "description": (
+                "_A SpellTable link will be created when all players have joined._\n\n"
+                f"player 1: {player.name}\n\n"
+                f"game id: {game.id}"
+            ),
+            "fields": [
+                {"inline": False, "name": "Players", "value": f"<@{player.xid}>"},
+                {"inline": True, "name": "Format", "value": "Commander"},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {
+                "url": settings.THUMB_URL,
+            },
+            "title": "**Waiting for 3 more players to join...**",
+            "type": "rich",
+        }
+
     def test_game_embed_pending_with_power_level(
         self,
         settings: Settings,
