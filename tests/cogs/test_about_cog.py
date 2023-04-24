@@ -7,7 +7,7 @@ from spellbot.cogs import AboutCog
 from tests.mixins import InteractionMixin
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogAbout(InteractionMixin):
     async def test_about(self) -> None:
         cog = AboutCog(self.bot)

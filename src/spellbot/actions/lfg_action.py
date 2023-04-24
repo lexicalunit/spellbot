@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class LookingForGameAction(BaseAction):
-    def __init__(self, bot: SpellBot, interaction: discord.Interaction):
+    def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         super().__init__(bot, interaction)
         self.settings = Settings()
 
@@ -140,13 +140,14 @@ class LookingForGameAction(BaseAction):
         seats: Optional[int] = None,
         format: Optional[int] = None,
         message_xid: Optional[int] = None,
-    ):
+    ) -> None:
         if not self.guild or not self.channel:
             # Someone tried to lfg in a Discord thread rather than in the channel itself.
-            return await safe_send_user(
+            await safe_send_user(
                 self.interaction.user,
                 "Sorry, that command is not supported in this context.",
             )
+            return
 
         # True if user clicked on a Join Game button.
         # False if user issued a /lfg command in chat.
@@ -162,15 +163,17 @@ class LookingForGameAction(BaseAction):
                     self.interaction.user,
                     "You're already in a game.",
                 )
-            return await safe_followup_channel(self.interaction, "You're already in a game.")
+            await safe_followup_channel(self.interaction, "You're already in a game.")
+            return
 
         friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", actual_friends)))
 
         if len(friend_xids) + 1 > actual_seats:
-            return await safe_send_user(
+            await safe_send_user(
                 self.interaction.user,
                 "You mentioned too many players.",
             )
+            return
 
         friend_xids = await self.filter_friend_xids(friend_xids)
 
@@ -199,33 +202,35 @@ class LookingForGameAction(BaseAction):
             await self._handle_direct_messages()
 
     @tracer.wrap()
-    async def add_points(self, message: Message, points: int):
+    async def add_points(self, message: Message, points: int) -> None:
         found = await self.services.games.select_by_message_xid(message.id)
         if not found:
             return
 
         if not await self.services.games.players_included(self.interaction.user.id):
-            return await safe_send_user(
+            await safe_send_user(
                 self.interaction.user,
                 "You are not one of the players in this game.",
             )
+            return
 
         await self.services.games.add_points(self.interaction.user.id, points)
         embed = await self.services.games.to_embed()
         await safe_update_embed(message, embed=embed)
 
     @tracer.wrap()
-    async def create_game(self, players: str, format: Optional[int] = None):
+    async def create_game(self, players: str, format: Optional[int] = None) -> None:
         assert self.channel
 
         game_format = GameFormat(format or GameFormat.COMMANDER.value)  # type: ignore
         player_xids = list(map(int, re.findall(r"<@!?(\d+)>", players)))
         requested_seats = len(player_xids)
         if requested_seats < 2 or requested_seats > game_format.players:
-            return await safe_followup_channel(
+            await safe_followup_channel(
                 self.interaction,
                 f"You can't create a {game_format} game with {requested_seats} players.",
             )
+            return
 
         found_players: list[int] = []
         found_players = await self.ensure_users_exist(player_xids, exclude_self=False)
@@ -233,13 +238,14 @@ class LookingForGameAction(BaseAction):
         if len(found_players) != requested_seats:
             excluded_player_xids = set(player_xids) - set(found_players)
             excluded_players_s = ", ".join(f"<@{xid}>" for xid in excluded_player_xids)
-            return await safe_followup_channel(
+            await safe_followup_channel(
                 self.interaction,
                 (
                     "Some of the players you mentioned can not"
                     f" be added to a game: {excluded_players_s}"
                 ),
             )
+            return
 
         assert self.interaction.guild_id
         await self.services.games.upsert(
@@ -258,12 +264,12 @@ class LookingForGameAction(BaseAction):
         await self._handle_direct_messages()
 
     @tracer.wrap()
-    async def _handle_link_creation(self):
+    async def _handle_link_creation(self) -> None:
         spelltable_link = await self.bot.create_spelltable_link()
         await self.services.games.make_ready(spelltable_link)
 
     @tracer.wrap()
-    async def _handle_voice_creation(self, guild_xid: int):
+    async def _handle_voice_creation(self, guild_xid: int) -> None:
         if not await self.services.guilds.should_voice_create():
             return
 
@@ -348,7 +354,7 @@ class LookingForGameAction(BaseAction):
             await self._reply_found_embed()
 
     @tracer.wrap()
-    async def _reply_found_embed(self):
+    async def _reply_found_embed(self) -> None:
         embed = Embed()
         embed.set_thumbnail(url=self.settings.ICO_URL)
         embed.set_author(name="I found a game for you!")
@@ -359,7 +365,7 @@ class LookingForGameAction(BaseAction):
         await safe_followup_channel(self.interaction, embed=embed)
 
     @tracer.wrap()
-    async def _handle_direct_messages(self):
+    async def _handle_direct_messages(self) -> None:
         player_xids = await self.services.games.player_xids()
         embed = await self.services.games.to_embed(dm=True)
         failed_xids: list[int] = []
@@ -409,7 +415,7 @@ class LookingForGameAction(BaseAction):
         await self._handle_watched_players(player_xids)
 
     @tracer.wrap()
-    async def _handle_watched_players(self, player_xids: list[int]):
+    async def _handle_watched_players(self, player_xids: list[int]) -> None:
         """Notify moderators about watched players."""
         assert self.interaction.guild
         mod_role: Optional[discord.Role] = None

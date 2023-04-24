@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 @for_all_callbacks(app_commands.check(is_admin))
 @for_all_callbacks(app_commands.check(is_guild))
 class WatchCog(commands.Cog):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -26,10 +26,11 @@ class WatchCog(commands.Cog):
     )
     @app_commands.describe(page="If there are multiple pages of output, which one?")
     @tracer.wrap(name="interaction", resource="watched")
-    async def watched(self, interaction: discord.Interaction, page: Optional[int] = 1):
+    async def watched(self, interaction: discord.Interaction, page: Optional[int] = 1) -> None:
         add_span_context(interaction)
         async with WatchAction.create(self.bot, interaction) as action:
-            assert page and page >= 1
+            assert page
+            assert page >= 1
             await action.watched(page=page)
 
     @app_commands.command(
@@ -44,7 +45,7 @@ class WatchCog(commands.Cog):
         interaction: discord.Interaction,
         target: Union[discord.User, discord.Member],
         note: Optional[str] = None,
-    ):
+    ) -> None:
         add_span_context(interaction)
         async with WatchAction.create(self.bot, interaction) as action:
             await action.watch(target=target, note=note)
@@ -61,11 +62,11 @@ class WatchCog(commands.Cog):
         interaction: discord.Interaction,
         target: Optional[Union[discord.User, discord.Member]] = None,
         id: Optional[str] = None,
-    ):
+    ) -> None:
         add_span_context(interaction)
         async with WatchAction.create(self.bot, interaction) as action:
             await action.unwatch(target=target, id=id)
 
 
-async def setup(bot: SpellBot):  # pragma: no cover
+async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(WatchCog(bot), guild=bot.settings.GUILD_OBJECT)

@@ -13,13 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class SyncCog(commands.Cog):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
     @commands.command(name="sync")
     @commands.is_owner()
     @tracer.wrap(name="interaction", resource="sync")
-    async def sync(self, ctx: commands.Context[SpellBot]):
+    async def sync(self, ctx: commands.Context[SpellBot]) -> None:
         add_span_context(self.bot)
         try:
             await load_extensions(self.bot, do_sync=True)
@@ -32,5 +32,5 @@ class SyncCog(commands.Cog):
             await handle_exception(ex)
 
 
-async def setup(bot: SpellBot):  # pragma: no cover
+async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(SyncCog(bot), guild=bot.settings.GUILD_OBJECT)

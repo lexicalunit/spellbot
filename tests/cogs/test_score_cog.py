@@ -6,6 +6,7 @@ from typing import Callable, cast
 import discord
 import pytest
 import pytest_asyncio
+import pytz
 from freezegun.api import FrozenDateTimeFactory
 from spellbot import SpellBot
 from spellbot.cogs import ScoreCog
@@ -20,7 +21,7 @@ async def cog(bot: SpellBot) -> ScoreCog:
     return ScoreCog(bot)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogScore(InteractionMixin):
     async def test_score(self, cog: ScoreCog, user: User, channel: Channel) -> None:
         await self.run(cog.score)
@@ -128,7 +129,7 @@ class TestCogScore(InteractionMixin):
         add_user: Callable[..., User],
         freezer: FrozenDateTimeFactory,
     ) -> None:
-        now = datetime(2020, 1, 1)
+        now = datetime(2020, 1, 1, tzinfo=pytz.utc)
         freezer.move_to(now)
 
         user1 = add_user()

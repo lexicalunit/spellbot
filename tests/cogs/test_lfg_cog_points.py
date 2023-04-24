@@ -15,7 +15,7 @@ from __future__ import annotations
 # from tests.mocks import mock_discord_user, mock_operations
 
 
-# @pytest.mark.asyncio
+# @pytest.mark.asyncio()
 # class TestCogLookingForGamePoints:
 #     async def test_points(
 #         self,

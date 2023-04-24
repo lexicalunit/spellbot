@@ -50,7 +50,12 @@ def patch_discord() -> None:  # pragma: no cover
     interaction_callback = re.compile(r"/interactions/([0-9]+)/([^/]+)/callback")
     webhook_message = re.compile(r"/webhooks/([0-9]+)/([^/]+)/messages/@original")
 
-    def request(wrapped: Callable, instance, args, kwargs):  # type: ignore # pragma: no cover
+    def request(
+        wrapped: Callable,  # type: ignore # pragma: no cover
+        instance,  # noqa # type: ignore # pragma: no cover
+        args,  # noqa # type: ignore # pragma: no cover
+        kwargs,  # noqa # type: ignore # pragma: no cover
+    ) -> Any:
         route: Route = args[0]
         path: str = route.path
         additional_tags = {}
@@ -68,9 +73,9 @@ def patch_discord() -> None:  # pragma: no cover
             span.set_tags(
                 {
                     "base": route.BASE,
-                    "channel_id": str(route.channel_id),
+                    "channel_xid": str(route.channel_id),
                     "data": kwargs,
-                    "guild_id": str(route.guild_id),
+                    "guild_xid": str(route.guild_id),
                     "instance": instance,
                     "method": route.method,
                     **additional_tags,
@@ -99,7 +104,7 @@ def alert_error(
 
 
 @skip_if_no_metrics
-def add_span_context(interaction: Any):  # pragma: no cover
+def add_span_context(interaction: Any) -> None:  # pragma: no cover
     if span := tracer.current_span():
         if interaction_id := getattr(interaction, "id", None):
             span.set_tag("interaction_id", interaction_id)
@@ -118,7 +123,7 @@ def add_span_context(interaction: Any):  # pragma: no cover
 
 
 @skip_if_no_metrics
-def add_span_error(ex: BaseException):  # pragma: no cover
+def add_span_error(ex: BaseException) -> None:  # pragma: no cover
     if span := tracer.current_span():
         span.set_exc_info(ex.__class__, ex, getattr(ex, "__traceback__", None))
 
@@ -133,7 +138,7 @@ def add_span_error(ex: BaseException):  # pragma: no cover
 
 
 @skip_if_no_metrics
-def setup_ignored_errors(span: Span):  # pragma: no cover
+def setup_ignored_errors(span: Span) -> None:  # pragma: no cover
     span._ignore_exception(AdminOnlyError)  # type: ignore
     span._ignore_exception(GuildOnlyError)  # type: ignore
     span._ignore_exception(UserBannedError)  # type: ignore

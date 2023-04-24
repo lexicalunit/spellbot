@@ -6,7 +6,7 @@ from tests.fixtures import Factories
 
 
 class TestModelUser:
-    def test_user(self, factories: Factories):
+    def test_user(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         game1 = factories.game.create(guild=guild, channel=channel)

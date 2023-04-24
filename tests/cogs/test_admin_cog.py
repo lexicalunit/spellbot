@@ -7,6 +7,7 @@ import discord
 import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
+from spellbot.actions import admin_action
 from spellbot.client import SpellBot
 from spellbot.cogs import AdminCog
 from spellbot.database import DatabaseSession
@@ -16,7 +17,7 @@ from spellbot.views import SetupView
 
 from tests.fixtures import Factories
 from tests.mixins import InteractionMixin
-from tests.mocks import mock_discord_user
+from tests.mocks import mock_discord_user, mock_operations
 
 
 @pytest_asyncio.fixture
@@ -29,7 +30,7 @@ async def view(bot: SpellBot) -> SetupView:
     return SetupView(bot)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogAdminSetup(InteractionMixin):
     async def test_setup(self, cog: AdminCog) -> None:
         await self.run(cog.setup)
@@ -87,7 +88,7 @@ class TestCogAdminSetup(InteractionMixin):
         }
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestSetupView(InteractionMixin):
     @pytest_asyncio.fixture
     async def admin(self, factories: Factories, mocker: MockerFixture) -> discord.User:
@@ -108,7 +109,7 @@ class TestSetupView(InteractionMixin):
             await view.interaction_check(self.interaction)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogAdminMotd(InteractionMixin):
     async def test_set_motd(self, cog: AdminCog) -> None:
         await self.run(cog.motd, message="this is a test")
@@ -125,7 +126,7 @@ class TestCogAdminMotd(InteractionMixin):
         assert guild.motd == ""
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogAdminSetupView(InteractionMixin):
     async def test_refresh_setup(self, view: SetupView) -> None:
         await view.refresh_setup.callback(self.interaction)
@@ -197,7 +198,7 @@ class TestCogAdminSetupView(InteractionMixin):
         assert guild.voice_create != Guild.voice_create.default.arg  # type: ignore
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogAdminInfo(InteractionMixin):
     async def test_happy_path(self, cog: AdminCog, game: Game) -> None:
         await self.run(cog.info, game_id=f"SB#{game.id}")
@@ -231,7 +232,7 @@ class TestCogAdminInfo(InteractionMixin):
         )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogAdminChannels(InteractionMixin):
     async def test_default_seats(self, cog: AdminCog) -> None:
         seats = Channel.default_seats.default.arg - 1  # type: ignore
@@ -263,7 +264,7 @@ class TestCogAdminChannels(InteractionMixin):
         channel = DatabaseSession.query(Channel).one()
         assert channel.verified_only != default_value
 
-    async def test_unverified_only(self, cog: AdminCog):
+    async def test_unverified_only(self, cog: AdminCog) -> None:
         default_value = Channel.unverified_only.default.arg  # type: ignore
         await self.run(cog.unverified_only, setting=not default_value)
         self.interaction.response.send_message.assert_called_once_with(
@@ -273,7 +274,7 @@ class TestCogAdminChannels(InteractionMixin):
         channel = DatabaseSession.query(Channel).one()
         assert channel.unverified_only != default_value
 
-    async def test_voice_category(self, cog: AdminCog):
+    async def test_voice_category(self, cog: AdminCog) -> None:
         default_value = Channel.voice_category.default.arg  # type: ignore
         new_value = "wotnot" + default_value
         await self.run(cog.voice_category, prefix=new_value)
@@ -284,7 +285,7 @@ class TestCogAdminChannels(InteractionMixin):
         channel = DatabaseSession.query(Channel).one()
         assert channel.voice_category != default_value
 
-    async def test_channel_motd(self, cog: AdminCog):
+    async def test_channel_motd(self, cog: AdminCog) -> None:
         motd = "this is a channel message of the day"
         await self.run(cog.channel_motd, message=motd)
         self.interaction.response.send_message.assert_called_once_with(
@@ -299,69 +300,110 @@ class TestCogAdminChannels(InteractionMixin):
         channel = DatabaseSession.query(Channel).one()
         assert channel.motd == ""
 
-    async def test_channels(self, cog: AdminCog, add_channel: Callable[..., Channel]):
+    async def test_channels(self, cog: AdminCog, add_channel: Callable[..., Channel]) -> None:
         channel1 = add_channel(auto_verify=True)
         channel2 = add_channel(unverified_only=True)
         channel3 = add_channel(verified_only=True)
         channel4 = add_channel(default_seats=2)
 
-        await self.run(cog.channels)
+        with mock_operations(admin_action):
+            await self.run(cog.channels)
 
-        assert self.last_send_message("embed") == {
-            "color": self.settings.EMBED_COLOR,
-            "description": (
-                f"• <#{channel1.xid}> ({channel1.xid}) — `auto_verify`\n"
-                f"• <#{channel2.xid}> ({channel2.xid}) — `unverified_only`\n"
-                f"• <#{channel3.xid}> ({channel3.xid}) — `verified_only`\n"
-                f"• <#{channel4.xid}> ({channel4.xid}) — `default_seats=2`\n"
-            ),
-            "thumbnail": {"url": self.settings.ICO_URL},
-            "title": f"Configuration for channels in {self.guild.name}",
-            "type": "rich",
-        }
+            mock_call = admin_action.safe_send_channel
+            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
+                "color": self.settings.EMBED_COLOR,
+                "description": (
+                    f"• <#{channel1.xid}> ({channel1.xid}) — `auto_verify`\n"
+                    f"• <#{channel2.xid}> ({channel2.xid}) — `unverified_only`\n"
+                    f"• <#{channel3.xid}> ({channel3.xid}) — `verified_only`\n"
+                    f"• <#{channel4.xid}> ({channel4.xid}) — `default_seats=2`\n"
+                ),
+                "thumbnail": {"url": self.settings.ICO_URL},
+                "title": f"Configuration for channels in {self.guild.name}",
+                "type": "rich",
+            }
 
-    async def test_forget_channel(self, cog: AdminCog, add_channel: Callable[..., Channel]):
+    async def test_channels_when_channel_deleted(
+        self,
+        cog: AdminCog,
+        add_channel: Callable[..., Channel],
+    ) -> None:
+        add_channel(auto_verify=True)
+
+        with mock_operations(admin_action):
+            admin_action.safe_fetch_text_channel.return_value = None
+
+            await self.run(cog.channels)
+
+            mock_call = admin_action.safe_send_channel
+            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
+                "color": self.settings.EMBED_COLOR,
+                "description": (
+                    "**All channels on this server have a default configuration.**\n\n"
+                    "Use may use channel specific `/set` commands within a channel "
+                    "to change that channel's configuration."
+                ),
+                "thumbnail": {"url": self.settings.ICO_URL},
+                "title": f"Configuration for channels in {self.guild.name}",
+                "type": "rich",
+            }
+
+    async def test_forget_channel(self, cog: AdminCog, add_channel: Callable[..., Channel]) -> None:
         channel = add_channel(auto_verify=True)
 
         await self.run(cog.forget_channel, channel=str(channel.xid))
         self.interaction.response.send_message.reset_mock()
-        await self.run(cog.channels)
 
-        assert self.last_send_message("embed") == {
-            "color": self.settings.EMBED_COLOR,
-            "description": (
-                "**All channels on this server have a default configuration.**\n\n"
-                "Use may use channel specific `/set` commands within a channel "
-                "to change that channel's configuration."
-            ),
-            "thumbnail": {"url": self.settings.ICO_URL},
-            "title": f"Configuration for channels in {self.guild.name}",
-            "type": "rich",
-        }
+        with mock_operations(admin_action):
+            await self.run(cog.channels)
 
-    async def test_forget_channel_when_channel_invalid(self, cog: AdminCog, channel: Channel):
+            mock_call = admin_action.safe_send_channel
+            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
+                "color": self.settings.EMBED_COLOR,
+                "description": (
+                    "**All channels on this server have a default configuration.**\n\n"
+                    "Use may use channel specific `/set` commands within a channel "
+                    "to change that channel's configuration."
+                ),
+                "thumbnail": {"url": self.settings.ICO_URL},
+                "title": f"Configuration for channels in {self.guild.name}",
+                "type": "rich",
+            }
+
+    async def test_forget_channel_when_channel_invalid(
+        self,
+        cog: AdminCog,
+        channel: Channel,
+    ) -> None:
         await self.run(cog.forget_channel, channel="foobar")
         self.interaction.response.send_message.assert_called_once_with(
             "Invalid ID.",
             ephemeral=True,
         )
 
-    async def test_channels_when_no_non_default_channels(self, cog: AdminCog, channel: Channel):
-        await self.run(cog.channels)
-        assert self.last_send_message("embed") == {
-            "color": self.settings.EMBED_COLOR,
-            "description": (
-                "**All channels on this server have a default configuration.**\n\n"
-                "Use may use channel specific `/set` commands within a channel"
-                " to change that channel's configuration."
-            ),
-            "thumbnail": {"url": self.settings.ICO_URL},
-            "title": f"Configuration for channels in {self.guild.name}",
-            "type": "rich",
-        }
+    async def test_channels_when_no_non_default_channels(
+        self,
+        cog: AdminCog,
+        channel: Channel,
+    ) -> None:
+        with mock_operations(admin_action):
+            await self.run(cog.channels)
+
+            mock_call = admin_action.safe_send_channel
+            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
+                "color": self.settings.EMBED_COLOR,
+                "description": (
+                    "**All channels on this server have a default configuration.**\n\n"
+                    "Use may use channel specific `/set` commands within a channel"
+                    " to change that channel's configuration."
+                ),
+                "thumbnail": {"url": self.settings.ICO_URL},
+                "title": f"Configuration for channels in {self.guild.name}",
+                "type": "rich",
+            }
 
     @pytest.mark.parametrize("page", [1, 2])
-    async def test_channels_with_pagination(self, cog: AdminCog, page: int):
+    async def test_channels_with_pagination(self, cog: AdminCog, page: int) -> None:
         self.factories.channel.create_batch(
             100,
             guild=self.guild,
@@ -370,13 +412,20 @@ class TestCogAdminChannels(InteractionMixin):
             unverified_only=True,
             verified_only=True,
         )
-        await self.run(cog.channels, page=page)
-        assert self.last_send_message("embed")["footer"]["text"] == f"page {page} of 3"
+
+        with mock_operations(admin_action):
+            await self.run(cog.channels, page=page)
+
+            mock_call = admin_action.safe_send_channel
+            assert (
+                mock_call.call_args_list[0].kwargs["embed"].to_dict()["footer"]["text"]
+                == f"page {page} of 3"
+            )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogAdminAwards(InteractionMixin):
-    async def test_awards(self, cog: AdminCog):
+    async def test_awards(self, cog: AdminCog) -> None:
         award1 = self.factories.guild_award.create(
             guild=self.guild,
             count=10,
@@ -413,7 +462,7 @@ class TestCogAdminAwards(InteractionMixin):
             "type": "rich",
         }
 
-    async def test_awards_when_no_awards(self, cog: AdminCog):
+    async def test_awards_when_no_awards(self, cog: AdminCog) -> None:
         await self.run(cog.awards)
         assert self.last_send_message("embed") == {
             "color": self.settings.EMBED_COLOR,
@@ -427,7 +476,7 @@ class TestCogAdminAwards(InteractionMixin):
         }
 
     @pytest.mark.parametrize("page", [1, 2])
-    async def test_awards_with_pagination(self, cog: AdminCog, page: int):
+    async def test_awards_with_pagination(self, cog: AdminCog, page: int) -> None:
         self.factories.guild_award.create_batch(
             40,
             guild=self.guild,
@@ -438,7 +487,7 @@ class TestCogAdminAwards(InteractionMixin):
         await self.run(cog.awards, page=page)
         assert self.last_send_message("embed")["footer"]["text"] == f"page {page} of 2"
 
-    async def test_award_delete(self, cog: AdminCog):
+    async def test_award_delete(self, cog: AdminCog) -> None:
         awards = self.factories.guild_award.create_batch(2, guild=self.guild)
         await self.run(cog.award_delete, id=awards[0].id)
         assert self.last_send_message("embed") == {
@@ -451,7 +500,7 @@ class TestCogAdminAwards(InteractionMixin):
         assert self.last_send_message("ephemeral")
         assert DatabaseSession.query(GuildAward).count() == 1
 
-    async def test_award_add(self, cog: AdminCog):
+    async def test_award_add(self, cog: AdminCog) -> None:
         await self.run(cog.award_add, count=10, role="role", message="message", repeating=True)
         award = DatabaseSession.query(GuildAward).one()
         assert self.last_send_message("embed") == {
@@ -470,7 +519,7 @@ class TestCogAdminAwards(InteractionMixin):
         assert award.message == "message"
         assert award.repeating
 
-    async def test_award_add_message_too_long(self, cog: AdminCog):
+    async def test_award_add_message_too_long(self, cog: AdminCog) -> None:
         message = "hippo " * 300
         await self.run(cog.award_add, count=1, role="role", message=message)
         self.interaction.response.send_message.assert_called_once_with(
@@ -479,7 +528,7 @@ class TestCogAdminAwards(InteractionMixin):
         )
         assert DatabaseSession.query(GuildAward).count() == 0
 
-    async def test_award_add_zero_count(self, cog: AdminCog):
+    async def test_award_add_zero_count(self, cog: AdminCog) -> None:
         await self.run(cog.award_add, count=0, role="role", message="message")
         self.interaction.response.send_message.assert_called_once_with(
             "You can't create an award for zero games played.",

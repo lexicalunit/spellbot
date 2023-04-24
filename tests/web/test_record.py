@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 import pytest
+import pytz
 from aiohttp.client import ClientSession
 from freezegun.api import FrozenDateTimeFactory
 from spellbot.models import GameFormat, GameStatus
@@ -11,7 +12,7 @@ from syrupy.assertion import SnapshotAssertion
 from tests.fixtures import Factories
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestWebRecord:
     async def test_user_record(
         self,
@@ -19,8 +20,8 @@ class TestWebRecord:
         snapshot: SnapshotAssertion,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-    ):
-        freezer.move_to(datetime(2020, 1, 1))
+    ) -> None:
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=pytz.utc))
         user1 = factories.user.create(xid=101, name="user:1")
         user2 = factories.user.create(xid=102, name="user@2")
         guild = factories.guild.create(xid=201, name="guild")
@@ -32,8 +33,8 @@ class TestWebRecord:
             format=GameFormat.MODERN.value,
             guild=guild,
             channel=channel,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
             message_xid=901,
         )
         game2 = factories.game.create(
@@ -43,8 +44,8 @@ class TestWebRecord:
             format=GameFormat.STANDARD.value,
             guild=guild,
             channel=channel,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
             message_xid=902,
         )
         game3 = factories.game.create(
@@ -54,8 +55,8 @@ class TestWebRecord:
             format=GameFormat.LEGACY.value,
             guild=guild,
             channel=channel,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
             message_xid=903,
         )
         factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
@@ -76,8 +77,8 @@ class TestWebRecord:
         snapshot: SnapshotAssertion,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-    ):
-        freezer.move_to(datetime(2020, 1, 1))
+    ) -> None:
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=pytz.utc))
         user1 = factories.user.create(xid=101, name="user:1")
         user2 = factories.user.create(xid=102, name="user@2")
         guild = factories.guild.create(xid=201, name="guild")
@@ -89,8 +90,8 @@ class TestWebRecord:
             format=GameFormat.MODERN.value,
             guild=guild,
             channel=channel,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
             message_xid=901,
         )
         game2 = factories.game.create(
@@ -100,8 +101,8 @@ class TestWebRecord:
             format=GameFormat.STANDARD.value,
             guild=guild,
             channel=channel,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
             message_xid=902,
         )
         game3 = factories.game.create(
@@ -111,8 +112,8 @@ class TestWebRecord:
             format=GameFormat.LEGACY.value,
             guild=guild,
             channel=channel,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
             message_xid=903,
         )
         factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
@@ -138,7 +139,7 @@ class TestWebRecord:
         client: ClientSession,
         snapshot: SnapshotAssertion,
         factories: Factories,
-    ):
+    ) -> None:
         user = factories.user.create(xid=101, name="user")
         guild = factories.guild.create(xid=201, name="guild")
 
@@ -153,8 +154,8 @@ class TestWebRecord:
         snapshot: SnapshotAssertion,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-    ):
-        freezer.move_to(datetime(2020, 1, 1))
+    ) -> None:
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=pytz.utc))
         user1 = factories.user.create(xid=101, name="user1")
         user2 = factories.user.create(xid=102, name="user2")
         guild = factories.guild.create(xid=201, name="guild")
@@ -167,8 +168,8 @@ class TestWebRecord:
             guild=guild,
             channel=channel,
             message_xid=901,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
         )
         game2 = factories.game.create(
             id=2,
@@ -178,8 +179,8 @@ class TestWebRecord:
             guild=guild,
             channel=channel,
             message_xid=902,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
         )
         game3 = factories.game.create(
             id=3,
@@ -189,8 +190,8 @@ class TestWebRecord:
             guild=guild,
             channel=channel,
             message_xid=903,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
         )
         factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
         factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
@@ -210,8 +211,8 @@ class TestWebRecord:
         snapshot: SnapshotAssertion,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-    ):
-        freezer.move_to(datetime(2020, 1, 1))
+    ) -> None:
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=pytz.utc))
         user1 = factories.user.create(xid=101, name="user1")
         user2 = factories.user.create(xid=102, name="user2")
         guild = factories.guild.create(xid=201, name="guild")
@@ -224,8 +225,8 @@ class TestWebRecord:
             guild=guild,
             channel=channel,
             message_xid=901,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
         )
         game2 = factories.game.create(
             id=2,
@@ -235,8 +236,8 @@ class TestWebRecord:
             guild=guild,
             channel=channel,
             message_xid=902,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
         )
         game3 = factories.game.create(
             id=3,
@@ -246,8 +247,8 @@ class TestWebRecord:
             guild=guild,
             channel=channel,
             message_xid=903,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
         )
         factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
         factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
@@ -273,8 +274,8 @@ class TestWebRecord:
         snapshot: SnapshotAssertion,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-    ):
-        freezer.move_to(datetime(2020, 1, 1))
+    ) -> None:
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=pytz.utc))
         user1 = factories.user.create(xid=101, name="user1")
         user2 = factories.user.create(xid=102, name="user2")
         guild = factories.guild.create(xid=201, name="guild")
@@ -287,8 +288,8 @@ class TestWebRecord:
             guild=guild,
             channel=channel,
             message_xid=901,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
         )
         game2 = factories.game.create(
             id=2,
@@ -298,8 +299,8 @@ class TestWebRecord:
             guild=guild,
             channel=channel,
             message_xid=902,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
         )
         game3 = factories.game.create(
             id=3,
@@ -309,8 +310,8 @@ class TestWebRecord:
             guild=guild,
             channel=channel,
             message_xid=903,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
+            updated_at=datetime.now(tz=pytz.utc),
         )
         factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
         factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
@@ -335,7 +336,7 @@ class TestWebRecord:
         client: ClientSession,
         snapshot: SnapshotAssertion,
         factories: Factories,
-    ):
+    ) -> None:
         guild = factories.guild.create(xid=201, name="guild")
         channel = factories.channel.create(xid=101, name="channel", guild=guild)
 
@@ -344,11 +345,11 @@ class TestWebRecord:
         text = await resp.text()
         assert text == snapshot
 
-    async def test_user_record_invalid_ids(self, client: ClientSession):
+    async def test_user_record_invalid_ids(self, client: ClientSession) -> None:
         resp = await client.get("/g/abc/u/xyz")
         assert resp.status == 404
 
-    async def test_channel_record_invalid_ids(self, client: ClientSession):
+    async def test_channel_record_invalid_ids(self, client: ClientSession) -> None:
         resp = await client.get("/g/abc/c/xyz")
         assert resp.status == 404
 
@@ -356,7 +357,7 @@ class TestWebRecord:
         self,
         client: ClientSession,
         factories: Factories,
-    ):
+    ) -> None:
         user = factories.user.create(xid=101, name="user")
         resp = await client.get(f"/g/404/u/{user.xid}")
         assert resp.status == 404
@@ -365,7 +366,7 @@ class TestWebRecord:
         self,
         client: ClientSession,
         factories: Factories,
-    ):
+    ) -> None:
         guild = factories.guild.create(xid=201, name="guild")
         channel = factories.channel.create(xid=301, name="channel", guild=guild)
         resp = await client.get(f"/g/404/c/{channel.xid}")
@@ -375,7 +376,7 @@ class TestWebRecord:
         self,
         client: ClientSession,
         factories: Factories,
-    ):
+    ) -> None:
         guild = factories.guild.create(xid=201, name="guild")
         resp = await client.get(f"/g/{guild.xid}/c/404")
         assert resp.status == 404

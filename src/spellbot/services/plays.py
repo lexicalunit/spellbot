@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import Any, Optional
 
+import pytz
 from asgiref.sync import sync_to_async
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
@@ -241,7 +242,7 @@ class PlaysService:
             Game.channel_xid == channel_xid,
         ]
         if monthly:
-            target = datetime.date.today() + relativedelta(months=-ago)
+            target = datetime.datetime.now(tz=pytz.utc).date() + relativedelta(months=-ago)
             filters.append(extract("year", Game.started_at) == target.year)
             filters.append(extract("month", Game.started_at) == target.month)
         result = (

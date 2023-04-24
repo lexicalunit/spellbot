@@ -28,7 +28,7 @@ class WatchAction(BaseAction):
         target: Optional[Union[discord.User, discord.Member]] = None,
         id: Optional[int] = None,
         note: Optional[str] = None,
-    ):
+    ) -> None:
         if target:
             await self.services.users.upsert(target)
 
@@ -50,14 +50,18 @@ class WatchAction(BaseAction):
             await self.services.users.watch(self.interaction.guild_id, target_xid, note=note)
             await safe_send_channel(self.interaction, f"Watching <@{target_xid}>.", ephemeral=True)
 
-    async def watch(self, target: Union[discord.User, discord.Member], note: Optional[str] = None):
+    async def watch(
+        self,
+        target: Union[discord.User, discord.Member],
+        note: Optional[str] = None,
+    ) -> None:
         await self.execute(ActionType.WATCH, target=target, note=note)
 
     async def unwatch(
         self,
         target: Optional[Union[discord.User, discord.Member]] = None,
         id: Optional[str] = None,
-    ):
+    ) -> None:
         if not target and not id:
             await safe_send_channel(
                 self.interaction,
@@ -114,6 +118,6 @@ class WatchAction(BaseAction):
 
         return embeds
 
-    async def watched(self, page: int):
+    async def watched(self, page: int) -> None:
         embeds: list[Embed] = await self.get_watched_embeds()
         await safe_send_channel(self.interaction, embed=embeds[page - 1])

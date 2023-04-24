@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Any, AsyncGenerator
 
+import pytz
 from dateutil import tz
 from ddtrace import tracer
 from discord.channel import VoiceChannel
@@ -31,13 +32,13 @@ logger = logging.getLogger(__name__)
 
 
 class VoiceChannelFilterer:
-    def __init__(self, games: GamesService):
+    def __init__(self, games: GamesService) -> None:
         self.games = games
         grace_delta = timedelta(minutes=settings.VOICE_GRACE_PERIOD_M)
-        grace_time_ago = datetime.utcnow() - grace_delta
+        grace_time_ago = datetime.now(tz=pytz.utc) - grace_delta
         self.grace_time_ago = grace_time_ago.replace(tzinfo=tz.UTC)
         age_limit_delta = timedelta(hours=settings.VOICE_AGE_LIMIT_H)
-        age_limit_ago = datetime.utcnow() - age_limit_delta
+        age_limit_ago = datetime.now(tz=pytz.utc) - age_limit_delta
         self.age_limit_ago = age_limit_ago.replace(tzinfo=tz.UTC)
 
     async def filter(self, voice_channels: list[VoiceChannel]) -> list[VoiceChannel]:
@@ -75,7 +76,7 @@ class VoiceChannelFilterer:
 
 
 class TasksAction:
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
         self.services = ServicesRegistry()
 
@@ -91,7 +92,7 @@ class TasksAction:
                 except Exception as ex:  # pragma: no cover
                     await handle_exception(ex)
 
-    async def cleanup_old_voice_channels(self):
+    async def cleanup_old_voice_channels(self) -> None:
         logger.info("starting task cleanup_old_voice_channels")
         try:
             channels = await self.gather_channels()
@@ -103,7 +104,7 @@ class TasksAction:
 
     async def gather_channels(self) -> list[VoiceChannel]:
         channels: list[VoiceChannel] = []
-        active_guild_xids = set(g.id for g in self.bot.guilds)
+        active_guild_xids = {g.id for g in self.bot.guilds}
         channel_filterer = VoiceChannelFilterer(self.services.games)
 
         for guild_xid in await self.services.guilds.voiced():
@@ -132,7 +133,7 @@ class TasksAction:
 
         return channels
 
-    async def delete_channels(self, channels: list[VoiceChannel]):
+    async def delete_channels(self, channels: list[VoiceChannel]) -> None:
         batch = 0
         for channel in sorted(channels, key=lambda c: c.created_at):
             logger.info("deleting channel %s(%s)", channel.name, channel.id)
@@ -146,7 +147,7 @@ class TasksAction:
                 logger.info("batch limit reached, %s channels remain", remaining)
                 break
 
-    async def expire_inactive_games(self):
+    async def expire_inactive_games(self) -> None:
         logger.info("starting task expire_inactive_games")
         try:
             games = await self.services.games.inactive_games()
@@ -156,7 +157,7 @@ class TasksAction:
             logger.exception("error: exception in background task: %s", e)
             await rollback_session()
 
-    async def expire_games(self, games: list[dict[str, Any]]):
+    async def expire_games(self, games: list[dict[str, Any]]) -> None:
         batch = 0
         for game in games:
             game_id = game["id"]
@@ -171,7 +172,7 @@ class TasksAction:
             else:
                 await asyncio.sleep(1)
 
-    async def expire_game(self, game: dict[str, Any]):
+    async def expire_game(self, game: dict[str, Any]) -> None:
         message_xid = game["message_xid"]
         if message_xid is None:
             return

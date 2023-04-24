@@ -30,14 +30,14 @@ FormatDetails = namedtuple("FormatDetails", ["players"])
 class GameFormat(Enum):
     """A Magic: The Gathering game format."""
 
-    def __new__(cls, *args: Any, **kwargs: Any):  # pylint: disable=W0613
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:  # pylint: disable=W0613
         """Give each enum value an increasing numerical value starting at 1."""
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
         obj._value_ = value
         return obj
 
-    def __init__(self, players: int):
+    def __init__(self, players: int) -> None:
         """Each enum has certain additional properties taken from FormatDetails."""
         self.players = players
 

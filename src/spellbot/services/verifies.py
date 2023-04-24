@@ -11,7 +11,7 @@ from ..models import Verify
 
 
 class VerifiesService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.current: Optional[Verify] = None
 
     @sync_to_async
