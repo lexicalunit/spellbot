@@ -136,7 +136,7 @@ def main(
             # since those only start after the ready signal has been processed.
             # As such, let's check every 30 minutes if the bot is ready, because if
             # it isn't we can just kill it and have supervisord restart it for us.
-            def killer(bot: SpellBot):
+            def killer(bot: SpellBot) -> None:
                 while True:
                     time.sleep(30 * 60)  # 30 minute wait
                     if not bot.is_ready():

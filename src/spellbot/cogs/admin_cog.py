@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 @for_all_callbacks(app_commands.check(is_admin))
 @for_all_callbacks(app_commands.check(is_guild))
 class AdminCog(commands.Cog):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
     @app_commands.command(name="setup", description="Setup SpellBot on your server.")
@@ -223,5 +223,5 @@ class AdminCog(commands.Cog):
             await action.set_show_points(setting)
 
 
-async def setup(bot: SpellBot):  # pragma: no cover
+async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(AdminCog(bot), guild=bot.settings.GUILD_OBJECT)

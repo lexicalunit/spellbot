@@ -4,7 +4,7 @@ from tests.fixtures import Factories
 
 
 class TestModelConfig:
-    def test_config(self, factories: Factories):
+    def test_config(self, factories: Factories) -> None:
         guild = factories.guild.create()
         user = factories.user.create()
         config = factories.config.create(guild_xid=guild.xid, user_xid=user.xid)

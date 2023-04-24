@@ -4,7 +4,7 @@ from tests.fixtures import Factories
 
 
 class TestModelWatch:
-    def test_watch(self, factories: Factories):
+    def test_watch(self, factories: Factories) -> None:
         guild = factories.guild.create()
         user = factories.user.create()
         watch = factories.watch.create(

@@ -22,14 +22,14 @@ async def wait_until_ready(bot: SpellBot) -> None:
 
 
 class TasksCog(commands.Cog):  # pragma: no cover
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
         if not running_in_pytest():
             self.cleanup_old_voice_channels.start()  # pylint: disable=no-member
             self.expire_inactive_games.start()  # pylint: disable=no-member
 
     @tasks.loop(minutes=settings.VOICE_CLEANUP_LOOP_M)
-    async def cleanup_old_voice_channels(self):
+    async def cleanup_old_voice_channels(self) -> None:
         try:
             with tracer.trace(name="command", resource="cleanup_old_voice_channels"):
                 async with TasksAction.create(self.bot) as interaction:
@@ -38,11 +38,11 @@ class TasksCog(commands.Cog):  # pragma: no cover
             logger.exception("error: exception in task cog: %s", e)
 
     @cleanup_old_voice_channels.before_loop
-    async def before_cleanup_old_voice_channels(self):
+    async def before_cleanup_old_voice_channels(self) -> None:
         await wait_until_ready(self.bot)
 
     @tasks.loop(minutes=settings.EXPIRE_GAMES_LOOP_M)
-    async def expire_inactive_games(self):
+    async def expire_inactive_games(self) -> None:
         try:
             with tracer.trace(name="command", resource="expire_inactive_games"):
                 async with TasksAction.create(self.bot) as interaction:
@@ -51,9 +51,9 @@ class TasksCog(commands.Cog):  # pragma: no cover
             logger.exception("error: exception in task cog: %s", e)
 
     @expire_inactive_games.before_loop
-    async def before_expire_inactive_games(self):
+    async def before_expire_inactive_games(self) -> None:
         await wait_until_ready(self.bot)
 
 
-async def setup(bot: SpellBot):  # pragma: no cover
+async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(TasksCog(bot), guild=bot.settings.GUILD_OBJECT)

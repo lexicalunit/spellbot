@@ -18,7 +18,7 @@ async def cog(bot: SpellBot) -> LeaveGameCog:
     return LeaveGameCog(bot)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogLeaveGame(InteractionMixin):
     async def test_leave(self, cog: LeaveGameCog, message: discord.Message, player: User) -> None:
         with mock_operations(leave_action):

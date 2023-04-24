@@ -7,9 +7,9 @@ from spellbot.services import VerifiesService
 from tests.fixtures import Factories
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestServiceVerifies:
-    async def test_verifies_upsert(self, guild: Guild, factories: Factories):
+    async def test_verifies_upsert(self, guild: Guild, factories: Factories) -> None:
         user = factories.user.create()
 
         verifies = VerifiesService()

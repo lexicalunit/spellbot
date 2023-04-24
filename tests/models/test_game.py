@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import pytz
 from spellbot.models import GameStatus
 from spellbot.settings import Settings
 
@@ -9,7 +10,7 @@ from tests.fixtures import Factories
 
 
 class TestModelGame:
-    def test_game_to_dict(self, factories: Factories):
+    def test_game_to_dict(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(guild=guild, channel=channel)
@@ -33,7 +34,7 @@ class TestModelGame:
             "spectate_link": game.spectate_link,
         }
 
-    def test_game_show_links(self, factories: Factories):
+    def test_game_show_links(self, factories: Factories) -> None:
         guild1 = factories.guild.create()
         guild2 = factories.guild.create(show_links=True)
         channel1 = factories.channel.create(guild=guild1)
@@ -46,7 +47,7 @@ class TestModelGame:
         assert game2.show_links()
         assert game2.show_links(True)
 
-    def test_game_embed_empty(self, settings: Settings, factories: Factories):
+    def test_game_embed_empty(self, settings: Settings, factories: Factories) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(guild=guild, channel=channel)
@@ -63,7 +64,7 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_pending(self, settings: Settings, factories: Factories):
+    def test_game_embed_pending(self, settings: Settings, factories: Factories) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(guild=guild, channel=channel)
@@ -84,7 +85,7 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_placeholders(self, settings: Settings, factories: Factories):
+    def test_game_embed_placeholders(self, settings: Settings, factories: Factories) -> None:
         guild = factories.guild.create(motd="player 1: ${player_name_1}")
         channel = factories.channel.create(guild=guild, motd="game id: ${game_id}")
         game = factories.game.create(guild=guild, channel=channel)
@@ -113,7 +114,7 @@ class TestModelGame:
         self,
         settings: Settings,
         factories: Factories,
-    ):
+    ) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(guild=guild, channel=channel)
@@ -147,13 +148,13 @@ class TestModelGame:
         self,
         settings: Settings,
         factories: Factories,
-    ):
+    ) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31),
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
             spelltable_link="https://spelltable/link",
             guild=guild,
             channel=channel,
@@ -208,13 +209,13 @@ class TestModelGame:
         self,
         settings: Settings,
         factories: Factories,
-    ):
+    ) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, show_points=True, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31),
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
             guild=guild,
             channel=channel,
         )
@@ -249,13 +250,13 @@ class TestModelGame:
         self,
         settings: Settings,
         factories: Factories,
-    ):
+    ) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31),
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
             guild=guild,
             channel=channel,
         )
@@ -309,13 +310,13 @@ class TestModelGame:
         self,
         settings: Settings,
         factories: Factories,
-    ):
+    ) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31),
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
             spelltable_link="https://spelltable/link",
             voice_invite_link="https://voice/invite/link",
             voice_xid=501,
@@ -376,13 +377,13 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_with_motd(self, settings: Settings, factories: Factories):
+    def test_game_embed_started_with_motd(self, settings: Settings, factories: Factories) -> None:
         guild = factories.guild.create(motd="this is a message of the day")
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31),
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
             spelltable_link="https://spelltable/link",
             guild=guild,
             channel=channel,

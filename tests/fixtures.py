@@ -54,7 +54,7 @@ class Factories:
     watch = WatchFactory
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture()
 async def factories() -> Factories:
     return Factories()
 
@@ -82,7 +82,7 @@ async def session_context(
         VerifyFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         WatchFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
 
-        def cleanup_session():
+        def cleanup_session() -> None:
             async def finalizer() -> None:
                 try:
                     await rollback_transaction()
@@ -95,7 +95,7 @@ async def session_context(
 
     context = contextvars.copy_context()
 
-    def cleanup_context():
+    def cleanup_context() -> None:
         nonlocal context
         for c in context:
             c.set(context[c])
@@ -117,7 +117,7 @@ async def bot() -> SpellBot:
     return build_bot(mock_games=True, create_connection=False)
 
 
-@pytest.fixture
+@pytest.fixture()
 def client(
     loop: AbstractEventLoop,
     aiohttp_client: Callable[..., Awaitable[TestClient]],
@@ -126,47 +126,47 @@ def client(
     return loop.run_until_complete(aiohttp_client(app))
 
 
-@pytest.fixture
+@pytest.fixture()
 def settings() -> Settings:
     return Settings()
 
 
-@pytest.fixture
+@pytest.fixture()
 def guild(factories: Factories) -> Guild:
     return factories.guild.create()
 
 
-@pytest.fixture
+@pytest.fixture()
 def channel(factories: Factories, guild: Guild) -> Channel:
     return factories.channel.create(guild=guild)
 
 
-@pytest.fixture
+@pytest.fixture()
 def game(factories: Factories, guild: Guild, channel: Channel) -> Game:
     return factories.game.create(guild=guild, channel=channel)
 
 
-@pytest.fixture
+@pytest.fixture()
 def user(factories: Factories) -> Game:
     return factories.user.create()
 
 
-@pytest.fixture
+@pytest.fixture()
 def dpy_author() -> discord.User:
     return build_author()
 
 
-@pytest.fixture
+@pytest.fixture()
 def dpy_guild() -> discord.Guild:
     return build_guild()
 
 
-@pytest.fixture
+@pytest.fixture()
 def dpy_channel(dpy_guild: discord.Guild) -> discord.TextChannel:
     return build_channel(dpy_guild)
 
 
-@pytest.fixture
+@pytest.fixture()
 def dpy_message(
     dpy_guild: discord.Guild,
     dpy_channel: discord.TextChannel,
@@ -175,7 +175,7 @@ def dpy_message(
     return build_message(dpy_guild, dpy_channel, dpy_author)
 
 
-@pytest.fixture
+@pytest.fixture()
 def interaction(
     dpy_guild: discord.Guild,
     dpy_channel: discord.TextChannel,
@@ -184,7 +184,7 @@ def interaction(
     return build_interaction(dpy_guild, dpy_channel, dpy_author)
 
 
-@pytest.fixture
+@pytest.fixture()
 def context(
     dpy_guild: discord.Guild,
     dpy_channel: discord.TextChannel,
@@ -200,7 +200,7 @@ def context(
     return stub
 
 
-@pytest.fixture
+@pytest.fixture()
 def cli() -> Generator[MagicMock, None, None]:
     with (
         patch("spellbot.cli.asyncio") as mock_asyncio,
@@ -238,6 +238,6 @@ def cli() -> Generator[MagicMock, None, None]:
         yield obj
 
 
-@pytest.fixture
+@pytest.fixture()
 def runner() -> CliRunner:
     return CliRunner()

@@ -19,7 +19,7 @@ PATREON = "https://www.patreon.com/lexicalunit"
 
 @for_all_callbacks(app_commands.check(is_guild))
 class AboutCog(commands.Cog):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
     @app_commands.command(name="about", description="Get information about SpellBot.")
@@ -47,5 +47,5 @@ class AboutCog(commands.Cog):
         await safe_send_channel(interaction, embed=embed)
 
 
-async def setup(bot: SpellBot):  # pragma: no cover
+async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(AboutCog(bot), guild=bot.settings.GUILD_OBJECT)

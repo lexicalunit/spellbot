@@ -13,12 +13,12 @@ from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object
 
 
-@pytest.fixture
+@pytest.fixture()
 def cog(bot: SpellBot) -> WatchCog:
     return WatchCog(bot)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogWatch(InteractionMixin):
     async def test_watch_and_unwatch(self, cog: WatchCog, add_user: Callable[..., User]) -> None:
         target_user = add_user()

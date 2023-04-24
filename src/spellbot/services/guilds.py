@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Optional
 
 import discord
+import pytz
 from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
@@ -13,7 +14,7 @@ from ..models import Channel, Guild, GuildAward
 
 
 class GuildsService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.guild: Optional[Guild] = None
 
     @sync_to_async()
@@ -24,7 +25,7 @@ class GuildsService:
         values = {
             "xid": guild.id,
             "name": name,
-            "updated_at": datetime.utcnow(),
+            "updated_at": datetime.now(tz=pytz.utc),
         }
         upsert = insert(Guild).values(**values)
         upsert = upsert.on_conflict_do_update(
@@ -152,7 +153,7 @@ class GuildsService:
         return award.to_dict()
 
     @sync_to_async
-    def award_delete(self, guild_award_id: int):
+    def award_delete(self, guild_award_id: int) -> None:
         assert self.guild
         award = DatabaseSession.query(GuildAward).get(guild_award_id)
         if award:

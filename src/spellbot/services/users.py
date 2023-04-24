@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Optional, Union
 
 import discord
+import pytz
 from asgiref.sync import sync_to_async
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
@@ -14,7 +15,7 @@ from ..models import Block, Game, User, Watch
 
 
 class UsersService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.user: Optional[User] = None
 
     @sync_to_async
@@ -24,7 +25,7 @@ class UsersService:
         max_name_len = User.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(target, "display_name", "")
         name = raw_name[:max_name_len]
-        values = {"xid": xid, "name": name, "updated_at": datetime.utcnow()}
+        values = {"xid": xid, "name": name, "updated_at": datetime.now(tz=pytz.utc)}
         upsert = insert(User).values(**values)
         upsert = upsert.on_conflict_do_update(
             index_elements=[User.xid],
@@ -50,7 +51,7 @@ class UsersService:
         values = {
             "xid": xid,
             "name": "Unknown User",
-            "updated_at": datetime.utcnow(),
+            "updated_at": datetime.now(tz=pytz.utc),
             "banned": banned,
         }
         upsert = insert(User).values(**values)
@@ -84,7 +85,7 @@ class UsersService:
         query = (
             update(Game)
             .where(Game.id == left_game_id)
-            .values(updated_at=datetime.utcnow())
+            .values(updated_at=datetime.now(tz=pytz.utc))
             .execution_options(synchronize_session=False)
         )
         DatabaseSession.execute(query)

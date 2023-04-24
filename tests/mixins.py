@@ -21,14 +21,17 @@ class BaseMixin:
     @pytest.fixture(autouse=True)
     def use_bot(self, bot: SpellBot) -> None:
         self.bot = bot
+        return None  # pylint: useless-return
 
     @pytest.fixture(autouse=True)
     def use_settings(self, settings: Settings) -> None:
         self.settings = settings
+        return None  # pylint: useless-return
 
     @pytest.fixture(autouse=True)
     def use_factories(self, factories: Factories) -> None:
         self.factories = factories
+        return None  # pylint: useless-return
 
 
 CogT = TypeVar("CogT", bound=commands.Cog)
@@ -43,22 +46,26 @@ class InteractionMixin(BaseMixin):
         self.interaction = interaction
         return self.interaction
 
-    @pytest.fixture
+    @pytest.fixture()
     def add_guild(self, factories: Factories) -> Callable[..., Guild]:
         return factories.guild.create
 
     @pytest.fixture(autouse=True, name="guild")
-    def _guild(self, add_guild: Callable[..., Guild], interaction: discord.Interaction) -> Guild:
+    def guild_fixture(
+        self,
+        add_guild: Callable[..., Guild],
+        interaction: discord.Interaction,
+    ) -> Guild:
         assert interaction.guild is not None
         self.guild = add_guild(xid=interaction.guild_id, name=interaction.guild.name)
         return self.guild
 
-    @pytest.fixture
+    @pytest.fixture()
     def add_channel(self, factories: Factories, guild: Guild) -> Callable[..., Channel]:
         return partial(factories.channel.create, guild=guild)
 
     @pytest.fixture(name="channel")
-    def _channel(
+    def channel_fixture(
         self,
         interaction: discord.Interaction,
         add_channel: Callable[..., Channel],
@@ -69,17 +76,17 @@ class InteractionMixin(BaseMixin):
         self.channel = add_channel(xid=interaction.channel_id, name=channel_name)
         return self.channel
 
-    @pytest.fixture
+    @pytest.fixture()
     def add_user(self, factories: Factories) -> Callable[..., User]:
         return factories.user.create
 
     @pytest.fixture(name="user")
-    def _user(self, interaction: discord.Interaction, add_user: Callable[..., User]) -> User:
+    def user_fixture(self, interaction: discord.Interaction, add_user: Callable[..., User]) -> User:
         self.user = add_user(xid=interaction.user.id)
         return self.user
 
     @pytest.fixture(name="message")
-    def _message(self, interaction: discord.Interaction) -> discord.Message:
+    def message_fixture(self, interaction: discord.Interaction) -> discord.Message:
         assert interaction.guild is not None
         assert interaction.channel is not None
         assert isinstance(interaction.channel, discord.TextChannel)
@@ -87,7 +94,7 @@ class InteractionMixin(BaseMixin):
         return self.message
 
     @pytest.fixture(name="game")
-    def _game(
+    def game_fixture(
         self,
         factories: Factories,
         guild: Guild,
@@ -97,7 +104,7 @@ class InteractionMixin(BaseMixin):
         self.game = factories.game.create(guild=guild, channel=channel, message_xid=message.id)
         return self.game
 
-    @pytest.fixture
+    @pytest.fixture()
     def player(self, user: User, game: Game) -> User:
         """Puts self.user into a game."""
         user.game = game
@@ -162,6 +169,6 @@ class InteractionMixin(BaseMixin):
 
 class ContextMixin(BaseMixin):
     @pytest.fixture(autouse=True, name="context")
-    def _context(self, context: commands.Context[SpellBot]) -> commands.Context[SpellBot]:
+    def context_fixture(self, context: commands.Context[SpellBot]) -> commands.Context[SpellBot]:
         self.context = context
         return self.context

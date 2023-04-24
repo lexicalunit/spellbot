@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 import discord
 import pytest
 import pytest_asyncio
+import pytz
 from pytest_mock import MockerFixture
 from spellbot import SpellBot
 from spellbot.actions import TasksAction
@@ -124,7 +125,7 @@ async def bot(mocker: MockerFixture, discord_guild: discord.Guild) -> SpellBot:
     return build_bot(mock_games=True, create_connection=False)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestTaskCleanupOldVoiceChannels:
     async def test_when_nothing_exists(
         self,
@@ -214,13 +215,13 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
         )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(tz=pytz.utc),
         )
         make_category_channel(
             id=3001,
@@ -244,13 +245,13 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
         )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.utcnow() - timedelta(hours=1),
+            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
         )
         voice_channel.voice_states.keys = lambda: True  # type: ignore
         make_category_channel(
@@ -279,7 +280,7 @@ class TestTaskCleanupOldVoiceChannels:
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.utcnow() - timedelta(hours=1),
+            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
         )
         voice_channel.voice_states.keys = lambda: False  # type: ignore
         make_category_channel(
@@ -304,13 +305,13 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
         )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"XXX-Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.utcnow() - timedelta(hours=1),
+            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
         )
         game.voice_xid = voice_channel.id  # type: ignore
         DatabaseSession.commit()
@@ -336,13 +337,13 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
         )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"XXX-Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.utcnow() - timedelta(hours=1),
+            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
         )
         game.voice_xid = voice_channel.id + 1  # type: ignore
         DatabaseSession.commit()
@@ -368,13 +369,13 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
         )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.utcnow() - timedelta(days=1),
+            created_at=datetime.now(tz=pytz.utc) - timedelta(days=1),
         )
         voice_channel.voice_states.keys = lambda: True  # type: ignore
         make_category_channel(
@@ -399,13 +400,13 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
         )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.utcnow() - timedelta(hours=1),
+            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
         )
         voice_channel.voice_states.keys = lambda: False  # type: ignore
         make_category_channel(
@@ -434,13 +435,13 @@ class TestTaskCleanupOldVoiceChannels:
 
         mocker.patch.object(mod.settings, "VOICE_CLEANUP_BATCH", 0)
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
         )
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.utcnow() - timedelta(hours=1),
+            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
         )
         voice_channel.voice_states.keys = lambda: False  # type: ignore
         make_category_channel(
