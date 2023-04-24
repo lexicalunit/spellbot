@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class ScoreAction(BaseAction):
-    async def execute(self, target: Union[discord.Member, discord.User]):
+    async def execute(self, target: Union[discord.Member, discord.User]) -> None:
         assert self.interaction.guild
         guild_name = self.interaction.guild.name
         assert hasattr(target, "id")
@@ -33,7 +33,7 @@ class ScoreAction(BaseAction):
         embed.color = settings.EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
-    async def history(self):
+    async def history(self) -> None:
         assert self.interaction.channel
         assert hasattr(self.interaction.channel, "name")
         channel_name = self.interaction.channel.name  # type: ignore
@@ -48,7 +48,7 @@ class ScoreAction(BaseAction):
         embed.color = settings.EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
-    async def top(self, monthly: bool, ago: int):
+    async def top(self, monthly: bool, ago: int) -> None:
         if not monthly:
             ago = 0  # "months ago" doesn't make sense for "all time" range
 

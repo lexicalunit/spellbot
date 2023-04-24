@@ -56,13 +56,13 @@ class PendingGameView(BaseView):
 
 
 class StartedGameView(BaseView):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         super().__init__(bot)
         self.add_item(StartedGameSelect(self.bot))
 
 
 class StartedGameSelect(ui.Select[StartedGameView]):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
         super().__init__(
             custom_id="points",
@@ -82,7 +82,7 @@ class StartedGameSelect(ui.Select[StartedGameView]):
             ],
         )
 
-    async def callback(self, interaction: discord.Interaction):
+    async def callback(self, interaction: discord.Interaction) -> None:
         from ..actions import LookingForGameAction
 
         with tracer.trace(name="interaction", resource="points"):  # type: ignore

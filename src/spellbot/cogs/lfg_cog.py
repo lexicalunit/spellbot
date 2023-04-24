@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @for_all_callbacks(app_commands.check(is_guild))
 class LookingForGameCog(commands.Cog):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
     @app_commands.command(name="lfg", description="Looking for game.")
@@ -42,7 +42,7 @@ class LookingForGameCog(commands.Cog):
         friends: Optional[str] = None,
         seats: Optional[int] = None,
         format: Optional[int] = None,
-    ):
+    ) -> None:
         assert interaction.channel_id is not None
         add_span_context(interaction)
         await interaction.response.defer()
@@ -51,5 +51,5 @@ class LookingForGameCog(commands.Cog):
                 await action.execute(friends=friends, seats=seats, format=format)
 
 
-async def setup(bot: SpellBot):  # pragma: no cover
+async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(LookingForGameCog(bot), guild=bot.settings.GUILD_OBJECT)

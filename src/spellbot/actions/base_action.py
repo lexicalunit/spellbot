@@ -44,7 +44,7 @@ class BaseAction:
     channel: Optional[discord.TextChannel]
     channel_data: dict[str, Any]
 
-    def __init__(self, bot: SpellBot, interaction: discord.Interaction):
+    def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         self.bot = bot
         self.services = ServicesRegistry()
         self.interaction = interaction

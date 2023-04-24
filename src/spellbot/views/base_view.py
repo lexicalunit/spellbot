@@ -7,7 +7,7 @@ from ..utils import handle_view_errors
 
 
 class BaseView(discord.ui.View):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         super().__init__(timeout=None)
         self.bot = bot
         self.on_error = handle_view_errors

@@ -11,14 +11,14 @@ from tests.mixins import InteractionMixin
 from tests.mocks import mock_operations
 
 
-@pytest.fixture
+@pytest.fixture()
 def cog(bot: SpellBot) -> ConfigCog:
     return ConfigCog(bot)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogConfig(InteractionMixin):
-    async def test_power_level(self, cog: ConfigCog):
+    async def test_power_level(self, cog: ConfigCog) -> None:
         await self.run(cog.power, level=10)
 
         config = DatabaseSession.query(Config).one()
@@ -28,9 +28,9 @@ class TestCogConfig(InteractionMixin):
         assert config.power_level == 10
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogConfigPowerLevelWhenUserWaiting(InteractionMixin):
-    async def test_happy_path(self, cog: ConfigCog, player: User):
+    async def test_happy_path(self, cog: ConfigCog, player: User) -> None:
         with mock_operations(config_action):
             config_action.safe_fetch_text_channel.return_value = self.interaction.channel
             config_action.safe_get_partial_message.return_value = self.interaction.message
@@ -62,7 +62,7 @@ class TestCogConfigPowerLevelWhenUserWaiting(InteractionMixin):
                 "type": "rich",
             }
 
-    async def test_when_channel_not_found(self, cog: ConfigCog, player: User):
+    async def test_when_channel_not_found(self, cog: ConfigCog, player: User) -> None:
         with mock_operations(config_action):
             config_action.safe_fetch_text_channel.return_value = None
 
@@ -70,7 +70,7 @@ class TestCogConfigPowerLevelWhenUserWaiting(InteractionMixin):
 
             config_action.safe_update_embed.assert_not_called()
 
-    async def test_when_message_not_found(self, cog: ConfigCog, player: User):
+    async def test_when_message_not_found(self, cog: ConfigCog, player: User) -> None:
         with mock_operations(config_action):
             config_action.safe_fetch_text_channel.return_value = self.interaction.channel
             config_action.safe_get_partial_message.return_value = None

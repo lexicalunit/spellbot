@@ -4,7 +4,7 @@ from tests.fixtures import Factories
 
 
 class TestModelAward:
-    def test_award(self, factories: Factories):
+    def test_award(self, factories: Factories) -> None:
         guild = factories.guild.create()
         guild_award = factories.guild_award.create(guild=guild)
 

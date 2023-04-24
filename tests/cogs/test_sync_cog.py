@@ -11,7 +11,7 @@ from spellbot.cogs import SyncCog
 from tests.mixins import ContextMixin
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogSync(ContextMixin):
     async def test_sync(self, mocker: MockerFixture) -> None:
         mocker.patch("spellbot.cogs.sync_cog.load_extensions", AsyncMock())

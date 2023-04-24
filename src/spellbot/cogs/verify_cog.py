@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 @for_all_callbacks(app_commands.check(is_admin))
 @for_all_callbacks(app_commands.check(is_guild))
 class VerifyCog(commands.Cog):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
     @app_commands.command(name="verify", description="Verify a user.")
@@ -45,5 +45,5 @@ class VerifyCog(commands.Cog):
             await action.unverify(target=target)
 
 
-async def setup(bot: SpellBot):  # pragma: no cover
+async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(VerifyCog(bot), guild=bot.settings.GUILD_OBJECT)

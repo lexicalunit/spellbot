@@ -19,13 +19,13 @@ async def cog(bot: SpellBot) -> VerifyCog:
     return VerifyCog(bot)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogVerify(InteractionMixin):
     @pytest_asyncio.fixture
     async def target(self, add_user: Callable[..., User]) -> discord.Member:
         return cast(discord.Member, mock_discord_object(add_user()))
 
-    async def test_verify_and_unverify(self, cog: VerifyCog, target: discord.Member):
+    async def test_verify_and_unverify(self, cog: VerifyCog, target: discord.Member) -> None:
         await self.run(cog.verify, target=target)
 
         self.interaction.response.send_message.assert_called_once_with(

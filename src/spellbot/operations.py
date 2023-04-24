@@ -83,14 +83,12 @@ async def safe_fetch_text_channel(
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid), "channel_xid": str(channel_xid)})
 
-    # first check our channel cache
-    channel: GetChannelReturnType
-    if channel := client.get_channel(channel_xid):
-        if not isinstance(channel, discord.TextChannel):
+    if got := client.get_channel(channel_xid):
+        if not isinstance(got, discord.TextChannel):
             return None
-        return channel
+        return got
 
-    # fallback to hitting the Discord API
+    channel: Optional[discord.TextChannel] = None
     with suppress(
         DiscordException,
         log="in guild %(guild_xid)s, could not fetch channel %(channel_xid)s",
@@ -99,10 +97,9 @@ async def safe_fetch_text_channel(
     ):
         fetched = await client.fetch_channel(channel_xid)
         if isinstance(fetched, discord.TextChannel):
-            return fetched
+            channel = fetched
 
-    # failed to find in cache or via the API
-    return None
+    return channel
 
 
 @tracer.wrap()

@@ -16,7 +16,7 @@ from ..utils import for_all_callbacks
 logger = logging.getLogger(__name__)
 
 
-async def set_banned(banned: bool, ctx: commands.Context[SpellBot], arg: Optional[str]):
+async def set_banned(banned: bool, ctx: commands.Context[SpellBot], arg: Optional[str]) -> None:
     assert ctx.message
     if arg is None:
         return await safe_send_user(ctx.message.author, "No target user.")
@@ -34,12 +34,12 @@ async def set_banned(banned: bool, ctx: commands.Context[SpellBot], arg: Optiona
 
 @for_all_callbacks(commands.is_owner())
 class OwnerCog(commands.Cog):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
     @commands.command(name="ban")
     @tracer.wrap(name="interaction", resource="ban")
-    async def ban(self, ctx: commands.Context[SpellBot], arg: Optional[str] = None):
+    async def ban(self, ctx: commands.Context[SpellBot], arg: Optional[str] = None) -> None:
         add_span_context(ctx)
         async with db_session_manager():
             try:
@@ -49,7 +49,7 @@ class OwnerCog(commands.Cog):
 
     @commands.command(name="unban")
     @tracer.wrap(name="interaction", resource="unban")
-    async def unban(self, ctx: commands.Context[SpellBot], arg: Optional[str] = None):
+    async def unban(self, ctx: commands.Context[SpellBot], arg: Optional[str] = None) -> None:
         add_span_context(ctx)
         async with db_session_manager():
             try:
@@ -59,7 +59,7 @@ class OwnerCog(commands.Cog):
 
     @commands.command(name="stats")
     @tracer.wrap(name="interaction", resource="stats")
-    async def stats(self, ctx: commands.Context[SpellBot]):
+    async def stats(self, ctx: commands.Context[SpellBot]) -> None:
         add_span_context(ctx)
         await safe_send_user(
             ctx.message.author,
@@ -73,17 +73,17 @@ class OwnerCog(commands.Cog):
                     guilds:   {len(self.bot.guilds)}
                     users:    {len(self.bot.users)}
                     ```
-                """
+                """,
             ),
         )
 
     @commands.command(name="naughty")
     @tracer.wrap(name="interaction", resource="naughty")
-    async def naughty(self, ctx: commands.Context[SpellBot]):
+    async def naughty(self, ctx: commands.Context[SpellBot]) -> None:
         add_span_context(ctx)
         resp = "\n".join([f"<@{xid}> ({xid})" for xid in bad_users])
         await safe_send_user(ctx.message.author, f"Naughty users: {resp}")
 
 
-async def setup(bot: SpellBot):  # pragma: no cover
+async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(OwnerCog(bot), guild=bot.settings.GUILD_OBJECT)

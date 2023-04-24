@@ -14,9 +14,9 @@ from spellbot.settings import Settings
 from spellbot.spelltable import generate_link
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestSpellTable:
-    async def test_generate_link(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_generate_link(self, monkeypatch: pytest.MonkeyPatch) -> None:
         settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
@@ -30,7 +30,7 @@ class TestSpellTable:
 
         class MockClient:
             @asynccontextmanager
-            async def post(self, *args: Any, **kwargs: Any):  # pylint: disable=W0613
+            async def post(self, *args: Any, **kwargs: Any):  # noqa
                 yield mock_response
 
         mock_client = MockClient()
@@ -46,7 +46,7 @@ class TestSpellTable:
 
         assert await generate_link() == game_url
 
-    async def test_generate_link_missing_game_url(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_generate_link_missing_game_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
         settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
@@ -57,7 +57,7 @@ class TestSpellTable:
 
         class MockClient:
             @asynccontextmanager
-            async def post(self, *args: Any, **kwargs: Any):  # pylint: disable=W0613
+            async def post(self, *args: Any, **kwargs: Any):  # noqa
                 yield mock_response
 
         mock_client = MockClient()
@@ -73,7 +73,7 @@ class TestSpellTable:
 
         assert await generate_link() is None
 
-    async def test_generate_link_non_json(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_generate_link_non_json(self, monkeypatch: pytest.MonkeyPatch) -> None:
         settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
@@ -84,7 +84,7 @@ class TestSpellTable:
 
         class MockClient:
             @asynccontextmanager
-            async def post(self, *args: Any, **kwargs: Any):  # pylint: disable=W0613
+            async def post(self, *args: Any, **kwargs: Any):  # noqa
                 yield mock_response
 
         mock_client = MockClient()
@@ -100,7 +100,7 @@ class TestSpellTable:
 
         assert await generate_link() is None
 
-    async def test_generate_link_raises_error(self, monkeypatch: pytest.MonkeyPatch):
+    async def test_generate_link_raises_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
         settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
@@ -108,11 +108,11 @@ class TestSpellTable:
 
         class MockClient:  # pragma: no cover
             @asynccontextmanager
-            async def post(self, *args: Any, **kwargs: Any):  # pylint: disable=W0613
+            async def post(self, *args: Any, **kwargs: Any):  # noqa
                 raise ClientError()
 
                 # Need to yield to satisfy static analysis of @asynccontextmanager.
-                yield  # noqa
+                yield
 
         mock_client = MockClient()
 

@@ -13,7 +13,7 @@ from .watches import WatchesService
 
 
 class ServicesRegistry:
-    def __init__(self):
+    def __init__(self) -> None:
         self.awards = AwardsService()
         self.channels = ChannelsService()
         self.configs = ConfigsService()

@@ -4,7 +4,7 @@ from tests.fixtures import Factories
 
 
 class TestModelGuild:
-    def test_guild(self, factories: Factories):
+    def test_guild(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel1 = factories.channel.create(guild=guild)
         channel2 = factories.channel.create(guild=guild)

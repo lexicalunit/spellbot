@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from typing import Any, Generic, NoReturn, Type, TypeVar
+from typing import Any, AsyncGenerator, Generic, NoReturn, Type, TypeVar
 from uuid import uuid4
 
 from asgiref.sync import sync_to_async
@@ -21,17 +21,17 @@ context_vars: dict["ContextLocal", ContextVar] = {}  # type: ignore
 
 
 class ContextLocal(Generic[ProxiedObject]):
-    def __init__(self):
+    def __init__(self) -> None:
         context_vars[self] = ContextVar(str(uuid4()))
 
     @classmethod
     def of_type(cls, _: Type[ProxiedObject]) -> ProxiedObject:
         return cls()  # type: ignore
 
-    def set(self, obj: ProxiedObject):
+    def set(self, obj: ProxiedObject) -> None:
         context_vars[self].set(obj)
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Any:
         obj = context_vars[self].get()
         return getattr(obj, name)
 
@@ -43,14 +43,14 @@ class ContextLocal(Generic[ProxiedObject]):
 
 
 class TypedProxy(Generic[ProxiedObject], CallableObjectProxy):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(None)  # type: ignore
 
     @classmethod
     def of_type(cls, _: Type[ProxiedObject]) -> ProxiedObject:
         return cls()  # type: ignore
 
-    def set(self, obj: ProxiedObject):
+    def set(self, obj: ProxiedObject) -> None:
         super().__init__(obj)  # type: ignore
 
     def __copy__(self) -> NoReturn:
@@ -73,7 +73,7 @@ def initialize_connection(
     *,
     use_transaction: bool = False,
     run_migrations: bool = True,
-):
+) -> None:
     """
     Connect to the database.
 
@@ -118,31 +118,31 @@ def initialize_connection(
 
 
 @sync_to_async
-def begin_session():
+def begin_session() -> None:
     db_session = db_session_maker()
     DatabaseSession.set(db_session)  # type: ignore
 
 
 @sync_to_async
-def rollback_session():  # pragma: no cover
+def rollback_session() -> None:  # pragma: no cover
     DatabaseSession.rollback()
 
 
 @sync_to_async
-def end_session():
+def end_session() -> None:
     DatabaseSession.commit()
     DatabaseSession.close()
 
 
 @asynccontextmanager
-async def db_session_manager():
+async def db_session_manager() -> AsyncGenerator[None, None]:
     await begin_session()
     yield
     await end_session()
 
 
 @sync_to_async
-def rollback_transaction():
+def rollback_transaction() -> None:
     if transaction.is_active:
         transaction.rollback()
     if not connection.closed:  # pragma: no cover

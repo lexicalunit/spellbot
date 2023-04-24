@@ -24,7 +24,7 @@ class MockClient:
         guilds: Optional[list[discord.Guild]] = None,
         users: Optional[list[discord.User]] = None,
         categories: Optional[list[discord.CategoryChannel]] = None,
-    ):
+    ) -> None:
         self.user = user
         self.channels = channels or []
         self.guilds = guilds or []
@@ -104,7 +104,7 @@ def mock_operations(
             elif name.startswith("safe_"):  # all others we can assume are async
                 if name == "safe_fetch_user":
 
-                    async def finder(_, xid: int):
+                    async def finder(_: Any, xid: int) -> Optional[discord.User]:
                         return next((user for user in _users if user.id == xid), None)
 
                     monkeypatch.setattr(module, name, AsyncMock(side_effect=finder))
@@ -158,6 +158,7 @@ def build_channel(guild: discord.Guild, offset: int = 1) -> discord.TextChannel:
     channel.guild = guild
     channel.type = discord.ChannelType.text
     channel.permissions_for = MagicMock(return_value=discord.Permissions())
+    channel.is_set = False
     return channel
 
 

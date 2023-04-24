@@ -185,15 +185,15 @@ class suppress(AbstractContextManager[None]):
     be able to understand that code following the context is reachable.
     """
 
-    def __init__(self, *exceptions: Type[Exception], log: str, **kwargs: Any):
+    def __init__(self, *exceptions: Type[Exception], log: str, **kwargs: Any) -> None:
         self._exceptions = exceptions
         self._log = log
         self._kwargs = kwargs
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         pass
 
-    def __exit__(self, exctype: Type[Exception], excinst: Exception, exctb: Traceback):
+    def __exit__(self, exctype: Type[Exception], excinst: Exception, exctb: Traceback) -> bool:
         if captured := exctype is not None and issubclass(exctype, self._exceptions):
             log_warning(self._log, exec_info=True, **self._kwargs)
             if span := tracer.current_span():  # pragma: no cover
@@ -211,7 +211,7 @@ class suppress(AbstractContextManager[None]):
 
 # I have no idea how to properly type hint this.
 def for_all_callbacks(decorator: Any) -> Any:
-    def decorate(cls: Any):
+    def decorate(cls: Any) -> Any:
         for attr in cls.__dict__:
             method = getattr(cls, attr)
             if isinstance(method, (AppCommand, ExtCommand)):

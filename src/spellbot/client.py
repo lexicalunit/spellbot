@@ -27,7 +27,7 @@ class SpellBot(AutoShardedBot):
         self,
         mock_games: bool = False,
         create_connection: bool = True,
-    ):
+    ) -> None:
         self.settings = Settings()
         intents = discord.Intents().default()
         intents.members = True  # pylint: disable=E0237
@@ -44,7 +44,7 @@ class SpellBot(AutoShardedBot):
         self.create_connection = create_connection
         self.channel_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
 
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         logger.info("client ready")
 
     async def setup_hook(self) -> None:
@@ -79,21 +79,24 @@ class SpellBot(AutoShardedBot):
         return await generate_link()
 
     @tracer.wrap(name="interaction", resource="on_message")
-    async def on_message(self, message: discord.Message):  # pylint: disable=arguments-differ
+    async def on_message(  # pylint: disable=arguments-differ
+        self,
+        message: discord.Message,
+    ) -> None:
         span = tracer.current_span()
-        if span:  # noqa
+        if span:
             setup_ignored_errors(span)
 
         # handle DMs normally
         if not message.guild or not hasattr(message.guild, "id"):
             return await super().on_message(message)
-        if span:  # noqa
+        if span:
             span.set_tag("guild_id", message.guild.id)  # type: ignore
 
         # ignore everything except messages in text channels
         if not hasattr(message.channel, "type") or message.channel.type != discord.ChannelType.text:
             return
-        if span:  # noqa
+        if span:
             span.set_tag("channel_id", message.channel.id)  # type: ignore
 
         # ignore hidden/ephemeral messages
@@ -105,7 +108,7 @@ class SpellBot(AutoShardedBot):
             return
 
         message_author_xid = message.author.id  # type: ignore
-        if span:  # noqa
+        if span:
             span.set_tag("author_id", message_author_xid)
 
         # don't try to verify the bot itself
@@ -133,7 +136,7 @@ class SpellBot(AutoShardedBot):
         return await super().on_command_error(context, exception)
 
     @tracer.wrap()
-    async def handle_verification(self, message: discord.Message):
+    async def handle_verification(self, message: discord.Message) -> None:
         message_author_xid = message.author.id  # type: ignore
         verified: Optional[bool] = None
         guilds = GuildsService()
@@ -154,7 +157,7 @@ class SpellBot(AutoShardedBot):
                 await message.delete()
 
     @tracer.wrap()
-    async def handle_message_deleted(self, message: discord.Message):
+    async def handle_message_deleted(self, message: discord.Message) -> None:
         games = GamesService()
         data = await games.select_by_message_xid(message.id)
         if not data:

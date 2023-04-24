@@ -24,13 +24,13 @@ def version_from_package() -> Optional[str]:
 
 
 def version_from_toml() -> Optional[str]:
-    from os.path import dirname, realpath
+    from os.path import realpath
     from pathlib import Path
 
     import toml
 
     try:
-        pkg_root = dirname(realpath(__file__))
+        pkg_root = Path(realpath(__file__)).parent
         src_root = Path(pkg_root).parent
         repo_root = src_root.parent
         pyproject = toml.load(repo_root / "pyproject.toml")

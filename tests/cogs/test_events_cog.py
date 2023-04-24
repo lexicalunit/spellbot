@@ -14,12 +14,12 @@ from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
 
 
-@pytest.fixture
+@pytest.fixture()
 def cog(bot: SpellBot) -> EventsCog:
     return EventsCog(bot)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogEvents(InteractionMixin):
     async def test_game(
         self,
@@ -42,7 +42,8 @@ class TestCogEvents(InteractionMixin):
         game = DatabaseSession.query(Game).one()
         assert game.status == GameStatus.STARTED.value
         admin = DatabaseSession.query(User).get(self.interaction.user.id)
-        assert admin is not None and admin.game_id is None
+        assert admin is not None
+        assert admin.game_id is None
         players = DatabaseSession.query(User).filter(User.xid != self.interaction.user.id).all()
         assert len(players) == 2
         for player in players:

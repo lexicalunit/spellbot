@@ -7,14 +7,14 @@ from spellbot.services import AwardsService, NewAward
 from tests.fixtures import Factories
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestServiceAwards:
     async def test_give_awards_first_award(
         self,
         guild: Guild,
         channel: Channel,
         factories: Factories,
-    ):
+    ) -> None:
         factories.guild_award.create(guild=guild, count=1, role="one", message="msg")
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create()
@@ -33,7 +33,7 @@ class TestServiceAwards:
         guild: Guild,
         channel: Channel,
         factories: Factories,
-    ):
+    ) -> None:
         user = factories.user.create()
         factories.guild_award.create(guild=guild, count=1, role="one", message="msg")
         factories.user_award.create(
@@ -56,7 +56,7 @@ class TestServiceAwards:
         guild: Guild,
         channel: Channel,
         factories: Factories,
-    ):
+    ) -> None:
         game = factories.game.create(guild=guild, channel=channel)
         factories.guild_award.create(guild=guild, count=1, role="one", message="msg")
         user = factories.user.create(game=game)
@@ -74,7 +74,7 @@ class TestServiceAwards:
         guild: Guild,
         channel: Channel,
         factories: Factories,
-    ):
+    ) -> None:
         factories.guild_award.create(guild=guild, count=2, role="two", message="msg")
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create()
@@ -93,7 +93,7 @@ class TestServiceAwards:
         guild: Guild,
         channel: Channel,
         factories: Factories,
-    ):
+    ) -> None:
         factories.guild_award.create(
             guild=guild,
             count=1,

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 @for_all_callbacks(app_commands.check(is_admin))
 @for_all_callbacks(app_commands.check(is_guild))
 class EventsCog(commands.Cog):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
     @app_commands.command(name="game", description="Immediately create and start an ad-hoc game.")
@@ -42,5 +42,5 @@ class EventsCog(commands.Cog):
             await action.create_game(players, format)
 
 
-async def setup(bot: SpellBot):  # pragma: no cover
+async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(EventsCog(bot), guild=bot.settings.GUILD_OBJECT)

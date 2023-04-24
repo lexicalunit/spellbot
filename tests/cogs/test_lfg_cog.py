@@ -15,14 +15,14 @@ from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
 
 
-@pytest.fixture
+@pytest.fixture()
 def cog(bot: SpellBot) -> LookingForGameCog:
     return LookingForGameCog(bot)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogLookingForGame(InteractionMixin):
-    async def test_lfg(self, cog: LookingForGameCog, channel: Channel):
+    async def test_lfg(self, cog: LookingForGameCog, channel: Channel) -> None:
         await self.run(cog.lfg)
         game = DatabaseSession.query(Game).one()
         user = DatabaseSession.query(User).one()
@@ -34,7 +34,7 @@ class TestCogLookingForGame(InteractionMixin):
         self,
         cog: LookingForGameCog,
         add_channel: Callable[..., Channel],
-    ):
+    ) -> None:
         channel = add_channel(default_seats=2, xid=self.interaction.channel_id)
         game = self.factories.game.create(
             guild=self.guild,
@@ -227,7 +227,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             assert game.message_xid is None
 
 
-# @pytest.mark.asyncio
+# @pytest.mark.asyncio()
 # class TestCogLookingForGameCrossContext(BaseMixin):
 #     # TODO: Refactor.
 #     @pytest.mark.skip(reason="needs refactoring")
@@ -341,7 +341,7 @@ class TestCogLookingForGame(InteractionMixin):
 #         }
 
 
-# @pytest.mark.asyncio
+# @pytest.mark.asyncio()
 # class TestCogLookingForGameJoinButton(ComponentContextMixin):
 #     async def test_join(self):
 #         assert self.ctx.author
@@ -519,7 +519,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             }
 
 
-# @pytest.mark.asyncio
+# @pytest.mark.asyncio()
 # class TestCogLookingForGameUserNotifications(InteractionContextMixin):
 #     async def test_happy_path(self):
 #         assert self.ctx.author
@@ -631,7 +631,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             # )
 
 
-# @pytest.mark.asyncio
+# @pytest.mark.asyncio()
 # class TestCogLookingForGameUserAwards(InteractionContextMixin):
 #     async def test_happy_path(self):
 #         assert self.ctx.author
@@ -707,7 +707,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             assert award.guild_award_id == guild_award.id
 
 
-# @pytest.mark.asyncio
+# @pytest.mark.asyncio()
 # class TestCogLookingForGameWatchedUsers(InteractionContextMixin):
 #     async def test_happy_path(self, monkeypatch):
 #         assert self.ctx.guild
@@ -791,7 +791,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             lfg_action.safe_send_user.assert_not_called()
 
 
-# @pytest.mark.asyncio
+# @pytest.mark.asyncio()
 # class TestCogLookingForGameLeaveButton(ComponentContextMixin):
 #     async def test_leave(self):
 #         assert self.ctx.author
@@ -874,7 +874,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             )
 
 
-# @pytest.mark.asyncio
+# @pytest.mark.asyncio()
 # class TestCogLookingForGameVoiceCreate(ComponentContextMixin):
 #     async def test_join_happy_path(self):
 #         assert self.ctx.guild

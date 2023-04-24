@@ -6,7 +6,7 @@ import warnings
 from os import chdir
 from pathlib import Path
 from subprocess import getoutput, run
-from typing import cast
+from typing import Generator, cast
 
 import pytest
 import toml
@@ -17,7 +17,7 @@ from . import REPO_ROOT, SRC_DIRS
 
 
 class TestCodebase:
-    def test_annotations(self):
+    def test_annotations(self) -> None:
         """Checks that all python modules import annotations from future."""
         chdir(REPO_ROOT)
         output = getoutput(
@@ -33,7 +33,7 @@ class TestCodebase:
         )
         assert output == "", "ensure that these files import annotations from __future__"
 
-    def test_pyright(self):
+    def test_pyright(self) -> None:
         """Checks that the Python codebase passes pyright static analysis checks."""
         chdir(REPO_ROOT)
         cmd = ["pyright", *SRC_DIRS]
@@ -42,7 +42,7 @@ class TestCodebase:
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"pyright issues:\n{proc.stdout.decode('utf-8')}"
 
-    def test_ruff(self):
+    def test_ruff(self) -> None:
         """Checks that the Python codebase passes configured ruff checks."""
         chdir(REPO_ROOT)
         cmd = ["ruff", *SRC_DIRS]
@@ -53,7 +53,7 @@ class TestCodebase:
             exitcode == 0
         ), f"ruff issues:\n{proc.stderr.decode('utf-8')}\n{proc.stdout.decode('utf-8')}"
 
-    def test_black(self):
+    def test_black(self) -> None:
         """Checks that the Python codebase passes configured black checks."""
         chdir(REPO_ROOT)
         cmd = ["black", "--check", *SRC_DIRS]
@@ -63,7 +63,7 @@ class TestCodebase:
         assert exitcode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
 
     @pytest.mark.skip(reason="Disabled until TODOs from v7 refactor are fixed.")
-    def test_pylint(self):
+    def test_pylint(self) -> None:
         """Checks that the Python codebase passes configured pylint checks."""
         chdir(REPO_ROOT)
         cmd = ["pylint", *SRC_DIRS]
@@ -75,7 +75,7 @@ class TestCodebase:
         except FileNotFoundError:  # pragma: no cover
             warnings.warn(UserWarning("test skipped: pylint not installed"))
 
-    def test_pylic(self):
+    def test_pylic(self) -> None:
         """Checks that the Python codebase passes configured pylic checks."""
         chdir(REPO_ROOT)
         cmd = ["pylic", "check"]
@@ -84,7 +84,7 @@ class TestCodebase:
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"pylic issues:\n{proc.stdout.decode('utf-8')}"
 
-    def test_pyproject_dependencies(self):
+    def test_pyproject_dependencies(self) -> None:
         """Checks that pyproject.toml dependencies are sorted."""
         pyproject = toml.load("pyproject.toml")
 
@@ -94,7 +94,7 @@ class TestCodebase:
         deps = list(pyproject["tool"]["poetry"]["dependencies"].keys())
         assert deps == sorted(deps)
 
-    def test_relative_imports(self):
+    def test_relative_imports(self) -> None:
         """Checks that relative imports are used in spellbot package."""
         chdir(REPO_ROOT / "src")
         cmd = ["/usr/bin/grep", "-HIRn", "--exclude-dir=migrations", "from spellbot", "."]
@@ -110,7 +110,7 @@ class TestCodebase:
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 1, f"non-exported imports:\n{proc.stdout.decode('utf-8')}"
 
-    def test_whitespace(self):  # pragma: no cover
+    def test_whitespace(self) -> None:  # pragma: no cover
         """Checks for problematic trailing whitespace and missing ending newlines."""
         EXCLUDE_EXTS = (".gif", ".ico", ".ics", ".jpg", ".lock", ".svg", ".png")
         repo = Repo(REPO_ROOT)
@@ -120,19 +120,19 @@ class TestCodebase:
         # Some sources from beautiful-jekyll have persistent whitespace issues.
         WHITESPACE_EXCEPTIONS = "docs/_includes/head.html"
 
-        def paths(tree: Tree, path: Path):
+        def paths(tree: Tree, path: Path) -> Generator[Path, None, None]:
             for blob in tree.blobs:
                 yield path / blob.name
             for t in tree.trees:
                 yield from paths(t, path / t.name)
 
-        def check(path: Path):
+        def check(path: Path) -> None:
             if path.suffix.lower() in EXCLUDE_EXTS:
                 return
             rels = str(path.relative_to(REPO_ROOT))
             if "__snapshots__" in rels:
                 return
-            with open(path, encoding="utf-8") as file:
+            with Path.open(path, encoding="utf-8") as file:
                 lastline = None
                 key = None
                 for i, line in enumerate(file.readlines()):
@@ -154,4 +154,4 @@ class TestCodebase:
             print("Files with trailing whitespace:", file=sys.stderr)  # noqa: T201
             for error in sorted(errors):
                 print(error, file=sys.stderr)  # noqa: T201
-            assert False, "Trailing whitespace is not allowed."
+            pytest.fail("Trailing whitespace is not allowed.")

@@ -6,7 +6,7 @@ from pathlib import Path
 from pkgutil import iter_modules
 
 
-def import_models():  # pragma: no cover
+def import_models() -> None:  # pragma: no cover
     package_dir = Path(__file__).resolve().parent
     for info in iter_modules([str(package_dir)]):
         module = import_module(f"{__name__}.{info.name}")
@@ -16,18 +16,18 @@ def import_models():  # pragma: no cover
                     globals()[name] = _object
 
 
-from .base import Base, create_all, literalquery, now, reverse_all  # noqa: I001
+from .base import Base, create_all, literalquery, now, reverse_all  # noqa: I001,E402
 
-from .award import GuildAward, UserAward
-from .block import Block
-from .channel import Channel
-from .config import Config
-from .game import Game, GameFormat, GameStatus
-from .guild import Guild
-from .play import Play
-from .user import User
-from .verify import Verify
-from .watch import Watch
+from .award import GuildAward, UserAward  # noqa: E402
+from .block import Block  # noqa: E402
+from .channel import Channel  # noqa: E402
+from .config import Config  # noqa: E402
+from .game import Game, GameFormat, GameStatus  # noqa: E402
+from .guild import Guild  # noqa: E402
+from .play import Play  # noqa: E402
+from .user import User  # noqa: E402
+from .verify import Verify  # noqa: E402
+from .watch import Watch  # noqa: E402
 
 __all__ = [
     "Base",

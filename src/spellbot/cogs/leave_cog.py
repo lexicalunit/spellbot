@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 @for_all_callbacks(app_commands.check(is_guild))
 class LeaveGameCog(commands.Cog):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
     # Normally this function would be named "leave" to match the command name like
@@ -29,5 +29,5 @@ class LeaveGameCog(commands.Cog):
             await action.execute()
 
 
-async def setup(bot: SpellBot):  # pragma: no cover
+async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(LeaveGameCog(bot), guild=bot.settings.GUILD_OBJECT)

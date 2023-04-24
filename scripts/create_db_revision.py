@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 import sys
-from os.path import dirname, realpath
+from os.path import realpath
 from pathlib import Path
 
 import alembic
 import alembic.command
 import alembic.config
 
-SRC_ROOT = Path(dirname(realpath(__file__))).parent
+SRC_ROOT = Path(realpath(__file__)).parent.parent
 SPELLBOT_DIR = SRC_ROOT / "src" / "spellbot"
 MIGRATIONS_DIR = SPELLBOT_DIR / "migrations"
 ALEMBIC_INI = MIGRATIONS_DIR / "alembic.ini"

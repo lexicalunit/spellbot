@@ -17,9 +17,9 @@ async def cog(bot: SpellBot) -> BlockCog:
     return BlockCog(bot)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogBlock(InteractionMixin):
-    async def test_block_and_unblock(self, cog: BlockCog):
+    async def test_block_and_unblock(self, cog: BlockCog) -> None:
         target = MagicMock()
         target.id = 2
         target.display_name = "target-author-display-name"
@@ -31,7 +31,7 @@ class TestCogBlock(InteractionMixin):
             ephemeral=True,
         )
 
-        users = sorted(list(DatabaseSession.query(User).all()), key=lambda u: u.name)
+        users = sorted(DatabaseSession.query(User).all(), key=lambda u: u.name)
         assert len(users) == 2
         assert users[0].name == target.display_name
         assert users[0].xid == target.id
@@ -48,7 +48,7 @@ class TestCogBlock(InteractionMixin):
         blocks = list(DatabaseSession.query(Block).all())
         assert len(blocks) == 0
 
-    async def test_block_self(self, cog: BlockCog):
+    async def test_block_self(self, cog: BlockCog) -> None:
         target = MagicMock()
         target.id = self.interaction.user.id
         target.display_name = self.interaction.user.display_name

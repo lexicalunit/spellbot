@@ -26,9 +26,9 @@ async def run_lfg(cog: LookingForGameCog, interaction: discord.Interaction) -> N
     return await callback(interaction=interaction)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogLookingForGameConcurrency:
-    async def test_concurrent_lfg_requests_different_channels(self, bot: SpellBot):
+    async def test_concurrent_lfg_requests_different_channels(self, bot: SpellBot) -> None:
         cog = LookingForGameCog(bot)
         guild = build_guild()
         n = 100
@@ -61,10 +61,10 @@ class TestCogLookingForGameConcurrency:
         self,
         bot: SpellBot,
         monkeypatch: pytest.MonkeyPatch,
-    ):
+    ) -> None:
         next_message_xid = 1
 
-        def get_next_message(*args: Any, **kwargs: Any):
+        def get_next_message(*args: Any, **kwargs: Any) -> discord.Message:
             nonlocal next_message_xid
             message = MagicMock(spec=discord.Message)
             message.id = next_message_xid

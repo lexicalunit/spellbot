@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 @for_all_callbacks(app_commands.check(is_guild))
 class ScoreCog(commands.Cog):
-    def __init__(self, bot: SpellBot):
+    def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
     @app_commands.command(
@@ -59,5 +59,5 @@ class ScoreCog(commands.Cog):
             await action.top(monthly, ago)
 
 
-async def setup(bot: SpellBot):  # pragma: no cover
+async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(ScoreCog(bot), guild=bot.settings.GUILD_OBJECT)

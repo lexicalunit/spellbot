@@ -5,6 +5,7 @@ from datetime import datetime
 from os import getenv
 from typing import Optional
 
+import pytz
 from discord import Object
 from discord.abc import Snowflake
 
@@ -12,7 +13,7 @@ from .environment import running_in_pytest
 
 
 class Settings:
-    def __init__(self, guild_xid: Optional[int] = None):
+    def __init__(self, guild_xid: Optional[int] = None) -> None:
         self.guild_xid = guild_xid
 
         # content
@@ -68,7 +69,7 @@ class Settings:
         self.EXPIRE_TIME_M = 45  # 45 minutes
 
     def workaround_over_eager_caching(self, url: str) -> str:
-        return f"{url}?{datetime.today().strftime('%Y-%m-%d')}"
+        return f"{url}?{datetime.now(tz=pytz.utc).date().strftime('%Y-%m-%d')}"
 
     @property
     def THUMB_URL(self) -> str:

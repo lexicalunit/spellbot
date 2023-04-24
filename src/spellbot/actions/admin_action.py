@@ -8,7 +8,7 @@ from discord.embeds import Embed
 
 from .. import SpellBot
 from ..models import Channel, GuildAward
-from ..operations import safe_send_channel, safe_update_embed_origin
+from ..operations import safe_fetch_text_channel, safe_send_channel, safe_update_embed_origin
 from ..services import GamesService
 from ..settings import Settings
 from ..utils import EMBED_DESCRIPTION_SIZE_LIMIT
@@ -38,7 +38,7 @@ def award_line(award: dict[str, Any]) -> str:
 
 
 class AdminAction(BaseAction):
-    def __init__(self, bot: SpellBot, interaction: discord.Interaction):
+    def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         super().__init__(bot, interaction)
         self.settings = Settings()
 
@@ -63,7 +63,7 @@ class AdminAction(BaseAction):
             channel: dict[str, Any],
             channel_settings: dict[str, Any],
             col: str,
-        ):
+        ) -> None:
             if channel[col] != getattr(Channel, col).default.arg:
                 channel_settings[col] = channel[col]
 
@@ -71,6 +71,11 @@ class AdminAction(BaseAction):
         embed = new_embed()
         description = ""
         for channel in sorted(guild.get("channels", []), key=lambda g: g["xid"]):
+            discord_channel = await safe_fetch_text_channel(self.bot, guild["xid"], channel["xid"])
+            if not discord_channel:
+                await self.services.channels.forget(channel["xid"])
+                continue
+
             channel_settings: dict[str, Any] = {}
             update_channel_settings(channel, channel_settings, "default_seats")
             update_channel_settings(channel, channel_settings, "auto_verify")
@@ -285,24 +290,24 @@ class AdminAction(BaseAction):
         await self.services.guilds.set_motd(message)
         await safe_send_channel(self.interaction, "Message of the day updated.", ephemeral=True)
 
-    async def refresh_setup(self):
+    async def refresh_setup(self) -> None:
         embed = await self._build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
-    async def toggle_show_links(self):
+    async def toggle_show_links(self) -> None:
         await self.services.guilds.toggle_show_links()
         embed = await self._build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
-    async def toggle_voice_create(self):
+    async def toggle_voice_create(self) -> None:
         await self.services.guilds.toggle_voice_create()
         embed = await self._build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
-    async def set_default_seats(self, seats: int):
+    async def set_default_seats(self, seats: int) -> None:
         await self.services.channels.set_default_seats(self.interaction.channel_id, seats)
         await safe_send_channel(
             self.interaction,
@@ -310,7 +315,7 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def set_auto_verify(self, setting: bool):
+    async def set_auto_verify(self, setting: bool) -> None:
         await self.services.channels.set_auto_verify(self.interaction.channel_id, setting)
         await safe_send_channel(
             self.interaction,
@@ -318,7 +323,7 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def set_verified_only(self, setting: bool):
+    async def set_verified_only(self, setting: bool) -> None:
         await self.services.channels.set_verified_only(self.interaction.channel_id, setting)
         await safe_send_channel(
             self.interaction,
@@ -326,7 +331,7 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def set_unverified_only(self, setting: bool):
+    async def set_unverified_only(self, setting: bool) -> None:
         assert self.interaction
         await self.services.channels.set_unverified_only(self.interaction.channel_id, setting)
         await safe_send_channel(
@@ -335,7 +340,7 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def set_channel_motd(self, message: Optional[str] = None):
+    async def set_channel_motd(self, message: Optional[str] = None) -> None:
         motd = await self.services.channels.set_motd(self.interaction.channel_id, message)
         await safe_send_channel(
             self.interaction,
@@ -343,7 +348,7 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def set_voice_category(self, value: str):
+    async def set_voice_category(self, value: str) -> None:
         name = await self.services.channels.set_voice_category(self.interaction.channel_id, value)
         await safe_send_channel(
             self.interaction,
@@ -351,7 +356,7 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def set_delete_expired(self, value: bool):
+    async def set_delete_expired(self, value: bool) -> None:
         name = await self.services.channels.set_delete_expired(self.interaction.channel_id, value)
         await safe_send_channel(
             self.interaction,
@@ -359,7 +364,7 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def set_show_points(self, value: bool):
+    async def set_show_points(self, value: bool) -> None:
         name = await self.services.channels.set_show_points(self.interaction.channel_id, value)
         await safe_send_channel(
             self.interaction,

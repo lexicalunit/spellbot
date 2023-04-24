@@ -15,7 +15,7 @@ from spellbot.models import User
 from tests.mixins import ContextMixin
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestCogOwner(ContextMixin):
     async def run(
         self,
@@ -96,6 +96,6 @@ class TestCogOwner(ContextMixin):
                     guilds:   0
                     users:    0
                     ```
-                """
-            )
+                """,
+            ),
         )

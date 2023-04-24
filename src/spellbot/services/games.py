@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import Any, Optional
 
 import discord
+import pytz
 from asgiref.sync import sync_to_async
 from ddtrace import tracer
 from sqlalchemy import update
@@ -21,7 +22,7 @@ MAX_VOICE_INVITE_LINK_LEN = Game.voice_invite_link.property.columns[0].type.leng
 
 
 class GamesService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.game: Optional[Game] = None
 
     @sync_to_async
@@ -75,7 +76,7 @@ class GamesService:
         query = (
             update(Game)
             .where(Game.id == self.game.id)
-            .values(updated_at=datetime.utcnow())
+            .values(updated_at=datetime.now(tz=pytz.utc))
             .execution_options(synchronize_session=False)
         )
         DatabaseSession.execute(query)
@@ -132,7 +133,7 @@ class GamesService:
         return new
 
     @tracer.wrap()
-    def _find_existing(
+    def _find_existing(  # pylint: disable=too-many-locals
         self,
         *,
         guild_xid: int,
@@ -229,7 +230,7 @@ class GamesService:
         assert len(spelltable_link or "") <= MAX_SPELLTABLE_LINK_LEN
         self.game.spelltable_link = spelltable_link  # type: ignore
         self.game.status = GameStatus.STARTED.value  # type: ignore
-        self.game.started_at = datetime.utcnow()  # type: ignore
+        self.game.started_at = datetime.now(tz=pytz.utc)  # type: ignore
         DatabaseSession.commit()
 
     @sync_to_async
@@ -374,7 +375,7 @@ class GamesService:
 
     @sync_to_async
     @tracer.wrap()
-    def add_points(self, player_xid: int, points: int):
+    def add_points(self, player_xid: int, points: int) -> None:
         assert self.game
         values = {
             "user_xid": player_xid,
@@ -403,7 +404,7 @@ class GamesService:
     @tracer.wrap()
     def inactive_games(self) -> list[dict[str, Any]]:
         settings = Settings()
-        limit = datetime.utcnow() - timedelta(minutes=settings.EXPIRE_TIME_M)
+        limit = datetime.now(tz=pytz.utc) - timedelta(minutes=settings.EXPIRE_TIME_M)
         records = DatabaseSession.query(Game).filter(
             and_(
                 Game.status == GameStatus.PENDING.value,
@@ -415,7 +416,9 @@ class GamesService:
 
     @sync_to_async
     @tracer.wrap()
-    def delete_games(self, game_ids: list[int]):
-        query = update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.utcnow())
+    def delete_games(self, game_ids: list[int]) -> None:
+        query = (
+            update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.now(tz=pytz.utc))
+        )
         DatabaseSession.execute(query)
         DatabaseSession.commit()

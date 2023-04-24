@@ -7,9 +7,9 @@ from spellbot.services import WatchesService
 from tests.factories import GuildFactory, UserFactory, WatchFactory
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestServiceWatches:
-    async def test_fetch(self):
+    async def test_fetch(self) -> None:
         guild1 = GuildFactory.create()
         guild2 = GuildFactory.create()
         user1 = UserFactory.create(xid=101)

@@ -51,10 +51,10 @@ def reverse_all(DATABASE_URL: str) -> None:
 
 
 class StringLiteral(String):  # pragma: no cover
-    def literal_processor(self, dialect: Any):
+    def literal_processor(self, dialect: Any) -> Any:
         super_processor = super().literal_processor(dialect)
 
-        def process(value: Any):
+        def process(value: Any) -> Any:
             if isinstance(value, int):
                 return text(value)  # type: ignore
             if not isinstance(value, str):
@@ -67,7 +67,7 @@ class StringLiteral(String):  # pragma: no cover
         return process
 
 
-def literalquery(statement: Any):  # pragma: no cover
+def literalquery(statement: Any) -> str:  # pragma: no cover
     """WARNING: This is **insecure**. DO NOT execute returned strings."""
     import sqlalchemy.orm
 

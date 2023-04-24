@@ -10,9 +10,9 @@ from ..logs import configure_logging
 
 configure_logging(getenv("LOG_LEVEL") or "INFO")
 
-from ..database import initialize_connection
-from ..environment import running_in_pytest
-from . import build_web_app
+from ..database import initialize_connection  # noqa: E402
+from ..environment import running_in_pytest  # noqa: E402
+from . import build_web_app  # noqa: E402
 
 if not running_in_pytest():  # pragma: no cover
     load_dotenv()

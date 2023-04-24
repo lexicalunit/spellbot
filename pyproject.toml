@@ -2,13 +2,6 @@
 include = '\.pyi?$'
 line-length = 100
 
-[tool.isort]
-ensure_newline_before_comments = true
-include_trailing_comma = true
-line_length = 100
-multi_line_output = 3
-use_parentheses = true
-
 [tool.pylint]
 max-line-length = 100
 
@@ -19,10 +12,47 @@ reportMissingTypeArgument = true
 typeCheckingMode = "basic"
 
 [tool.ruff]
-exclude = [".git", "env"]
-ignore = ["E", "W"]
+exclude = [
+  "__pypackages__",
+  "_build",
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".env",
+  ".git",
+  ".hg",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "buck-out",
+  "build",
+  "dist",
+  "env",
+  "node_modules",
+  "venv",
+  "src/spellbot/migrations/versions",
+]
+extend-select = [
+  "ANN",
+  "C4",
+  "COM812",
+  "DTZ",
+  "I",
+  "ISC",
+  "PT",
+  "PTH",
+  "Q",
+  "RUF",
+  "T20",
+  "W",
+]
+ignore = ["ANN101", "ANN102", "ANN401"]
 line-length = 100
-select = ["F", "E501", "T201", "T203", "I001"]
 target-version = "py310"
 
 [tool.pylic]

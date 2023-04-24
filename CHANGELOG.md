@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Applied more linting and formatting rules from ruff.
+
+### Added
+
+- Automatically clean deleted channels when running the /channels command.
+
 ## [v8.10.1](https://github.com/lexicalunit/spellbot/releases/tag/v8.10.1) - 2023-04-19
 
 ### Fixed
