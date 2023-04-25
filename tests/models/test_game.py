@@ -29,7 +29,6 @@ class TestModelGame:
             "status": game.status,
             "format": game.format,
             "spelltable_link": game.spelltable_link,
-            "voice_invite_link": game.voice_invite_link,
             "jump_link": game.jump_link,
             "spectate_link": game.spectate_link,
         }
@@ -306,7 +305,7 @@ class TestModelGame:
             "type": "rich",
         }
 
-    def test_game_embed_started_with_voice_invite_link(
+    def test_game_embed_started_with_voice_channel(
         self,
         settings: Settings,
         factories: Factories,
@@ -318,7 +317,6 @@ class TestModelGame:
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
             spelltable_link="https://spelltable/link",
-            voice_invite_link="https://voice/invite/link",
             voice_xid=501,
             guild=guild,
             channel=channel,
@@ -350,8 +348,7 @@ class TestModelGame:
                 f"({game.spelltable_link}) (or [spectate this game]"
                 f"({game.spectate_link}))\n"
                 "\n"
-                f"[Join your voice chat now!]({game.voice_invite_link})"
-                " (invite will expire in 240 minutes)\n"
+                f"Join your voice chat now: <#{game.voice_xid}>\n"
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
@@ -365,11 +362,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {
-                    "inline": True,
-                    "name": "Voice Channel",
-                    "value": f"<#{game.voice_xid}>",
-                },
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {"url": settings.THUMB_URL},

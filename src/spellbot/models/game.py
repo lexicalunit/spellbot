@@ -152,10 +152,6 @@ class Game(Base):
         String(255),
         doc="The generated SpellTable link for this game",
     )
-    voice_invite_link = Column(
-        String(255),
-        doc="The generate voice channel invite link for this game",
-    )
 
     players = relationship(
         "User",
@@ -207,13 +203,8 @@ class Game(Base):
                         " for this game. Please go to [SpellTable]"
                         "(https://spelltable.wizards.com/) to create one."
                     )
-                if self.voice_invite_link:
-                    settings = Settings()
-                    expire_min = int(settings.VOICE_INVITE_EXPIRE_TIME_S / 60)
-                    description += (
-                        f"\n\n[Join your voice chat now!]({self.voice_invite_link})"
-                        f" (invite will expire in {expire_min} minutes)"
-                    )
+                if self.voice_xid:
+                    description += f"\n\nJoin your voice chat now: <#{self.voice_xid}>"
             else:
                 description += "Please check your Direct Messages for your SpellTable link."
             if dm:
@@ -300,8 +291,6 @@ class Game(Base):
         embed.add_field(name="Format", value=self.format_name)
         if self.started_at:
             embed.add_field(name="Started at", value=f"<t:{self.started_at_timestamp}>")
-        if self.voice_xid and self.show_links(dm):
-            embed.add_field(name="Voice Channel", value=f"<#{self.voice_xid}>")
         embed.set_footer(text=self.embed_footer)
         embed.color = discord.Color(settings.EMBED_COLOR)
         return embed
@@ -322,6 +311,5 @@ class Game(Base):
             "format": self.format,
             "spelltable_link": self.spelltable_link,
             "spectate_link": self.spectate_link,
-            "voice_invite_link": self.voice_invite_link,
             "jump_link": self.jump_link,
         }
