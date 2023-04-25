@@ -152,6 +152,10 @@ class Game(Base):
         String(255),
         doc="The generated SpellTable link for this game",
     )
+    voice_invite_link = Column(
+        String(255),
+        doc="The generate voice channel invite link for this game",
+    )
 
     players = relationship(
         "User",
