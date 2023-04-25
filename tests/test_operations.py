@@ -15,7 +15,6 @@ from spellbot.operations import (
     safe_add_role,
     safe_channel_reply,
     safe_create_category_channel,
-    safe_create_invite,
     safe_create_voice_channel,
     safe_delete_channel,
     safe_ensure_voice_category,
@@ -210,18 +209,6 @@ class TestOperationsCreateVoiceChannel:
         client = mock_client()
         await safe_create_voice_channel(client, dpy_guild.id, "name", category=category)
         dpy_guild.create_voice_channel.assert_not_called()
-
-
-@pytest.mark.asyncio()
-class TestOperationsCreateInvite:
-    async def test_happy_path(self, dpy_guild: discord.Guild) -> None:
-        channel = MagicMock(spec=discord.VoiceChannel)
-        invite = MagicMock(discord.Invite)
-        invite.url = "http://url"
-        channel.create_invite = AsyncMock(return_value=invite)
-        url = await safe_create_invite(channel, dpy_guild.id, 10)
-        channel.create_invite.assert_awaited_once_with(max_age=10)
-        assert url == invite.url
 
 
 @pytest.mark.asyncio()

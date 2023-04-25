@@ -336,7 +336,6 @@ class TestCogLookingForGame(InteractionMixin):
 #             "started_at": game.started_at,
 #             "status": GameStatus.STARTED.value,
 #             "updated_at": game.updated_at,
-#             "voice_invite_link": None,
 #             "voice_xid": None,
 #         }
 
@@ -890,14 +889,12 @@ class TestCogLookingForGame(InteractionMixin):
 #             lfg_action.safe_get_partial_message.return_value = self.ctx.message
 #             voice_channel = build_voice_channel(self.ctx.guild)
 #             lfg_action.safe_create_voice_channel.return_value = voice_channel
-#             lfg_action.safe_create_invite.return_value = "http://invite"
 
 #             cog = LookingForGameCog(self.bot)
 #             await cog.join.func(cog, self.ctx)
 
 #         found = DatabaseSession.query(Game).one()
 #         assert found.voice_xid == voice_channel.id
-#         assert found.voice_invite_link == "http://invite"
 
 #     async def test_join_when_category_fails(self):
 #         assert self.ctx.author
@@ -917,7 +914,6 @@ class TestCogLookingForGame(InteractionMixin):
 
 #         found = DatabaseSession.query(Game).one()
 #         assert not found.voice_xid
-#         assert not found.voice_invite_link
 
 #     async def test_join_when_channel_fails(self):
 #         assert self.ctx.author
@@ -937,27 +933,3 @@ class TestCogLookingForGame(InteractionMixin):
 
 #         found = DatabaseSession.query(Game).one()
 #         assert not found.voice_xid
-#         assert not found.voice_invite_link
-
-#     async def test_join_when_invite_fails(self):
-#         assert self.ctx.guild
-#         assert self.ctx.author
-#         assert isinstance(self.ctx.author, discord.User)
-#         guild = ctx_guild(self.ctx, voice_create=True)
-#         channel = ctx_channel(self.ctx, guild)
-#         game = ctx_game(self.ctx, guild, channel, seats=2)
-#         other_user = ctx_user(self.ctx, xid=self.ctx.author_id + 1, game=game)
-#         other_player = mock_discord_user(other_user)
-
-#         with mock_operations(lfg_action, users=[self.ctx.author, other_player]):
-#             lfg_action.safe_get_partial_message.return_value = self.ctx.message
-#             voice_channel = build_voice_channel(self.ctx.guild)
-#             lfg_action.safe_create_voice_channel.return_value = voice_channel
-#             lfg_action.safe_create_invite.return_value = None
-
-#             cog = LookingForGameCog(self.bot)
-#             await cog.join.func(cog, self.ctx)
-
-#         found = DatabaseSession.query(Game).one()
-#         assert found.voice_xid == voice_channel.id
-#         assert not found.voice_invite_link

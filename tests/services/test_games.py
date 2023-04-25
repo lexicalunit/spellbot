@@ -108,13 +108,12 @@ class TestServiceGames:
     async def test_games_set_voice(self, game: Game) -> None:
         games = GamesService()
         await games.select(game.id)
-        await games.set_voice(12345, "http://link")
+        await games.set_voice(12345)
 
         DatabaseSession.expire_all()
         found = DatabaseSession.query(Game).get(game.id)
         assert found
         assert found.voice_xid == 12345
-        assert found.voice_invite_link == "http://link"
 
     async def test_games_to_dict(self, game: Game) -> None:
         games = GamesService()

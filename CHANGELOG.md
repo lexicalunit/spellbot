@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Removed the creation of voice channel invite links since those now open in
+  a browser rather than directly in the app.
+
 ### Changed
 
 - Applied more linting and formatting rules from ruff.
