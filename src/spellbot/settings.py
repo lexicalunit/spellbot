@@ -54,7 +54,6 @@ class Settings:
             r"&permissions=2416045137"
             r"&scope=applications.commands%20bot"
         )
-        self.VOICE_INVITE_EXPIRE_TIME_S = 14400  # 4 hours
         self.EMBED_COLOR = 0x5A3EFD
         self.DATABASE_ECHO = False
         self.ADMIN_ROLE = "SpellBot Admin"

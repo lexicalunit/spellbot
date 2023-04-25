@@ -14,7 +14,6 @@ from ..models import GameFormat, GameStatus
 from ..operations import (
     safe_add_role,
     safe_channel_reply,
-    safe_create_invite,
     safe_create_voice_channel,
     safe_ensure_voice_category,
     safe_fetch_user,
@@ -292,14 +291,7 @@ class LookingForGameAction(BaseAction):
         if not voice_channel:
             return
 
-        # This can fail, but it's ok if it does, users don't NEED
-        # an invite link to find their game's voice channel.
-        voice_invite_link = await safe_create_invite(
-            voice_channel,
-            guild_xid,
-            self.settings.VOICE_INVITE_EXPIRE_TIME_S,
-        )
-        await self.services.games.set_voice(voice_channel.id, voice_invite_link)
+        await self.services.games.set_voice(voice_channel.id)
 
     @tracer.wrap()
     async def _handle_embed_creation(  # pylint: disable=too-many-branches

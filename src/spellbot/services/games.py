@@ -18,7 +18,6 @@ from ..models import Block, Game, GameStatus, Play, User, UserAward, Watch
 from ..settings import Settings
 
 MAX_SPELLTABLE_LINK_LEN = Game.spelltable_link.property.columns[0].type.length  # type: ignore
-MAX_VOICE_INVITE_LINK_LEN = Game.voice_invite_link.property.columns[0].type.length  # type: ignore
 
 
 class GamesService:
@@ -34,13 +33,7 @@ class GamesService:
     @sync_to_async
     @tracer.wrap()
     def select_by_voice_xid(self, voice_xid: int) -> bool:
-        self.game = (
-            DatabaseSession.query(Game)
-            .filter(
-                Game.voice_xid == voice_xid,
-            )
-            .one_or_none()
-        )
+        self.game = DatabaseSession.query(Game).filter(Game.voice_xid == voice_xid).one_or_none()
         return bool(self.game)
 
     @sync_to_async
@@ -302,11 +295,9 @@ class GamesService:
 
     @sync_to_async
     @tracer.wrap()
-    def set_voice(self, voice_xid: int, voice_invite_link: str) -> None:
+    def set_voice(self, voice_xid: int) -> None:
         assert self.game
-        assert len(voice_invite_link or "") <= MAX_VOICE_INVITE_LINK_LEN
         self.game.voice_xid = voice_xid  # type: ignore
-        self.game.voice_invite_link = voice_invite_link  # type: ignore
         DatabaseSession.commit()
 
     @sync_to_async

@@ -290,27 +290,6 @@ async def safe_ensure_voice_category(
 
 
 @tracer.wrap()
-async def safe_create_invite(
-    channel: discord.VoiceChannel,
-    guild_xid: int,
-    max_age: int = 0,
-) -> Optional[str]:
-    if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"guild_xid": str(guild_xid), "channel_xid": str(channel.id)})
-
-    invite: Optional[str] = None
-    with suppress(
-        DiscordException,
-        log="int guild %(guild_xid)s, could create invite for channel %(channel_xid)s",
-        guild_xid=guild_xid,
-        channel_xid=channel.id,
-    ):
-        discord_invite = await channel.create_invite(max_age=max_age)
-        invite = str(discord_invite.url)
-    return invite
-
-
-@tracer.wrap()
 async def safe_delete_channel(
     channel: MessageableChannel,
     guild_xid: int,
