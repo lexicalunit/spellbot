@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v8.11.0](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.0) - 2023-04-26
+
 ### Removed
 
 - Removed the creation of voice channel invite links since those now open in
