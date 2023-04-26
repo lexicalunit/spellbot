@@ -114,7 +114,7 @@ class TasksAction:
             prefixes = await self.services.guilds.voice_category_prefixes()
 
             if guild_xid not in active_guild_xids:
-                logger.warning("guild is not active")
+                logger.info("guild is not active")
                 continue
 
             guild = self.bot.get_guild(guild_xid)
