@@ -724,14 +724,14 @@ graph = ["objgraph (>=1.7.2)"]
 
 [[package]]
 name = "discord-py"
-version = "2.2.2"
+version = "2.2.3"
 description = "A Python wrapper for the Discord API"
 category = "main"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "discord.py-2.2.2-py3-none-any.whl", hash = "sha256:38fc52a784727b8e5e5749267089400035b187a009028eddfabeb182abcc6d52"},
-    {file = "discord.py-2.2.2.tar.gz", hash = "sha256:b9944056bcb5711b2d04088848fd004466cf117c15c84fa798bf55470f28275f"},
+    {file = "discord.py-2.2.3-py3-none-any.whl", hash = "sha256:792bdcfe71cfe013c446cf379b2e83e08b5050604322ad6fb592864e63511abd"},
+    {file = "discord.py-2.2.3.tar.gz", hash = "sha256:f9df95795c6f52c5db43b7ab43634993e12ef233288636a759166dd9c134d077"},
 ]
 
 [package.dependencies]
