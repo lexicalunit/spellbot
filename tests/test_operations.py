@@ -8,14 +8,17 @@ from unittest.mock import ANY, AsyncMock, MagicMock, Mock
 import discord
 import pytest
 import pytest_asyncio
+from aiohttp.client_exceptions import ClientOSError
 from discord.errors import DiscordException
 from pytest_mock import MockerFixture
 from spellbot import operations
 from spellbot.operations import (
+    retry,
     safe_add_role,
     safe_channel_reply,
     safe_create_category_channel,
     safe_create_voice_channel,
+    safe_defer_interaction,
     safe_delete_channel,
     safe_ensure_voice_category,
     safe_fetch_guild,
@@ -31,6 +34,47 @@ from spellbot.utils import CANT_SEND_CODE
 
 from tests.mixins import InteractionMixin
 from tests.mocks import build_message, mock_client
+
+
+@pytest.mark.asyncio()
+class TestOperationsRetry:
+    @pytest_asyncio.fixture(autouse=True)
+    def mock_sleep(self, mocker: MockerFixture) -> AsyncMock:
+        return mocker.patch.object(operations, "sleep", AsyncMock())
+
+    async def test_happy_path(self) -> None:
+        async def func() -> int:
+            return 1
+
+        assert await retry(lambda: func()) == 1
+
+    async def test_failure(self) -> None:
+        async def func() -> int:
+            raise ClientOSError()
+
+        with pytest.raises(ClientOSError):
+            await retry(lambda: func())
+
+    async def test_retries(self) -> None:
+        tried_once = False
+
+        async def func() -> int:
+            nonlocal tried_once
+            if not tried_once:
+                tried_once = True
+                raise ClientOSError()
+            return 1
+
+        assert await retry(lambda: func()) == 1
+        assert tried_once
+
+
+@pytest.mark.asyncio()
+class TestOperationsDeferInteraction:
+    async def test_happy_path(self) -> None:
+        interaction = AsyncMock()
+        await safe_defer_interaction(interaction)
+        interaction.response.defer.assert_called_once_with()
 
 
 @pytest.mark.asyncio()

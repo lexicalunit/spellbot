@@ -6,6 +6,7 @@ from discord import ui
 
 from ..client import SpellBot
 from ..metrics import add_span_context
+from ..operations import safe_defer_interaction
 from . import BaseView
 
 
@@ -27,7 +28,7 @@ class PendingGameView(BaseView):
         with tracer.trace(name="interaction", resource="join"):  # type: ignore
             add_span_context(interaction)
             assert interaction.original_response
-            await interaction.response.defer()
+            await safe_defer_interaction(interaction)
             async with self.bot.channel_lock(interaction.channel_id):
                 async with LookingForGameAction.create(self.bot, interaction) as action:
                     original_response = await interaction.original_response()
@@ -49,7 +50,7 @@ class PendingGameView(BaseView):
         assert interaction.channel_id is not None
         with tracer.trace(name="interaction", resource="leave"):  # type: ignore
             add_span_context(interaction)
-            await interaction.response.defer()
+            await safe_defer_interaction(interaction)
             async with self.bot.channel_lock(interaction.channel_id):
                 async with LeaveAction.create(self.bot, interaction) as action:
                     await action.execute(origin=True)
@@ -87,7 +88,7 @@ class StartedGameSelect(ui.Select[StartedGameView]):
 
         with tracer.trace(name="interaction", resource="points"):  # type: ignore
             add_span_context(interaction)
-            await interaction.response.defer()
+            await safe_defer_interaction(interaction)
             assert interaction.original_response
             points = int(self.values[0])
             async with LookingForGameAction.create(self.bot, interaction) as action:
