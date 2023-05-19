@@ -6,6 +6,7 @@ import discord
 from ddtrace import tracer
 
 from ..metrics import add_span_context
+from ..operations import safe_defer_interaction
 from ..utils import is_admin
 from ..views import BaseView
 
@@ -33,7 +34,7 @@ class SetupView(BaseView):
         from ..actions.admin_action import AdminAction
 
         with tracer.trace(name="interaction", resource="toggle_show_links"):
-            await interaction.response.defer()
+            await safe_defer_interaction(interaction)
             add_span_context(interaction)
             async with AdminAction.create(self.bot, interaction) as action:
                 await action.toggle_show_links()
@@ -52,7 +53,7 @@ class SetupView(BaseView):
         from ..actions.admin_action import AdminAction
 
         with tracer.trace(name="interaction", resource="toggle_voice_create"):
-            await interaction.response.defer()
+            await safe_defer_interaction(interaction)
             add_span_context(interaction)
             async with AdminAction.create(self.bot, interaction) as action:
                 await action.toggle_voice_create()
@@ -71,7 +72,7 @@ class SetupView(BaseView):
         from ..actions.admin_action import AdminAction
 
         with tracer.trace(name="interaction", resource="refresh_setup"):
-            await interaction.response.defer()
+            await safe_defer_interaction(interaction)
             add_span_context(interaction)
             async with AdminAction.create(self.bot, interaction) as action:
                 await action.refresh_setup()

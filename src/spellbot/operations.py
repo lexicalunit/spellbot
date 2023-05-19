@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from asyncio import sleep
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Union, cast
 
 import discord
+from aiohttp.client_exceptions import ClientOSError
 from ddtrace import tracer
 from discord.errors import DiscordException
 from discord.utils import MISSING
@@ -25,11 +27,34 @@ if TYPE_CHECKING:
     from discord.guild import GuildChannel
     from discord.threads import Thread
 
-    # Good god why does discord.py type hinting suck so much ass?
     GetChannelReturnType = Optional[Union[GuildChannel, Thread, PrivateChannel]]
 
 logger = logging.getLogger(__name__)
 bad_users: set[int] = set()
+
+
+@tracer.wrap()
+async def retry(func: Callable[[], Awaitable[Any]]) -> Any:
+    times = 0
+    while True:
+        try:
+            times += 1
+            return await func()
+        except ClientOSError:
+            if times > 3:
+                raise
+            await sleep(times / 100)  # 10ms, 20ms, 30ms, etc.
+
+
+@tracer.wrap()
+async def safe_defer_interaction(interaction: discord.Interaction) -> None:
+    with suppress(
+        DiscordException,
+        ClientOSError,
+        log="could defer interaction for user %(user_xid)s",
+        user_xid=interaction.user.id,
+    ):
+        await retry(lambda: interaction.response.defer())
 
 
 @tracer.wrap()
@@ -46,10 +71,11 @@ async def safe_fetch_user(
 
     with suppress(
         DiscordException,
+        ClientOSError,
         log="could not fetch user %(user_xid)s",
         user_xid=user_xid,
     ):
-        user = await client.fetch_user(user_xid)
+        user = await retry(lambda: client.fetch_user(user_xid))
     return user
 
 
@@ -67,10 +93,11 @@ async def safe_fetch_guild(
 
     with suppress(
         DiscordException,
+        ClientOSError,
         log="could not fetch guild %(guild_xid)s",
         guild_xid=guild_xid,
     ):
-        guild = await client.fetch_guild(guild_xid)
+        guild = await retry(lambda: client.fetch_guild(guild_xid))
     return guild
 
 
@@ -91,11 +118,12 @@ async def safe_fetch_text_channel(
     channel: Optional[discord.TextChannel] = None
     with suppress(
         DiscordException,
+        ClientOSError,
         log="in guild %(guild_xid)s, could not fetch channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,
     ):
-        fetched = await client.fetch_channel(channel_xid)
+        fetched = await retry(lambda: client.fetch_channel(channel_xid))
         if isinstance(fetched, discord.TextChannel):
             channel = fetched
 
@@ -121,6 +149,7 @@ def safe_get_partial_message(
     text_channel = cast(discord.TextChannel, channel)
     with suppress(
         DiscordException,
+        ClientOSError,
         log="in guild %(guild_xid)s, could not get partial message %(message_xid)s",
         guild_xid=guild_xid,
         message_xid=message_xid,
@@ -141,11 +170,12 @@ async def safe_update_embed(
     updated_message: Optional[discord.Message] = None
     with suppress(
         DiscordException,
+        ClientOSError,
         log="could not update embed in message %(message_xid)s",
         message_xid=message.id,
     ):
         try:
-            updated_message = await message.edit(*args, **kwargs)
+            updated_message = await retry(lambda: message.edit(*args, **kwargs))
         except discord.errors.NotFound:
             guild_xid = message.guild.id if message.guild else None
             logger.warning("in guild %s, unknown message %s", guild_xid, message.id)
@@ -160,10 +190,11 @@ async def safe_delete_message(message: Union[discord.Message, discord.PartialMes
     success: bool = False
     with suppress(
         DiscordException,
+        ClientOSError,
         log="could not delete message %(message_xid)s",
         message_xid=message.id,
     ):
-        await message.delete()
+        await retry(lambda: message.delete())
         success = True
     return success
 
@@ -183,10 +214,11 @@ async def safe_update_embed_origin(
     success: bool = False
     with suppress(
         DiscordException,
+        ClientOSError,
         log="could not update origin embed in message %(message_xid)s",
         message_xid=interaction.message.id,
     ):
-        await interaction.edit_original_response(*args, **kwargs)
+        await retry(lambda: interaction.edit_original_response(*args, **kwargs))
         success = True
     return success
 
@@ -201,16 +233,17 @@ async def safe_create_category_channel(
         span.set_tags({"guild_xid": str(guild_xid), "name": name})
 
     guild: Optional[discord.Guild]
-    if not (guild := await safe_fetch_guild(client, guild_xid)):
+    if not (guild := await retry(lambda: safe_fetch_guild(client, guild_xid))):
         return None
 
     channel: Optional[discord.CategoryChannel] = None
     with suppress(
         DiscordException,
+        ClientOSError,
         log="in guild %(guild_xid)s, could not create category channel",
         guild_xid=guild_xid,
     ):
-        channel = await guild.create_category_channel(name)
+        channel = await retry(lambda: guild.create_category_channel(name))
     return channel
 
 
@@ -225,16 +258,17 @@ async def safe_create_voice_channel(
         span.set_tags({"guild_xid": str(guild_xid), "name": name})
 
     guild: Optional[discord.Guild]
-    if not (guild := await safe_fetch_guild(client, guild_xid)):
+    if not (guild := await retry(lambda: safe_fetch_guild(client, guild_xid))):
         return None
 
     channel: Optional[discord.VoiceChannel] = None
     with suppress(
         DiscordException,
+        ClientOSError,
         log="in guild %(guild_xid)s, could not create voice channel",
         guild_xid=guild_xid,
     ):
-        channel = await guild.create_voice_channel(name, category=category)
+        channel = await retry(lambda: guild.create_voice_channel(name, category=category))
     return channel
 
 
@@ -248,7 +282,7 @@ async def safe_ensure_voice_category(
         span.set_tags({"guild_xid": str(guild_xid), "prefix": prefix})
 
     guild: Optional[discord.Guild]
-    if not (guild := await safe_fetch_guild(client, guild_xid)):
+    if not (guild := await retry(lambda: safe_fetch_guild(client, guild_xid))):
         return None
 
     def category_num(cat: discord.CategoryChannel) -> int:
@@ -282,10 +316,12 @@ async def safe_ensure_voice_category(
     if available:
         return available
 
-    return await safe_create_category_channel(
-        client,
-        guild_xid,
-        category_name(len(full)),
+    return await retry(
+        lambda: safe_create_category_channel(
+            client,
+            guild_xid,
+            category_name(len(full)),
+        ),
     )
 
 
@@ -313,12 +349,13 @@ async def safe_delete_channel(
     success = False
     with suppress(
         DiscordException,
+        ClientOSError,
         log="in guild %(guild_xid)s, could not delete channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,
     ):
         try:
-            await channel.delete()  # type: ignore
+            await retry(lambda: channel.delete())  # type: ignore
             success = True
         except discord.errors.NotFound:
             logger.warning("in guild  %s, unknown channel %s", guild_xid, channel_xid)
@@ -342,12 +379,13 @@ async def safe_send_channel(
     message: Optional[discord.Message] = None
     with suppress(
         DiscordException,
+        ClientOSError,
         log="in guild %(guild_xid)s, could not send message to channel %(channel_xid)s",
         guild_xid=interaction.guild_id,
         channel_xid=interaction.channel_id,
     ):
-        await interaction.response.send_message(*args, **kwargs)
-        message = await interaction.original_response()
+        await retry(lambda: interaction.response.send_message(*args, **kwargs))
+        message = await retry(lambda: interaction.original_response())
     return message
 
 
@@ -373,12 +411,13 @@ async def safe_followup_channel(
     message: Optional[discord.Message] = None
     with suppress(
         DiscordException,
+        ClientOSError,
         log="in guild %(guild_xid)s, could not send message to channel %(channel_xid)s",
         guild_xid=interaction.guild_id,
         channel_xid=interaction.channel_id,
     ):
-        await interaction.followup.send(*args, **kwargs)
-        message = await interaction.original_response()
+        await retry(lambda: interaction.followup.send(*args, **kwargs))
+        message = await retry(lambda: interaction.original_response())
     return message
 
 
@@ -396,11 +435,12 @@ async def safe_channel_reply(
     message: Optional[discord.Message] = None
     with suppress(
         DiscordException,
+        ClientOSError,
         log="in guild %(guild_xid)s, could not reply to channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,
     ):
-        message = await channel.send(*args, **kwargs)
+        message = await retry(lambda: channel.send(*args, **kwargs))
     return message
 
 
@@ -413,7 +453,7 @@ async def safe_message_reply(message: discord.Message, *args: Any, **kwargs: Any
         return
 
     try:
-        await message.reply(*args, **kwargs)
+        await retry(lambda: message.reply(*args, **kwargs))
     except Exception as ex:
         add_span_error(ex)
         logger.debug("debug: %s", ex, exc_info=True)
@@ -436,7 +476,7 @@ async def safe_send_user(
         return log_warning("no send method on user %(user)s %(xid)s", user=user, xid=user.id)
 
     try:
-        await user.send(*args, **kwargs)
+        await retry(lambda: user.send(*args, **kwargs))
     except discord.errors.DiscordServerError as ex:
         add_span_error(ex)
         log_warning(
@@ -462,6 +502,14 @@ async def safe_send_user(
             )
         log_warning(
             "failed to send message to user %(user)s %(xid)s",
+            user=user,
+            xid=user.id,
+            exec_info=True,
+        )
+    except ClientOSError as ex:
+        add_span_error(ex)
+        log_warning(
+            "client error sending to user %(user)s %(xid)s",
             user=user,
             xid=user.id,
             exec_info=True,
@@ -527,9 +575,9 @@ async def safe_add_role(
             )
             return
         if remove:
-            await member.remove_roles(discord_role)
+            await retry(lambda: member.remove_roles(discord_role))
         else:
-            await member.add_roles(discord_role)
+            await retry(lambda: member.add_roles(discord_role))
     except (
         discord.errors.Forbidden,
         discord.errors.HTTPException,

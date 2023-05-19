@@ -11,6 +11,7 @@ from .. import SpellBot
 from ..actions.lfg_action import LookingForGameAction
 from ..metrics import add_span_context
 from ..models import GameFormat
+from ..operations import safe_defer_interaction
 from ..utils import for_all_callbacks, is_guild
 
 logger = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ class LookingForGameCog(commands.Cog):
     ) -> None:
         assert interaction.channel_id is not None
         add_span_context(interaction)
-        await interaction.response.defer()
+        await safe_defer_interaction(interaction)
         async with self.bot.channel_lock(interaction.channel_id):
             async with LookingForGameAction.create(self.bot, interaction) as action:
                 await action.execute(friends=friends, seats=seats, format=format)

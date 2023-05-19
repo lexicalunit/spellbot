@@ -11,6 +11,7 @@ from .. import SpellBot
 from ..actions import LookingForGameAction
 from ..metrics import add_span_context
 from ..models import GameFormat
+from ..operations import safe_defer_interaction
 from ..utils import for_all_callbacks, is_admin, is_guild
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ class EventsCog(commands.Cog):
     ) -> None:
         assert interaction.channel_id is not None
         add_span_context(interaction)
-        await interaction.response.defer()
+        await safe_defer_interaction(interaction)
         async with LookingForGameAction.create(self.bot, interaction) as action:
             await action.create_game(players, format)
 
