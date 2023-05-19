@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v8.11.1](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.1) - 2023-05-19
+
 ### Added
 
 - Retry logic to all discord operations to combat ClientOSError issues.
