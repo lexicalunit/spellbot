@@ -14,6 +14,7 @@ from expiringdict import ExpiringDict
 
 from .database import db_session_manager, initialize_connection
 from .metrics import setup_ignored_errors, setup_metrics
+from .operations import safe_delete_message
 from .services import ChannelsService, GamesService, GuildsService, VerifiesService
 from .settings import Settings
 from .spelltable import generate_link
@@ -152,9 +153,9 @@ class SpellBot(AutoShardedBot):
         if not user_can_moderate(message.author, guild, message.channel):
             user_is_verified = await verify.is_verified()
             if user_is_verified and channel_data["unverified_only"]:
-                await message.delete()
+                await safe_delete_message(message)
             if not user_is_verified and channel_data["verified_only"]:
-                await message.delete()
+                await safe_delete_message(message)
 
     @tracer.wrap()
     async def handle_message_deleted(self, message: discord.Message) -> None:
