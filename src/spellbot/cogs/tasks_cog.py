@@ -32,8 +32,8 @@ class TasksCog(commands.Cog):  # pragma: no cover
     async def cleanup_old_voice_channels(self) -> None:
         try:
             with tracer.trace(name="command", resource="cleanup_old_voice_channels"):
-                async with TasksAction.create(self.bot) as interaction:
-                    await interaction.cleanup_old_voice_channels()
+                async with TasksAction.create(self.bot) as action:
+                    await action.cleanup_old_voice_channels()
         except BaseException as e:  # Catch EVERYTHING so tasks don't die
             logger.exception("error: exception in task cog: %s", e)
 
@@ -45,8 +45,8 @@ class TasksCog(commands.Cog):  # pragma: no cover
     async def expire_inactive_games(self) -> None:
         try:
             with tracer.trace(name="command", resource="expire_inactive_games"):
-                async with TasksAction.create(self.bot) as interaction:
-                    await interaction.expire_inactive_games()
+                async with TasksAction.create(self.bot) as action:
+                    await action.expire_inactive_games()
         except BaseException as e:  # Catch EVERYTHING so tasks don't die
             logger.exception("error: exception in task cog: %s", e)
 
