@@ -26,6 +26,7 @@ from spellbot.operations import (
     safe_fetch_user,
     safe_get_partial_message,
     safe_message_reply,
+    safe_original_response,
     safe_send_user,
     safe_update_embed,
     safe_update_embed_origin,
@@ -75,6 +76,17 @@ class TestOperationsDeferInteraction:
         interaction = AsyncMock()
         await safe_defer_interaction(interaction)
         interaction.response.defer.assert_called_once_with()
+
+
+@pytest.mark.asyncio()
+class TestOperationsOriginalResponse:
+    async def test_happy_path(self) -> None:
+        interaction = AsyncMock()
+        original_response = MagicMock()
+        interaction.original_response.return_value = original_response
+        response = await safe_original_response(interaction)
+        interaction.original_response.assert_called_once_with()
+        assert response == original_response
 
 
 @pytest.mark.asyncio()

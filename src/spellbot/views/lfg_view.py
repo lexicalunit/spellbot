@@ -6,7 +6,7 @@ from discord import ui
 
 from ..client import SpellBot
 from ..metrics import add_span_context
-from ..operations import safe_defer_interaction
+from ..operations import safe_defer_interaction, safe_original_response
 from . import BaseView
 
 
@@ -31,8 +31,9 @@ class PendingGameView(BaseView):
             await safe_defer_interaction(interaction)
             async with self.bot.channel_lock(interaction.channel_id):
                 async with LookingForGameAction.create(self.bot, interaction) as action:
-                    original_response = await interaction.original_response()
-                    await action.execute(message_xid=original_response.id)
+                    original_response = await safe_original_response(interaction)
+                    if original_response:
+                        await action.execute(message_xid=original_response.id)
 
     @ui.button(
         custom_id="leave",
@@ -92,5 +93,6 @@ class StartedGameSelect(ui.Select[StartedGameView]):
             assert interaction.original_response
             points = int(self.values[0])
             async with LookingForGameAction.create(self.bot, interaction) as action:
-                original_response = await interaction.original_response()
-                await action.add_points(original_response, points)
+                original_response = await safe_original_response(interaction)
+                if original_response:
+                    await action.add_points(original_response, points)
