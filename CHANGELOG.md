@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added logic to guard against `interaction.original_message()` failures.
+
 ## [v8.11.1](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.1) - 2023-05-19
 
 ### Added

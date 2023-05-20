@@ -47,6 +47,21 @@ async def retry(func: Callable[[], Awaitable[Any]]) -> Any:
 
 
 @tracer.wrap()
+async def safe_original_response(
+    interaction: discord.Interaction,
+) -> Optional[discord.InteractionMessage]:
+    response: Optional[discord.InteractionMessage] = None
+    with suppress(
+        DiscordException,
+        ClientOSError,
+        log="could fetch original response for user %(user_xid)s",
+        user_xid=interaction.user.id,
+    ):
+        response = await retry(lambda: interaction.original_response())
+    return response
+
+
+@tracer.wrap()
 async def safe_defer_interaction(interaction: discord.Interaction) -> None:
     with suppress(
         DiscordException,
