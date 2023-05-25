@@ -235,7 +235,7 @@ class PlaysService:
         channel_xid: int,
         monthly: bool,
         ago: int,
-    ) -> Optional[list[dict[str, Any]]]:
+    ) -> list[tuple[str, Any]]:
         filters = [
             Play.game_id == Game.id,
             Game.guild_xid == guild_xid,

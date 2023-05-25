@@ -11,10 +11,9 @@ from ..models import Verify
 
 
 class VerifiesService:
-    def __init__(self) -> None:
-        self.current: Optional[Verify] = None
+    current: Optional[Verify] = None
 
-    @sync_to_async
+    @sync_to_async()
     def upsert(
         self,
         guild_xid: int,
@@ -52,7 +51,7 @@ class VerifiesService:
             .one_or_none()
         )
 
-    @sync_to_async
+    @sync_to_async()
     def is_verified(self) -> bool:
         assert self.current
         return bool(self.current.verified)

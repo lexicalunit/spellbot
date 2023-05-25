@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 ActionType = TypeVar("ActionType", bound="BaseAction")
 
 
-@sync_to_async
+@sync_to_async()
 def handle_exception(ex: Exception) -> NoReturn:
     if isinstance(ex, SpellBotError):
         raise ex

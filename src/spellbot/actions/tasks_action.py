@@ -187,7 +187,7 @@ class TasksAction:
             return
 
         channel_data = await self.services.channels.select(channel_xid)
-        if channel_data["delete_expired"]:
+        if channel_data and channel_data["delete_expired"]:
             await safe_delete_message(post)
         else:
             await safe_update_embed(

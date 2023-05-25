@@ -9,7 +9,7 @@ from ..models import Watch
 
 
 class WatchesService:
-    @sync_to_async
+    @sync_to_async()
     def fetch(self, guild_xid: int) -> list[dict[str, Any]]:
         watches = (
             DatabaseSession.query(Watch)

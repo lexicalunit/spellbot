@@ -24,7 +24,7 @@ class ConfigsService:
         )
         return config.to_dict() if config else None
 
-    @sync_to_async
+    @sync_to_async()
     def upsert(
         self,
         guild_xid: int,

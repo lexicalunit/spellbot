@@ -12,7 +12,7 @@ NewAward = namedtuple("NewAward", ["role", "message", "remove"])
 
 
 class AwardsService:
-    @sync_to_async
+    @sync_to_async()
     def give_awards(self, guild_xid: int, player_xids: list[int]) -> dict[int, list[NewAward]]:
         """Returns dict of discord user ids -> role names to assign to that user."""
         new_roles: dict[int, list[NewAward]] = defaultdict(list)

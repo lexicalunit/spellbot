@@ -14,8 +14,7 @@ from ..models import Channel, Guild, GuildAward
 
 
 class GuildsService:
-    def __init__(self) -> None:
-        self.guild: Optional[Guild] = None
+    guild: Optional[Guild] = None
 
     @sync_to_async()
     def upsert(self, guild: discord.Guild) -> None:
@@ -46,7 +45,7 @@ class GuildsService:
             .one_or_none()
         )
 
-    @sync_to_async
+    @sync_to_async()
     def select(self, guild_xid: int) -> bool:
         self.guild = (
             DatabaseSession.query(Guild)
@@ -83,12 +82,12 @@ class GuildsService:
         self.guild.voice_create = not self.guild.voice_create  # type: ignore
         DatabaseSession.commit()
 
-    @sync_to_async
+    @sync_to_async()
     def current_name(self) -> str:
         assert self.guild
         return self.guild.name or ""
 
-    @sync_to_async
+    @sync_to_async()
     def voice_category_prefixes(self) -> list[str]:
         assert self.guild
         return [
@@ -99,19 +98,19 @@ class GuildsService:
             .all()
         ]
 
-    @sync_to_async
+    @sync_to_async()
     def voiced(self) -> list[int]:
         rows = DatabaseSession.query(Guild.xid).filter(Guild.voice_create.is_(True)).all()
         if not rows:
             return []
         return [int(row[0]) for row in rows]
 
-    @sync_to_async
+    @sync_to_async()
     def to_dict(self) -> dict[str, Any]:
         assert self.guild
         return self.guild.to_dict()
 
-    @sync_to_async
+    @sync_to_async()
     def has_award_with_count(self, count: int) -> bool:
         assert self.guild
         return bool(
@@ -125,7 +124,7 @@ class GuildsService:
             .one_or_none(),
         )
 
-    @sync_to_async
+    @sync_to_async()
     def award_add(
         self,
         count: int,
@@ -152,7 +151,7 @@ class GuildsService:
         DatabaseSession.commit()
         return award.to_dict()
 
-    @sync_to_async
+    @sync_to_async()
     def award_delete(self, guild_award_id: int) -> None:
         assert self.guild
         award = DatabaseSession.query(GuildAward).get(guild_award_id)
