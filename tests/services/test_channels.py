@@ -47,15 +47,18 @@ class TestServiceChannels:
     async def test_channels_current_default_seats(self, channel: Channel) -> None:
         channels = ChannelsService()
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["default_seats"] == channel.default_seats
 
     async def test_channels_set_default_seats(self, channel: Channel) -> None:
         channels = ChannelsService()
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["default_seats"] != 2
 
         await channels.set_default_seats(channel.xid, 2)
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["default_seats"] == 2
 
     async def test_channels_should_auto_verify(self, guild: Guild) -> None:
@@ -63,6 +66,7 @@ class TestServiceChannels:
 
         channels = ChannelsService()
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["auto_verify"]
 
     async def test_channels_verified_only(self, guild: Guild) -> None:
@@ -70,6 +74,7 @@ class TestServiceChannels:
 
         channels = ChannelsService()
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["verified_only"]
 
     async def test_channels_unverified_only(self, guild: Guild) -> None:
@@ -77,6 +82,7 @@ class TestServiceChannels:
 
         channels = ChannelsService()
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["unverified_only"]
 
     async def test_channels_set_auto_verify(self, guild: Guild) -> None:
@@ -85,6 +91,7 @@ class TestServiceChannels:
         channels = ChannelsService()
         await channels.set_auto_verify(channel.xid, True)
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["auto_verify"]
 
     async def test_channels_set_verified_only(self, guild: Guild) -> None:
@@ -93,6 +100,7 @@ class TestServiceChannels:
         channels = ChannelsService()
         await channels.set_verified_only(channel.xid, True)
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["verified_only"]
 
     async def test_channels_set_unverified_only(self, guild: Guild) -> None:
@@ -101,6 +109,7 @@ class TestServiceChannels:
         channels = ChannelsService()
         await channels.set_unverified_only(channel.xid, True)
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["unverified_only"]
 
     async def test_channels_set_motd(self, guild: Guild) -> None:
@@ -108,10 +117,12 @@ class TestServiceChannels:
 
         channel = ChannelFactory.create(guild=guild, motd="whatever")
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["motd"] == "whatever"
 
         await channels.set_motd(channel.xid, "something else")
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["motd"] == "something else"
 
     async def test_channels_set_delete_expired(self, guild: Guild) -> None:
@@ -119,8 +130,10 @@ class TestServiceChannels:
 
         channel = ChannelFactory.create(guild=guild, delete_expired=False)
         data = await channels.select(channel.xid)
+        assert data is not None
         assert not data["delete_expired"]
 
         await channels.set_delete_expired(channel.xid, True)
         data = await channels.select(channel.xid)
+        assert data is not None
         assert data["delete_expired"]

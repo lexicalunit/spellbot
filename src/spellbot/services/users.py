@@ -15,10 +15,9 @@ from ..models import Block, Game, User, Watch
 
 
 class UsersService:
-    def __init__(self) -> None:
-        self.user: Optional[User] = None
+    user: Optional[User] = None
 
-    @sync_to_async
+    @sync_to_async()
     def upsert(self, target: Union[discord.User, discord.Member]) -> dict[str, Any]:
         assert hasattr(target, "id")
         xid = target.id  # type: ignore
@@ -41,12 +40,12 @@ class UsersService:
         assert self.user
         return self.user.to_dict()
 
-    @sync_to_async
+    @sync_to_async()
     def select(self, user_xid: int) -> bool:
         self.user = DatabaseSession.query(User).filter(User.xid == user_xid).one_or_none()
         return bool(self.user)
 
-    @sync_to_async
+    @sync_to_async()
     def set_banned(self, banned: bool, xid: int) -> None:
         values = {
             "xid": xid,
@@ -66,12 +65,12 @@ class UsersService:
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
 
-    @sync_to_async
+    @sync_to_async()
     def current_game_id(self) -> Optional[int]:
         assert self.user
         return self.user.game_id
 
-    @sync_to_async
+    @sync_to_async()
     def leave_game(self) -> None:
         assert self.user
         assert self.user.game
@@ -91,12 +90,12 @@ class UsersService:
         DatabaseSession.execute(query)
         DatabaseSession.commit()
 
-    @sync_to_async
+    @sync_to_async()
     def is_waiting(self) -> bool:
         assert self.user
         return self.user.waiting
 
-    @sync_to_async
+    @sync_to_async()
     def is_banned(self, target_xid: Optional[int] = None) -> bool:
         if target_xid is not None:
             row = DatabaseSession.query(User.banned).filter(User.xid == target_xid).one_or_none()
@@ -105,7 +104,7 @@ class UsersService:
         assert self.user
         return self.user.banned
 
-    @sync_to_async
+    @sync_to_async()
     def block(self, author_xid: int, target_xid: int) -> None:
         values = {
             "user_xid": author_xid,
@@ -116,7 +115,7 @@ class UsersService:
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
 
-    @sync_to_async
+    @sync_to_async()
     def unblock(self, author_xid: int, target_xid: int) -> None:
         DatabaseSession.query(Block).filter(
             and_(
@@ -126,7 +125,7 @@ class UsersService:
         ).delete(synchronize_session=False)
         DatabaseSession.commit()
 
-    @sync_to_async
+    @sync_to_async()
     def watch(self, guild_xid: int, user_xid: int, note: Optional[str] = None) -> None:
         values: dict[str, Any] = {
             "guild_xid": guild_xid,
@@ -149,7 +148,7 @@ class UsersService:
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
 
-    @sync_to_async
+    @sync_to_async()
     def unwatch(self, guild_xid: int, user_xid: int) -> None:
         DatabaseSession.query(Watch).filter(
             and_(

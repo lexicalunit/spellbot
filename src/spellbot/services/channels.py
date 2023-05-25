@@ -40,16 +40,16 @@ class ChannelsService:
         channel = DatabaseSession.query(Channel).filter(Channel.xid == channel.id).one()
         return channel.to_dict()
 
-    @sync_to_async
+    @sync_to_async()
     def forget(self, xid: int) -> None:
         DatabaseSession.query(Channel).filter(Channel.xid == xid).delete(synchronize_session=False)
 
-    @sync_to_async
+    @sync_to_async()
     def select(self, xid: int) -> Optional[dict[str, Any]]:
         channel = DatabaseSession.query(Channel).filter(Channel.xid == xid).one_or_none()
         return channel.to_dict() if channel else None
 
-    @sync_to_async
+    @sync_to_async()
     def set_default_seats(self, xid: int, seats: int) -> None:
         query = (
             update(Channel)
@@ -60,7 +60,7 @@ class ChannelsService:
         DatabaseSession.execute(query)
         DatabaseSession.commit()
 
-    @sync_to_async
+    @sync_to_async()
     def set_auto_verify(self, xid: int, setting: bool) -> None:
         query = (
             update(Channel)
@@ -71,7 +71,7 @@ class ChannelsService:
         DatabaseSession.execute(query)
         DatabaseSession.commit()
 
-    @sync_to_async
+    @sync_to_async()
     def set_verified_only(self, xid: int, setting: bool) -> None:
         query = (
             update(Channel)
@@ -82,7 +82,7 @@ class ChannelsService:
         DatabaseSession.execute(query)
         DatabaseSession.commit()
 
-    @sync_to_async
+    @sync_to_async()
     def set_unverified_only(self, xid: int, setting: bool) -> None:
         query = (
             update(Channel)
