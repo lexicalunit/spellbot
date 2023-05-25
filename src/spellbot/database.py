@@ -67,7 +67,7 @@ db_session_maker = TypedProxy.of_type(sessionmaker)
 DatabaseSession = ContextLocal.of_type(Session)
 
 
-@sync_to_async
+@sync_to_async()
 def initialize_connection(
     app: str,
     *,
@@ -117,18 +117,18 @@ def initialize_connection(
     db_session_maker.set(db_session_maker_obj)  # type: ignore
 
 
-@sync_to_async
+@sync_to_async()
 def begin_session() -> None:
     db_session = db_session_maker()
     DatabaseSession.set(db_session)  # type: ignore
 
 
-@sync_to_async
+@sync_to_async()
 def rollback_session() -> None:  # pragma: no cover
     DatabaseSession.rollback()
 
 
-@sync_to_async
+@sync_to_async()
 def end_session() -> None:
     DatabaseSession.commit()
     DatabaseSession.close()
@@ -141,7 +141,7 @@ async def db_session_manager() -> AsyncGenerator[None, None]:
     await end_session()
 
 
-@sync_to_async
+@sync_to_async()
 def rollback_transaction() -> None:
     if transaction.is_active:
         transaction.rollback()
