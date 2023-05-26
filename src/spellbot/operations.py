@@ -14,6 +14,7 @@ from .metrics import add_span_error
 from .utils import (
     CANT_SEND_CODE,
     bot_can_delete_channel,
+    bot_can_manage_channels,
     bot_can_read,
     bot_can_reply_to,
     bot_can_role,
@@ -249,6 +250,9 @@ async def safe_create_category_channel(
 
     guild: Optional[discord.Guild]
     if not (guild := await retry(lambda: safe_fetch_guild(client, guild_xid))):
+        return None
+
+    if not bot_can_manage_channels(guild):
         return None
 
     channel: Optional[discord.CategoryChannel] = None

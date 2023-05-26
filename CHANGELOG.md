@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Check "manage_channels" permissions check before creating category channel.
+
 ## [v8.11.2](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.2) - 2023-05-19
 
 ### Added

@@ -94,6 +94,16 @@ def bot_can_read(channel: MessageableChannel) -> bool:
     return True
 
 
+def bot_can_manage_channels(guild: discord.Guild) -> bool:
+    if not guild.me:
+        return False
+    perms = guild.me.guild_permissions
+    req = "manage_channels"
+    if not hasattr(perms, req) or not getattr(perms, req):
+        return False
+    return True
+
+
 def bot_can_delete_channel(channel: MessageableChannel) -> bool:
     if not hasattr(channel, "type"):
         return False
