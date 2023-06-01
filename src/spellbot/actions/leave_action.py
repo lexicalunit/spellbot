@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
+from typing import Any, cast
 
 from ddtrace import tracer
 
 from ..operations import (
     safe_fetch_text_channel,
     safe_get_partial_message,
+    safe_original_response,
     safe_send_channel,
     safe_send_user,
     safe_update_embed,
@@ -23,29 +25,45 @@ class LeaveAction(BaseAction):
         if not (game_id := await self.services.users.current_game_id()):
             return
 
-        found = await self.services.games.select(game_id)
-        assert found
-
-        game_data = await self.services.games.to_dict()
-        if not (message_xid := game_data["message_xid"]):
+        if not await self.services.games.select(game_id):
             return
 
-        original_response = await self.interaction.original_response()
-        if original_response.id != message_xid:
-            return await safe_send_user(
-                self.interaction.user,
-                "You're not in that game. Use the /leave command to leave a game.",
-            )
-
         await self.services.users.leave_game()
+
+        game_data = await self.services.games.to_dict()
+        message_xid = game_data.get("message_xid")
+
+        original_response = await safe_original_response(self.interaction)
+        if original_response and message_xid and original_response.id == message_xid:
+            embed = await self.services.games.to_embed()
+            await safe_update_embed_origin(self.interaction, embed=embed)
+            return
+
+        # We couldn't get the original response, so let's fallback to fetching
+        # the channel message associated with the game and updating it.
+        if not self.interaction.channel or not self.interaction.guild or not message_xid:
+            return
+
+        message = safe_get_partial_message(
+            cast(Any, self.interaction.channel),
+            self.interaction.guild.id,
+            message_xid,
+        )
+        if message is None:
+            return
+
         embed = await self.services.games.to_embed()
-        await safe_update_embed_origin(self.interaction, embed=embed)
+        await safe_update_embed(message, embed=embed)
+        await safe_send_user(
+            self.interaction.user,
+            "You have been removed from any games you were signed up for.",
+        )
 
     async def _removed(self) -> None:
         # Note: Ok to use safe_send_channel() so long as this is not an origin context!
         await safe_send_channel(
             self.interaction,
-            "You have been removed from any games your were signed up for.",
+            "You have been removed from any games you were signed up for.",
             ephemeral=True,
         )
 

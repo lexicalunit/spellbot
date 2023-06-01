@@ -29,7 +29,7 @@ class TestCogLeaveGame(InteractionMixin):
 
             leave_action.safe_send_channel.assert_called_once_with(
                 self.interaction,
-                "You have been removed from any games your were signed up for.",
+                "You have been removed from any games you were signed up for.",
                 ephemeral=True,
             )
             leave_action.safe_update_embed.assert_called_once()
@@ -65,7 +65,7 @@ class TestCogLeaveGame(InteractionMixin):
 
             leave_action.safe_send_channel.assert_called_once_with(
                 self.interaction,
-                "You have been removed from any games your were signed up for.",
+                "You have been removed from any games you were signed up for.",
                 ephemeral=True,
             )
 
@@ -75,7 +75,7 @@ class TestCogLeaveGame(InteractionMixin):
 
             leave_action.safe_send_channel.assert_called_once_with(
                 self.interaction,
-                "You have been removed from any games your were signed up for.",
+                "You have been removed from any games you were signed up for.",
                 ephemeral=True,
             )
 
@@ -92,7 +92,7 @@ class TestCogLeaveGame(InteractionMixin):
 
             leave_action.safe_send_channel.assert_called_once_with(
                 self.interaction,
-                "You have been removed from any games your were signed up for.",
+                "You have been removed from any games you were signed up for.",
                 ephemeral=True,
             )
 
@@ -105,6 +105,6 @@ class TestCogLeaveGame(InteractionMixin):
 
             leave_action.safe_send_channel.assert_called_once_with(
                 self.interaction,
-                "You have been removed from any games your were signed up for.",
+                "You have been removed from any games you were signed up for.",
                 ephemeral=True,
             )
