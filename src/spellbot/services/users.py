@@ -71,24 +71,28 @@ class UsersService:
         return self.user.game_id
 
     @sync_to_async()
-    def leave_game(self) -> None:
+    def leave_game(self) -> Optional[int]:
         assert self.user
         assert self.user.game
 
-        left_game_id = self.user.game_id
+        left_game_id: Optional[int] = self.user.game_id
 
-        self.user.game_id = None  # type: ignore
-        DatabaseSession.commit()
+        if left_game_id is not None:
+            self.user.game_id = None  # type: ignore
+            DatabaseSession.commit()
 
-        # This operation should "dirty" the Game, so we need to update its updated_at.
-        query = (
-            update(Game)
-            .where(Game.id == left_game_id)
-            .values(updated_at=datetime.now(tz=pytz.utc))
-            .execution_options(synchronize_session=False)
-        )
-        DatabaseSession.execute(query)
-        DatabaseSession.commit()
+            # This operation should "dirty" the Game, so
+            # we need to update its updated_at field now.
+            query = (
+                update(Game)
+                .where(Game.id == left_game_id)
+                .values(updated_at=datetime.now(tz=pytz.utc))
+                .execution_options(synchronize_session=False)
+            )
+            DatabaseSession.execute(query)
+            DatabaseSession.commit()
+
+        return left_game_id
 
     @sync_to_async()
     def is_waiting(self) -> bool:
