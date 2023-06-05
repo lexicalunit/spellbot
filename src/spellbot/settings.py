@@ -70,9 +70,12 @@ class Settings:
     def workaround_over_eager_caching(self, url: str) -> str:
         return f"{url}?{datetime.now(tz=pytz.utc).date().strftime('%Y-%m-%d')}"
 
+    def queer(self) -> bool:
+        return self.guild_xid == 757455940009328670 or datetime.now(tz=pytz.utc).month == 6
+
     @property
     def THUMB_URL(self) -> str:
-        if self.guild_xid == 757455940009328670:  # pragma: no cover
+        if self.queer():  # pragma: no cover
             return self.workaround_over_eager_caching(
                 "https://user-images.githubusercontent.com/1903876/"
                 "149257079-e3efe74f-482b-4410-a0ea-dd988a4d3c63.png",
@@ -83,7 +86,7 @@ class Settings:
 
     @property
     def ICO_URL(self) -> str:
-        if self.guild_xid == 757455940009328670:  # pragma: no cover
+        if self.queer():  # pragma: no cover
             return self.workaround_over_eager_caching(
                 "https://user-images.githubusercontent.com/1903876/"
                 "149257564-86595c81-82a5-4558-ae40-c03d29a95d1f.png",
