@@ -40,6 +40,7 @@ class WatchAction(BaseAction):
         assert target_xid is not None
 
         if action is ActionType.UNWATCH:
+            assert self.interaction.guild_id is not None
             await self.services.users.unwatch(self.interaction.guild_id, target_xid)
             await safe_send_channel(
                 self.interaction,
@@ -47,6 +48,7 @@ class WatchAction(BaseAction):
                 ephemeral=True,
             )
         else:
+            assert self.interaction.guild_id is not None
             await self.services.users.watch(self.interaction.guild_id, target_xid, note=note)
             await safe_send_channel(self.interaction, f"Watching <@{target_xid}>.", ephemeral=True)
 
@@ -95,6 +97,7 @@ class WatchAction(BaseAction):
             return embed
 
         watches = WatchesService()
+        assert self.interaction.guild_id is not None
         entries = await watches.fetch(guild_xid=self.interaction.guild_id)
 
         embeds: list[Embed] = []

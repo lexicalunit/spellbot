@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-import discord
 import pytz
 from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
@@ -12,10 +11,14 @@ from sqlalchemy.sql.expression import update
 from ..database import DatabaseSession
 from ..models import Channel
 
+if TYPE_CHECKING:
+    from discord.abc import MessageableChannel
+
 
 class ChannelsService:
     @sync_to_async()
-    def upsert(self, channel: discord.TextChannel) -> dict[str, Any]:
+    def upsert(self, channel: MessageableChannel) -> dict[str, Any]:
+        assert channel.guild is not None
         name_max_len = Channel.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(channel, "name", "")
         name = raw_name[:name_max_len]
