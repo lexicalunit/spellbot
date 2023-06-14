@@ -141,6 +141,7 @@ class SpellBot(AutoShardedBot):
         message_author_xid = message.author.id  # type: ignore
         verified: Optional[bool] = None
         guilds = GuildsService()
+        assert message.guild is not None
         await guilds.upsert(message.guild)
         channels = ChannelsService()
         channel_data = await channels.upsert(message.channel)

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class ConfigAction(BaseAction):
     async def power(self, level: Optional[int] = None) -> None:
+        assert self.interaction.guild_id is not None
         await self.services.configs.upsert(
             self.interaction.guild_id,
             self.interaction.user.id,

@@ -308,6 +308,7 @@ class AdminAction(BaseAction):
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def set_default_seats(self, seats: int) -> None:
+        assert self.interaction.channel_id is not None
         await self.services.channels.set_default_seats(self.interaction.channel_id, seats)
         await safe_send_channel(
             self.interaction,
@@ -316,6 +317,7 @@ class AdminAction(BaseAction):
         )
 
     async def set_auto_verify(self, setting: bool) -> None:
+        assert self.interaction.channel_id is not None
         await self.services.channels.set_auto_verify(self.interaction.channel_id, setting)
         await safe_send_channel(
             self.interaction,
@@ -324,6 +326,7 @@ class AdminAction(BaseAction):
         )
 
     async def set_verified_only(self, setting: bool) -> None:
+        assert self.interaction.channel_id is not None
         await self.services.channels.set_verified_only(self.interaction.channel_id, setting)
         await safe_send_channel(
             self.interaction,
@@ -332,7 +335,7 @@ class AdminAction(BaseAction):
         )
 
     async def set_unverified_only(self, setting: bool) -> None:
-        assert self.interaction
+        assert self.interaction.channel_id is not None
         await self.services.channels.set_unverified_only(self.interaction.channel_id, setting)
         await safe_send_channel(
             self.interaction,
@@ -341,6 +344,7 @@ class AdminAction(BaseAction):
         )
 
     async def set_channel_motd(self, message: Optional[str] = None) -> None:
+        assert self.interaction.channel_id is not None
         motd = await self.services.channels.set_motd(self.interaction.channel_id, message)
         await safe_send_channel(
             self.interaction,
@@ -349,6 +353,7 @@ class AdminAction(BaseAction):
         )
 
     async def set_voice_category(self, value: str) -> None:
+        assert self.interaction.channel_id is not None
         name = await self.services.channels.set_voice_category(self.interaction.channel_id, value)
         await safe_send_channel(
             self.interaction,
@@ -357,6 +362,7 @@ class AdminAction(BaseAction):
         )
 
     async def set_delete_expired(self, value: bool) -> None:
+        assert self.interaction.channel_id is not None
         name = await self.services.channels.set_delete_expired(self.interaction.channel_id, value)
         await safe_send_channel(
             self.interaction,
@@ -365,6 +371,7 @@ class AdminAction(BaseAction):
         )
 
     async def set_show_points(self, value: bool) -> None:
+        assert self.interaction.channel_id is not None
         name = await self.services.channels.set_show_points(self.interaction.channel_id, value)
         await safe_send_channel(
             self.interaction,

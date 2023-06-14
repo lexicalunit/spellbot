@@ -16,6 +16,7 @@ class VerifyAction(BaseAction):
         assert hasattr(target, "id")
         target_xid = target.id
 
+        assert self.interaction.guild_id is not None
         await self.services.verifies.upsert(self.interaction.guild_id, target_xid, setting)
         await safe_send_channel(
             self.interaction,
