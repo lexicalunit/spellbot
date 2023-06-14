@@ -80,6 +80,7 @@ class LookingForGameAction(BaseAction):
         origin = bool(message_xid is not None)
 
         if not origin:
+            assert self.interaction.guild_id is not None
             return await self.services.games.upsert(
                 guild_xid=self.interaction.guild_id,
                 channel_xid=self.channel.id,
@@ -373,6 +374,7 @@ class LookingForGameAction(BaseAction):
                 failed_xids.append(player_xid)
 
         # give out awards
+        assert self.interaction.guild_id is not None
         new_roles = await self.services.awards.give_awards(
             self.interaction.guild_id,
             player_xids,

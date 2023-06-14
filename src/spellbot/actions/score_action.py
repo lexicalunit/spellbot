@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 class ScoreAction(BaseAction):
     async def execute(self, target: Union[discord.Member, discord.User]) -> None:
         assert self.interaction.guild
+        assert self.interaction.guild_id is not None
         guild_name = self.interaction.guild.name
         assert hasattr(target, "id")
         target_xid = target.id
@@ -58,6 +59,7 @@ class ScoreAction(BaseAction):
         channel_xid = self.interaction.channel.id
         guild_xid = self.interaction.guild_id
 
+        assert guild_xid is not None
         data = await self.services.plays.top_records(guild_xid, channel_xid, monthly, ago)
 
         settings = Settings()
