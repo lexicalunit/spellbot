@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import BigInteger, Column, ForeignKey, Integer
 
@@ -35,3 +35,10 @@ class Play(Base):
         nullable=True,
         doc="The number of points reported by the user",
     )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "user_xid": self.user_xid,
+            "game_id": self.game_id,
+            "points": self.points,
+        }

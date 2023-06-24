@@ -2,10 +2,33 @@ from __future__ import annotations
 
 import pytest
 from spellbot.database import DatabaseSession
-from spellbot.models import Channel, Game, GameFormat, GameStatus, Guild, Play, User
+from spellbot.models import (
+    Block,
+    Channel,
+    Game,
+    GameFormat,
+    GameStatus,
+    Guild,
+    Play,
+    User,
+    UserAward,
+    Verify,
+)
 from spellbot.services import GamesService
+from sqlalchemy.sql.expression import and_
 
-from tests.factories import BlockFactory, GameFactory, PlayFactory, UserFactory, WatchFactory
+from tests.factories import (
+    BlockFactory,
+    ChannelFactory,
+    GameFactory,
+    GuildAwardFactory,
+    GuildFactory,
+    PlayFactory,
+    UserAwardFactory,
+    UserFactory,
+    VerifyFactory,
+    WatchFactory,
+)
 
 
 @pytest.mark.asyncio()
@@ -370,3 +393,100 @@ class TestServiceGamesUpsert:
         assert game.channel_xid == channel.xid
         rows = DatabaseSession.query(User.xid).filter(User.game_id == game.id).all()
         assert {row[0] for row in rows} == {101, 102, 103}
+
+    async def test_transfer(self) -> None:
+        games = GamesService()
+
+        guild1 = GuildFactory.create()
+        channel11 = ChannelFactory.create(guild_xid=guild1.xid)
+        channel12 = ChannelFactory.create(guild_xid=guild1.xid)
+
+        guild2 = GuildFactory.create()
+        channel21 = ChannelFactory.create(guild_xid=guild2.xid)
+        channel22 = ChannelFactory.create(guild_xid=guild2.xid)
+
+        user1 = UserFactory.create(xid=101)
+        user2 = UserFactory.create(xid=102)
+        user3 = UserFactory.create(xid=103)
+
+        game11 = GameFactory.create(guild=guild1, channel=channel11)
+        game12 = GameFactory.create(guild=guild1, channel=channel12)
+        game21 = GameFactory.create(guild=guild2, channel=channel21)
+        game22 = GameFactory.create(guild=guild2, channel=channel22)
+
+        user1_play11 = PlayFactory.create(user_xid=user1.xid, game_id=game11.id)
+        user1_play12 = PlayFactory.create(user_xid=user1.xid, game_id=game12.id)
+        user1_play21 = PlayFactory.create(user_xid=user1.xid, game_id=game21.id)
+        user1_play22 = PlayFactory.create(user_xid=user1.xid, game_id=game22.id)
+
+        guild_award = GuildAwardFactory.create(guild_xid=guild1.xid)
+        UserAwardFactory.create(
+            guild_xid=guild1.xid,
+            user_xid=user1.xid,
+            guild_award_id=guild_award.id,
+        )
+        user2_guild1_award = UserAwardFactory.create(
+            guild_xid=guild1.xid,
+            user_xid=user2.xid,
+            guild_award_id=guild_award.id,
+        )
+
+        VerifyFactory.create(
+            guild_xid=guild1.xid,
+            user_xid=user1.xid,
+            verified=True,
+        )
+        verify12 = VerifyFactory.create(
+            guild_xid=guild1.xid,
+            user_xid=user2.xid,
+            verified=True,
+        )
+
+        user1_blocks_user3 = BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user3.xid)
+        user3_blocks_user1 = BlockFactory.create(user_xid=user3.xid, blocked_user_xid=user1.xid)
+
+        await games.transfer(guild1.xid, user1.xid, user2.xid)
+
+        DatabaseSession.expire_all()
+
+        assert DatabaseSession.query(UserAward).filter(UserAward.user_xid == user1.xid).count() == 0
+        assert DatabaseSession.query(UserAward).filter(UserAward.user_xid == user2.xid).count() == 1
+        assert user2_guild1_award.user_xid == user2.xid
+
+        assert DatabaseSession.query(Verify).filter(Verify.user_xid == user1.xid).count() == 0
+        assert DatabaseSession.query(Verify).filter(Verify.user_xid == user2.xid).count() == 1
+        assert verify12.user_xid == user2.xid
+
+        assert DatabaseSession.query(Play).filter(Play.user_xid == user1.xid).count() == 2
+        assert DatabaseSession.query(Play).filter(Play.user_xid == user2.xid).count() == 2
+        assert user1_play11.user_xid == user2.xid
+        assert user1_play12.user_xid == user2.xid
+        assert user1_play21.user_xid == user1.xid
+        assert user1_play22.user_xid == user1.xid
+
+        assert user1_blocks_user3.user_xid == user1.xid
+        assert user1_blocks_user3.blocked_user_xid == user3.xid
+        assert user3_blocks_user1.user_xid == user3.xid
+        assert user3_blocks_user1.blocked_user_xid == user1.xid
+        assert (
+            DatabaseSession.query(Block)
+            .filter(
+                and_(
+                    Block.user_xid == user2.xid,
+                    Block.blocked_user_xid == user3.xid,
+                ),
+            )
+            .count()
+            == 1
+        )
+        assert (
+            DatabaseSession.query(Block)
+            .filter(
+                and_(
+                    Block.user_xid == user3.xid,
+                    Block.blocked_user_xid == user2.xid,
+                ),
+            )
+            .count()
+            == 1
+        )

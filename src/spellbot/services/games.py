@@ -9,15 +9,20 @@ from asgiref.sync import sync_to_async
 from ddtrace import tracer
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import and_, asc, column, or_, select
 from sqlalchemy.sql.functions import count
 
 from ..database import DatabaseSession
-from ..models import Block, Game, GameStatus, Play, User, UserAward, Watch
+from ..models import Block, Config, Game, GameStatus, Play, User, UserAward, Verify, Watch
 from ..settings import Settings
 
 MAX_SPELLTABLE_LINK_LEN = Game.spelltable_link.property.columns[0].type.length  # type: ignore
+
+
+def without(d: dict[str, Any], keys: list[str]) -> dict[str, Any]:
+    return {key: value for key, value in d.items() if key not in keys}
 
 
 class GamesService:
@@ -412,3 +417,67 @@ class GamesService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
+
+    @sync_to_async()
+    @tracer.wrap()
+    def transfer(self, guild_xid: int, old_user_xid: int, new_user_xid: int) -> None:
+        def transfer_model(
+            model: Any,
+            user_xid_field: str = "user_xid",
+            do_delete: bool = False,
+        ) -> None:
+            user_xid_column = getattr(model, user_xid_field)
+            guild_xid_column = getattr(model, "guild_xid") if hasattr(model, "guild_xid") else None
+
+            new_filter = [user_xid_column == new_user_xid]
+            if guild_xid_column:
+                new_filter.append(guild_xid_column == guild_xid)
+
+            old_filter = [user_xid_column == old_user_xid]
+            if guild_xid_column:
+                old_filter.append(guild_xid_column == guild_xid)
+
+            extant = [obj.to_dict() for obj in DatabaseSession.query(model).filter(*new_filter)]
+
+            for obj in DatabaseSession.query(model).filter(*old_filter):
+                data = obj.to_dict()
+                data[user_xid_field] = new_user_xid
+                if data not in extant:
+                    if do_delete:
+                        setattr(obj, user_xid_field, new_user_xid)
+                    else:
+                        new_obj = model(**data)
+                        DatabaseSession.add(new_obj)
+
+            if do_delete:
+                DatabaseSession.query(model).filter(*old_filter).delete()
+
+        transfer_model(UserAward, do_delete=True)
+        transfer_model(Verify, do_delete=True)
+        transfer_model(Config, do_delete=True)
+        transfer_model(Watch, do_delete=False)
+        transfer_model(Block, "user_xid", do_delete=False)
+        transfer_model(Block, "blocked_user_xid", do_delete=False)
+
+        # transfer plays: since these need to be joined on the games table, we
+        # can't use transfer_model here and instead have to use some custom logic
+        plays = (
+            DatabaseSession.query(Play)
+            .join(Game)
+            .filter(
+                and_(
+                    Play.user_xid == old_user_xid,
+                    Game.guild_xid == guild_xid,
+                ),
+            )
+        )
+        for play in plays:
+            # theoretically this shouldn't cause an integrity error since we don't
+            # except the old user to have played in a game with the new user
+            play.user_xid = new_user_xid
+
+        try:
+            DatabaseSession.commit()
+        except IntegrityError:
+            DatabaseSession.rollback()
+            raise

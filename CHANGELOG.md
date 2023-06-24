@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a /transfer command to transfer an old user's data to a new user.
+
 ## [v8.11.6](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.6) - 2023-06-12
 
 ### Changed

@@ -37,7 +37,7 @@ class Config(Base):
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "user_xid": self.user_xid,
             "guild_xid": self.guild_xid,
+            "user_xid": self.user_xid,
             "power_level": self.power_level,
         }
