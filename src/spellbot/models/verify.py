@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import BigInteger, Boolean, Column, false
 
 from . import Base
@@ -29,3 +31,10 @@ class Verify(Base):
         server_default=false(),
         doc="If true, this user is considered verified for this guild",
     )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "guild_xid": self.guild_xid,
+            "user_xid": self.user_xid,
+            "verified": self.verified,
+        }

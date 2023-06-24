@@ -4,7 +4,7 @@ from tests.fixtures import Factories
 
 
 class TestModelAward:
-    def test_award(self, factories: Factories) -> None:
+    def test_guild_award(self, factories: Factories) -> None:
         guild = factories.guild.create()
         guild_award = factories.guild_award.create(guild=guild)
 
@@ -18,4 +18,20 @@ class TestModelAward:
             "message": guild_award.message,
             "unverified_only": guild_award.unverified_only,
             "verified_only": guild_award.verified_only,
+        }
+
+    def test_user_award(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        user = factories.user.create()
+        guild_award = factories.guild_award.create(guild=guild)
+        user_award = factories.user_award.create(
+            guild_xid=guild.xid,
+            user_xid=user.xid,
+            guild_award_id=guild_award.id,
+        )
+
+        assert user_award.to_dict() == {
+            "user_xid": user_award.user_xid,
+            "guild_xid": user_award.guild_xid,
+            "guild_award_id": user_award.guild_award_id,
         }

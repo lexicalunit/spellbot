@@ -117,3 +117,10 @@ class UserAward(Base):
         index=True,
     )
     guild_award_id = Column(Integer, nullable=True)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "user_xid": self.user_xid,
+            "guild_xid": self.guild_xid,
+            "guild_award_id": self.guild_award_id,
+        }
