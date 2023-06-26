@@ -214,11 +214,17 @@ class AdminAction(BaseAction):
 
     async def channels(self, page: int) -> None:
         embeds = await self._build_channels_embeds()
-        await safe_send_channel(self.interaction, embed=embeds[page - 1])
+        try:
+            await safe_send_channel(self.interaction, embed=embeds[page - 1])
+        except IndexError:
+            await safe_send_channel(self.interaction, "Invalid page.", ephemeral=True)
 
     async def awards(self, page: int) -> None:
         embeds = await self._build_awards_embeds()
-        await safe_send_channel(self.interaction, embed=embeds[page - 1])
+        try:
+            await safe_send_channel(self.interaction, embed=embeds[page - 1])
+        except IndexError:
+            await safe_send_channel(self.interaction, "Invalid page.", ephemeral=True)
 
     async def transfer(
         self,
