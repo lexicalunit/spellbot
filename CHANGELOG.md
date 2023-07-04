@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Adds a /transfer command to transfer an old user's data to a new user.
 - Catch IndexErrors in admin pagination commands.
+- Small tweak to SpellTable API interface to handle upstream timeout errors.
 
 ## [v8.11.6](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.6) - 2023-06-12
 

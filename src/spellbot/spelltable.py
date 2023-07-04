@@ -61,6 +61,9 @@ async def generate_link() -> Optional[str]:
         )
         return None
     except Exception as ex:
+        if raw_data == b"upstream request timeout":
+            return None
+
         add_span_error(ex)
         logger.error(
             "error: unexpected exception: %s, data: %s, raw: %s",
