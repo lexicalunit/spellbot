@@ -37,16 +37,17 @@ class TestCogConfigPowerLevelWhenUserWaiting(InteractionMixin):
 
             await self.run(cog.power, level=10)
 
+            assert self.interaction.channel is not None
+            game = player.game(self.interaction.channel.id)
+            assert game is not None
             update_embed_call = config_action.safe_update_embed
             update_embed_call.assert_called_once()
             assert update_embed_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": self.settings.EMBED_COLOR,
                 "description": (
-                    "_A SpellTable link will be created when all players have joined._\n"
-                    "\n"
-                    f"{player.game.guild.motd}\n"
-                    "\n"
-                    f"{player.game.channel.motd}"
+                    "_A SpellTable link will be created when all players have joined._\n\n"
+                    f"{game.guild.motd}\n\n"
+                    f"{game.channel.motd}"
                 ),
                 "fields": [
                     {
@@ -56,7 +57,7 @@ class TestCogConfigPowerLevelWhenUserWaiting(InteractionMixin):
                     },
                     {"inline": True, "name": "Format", "value": "Commander"},
                 ],
-                "footer": {"text": f"SpellBot Game ID: #SB{player.game.id}"},
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
                 "thumbnail": {"url": self.settings.THUMB_URL},
                 "title": "**Waiting for 3 more players to join...**",
                 "type": "rich",

@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import asyncio
-import threading
 import time
-from os import _exit, getenv
+from os import getenv
 from socket import socket
 from typing import Optional
 
@@ -124,28 +123,8 @@ def main(
         launch_web_server(settings, loop, port or settings.PORT)
         loop.run_forever()
     else:
-        from . import SpellBot
         from .client import build_bot
 
         assert settings.BOT_TOKEN is not None
         bot = build_bot(mock_games=mock_games)
-
-        if not debug and not running_in_pytest:
-            # Sometimes the bot gets into a weird state where it doesn't properly
-            # start up entirely; this causes tasks (see tasks_cog.py) to never begin
-            # since those only start after the ready signal has been processed.
-            # As such, let's check every 30 minutes if the bot is ready, because if
-            # it isn't we can just kill it and have supervisord restart it for us.
-            def killer(bot: SpellBot) -> None:
-                while True:
-                    time.sleep(30 * 60)  # 30 minute wait
-                    if not bot.is_ready():
-                        print("exiting due to readiness check failure")  # noqa: T201
-                        _exit(1)
-                    else:
-                        print("readiness check passed")  # noqa: T201
-
-            x = threading.Thread(target=killer, args=(bot,))
-            x.start()
-
         bot.run(settings.BOT_TOKEN)

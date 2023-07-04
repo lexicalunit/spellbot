@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 
 import pytz
-from spellbot.models import GameStatus
+from spellbot.database import DatabaseSession
+from spellbot.models import GameStatus, Play
 from spellbot.settings import Settings
 
 from tests.fixtures import Factories
@@ -220,8 +221,22 @@ class TestModelGame:
         )
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
-        factories.play.create(user_xid=player1.xid, game_id=game.id, points=5)
-        factories.play.create(user_xid=player2.xid, game_id=game.id, points=1)
+        DatabaseSession.query(Play).filter(
+            Play.game_id == game.id,
+            Play.user_xid == player1.xid,
+        ).update(
+            {
+                Play.points: 5,  # type: ignore
+            },
+        )
+        DatabaseSession.query(Play).filter(
+            Play.game_id == game.id,
+            Play.user_xid == player2.xid,
+        ).update(
+            {
+                Play.points: 1,  # type: ignore
+            },
+        )
 
         assert game.to_embed().to_dict() == {
             "color": settings.EMBED_COLOR,

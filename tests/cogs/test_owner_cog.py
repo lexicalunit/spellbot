@@ -99,3 +99,13 @@ class TestCogOwner(ContextMixin):
                 """,
             ),
         )
+
+    async def test_naughty(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.cogs.owner_cog.bad_users", [1, 2, 3])
+        cog = OwnerCog(self.bot)
+
+        await self.run(cog, cog.naughty, self.context)
+
+        self.context.author.send.assert_called_once_with(
+            "Naughty users: <@1> (1)\n<@2> (2)\n<@3> (3)",
+        )

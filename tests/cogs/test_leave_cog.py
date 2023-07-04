@@ -29,7 +29,40 @@ class TestCogLeaveGame(InteractionMixin):
 
             leave_action.safe_send_channel.assert_called_once_with(
                 self.interaction,
-                "You have been removed from any games you were signed up for.",
+                "You were removed from any pending games in this channel.",
+                ephemeral=True,
+            )
+            leave_action.safe_update_embed.assert_called_once()
+            safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
+            assert safe_update_embed_call.kwargs["embed"].to_dict() == {
+                "color": self.settings.EMBED_COLOR,
+                "description": (
+                    "_A SpellTable link will be created when all players have joined._\n"
+                    "\n"
+                    f"{self.guild.motd}\n\n{self.channel.motd}"
+                ),
+                "fields": [{"inline": True, "name": "Format", "value": "Commander"}],
+                "footer": {"text": f"SpellBot Game ID: #SB{self.game.id}"},
+                "thumbnail": {"url": self.settings.THUMB_URL},
+                "title": "**Waiting for 4 more players to join...**",
+                "type": "rich",
+            }
+
+    async def test_leave_all(
+        self,
+        cog: LeaveGameCog,
+        message: discord.Message,
+        player: User,
+    ) -> None:
+        with mock_operations(leave_action):
+            leave_action.safe_fetch_text_channel.return_value = self.interaction.channel
+            leave_action.safe_get_partial_message.return_value = message
+
+            await self.run(cog.leave_all)
+
+            leave_action.safe_send_channel.assert_called_once_with(
+                self.interaction,
+                "You were removed from all pending games.",
                 ephemeral=True,
             )
             leave_action.safe_update_embed.assert_called_once()
@@ -65,7 +98,7 @@ class TestCogLeaveGame(InteractionMixin):
 
             leave_action.safe_send_channel.assert_called_once_with(
                 self.interaction,
-                "You have been removed from any games you were signed up for.",
+                "You were removed from any pending games in this channel.",
                 ephemeral=True,
             )
 
@@ -75,7 +108,7 @@ class TestCogLeaveGame(InteractionMixin):
 
             leave_action.safe_send_channel.assert_called_once_with(
                 self.interaction,
-                "You have been removed from any games you were signed up for.",
+                "You were removed from any pending games in this channel.",
                 ephemeral=True,
             )
 
@@ -92,7 +125,7 @@ class TestCogLeaveGame(InteractionMixin):
 
             leave_action.safe_send_channel.assert_called_once_with(
                 self.interaction,
-                "You have been removed from any games you were signed up for.",
+                "You were removed from any pending games in this channel.",
                 ephemeral=True,
             )
 
@@ -105,6 +138,6 @@ class TestCogLeaveGame(InteractionMixin):
 
             leave_action.safe_send_channel.assert_called_once_with(
                 self.interaction,
-                "You have been removed from any games you were signed up for.",
+                "You were removed from any pending games in this channel.",
                 ephemeral=True,
             )

@@ -16,7 +16,7 @@ settings = Settings()
 WAIT_UNTIL_READY_TIMEOUT = 900.0  # 15 minutes
 
 
-async def wait_until_ready(bot: Client) -> None:
+async def wait_until_ready(bot: Client) -> None:  # pragma: no cover
     while True:
         try:
             if bot.is_ready():
@@ -47,7 +47,7 @@ async def wait_until_ready(bot: Client) -> None:
             logger.exception("error: exception in task before loop: %s", e)
 
 
-class TasksCog(commands.Cog):  # pragma: no cover
+class TasksCog(commands.Cog):
     def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
         if not running_in_pytest():

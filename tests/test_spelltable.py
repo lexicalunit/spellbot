@@ -46,6 +46,33 @@ class TestSpellTable:
 
         assert await generate_link() == game_url
 
+    async def test_generate_link_upstream_timeout(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        settings = MagicMock(spec=Settings)
+        settings.SPELLTABLE_AUTH_KEY = "auth-key"
+        settings.SPELLTABLE_CREATE = "https://create"
+        monkeypatch.setattr(spelltable, "Settings", lambda: settings)
+
+        mock_response = MagicMock()
+        mock_response.read = AsyncMock(return_value=b"upstream request timeout")
+
+        class MockClient:
+            @asynccontextmanager
+            async def post(self, *args: Any, **kwargs: Any):  # noqa
+                yield mock_response
+
+        mock_client = MockClient()
+
+        @asynccontextmanager
+        async def MockRetryClient(  # pylint: disable=W0613
+            *args: Any,
+            **kwargs: Any,
+        ) -> AsyncGenerator[RetryClient, None]:
+            yield cast(RetryClient, mock_client)
+
+        monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
+
+        assert await generate_link() is None
+
     async def test_generate_link_missing_game_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
         settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"

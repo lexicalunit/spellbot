@@ -26,8 +26,10 @@ class ConfigAction(BaseAction):
         await self._handle_update()
 
     async def _handle_update(self) -> None:
-        if await self.services.users.is_waiting() and self.interaction.guild_id:
-            game_id = await self.services.users.current_game_id()
+        assert self.interaction.channel is not None
+        channel_xid = self.interaction.channel.id
+        if await self.services.users.is_waiting(channel_xid) and self.interaction.guild_id:
+            game_id = await self.services.users.current_game_id(channel_xid)
             assert game_id
 
             found = await self.services.games.select(game_id)

@@ -6,12 +6,12 @@ from typing import Any, Optional, Union
 import discord
 import pytz
 from asgiref.sync import sync_to_async
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
 from ..database import DatabaseSession
-from ..models import Block, Game, User, Watch
+from ..models import Block, Game, Queue, User, Watch
 
 
 class UsersService:
@@ -66,19 +66,45 @@ class UsersService:
         DatabaseSession.commit()
 
     @sync_to_async()
-    def current_game_id(self) -> Optional[int]:
+    def current_game_id(self, channel_xid: int) -> Optional[int]:
+        """Gets the current PENDING game ID for the user in the given channel."""
         assert self.user
-        return self.user.game_id
+        queue = (
+            DatabaseSession.query(Queue)
+            .join(Game)
+            .filter(
+                and_(
+                    Queue.user_xid == self.user.xid,
+                    Game.channel_xid == channel_xid,
+                ),
+            )
+            .first()
+        )
+        return queue.game_id if queue else None
 
     @sync_to_async()
-    def leave_game(self) -> Optional[int]:
+    def leave_game(self, channel_xid: int) -> Optional[int]:
         assert self.user
-        assert self.user.game
-
-        left_game_id: Optional[int] = self.user.game_id
+        game = self.user.game(channel_xid)
+        left_game_id = game.id if game else None
 
         if left_game_id is not None:
-            self.user.game_id = None  # type: ignore
+            inner = (
+                select(Game.id)  # type: ignore
+                .join(Queue)
+                .filter(  # type: ignore
+                    and_(
+                        Queue.user_xid == self.user.xid,
+                        Game.channel_xid == channel_xid,
+                    ),
+                )
+            )
+            DatabaseSession.query(Queue).filter(
+                and_(
+                    Queue.user_xid == self.user.xid,
+                    Queue.game_id.in_(inner),
+                ),
+            ).delete()
             DatabaseSession.commit()
 
             # This operation should "dirty" the Game, so
@@ -95,9 +121,27 @@ class UsersService:
         return left_game_id
 
     @sync_to_async()
-    def is_waiting(self) -> bool:
+    def is_waiting(self, channel_xid: int) -> bool:
         assert self.user
-        return self.user.waiting
+        return self.user.waiting(channel_xid)
+
+    @sync_to_async()
+    def queued_in_another_guild(self, guild_xid: int) -> bool:
+        assert self.user
+        return bool(
+            DatabaseSession.query(Queue)
+            .join(Game, Queue.game_id == Game.id)
+            .filter(
+                Queue.user_xid == self.user.xid,
+                Game.guild_xid != guild_xid,
+            )
+            .count(),
+        )
+
+    @sync_to_async()
+    def pending_games(self) -> int:
+        assert self.user
+        return self.user.pending_games()
 
     @sync_to_async()
     def is_banned(self, target_xid: Optional[int] = None) -> bool:

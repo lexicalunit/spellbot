@@ -24,12 +24,12 @@ class PendingGameView(BaseView):
     ) -> None:
         from ..actions import LookingForGameAction
 
-        assert interaction.channel_id is not None
+        assert interaction.guild is not None
         with tracer.trace(name="interaction", resource="join"):  # type: ignore
             add_span_context(interaction)
             assert interaction.original_response
             await safe_defer_interaction(interaction)
-            async with self.bot.channel_lock(interaction.channel_id):
+            async with self.bot.guild_lock(interaction.guild.id):
                 async with LookingForGameAction.create(self.bot, interaction) as action:
                     original_response = await safe_original_response(interaction)
                     if original_response:
@@ -48,11 +48,11 @@ class PendingGameView(BaseView):
     ) -> None:
         from ..actions import LeaveAction
 
-        assert interaction.channel_id is not None
+        assert interaction.guild is not None
         with tracer.trace(name="interaction", resource="leave"):  # type: ignore
             add_span_context(interaction)
             await safe_defer_interaction(interaction)
-            async with self.bot.channel_lock(interaction.channel_id):
+            async with self.bot.guild_lock(interaction.guild.id):
                 async with LeaveAction.create(self.bot, interaction) as action:
                     await action.execute(origin=True)
 

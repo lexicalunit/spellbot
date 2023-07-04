@@ -58,6 +58,7 @@ class Settings:
         self.DATABASE_ECHO = False
         self.ADMIN_ROLE = "SpellBot Admin"
         self.MOD_PREFIX = "Moderator"
+        self.MAX_PENDING_GAMES = 5
 
         # tasks
         self.VOICE_GRACE_PERIOD_M = 10  # 10 minutes

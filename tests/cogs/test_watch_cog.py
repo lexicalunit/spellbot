@@ -47,6 +47,65 @@ class TestCogWatch(InteractionMixin):
         watch = DatabaseSession.query(Watch).one_or_none()
         assert not watch
 
+    async def test_watch_and_unwatch_by_id(
+        self,
+        cog: WatchCog,
+        add_user: Callable[..., User],
+    ) -> None:
+        target_user = add_user()
+        target_member = cast(discord.Member, mock_discord_object(target_user))
+
+        await self.run(cog.watch, id=target_member.id, note="note")
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Watching <@{target_member.id}>.",
+            ephemeral=True,
+        )
+
+        watch = DatabaseSession.query(Watch).one()
+        assert watch.to_dict() == {
+            "guild_xid": self.guild.xid,
+            "user_xid": target_member.id,
+            "note": "note",
+        }
+
+        self.interaction.response.send_message.reset_mock()
+        await self.run(cog.unwatch, id=target_member.id)
+        self.interaction.response.send_message.assert_called_once_with(
+            f"No longer watching <@{target_member.id}>.",
+            ephemeral=True,
+        )
+
+        watch = DatabaseSession.query(Watch).one_or_none()
+        assert not watch
+
+    async def test_watch_with_no_target(self, cog: WatchCog) -> None:
+        await self.run(cog.watch, note="note")
+        self.interaction.response.send_message.assert_called_once_with(
+            "You must provide either a target User or their ID.",
+            ephemeral=True,
+        )
+
+    async def test_watch_with_invalid_id(self, cog: WatchCog) -> None:
+        await self.run(cog.watch, id="wah", note="note")
+        self.interaction.response.send_message.assert_called_once_with(
+            "You must provide a valid integer for an ID.",
+            ephemeral=True,
+        )
+
+    async def test_unwatch_with_no_target(self, cog: WatchCog) -> None:
+        await self.run(cog.unwatch)
+        self.interaction.response.send_message.assert_called_once_with(
+            "You must provide either a target User or their ID.",
+            ephemeral=True,
+        )
+
+    async def test_unwatch_with_invalid_id(self, cog: WatchCog) -> None:
+        await self.run(cog.unwatch, id="wah")
+        self.interaction.response.send_message.assert_called_once_with(
+            "You must provide a valid integer for an ID.",
+            ephemeral=True,
+        )
+
     async def test_watched_single_page(
         self,
         cog: WatchCog,

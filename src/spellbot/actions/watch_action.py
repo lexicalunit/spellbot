@@ -33,9 +33,11 @@ class WatchAction(BaseAction):
             await self.services.users.upsert(target)
 
         target_xid: Optional[int] = None
+        assert target is not None or id is not None
         if target and hasattr(target, "id"):
             target_xid = target.id
-        elif id:
+        else:
+            assert id is not None
             target_xid = id
         assert target_xid is not None
 
@@ -54,20 +56,14 @@ class WatchAction(BaseAction):
 
     async def watch(
         self,
-        target: Union[discord.User, discord.Member],
-        note: Optional[str] = None,
-    ) -> None:
-        await self.execute(ActionType.WATCH, target=target, note=note)
-
-    async def unwatch(
-        self,
-        target: Optional[Union[discord.User, discord.Member]] = None,
+        target: Optional[Union[discord.User, discord.Member]],
         id: Optional[str] = None,
+        note: Optional[str] = None,
     ) -> None:
         if not target and not id:
             await safe_send_channel(
                 self.interaction,
-                "You must provide either a target User or their ID",
+                "You must provide either a target User or their ID.",
                 ephemeral=True,
             )
             return
@@ -79,7 +75,34 @@ class WatchAction(BaseAction):
             except ValueError:
                 await safe_send_channel(
                     self.interaction,
-                    "You must provide a valid integer for an ID",
+                    "You must provide a valid integer for an ID.",
+                    ephemeral=True,
+                )
+                return
+
+        await self.execute(ActionType.WATCH, target=target, id=xid, note=note)
+
+    async def unwatch(
+        self,
+        target: Optional[Union[discord.User, discord.Member]] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        if not target and not id:
+            await safe_send_channel(
+                self.interaction,
+                "You must provide either a target User or their ID.",
+                ephemeral=True,
+            )
+            return
+
+        xid: Optional[int] = None
+        if id:
+            try:
+                xid = int(id)
+            except ValueError:
+                await safe_send_channel(
+                    self.interaction,
+                    "You must provide a valid integer for an ID.",
                     ephemeral=True,
                 )
                 return

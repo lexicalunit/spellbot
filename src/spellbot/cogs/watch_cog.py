@@ -43,12 +43,13 @@ class WatchCog(commands.Cog):
     async def watch(
         self,
         interaction: discord.Interaction,
-        target: Union[discord.User, discord.Member],
+        target: Optional[Union[discord.User, discord.Member]] = None,
+        id: Optional[str] = None,
         note: Optional[str] = None,
     ) -> None:
         add_span_context(interaction)
         async with WatchAction.create(self.bot, interaction) as action:
-            await action.watch(target=target, note=note)
+            await action.watch(target=target, id=id, note=note)
 
     @app_commands.command(
         name="unwatch",

@@ -22,22 +22,6 @@ class AdminCog(commands.Cog):
     def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
-    # TODO: Add a command to transfer data from one user to another.
-    # @app_commands.command(name="transfer", description="Transfer data from one user to another.")
-    # @app_commands.describe(old="Old user to transfer data from")
-    # @app_commands.describe(new="New user to transfer data to")
-    # @tracer.wrap(name="interaction", resource="transfer")
-    # async def transfer(
-    #     self,
-    #     interaction: discord.Interaction,
-    #     old: discord.Member,
-    #     new: discord.Member,
-    # ) -> None:
-    #     add_span_context(interaction)
-    #     assert interaction.guild is not None
-    #     async with AdminAction.create(self.bot, interaction) as action:
-    #         await action.transfer(old=old, new=new, guild=interaction.guild)
-
     @app_commands.command(name="setup", description="Setup SpellBot on your server.")
     @tracer.wrap(name="interaction", resource="setup")
     async def setup(self, interaction: discord.Interaction) -> None:

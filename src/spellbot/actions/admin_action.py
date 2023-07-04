@@ -226,15 +226,6 @@ class AdminAction(BaseAction):
         except IndexError:
             await safe_send_channel(self.interaction, "Invalid page.", ephemeral=True)
 
-    async def transfer(
-        self,
-        old: discord.Member,
-        new: discord.Member,
-        guild: discord.Guild,
-    ) -> None:
-        await self.services.games.transfer(old.id, new.id, guild.id)
-        await safe_send_channel(self.interaction, "Done!")
-
     async def award_add(
         self,
         count: int,
