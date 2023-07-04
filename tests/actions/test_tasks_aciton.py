@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Callable
+from typing import Any, Callable, Optional
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import discord
@@ -16,7 +16,7 @@ from spellbot.actions import TasksAction
 from spellbot.client import build_bot
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Game, Guild
-from spellbot.services import GamesService, GuildsService, ServicesRegistry
+from spellbot.services import ChannelsService, GamesService, GuildsService, ServicesRegistry
 
 from tests.fixtures import Factories
 from tests.mocks import mock_discord_object
@@ -36,6 +36,7 @@ def use_mock_sleep(mocker: MockerFixture) -> AsyncMock:
 async def mock_services() -> MagicMock:
     services = MagicMock(spec=ServicesRegistry)
     services.games = MagicMock(spec=GamesService)
+    services.channels = MagicMock(spec=ChannelsService)
     services.guilds = MagicMock(spec=GuildsService)
     services.guilds.voiced = AsyncMock()
     return services
@@ -123,6 +124,146 @@ async def bot(mocker: MockerFixture, discord_guild: discord.Guild) -> SpellBot:
         return_value=[discord_guild],
     )
     return build_bot(mock_games=True, create_connection=False)
+
+
+@pytest.mark.asyncio()
+class TestTaskExpireInactiveChannels:
+    async def test_when_nothing_to_expire(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        action.services = mock_services
+        await action.expire_inactive_games()
+        mock_services.games.delete_games.assert_not_called()
+        assert "starting task expire_inactive_games" in caplog.text
+
+    async def test_when_exception_raised(
+        self,
+        action: TasksAction,
+        caplog: pytest.LogCaptureFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(action, "expire_games", AsyncMock(side_effect=RuntimeError))
+        await action.expire_inactive_games()
+        assert "error: exception in background task:" in caplog.text
+
+    async def test_when_active_game_exists(
+        self,
+        action: TasksAction,
+        factories: Factories,
+    ) -> None:
+        guild: Guild = factories.guild.create()
+        channel: Channel = factories.channel.create(guild=guild)
+        game: Game = factories.game.create(guild=guild, channel=channel)
+
+        await action.expire_inactive_games()
+
+        DatabaseSession.expire_all()
+        assert game.deleted_at is None
+
+    async def test_when_inactive_game_exists(
+        self,
+        action: TasksAction,
+        caplog: pytest.LogCaptureFixture,
+        factories: Factories,
+    ) -> None:
+        guild: Guild = factories.guild.create()
+        channel: Channel = factories.channel.create(guild=guild)
+        game: Game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            updated_at=datetime.now(tz=pytz.utc) - timedelta(days=1),
+        )
+
+        await action.expire_inactive_games()
+
+        DatabaseSession.expire_all()
+        assert game.deleted_at is not None
+        assert f"expiring game {game.id}..." in caplog.text
+
+    @pytest.mark.parametrize(
+        "message_xid",
+        [
+            pytest.param(1234, id="message"),
+            pytest.param(None, id="no_message"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "chan",
+        [
+            pytest.param("mock_channel", id="channel"),
+            pytest.param(None, id="no_channel"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "post",
+        [
+            pytest.param("mock_post", id="post"),
+            pytest.param(None, id="no_post"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "delete_expired",
+        [
+            pytest.param(True, id="delete"),
+            pytest.param(False, id="update"),
+        ],
+    )
+    async def test_when_inactive_game_with_players_exists(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+        factories: Factories,
+        mocker: MockerFixture,
+        message_xid: Optional[int],
+        chan: Any,
+        post: Any,
+        delete_expired: bool,
+    ) -> None:
+        guild: Guild = factories.guild.create()
+        channel: Channel = factories.channel.create(guild=guild)
+        game: Game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            updated_at=datetime.now(tz=pytz.utc) - timedelta(days=1),
+            message_xid=message_xid,
+        )
+        factories.user.create(game=game)
+        action.services = mock_services
+        action.services.games.inactive_games.return_value = [game.to_dict()]
+        action.services.channels.select.return_value = {"delete_expired": delete_expired}
+        mock_fetch_channel = AsyncMock(return_value=chan)
+        mocker.patch("spellbot.actions.tasks_action.safe_fetch_text_channel", mock_fetch_channel)
+        mock_get_partial = MagicMock(return_value=post)
+        mocker.patch("spellbot.actions.tasks_action.safe_get_partial_message", mock_get_partial)
+        mock_delete_message = AsyncMock()
+        mocker.patch("spellbot.actions.tasks_action.safe_delete_message", mock_delete_message)
+        mock_update_embed = AsyncMock()
+        mocker.patch("spellbot.actions.tasks_action.safe_update_embed", mock_update_embed)
+
+        await action.expire_inactive_games()
+
+        DatabaseSession.expire_all()
+        action.services.games.delete_games.assert_called_once_with([game.id])
+        assert f"expiring game {game.id}..." in caplog.text
+        if message_xid is not None:
+            mock_fetch_channel.assert_called_once_with(action.bot, guild.xid, channel.xid)
+            if chan is not None:
+                mock_get_partial.assert_called_once_with(chan, guild.xid, message_xid)
+                if post is not None:
+                    action.services.channels.select.assert_called_once_with(channel.xid)
+                    if delete_expired:
+                        mock_delete_message.assert_called_once_with(post)
+                    else:
+                        mock_update_embed.assert_called_once_with(
+                            post,
+                            content="Sorry, this game was expired due to inactivity.",
+                            embed=None,
+                            view=None,
+                        )
 
 
 @pytest.mark.asyncio()

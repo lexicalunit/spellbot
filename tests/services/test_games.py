@@ -3,30 +3,23 @@ from __future__ import annotations
 import pytest
 from spellbot.database import DatabaseSession
 from spellbot.models import (
-    Block,
     Channel,
     Game,
     GameFormat,
     GameStatus,
     Guild,
     Play,
+    Queue,
     User,
-    UserAward,
-    Verify,
 )
 from spellbot.services import GamesService
 from sqlalchemy.sql.expression import and_
 
 from tests.factories import (
     BlockFactory,
-    ChannelFactory,
     GameFactory,
-    GuildAwardFactory,
-    GuildFactory,
     PlayFactory,
-    UserAwardFactory,
     UserFactory,
-    VerifyFactory,
     WatchFactory,
 )
 
@@ -62,7 +55,9 @@ class TestServiceGames:
         DatabaseSession.expire_all()
         found = DatabaseSession.query(User).get(user.xid)
         assert found
-        assert found.game.id == game.id
+        found_game = found.game(game.channel_xid)
+        assert found_game is not None
+        assert found_game.id == game.id
 
     async def test_games_to_embed(self, game: Game) -> None:
         public_embed = game.to_embed().to_dict()
@@ -143,6 +138,23 @@ class TestServiceGames:
         await games.select(game.id)
         assert await games.to_dict() == game.to_dict()
 
+    async def test_message_xids(self, game: Game) -> None:
+        games = GamesService()
+        await games.select(game.id)
+        assert await games.message_xids([game.id]) == [game.message_xid]
+
+    async def test_dequeue_players(self, game: Game) -> None:
+        user1 = UserFactory.create(game=game)
+        user2 = UserFactory.create(game=game)
+        games = GamesService()
+
+        await games.select(game.id)
+        await games.dequeue_players([user1.xid, user2.xid])
+
+        DatabaseSession.expire_all()
+        assert user1.game(game.channel_xid) is None
+        assert user2.game(game.channel_xid) is None
+
 
 @pytest.mark.asyncio()
 class TestServiceGamesPlays:
@@ -171,30 +183,6 @@ class TestServiceGamesPlays:
         assert found.points == 5
         found = DatabaseSession.query(Play).filter(Play.user_xid == user2.xid).one()
         assert found.points is None
-
-    async def test_games_record_plays(self, guild: Guild, channel: Channel) -> None:
-        game = GameFactory.create(
-            guild=guild,
-            channel=channel,
-            seats=2,
-            status=GameStatus.STARTED.value,
-        )
-        user1 = UserFactory.create(xid=101, game=game)
-        user2 = UserFactory.create(xid=102, game=game)
-
-        games = GamesService()
-        await games.select(game.id)
-        await games.record_plays()
-
-        DatabaseSession.expire_all()
-        found = DatabaseSession.query(Play).filter(Play.user_xid == user1.xid).one()
-        assert found.user_xid == user1.xid
-        assert found.game_id == game.id
-        found = DatabaseSession.query(Play).filter(Play.user_xid == user2.xid).one()
-        assert found.user_xid == user2.xid
-        assert found.game_id == game.id
-        found = DatabaseSession.query(Play).filter(Play.user_xid == 103).one_or_none()
-        assert not found
 
 
 @pytest.mark.asyncio()
@@ -274,8 +262,18 @@ class TestServiceGamesUpsert:
         assert not new
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.query(User).one()
-        assert found.game_id == game.id
+        found_user = DatabaseSession.query(User).one()
+        found_queue = (
+            DatabaseSession.query(Queue)
+            .filter(
+                and_(
+                    Queue.game_id == game.id,
+                    Queue.user_xid == found_user.xid,
+                ),
+            )
+            .one_or_none()
+        )
+        assert found_queue is not None
 
     async def test_lfg_with_friend_when_existing_game(self, game: Game) -> None:
         user1 = UserFactory.create(xid=101)
@@ -293,7 +291,7 @@ class TestServiceGamesUpsert:
         assert not new
 
         DatabaseSession.expire_all()
-        rows = DatabaseSession.query(User.xid).filter(User.game_id == game.id).all()
+        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == game.id).all()
         assert {row[0] for row in rows} == {101, 102}
 
     async def test_lfg_alone_when_no_game(self, guild: Guild, channel: Channel, user: User) -> None:
@@ -311,9 +309,11 @@ class TestServiceGamesUpsert:
         DatabaseSession.expire_all()
         found_user = DatabaseSession.query(User).one()
         found_game = DatabaseSession.query(Game).one()
+        found_queue = DatabaseSession.query(Queue).one()
         assert found_game.guild_xid == guild.xid
         assert found_game.channel_xid == channel.xid
-        assert found_user.game_id == found_game.id
+        assert found_queue.game_id == found_game.id
+        assert found_queue.user_xid == found_user.xid
 
     async def test_lfg_with_friend_when_no_game(self, guild: Guild, channel: Channel) -> None:
         user1 = UserFactory.create(xid=101)
@@ -334,7 +334,7 @@ class TestServiceGamesUpsert:
         game = DatabaseSession.query(Game).one()
         assert game.guild_xid == guild.xid
         assert game.channel_xid == channel.xid
-        rows = DatabaseSession.query(User.xid).filter(User.game_id == game.id).all()
+        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == game.id).all()
         assert {row[0] for row in rows} == {101, 102}
 
     async def test_lfg_with_friend_when_full_game(self, guild: Guild, channel: Channel) -> None:
@@ -358,7 +358,7 @@ class TestServiceGamesUpsert:
         game = DatabaseSession.query(Game).filter(Game.id != bad_game.id).one()
         assert game.guild_xid == guild.xid
         assert game.channel_xid == channel.xid
-        rows = DatabaseSession.query(User.xid).filter(User.game_id == game.id).all()
+        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == game.id).all()
         assert {row[0] for row in rows} == {101, 102, 103}
 
     async def test_lfg_with_friend_when_game_wrong_format(
@@ -391,102 +391,47 @@ class TestServiceGamesUpsert:
         game = DatabaseSession.query(Game).filter(Game.id != bad_game.id).one()
         assert game.guild_xid == guild.xid
         assert game.channel_xid == channel.xid
-        rows = DatabaseSession.query(User.xid).filter(User.game_id == game.id).all()
+        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == game.id).all()
         assert {row[0] for row in rows} == {101, 102, 103}
 
-    async def test_transfer(self) -> None:
+    async def test_lfg_when_existing_game_and_blocked(self, game: Game) -> None:
         games = GamesService()
-
-        guild1 = GuildFactory.create()
-        channel11 = ChannelFactory.create(guild_xid=guild1.xid)
-        channel12 = ChannelFactory.create(guild_xid=guild1.xid)
-
-        guild2 = GuildFactory.create()
-        channel21 = ChannelFactory.create(guild_xid=guild2.xid)
-        channel22 = ChannelFactory.create(guild_xid=guild2.xid)
-
-        user1 = UserFactory.create(xid=101)
+        user1 = UserFactory.create(xid=101, game=game)
         user2 = UserFactory.create(xid=102)
-        user3 = UserFactory.create(xid=103)
+        BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
 
-        game11 = GameFactory.create(guild=guild1, channel=channel11)
-        game12 = GameFactory.create(guild=guild1, channel=channel12)
-        game21 = GameFactory.create(guild=guild2, channel=channel21)
-        game22 = GameFactory.create(guild=guild2, channel=channel22)
-
-        user1_play11 = PlayFactory.create(user_xid=user1.xid, game_id=game11.id)
-        user1_play12 = PlayFactory.create(user_xid=user1.xid, game_id=game12.id)
-        user1_play21 = PlayFactory.create(user_xid=user1.xid, game_id=game21.id)
-        user1_play22 = PlayFactory.create(user_xid=user1.xid, game_id=game22.id)
-
-        guild_award = GuildAwardFactory.create(guild_xid=guild1.xid)
-        UserAwardFactory.create(
-            guild_xid=guild1.xid,
-            user_xid=user1.xid,
-            guild_award_id=guild_award.id,
+        new = await games.upsert(
+            guild_xid=game.guild.xid,
+            channel_xid=game.channel.xid,
+            author_xid=user2.xid,
+            friends=[],
+            seats=game.seats,
+            format=game.format,
         )
-        user2_guild1_award = UserAwardFactory.create(
-            guild_xid=guild1.xid,
-            user_xid=user2.xid,
-            guild_award_id=guild_award.id,
-        )
-
-        VerifyFactory.create(
-            guild_xid=guild1.xid,
-            user_xid=user1.xid,
-            verified=True,
-        )
-        verify12 = VerifyFactory.create(
-            guild_xid=guild1.xid,
-            user_xid=user2.xid,
-            verified=True,
-        )
-
-        user1_blocks_user3 = BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user3.xid)
-        user3_blocks_user1 = BlockFactory.create(user_xid=user3.xid, blocked_user_xid=user1.xid)
-
-        await games.transfer(guild1.xid, user1.xid, user2.xid)
 
         DatabaseSession.expire_all()
+        other_game = DatabaseSession.query(Game).filter(Game.id != game.id).one()
+        assert new
+        assert game.players == [user1]
+        assert other_game.players == [user2]
 
-        assert DatabaseSession.query(UserAward).filter(UserAward.user_xid == user1.xid).count() == 0
-        assert DatabaseSession.query(UserAward).filter(UserAward.user_xid == user2.xid).count() == 1
-        assert user2_guild1_award.user_xid == user2.xid
+    async def test_lfg_when_existing_game_and_blocker(self, game: Game) -> None:
+        games = GamesService()
+        user1 = UserFactory.create(xid=101, game=game)
+        user2 = UserFactory.create(xid=102)
+        BlockFactory.create(user_xid=user2.xid, blocked_user_xid=user1.xid)
 
-        assert DatabaseSession.query(Verify).filter(Verify.user_xid == user1.xid).count() == 0
-        assert DatabaseSession.query(Verify).filter(Verify.user_xid == user2.xid).count() == 1
-        assert verify12.user_xid == user2.xid
-
-        assert DatabaseSession.query(Play).filter(Play.user_xid == user1.xid).count() == 2
-        assert DatabaseSession.query(Play).filter(Play.user_xid == user2.xid).count() == 2
-        assert user1_play11.user_xid == user2.xid
-        assert user1_play12.user_xid == user2.xid
-        assert user1_play21.user_xid == user1.xid
-        assert user1_play22.user_xid == user1.xid
-
-        assert user1_blocks_user3.user_xid == user1.xid
-        assert user1_blocks_user3.blocked_user_xid == user3.xid
-        assert user3_blocks_user1.user_xid == user3.xid
-        assert user3_blocks_user1.blocked_user_xid == user1.xid
-        assert (
-            DatabaseSession.query(Block)
-            .filter(
-                and_(
-                    Block.user_xid == user2.xid,
-                    Block.blocked_user_xid == user3.xid,
-                ),
-            )
-            .count()
-            == 1
+        new = await games.upsert(
+            guild_xid=game.guild.xid,
+            channel_xid=game.channel.xid,
+            author_xid=user2.xid,
+            friends=[],
+            seats=game.seats,
+            format=game.format,
         )
-        assert (
-            DatabaseSession.query(Block)
-            .filter(
-                and_(
-                    Block.user_xid == user3.xid,
-                    Block.blocked_user_xid == user2.xid,
-                ),
-            )
-            .count()
-            == 1
-        )
+
+        DatabaseSession.expire_all()
+        other_game = DatabaseSession.query(Game).filter(Game.id != game.id).one()
+        assert new
+        assert game.players == [user1]
+        assert other_game.players == [user2]

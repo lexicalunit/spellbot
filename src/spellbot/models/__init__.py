@@ -25,6 +25,7 @@ from .config import Config  # noqa: E402
 from .game import Game, GameFormat, GameStatus  # noqa: E402
 from .guild import Guild  # noqa: E402
 from .play import Play  # noqa: E402
+from .queue import Queue  # noqa: E402
 from .user import User  # noqa: E402
 from .verify import Verify  # noqa: E402
 from .watch import Watch  # noqa: E402
@@ -44,6 +45,7 @@ __all__ = [
     "literalquery",
     "now",
     "Play",
+    "Queue",
     "reverse_all",
     "User",
     "UserAward",

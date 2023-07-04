@@ -41,9 +41,9 @@ class ConfigCog(commands.Cog):
     )
     @tracer.wrap(name="interaction", resource="power")
     async def power(self, interaction: discord.Interaction, level: Optional[int] = None) -> None:
-        assert interaction.channel_id is not None
+        assert interaction.guild is not None
         add_span_context(interaction)
-        async with self.bot.channel_lock(interaction.channel_id):
+        async with self.bot.guild_lock(interaction.guild.id):
             async with ConfigAction.create(self.bot, interaction) as action:
                 await action.power(level=level)
 

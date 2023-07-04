@@ -7,22 +7,26 @@ import discord
 import pytz
 from asgiref.sync import sync_to_async
 from ddtrace import tracer
-from sqlalchemy import update
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import aliased
-from sqlalchemy.sql.expression import and_, asc, column, or_, select
+from sqlalchemy.sql.expression import and_, asc, column, or_
 from sqlalchemy.sql.functions import count
 
 from ..database import DatabaseSession
-from ..models import Block, Config, Game, GameStatus, Play, User, UserAward, Verify, Watch
+from ..models import (
+    Block,
+    Game,
+    GameStatus,
+    Play,
+    Queue,
+    User,
+    UserAward,
+    Watch,
+)
 from ..settings import Settings
 
 MAX_SPELLTABLE_LINK_LEN = Game.spelltable_link.property.columns[0].type.length  # type: ignore
-
-
-def without(d: dict[str, Any], keys: list[str]) -> dict[str, Any]:
-    return {key: value for key, value in d.items() if key not in keys}
 
 
 class GamesService:
@@ -57,16 +61,15 @@ class GamesService:
     def add_player(self, player_xid: int) -> None:
         assert self.game
 
-        rows = DatabaseSession.query(User).filter(User.game_id == self.game.id).count()
+        rows = DatabaseSession.query(Queue).filter(Queue.game_id == self.game.id).count()
         assert rows + 1 <= self.game.seats
 
-        query = (
-            update(User)
-            .where(User.xid == player_xid)
-            .values(game_id=self.game.id)
-            .execution_options(synchronize_session=False)
+        # upsert into queues
+        DatabaseSession.execute(
+            insert(Queue)
+            .values([{"user_xid": player_xid, "game_id": self.game.id}])
+            .on_conflict_do_nothing(),
         )
-        DatabaseSession.execute(query)
         DatabaseSession.commit()
 
         # This operation should "dirty" the Game, so we need to update its updated_at.
@@ -119,13 +122,15 @@ class GamesService:
             DatabaseSession.commit()
             new = True
 
+        # upsert into queues
+        user_xids = [*friends, author_xid]
         DatabaseSession.execute(
-            update(User)
-            .where(User.xid.in_([*friends, author_xid]))
-            .values(game_id=game.id)
-            .execution_options(synchronize_session=False),
+            insert(Queue)
+            .values([{"user_xid": xid, "game_id": game.id} for xid in user_xids])
+            .on_conflict_do_nothing(),
         )
         DatabaseSession.commit()
+
         self.game = game
         return new
 
@@ -141,16 +146,19 @@ class GamesService:
         format: int,
     ) -> Optional[Game]:
         required_seats = 1 + len(friends)
+
         inner = (
             select(
                 Game,
-                User.xid.label("users_xid"),
-                count(User.xid)
-                .over(partition_by=Game.id)  # type: ignore .over()
-                .label("player_count"),
+                Queue.user_xid,
+                (
+                    count(Queue.user_xid)
+                    .over(partition_by=Game.id)
+                    .label("player_count")  # type: ignore
+                ),
             )
-            .join(User, isouter=True)
-            .filter(  # type: ignore .filter()
+            .join(Queue, isouter=True)
+            .filter(  # type: ignore
                 and_(
                     Game.guild_xid == guild_xid,
                     Game.channel_xid == channel_xid,
@@ -160,7 +168,7 @@ class GamesService:
                     Game.deleted_at.is_(None),
                 ),
             )
-            .group_by(Game, User.xid)
+            .group_by(Game, Queue.user_xid)
             .order_by(asc(Game.updated_at))
             .alias("inner")
         )
@@ -217,25 +225,81 @@ class GamesService:
     @tracer.wrap()
     def fully_seated(self) -> bool:
         assert self.game
-        rows = DatabaseSession.query(User).filter(User.game_id == self.game.id).count()
+        rows = DatabaseSession.query(Queue).filter(Queue.game_id == self.game.id).count()
         return rows == self.game.seats
+
+    @sync_to_async
+    @tracer.wrap()
+    def other_game_ids(self) -> list[int]:
+        """Using the currently selected game, return any other games with overlapping players."""
+        assert self.game
+        player_xids = self.game.player_xids
+        rows = DatabaseSession.query(Queue.game_id).filter(
+            Queue.user_xid.in_(player_xids),
+            Queue.game_id != self.game.id,
+        )
+        return [int(row[0]) for row in rows]
 
     @sync_to_async()
     @tracer.wrap()
-    def make_ready(self, spelltable_link: Optional[str]) -> None:
+    def make_ready(self, spelltable_link: Optional[str]) -> int:
         assert self.game
         assert len(spelltable_link or "") <= MAX_SPELLTABLE_LINK_LEN
+        queued_xids = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == self.game.id)
+        player_xids = [int(row[0]) for row in queued_xids]
+
+        # update game's state
         self.game.spelltable_link = spelltable_link  # type: ignore
         self.game.status = GameStatus.STARTED.value  # type: ignore
         self.game.started_at = datetime.now(tz=pytz.utc)  # type: ignore
+
+        if not player_xids:
+            DatabaseSession.commit()
+            return self.game.id
+
+        # upsert into plays
+        DatabaseSession.execute(
+            insert(Play)
+            .values(
+                [
+                    {
+                        "user_xid": player_xid,
+                        "game_id": self.game.id,
+                    }
+                    for player_xid in player_xids
+                ],
+            )
+            .on_conflict_do_nothing(),
+        )
+
+        # upsert into user_awards
+        DatabaseSession.execute(
+            insert(UserAward)
+            .values(
+                [
+                    {
+                        "guild_xid": self.game.guild_xid,
+                        "user_xid": player_xid,
+                    }
+                    for player_xid in player_xids
+                ],
+            )
+            .on_conflict_do_nothing(),
+        )
+
+        # drop the players from any other queues
+        DatabaseSession.query(Queue).filter(Queue.user_xid.in_(player_xids)).delete(
+            synchronize_session=False,
+        )
+
         DatabaseSession.commit()
+        return self.game.id
 
     @sync_to_async()
     @tracer.wrap()
     def player_xids(self) -> list[int]:
         assert self.game
-        rows = DatabaseSession.query(User.xid).filter(User.game_id == self.game.id)
-        return [int(row[0]) for row in rows]
+        return self.game.player_xids
 
     @sync_to_async()
     @tracer.wrap()
@@ -252,50 +316,6 @@ class GamesService:
             .all()
         )
         return {watch.user_xid: watch.note for watch in watched}
-
-    @sync_to_async()
-    @tracer.wrap()
-    def record_plays(self) -> None:
-        assert self.game
-        assert self.game.status == GameStatus.STARTED.value
-
-        rows = DatabaseSession.query(User.xid).filter(User.game_id == self.game.id)
-        player_xids = [int(row[0]) for row in rows]
-
-        game_id = self.game.id
-        guild_xid = self.game.guild_xid
-
-        # upsert into plays
-        DatabaseSession.execute(
-            insert(Play)
-            .values(
-                [
-                    {
-                        "user_xid": player_xid,
-                        "game_id": game_id,
-                    }
-                    for player_xid in player_xids
-                ],
-            )
-            .on_conflict_do_nothing(),
-        )
-
-        # upsert into user_awards
-        DatabaseSession.execute(
-            insert(UserAward)
-            .values(
-                [
-                    {
-                        "guild_xid": guild_xid,
-                        "user_xid": player_xid,
-                    }
-                    for player_xid in player_xids
-                ],
-            )
-            .on_conflict_do_nothing(),
-        )
-
-        DatabaseSession.commit()
 
     @sync_to_async()
     @tracer.wrap()
@@ -326,6 +346,39 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
+    def filter_pending_games(self, user_xids: list[int], guild_xid: int) -> list[int]:
+        settings = Settings()
+
+        rows = DatabaseSession.query(
+            Queue.user_xid,
+            func.count(Queue.user_xid).label("pending"),
+        ).group_by(Queue.user_xid)
+        counts = {row[0]: row[1] for row in rows}
+
+        user_xids = [
+            user_xid
+            for user_xid in user_xids
+            if counts.get(user_xid, 0) + 1 < settings.MAX_PENDING_GAMES
+        ]
+
+        result = []
+        for user_xid in user_xids:
+            in_another_guild = (
+                DatabaseSession.query(Queue)
+                .join(Game, Queue.game_id == Game.id)
+                .filter(
+                    User.xid == user_xid,
+                    Game.guild_xid != guild_xid,
+                )
+                .exists()
+            )
+            if not in_another_guild:
+                result.append(user_xid)
+
+        return result
+
+    @sync_to_async()
+    @tracer.wrap()
     def blocked(self, author_xid: int) -> bool:
         assert self.game
         users_author_has_blocked = [
@@ -338,9 +391,7 @@ class GamesService:
                 Block.blocked_user_xid == author_xid,
             )
         ]
-        player_xids = [
-            row.xid for row in DatabaseSession.query(User).filter(User.game_id == self.game.id)
-        ]
+        player_xids = self.game.player_xids
         if any(xid in player_xids for xid in users_author_has_blocked):
             return True
         if any(xid in player_xids for xid in users_who_blocked_author):
@@ -416,68 +467,26 @@ class GamesService:
             update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.now(tz=pytz.utc))
         )
         DatabaseSession.execute(query)
+        DatabaseSession.query(Queue).filter(Queue.game_id.in_(game_ids)).delete(
+            synchronize_session=False,
+        )
         DatabaseSession.commit()
 
     @sync_to_async()
     @tracer.wrap()
-    def transfer(self, guild_xid: int, old_user_xid: int, new_user_xid: int) -> None:
-        def transfer_model(
-            model: Any,
-            user_xid_field: str = "user_xid",
-            do_delete: bool = False,
-        ) -> None:
-            user_xid_column = getattr(model, user_xid_field)
-            guild_xid_column = getattr(model, "guild_xid") if hasattr(model, "guild_xid") else None
+    def message_xids(self, game_ids: list[int]) -> list[int]:
+        query = select(
+            Game.message_xid,  # type: ignore
+        ).where(Game.id.in_(game_ids))
+        return [int(row[0]) for row in DatabaseSession.execute(query)]
 
-            new_filter = [user_xid_column == new_user_xid]
-            if guild_xid_column:
-                new_filter.append(guild_xid_column == guild_xid)
-
-            old_filter = [user_xid_column == old_user_xid]
-            if guild_xid_column:
-                old_filter.append(guild_xid_column == guild_xid)
-
-            extant = [obj.to_dict() for obj in DatabaseSession.query(model).filter(*new_filter)]
-
-            for obj in DatabaseSession.query(model).filter(*old_filter):
-                data = obj.to_dict()
-                data[user_xid_field] = new_user_xid
-                if data not in extant:
-                    if do_delete:
-                        setattr(obj, user_xid_field, new_user_xid)
-                    else:
-                        new_obj = model(**data)
-                        DatabaseSession.add(new_obj)
-
-            if do_delete:
-                DatabaseSession.query(model).filter(*old_filter).delete()
-
-        transfer_model(UserAward, do_delete=True)
-        transfer_model(Verify, do_delete=True)
-        transfer_model(Config, do_delete=True)
-        transfer_model(Watch, do_delete=False)
-        transfer_model(Block, "user_xid", do_delete=False)
-        transfer_model(Block, "blocked_user_xid", do_delete=False)
-
-        # transfer plays: since these need to be joined on the games table, we
-        # can't use transfer_model here and instead have to use some custom logic
-        plays = (
-            DatabaseSession.query(Play)
-            .join(Game)
-            .filter(
-                and_(
-                    Play.user_xid == old_user_xid,
-                    Game.guild_xid == guild_xid,
-                ),
-            )
-        )
-        for play in plays:
-            # theoretically this shouldn't cause an integrity error since we don't
-            # except the old user to have played in a game with the new user
-            play.user_xid = new_user_xid
-
-        try:
-            DatabaseSession.commit()
-        except IntegrityError:
-            DatabaseSession.rollback()
-            raise
+    @sync_to_async()
+    @tracer.wrap()
+    def dequeue_players(self, player_xids: list[int]) -> list[int]:
+        """Removes the given players from any queues that they're in; returns changed game ids."""
+        queues = DatabaseSession.query(Queue).filter(Queue.user_xid.in_(player_xids)).all()
+        game_ids = {queue.game_id for queue in queues}
+        for queue in queues:
+            DatabaseSession.delete(queue)
+        DatabaseSession.commit()
+        return list(game_ids)

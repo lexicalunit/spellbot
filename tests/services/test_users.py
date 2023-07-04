@@ -74,15 +74,7 @@ class TestServiceUsers:
 
         users = UsersService()
         await users.select(user.xid)
-        assert await users.current_game_id() == game.id
-
-    async def test_users_leave_game(self, game: Game) -> None:
-        user = UserFactory.create(game=game)
-
-        users = UsersService()
-        await users.select(user.xid)
-        await users.leave_game()
-        assert await users.current_game_id() is None
+        assert await users.current_game_id(game.channel_xid) == game.id
 
     async def test_users_is_waiting(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
@@ -90,9 +82,9 @@ class TestServiceUsers:
 
         users = UsersService()
         await users.select(user1.xid)
-        assert await users.is_waiting()
+        assert await users.is_waiting(game.channel_xid)
         await users.select(user2.xid)
-        assert not await users.is_waiting()
+        assert not await users.is_waiting(game.channel_xid)
 
     async def test_users_block(self) -> None:
         user1 = UserFactory.create()
@@ -174,3 +166,13 @@ class TestServiceUsers:
         DatabaseSession.expire_all()
         watches = [w.to_dict() for w in DatabaseSession.query(Watch).all()]
         assert watches == []
+
+    async def test_users_leave_game(self, game: Game) -> None:
+        user1 = UserFactory.create(game=game)
+        user2 = UserFactory.create()
+
+        users = UsersService()
+        await users.select(user1.xid)
+        assert await users.leave_game(game.channel_xid) == game.id
+        await users.select(user2.xid)
+        assert await users.leave_game(game.channel_xid) is None

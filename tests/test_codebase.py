@@ -63,7 +63,7 @@ class TestCodebase:
         assert exitcode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
 
     @pytest.mark.skip(reason="Disabled until TODOs from v7 refactor are fixed.")
-    def test_pylint(self) -> None:
+    def test_pylint(self) -> None:  # pragma: no cover
         """Checks that the Python codebase passes configured pylint checks."""
         chdir(REPO_ROOT)
         cmd = ["pylint", *SRC_DIRS]

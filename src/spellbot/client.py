@@ -43,15 +43,15 @@ class SpellBot(AutoShardedBot):
         )
         self.mock_games = mock_games
         self.create_connection = create_connection
-        self.channel_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
+        self.guild_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
 
-    async def on_ready(self) -> None:
+    async def on_ready(self) -> None:  # pragma: no cover
         logger.info("client ready")
 
-    async def on_shard_ready(self, shard_id: int) -> None:
+    async def on_shard_ready(self, shard_id: int) -> None:  # pragma: no cover
         logger.info(f"shard {shard_id} ready")
 
-    async def setup_hook(self) -> None:
+    async def setup_hook(self) -> None:  # pragma: no cover
         # Note: In tests we create the connection using fixtures.
         if self.create_connection:  # pragma: no cover
             logger.info("initializing database connection...")
@@ -70,10 +70,10 @@ class SpellBot(AutoShardedBot):
         await load_extensions(self)
 
     @asynccontextmanager
-    async def channel_lock(self, channel_xid: int) -> AsyncGenerator[None, None]:
-        if not self.channel_locks.get(channel_xid):
-            self.channel_locks[channel_xid] = asyncio.Lock()
-        async with self.channel_locks[channel_xid]:  # type: ignore
+    async def guild_lock(self, guild_xid: int) -> AsyncGenerator[None, None]:
+        if not self.guild_locks.get(guild_xid):
+            self.guild_locks[guild_xid] = asyncio.Lock()
+        async with self.guild_locks[guild_xid]:  # type: ignore
             yield
 
     @tracer.wrap()

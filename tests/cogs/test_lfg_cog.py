@@ -28,7 +28,10 @@ class TestCogLookingForGame(InteractionMixin):
         user = DatabaseSession.query(User).one()
         assert game.channel_xid == channel.xid
         assert game.guild_xid == self.guild.xid
-        assert user.game_id == game.id
+        assert self.interaction.channel is not None
+        user_game = user.game(self.interaction.channel.id)
+        assert user_game is not None
+        assert user_game.id == game.id
 
     async def test_lfg_fully_seated(
         self,
@@ -113,7 +116,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             await cog.lfg.func(cog, self.ctx)
 #             lfg_action.safe_send_channel.assert_called_once_with(
 #                 self.ctx,
-#                 "You're already in a game.",
+#                 "You're already in a game in this channel.",
 #             )
 
 #         found = DatabaseSession.query(User).one()

@@ -7,6 +7,7 @@ from .config import ConfigFactory
 from .game import GameFactory
 from .guild import GuildFactory
 from .play import PlayFactory
+from .queue import QueueFactory
 from .user import UserFactory
 from .verify import VerifyFactory
 from .watch import WatchFactory
@@ -19,6 +20,7 @@ __all__ = [
     "GuildAwardFactory",
     "GuildFactory",
     "PlayFactory",
+    "QueueFactory",
     "UserAwardFactory",
     "UserFactory",
     "VerifyFactory",

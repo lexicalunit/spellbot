@@ -323,6 +323,22 @@ class TestCogAdminChannels(InteractionMixin):
                 "type": "rich",
             }
 
+    async def test_channels_when_invalid_page(
+        self,
+        cog: AdminCog,
+        add_channel: Callable[..., Channel],
+    ) -> None:
+        add_channel(auto_verify=True)
+
+        with mock_operations(admin_action):
+            await self.run(cog.channels, page=2)
+
+            admin_action.safe_send_channel.assert_called_once_with(
+                self.interaction,
+                "Invalid page.",
+                ephemeral=True,
+            )
+
     async def test_channels_when_channel_deleted(
         self,
         cog: AdminCog,
@@ -462,6 +478,14 @@ class TestCogAdminAwards(InteractionMixin):
             "type": "rich",
         }
 
+    async def test_awards_when_invalid_page(self, cog: AdminCog) -> None:
+        await self.run(cog.awards, page=2)
+
+        self.interaction.response.send_message.assert_called_once_with(
+            "Invalid page.",
+            ephemeral=True,
+        )
+
     async def test_awards_when_no_awards(self, cog: AdminCog) -> None:
         await self.run(cog.awards)
         assert self.last_send_message("embed") == {
@@ -519,6 +543,21 @@ class TestCogAdminAwards(InteractionMixin):
         assert award.message == "message"
         assert award.repeating
 
+    async def test_award_add_when_verified_and_unverified(self, cog: AdminCog) -> None:
+        await self.run(
+            cog.award_add,
+            count=10,
+            role="role",
+            message="message",
+            verified_only=True,
+            unverified_only=True,
+        )
+        assert DatabaseSession.query(GuildAward).count() == 0
+        self.interaction.response.send_message.assert_called_once_with(
+            "Your award can't be both verified and unverifed only.",
+            ephemeral=True,
+        )
+
     async def test_award_add_message_too_long(self, cog: AdminCog) -> None:
         message = "hippo " * 300
         await self.run(cog.award_add, count=1, role="role", message=message)
@@ -535,3 +574,29 @@ class TestCogAdminAwards(InteractionMixin):
             ephemeral=True,
         )
         assert DatabaseSession.query(GuildAward).count() == 0
+
+
+@pytest.mark.asyncio()
+class TestCogAdminDeleteExpired(InteractionMixin):
+    @pytest.mark.parametrize("setting", [True, False])
+    async def test_set_delete_expired(self, cog: AdminCog, setting: bool) -> None:
+        await self.run(cog.delete_expired, setting=setting)
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Delete expired setting for this channel has been set to: {setting}",
+            ephemeral=True,
+        )
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.delete_expired is setting
+
+
+@pytest.mark.asyncio()
+class TestCogAdminShowPoints(InteractionMixin):
+    @pytest.mark.parametrize("setting", [True, False])
+    async def test_set_show_points(self, cog: AdminCog, setting: bool) -> None:
+        await self.run(cog.show_points, setting=setting)
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Show points setting for this channel has been set to: {setting}",
+            ephemeral=True,
+        )
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.show_points is setting

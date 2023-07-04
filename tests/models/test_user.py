@@ -24,23 +24,21 @@ class TestModelUser:
         play2 = factories.play.create(user_xid=player2.xid, game_id=game2.id, points=1)
 
         assert user1.points(1) is None
-        assert not user1.waiting
+        assert not user1.waiting(channel.xid)
         assert user1.to_dict() == {
             "xid": user1.xid,
             "created_at": user1.created_at,
             "updated_at": user1.updated_at,
             "name": user1.name,
             "banned": user1.banned,
-            "game_id": user1.game_id,
         }
-        assert user2.waiting
+        assert user2.waiting(channel.xid)
         assert user2.to_dict() == {
             "xid": user2.xid,
             "created_at": user2.created_at,
             "updated_at": user2.updated_at,
             "name": user2.name,
             "banned": user2.banned,
-            "game_id": game1.id,
         }
         assert player1.points(game2.id) == play1.points
         assert player2.points(game2.id) == play2.points

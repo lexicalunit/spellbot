@@ -16,6 +16,7 @@ from ..operations import (
     safe_channel_reply,
     safe_create_voice_channel,
     safe_ensure_voice_category,
+    safe_fetch_text_channel,
     safe_fetch_user,
     safe_followup_channel,
     safe_get_partial_message,
@@ -55,6 +56,7 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def filter_friend_xids(self, friend_xids: list[int]) -> list[int]:
+        assert self.guild
         if friend_xids:
             friend_xids = await self.ensure_users_exist(friend_xids)
         if friend_xids:
@@ -62,6 +64,8 @@ class LookingForGameAction(BaseAction):
                 self.interaction.user.id,
                 friend_xids,
             )
+        if friend_xids:
+            friend_xids = await self.services.games.filter_pending_games(friend_xids, self.guild.id)
         return friend_xids
 
     @tracer.wrap()
@@ -157,13 +161,25 @@ class LookingForGameAction(BaseAction):
         actual_seats: int = await self.get_seats(format, seats)
         actual_format: int = await self.get_format(format)
 
-        if await self.services.users.is_waiting():
+        if await self.services.users.is_waiting(self.channel.id):
+            msg = "You're already in a game in this channel."
             if origin:
-                return await safe_send_user(
-                    self.interaction.user,
-                    "You're already in a game.",
-                )
-            await safe_followup_channel(self.interaction, "You're already in a game.")
+                return await safe_send_user(self.interaction.user, msg)
+            await safe_followup_channel(self.interaction, msg)
+            return
+
+        if await self.services.users.pending_games() + 1 > self.settings.MAX_PENDING_GAMES:
+            msg = "You're in too many pending games to join another one at this time."
+            if origin:
+                return await safe_send_user(self.interaction.user, msg)
+            await safe_followup_channel(self.interaction, msg)
+            return
+
+        if await self.services.users.queued_in_another_guild(self.guild.id):
+            msg = "You're in a pending game in another server, leave that one first."
+            if origin:
+                return await safe_send_user(self.interaction.user, msg)
+            await safe_followup_channel(self.interaction, msg)
             return
 
         friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", actual_friends)))
@@ -187,8 +203,11 @@ class LookingForGameAction(BaseAction):
             return
 
         fully_seated = await self.services.games.fully_seated()
+        started_game_id: Optional[int] = None
+        other_game_ids: list[int] = []
         if fully_seated:
-            await self._handle_link_creation()
+            other_game_ids = await self.services.games.other_game_ids()
+            started_game_id = await self.make_game_ready()
             await self._handle_voice_creation(self.guild.id)
 
         await self._handle_embed_creation(
@@ -198,8 +217,38 @@ class LookingForGameAction(BaseAction):
         )
 
         if fully_seated:
-            await self.services.games.record_plays()
+            assert started_game_id is not None
             await self._handle_direct_messages()
+            await self._update_other_game_posts(other_game_ids)
+
+    @tracer.wrap()
+    async def _update_other_game_posts(self, other_game_ids: list[int]) -> None:
+        """Update any other pending games to show that some players are no longer available."""
+        assert self.channel is not None
+        assert self.guild is not None
+        if not other_game_ids:
+            return
+
+        message_xids = await self.services.games.message_xids(other_game_ids)
+        for message_xid in message_xids:
+            data = await self.services.games.select_by_message_xid(message_xid)
+            if not data:
+                continue
+
+            channel_xid = data["channel_xid"]
+            guild_xid = data["guild_xid"]
+            if channel := await safe_fetch_text_channel(self.bot, guild_xid, channel_xid):
+                if message := safe_get_partial_message(
+                    channel,
+                    guild_xid,
+                    message_xid,
+                ):
+                    embed = await self.services.games.to_embed()
+                    await safe_update_embed(
+                        message,
+                        embed=embed,
+                        view=PendingGameView(bot=self.bot),
+                    )
 
     @tracer.wrap()
     async def add_points(self, message: Message, points: int) -> None:
@@ -257,16 +306,15 @@ class LookingForGameAction(BaseAction):
             format=game_format.value,
             create_new=True,
         )
-        await self._handle_link_creation()
+        await self.make_game_ready()
         await self._handle_voice_creation(self.interaction.guild_id)
         await self._handle_embed_creation(new=True, origin=False, fully_seated=True)
-        await self.services.games.record_plays()
         await self._handle_direct_messages()
 
     @tracer.wrap()
-    async def _handle_link_creation(self) -> None:
+    async def make_game_ready(self) -> int:
         spelltable_link = await self.bot.create_spelltable_link()
-        await self.services.games.make_ready(spelltable_link)
+        return await self.services.games.make_ready(spelltable_link)
 
     @tracer.wrap()
     async def _handle_voice_creation(self, guild_xid: int) -> None:
