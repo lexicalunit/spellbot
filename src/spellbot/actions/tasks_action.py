@@ -166,7 +166,7 @@ class TasksAction:
             await self.expire_game(game)
 
             batch += 1
-            if batch >= 5:
+            if batch >= 5:  # pragma: no cover
                 await asyncio.sleep(5)
                 batch = 0
             else:

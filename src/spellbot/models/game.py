@@ -157,12 +157,6 @@ class Game(Base):
         doc="The generate voice channel invite link for this game",
     )
 
-    players = relationship(
-        "User",
-        back_populates="game",
-        uselist=True,
-        doc="Players in this game",
-    )
     guild = relationship(
         "Guild",
         back_populates="games",
@@ -173,6 +167,24 @@ class Game(Base):
         back_populates="games",
         doc="The channel this game was created in",
     )
+
+    @property
+    def players(self) -> list[User]:
+        from ..database import DatabaseSession
+        from . import User
+
+        return DatabaseSession.query(User).filter(User.xid.in_(self.player_xids)).all()
+
+    @property
+    def player_xids(self) -> list[int]:
+        from ..database import DatabaseSession
+        from . import Play, Queue
+
+        if self.started_at is None:
+            rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == self.id)
+        else:
+            rows = DatabaseSession.query(Play.user_xid).filter(Play.game_id == self.id)
+        return [int(row[0]) for row in rows]
 
     @property
     def started_at_timestamp(self) -> int:

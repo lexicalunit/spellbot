@@ -44,10 +44,10 @@ class LookingForGameCog(commands.Cog):
         seats: Optional[int] = None,
         format: Optional[int] = None,
     ) -> None:
-        assert interaction.channel_id is not None
+        assert interaction.guild is not None
         add_span_context(interaction)
         await safe_defer_interaction(interaction)
-        async with self.bot.channel_lock(interaction.channel_id):
+        async with self.bot.guild_lock(interaction.guild.id):
             async with LookingForGameAction.create(self.bot, interaction) as action:
                 await action.execute(friends=friends, seats=seats, format=format)
 

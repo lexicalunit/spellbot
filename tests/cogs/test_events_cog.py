@@ -8,7 +8,8 @@ from spellbot.actions import lfg_action
 from spellbot.client import SpellBot
 from spellbot.cogs import EventsCog
 from spellbot.database import DatabaseSession
-from spellbot.models import Game, GameFormat, GameStatus, User
+from spellbot.models import Game, GameFormat, GameStatus, Play, User
+from sqlalchemy.sql.expression import and_
 
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
@@ -43,11 +44,22 @@ class TestCogEvents(InteractionMixin):
         assert game.status == GameStatus.STARTED.value
         admin = DatabaseSession.query(User).get(self.interaction.user.id)
         assert admin is not None
-        assert admin.game_id is None
+        assert self.interaction.channel is not None
+        assert admin.game(self.interaction.channel.id) is None
         players = DatabaseSession.query(User).filter(User.xid != self.interaction.user.id).all()
         assert len(players) == 2
         for player in players:
-            assert player.game_id == game.id
+            play = (
+                DatabaseSession.query(Play)
+                .filter(
+                    and_(
+                        Play.user_xid == player.xid,
+                        Play.game_id == game.id,
+                    ),
+                )
+                .one_or_none()
+            )
+            assert play is not None
 
     async def test_game_with_one_player(
         self,

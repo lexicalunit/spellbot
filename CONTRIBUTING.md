@@ -195,10 +195,22 @@ poetry run scripts/create_db_revision.py \
     "<Some description of your changes>"
 ```
 
+> Note: An example database url: postgresql://postgres@localhost:5432/postgres
+
 This will create a revision script in the `src/spellbot/versions/versions`
 directory with a name like `REVISIONID_some_description_of_your_changes.py`.
 You may have to edit this script manually to ensure that it is correct as
 the autogenerate facility of `alembic revision` is not perfect.
+
+### Downgrading
+
+Another migration script is `scripts/downgrade.py` which allows you to pass
+a revision string to downgrade to. For example, to undo the last migration
+you could run something like:
+
+```shell
+poetry run scripts/downgrade.py postgresql://postgres@localhost:5432/postgres "-1"
+```
 
 ## Metrics
 
@@ -257,4 +269,3 @@ docker run --rm \
 [process-agent]: https://docs.datadoghq.com/infrastructure/process/
 [trace-agent]: https://docs.datadoghq.com/tracing/setup_overview/
 [tracer]: https://ddtrace.readthedocs.io/en/stable/advanced_usage.html
-[wiki]: https://animalcrossing.fandom.com/

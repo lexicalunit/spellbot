@@ -3,13 +3,14 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String, false
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.expression import and_
 
 from . import Base, Config, GameStatus, Play, now
 
 if TYPE_CHECKING:  # pragma: no cover
-    from . import Game  # noqa
+    from . import Game
 
 
 class User(Base):
@@ -50,18 +51,11 @@ class User(Base):
         server_default=false(),
         doc="If true, this user is banned from using SpellBot",
     )
-    game_id = Column(
-        Integer,
-        ForeignKey("games.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
-        doc="The game ID that this user is current signed up for",
-    )
 
-    game = relationship(
-        "Game",
-        back_populates="players",
-        doc="Game that this player is currently in",
+    queues = relationship(
+        "Queue",
+        primaryjoin="User.xid == Queue.user_xid",
+        doc="Queues this user is currently in",
     )
 
     plays = relationship(
@@ -96,6 +90,24 @@ class User(Base):
     #
     # Allows for application code like: `some_user.points[game_id].points`
 
+    def game(self, channel_xid: int) -> Optional[Game]:
+        from ..database import DatabaseSession
+        from . import Game, Queue
+
+        session = DatabaseSession.object_session(self)
+        queue = (
+            session.query(Queue)
+            .join(Game)
+            .filter(
+                and_(
+                    Queue.user_xid == self.xid,
+                    Game.channel_xid == channel_xid,
+                ),
+            )
+            .one_or_none()
+        )
+        return session.query(Game).get(queue.game_id) if queue else None
+
     def points(self, game_id: int) -> Optional[int]:
         play = self.plays.filter(Play.game_id == game_id).one_or_none()
         return play.points if play else None
@@ -104,11 +116,21 @@ class User(Base):
         guild_config = self.configs.filter(Config.guild_xid == guild_xid).one_or_none()
         return guild_config.to_dict() if guild_config else None
 
-    @property
-    def waiting(self) -> bool:
+    def waiting(self, channel_xid: int) -> bool:
+        game = self.game(channel_xid)
         return bool(
-            self.game and self.game.status == GameStatus.PENDING.value and not self.game.deleted_at,
+            game
+            and game.channel_xid == channel_xid
+            and game.status == GameStatus.PENDING.value
+            and not game.deleted_at,
         )
+
+    def pending_games(self) -> int:
+        from ..database import DatabaseSession
+        from . import Queue
+
+        session = DatabaseSession.object_session(self)
+        return session.query(Queue).filter(Queue.user_xid == self.xid).count()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -117,5 +139,4 @@ class User(Base):
             "updated_at": self.updated_at,
             "name": self.name,
             "banned": self.banned,
-            "game_id": self.game_id,
         }

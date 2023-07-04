@@ -10,7 +10,7 @@ from discord.app_commands import Command
 from discord.ext import commands
 from spellbot import SpellBot
 from spellbot.database import DatabaseSession
-from spellbot.models import Channel, Game, Guild, User
+from spellbot.models import Channel, Game, Guild, Queue, User
 from spellbot.settings import Settings
 
 from tests.fixtures import Factories
@@ -107,7 +107,7 @@ class InteractionMixin(BaseMixin):
     @pytest.fixture()
     def player(self, user: User, game: Game) -> User:
         """Puts self.user into a game."""
-        user.game = game
+        DatabaseSession.add(Queue(user_xid=user.xid, game_id=game.id))
         DatabaseSession.commit()
         return user
 
