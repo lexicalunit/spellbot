@@ -2234,13 +2234,13 @@ testing = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "syrupy"
-version = "4.0.4"
+version = "4.0.5"
 description = "Pytest Snapshot Test Utility"
 optional = false
 python-versions = ">=3.8.1,<4"
 files = [
-    {file = "syrupy-4.0.4-py3-none-any.whl", hash = "sha256:9ea222e6c882ee34e35b418660c52bf3f62e5fe249331932eeceb2597eeab02d"},
-    {file = "syrupy-4.0.4.tar.gz", hash = "sha256:806195794ed4fc17bec2836dd94f52b037fdb136e7c11949633e3970096ffec6"},
+    {file = "syrupy-4.0.5-py3-none-any.whl", hash = "sha256:1a9db40ec5133f7e2180105bc9e523ef561eaaa2a9967e4c372aba2eb56dd317"},
+    {file = "syrupy-4.0.5.tar.gz", hash = "sha256:d11c5de95be7f6bbb3d00974d15104a75a27a9fbca0e488d920d2dbbd43086ab"},
 ]
 
 [package.dependencies]
