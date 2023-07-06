@@ -45,10 +45,6 @@ class SpellBot(AutoShardedBot):
         self.create_connection = create_connection
         self.channel_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
 
-        # add debug logging for discord.py state
-        discord_state_logger = logging.getLogger("discord.state")
-        discord_state_logger.setLevel(logging.DEBUG)
-
     async def on_ready(self) -> None:
         logger.info("client ready")
 
