@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v8.11.13](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.13) - 2023-07-06
+
 ### Fixed
 
 - Fixed the timeout length for `wait_until_ready()`, this was broken in v8.11.12.
