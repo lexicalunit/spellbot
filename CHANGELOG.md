@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Proper handling for cancelling ready and resumed events.
+- Debug logging for discord.state.
+- Logging for when shards are ready.
+
 ## [v8.11.9](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.9) - 2023-07-06
 
 ### Added
