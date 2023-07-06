@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a workaround for client never getting the ready event and tasks not starting.
+
 ## [v8.11.7](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.7) - 2023-07-04
 
 ### Added
