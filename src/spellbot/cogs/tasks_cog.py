@@ -13,7 +13,7 @@ from ..settings import Settings
 logger = logging.getLogger(__name__)
 settings = Settings()
 
-WAIT_UNTIL_READY_TIMEOUT = 900.0  # 15 minutes
+WAIT_UNTIL_READY_TIMEOUT = 10.0  # 15 minutes
 
 
 async def wait_until_ready(bot: Client) -> None:
@@ -28,24 +28,16 @@ async def wait_until_ready(bot: Client) -> None:
             #       what happens is the client gets a resumed event instead, so the
             #       ready event never triggers the wait_until_ready() to return.
             #       This is a workaround that waits for either a ready or resumed.
-            #       THIS IS A HACK! If discord.py changes _listeners, this will break.
             #       See: https://github.com/Rapptz/discord.py/issues/9074 for details.
-            ready_future = bot.loop.create_future()
-            resumed_future = bot.loop.create_future()
-            ready_listeners = bot._listeners.get("ready", [])
-            resumed_listeners = bot._listeners.get("resumed", [])
-            ready_listeners.append((ready_future, lambda: True))
-            resumed_listeners.append((resumed_future, lambda: True))
-            bot._listeners["ready"] = ready_listeners
-            bot._listeners["resumed"] = resumed_listeners
-            ready_coro = asyncio.wait_for(ready_future, timeout=WAIT_UNTIL_READY_TIMEOUT)
-            resumed_coro = asyncio.wait_for(resumed_future, timeout=WAIT_UNTIL_READY_TIMEOUT)
-            await asyncio.wait([ready_coro, resumed_coro], return_when=asyncio.FIRST_COMPLETED)
-            if not ready_future.done():
-                ready_future.cancel()
-            if not resumed_future.done():
-                resumed_future.cancel()
-
+            _, unfinished = await asyncio.wait(
+                [
+                    bot.wait_for("ready", timeout=WAIT_UNTIL_READY_TIMEOUT),
+                    bot.wait_for("resumed", timeout=WAIT_UNTIL_READY_TIMEOUT),
+                ],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for task in unfinished:
+                task.cancel()
             logger.info("wait_until_ready: ready or resumed")
             break
         except TimeoutError:
