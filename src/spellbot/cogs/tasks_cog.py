@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from ddtrace import tracer
@@ -11,11 +12,29 @@ from ..settings import Settings
 logger = logging.getLogger(__name__)
 settings = Settings()
 
+WAIT_UNTIL_READY_TIMEOUT = 900.0  # 15 minutes
+
 
 async def wait_until_ready(bot: SpellBot) -> None:
     while True:
         try:
-            await bot.wait_until_ready()
+            if bot.is_ready():
+                logger.info("wait_until_ready: already ready")
+                break
+
+            # Note: bot.wait_until_ready() is not used because it sometimes hangs
+            #       waiting for a ready event that never comes. Speculation is that
+            #       what happens is the client gets a resumed event instead, so the
+            #       ready event never triggers the wait_until_ready() to return.
+            #       This is a workaround that waits for either a ready or resumed.
+            #       See: https://github.com/Rapptz/discord.py/issues/9074 for details.
+            ready = bot.wait_for("ready", timeout=WAIT_UNTIL_READY_TIMEOUT)
+            resumed = bot.wait_for("resumed", timeout=WAIT_UNTIL_READY_TIMEOUT)
+            await asyncio.wait([ready, resumed], return_when=asyncio.FIRST_COMPLETED)
+            logger.info("wait_until_ready: ready or resumed")
+            break
+        except TimeoutError:
+            logger.warning("wait_until_ready: timeout waiting for ready or resumed")
             break
         except BaseException as e:  # Catch EVERYTHING so tasks don't die
             logger.exception("error: exception in task before loop: %s", e)
