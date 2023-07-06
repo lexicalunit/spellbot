@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from ddtrace import tracer
+from discord import Client
 from discord.ext import commands, tasks
 
 from .. import SpellBot
@@ -15,7 +16,7 @@ settings = Settings()
 WAIT_UNTIL_READY_TIMEOUT = 900.0  # 15 minutes
 
 
-async def wait_until_ready(bot: SpellBot) -> None:
+async def wait_until_ready(bot: Client) -> None:
     while True:
         try:
             if bot.is_ready():
