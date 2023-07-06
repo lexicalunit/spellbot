@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Less hacky solution for cancelling unfinished tasks in `wait_until_ready()`.
+
 ## [v8.11.11](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.11) - 2023-07-06
 
 ### Changed
