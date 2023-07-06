@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v8.11.11](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.11) - 2023-07-06
+
 ### Changed
 
 - Disable debug logging for discord.state, it's too spammy.
