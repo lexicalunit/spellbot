@@ -40,13 +40,19 @@ EMBED_DESCRIPTION_SIZE_LIMIT = 4096
 
 
 def log_warning(log: str, exec_info: bool = False, **kwargs: Any) -> None:
-    message = f"warning: discord: {log}"
-    logger.warning(message, kwargs, exc_info=exec_info)
+    logger.warning(f"warning: discord: {log}", kwargs, exc_info=exec_info)
 
 
 def log_info(log: str, exec_info: bool = False, **kwargs: Any) -> None:
-    message = f"info: discord: {log}"
-    logger.info(message, kwargs, exc_info=exec_info)
+    logger.info(f"info: discord: {log}", kwargs, exc_info=exec_info)
+
+
+def safe_permissions_for(obj: Any, *args: Any) -> Optional[discord.Permissions]:
+    try:
+        return obj.permissions_for(*args)
+    except Exception:
+        log_info("failed to get permissions object", exec_info=True)
+        return None
 
 
 def bot_can_reply_to(message: discord.Message) -> bool:
@@ -58,10 +64,15 @@ def bot_can_reply_to(message: discord.Message) -> bool:
         or message.channel.type != discord.ChannelType.text
     ):
         return False
-    perms = message.channel.permissions_for(message.channel.guild.me)  # type: ignore
-    for req in ("send_messages",):
-        if not hasattr(perms, req) or not getattr(perms, req):
-            return False
+    if message.channel.guild is None:
+        return False
+    try:
+        perms = safe_permissions_for(message.channel, message.channel.guild.me)
+        for req in ("send_messages",):
+            if not hasattr(perms, req) or not getattr(perms, req):
+                return False
+    except Exception:
+        return False
     return True
 
 
@@ -87,7 +98,7 @@ def bot_can_read(channel: MessageableChannel) -> bool:
     if not hasattr(guild_channel, "guild"):
         return True
     guild: discord.Guild = getattr(guild_channel, "guild")
-    perms = guild_channel.permissions_for(guild.me)
+    perms = safe_permissions_for(guild_channel, guild.me)
     for req in ("read_messages", "read_message_history"):
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
@@ -114,11 +125,10 @@ def bot_can_delete_channel(channel: MessageableChannel) -> bool:
     if not hasattr(guild_channel, "guild"):
         return False
     guild: discord.Guild = getattr(guild_channel, "guild")
-
-    perms = guild_channel.permissions_for(guild.me)
+    if not (perms := safe_permissions_for(guild_channel, guild.me)):
+        return False
     channel_id = getattr(channel, "id", None)
     logger.info("bot permissions (%s): %s", channel_id, str(perms.value))
-
     for req in ("manage_channels",):
         if not hasattr(perms, req) or not getattr(perms, req):
             return False
@@ -132,7 +142,7 @@ def is_admin(interaction: discord.Interaction) -> bool:
         raise AdminOnlyError()
     if interaction.user.id == guild.owner_id:
         return True
-    if (perms := channel.permissions_for(interaction.user)) and perms.administrator:
+    if (perms := safe_permissions_for(channel, interaction.user)) and perms.administrator:
         return True
     if not hasattr(interaction.user, "roles"):
         raise AdminOnlyError()
@@ -168,7 +178,7 @@ def user_can_moderate(
     if not hasattr(author, "roles"):
         return False
     member: discord.Member = cast(discord.Member, author)
-    if (perms := channel.permissions_for(member)) and perms.administrator:
+    if (perms := safe_permissions_for(channel, member)) and perms.administrator:
         return True
     author_roles = author.roles  # type: ignore
     settings = Settings()
