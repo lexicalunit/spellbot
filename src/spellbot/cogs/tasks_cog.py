@@ -13,7 +13,7 @@ from ..settings import Settings
 logger = logging.getLogger(__name__)
 settings = Settings()
 
-WAIT_UNTIL_READY_TIMEOUT = 10.0  # 15 minutes
+WAIT_UNTIL_READY_TIMEOUT = 900.0  # 15 minutes
 
 
 async def wait_until_ready(bot: Client) -> None:
