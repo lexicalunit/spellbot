@@ -561,13 +561,13 @@ toml = ["tomli"]
 
 [[package]]
 name = "datadog"
-version = "0.45.0"
+version = "0.46.0"
 description = "The Datadog Python library"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 files = [
-    {file = "datadog-0.45.0-py2.py3-none-any.whl", hash = "sha256:144fce48bda79484b102349f159c4ea4c7cd35361f9e0d031ddf931a922a38a4"},
-    {file = "datadog-0.45.0.tar.gz", hash = "sha256:6bffed67448cb4bf5dff559fb2acee1c06e7da8612b8e2a734f278b50b396603"},
+    {file = "datadog-0.46.0-py2.py3-none-any.whl", hash = "sha256:3d7bcda6177b43be4cdb52e16b4bdd4f9005716c0dd7cfea009e018c36bb7a3d"},
+    {file = "datadog-0.46.0.tar.gz", hash = "sha256:e4fbc92a85e2b0919a226896ae45fc5e4b356c0c57f1c2659659dfbe0789c674"},
 ]
 
 [package.dependencies]
@@ -2175,13 +2175,13 @@ testing = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "syrupy"
-version = "4.0.5"
+version = "4.0.6"
 description = "Pytest Snapshot Test Utility"
 optional = false
 python-versions = ">=3.8.1,<4"
 files = [
-    {file = "syrupy-4.0.5-py3-none-any.whl", hash = "sha256:1a9db40ec5133f7e2180105bc9e523ef561eaaa2a9967e4c372aba2eb56dd317"},
-    {file = "syrupy-4.0.5.tar.gz", hash = "sha256:d11c5de95be7f6bbb3d00974d15104a75a27a9fbca0e488d920d2dbbd43086ab"},
+    {file = "syrupy-4.0.6-py3-none-any.whl", hash = "sha256:a03ebeb4bac692b890b9ca6d239c9b50405dbfa289a09b802e3ab899fad96f13"},
+    {file = "syrupy-4.0.6.tar.gz", hash = "sha256:523cf5d146d16c7db704e29f9c3a9c01f4ec8377a883f0379a82baa81b251d08"},
 ]
 
 [package.dependencies]
@@ -2568,4 +2568,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4"
-content-hash = "a1dd05394f2a88adddf028ac2402438a407a2835c46c5083de1e0cf0d88fdb7b"
+content-hash = "6dc70ad24060216739b296294c44344811344370e7dce2bebbba1bec20eddb07"
