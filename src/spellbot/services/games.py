@@ -20,7 +20,6 @@ from ..models import (
     GameStatus,
     Play,
     Queue,
-    User,
     UserAward,
     Watch,
 )
@@ -367,7 +366,7 @@ class GamesService:
                 DatabaseSession.query(Queue)
                 .join(Game, Queue.game_id == Game.id)
                 .filter(
-                    User.xid == user_xid,
+                    Queue.user_xid == user_xid,
                     Game.guild_xid != guild_xid,
                 )
                 .exists()
