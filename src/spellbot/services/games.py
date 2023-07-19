@@ -363,13 +363,16 @@ class GamesService:
         result = []
         for user_xid in user_xids:
             in_another_guild = (
-                DatabaseSession.query(Queue)
-                .join(Game, Queue.game_id == Game.id)
-                .filter(
-                    Queue.user_xid == user_xid,
-                    Game.guild_xid != guild_xid,
+                bool(
+                    DatabaseSession.query(Queue)
+                    .join(Game, Queue.game_id == Game.id)
+                    .filter(
+                        Queue.user_xid == user_xid,
+                        Game.guild_xid != guild_xid,
+                    )
+                    .count(),
                 )
-                .exists()
+                > 0
             )
             if not in_another_guild:
                 result.append(user_xid)
