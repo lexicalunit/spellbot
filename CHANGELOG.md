@@ -7,11 +7,27 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Dependency updates.
+
 ## [v9.0.2](https://github.com/lexicalunit/spellbot/releases/tag/v9.0.2) - 2023-07-19
+
+### Fixed
+
+- Fixes another bug in a multi-queue related query.
 
 ## [v9.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v9.0.1) - 2023-07-19
 
+### Fixed
+
+- Fixes a bug in a multi-queue related query.
+
 ## [v9.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v9.0.0) - 2023-07-19
+
+### Added
+
+- Support for queueing in up to five pending games at a time.
 
 ## [v8.11.13](https://github.com/lexicalunit/spellbot/releases/tag/v8.11.13) - 2023-07-06
 
