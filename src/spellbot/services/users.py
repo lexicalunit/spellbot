@@ -6,7 +6,7 @@ from typing import Any, Optional, Union
 import discord
 import pytz
 from asgiref.sync import sync_to_async
-from sqlalchemy import select, update
+from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
@@ -83,42 +83,36 @@ class UsersService:
         return queue.game_id if queue else None
 
     @sync_to_async()
-    def leave_game(self, channel_xid: int) -> Optional[int]:
+    def leave_game(self, channel_xid: int) -> None:
         assert self.user
-        game = self.user.game(channel_xid)
-        left_game_id = game.id if game else None
-
-        if left_game_id is not None:
-            inner = (
-                select(Game.id)  # type: ignore
-                .join(Queue)
-                .filter(  # type: ignore
-                    and_(
-                        Queue.user_xid == self.user.xid,
-                        Game.channel_xid == channel_xid,
-                    ),
-                )
-            )
-            DatabaseSession.query(Queue).filter(
+        pending_games = (
+            DatabaseSession.query(Queue)
+            .join(Game)
+            .filter(
                 and_(
                     Queue.user_xid == self.user.xid,
-                    Queue.game_id.in_(inner),
+                    Game.channel_xid == channel_xid,
                 ),
-            ).delete()
-            DatabaseSession.commit()
-
-            # This operation should "dirty" the Game, so
-            # we need to update its updated_at field now.
-            query = (
-                update(Game)
-                .where(Game.id == left_game_id)
-                .values(updated_at=datetime.now(tz=pytz.utc))
-                .execution_options(synchronize_session=False)
             )
-            DatabaseSession.execute(query)
-            DatabaseSession.commit()
+        )
+        left_game_ids = [game.game_id for game in pending_games]
 
-        return left_game_id
+        DatabaseSession.query(Queue).filter(
+            Queue.user_xid == self.user.xid,
+            Queue.game_id.in_(left_game_ids),
+        ).delete()
+        DatabaseSession.commit()
+
+        # This operation should "dirty" the Games, so
+        # we need to update their updated_at field now.
+        query = (
+            update(Game)
+            .where(Game.id.in_(left_game_ids))
+            .values(updated_at=datetime.now(tz=pytz.utc))
+            .execution_options(synchronize_session=False)
+        )
+        DatabaseSession.execute(query)
+        DatabaseSession.commit()
 
     @sync_to_async()
     def is_waiting(self, channel_xid: int) -> bool:
