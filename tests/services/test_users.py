@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from spellbot.database import DatabaseSession
-from spellbot.models import Block, Game, Guild, User, Watch
+from spellbot.models import Block, Game, Guild, Queue, User, Watch
 from spellbot.services import UsersService
 
 from tests.factories import UserFactory
@@ -170,9 +170,13 @@ class TestServiceUsers:
     async def test_users_leave_game(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
-
         users = UsersService()
+
+        assert DatabaseSession.query(Queue).count() == 1
+
         await users.select(user1.xid)
-        assert await users.leave_game(game.channel_xid) == game.id
+        await users.leave_game(game.channel_xid)
         await users.select(user2.xid)
-        assert await users.leave_game(game.channel_xid) is None
+        await users.leave_game(game.channel_xid)
+
+        assert DatabaseSession.query(Queue).count() == 0
