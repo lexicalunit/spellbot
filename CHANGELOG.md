@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Dependency updates.
+- Changes how leave game action works a bit to be more robust and use less queries.
 
 ## [v9.0.2](https://github.com/lexicalunit/spellbot/releases/tag/v9.0.2) - 2023-07-19
 
