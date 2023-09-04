@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Dependency updates.
+
+### Fixed
+
+- Small fix to user `is_waiting` to avoid possible race condition.
+
 ## [v9.0.4](https://github.com/lexicalunit/spellbot/releases/tag/v9.0.4) - 2023-08-10
 
 ### Changed
