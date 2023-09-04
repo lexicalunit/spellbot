@@ -104,7 +104,8 @@ class User(Base):
                     Game.channel_xid == channel_xid,
                 ),
             )
-            .one_or_none()
+            .order_by(Game.updated_at.desc())
+            .first()
         )
         return session.query(Game).get(queue.game_id) if queue else None
 
