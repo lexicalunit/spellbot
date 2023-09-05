@@ -64,6 +64,20 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_channel_motd(message)
 
+    @set_group.command(
+        name="channel_extra",
+        description="Set this channel's extra message. Leave blank to unset.",
+    )
+    @tracer.wrap(name="interaction", resource="set_channel_extra")
+    async def channel_extra(
+        self,
+        interaction: discord.Interaction,
+        message: Optional[str] = None,
+    ) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_channel_extra(message)
+
     @app_commands.command(
         name="channels",
         description="Show the current configurations for channels on your server.",

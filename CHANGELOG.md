@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Support for a `/set channel_extra` command that adds extra message to game posts.
+
 ## [v9.0.5](https://github.com/lexicalunit/spellbot/releases/tag/v9.0.5) - 2023-09-03
 
 ### Changed
