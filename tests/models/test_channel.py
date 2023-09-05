@@ -19,6 +19,7 @@ class TestModelChannel:
             "unverified_only": channel.unverified_only,
             "verified_only": channel.verified_only,
             "motd": channel.motd,
+            "extra": channel.extra,
             "voice_category": channel.voice_category,
             "delete_expired": channel.delete_expired,
             "show_points": channel.show_points,

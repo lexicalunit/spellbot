@@ -114,6 +114,23 @@ class ChannelsService:
         return motd
 
     @sync_to_async()
+    def set_extra(self, xid: int, message: Optional[str] = None) -> str:
+        if message:
+            max_len = Channel.extra.property.columns[0].type.length  # type: ignore
+            extra = message[:max_len]
+        else:
+            extra = ""
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(extra=extra)
+            .execution_options(synchronize_session=False)
+        )
+        DatabaseSession.execute(query)
+        DatabaseSession.commit()
+        return extra
+
+    @sync_to_async()
     def set_voice_category(self, xid: int, value: str) -> str:
         max_len = Channel.voice_category.property.columns[0].type.length  # type: ignore
         name = value[:max_len]

@@ -358,6 +358,15 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
+    async def set_channel_extra(self, message: Optional[str] = None) -> None:
+        assert self.interaction.channel_id is not None
+        extra = await self.services.channels.set_extra(self.interaction.channel_id, message)
+        await safe_send_channel(
+            self.interaction,
+            f"Extra message for this channel has been set to: {extra}",
+            ephemeral=True,
+        )
+
     async def set_voice_category(self, value: str) -> None:
         assert self.interaction.channel_id is not None
         name = await self.services.channels.set_voice_category(self.interaction.channel_id, value)

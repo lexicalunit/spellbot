@@ -435,6 +435,8 @@ async def safe_followup_channel(
         guild_xid=interaction.guild_id,
         channel_xid=interaction.channel_id,
     ):
+        if "content" in kwargs and kwargs["content"] is None:
+            kwargs["content"] = MISSING
         await retry(lambda: interaction.followup.send(*args, **kwargs))
         message = await retry(lambda: interaction.original_response())
     return message

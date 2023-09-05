@@ -84,6 +84,10 @@ class Channel(Base):
         String(255),
         doc="Channel message of the day",
     )
+    extra = Column(
+        String(255),
+        doc="Extra message content (which can contain alerts)",
+    )
     voice_category = Column(
         String(50),
         doc="Category name for voice channels for games in this channel.",
@@ -130,6 +134,7 @@ class Channel(Base):
             "unverified_only": self.unverified_only,
             "verified_only": self.verified_only,
             "motd": self.motd,
+            "extra": self.extra,
             "voice_category": self.voice_category,
             "delete_expired": self.delete_expired,
             "show_points": self.show_points,
