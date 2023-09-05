@@ -354,6 +354,7 @@ class LookingForGameAction(BaseAction):
 
         # build the game post's embed and view:
         embed: discord.Embed = await self.services.games.to_embed()
+        content = self.channel_data.get("extra", None)
 
         view: Optional[BaseView] = None
         if fully_seated:
@@ -363,9 +364,19 @@ class LookingForGameAction(BaseAction):
             view = PendingGameView(bot=self.bot)
 
         if new:  # create the initial game post:
-            if message := await safe_followup_channel(self.interaction, embed=embed, view=view):
+            if message := await safe_followup_channel(
+                self.interaction,
+                content=content,
+                embed=embed,
+                view=view,
+            ):
                 await self.services.games.set_message_xid(message.id)
-            elif message := await safe_channel_reply(self.channel, embed=embed, view=view):
+            elif message := await safe_channel_reply(
+                self.channel,
+                content=content,
+                embed=embed,
+                view=view,
+            ):
                 await self.services.games.set_message_xid(message.id)
             return
 
@@ -382,13 +393,24 @@ class LookingForGameAction(BaseAction):
             # If it does fail, we will fallback to doing a standard
             # message.edit() call, which should hopefully at least update
             # the game embed, even if the interaction shows as "failed".
-            if await safe_update_embed_origin(self.interaction, embed=embed, view=view):
+            content = self.channel_data.get("extra", None)
+            if await safe_update_embed_origin(
+                self.interaction,
+                content=content,
+                embed=embed,
+                view=view,
+            ):
                 return
 
         if message:
             if await safe_update_embed(message, embed=embed, view=view):
                 pass
-            elif updated := await safe_channel_reply(self.channel, embed=embed, view=view):
+            elif updated := await safe_channel_reply(
+                self.channel,
+                content=content,
+                embed=embed,
+                view=view,
+            ):
                 await self.services.games.set_message_xid(updated.id)
 
         if not origin:
