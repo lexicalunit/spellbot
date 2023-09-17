@@ -236,6 +236,28 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_show_points(setting)
 
+    @app_commands.command(name="move_user", description="Move one user's data to another user.")
+    @tracer.wrap(name="interaction", resource="move_user")
+    @app_commands.describe(from_user_id="User ID of the old user")
+    @app_commands.describe(to_user_id="User ID of the new user")
+    async def move_user(
+        self,
+        interaction: discord.Interaction,
+        from_user_id: str,
+        to_user_id: str,
+    ) -> None:
+        add_span_context(interaction)
+        assert interaction.guild_id is not None
+        # TODO: user input validation
+        from_user_xid = int(from_user_id)
+        to_user_xid = int(to_user_id)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.move_user(
+                guild_xid=interaction.guild_id,
+                from_user_xid=from_user_xid,
+                to_user_xid=to_user_xid,
+            )
+
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(AdminCog(bot), guild=bot.settings.GUILD_OBJECT)
