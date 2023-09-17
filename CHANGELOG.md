@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v9.2.0](https://github.com/lexicalunit/spellbot/releases/tag/v9.2.0) - 2023-09-17
+
 ### Added
 
 - A `/move_user` command.
