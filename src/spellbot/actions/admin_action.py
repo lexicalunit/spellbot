@@ -393,3 +393,13 @@ class AdminAction(BaseAction):
             f"Show points setting for this channel has been set to: {name}",
             ephemeral=True,
         )
+
+    async def move_user(self, guild_xid: int, from_user_xid: int, to_user_xid: int) -> None:
+        if error := await self.services.users.move_user(guild_xid, from_user_xid, to_user_xid):
+            await safe_send_channel(self.interaction, f"Error: {error}", ephemeral=True)
+            return
+        await safe_send_channel(
+            self.interaction,
+            f"User {from_user_xid} has been moved to {to_user_xid}",
+            ephemeral=True,
+        )
