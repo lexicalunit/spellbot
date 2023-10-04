@@ -58,7 +58,7 @@ async def safe_original_response(
         log="could fetch original response for user %(user_xid)s",
         user_xid=interaction.user.id,
     ):
-        response = await retry(lambda: interaction.original_response())
+        response = await retry(interaction.original_response)
     return response
 
 
@@ -70,7 +70,7 @@ async def safe_defer_interaction(interaction: discord.Interaction) -> None:
         log="could defer interaction for user %(user_xid)s",
         user_xid=interaction.user.id,
     ):
-        await retry(lambda: interaction.response.defer())
+        await retry(interaction.response.defer)
 
 
 @tracer.wrap()
@@ -210,7 +210,7 @@ async def safe_delete_message(message: Union[discord.Message, discord.PartialMes
         log="could not delete message %(message_xid)s",
         message_xid=message.id,
     ):
-        await retry(lambda: message.delete())
+        await retry(message.delete)
         success = True
     return success
 
@@ -374,7 +374,7 @@ async def safe_delete_channel(
         channel_xid=channel_xid,
     ):
         try:
-            await retry(lambda: channel.delete())  # type: ignore
+            await retry(channel.delete)  # type: ignore - this is asserted above
             success = True
         except discord.errors.NotFound:
             logger.warning("in guild  %s, unknown channel %s", guild_xid, channel_xid)
@@ -404,7 +404,7 @@ async def safe_send_channel(
         channel_xid=interaction.channel_id,
     ):
         await retry(lambda: interaction.response.send_message(*args, **kwargs))
-        message = await retry(lambda: interaction.original_response())
+        message = await retry(interaction.original_response)
     return message
 
 
@@ -438,7 +438,7 @@ async def safe_followup_channel(
         if "content" in kwargs and kwargs["content"] is None:
             kwargs["content"] = MISSING
         await retry(lambda: interaction.followup.send(*args, **kwargs))
-        message = await retry(lambda: interaction.original_response())
+        message = await retry(interaction.original_response)
     return message
 
 

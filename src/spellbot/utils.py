@@ -40,11 +40,13 @@ EMBED_DESCRIPTION_SIZE_LIMIT = 4096
 
 
 def log_warning(log: str, exec_info: bool = False, **kwargs: Any) -> None:
-    logger.warning(f"warning: discord: {log}", kwargs, exc_info=exec_info)
+    message = f"warning: discord: {log}"
+    logger.warning(message, kwargs, exc_info=exec_info)
 
 
 def log_info(log: str, exec_info: bool = False, **kwargs: Any) -> None:
-    logger.info(f"info: discord: {log}", kwargs, exc_info=exec_info)
+    message = f"info: discord: {log}"
+    logger.info(message, kwargs, exc_info=exec_info)
 
 
 def safe_permissions_for(obj: Any, *args: Any) -> Optional[discord.Permissions]:

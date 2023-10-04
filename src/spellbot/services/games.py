@@ -1,3 +1,4 @@
+# pylint: disable=too-many-public-methods
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -350,7 +351,7 @@ class GamesService:
 
         rows = DatabaseSession.query(
             Queue.user_xid,
-            func.count(Queue.user_xid).label("pending"),
+            func.count(Queue.user_xid).label("pending"),  # pylint: disable=not-callable
         ).group_by(Queue.user_xid)
         counts = {row[0]: row[1] for row in rows}
 
