@@ -189,7 +189,6 @@ made to the models. To autogenerate migration scripts that will bring the
 database inline with the changes you've made to the models, run:
 
 ```shell
-source env/bin/activate
 poetry run scripts/create_db_revision.py \
     "<your-sqlalchemy-database-url>" \
     "<Some description of your changes>"
