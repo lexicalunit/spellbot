@@ -1,3 +1,4 @@
+# pylint: disable=too-many-public-methods
 from __future__ import annotations
 
 import logging

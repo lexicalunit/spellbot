@@ -219,7 +219,7 @@ class UsersService:
                 "name": from_user.name,
                 "banned": from_user.banned,
             }
-            logger.info(f"upsert user: {user_values}")
+            logger.info("upsert user: %s", user_values)
             user_upsert = insert(User).values(**user_values)
             user_upsert = user_upsert.on_conflict_do_update(
                 index_elements=[User.xid],
@@ -242,7 +242,7 @@ class UsersService:
                     "user_xid": to_user_xid,
                     "note": watch.note,
                 }
-                logger.info(f"upsert watch: {watch_values}")
+                logger.info("upsert watch: %s", watch_values)
                 watch_upsert = insert(Watch).values(**watch_values)
                 watch_upsert = watch_upsert.on_conflict_do_update(
                     index_elements=[Watch.guild_xid, Watch.user_xid],
@@ -265,7 +265,7 @@ class UsersService:
                     "user_xid": to_user_xid,
                     "blocked_user_xid": user_block.blocked_user_xid,
                 }
-                logger.info(f"upsert block: {user_block_values}")
+                logger.info("upsert block: %s", user_block_values)
                 user_block_upsert = insert(Block).values(**user_block_values)
                 user_block_upsert = user_block_upsert.on_conflict_do_nothing()
                 DatabaseSession.execute(user_block_upsert, user_block_values)
@@ -278,7 +278,7 @@ class UsersService:
                     "user_xid": user_blocked.user_xid,
                     "blocked_user_xid": to_user_xid,
                 }
-                logger.info(f"upsert blocked: {user_blocked_values}")
+                logger.info("upsert blocked: %s", user_blocked_values)
                 user_blocked_upsert = insert(Block).values(**user_blocked_values)
                 user_blocked_upsert = user_blocked_upsert.on_conflict_do_nothing()
                 DatabaseSession.execute(user_blocked_upsert, user_blocked_values)
@@ -293,7 +293,7 @@ class UsersService:
                     "user_xid": to_user_xid,
                     "verified": verify.verified,
                 }
-                logger.info(f"upsert verify: {verify_values}")
+                logger.info("upsert verify: %s", verify_values)
                 verify_upsert = insert(Verify).values(**verify_values)
                 verify_upsert = verify_upsert.on_conflict_do_update(
                     index_elements=[Verify.guild_xid, Verify.user_xid],
@@ -322,7 +322,7 @@ class UsersService:
                     "game_id": play.game_id,
                     "points": play.points,
                 }
-                logger.info(f"upsert play: {play_values}")
+                logger.info("upsert play: %s", play_values)
                 play_upsert = insert(Play).values(**play_values)
                 play_upsert = play_upsert.on_conflict_do_update(
                     index_elements=[Play.user_xid, Play.game_id],
@@ -347,7 +347,7 @@ class UsersService:
                     "user_xid": to_user_xid,
                     "power_level": config.power_level,
                 }
-                logger.info(f"upsert config: {config_values}")
+                logger.info("upsert config: %s", config_values)
                 config_upsert = insert(Config).values(**config_values)
                 config_upsert = config_upsert.on_conflict_do_update(
                     index_elements=[Config.guild_xid, Config.user_xid],
@@ -372,7 +372,7 @@ class UsersService:
                     "guild_xid": award.guild_xid,
                     "guild_award_id": award.guild_award_id,
                 }
-                logger.info(f"upsert award: {award_values}")
+                logger.info("upsert award: %s", award_values)
                 award_upsert = insert(UserAward).values(**award_values)
                 award_upsert = award_upsert.on_conflict_do_update(
                     index_elements=[UserAward.user_xid, UserAward.guild_xid],
@@ -389,7 +389,7 @@ class UsersService:
 
             DatabaseSession.commit()
         except Exception as e:
-            logger.error(f"error moving user: {e}", exc_info=True)
+            logger.error("error moving user: %s", e, exc_info=True)
             DatabaseSession.rollback()
             return "database error"
 

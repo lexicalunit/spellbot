@@ -49,7 +49,7 @@ class SpellBot(AutoShardedBot):
         logger.info("client ready")
 
     async def on_shard_ready(self, shard_id: int) -> None:  # pragma: no cover
-        logger.info(f"shard {shard_id} ready")
+        logger.info("shard %s ready", shard_id)
 
     async def setup_hook(self) -> None:  # pragma: no cover
         # Note: In tests we create the connection using fixtures.
