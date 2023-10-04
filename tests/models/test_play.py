@@ -15,4 +15,6 @@ class TestModelPlay:
             "user_xid": play.user_xid,
             "game_id": play.game_id,
             "points": play.points,
+            "created_at": play.created_at,
+            "updated_at": play.updated_at,
         }
