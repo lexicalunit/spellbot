@@ -246,7 +246,10 @@ class PlaysService:
             filters.append(extract("year", Game.started_at) == target.year)
             filters.append(extract("month", Game.started_at) == target.month)
         result = (
-            DatabaseSession.query(Play.user_xid, func.count(Play.game_id).label("count"))
+            DatabaseSession.query(
+                Play.user_xid,
+                func.count(Play.game_id).label("count"),  # pylint: disable=not-callable
+            )
             .filter(*filters)
             .group_by(Play.user_xid)
             .order_by(text("count DESC"))

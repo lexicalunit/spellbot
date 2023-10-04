@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import ANY, MagicMock
 
 import pytest
 from spellbot.database import DatabaseSession
@@ -95,7 +95,14 @@ class TestServiceUsers:
 
         DatabaseSession.expire_all()
         blocks = [b.to_dict() for b in DatabaseSession.query(Block).all()]
-        assert blocks == [{"user_xid": user1.xid, "blocked_user_xid": user2.xid}]
+        assert blocks == [
+            {
+                "user_xid": user1.xid,
+                "blocked_user_xid": user2.xid,
+                "created_at": ANY,
+                "updated_at": ANY,
+            },
+        ]
 
     async def test_users_unblock(self) -> None:
         user1 = UserFactory.create()
@@ -106,7 +113,14 @@ class TestServiceUsers:
 
         DatabaseSession.expire_all()
         blocks = [b.to_dict() for b in DatabaseSession.query(Block).all()]
-        assert blocks == [{"user_xid": user1.xid, "blocked_user_xid": user2.xid}]
+        assert blocks == [
+            {
+                "user_xid": user1.xid,
+                "blocked_user_xid": user2.xid,
+                "created_at": ANY,
+                "updated_at": ANY,
+            },
+        ]
 
         await users.unblock(user1.xid, user2.xid)
 
