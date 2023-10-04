@@ -12,4 +12,6 @@ class TestModelBlock:
         assert block.to_dict() == {
             "user_xid": user1.xid,
             "blocked_user_xid": user2.xid,
+            "created_at": block.created_at,
+            "updated_at": block.updated_at,
         }

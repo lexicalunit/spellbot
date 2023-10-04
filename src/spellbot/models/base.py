@@ -7,10 +7,9 @@ from typing import Any
 import alembic
 import alembic.command
 import alembic.config
-from sqlalchemy import create_engine, text
+from sqlalchemy import String, create_engine, text
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql.sqltypes import String
 from sqlalchemy_utils import create_database, database_exists
 
 from . import import_models
