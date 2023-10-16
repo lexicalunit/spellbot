@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from spellbot.enums import GameFormat
+
 from tests.fixtures import Factories
 
 
@@ -15,6 +17,7 @@ class TestModelChannel:
             "guild_xid": channel.guild_xid,
             "name": channel.name,
             "default_seats": channel.default_seats,
+            "default_format": GameFormat(channel.default_format),
             "auto_verify": channel.auto_verify,
             "unverified_only": channel.unverified_only,
             "verified_only": channel.verified_only,

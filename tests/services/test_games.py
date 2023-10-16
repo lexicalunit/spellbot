@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 from spellbot.database import DatabaseSession
+from spellbot.enums import GameFormat
 from spellbot.models import (
     Channel,
     Game,
-    GameFormat,
     GameStatus,
     Guild,
     Play,

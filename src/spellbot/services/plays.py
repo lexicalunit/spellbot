@@ -10,7 +10,8 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy.sql.expression import and_, extract, func, text
 
 from ..database import DatabaseSession
-from ..models import Channel, Game, GameFormat, Guild, Play
+from ..enums import GameFormat
+from ..models import Channel, Game, Guild, Play
 
 USER_PAGE_SIZE = 25
 CHANNEL_PAGE_SIZE = 10

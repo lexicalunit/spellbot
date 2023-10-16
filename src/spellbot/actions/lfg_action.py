@@ -10,7 +10,8 @@ from discord.embeds import Embed
 from discord.message import Message
 
 from .. import SpellBot
-from ..models import GameFormat, GameStatus
+from ..enums import GameFormat
+from ..models import GameStatus
 from ..operations import (
     safe_add_role,
     safe_channel_reply,
@@ -41,6 +42,14 @@ class LookingForGameAction(BaseAction):
         return friends or ""
 
     @tracer.wrap()
+    async def get_format(self, format: Optional[int] = None) -> int:
+        if format is not None:
+            return format
+        if self.channel_data["default_format"] is not None:
+            return self.channel_data["default_format"].value
+        return GameFormat.COMMANDER.value
+
+    @tracer.wrap()
     async def get_seats(
         self,
         format: Optional[int] = None,
@@ -49,10 +58,6 @@ class LookingForGameAction(BaseAction):
         if format and not seats:
             return GameFormat(format).players
         return seats or self.channel_data["default_seats"]
-
-    @tracer.wrap()
-    async def get_format(self, format: Optional[int] = None) -> int:
-        return format or GameFormat.COMMANDER.value  # type: ignore
 
     @tracer.wrap()
     async def filter_friend_xids(self, friend_xids: list[int]) -> list[int]:
@@ -158,8 +163,8 @@ class LookingForGameAction(BaseAction):
         origin = bool(message_xid is not None)
 
         actual_friends: str = await self.get_friends(friends)
-        actual_seats: int = await self.get_seats(format, seats)
         actual_format: int = await self.get_format(format)
+        actual_seats: int = await self.get_seats(actual_format, seats)
 
         if await self.services.users.is_waiting(self.channel.id):
             msg = "You're already in a game in this channel."
