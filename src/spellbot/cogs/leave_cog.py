@@ -24,16 +24,20 @@ class LeaveGameCog(commands.Cog):
     @app_commands.command(name="leave", description="Leaves pending games in this channel.")
     @tracer.wrap(name="interaction", resource="leave_command")
     async def leave_command(self, interaction: discord.Interaction) -> None:
+        assert interaction.guild is not None
         add_span_context(interaction)
-        async with LeaveAction.create(self.bot, interaction) as action:
-            await action.execute()
+        async with self.bot.guild_lock(interaction.guild.id):
+            async with LeaveAction.create(self.bot, interaction) as action:
+                await action.execute()
 
     @app_commands.command(name="leave_all", description="Leaves all pending games.")
     @tracer.wrap(name="interaction", resource="leave_all_command")
     async def leave_all(self, interaction: discord.Interaction) -> None:
+        assert interaction.guild is not None
         add_span_context(interaction)
-        async with LeaveAction.create(self.bot, interaction) as action:
-            await action.execute_all()
+        async with self.bot.guild_lock(interaction.guild.id):
+            async with LeaveAction.create(self.bot, interaction) as action:
+                await action.execute_all()
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
