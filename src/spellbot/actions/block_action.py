@@ -7,6 +7,8 @@ from typing import Union
 import discord
 
 from ..operations import safe_send_channel
+from ..settings import Settings
+from ..utils import EMBED_DESCRIPTION_SIZE_LIMIT
 from .base_action import BaseAction
 
 logger = logging.getLogger(__name__)
@@ -51,3 +53,24 @@ class BlockAction(BaseAction):
 
     async def unblock(self, target: Union[discord.User, discord.Member]) -> None:
         await self.execute(target, ActionType.UNBLOCK)
+
+    async def blocked(self, page: int) -> None:
+        settings = Settings()
+        blocklist = await self.services.users.blocklist(self.interaction.user.id)
+        embed = discord.Embed(title="Blocked Users")
+        embed.set_thumbnail(url=settings.ICO_URL)
+        pages = []
+        cur_page = ""
+        for xid in blocklist:
+            next_user = f"<@{xid}>\n"
+            if len(cur_page) + len(next_user) > EMBED_DESCRIPTION_SIZE_LIMIT:
+                pages.append(cur_page)
+                cur_page = ""
+            cur_page += next_user
+        if cur_page:
+            pages.append(cur_page)
+        index = min(page - 1, len(pages) - 1)
+        embed.description = pages[index]
+        embed.color = discord.Color(settings.EMBED_COLOR)
+        embed.set_footer(text=f"Page {page} of {len(pages)}")
+        await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
