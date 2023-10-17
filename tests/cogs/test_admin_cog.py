@@ -11,6 +11,7 @@ from spellbot.actions import admin_action
 from spellbot.client import SpellBot
 from spellbot.cogs import AdminCog
 from spellbot.database import DatabaseSession
+from spellbot.enums import GameFormat
 from spellbot.errors import AdminOnlyError
 from spellbot.models import Channel, Game, Guild, GuildAward
 from spellbot.views import SetupView
@@ -243,6 +244,16 @@ class TestCogAdminChannels(InteractionMixin):
         )
         channel = DatabaseSession.query(Channel).one()
         assert channel.default_seats == seats
+
+    async def test_default_format(self, cog: AdminCog) -> None:
+        format = Channel.default_format.default.arg + 1  # type: ignore
+        await self.run(cog.default_format, format=format)
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Default format set to {GameFormat(format)} for this channel.",
+            ephemeral=True,
+        )
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.default_format == format
 
     async def test_auto_verify(self, cog: AdminCog) -> None:
         default_value = Channel.auto_verify.default.arg  # type: ignore
