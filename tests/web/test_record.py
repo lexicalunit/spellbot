@@ -6,7 +6,8 @@ import pytest
 import pytz
 from aiohttp.client import ClientSession
 from freezegun.api import FrozenDateTimeFactory
-from spellbot.models import GameFormat, GameStatus
+from spellbot.enums import GameFormat
+from spellbot.models import GameStatus
 from syrupy.assertion import SnapshotAssertion
 
 from tests.fixtures import Factories

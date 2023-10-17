@@ -64,6 +64,17 @@ class ChannelsService:
         DatabaseSession.commit()
 
     @sync_to_async()
+    def set_default_format(self, xid: int, format: int) -> None:
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(default_format=format)
+            .execution_options(synchronize_session=False)
+        )
+        DatabaseSession.execute(query)
+        DatabaseSession.commit()
+
+    @sync_to_async()
     def set_auto_verify(self, xid: int, setting: bool) -> None:
         query = (
             update(Channel)

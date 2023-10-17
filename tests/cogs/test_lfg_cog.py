@@ -9,6 +9,7 @@ from spellbot.actions import lfg_action
 from spellbot.client import SpellBot
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
+from spellbot.enums import GameFormat
 from spellbot.models import Channel, Game, User
 
 from tests.mixins import InteractionMixin
@@ -38,11 +39,16 @@ class TestCogLookingForGame(InteractionMixin):
         cog: LookingForGameCog,
         add_channel: Callable[..., Channel],
     ) -> None:
-        channel = add_channel(default_seats=2, xid=self.interaction.channel_id)
+        channel = add_channel(
+            default_format=GameFormat.MODERN.value,
+            default_seats=2,
+            xid=self.interaction.channel_id,
+        )
         game = self.factories.game.create(
             guild=self.guild,
             channel=channel,
             seats=2,
+            format=GameFormat.MODERN.value,
             message_xid=123,
         )
         other_user = self.factories.user.create(xid=self.interaction.user.id + 1, game=game)
@@ -70,7 +76,7 @@ class TestCogLookingForGame(InteractionMixin):
                         "name": "Players",
                         "value": f"<@{self.interaction.user.id}>, <@{other_player.id}>",
                     },
-                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Format", "value": "Modern"},
                     {
                         "inline": True,
                         "name": "Started at",

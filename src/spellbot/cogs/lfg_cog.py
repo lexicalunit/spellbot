@@ -9,8 +9,8 @@ from discord.ext import commands
 
 from .. import SpellBot
 from ..actions.lfg_action import LookingForGameAction
+from ..enums import GameFormat
 from ..metrics import add_span_context
-from ..models import GameFormat
 from ..operations import safe_defer_interaction
 from ..utils import for_all_callbacks, is_guild
 

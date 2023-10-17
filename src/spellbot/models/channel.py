@@ -9,6 +9,7 @@ from sqlalchemy.sql.expression import false, text
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import Boolean, Integer
 
+from ..enums import GameFormat
 from . import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -58,6 +59,14 @@ class Channel(Base):
         default=4,
         server_default=text("4"),
         doc="The default number of players that should be seated at newly created games.",
+    )
+    default_format = Column(
+        Integer(),
+        default=GameFormat.COMMANDER.value,
+        server_default=text(str(GameFormat.COMMANDER.value)),
+        index=True,
+        nullable=False,
+        doc="The default Magic: The Gathering format for this channel",
     )
     auto_verify = Column(
         Boolean,
@@ -130,6 +139,7 @@ class Channel(Base):
             "guild_xid": self.guild_xid,
             "name": self.name,
             "default_seats": self.default_seats,
+            "default_format": GameFormat(self.default_format),
             "auto_verify": self.auto_verify,
             "unverified_only": self.unverified_only,
             "verified_only": self.verified_only,

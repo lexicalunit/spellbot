@@ -9,6 +9,7 @@ from spellbot import SpellBot
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
+from spellbot.enums import GameFormat
 from spellbot.models import Channel, Game, Play
 from spellbot.settings import Settings
 from spellbot.views import StartedGameSelect, StartedGameView
@@ -30,11 +31,17 @@ class TestCogLookingForGamePoints(InteractionMixin):
         settings: Settings,
         add_channel: Callable[..., Channel],
     ) -> None:
-        channel = add_channel(default_seats=2, xid=self.interaction.channel_id, show_points=True)
+        channel = add_channel(
+            default_seats=2,
+            default_format=GameFormat.MODERN.value,
+            xid=self.interaction.channel_id,
+            show_points=True,
+        )
         game = self.factories.game.create(
             guild=self.guild,
             channel=channel,
             seats=2,
+            format=GameFormat.MODERN.value,
             message_xid=123,
         )
         user = self.factories.user.create(xid=self.interaction.user.id)
@@ -71,7 +78,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                             "name": "Players",
                             "value": f"<@{self.interaction.user.id}>, <@{other_player.id}>",
                         },
-                        {"inline": True, "name": "Format", "value": "Commander"},
+                        {"inline": True, "name": "Format", "value": "Modern"},
                         {
                             "inline": True,
                             "name": "Started at",
@@ -102,7 +109,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                             "name": "Players",
                             "value": f"<@{user.xid}> (5 points), <@{other_user.xid}>",
                         },
-                        {"inline": True, "name": "Format", "value": "Commander"},
+                        {"inline": True, "name": "Format", "value": "Modern"},
                         {
                             "inline": True,
                             "name": "Started at",
@@ -121,11 +128,17 @@ class TestCogLookingForGamePoints(InteractionMixin):
         settings: Settings,
         add_channel: Callable[..., Channel],
     ) -> None:
-        channel = add_channel(default_seats=2, xid=self.interaction.channel_id, show_points=True)
+        channel = add_channel(
+            default_seats=2,
+            default_format=GameFormat.MODERN.value,
+            xid=self.interaction.channel_id,
+            show_points=True,
+        )
         game = self.factories.game.create(
             guild=self.guild,
             channel=channel,
             seats=2,
+            format=GameFormat.MODERN.value,
             message_xid=123,
         )
         user = self.factories.user.create(xid=self.interaction.user.id)
@@ -162,7 +175,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                             "name": "Players",
                             "value": f"<@{self.interaction.user.id}>, <@{other_player.id}>",
                         },
-                        {"inline": True, "name": "Format", "value": "Commander"},
+                        {"inline": True, "name": "Format", "value": "Modern"},
                         {
                             "inline": True,
                             "name": "Started at",
@@ -192,11 +205,17 @@ class TestCogLookingForGamePoints(InteractionMixin):
         settings: Settings,
         add_channel: Callable[..., Channel],
     ) -> None:
-        channel = add_channel(default_seats=2, xid=self.interaction.channel_id, show_points=True)
+        channel = add_channel(
+            default_seats=2,
+            default_format=GameFormat.MODERN.value,
+            xid=self.interaction.channel_id,
+            show_points=True,
+        )
         game = self.factories.game.create(
             guild=self.guild,
             channel=channel,
             seats=2,
+            format=GameFormat.MODERN.value,
             message_xid=123,
         )
         self.factories.user.create(xid=self.interaction.user.id)

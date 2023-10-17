@@ -8,7 +8,8 @@ from spellbot.actions import lfg_action
 from spellbot.client import SpellBot
 from spellbot.cogs import EventsCog
 from spellbot.database import DatabaseSession
-from spellbot.models import Game, GameFormat, GameStatus, Play, User
+from spellbot.enums import GameFormat
+from spellbot.models import Game, GameStatus, Play, User
 from sqlalchemy.sql.expression import and_
 
 from tests.mixins import InteractionMixin
