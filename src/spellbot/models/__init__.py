@@ -22,7 +22,7 @@ from .award import GuildAward, UserAward  # noqa: E402
 from .block import Block  # noqa: E402
 from .channel import Channel  # noqa: E402
 from .config import Config  # noqa: E402
-from .game import Game, GameFormat, GameStatus  # noqa: E402
+from .game import Game, GameStatus  # noqa: E402
 from .guild import Guild  # noqa: E402
 from .play import Play  # noqa: E402
 from .queue import Queue  # noqa: E402
@@ -37,7 +37,6 @@ __all__ = [
     "Config",
     "create_all",
     "Game",
-    "GameFormat",
     "GameStatus",
     "Guild",
     "GuildAward",

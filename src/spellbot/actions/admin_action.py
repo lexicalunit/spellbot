@@ -8,6 +8,7 @@ import discord
 from discord.embeds import Embed
 
 from .. import SpellBot
+from ..enums import GameFormat
 from ..models import Channel, GuildAward
 from ..operations import safe_fetch_text_channel, safe_send_channel, safe_update_embed_origin
 from ..services import GamesService
@@ -65,8 +66,9 @@ class AdminAction(BaseAction):
             channel_settings: dict[str, Any],
             col: str,
         ) -> None:
-            if channel[col] != getattr(Channel, col).default.arg:
-                channel_settings[col] = channel[col]
+            value = channel[col].value if col == "default_format" else channel[col]
+            if value != getattr(Channel, col).default.arg:
+                channel_settings[col] = value
 
         all_default = True
         embed = new_embed()
@@ -79,6 +81,7 @@ class AdminAction(BaseAction):
 
             channel_settings: dict[str, Any] = {}
             update_channel_settings(channel, channel_settings, "default_seats")
+            update_channel_settings(channel, channel_settings, "default_format")
             update_channel_settings(channel, channel_settings, "auto_verify")
             update_channel_settings(channel, channel_settings, "unverified_only")
             update_channel_settings(channel, channel_settings, "verified_only")
@@ -320,6 +323,15 @@ class AdminAction(BaseAction):
         await safe_send_channel(
             self.interaction,
             f"Default seats set to {seats} for this channel.",
+            ephemeral=True,
+        )
+
+    async def set_default_format(self, format: int) -> None:
+        assert self.interaction.channel_id is not None
+        await self.services.channels.set_default_format(self.interaction.channel_id, format)
+        await safe_send_channel(
+            self.interaction,
+            f"Default format set to {GameFormat(format)} for this channel.",
             ephemeral=True,
         )
 
