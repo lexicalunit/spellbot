@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds the `/default_format` command.
+
 ## [v9.3.0](https://github.com/lexicalunit/spellbot/releases/tag/v9.3.0) - 2023-10-04
 
 ### Added
