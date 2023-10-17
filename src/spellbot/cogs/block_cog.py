@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import discord
 from ddtrace import tracer
@@ -39,6 +40,18 @@ class BlockCog(commands.Cog):
         add_span_context(interaction)
         async with BlockAction.create(self.bot, interaction) as action:
             await action.unblock(target=target)
+
+    @app_commands.command(
+        name="blocked",
+        description="List all users you've blocked.",
+    )
+    @app_commands.describe(page="If there are multiple pages of output, which one?")
+    @tracer.wrap(name="interaction", resource="blocked")
+    async def blocked(self, interaction: discord.Interaction, page: Optional[int] = 1) -> None:
+        add_span_context(interaction)
+        async with BlockAction.create(self.bot, interaction) as action:
+            page = page or 1
+            await action.blocked(page=page)
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
