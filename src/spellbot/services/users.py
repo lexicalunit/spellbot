@@ -204,6 +204,13 @@ class UsersService:
         DatabaseSession.commit()
 
     @sync_to_async()
+    def blocklist(self, user_xid: int) -> list[int]:
+        return [
+            block.blocked_user_xid
+            for block in DatabaseSession.query(Block).filter(Block.user_xid == user_xid).all()
+        ]
+
+    @sync_to_async()
     def move_user(self, guild_xid: int, from_user_xid: int, to_user_xid: int) -> Optional[str]:
         from_user = DatabaseSession.query(User).filter(User.xid == from_user_xid).one_or_none()
         if not from_user:
