@@ -136,7 +136,7 @@ sqlalchemy = "^2.0.18"
 sqlalchemy-utils = "^0.41.1"
 supervisor = "^4.2.5"
 toml = "^0.10.2"
-uvloop = "^0.17.0"
+uvloop = ">=0.17,<0.20"
 wrapt = "^1.15.0"
 
 [tool.poetry.scripts]
