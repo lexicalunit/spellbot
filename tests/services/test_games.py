@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 import pytest
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat
@@ -28,7 +30,7 @@ from tests.factories import (
 class TestServiceGames:
     async def test_games_select(self, game: Game) -> None:
         games = GamesService()
-        assert await games.select(game.id)
+        assert await games.select(cast(int, game.id))
         assert not await games.select(404)
 
     async def test_games_select_by_voice_xid(self, guild: Guild, channel: Channel) -> None:
@@ -49,7 +51,7 @@ class TestServiceGames:
         user = UserFactory.create()
 
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         await games.add_player(user.xid)
 
         DatabaseSession.expire_all()
@@ -64,13 +66,13 @@ class TestServiceGames:
         private_embed = game.to_embed(True).to_dict()
 
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         assert (await games.to_embed()).to_dict() == public_embed
         assert (await games.to_embed()).to_dict() == private_embed
 
     async def test_games_set_message_xid(self, game: Game) -> None:
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         await games.set_message_xid(12345)
 
         DatabaseSession.expire_all()
@@ -86,14 +88,14 @@ class TestServiceGames:
         UserFactory.create(game=pending_game)
 
         games = GamesService()
-        await games.select(started_game.id)
+        await games.select(cast(int, started_game.id))
         assert await games.fully_seated()
         await games.select(pending_game.id)
         assert not await games.fully_seated()
 
     async def test_games_make_ready(self, game: Game) -> None:
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         await games.make_ready("http://link")
 
         DatabaseSession.expire_all()
@@ -107,7 +109,7 @@ class TestServiceGames:
         user2 = UserFactory.create(game=game)
 
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         assert set(await games.player_xids()) == {user1.xid, user2.xid}
 
     async def test_games_watch_notes(self, game: Game) -> None:
@@ -118,14 +120,14 @@ class TestServiceGames:
 
         DatabaseSession.expire_all()
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         assert await games.watch_notes([user1.xid, user2.xid, user3.xid]) == {
             user1.xid: watch.note,
         }
 
     async def test_games_set_voice(self, game: Game) -> None:
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         await games.set_voice(12345)
 
         DatabaseSession.expire_all()
@@ -135,20 +137,20 @@ class TestServiceGames:
 
     async def test_games_to_dict(self, game: Game) -> None:
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         assert await games.to_dict() == game.to_dict()
 
     async def test_message_xids(self, game: Game) -> None:
         games = GamesService()
-        await games.select(game.id)
-        assert await games.message_xids([game.id]) == [game.message_xid]
+        await games.select(cast(int, game.id))
+        assert await games.message_xids([cast(int, game.id)]) == [game.message_xid]
 
     async def test_dequeue_players(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
         games = GamesService()
 
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         await games.dequeue_players([user1.xid, user2.xid])
 
         DatabaseSession.expire_all()
@@ -164,7 +166,7 @@ class TestServiceGamesPlays:
         PlayFactory.create(user_xid=user1.xid, game_id=game.id)
 
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         assert await games.players_included(user1.xid)
         assert not await games.players_included(user2.xid)
 
@@ -175,7 +177,7 @@ class TestServiceGamesPlays:
         PlayFactory.create(user_xid=user2.xid, game_id=game.id, points=None)
 
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         await games.add_points(user1.xid, 5)
 
         DatabaseSession.expire_all()
@@ -194,7 +196,7 @@ class TestServiceGamesBlocked:
         BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
 
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         assert await games.blocked(user2.xid)
 
     async def test_when_blocker_outside_game(self, game: Game) -> None:
@@ -204,7 +206,7 @@ class TestServiceGamesBlocked:
         BlockFactory.create(user_xid=user2.xid, blocked_user_xid=user1.xid)
 
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         assert await games.blocked(user2.xid)
 
     async def test_when_no_blockers(self, game: Game) -> None:
@@ -212,7 +214,7 @@ class TestServiceGamesBlocked:
         user3 = UserFactory.create()
 
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         assert not await games.blocked(user3.xid)
 
 
@@ -225,7 +227,7 @@ class TestServiceGamesFilterBlocked:
         BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
 
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         assert await games.filter_blocked_list(user2.xid, [user1.xid]) == []
 
     async def test_when_blocker_outside_game(self, game: Game) -> None:
@@ -235,7 +237,7 @@ class TestServiceGamesFilterBlocked:
         BlockFactory.create(user_xid=user2.xid, blocked_user_xid=user1.xid)
 
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         assert await games.filter_blocked_list(user2.xid, [user1.xid]) == []
 
     async def test_when_no_blockers(self, game: Game) -> None:
@@ -243,7 +245,7 @@ class TestServiceGamesFilterBlocked:
         user3 = UserFactory.create()
 
         games = GamesService()
-        await games.select(game.id)
+        await games.select(cast(int, game.id))
         assert await games.filter_blocked_list(user3.xid, [1, 2, 3]) == [1, 2, 3]
 
 
@@ -254,7 +256,7 @@ class TestServiceGamesUpsert:
         new = await games.upsert(
             guild_xid=game.guild.xid,
             channel_xid=game.channel.xid,
-            author_xid=user.xid,
+            author_xid=cast(int, user.xid),
             friends=[],
             seats=4,
             format=GameFormat.COMMANDER.value,
@@ -299,7 +301,7 @@ class TestServiceGamesUpsert:
         new = await games.upsert(
             guild_xid=guild.xid,
             channel_xid=channel.xid,
-            author_xid=user.xid,
+            author_xid=cast(int, user.xid),
             friends=[],
             seats=4,
             format=GameFormat.COMMANDER.value,

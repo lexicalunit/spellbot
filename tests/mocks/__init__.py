@@ -232,7 +232,7 @@ def mock_discord_channel(
     if guild:
         discord_channel.guild = guild
     else:
-        discord_channel.guild = mock_discord_guild(channel.guild)
+        discord_channel.guild = mock_discord_guild(cast(Guild, channel.guild))
     discord_channel.fetch_message = AsyncMock()
     discord_channel.get_partial_message = MagicMock()
     discord_channel.permissions_for = MagicMock()

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import discord
 from dateutil import tz
@@ -68,12 +68,15 @@ class Game(Base):
         nullable=False,
         doc="The external Discord ID of the associated guild",
     )
-    channel_xid = Column(
-        BigInteger,
-        ForeignKey("channels.xid", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-        doc="The external Discord ID of the associated channel",
+    channel_xid: int = cast(
+        int,
+        Column(
+            BigInteger,
+            ForeignKey("channels.xid", ondelete="CASCADE"),
+            index=True,
+            nullable=False,
+            doc="The external Discord ID of the associated channel",
+        ),
     )
     message_xid = Column(
         BigInteger,
@@ -87,27 +90,36 @@ class Game(Base):
         nullable=True,
         doc="The external Discord ID of an associated voice channel",
     )
-    seats = Column(
-        Integer,
-        index=True,
-        nullable=False,
-        doc="The number of seats (open or occupied) available at this game",
+    seats: int = cast(
+        int,
+        Column(
+            Integer,
+            index=True,
+            nullable=False,
+            doc="The number of seats (open or occupied) available at this game",
+        ),
     )
-    status = Column(
-        Integer(),
-        default=GameStatus.PENDING.value,
-        server_default=text(str(GameStatus.PENDING.value)),
-        index=True,
-        nullable=False,
-        doc="Pending or started status of this game",
+    status: int = cast(
+        int,
+        Column(
+            Integer(),
+            default=GameStatus.PENDING.value,
+            server_default=text(str(GameStatus.PENDING.value)),
+            index=True,
+            nullable=False,
+            doc="Pending or started status of this game",
+        ),
     )
-    format = Column(
-        Integer(),
-        default=GameFormat.COMMANDER.value,
-        server_default=text(str(GameFormat.COMMANDER.value)),
-        index=True,
-        nullable=False,
-        doc="The Magic: The Gathering format for this game",
+    format: int = cast(
+        int,
+        Column(
+            Integer(),
+            default=GameFormat.COMMANDER.value,
+            server_default=text(str(GameFormat.COMMANDER.value)),
+            index=True,
+            nullable=False,
+            doc="The Magic: The Gathering format for this game",
+        ),
     )
     spelltable_link = Column(
         String(255),
@@ -150,7 +162,7 @@ class Game(Base):
     @property
     def started_at_timestamp(self) -> int:
         assert self.started_at is not None
-        return int(self.started_at.replace(tzinfo=tz.UTC).timestamp())
+        return int(cast(datetime, self.started_at).replace(tzinfo=tz.UTC).timestamp())
 
     def show_links(self, dm: bool = False) -> bool:
         return True if dm else self.guild.show_links
@@ -159,7 +171,7 @@ class Game(Base):
     def embed_title(self) -> str:
         if self.status == GameStatus.STARTED.value:
             return "**Your game is ready!**"
-        remaining = int(self.seats) - len(self.players)
+        remaining = int(cast(int, self.seats)) - len(self.players)
         plural = "s" if remaining > 1 else ""
         return f"**Waiting for {remaining} more player{plural} to join...**"
 
@@ -210,7 +222,7 @@ class Game(Base):
             "game_start": game_start,
         }
         for i, player in enumerate(self.players):
-            placeholders[f"player_name_{i+1}"] = player.name
+            placeholders[f"player_name_{i+1}"] = cast(str, player.name)
         return placeholders
 
     def apply_placeholders(self, placeholders: dict[str, str], text: str) -> str:
@@ -224,13 +236,13 @@ class Game(Base):
         for player in self.players:
             points_str = ""
             if self.status == GameStatus.STARTED.value:
-                points = player.points(self.id)
+                points = player.points(cast(int, self.id))
                 if points:
                     points_str = f" ({points} point{'s' if points > 1 else ''})"
 
             power_level_str = ""
             if self.status == GameStatus.PENDING.value:
-                config = player.config(self.guild_xid) or {}
+                config = player.config(cast(int, self.guild_xid)) or {}
                 power_level = config.get("power_level", None)
                 if power_level:
                     power_level_str = f" (power level: {power_level})"
