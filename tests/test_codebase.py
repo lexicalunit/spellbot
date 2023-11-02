@@ -53,14 +53,14 @@ class TestCodebase:
             exitcode == 0
         ), f"ruff issues:\n{proc.stderr.decode('utf-8')}\n{proc.stdout.decode('utf-8')}"
 
-    def test_black(self) -> None:
-        """Checks that the Python codebase passes configured black checks."""
+    def test_ruff_format(self) -> None:
+        """Checks that the Python codebase passes configured ruff format checks."""
         chdir(REPO_ROOT)
-        cmd = ["black", "--check", *SRC_DIRS]
+        cmd = ["ruff", "format", "--check", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True)
         exitcode: int = cast(int, proc.returncode)
-        assert exitcode == 0, f"black issues:\n{proc.stderr.decode('utf-8')}"
+        assert exitcode == 0, f"ruff format issues:\n{proc.stderr.decode('utf-8')}"
 
     @pytest.mark.skip(reason="Disabled until TODOs from v7 refactor are fixed.")
     def test_pylint(self) -> None:  # pragma: no cover
