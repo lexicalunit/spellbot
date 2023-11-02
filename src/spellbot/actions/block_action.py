@@ -69,8 +69,11 @@ class BlockAction(BaseAction):
             cur_page += next_user
         if cur_page:
             pages.append(cur_page)
-        index = min(page - 1, len(pages) - 1)
-        embed.description = pages[index]
         embed.color = discord.Color(settings.EMBED_COLOR)
-        embed.set_footer(text=f"Page {page} of {len(pages)}")
+        if pages:
+            index = min(page - 1, len(pages) - 1)
+            embed.description = pages[index]
+            embed.set_footer(text=f"Page {page} of {len(pages)}")
+        else:
+            embed.description = "You have no blocked users."
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
