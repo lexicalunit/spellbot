@@ -147,15 +147,12 @@ class GamesService:
     ) -> Optional[Game]:
         required_seats = 1 + len(friends)
 
+        player_count = count(Queue.user_xid).over(partition_by=Game.id)
         inner = (
             select(
                 Game,
                 Queue.user_xid,
-                (
-                    count(Queue.user_xid)
-                    .over(partition_by=Game.id)
-                    .label("player_count")  # type: ignore
-                ),
+                player_count.label("player_count"),  # type: ignore
             )
             .join(Queue, isouter=True)
             .filter(  # type: ignore
