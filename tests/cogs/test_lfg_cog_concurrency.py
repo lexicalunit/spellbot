@@ -54,7 +54,7 @@ class TestCogLookingForGameConcurrency:
                 # At leat one game is out of order, this is good!
                 messages_out_of_order = True
                 break
-            message_xid = game.message_xid
+            message_xid = cast(Optional[int], game.message_xid)
         assert messages_out_of_order
 
     async def test_concurrent_lfg_requests_same_channel(
@@ -110,5 +110,5 @@ class TestCogLookingForGameConcurrency:
                 # At leat one game is out of order, this is good!
                 messages_out_of_order = True
                 break
-            message_xid = game.message_xid
+            message_xid = cast(Optional[int], game.message_xid)
         assert messages_out_of_order

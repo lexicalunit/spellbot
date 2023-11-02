@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import discord
 import pytz
@@ -59,7 +59,7 @@ class GuildsService:
     @sync_to_async()
     def should_voice_create(self) -> bool:
         assert self.guild
-        return self.guild.voice_create
+        return cast(bool, self.guild.voice_create)
 
     @sync_to_async()
     def set_motd(self, message: Optional[str] = None) -> None:
@@ -85,7 +85,7 @@ class GuildsService:
     @sync_to_async()
     def current_name(self) -> str:
         assert self.guild
-        return self.guild.name or ""
+        return cast(Optional[str], self.guild.name) or ""
 
     @sync_to_async()
     def voice_category_prefixes(self) -> list[str]:

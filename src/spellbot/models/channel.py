@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from sqlalchemy import BigInteger, Column, DateTime, String
 from sqlalchemy.orm import relationship
@@ -21,11 +21,14 @@ class Channel(Base):
 
     __tablename__ = "channels"
 
-    xid = Column(
-        BigInteger,
-        primary_key=True,
-        nullable=False,
-        doc="The external Discord ID for a channel",
+    xid: int = cast(
+        int,
+        Column(
+            BigInteger,
+            primary_key=True,
+            nullable=False,
+            doc="The external Discord ID for a channel",
+        ),
     )
     created_at = Column(
         DateTime,
@@ -139,7 +142,7 @@ class Channel(Base):
             "guild_xid": self.guild_xid,
             "name": self.name,
             "default_seats": self.default_seats,
-            "default_format": GameFormat(self.default_format),
+            "default_format": GameFormat(cast(int, self.default_format)),
             "auto_verify": self.auto_verify,
             "unverified_only": self.unverified_only,
             "verified_only": self.verified_only,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterable, cast
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
 from sqlalchemy.orm import relationship
@@ -17,7 +17,7 @@ class Guild(Base):
 
     __tablename__ = "guilds"
 
-    xid = Column(BigInteger, primary_key=True, nullable=False)
+    xid: int = cast(int, Column(BigInteger, primary_key=True, nullable=False))
     created_at = Column(
         DateTime,
         nullable=False,
@@ -86,11 +86,11 @@ class Guild(Base):
             "show_links": self.show_links,
             "voice_create": self.voice_create,
             "channels": sorted(
-                [channel.to_dict() for channel in self.channels],
+                [channel.to_dict() for channel in cast("Iterable[Channel]", self.channels)],
                 key=lambda c: c["xid"],
             ),
             "awards": sorted(
-                [award.to_dict() for award in self.awards],
+                [award.to_dict() for award in cast("Iterable[GuildAward]", self.awards)],
                 key=lambda c: c["id"],
             ),
         }

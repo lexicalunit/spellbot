@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import discord
 import pytz
@@ -147,7 +147,7 @@ class UsersService:
             return bool(row[0]) if row else False
 
         assert self.user
-        return self.user.banned
+        return cast(bool, self.user.banned)
 
     @sync_to_async()
     def block(self, author_xid: int, target_xid: int) -> None:
@@ -206,7 +206,7 @@ class UsersService:
     @sync_to_async()
     def blocklist(self, user_xid: int) -> list[int]:
         return [
-            block.blocked_user_xid
+            cast(int, block.blocked_user_xid)
             for block in DatabaseSession.query(Block).filter(Block.user_xid == user_xid).all()
         ]
 
