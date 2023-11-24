@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Dependency updates.
+
 ## [v9.4.1](https://github.com/lexicalunit/spellbot/releases/tag/v9.4.1) - 2023-11-02
 
 - Handle case when a user has no blocked users and runs the `/blocked` command.
