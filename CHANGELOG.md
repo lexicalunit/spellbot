@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updates how user vs member is handled in application commands to avoid potential issue.
+
 ## [v9.4.2](https://github.com/lexicalunit/spellbot/releases/tag/v9.4.2) - 2023-11-24
 
 ### Changed

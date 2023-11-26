@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 import discord
 from ddtrace import tracer
@@ -28,7 +28,7 @@ class ScoreCog(commands.Cog):
     async def score(
         self,
         interaction: discord.Interaction,
-        user: Optional[discord.Member] = None,
+        user: Optional[Union[discord.User, discord.Member]] = None,
     ) -> None:
         add_span_context(interaction)
         async with ScoreAction.create(self.bot, interaction) as action:
