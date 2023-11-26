@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 import discord
 from ddtrace import tracer
@@ -25,7 +25,11 @@ class BlockCog(commands.Cog):
     )
     @app_commands.describe(target="The user to block")
     @tracer.wrap(name="interaction", resource="block")
-    async def block(self, interaction: discord.Interaction, target: discord.Member) -> None:
+    async def block(
+        self,
+        interaction: discord.Interaction,
+        target: Union[discord.User, discord.Member],
+    ) -> None:
         add_span_context(interaction)
         async with BlockAction.create(self.bot, interaction) as action:
             await action.block(target=target)
@@ -36,7 +40,11 @@ class BlockCog(commands.Cog):
     )
     @app_commands.describe(target="The user to unblock")
     @tracer.wrap(name="interaction", resource="unblock")
-    async def unblock(self, interaction: discord.Interaction, target: discord.Member) -> None:
+    async def unblock(
+        self,
+        interaction: discord.Interaction,
+        target: Union[discord.User, discord.Member],
+    ) -> None:
         add_span_context(interaction)
         async with BlockAction.create(self.bot, interaction) as action:
             await action.unblock(target=target)
