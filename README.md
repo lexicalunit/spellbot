@@ -77,22 +77,22 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
         <td align="center"><a href="https://disboard.org/server/815001383979450368"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863859-9ec1997b-9983-498e-9295-fa594d242b4d.jpg" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
     </tr>
     <tr>
+        <td align="center"><a href="https://discord.gg/Jkn5FpTASv"><img height="130" src="https://github.com/lexicalunit/spellbot/assets/1903876/31578e71-45c2-4ff9-b9b7-b1ca88e6b417" alt="Combat Step" /><br />Combat&nbsp;Step</a></td>
         <td align="center"><a href="https://discord.gg/Xc748UPh5B"><img height="140" src="https://user-images.githubusercontent.com/1903876/192328539-a575bb6a-5a87-4766-92b3-8f94fbc17914.png" alt="Budget Commander" /><br />Budget&nbsp;Commander</a></td>
         <td align="center"><a href="https://disboard.org/server/806995731268632596"><img height="140" src="https://user-images.githubusercontent.com/1903876/140845585-8053037f-a42b-4c1c-88f2-1b3c403fea09.jpg" alt="The Mages Guild" /><br />The&nbsp;Mages&nbsp;Guild</a></td>
-        <td align="center"><a href="https://discord.gg/commander"><img height="140" src="https://user-images.githubusercontent.com/1903876/147596500-3cd08eef-84ad-4c02-a219-2eef0642a973.jpg" alt="Commander RC"/><br />Commander&nbsp;RC</a></td>
     </tr>
     <tr>
+        <td align="center"><a href="https://discord.gg/commander"><img height="140" src="https://user-images.githubusercontent.com/1903876/147596500-3cd08eef-84ad-4c02-a219-2eef0642a973.jpg" alt="Commander RC"/><br />Commander&nbsp;RC</a></td>
         <td align="center"><a href="https://www.patreon.com/asylumgamingmtg"><img height="140" src="https://user-images.githubusercontent.com/1903876/198731021-a6ea0111-da86-42e3-b74b-79d1225a2849.png" alt="Asylum Gaming" /><br />Asylum&nbsp;Gaming</a></td>
         <td align="center"><a href="https://discord.gg/YeFrEqae3N"><img height="140" src="https://user-images.githubusercontent.com/1903876/148895425-0c72426c-d7dd-4974-99d7-21949f80e893.png" alt="コマンドフェストオンライン" /><br /><span class="small">コマンドフェストオンライン</span></a></td>
-        <td align="center"><a href="https://disboard.org/server/848414032398516264"><img height="140" src="https://user-images.githubusercontent.com/1903876/140863856-00482a5a-7fe5-4cbb-8c4b-2442504925ea.jpg" alt="Commander en Español" /><br /><span class="small">Commander&nbsp;en&nbsp;Español</span></a></td>
     </tr>
     <tr>
+        <td align="center"><a href="https://disboard.org/server/848414032398516264"><img height="140" src="https://user-images.githubusercontent.com/1903876/140863856-00482a5a-7fe5-4cbb-8c4b-2442504925ea.jpg" alt="Commander en Español" /><br /><span class="small">Commander&nbsp;en&nbsp;Español</span></a></td>
         <td align="center"><a href="https://discord.gg/7gJDYU44gM"><img height="130" src="https://user-images.githubusercontent.com/1903876/147705994-909a94cc-ce70-431b-823a-127d257cdb52.png" alt="MTG let's play!!" /><br />MTG&nbsp;let&apos;s&nbsp;play!!</a></td>
         <td align="center"><a href="https://www.mtglandfall.com/"><img height="130" src="https://user-images.githubusercontent.com/1903876/152042910-af34b521-bba2-43d1-a033-d7fd7c387673.png" alt="Landfall" /><br />Landfall</a></td>
-        <td align="center"><a href="https://discord.gg/Rgp3xaV7HU"><img height="130" src="https://user-images.githubusercontent.com/1903876/148823767-5e1feb59-37d8-4340-ae23-148d8415699f.png" alt="Torre de Mando" /><br />Torre&nbsp;de&nbsp;Mando</a></td>
     </tr>
     <tr>
-        <td align="center">&nbsp;</td>
+        <td align="center"><a href="https://discord.gg/Rgp3xaV7HU"><img height="130" src="https://user-images.githubusercontent.com/1903876/148823767-5e1feb59-37d8-4340-ae23-148d8415699f.png" alt="Torre de Mando" /><br />Torre&nbsp;de&nbsp;Mando</a></td>
         <td align="center"><a href="https://discord.gg/xcnRz86vkb"><img height="130" src="https://user-images.githubusercontent.com/1903876/156637022-c8847db5-9cf5-4d00-a5b0-ecbaaec27802.jpg" alt="Your Virtual LGS" /><br />Your&nbsp;Virtual&nbsp;LGS</a></td>
         <td align="center">&nbsp;</td>
     </tr>
