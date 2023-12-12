@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds CombatStep discord.
+- Adds a manage_messages permission check to safe_delete_message.
 
 ## [v9.4.3](https://github.com/lexicalunit/spellbot/releases/tag/v9.4.3) - 2023-11-26
 
