@@ -14,6 +14,7 @@ from .metrics import add_span_error
 from .utils import (
     CANT_SEND_CODE,
     bot_can_delete_channel,
+    bot_can_delete_message,
     bot_can_manage_channels,
     bot_can_read,
     bot_can_reply_to,
@@ -202,6 +203,20 @@ async def safe_update_embed(
 async def safe_delete_message(message: Union[discord.Message, discord.PartialMessage]) -> bool:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"message_xid": str(message.id)})
+
+    if not bot_can_delete_message(message):
+        maybe_guild = getattr(message, "guild", None)
+        maybe_guild_xid = getattr(maybe_guild, "id", None)
+        logger.warning(
+            (
+                "warning: in guild %s (%s), could not manage message:"
+                " no permissions to manage message: %s"
+            ),
+            maybe_guild,
+            maybe_guild_xid,
+            str(message),
+        )
+        return False
 
     success: bool = False
     with suppress(
