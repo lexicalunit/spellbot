@@ -76,6 +76,9 @@ safe_licenses = [
   "Python Software Foundation License",
   "The Unlicense (Unlicense)",
 ]
+unsafe_packages = [
+  "envier", # this one is MIT but it is not detected properly by pylic
+]
 
 [tool.pytest.ini_options]
 addopts = """
