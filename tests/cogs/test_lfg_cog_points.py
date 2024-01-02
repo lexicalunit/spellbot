@@ -76,7 +76,10 @@ class TestCogLookingForGamePoints(InteractionMixin):
                         {
                             "inline": False,
                             "name": "Players",
-                            "value": f"<@{self.interaction.user.id}>, <@{other_player.id}>",
+                            "value": (
+                                f"{self.interaction.user.display_name} (<@{self.interaction.user.id}>), "
+                                f"{other_player.display_name} (<@{other_player.id}>)"
+                            ),
                         },
                         {"inline": True, "name": "Format", "value": "Modern"},
                         {
@@ -107,7 +110,10 @@ class TestCogLookingForGamePoints(InteractionMixin):
                         {
                             "inline": False,
                             "name": "Players",
-                            "value": f"<@{user.xid}> (5 points), <@{other_user.xid}>",
+                            "value": (
+                                f"{self.interaction.user.display_name} (<@{self.interaction.user.id}>) (5 points), "
+                                f"{other_user.name} (<@{other_user.xid}>)"
+                            ),
                         },
                         {"inline": True, "name": "Format", "value": "Modern"},
                         {
@@ -173,7 +179,10 @@ class TestCogLookingForGamePoints(InteractionMixin):
                         {
                             "inline": False,
                             "name": "Players",
-                            "value": f"<@{self.interaction.user.id}>, <@{other_player.id}>",
+                            "value": (
+                                f"{self.interaction.user.display_name} (<@{self.interaction.user.id}>), "
+                                f"{other_player.display_name} (<@{other_player.id}>)"
+                            ),
                         },
                         {"inline": True, "name": "Format", "value": "Modern"},
                         {

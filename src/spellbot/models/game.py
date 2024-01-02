@@ -232,7 +232,7 @@ class Game(Base):
 
     @property
     def embed_players(self) -> str:
-        player_strs: list[str] = []
+        player_parts: list[tuple[int, str, str, str]] = []
         for player in self.players:
             points_str = ""
             if self.status == GameStatus.STARTED.value:
@@ -246,9 +246,12 @@ class Game(Base):
                 power_level = config.get("power_level", None)
                 if power_level:
                     power_level_str = f" (power level: {power_level})"
+            player_parts.append((player.xid, player.name, power_level_str, points_str))
 
-            player_strs.append(f"<@{player.xid}>{power_level_str}{points_str}")
-        return ", ".join(sorted(player_strs))
+        player_strs: list[str] = []
+        for parts in sorted(player_parts):
+            player_strs.append(f"{parts[1]} (<@{parts[0]}>){parts[2]}{parts[3]}")
+        return ", ".join(player_strs)
 
     @property
     def embed_footer(self) -> str:

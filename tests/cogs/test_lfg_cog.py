@@ -74,7 +74,10 @@ class TestCogLookingForGame(InteractionMixin):
                     {
                         "inline": False,
                         "name": "Players",
-                        "value": f"<@{self.interaction.user.id}>, <@{other_player.id}>",
+                        "value": (
+                            f"{self.interaction.user.display_name} (<@{self.interaction.user.id}>), "
+                            f"{other_player.display_name} (<@{other_player.id}>)"
+                        ),
                     },
                     {"inline": True, "name": "Format", "value": "Modern"},
                     {
