@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds player name in addition to player handle to game embed.
+- Various dependency version updates.
+
 ## [v9.4.4](https://github.com/lexicalunit/spellbot/releases/tag/v9.4.4) - 2023-12-11
 
 ### Added
