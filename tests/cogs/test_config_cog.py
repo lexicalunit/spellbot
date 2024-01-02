@@ -53,7 +53,7 @@ class TestCogConfigPowerLevelWhenUserWaiting(InteractionMixin):
                     {
                         "inline": False,
                         "name": "Players",
-                        "value": f"<@{player.xid}> (power level: 10)",
+                        "value": f"{player.name} (<@{player.xid}>) (power level: 10)",
                     },
                     {"inline": True, "name": "Format", "value": "Commander"},
                 ],

@@ -74,7 +74,7 @@ class TestModelGame:
             "color": settings.EMBED_COLOR,
             "description": ("_A SpellTable link will be created when all players have joined._"),
             "fields": [
-                {"inline": False, "name": "Players", "value": f"<@{player.xid}>"},
+                {"inline": False, "name": "Players", "value": f"{player.name} (<@{player.xid}>)"},
                 {"inline": True, "name": "Format", "value": "Commander"},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
@@ -99,7 +99,7 @@ class TestModelGame:
                 f"game id: {game.id}"
             ),
             "fields": [
-                {"inline": False, "name": "Players", "value": f"<@{player.xid}>"},
+                {"inline": False, "name": "Players", "value": f"{player.name} (<@{player.xid}>)"},
                 {"inline": True, "name": "Format", "value": "Commander"},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
@@ -132,7 +132,7 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "Players",
-                    "value": f"<@{player.xid}> (power level: {config.power_level})",
+                    "value": f"{player.name} (<@{player.xid}>) (power level: {config.power_level})",
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
             ],
@@ -169,7 +169,7 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "Players",
-                    "value": f"<@{player1.xid}>, <@{player2.xid}>",
+                    "value": f"{player1.name} (<@{player1.xid}>), {player2.name} (<@{player2.xid}>)",
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
@@ -194,7 +194,7 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "Players",
-                    "value": f"<@{player1.xid}>, <@{player2.xid}>",
+                    "value": f"{player1.name} (<@{player1.xid}>), {player2.name} (<@{player2.xid}>)",
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
@@ -249,7 +249,10 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "Players",
-                    "value": f"<@{player1.xid}> (5 points), <@{player2.xid}> (1 point)",
+                    "value": (
+                        f"{player1.name} (<@{player1.xid}>) (5 points), "
+                        f"{player2.name} (<@{player2.xid}>) (1 point)"
+                    ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
@@ -284,7 +287,7 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "Players",
-                    "value": f"<@{player1.xid}>, <@{player2.xid}>",
+                    "value": f"{player1.name} (<@{player1.xid}>), {player2.name} (<@{player2.xid}>)",
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
@@ -309,7 +312,7 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "Players",
-                    "value": f"<@{player1.xid}>, <@{player2.xid}>",
+                    "value": f"{player1.name} (<@{player1.xid}>), {player2.name} (<@{player2.xid}>)",
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
@@ -346,7 +349,7 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "Players",
-                    "value": f"<@{player1.xid}>, <@{player2.xid}>",
+                    "value": f"{player1.name} (<@{player1.xid}>), {player2.name} (<@{player2.xid}>)",
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
@@ -373,7 +376,7 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "Players",
-                    "value": f"<@{player1.xid}>, <@{player2.xid}>",
+                    "value": f"{player1.name} (<@{player1.xid}>), {player2.name} (<@{player2.xid}>)",
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
@@ -409,7 +412,7 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "Players",
-                    "value": f"<@{player1.xid}>, <@{player2.xid}>",
+                    "value": f"{player1.name} (<@{player1.xid}>), {player2.name} (<@{player2.xid}>)",
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
@@ -436,7 +439,7 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "Players",
-                    "value": f"<@{player1.xid}>, <@{player2.xid}>",
+                    "value": f"{player1.name} (<@{player1.xid}>), {player2.name} (<@{player2.xid}>)",
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
