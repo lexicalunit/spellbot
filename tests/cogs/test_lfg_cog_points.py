@@ -77,8 +77,8 @@ class TestCogLookingForGamePoints(InteractionMixin):
                             "inline": False,
                             "name": "Players",
                             "value": (
-                                f"{self.interaction.user.display_name} (<@{self.interaction.user.id}>), "
-                                f"{other_player.display_name} (<@{other_player.id}>)"
+                                f"• <@{self.interaction.user.id}> ({self.interaction.user.display_name})\n"
+                                f"• <@{other_player.id}> ({other_player.display_name})"
                             ),
                         },
                         {"inline": True, "name": "Format", "value": "Modern"},
@@ -111,8 +111,8 @@ class TestCogLookingForGamePoints(InteractionMixin):
                             "inline": False,
                             "name": "Players",
                             "value": (
-                                f"{self.interaction.user.display_name} (<@{self.interaction.user.id}>) (5 points), "
-                                f"{other_user.name} (<@{other_user.xid}>)"
+                                f"• <@{self.interaction.user.id}> ({self.interaction.user.display_name}) - 5 points\n"
+                                f"• <@{other_user.xid}> ({other_user.name})"
                             ),
                         },
                         {"inline": True, "name": "Format", "value": "Modern"},
@@ -180,8 +180,8 @@ class TestCogLookingForGamePoints(InteractionMixin):
                             "inline": False,
                             "name": "Players",
                             "value": (
-                                f"{self.interaction.user.display_name} (<@{self.interaction.user.id}>), "
-                                f"{other_player.display_name} (<@{other_player.id}>)"
+                                f"• <@{self.interaction.user.id}> ({self.interaction.user.display_name})\n"
+                                f"• <@{other_player.id}> ({other_player.display_name})"
                             ),
                         },
                         {"inline": True, "name": "Format", "value": "Modern"},
