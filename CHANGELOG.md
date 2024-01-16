@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v9.4.9](https://github.com/lexicalunit/spellbot/releases/tag/v9.4.9) - 2024-01-15
+
 ### Added
 
 - Added the planechase format.
