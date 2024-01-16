@@ -41,3 +41,4 @@ class GameFormat(Enum):
     EDH_MID = FormatDetails(players=4)
     EDH_LOW = FormatDetails(players=4)
     EDH_BATTLECRUISER = FormatDetails(players=4)
+    PLANECHASE = FormatDetails(players=4)
