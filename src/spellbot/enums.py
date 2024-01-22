@@ -25,20 +25,20 @@ class GameFormat(Enum):
     def __str__(self) -> str:
         return self.name.replace("_", " ").title()
 
-    COMMANDER = FormatDetails(players=4)
-    STANDARD = FormatDetails(players=2)
-    SEALED = FormatDetails(players=2)
-    MODERN = FormatDetails(players=2)
-    VINTAGE = FormatDetails(players=2)
-    LEGACY = FormatDetails(players=2)
-    BRAWL_TWO_PLAYER = FormatDetails(players=2)
-    BRAWL_MULTIPLAYER = FormatDetails(players=4)
-    TWO_HEADED_GIANT = FormatDetails(players=4)
-    PAUPER = FormatDetails(players=2)
-    PIONEER = FormatDetails(players=2)
-    EDH_MAX = FormatDetails(players=4)
-    EDH_HIGH = FormatDetails(players=4)
-    EDH_MID = FormatDetails(players=4)
-    EDH_LOW = FormatDetails(players=4)
-    EDH_BATTLECRUISER = FormatDetails(players=4)
-    PLANECHASE = FormatDetails(players=4)
+    COMMANDER = FormatDetails(players=4)  # type: ignore
+    STANDARD = FormatDetails(players=2)  # type: ignore
+    SEALED = FormatDetails(players=2)  # type: ignore
+    MODERN = FormatDetails(players=2)  # type: ignore
+    VINTAGE = FormatDetails(players=2)  # type: ignore
+    LEGACY = FormatDetails(players=2)  # type: ignore
+    BRAWL_TWO_PLAYER = FormatDetails(players=2)  # type: ignore
+    BRAWL_MULTIPLAYER = FormatDetails(players=4)  # type: ignore
+    TWO_HEADED_GIANT = FormatDetails(players=4)  # type: ignore
+    PAUPER = FormatDetails(players=2)  # type: ignore
+    PIONEER = FormatDetails(players=2)  # type: ignore
+    EDH_MAX = FormatDetails(players=4)  # type: ignore
+    EDH_HIGH = FormatDetails(players=4)  # type: ignore
+    EDH_MID = FormatDetails(players=4)  # type: ignore
+    EDH_LOW = FormatDetails(players=4)  # type: ignore
+    EDH_BATTLECRUISER = FormatDetails(players=4)  # type: ignore
+    PLANECHASE = FormatDetails(players=4)  # type: ignore
