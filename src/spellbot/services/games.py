@@ -451,12 +451,20 @@ class GamesService:
     def inactive_games(self) -> list[dict[str, Any]]:
         settings = Settings()
         limit = datetime.now(tz=pytz.utc) - timedelta(minutes=settings.EXPIRE_TIME_M)
-        records = DatabaseSession.query(Game).filter(
-            and_(
+        records = (
+            DatabaseSession.query(Game)
+            .join(Queue, isouter=True)
+            .filter(
                 Game.status == GameStatus.PENDING.value,
-                Game.updated_at <= limit,
                 Game.deleted_at.is_(None),
-            ),
+            )
+            .group_by(Game)
+            .having(
+                or_(
+                    Game.updated_at <= limit,
+                    func.count(Queue.game_id) == 0,
+                ),
+            )
         )
         return [record.to_dict() for record in records]
 
