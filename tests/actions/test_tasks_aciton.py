@@ -157,11 +157,26 @@ class TestTaskExpireInactiveChannels:
         guild: Guild = factories.guild.create()
         channel: Channel = factories.channel.create(guild=guild)
         game: Game = factories.game.create(guild=guild, channel=channel)
+        factories.user.create(game=game)
 
         await action.expire_inactive_games()
 
         DatabaseSession.expire_all()
         assert game.deleted_at is None
+
+    async def test_when_empty_game_exists(
+        self,
+        action: TasksAction,
+        factories: Factories,
+    ) -> None:
+        guild: Guild = factories.guild.create()
+        channel: Channel = factories.channel.create(guild=guild)
+        game: Game = factories.game.create(guild=guild, channel=channel)
+
+        await action.expire_inactive_games()
+
+        DatabaseSession.expire_all()
+        assert game.deleted_at is not None
 
     async def test_when_inactive_game_exists(
         self,
