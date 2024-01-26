@@ -43,7 +43,7 @@ class AboutCog(commands.Cog):
             f"💜 Help keep SpellBot running by [becoming a patron!]({PATREON})"
         )
         embed.url = "http://spellbot.io/"
-        embed.color = Color(settings.EMBED_COLOR)
+        embed.color = Color(settings.INFO_EMBED_COLOR)
         await safe_send_channel(interaction, embed=embed)
 
 
