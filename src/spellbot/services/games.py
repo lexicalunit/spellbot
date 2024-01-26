@@ -235,7 +235,7 @@ class GamesService:
             Queue.user_xid.in_(player_xids),
             Queue.game_id != self.game.id,
         )
-        return [int(row[0]) for row in rows]
+        return [int(row[0]) for row in rows if row[0]]
 
     @sync_to_async()
     @tracer.wrap()
@@ -243,7 +243,7 @@ class GamesService:
         assert self.game
         assert len(spelltable_link or "") <= MAX_SPELLTABLE_LINK_LEN
         queued_xids = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == self.game.id)
-        player_xids = [int(row[0]) for row in queued_xids]
+        player_xids = [int(row[0]) for row in queued_xids if row[0]]
 
         # update game's state
         self.game.spelltable_link = spelltable_link  # type: ignore
@@ -328,6 +328,7 @@ class GamesService:
         users_author_has_blocked = [
             cast(int, row.blocked_user_xid)
             for row in DatabaseSession.query(Block).filter(Block.user_xid == author_xid)
+            if row
         ]
         users_who_blocked_author_or_other = [
             cast(int, row.user_xid)
@@ -350,7 +351,7 @@ class GamesService:
             Queue.user_xid,
             func.count(Queue.user_xid).label("pending"),  # pylint: disable=not-callable
         ).group_by(Queue.user_xid)
-        counts = {row[0]: row[1] for row in rows}
+        counts = {row[0]: row[1] for row in rows if row[0]}
 
         user_xids = [
             user_xid
@@ -486,7 +487,7 @@ class GamesService:
         query = select(
             Game.message_xid,  # type: ignore
         ).where(Game.id.in_(game_ids))
-        return [int(row[0]) for row in DatabaseSession.execute(query)]
+        return [int(row[0]) for row in DatabaseSession.execute(query) if row[0]]
 
     @sync_to_async()
     @tracer.wrap()

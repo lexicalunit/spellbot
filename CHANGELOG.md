@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds an Updated At field to pending games.
+- Sets the embed color to gray, purple, and gold, depending on the game state.
+
 ## [v9.4.10](https://github.com/lexicalunit/spellbot/releases/tag/v9.4.10) - 2024-01-23
 
 ### Changed

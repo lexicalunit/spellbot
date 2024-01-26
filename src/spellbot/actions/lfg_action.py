@@ -421,7 +421,7 @@ class LookingForGameAction(BaseAction):
         game_data = await self.services.games.to_dict()
         link = game_data["jump_link"]
         embed.description = f"You can [jump to the game post]({link}) to see it!"
-        embed.color = self.settings.EMBED_COLOR
+        embed.color = self.settings.INFO_EMBED_COLOR
         await safe_followup_channel(self.interaction, embed=embed)
 
     @tracer.wrap()
@@ -497,7 +497,7 @@ class LookingForGameAction(BaseAction):
         embed = Embed()
         embed.set_thumbnail(url=self.settings.ICO_URL)
         embed.set_author(name="Watched user(s) joined a game")
-        embed.color = self.settings.EMBED_COLOR
+        embed.color = self.settings.INFO_EMBED_COLOR
         description = (
             f"[⇤ Jump to the game post]({data['jump_link']})\n"
             f"[➤ Spectate the game on SpellTable]({data['spectate_link']})\n\n"

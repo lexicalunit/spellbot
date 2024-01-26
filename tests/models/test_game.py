@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from unittest.mock import ANY
 
 import pytz
 from spellbot.database import DatabaseSession
@@ -50,12 +51,19 @@ class TestModelGame:
     def test_game_embed_empty(self, settings: Settings, factories: Factories) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
-        game = factories.game.create(guild=guild, channel=channel)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            updated_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+        )
 
         assert game.to_embed().to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.EMPTY_EMBED_COLOR,
             "description": ("_A SpellTable link will be created when all players have joined._"),
-            "fields": [{"inline": True, "name": "Format", "value": "Commander"}],
+            "fields": [
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Updated at", "value": "<t:1635638400>"},
+            ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {
                 "url": settings.THUMB_URL,
@@ -71,11 +79,12 @@ class TestModelGame:
         player = factories.user.create(game=game)
 
         assert game.to_embed().to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.PENDING_EMBED_COLOR,
             "description": ("_A SpellTable link will be created when all players have joined._"),
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
                 {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Updated at", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {
@@ -92,7 +101,7 @@ class TestModelGame:
         player = factories.user.create(game=game)
 
         assert game.to_embed().to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.PENDING_EMBED_COLOR,
             "description": (
                 "_A SpellTable link will be created when all players have joined._\n\n"
                 f"player 1: {player.name}\n\n"
@@ -101,6 +110,7 @@ class TestModelGame:
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
                 {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Updated at", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {
@@ -126,7 +136,7 @@ class TestModelGame:
         )
 
         assert game.to_embed().to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.PENDING_EMBED_COLOR,
             "description": ("_A SpellTable link will be created when all players have joined._"),
             "fields": [
                 {
@@ -135,6 +145,7 @@ class TestModelGame:
                     "value": f"• <@{player.xid}> ({player.name}) - power level: {config.power_level}",
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Updated at", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {
@@ -163,7 +174,7 @@ class TestModelGame:
         player2 = factories.user.create(game=game)
 
         assert game.to_embed().to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your SpellTable link.",
             "fields": [
                 {
@@ -183,7 +194,7 @@ class TestModelGame:
             "type": "rich",
         }
         assert game.to_embed(dm=True).to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "[Join your SpellTable game now!]"
                 f"({game.spelltable_link}) (or [spectate this game]"
@@ -245,7 +256,7 @@ class TestModelGame:
         )
 
         assert game.to_embed().to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "Please check your Direct Messages for your SpellTable link.\n"
                 "\n"
@@ -287,7 +298,7 @@ class TestModelGame:
         player2 = factories.user.create(game=game)
 
         assert game.to_embed().to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your SpellTable link.",
             "fields": [
                 {
@@ -307,7 +318,7 @@ class TestModelGame:
             "type": "rich",
         }
         assert game.to_embed(dm=True).to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "Sorry but SpellBot was unable to create a SpellTable link for "
                 "this game. Please go to [SpellTable]"
@@ -355,7 +366,7 @@ class TestModelGame:
         player2 = factories.user.create(game=game)
 
         assert game.to_embed().to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your SpellTable link.",
             "fields": [
                 {
@@ -375,7 +386,7 @@ class TestModelGame:
             "type": "rich",
         }
         assert game.to_embed(dm=True).to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "[Join your SpellTable game now!]"
                 f"({game.spelltable_link}) (or [spectate this game]"
@@ -420,7 +431,7 @@ class TestModelGame:
         player2 = factories.user.create(game=game)
 
         assert game.to_embed().to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "Please check your Direct Messages for your SpellTable link.\n"
                 "\n"
@@ -444,7 +455,7 @@ class TestModelGame:
             "type": "rich",
         }
         assert game.to_embed(dm=True).to_dict() == {
-            "color": settings.EMBED_COLOR,
+            "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "[Join your SpellTable game now!]"
                 f"({game.spelltable_link}) (or [spectate this game]"

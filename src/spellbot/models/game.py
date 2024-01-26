@@ -164,6 +164,11 @@ class Game(Base):
         assert self.started_at is not None
         return int(cast(datetime, self.started_at).replace(tzinfo=tz.UTC).timestamp())
 
+    @property
+    def updated_at_timestamp(self) -> int:
+        assert self.updated_at is not None
+        return int(cast(datetime, self.updated_at).replace(tzinfo=tz.UTC).timestamp())
+
     def show_links(self, dm: bool = False) -> bool:
         return True if dm else self.guild.show_links
 
@@ -283,8 +288,17 @@ class Game(Base):
         embed.add_field(name="Format", value=self.format_name)
         if self.started_at:
             embed.add_field(name="Started at", value=f"<t:{self.started_at_timestamp}>")
+        else:
+            embed.add_field(name="Updated at", value=f"<t:{self.updated_at_timestamp}>")
+        if self.players:
+            embed.color = (
+                discord.Color(settings.STARTED_EMBED_COLOR)
+                if self.started_at
+                else discord.Color(settings.PENDING_EMBED_COLOR)
+            )
+        else:
+            embed.color = discord.Color(settings.EMPTY_EMBED_COLOR)
         embed.set_footer(text=self.embed_footer)
-        embed.color = discord.Color(settings.EMBED_COLOR)
         return embed
 
     def to_dict(self) -> dict[str, Any]:

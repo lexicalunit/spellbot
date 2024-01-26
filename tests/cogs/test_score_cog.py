@@ -28,7 +28,7 @@ class TestCogScore(InteractionMixin):
 
         assert self.last_send_message("embed") == {
             "author": {"name": f"Record of games played on {self.guild.name}"},
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 0 games on this server.\n"
             "View more [details on spellbot.io]"
             f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{user.xid}).",
@@ -48,7 +48,7 @@ class TestCogScore(InteractionMixin):
 
         assert self.last_send_message("embed") == {
             "author": {"name": f"Record of games played on {self.guild.name}"},
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 1 game on this server.\n"
             "View more [details on spellbot.io]"
             f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{user.xid}).",
@@ -67,7 +67,7 @@ class TestCogScore(InteractionMixin):
         await self.run(cog.score)
         assert self.last_send_message("embed") == {
             "author": {"name": f"Record of games played on {self.guild.name}"},
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 2 games on this server.\n"
             "View more [details on spellbot.io]"
             f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{user.xid}).",
@@ -87,7 +87,7 @@ class TestCogScore(InteractionMixin):
         assert embed is not None
         assert embed.to_dict() == {
             "author": {"name": f"Record of games played on {new_guild.name}"},
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 0 games on this server.\n"
             "View more [details on spellbot.io]"
             f"(https://bot.spellbot.io/g/{new_guild.id}/u/{user.xid}).",
@@ -102,7 +102,7 @@ class TestCogScore(InteractionMixin):
 
         assert self.last_send_message("embed") == {
             "author": {"name": f"Record of games played on {self.guild.name}"},
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": f"<@{target_member.id}> has played 0 games on this server.\n"
             "View more [details on spellbot.io]"
             f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{target_member.id}).",
@@ -115,7 +115,7 @@ class TestCogScore(InteractionMixin):
 
         assert self.last_send_message("embed") == {
             "author": {"name": f"Recent games played in {channel.name}"},
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": "View [game history on spellbot.io]"
             f"(https://bot.spellbot.io/g/{self.guild.xid}/c/{channel.xid}).",
             "thumbnail": {"url": self.settings.ICO_URL},
@@ -171,7 +171,7 @@ class TestCogScore(InteractionMixin):
         await self.run(cog.top, monthly=False)
         assert self.last_send_message("embed") == {
             "title": f"Top players in #{channel.name} (all time)",
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": (
                 "Rank \xa0\xa0\xa0 Games \xa0\xa0\xa0 Player\n"
                 f"{1:\xa0>6}\xa0{20:\xa0>20}\xa0\xa0\xa0<@{user4.xid}>\n"
@@ -187,7 +187,7 @@ class TestCogScore(InteractionMixin):
         await self.run(cog.top)
         assert self.last_send_message("embed") == {
             "title": f"Top players in #{channel.name} (this month)",
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": (
                 "Rank \xa0\xa0\xa0 Games \xa0\xa0\xa0 Player\n"
                 f"{1:\xa0>6}\xa0{15:\xa0>20}\xa0\xa0\xa0<@{user3.xid}>\n"
@@ -202,7 +202,7 @@ class TestCogScore(InteractionMixin):
         await self.run(cog.top, ago=1)
         assert self.last_send_message("embed") == {
             "title": f"Top players in #{channel.name} (1 months ago)",
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": (
                 "Rank \xa0\xa0\xa0 Games \xa0\xa0\xa0 Player\n"
                 f"{1:\xa0>6}\xa0{20:\xa0>20}\xa0\xa0\xa0<@{user4.xid}>\n"

@@ -65,7 +65,7 @@ class TestCogLookingForGame(InteractionMixin):
             game = DatabaseSession.query(Game).one()
             mock_call = lfg_action.safe_update_embed
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-                "color": self.settings.EMBED_COLOR,
+                "color": self.settings.STARTED_EMBED_COLOR,
                 "description": (
                     "Please check your Direct Messages for your SpellTable link.\n\n"
                     f"{self.guild.motd}\n\n{channel.motd}"
@@ -202,7 +202,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             mock_call = lfg_action.safe_channel_reply
 #             mock_call.assert_called_once()
 #             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-#                 "color": self.settings.EMBED_COLOR,
+#                 "color": self.settings.PENDING_EMBED_COLOR,
 #                 "description": (
 #                     "**A temporary issue prevented buttons from being added to this game"
 #                     " post. To join or leave this game use `/lfg` or `/leave`.**\n\n"
@@ -370,7 +370,7 @@ class TestCogLookingForGame(InteractionMixin):
 
 #             mock_call = lfg_action.safe_update_embed_origin
 #             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-#                 "color": self.settings.EMBED_COLOR,
+#                 "color": self.settings.PENDING_EMBED_COLOR,
 #                 "description": (
 #                     "_A SpellTable link will be created when all players have joined._\n"
 #                     "\n"
@@ -405,7 +405,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             mock_call.assert_called_once()
 #             assert mock_call.call_args_list[0].kwargs["components"] == snapshot
 #             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-#                 "color": self.settings.EMBED_COLOR,
+#                 "color": self.settings.STARTED_EMBED_COLOR,
 #                 "description": (
 #                     "Please check your Direct Messages for your SpellTable link.\n\n"
 #                     "When your game is over use the drop down to report your points.\n\n"
@@ -513,7 +513,7 @@ class TestCogLookingForGame(InteractionMixin):
 
 #             mock_call = lfg_action.safe_update_embed_origin
 #             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-#                 "color": self.settings.EMBED_COLOR,
+#                 "color": self.settings.PENDING_EMBED_COLOR,
 #                 "description": (
 #                     "_A SpellTable link will be created when all players have joined._\n"
 #                     "\n"
@@ -552,7 +552,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             mock_call.assert_any_call(other_player, embed=ANY)
 #             embed = mock_call.call_args_list[0].kwargs["embed"].to_dict()
 #             assert embed == {
-#                 "color": self.settings.EMBED_COLOR,
+#                 "color": self.settings.STARTED_EMBED_COLOR,
 #                 "description": (
 #                     f"[Join your SpellTable game now!]({game.spelltable_link})"
 #                     f" (or [spectate this game]({game.spectate_link}))\n\n"
@@ -756,7 +756,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             mock_call.assert_any_call(dpy_mod, embed=ANY)
 #             assert mock_call.call_args_list[-1].kwargs["embed"].to_dict() == {
 #                 "author": {"name": "Watched user(s) joined a game"},
-#                 "color": self.settings.EMBED_COLOR,
+#                 "color": self.settings.STARTED_EMBED_COLOR,
 #                 "description": (
 #                     f"[⇤ Jump to the game post]({game.jump_link})\n"
 #                     f"[➤ Spectate the game on SpellTable]({game.spectate_link})\n\n"
@@ -822,7 +822,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             mock_call = leave_action.safe_update_embed_origin
 #             mock_call.assert_called_once()
 #             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-#                 "color": self.settings.EMBED_COLOR,
+#                 "color": self.settings.PENDING_EMBED_COLOR,
 #                 "description": (
 #                     "_A SpellTable link will be created when all players have joined._\n"
 #                     "\n"

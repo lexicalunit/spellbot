@@ -122,7 +122,7 @@ class TestCogWatch(InteractionMixin):
 
         await self.run(cog.watched)
         assert self.last_send_message("embed") == {
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": f"• <@{user1.xid}> — {watch1.note}\n• <@{user2.xid}> — {watch2.note}\n",
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": "List of watched players on this server",
@@ -171,7 +171,7 @@ class TestCogWatch(InteractionMixin):
 
         await self.run(cog.watched, page=1)
         assert self.last_send_message("embed") == {
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": (
                 f"• <@{users[0].xid}> — {watches[0].note}\n"
                 f"• <@{users[1].xid}> — {watches[1].note}\n"
@@ -187,7 +187,7 @@ class TestCogWatch(InteractionMixin):
         self.interaction.response.send_message.reset_mock()
         await self.run(cog.watched, page=2)
         assert self.last_send_message("embed") == {
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": (f"• <@{users[4].xid}> — {watches[4].note}\n"),
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": "List of watched players on this server",

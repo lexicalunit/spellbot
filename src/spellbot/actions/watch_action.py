@@ -116,7 +116,7 @@ class WatchAction(BaseAction):
             assert self.interaction.guild
             embed = Embed(title="List of watched players on this server")
             embed.set_thumbnail(url=settings.ICO_URL)
-            embed.color = discord.Color(settings.EMBED_COLOR)
+            embed.color = discord.Color(settings.INFO_EMBED_COLOR)
             return embed
 
         watches = WatchesService()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Callable
-from unittest.mock import MagicMock
+from unittest.mock import ANY, MagicMock
 
 import discord
 import pytest
@@ -70,7 +70,7 @@ class TestCogAdminSetup(InteractionMixin):
             },
         ]
         assert self.last_send_message("embed") == {
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": (
                 "These are the current settings for SpellBot on this server. "
                 "Please use the buttons below, as well as the `/set` commands, "
@@ -166,7 +166,7 @@ class TestCogAdminSetupView(InteractionMixin):
             },
         ]
         assert self.last_edit_message("embed") == {
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": (
                 "These are the current settings for SpellBot on this server. "
                 "Please use the buttons below, as well as the `/set` commands, "
@@ -201,16 +201,21 @@ class TestCogAdminSetupView(InteractionMixin):
 
 @pytest.mark.asyncio()
 class TestCogAdminInfo(InteractionMixin):
-    async def test_happy_path(self, cog: AdminCog, game: Game) -> None:
+    async def test_happy_path(
+        self,
+        cog: AdminCog,
+        game: Game,
+    ) -> None:
         await self.run(cog.info, game_id=f"SB#{game.id}")
         assert self.last_send_message("embed") == {
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.EMPTY_EMBED_COLOR,
             "description": (
                 "_A SpellTable link will be created when all players have joined._\n\n"
                 f"{game.guild.motd}\n\n{game.channel.motd}"
             ),
             "fields": [
                 {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Updated at", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {"url": self.settings.THUMB_URL},
@@ -322,7 +327,7 @@ class TestCogAdminChannels(InteractionMixin):
 
             mock_call = admin_action.safe_send_channel
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-                "color": self.settings.EMBED_COLOR,
+                "color": self.settings.INFO_EMBED_COLOR,
                 "description": (
                     f"• <#{channel1.xid}> ({channel1.xid}) — `auto_verify`\n"
                     f"• <#{channel2.xid}> ({channel2.xid}) — `unverified_only`\n"
@@ -364,7 +369,7 @@ class TestCogAdminChannels(InteractionMixin):
 
             mock_call = admin_action.safe_send_channel
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-                "color": self.settings.EMBED_COLOR,
+                "color": self.settings.INFO_EMBED_COLOR,
                 "description": (
                     "**All channels on this server have a default configuration.**\n\n"
                     "Use may use channel specific `/set` commands within a channel "
@@ -386,7 +391,7 @@ class TestCogAdminChannels(InteractionMixin):
 
             mock_call = admin_action.safe_send_channel
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-                "color": self.settings.EMBED_COLOR,
+                "color": self.settings.INFO_EMBED_COLOR,
                 "description": (
                     "**All channels on this server have a default configuration.**\n\n"
                     "Use may use channel specific `/set` commands within a channel "
@@ -418,7 +423,7 @@ class TestCogAdminChannels(InteractionMixin):
 
             mock_call = admin_action.safe_send_channel
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-                "color": self.settings.EMBED_COLOR,
+                "color": self.settings.INFO_EMBED_COLOR,
                 "description": (
                     "**All channels on this server have a default configuration.**\n\n"
                     "Use may use channel specific `/set` commands within a channel"
@@ -475,7 +480,7 @@ class TestCogAdminAwards(InteractionMixin):
         await self.run(cog.awards)
 
         assert self.last_send_message("embed") == {
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": (
                 f"• **ID {award1.id}** — _after {award1.count}"
                 f" games_ — give `@{award1.role}` — {award1.message}\n"
@@ -500,7 +505,7 @@ class TestCogAdminAwards(InteractionMixin):
     async def test_awards_when_no_awards(self, cog: AdminCog) -> None:
         await self.run(cog.awards)
         assert self.last_send_message("embed") == {
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": (
                 "**There are no awards configured on this server.**\n\n"
                 "To add awards use the `/award add` command."
@@ -527,7 +532,7 @@ class TestCogAdminAwards(InteractionMixin):
         await self.run(cog.award_delete, id=awards[0].id)
         assert self.last_send_message("embed") == {
             "author": {"name": "Award deleted!"},
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": "You can view all awards with the `/set awards` command.",
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
@@ -540,7 +545,7 @@ class TestCogAdminAwards(InteractionMixin):
         award = DatabaseSession.query(GuildAward).one()
         assert self.last_send_message("embed") == {
             "author": {"name": "Award added!"},
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": (
                 f"• **ID {award.id}** — _every 10 games_ — give `@role` — message\n\n"
                 "You can view all awards with the `/set awards` command."

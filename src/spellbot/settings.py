@@ -54,7 +54,10 @@ class Settings:
             r"&permissions=2416045137"
             r"&scope=applications.commands%20bot"
         )
-        self.EMBED_COLOR = 0x5A3EFD
+        self.INFO_EMBED_COLOR = 0x5A3EFD
+        self.STARTED_EMBED_COLOR = 0xF8AE4A
+        self.PENDING_EMBED_COLOR = 0x5A3EFD
+        self.EMPTY_EMBED_COLOR = 0xCDCDCD
         self.DATABASE_ECHO = False
         self.ADMIN_ROLE = "SpellBot Admin"
         self.MOD_PREFIX = "Moderator"
