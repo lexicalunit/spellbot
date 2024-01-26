@@ -69,7 +69,7 @@ class BlockAction(BaseAction):
             cur_page += next_user
         if cur_page:
             pages.append(cur_page)
-        embed.color = discord.Color(settings.EMBED_COLOR)
+        embed.color = discord.Color(settings.INFO_EMBED_COLOR)
         if pages:
             index = min(page - 1, len(pages) - 1)
             embed.description = pages[index]

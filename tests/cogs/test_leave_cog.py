@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import ANY
+
 import discord
 import pytest
 import pytest_asyncio
@@ -35,13 +37,16 @@ class TestCogLeaveGame(InteractionMixin):
             leave_action.safe_update_embed.assert_called_once()
             safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
             assert safe_update_embed_call.kwargs["embed"].to_dict() == {
-                "color": self.settings.EMBED_COLOR,
+                "color": self.settings.EMPTY_EMBED_COLOR,
                 "description": (
                     "_A SpellTable link will be created when all players have joined._\n"
                     "\n"
                     f"{self.guild.motd}\n\n{self.channel.motd}"
                 ),
-                "fields": [{"inline": True, "name": "Format", "value": "Commander"}],
+                "fields": [
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Updated at", "value": ANY},
+                ],
                 "footer": {"text": f"SpellBot Game ID: #SB{self.game.id}"},
                 "thumbnail": {"url": self.settings.THUMB_URL},
                 "title": "**Waiting for 4 more players to join...**",
@@ -68,13 +73,16 @@ class TestCogLeaveGame(InteractionMixin):
             leave_action.safe_update_embed.assert_called_once()
             safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
             assert safe_update_embed_call.kwargs["embed"].to_dict() == {
-                "color": self.settings.EMBED_COLOR,
+                "color": self.settings.EMPTY_EMBED_COLOR,
                 "description": (
                     "_A SpellTable link will be created when all players have joined._\n"
                     "\n"
                     f"{self.guild.motd}\n\n{self.channel.motd}"
                 ),
-                "fields": [{"inline": True, "name": "Format", "value": "Commander"}],
+                "fields": [
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Updated at", "value": ANY},
+                ],
                 "footer": {"text": f"SpellBot Game ID: #SB{self.game.id}"},
                 "thumbnail": {"url": self.settings.THUMB_URL},
                 "title": "**Waiting for 4 more players to join...**",

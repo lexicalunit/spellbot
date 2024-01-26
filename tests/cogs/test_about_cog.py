@@ -17,7 +17,7 @@ class TestCogAbout(InteractionMixin):
         assert self.interaction.response.send_message.call_args_list[0].kwargs[
             "embed"
         ].to_dict() == {
-            "color": self.settings.EMBED_COLOR,
+            "color": self.settings.INFO_EMBED_COLOR,
             "description": (
                 "_The Discord bot for [SpellTable](https://spelltable.wizards.com/)._\n"
                 "\n"

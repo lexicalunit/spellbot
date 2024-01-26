@@ -66,7 +66,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                 DatabaseSession.expire_all()
                 game = DatabaseSession.query(Game).one()
                 assert lfg_action.safe_update_embed.call_args_list[0].kwargs["embed"].to_dict() == {
-                    "color": self.settings.EMBED_COLOR,
+                    "color": self.settings.STARTED_EMBED_COLOR,
                     "description": (
                         "Please check your Direct Messages for your SpellTable link.\n\n"
                         "When your game is over use the drop down to report your points.\n\n"
@@ -100,7 +100,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                 assert found.points == 5
 
                 assert lfg_action.safe_update_embed.call_args_list[1].kwargs["embed"].to_dict() == {
-                    "color": settings.EMBED_COLOR,
+                    "color": settings.STARTED_EMBED_COLOR,
                     "description": (
                         "Please check your Direct Messages for your SpellTable link.\n\n"
                         "When your game is over use the drop down to report your points.\n\n"
@@ -169,7 +169,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                 DatabaseSession.expire_all()
                 game = DatabaseSession.query(Game).one()
                 assert lfg_action.safe_update_embed.call_args_list[0].kwargs["embed"].to_dict() == {
-                    "color": self.settings.EMBED_COLOR,
+                    "color": self.settings.STARTED_EMBED_COLOR,
                     "description": (
                         "Please check your Direct Messages for your SpellTable link.\n\n"
                         "When your game is over use the drop down to report your points.\n\n"

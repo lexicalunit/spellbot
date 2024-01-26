@@ -31,7 +31,7 @@ class ScoreAction(BaseAction):
             " on this server.\n"
             f"View more [details on spellbot.io]({link})."
         )
-        embed.color = settings.EMBED_COLOR
+        embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
     async def history(self) -> None:
@@ -46,7 +46,7 @@ class ScoreAction(BaseAction):
         embed.set_author(name=f"Recent games played in {channel_name}")
         link = f"{settings.API_BASE_URL}/g/{self.interaction.guild_id}/c/{channel_xid}"
         embed.description = f"View [game history on spellbot.io]({link})."
-        embed.color = settings.EMBED_COLOR
+        embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
     async def top(self, monthly: bool, ago: int) -> None:
@@ -73,5 +73,5 @@ class ScoreAction(BaseAction):
             user_xid, count = datum
             description += f"{rank+1:\xa0>6}\xa0{count:\xa0>20}\xa0\xa0\xa0<@{user_xid}>\n"
         embed.description = description
-        embed.color = settings.EMBED_COLOR
+        embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)

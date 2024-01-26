@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import ANY
+
 import pytest
 from spellbot.actions import config_action
 from spellbot.client import SpellBot
@@ -43,7 +45,7 @@ class TestCogConfigPowerLevelWhenUserWaiting(InteractionMixin):
             update_embed_call = config_action.safe_update_embed
             update_embed_call.assert_called_once()
             assert update_embed_call.call_args_list[0].kwargs["embed"].to_dict() == {
-                "color": self.settings.EMBED_COLOR,
+                "color": self.settings.PENDING_EMBED_COLOR,
                 "description": (
                     "_A SpellTable link will be created when all players have joined._\n\n"
                     f"{game.guild.motd}\n\n"
@@ -56,6 +58,7 @@ class TestCogConfigPowerLevelWhenUserWaiting(InteractionMixin):
                         "value": f"• <@{player.xid}> ({player.name}) - power level: 10",
                     },
                     {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Updated at", "value": ANY},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
                 "thumbnail": {"url": self.settings.THUMB_URL},
