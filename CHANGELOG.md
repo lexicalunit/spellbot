@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v9.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v9.5.0) - 2024-01-26
+
 ### Added
 
 - Adds an Updated At field to pending games.
