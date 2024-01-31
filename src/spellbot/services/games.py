@@ -1,6 +1,7 @@
 # pylint: disable=too-many-public-methods
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta
 from typing import Any, Optional, cast
 
@@ -15,7 +16,6 @@ from sqlalchemy.sql.expression import and_, asc, column, or_
 from sqlalchemy.sql.functions import count
 
 from ..database import DatabaseSession
-from ..metrics import add_span_kv
 from ..models import (
     Block,
     Game,
@@ -26,6 +26,8 @@ from ..models import (
     Watch,
 )
 from ..settings import Settings
+
+logger = logging.getLogger(__name__)
 
 MAX_SPELLTABLE_LINK_LEN = Game.spelltable_link.property.columns[0].type.length  # type: ignore
 
@@ -484,7 +486,7 @@ class GamesService:
                 synchronize_session=False,
             )
         )
-        add_span_kv("dequeued", dequeued)
+        logger.info("dequeued %s players from games %s", dequeued, game_ids)
         DatabaseSession.commit()
 
     @sync_to_async()
