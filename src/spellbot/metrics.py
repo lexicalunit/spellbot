@@ -123,6 +123,12 @@ def add_span_context(interaction: Any) -> None:  # pragma: no cover
 
 
 @skip_if_no_metrics
+def add_span_kv(key: str, value: Any) -> None:  # pragma: no cover
+    if span := tracer.current_span():
+        span.set_tag(key, value)
+
+
+@skip_if_no_metrics
 def add_span_error(ex: BaseException) -> None:  # pragma: no cover
     if span := tracer.current_span():
         span.set_exc_info(ex.__class__, ex, getattr(ex, "__traceback__", None))

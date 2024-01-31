@@ -15,6 +15,7 @@ from sqlalchemy.sql.expression import and_, asc, column, or_
 from sqlalchemy.sql.functions import count
 
 from ..database import DatabaseSession
+from ..metrics import add_span_kv
 from ..models import (
     Block,
     Game,
@@ -476,9 +477,14 @@ class GamesService:
             update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.now(tz=pytz.utc))
         )
         DatabaseSession.execute(query)
-        DatabaseSession.query(Queue).filter(Queue.game_id.in_(game_ids)).delete(
-            synchronize_session=False,
+        dequeued = (
+            DatabaseSession.query(Queue)
+            .filter(Queue.game_id.in_(game_ids))
+            .delete(
+                synchronize_session=False,
+            )
         )
+        add_span_kv("dequeued", dequeued)
         DatabaseSession.commit()
 
     @sync_to_async()
