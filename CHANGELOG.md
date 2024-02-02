@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Changed some logging around expiring games.
+- Always delete empty pending games when expiring them.
 
 ## [v9.6.0](https://github.com/lexicalunit/spellbot/releases/tag/v9.6.0) - 2024-01-30
 
