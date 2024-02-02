@@ -162,8 +162,8 @@ class TasksAction:
         for game in games:
             game_id = game["id"]
             logger.info("expiring game %s...", game_id)
-            await self.services.games.delete_games([game_id])
-            await self.expire_game(game)
+            dequeued = await self.services.games.delete_games([game_id])
+            await self.expire_game(game, dequeued)
 
             batch += 1
             if batch >= 5:  # pragma: no cover
@@ -172,7 +172,7 @@ class TasksAction:
             else:
                 await asyncio.sleep(1)
 
-    async def expire_game(self, game: dict[str, Any]) -> None:
+    async def expire_game(self, game: dict[str, Any], dequeued: int) -> None:
         message_xid = game["message_xid"]
         if message_xid is None:
             return
@@ -187,7 +187,7 @@ class TasksAction:
             return
 
         channel_data = await self.services.channels.select(channel_xid)
-        if channel_data and channel_data["delete_expired"]:
+        if not dequeued or channel_data and channel_data["delete_expired"]:
             await safe_delete_message(post)
         else:
             await safe_update_embed(

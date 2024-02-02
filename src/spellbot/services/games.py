@@ -474,7 +474,7 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def delete_games(self, game_ids: list[int]) -> None:
+    def delete_games(self, game_ids: list[int]) -> int:
         query = (
             update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.now(tz=pytz.utc))
         )
@@ -482,12 +482,11 @@ class GamesService:
         dequeued = (
             DatabaseSession.query(Queue)
             .filter(Queue.game_id.in_(game_ids))
-            .delete(
-                synchronize_session=False,
-            )
+            .delete(synchronize_session=False)
         )
         logger.info("dequeued %s players from games %s", dequeued, game_ids)
         DatabaseSession.commit()
+        return dequeued
 
     @sync_to_async()
     @tracer.wrap()
