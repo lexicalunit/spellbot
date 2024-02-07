@@ -572,6 +572,28 @@ files = [
     {file = "ddtrace-2.6.0-cp37-cp37m-musllinux_1_1_i686.whl", hash = "sha256:e940d9074fe62015f9ec8d4da11b0383d8aad591f943e9abc1a8a6cb23da98c5"},
     {file = "ddtrace-2.6.0-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:b87e7269520beb0f33dd068165f4e6de8c26356253146407fa6779bdcc62d70d"},
     {file = "ddtrace-2.6.0-cp37-cp37m-win32.whl", hash = "sha256:a9e856b8f29e469dc5310673c14a5b48de942529d15fc7f700845b4685548b46"},
+    {file = "ddtrace-2.6.0-cp37-cp37m-win_amd64.whl", hash = "sha256:ae86a0b418af7f5bbf5120672821fb03f98054c7f8e0165b5e9852c9f2cfdfed"},
+    {file = "ddtrace-2.6.0-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:0d448f2a2a4b3a5403fb76bbbb31a3ae55562fa35e71df67c994741b6ce09813"},
+    {file = "ddtrace-2.6.0-cp38-cp38-macosx_11_0_x86_64.whl", hash = "sha256:c2cdfeea9cc58fde9697c4372ea6dcbc12e67c12e423c5d3fcf67ebd899c3f50"},
+    {file = "ddtrace-2.6.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:12590c71eaf2cc3f6c3cc81f577f011188a69363201555c651668487441e067c"},
+    {file = "ddtrace-2.6.0-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:398b0b2ead3c076c790270626cff0a2fb8997ca859e11a7465f99a6fb3ec0fbf"},
+    {file = "ddtrace-2.6.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:32d37d94efdebb5d9444be3bea518b284afd4ebdc27ed84ee3e6286799c17faa"},
+    {file = "ddtrace-2.6.0-cp38-cp38-musllinux_1_1_aarch64.whl", hash = "sha256:0f561dbcf47ed1478326c34740cc9f334b561e97fae100d875c7c5f53ba2ea65"},
+    {file = "ddtrace-2.6.0-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:b14c9031f9c372a703a614b1c1cbe5d280e39731f6ad2c4dab923d25152157fc"},
+    {file = "ddtrace-2.6.0-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:d0f7b693be7c28adc684e127c978b7f1071bcc13f291de6d68fa0509edd2d1b1"},
+    {file = "ddtrace-2.6.0-cp38-cp38-win32.whl", hash = "sha256:fff06d5dd84bca2ab3e330cc35c238b244682c83f8fc855a70447e0efce3f53c"},
+    {file = "ddtrace-2.6.0-cp38-cp38-win_amd64.whl", hash = "sha256:fb74140023a2e6c0df7d42a7c82300db491121be5b12e3ee1f559ab378612144"},
+    {file = "ddtrace-2.6.0-cp39-cp39-macosx_11_0_universal2.whl", hash = "sha256:94c303b55347b64a1b34d22f5445c60847dca3c8e83b835bdcd5acea6cbca1f2"},
+    {file = "ddtrace-2.6.0-cp39-cp39-macosx_11_0_x86_64.whl", hash = "sha256:4f7d5155592aa8b2f74feb86f4507fc15e545d7487f71e0e74d752217956c4e8"},
+    {file = "ddtrace-2.6.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3710991d81e63fd4d3c3af1c8fc3b92fceaf691379ca5e29add407de528978c6"},
+    {file = "ddtrace-2.6.0-cp39-cp39-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:7352c9259a02a8ff9d3df78710f7cab299cd09f12347bf0def6a10da690a25a9"},
+    {file = "ddtrace-2.6.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:271670464314f447b6c3d6a4d718ab80642ebe717ecdbc3b39f64fbd9c254c35"},
+    {file = "ddtrace-2.6.0-cp39-cp39-musllinux_1_1_aarch64.whl", hash = "sha256:8636dfe2dadf199f965d5b0c63c0f4527c74dfa8b3314220a94c26b8d5ed8bdd"},
+    {file = "ddtrace-2.6.0-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:0b33df7e383ba3bcdbf424cb1baef25fa6b96b37ed3c717526a7f1817db097ac"},
+    {file = "ddtrace-2.6.0-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:fd8c9cefa5897ebb5250ea7c5d9b059f405b45e0d860b72ca7bf4295311191a7"},
+    {file = "ddtrace-2.6.0-cp39-cp39-win32.whl", hash = "sha256:2d793485f2838ca35d59385882ad78f68a3cf2bcf8b73b8902647ade845fa830"},
+    {file = "ddtrace-2.6.0-cp39-cp39-win_amd64.whl", hash = "sha256:f7ca4dca4a88641a629d664c888fb4ff076ec0f1636e6d7449f99c43a4c6a5b6"},
+    {file = "ddtrace-2.6.0.tar.gz", hash = "sha256:ada0a49eb3388b60379e29e60b6380888e60581f9c2694ceae2b7be93f6aca2e"},
 ]
 
 [package.dependencies]
@@ -728,13 +750,13 @@ doc = ["Sphinx", "sphinx-rtd-theme", "sphinxcontrib-spelling"]
 
 [[package]]
 name = "faker"
-version = "23.0.0"
+version = "23.1.0"
 description = "Faker is a Python package that generates fake data for you."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "Faker-23.0.0-py3-none-any.whl", hash = "sha256:8ca62b41b83bc6bcebe4ec5e7535405881fbd5ef69c6df933550de7111099575"},
-    {file = "Faker-23.0.0.tar.gz", hash = "sha256:f508c6a131f2cff8594f66f218f6674d3a78488455fd73ffd8c684efae4dc4d3"},
+    {file = "Faker-23.1.0-py3-none-any.whl", hash = "sha256:60e89e5c0b584e285a7db05eceba35011a241954afdab2853cb246c8a56700a2"},
+    {file = "Faker-23.1.0.tar.gz", hash = "sha256:b7f76bb1b2ac4cdc54442d955e36e477c387000f31ce46887fb9722a041be60b"},
 ]
 
 [package.dependencies]
