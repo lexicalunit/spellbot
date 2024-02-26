@@ -77,7 +77,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
         <td align="center"><a href="https://disboard.org/server/815001383979450368"><img height="130" src="https://user-images.githubusercontent.com/1903876/140863859-9ec1997b-9983-498e-9295-fa594d242b4d.jpg" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://discord.gg/Jkn5FpTASv"><img height="130" src="https://github.com/lexicalunit/spellbot/assets/1903876/31578e71-45c2-4ff9-b9b7-b1ca88e6b417" alt="Combat Step" /><br />Combat&nbsp;Step</a></td>
+        <td align="center"><a href="https://discord.gg/Jkn5FpTASv"><img height="130" src="https://github.com/lexicalunit/spellbot/assets/1903876/cc420426-7d3c-4829-b963-a63c7d36a253" alt="Combat Step" /><br />Combat&nbsp;Step</a></td>
         <td align="center"><a href="https://discord.gg/Xc748UPh5B"><img height="140" src="https://user-images.githubusercontent.com/1903876/192328539-a575bb6a-5a87-4766-92b3-8f94fbc17914.png" alt="Budget Commander" /><br />Budget&nbsp;Commander</a></td>
         <td align="center"><a href="https://disboard.org/server/806995731268632596"><img height="140" src="https://user-images.githubusercontent.com/1903876/140845585-8053037f-a42b-4c1c-88f2-1b3c403fea09.jpg" alt="The Mages Guild" /><br />The&nbsp;Mages&nbsp;Guild</a></td>
     </tr>
