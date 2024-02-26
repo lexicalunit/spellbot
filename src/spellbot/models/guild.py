@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Iterable, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
 from sqlalchemy.orm import relationship
@@ -9,6 +9,8 @@ from sqlalchemy.orm import relationship
 from . import Base, now
 
 if TYPE_CHECKING:  # pragma: no cover
+    from typing import Iterable
+
     from . import Channel, Game, GuildAward  # noqa
 
 

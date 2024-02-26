@@ -12,6 +12,9 @@ disable=
         R0401, # cyclic-import (handled by pyright)
         R0801, # duplicate-code (spurious detections for discord.py boilerplate)
         R0903, # too-few-public-methods (spurious detections for our services)
+        R0911, # too-many-return-statements
+        R0913, # too-many-arguments
+        R0914, # too-many-locals
         W0613, # unused-argument (spurious detections for pytest fixtures)
         W0621, # redefined-outer-name (spurious detections for pytest fixtures)
         W0703, # broad-except

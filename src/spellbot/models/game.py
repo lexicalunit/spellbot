@@ -203,8 +203,7 @@ class Game(Base):
                 description += "Please check your Direct Messages for your SpellTable link."
             if dm:
                 description += (
-                    "\n\nYou can also [jump to the original game post]"
-                    f"({self.jump_link}) in <#{self.channel_xid}>."
+                    "\n\nYou can also [jump to the original game post]" f"({self.jump_link}) in <#{self.channel_xid}>."
                 )
             elif self.channel.show_points:
                 description += "\n\nWhen your game is over use the drop down to report your points."

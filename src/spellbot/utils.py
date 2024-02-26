@@ -163,9 +163,7 @@ def is_admin(interaction: discord.Interaction) -> bool:
         raise AdminOnlyError()
     author_roles = interaction.user.roles  # type: ignore
     settings = Settings()
-    has_admin_role = any(
-        role.name == settings.ADMIN_ROLE for role in cast(list[discord.Role], author_roles)
-    )
+    has_admin_role = any(role.name == settings.ADMIN_ROLE for role in cast(list[discord.Role], author_roles))
     if not has_admin_role:
         raise AdminOnlyError()
     return True

@@ -29,9 +29,7 @@ def award_line(award: dict[str, Any]) -> str:
     give_or_take = "take" if award["remove"] else "give"
     verified_only = "verified only" if award["verified_only"] else ""
     unverified_only = "unverified only" if award["unverified_only"] else ""
-    verify_status = (
-        f" ({verified_only}{unverified_only}) " if verified_only or unverified_only else " "
-    )
+    verify_status = f" ({verified_only}{unverified_only}) " if verified_only or unverified_only else " "
     return (
         f"• **ID {award['id']}** — _{kind} {award['count']} games_ "
         f"— {give_or_take} `@{award['role']}`{verify_status}"
@@ -90,8 +88,7 @@ class AdminAction(BaseAction):
             if channel_settings:
                 all_default = False
                 deets = ", ".join(
-                    (f"`{k}`" if isinstance(v, bool) and v else f"`{k}={v}`")
-                    for k, v in channel_settings.items()
+                    (f"`{k}`" if isinstance(v, bool) and v else f"`{k}={v}`") for k, v in channel_settings.items()
                 )
                 next_line = f"• <#{channel['xid']}> ({channel['xid']}) — {deets}\n"
                 if len(description) + len(next_line) >= EMBED_DESCRIPTION_SIZE_LIMIT:
@@ -143,8 +140,7 @@ class AdminAction(BaseAction):
 
         if not has_at_least_one_award:
             description = (
-                "**There are no awards configured on this server.**\n\n"
-                "To add awards use the `/award add` command."
+                "**There are no awards configured on this server.**\n\n" "To add awards use the `/award add` command."
             )
 
         embed.description = description
