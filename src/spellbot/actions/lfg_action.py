@@ -286,10 +286,7 @@ class LookingForGameAction(BaseAction):
             excluded_players_s = ", ".join(f"<@{xid}>" for xid in excluded_player_xids)
             await safe_followup_channel(
                 self.interaction,
-                (
-                    "Some of the players you mentioned can not"
-                    f" be added to a game: {excluded_players_s}"
-                ),
+                ("Some of the players you mentioned can not" f" be added to a game: {excluded_players_s}"),
             )
             return
 

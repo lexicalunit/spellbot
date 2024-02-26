@@ -1,5 +1,5 @@
-[tool.pylint]
-max-line-length = 100
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 120
 
 [tool.pyright]
 enableTypeIgnoreComments = true
@@ -33,10 +33,16 @@ exclude = [
   "src/spellbot/migrations/versions",
   "venv",
 ]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
 extend-select = [
   "ANN",
   "C4",
   "DTZ",
+  "E",
+  "F",
   "I",
   "ISC",
   "PT",
@@ -53,12 +59,14 @@ ignore = [
   "COM812",
   "ISC001",
 ]
-line-length = 100
-target-version = "py310"
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 120
+max-line-length = 120
 
 [tool.pylic]
 ignore_packages = [
-  # only install these as part of dev tools to avoid GPL usage in main application
+  # we only install these as part of dev tools to avoid GPL usage in main application
   "astroid",
   "pylint",
 ]
@@ -75,9 +83,6 @@ safe_licenses = [
   "Mozilla Public License 2.0 (MPL 2.0)",
   "Python Software Foundation License",
   "The Unlicense (Unlicense)",
-]
-unsafe_packages = [
-  "envier", # this one is MIT but it is not detected properly by pylic
 ]
 
 [tool.pytest.ini_options]

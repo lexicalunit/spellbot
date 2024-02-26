@@ -208,10 +208,7 @@ async def safe_delete_message(message: Union[discord.Message, discord.PartialMes
         maybe_guild = getattr(message, "guild", None)
         maybe_guild_xid = getattr(maybe_guild, "id", None)
         logger.warning(
-            (
-                "warning: in guild %s (%s), could not manage message:"
-                " no permissions to manage message: %s"
-            ),
+            ("warning: in guild %s (%s), could not manage message:" " no permissions to manage message: %s"),
             maybe_guild,
             maybe_guild_xid,
             str(message),
@@ -601,10 +598,7 @@ async def safe_add_role(
             return
         if not bot_can_role(guild, discord_role):
             logger.warning(
-                (
-                    "warning: in guild %s (%s), could not manage role:"
-                    " no permissions to manage role: %s"
-                ),
+                ("warning: in guild %s (%s), could not manage role:" " no permissions to manage role: %s"),
                 guild.name,
                 guild.id,
                 str(role),

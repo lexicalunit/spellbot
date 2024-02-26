@@ -263,7 +263,7 @@ class AdminCog(commands.Cog):
     ) -> None:
         add_span_context(interaction)
         assert interaction.guild_id is not None
-        # TODO: user input validation
+        # note: no user input validation is being done here
         from_user_xid = int(from_user_id)
         to_user_xid = int(to_user_id)
         async with AdminAction.create(self.bot, interaction) as action:

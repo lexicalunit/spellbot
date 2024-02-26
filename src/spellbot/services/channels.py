@@ -114,12 +114,7 @@ class ChannelsService:
             motd = message[:max_len]
         else:
             motd = ""
-        query = (
-            update(Channel)
-            .where(Channel.xid == xid)
-            .values(motd=motd)
-            .execution_options(synchronize_session=False)
-        )
+        query = update(Channel).where(Channel.xid == xid).values(motd=motd).execution_options(synchronize_session=False)
         DatabaseSession.execute(query)
         DatabaseSession.commit()
         return motd
@@ -132,10 +127,7 @@ class ChannelsService:
         else:
             extra = ""
         query = (
-            update(Channel)
-            .where(Channel.xid == xid)
-            .values(extra=extra)
-            .execution_options(synchronize_session=False)
+            update(Channel).where(Channel.xid == xid).values(extra=extra).execution_options(synchronize_session=False)
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()

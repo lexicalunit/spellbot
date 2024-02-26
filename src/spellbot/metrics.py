@@ -29,12 +29,7 @@ IS_RUNNING_IN_PYTEST = running_in_pytest()
 
 
 def no_metrics() -> bool:
-    return (
-        IS_RUNNING_IN_PYTEST
-        or not settings.DD_API_KEY
-        or not settings.DD_APP_KEY
-        or not settings.DD_TRACE_ENABLED
-    )
+    return IS_RUNNING_IN_PYTEST or not settings.DD_API_KEY or not settings.DD_APP_KEY or not settings.DD_TRACE_ENABLED
 
 
 def skip_if_no_metrics(f: Any) -> Callable[..., None]:  # pragma: no cover

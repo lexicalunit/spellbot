@@ -75,7 +75,8 @@ class TestCogLookingForGame(InteractionMixin):
                         "inline": False,
                         "name": "Players",
                         "value": (
-                            f"• <@{self.interaction.user.id}> ({self.interaction.user.display_name})\n"
+                            f"• <@{self.interaction.user.id}> "
+                            f"({self.interaction.user.display_name})\n"
                             f"• <@{other_player.id}> ({other_player.display_name})"
                         ),
                     },

@@ -51,11 +51,7 @@ async def load_all_cogs(bot: AutoShardedBot) -> AutoShardedBot:  # pragma: no co
             attribute = getattr(module, attribute_name)
 
             # Only load cogs in this module if they're exported
-            if (
-                isclass(attribute)
-                and issubclass(attribute, commands.Cog)
-                and attribute.__name__ in __all__
-            ):
+            if isclass(attribute) and issubclass(attribute, commands.Cog) and attribute.__name__ in __all__:
                 if module.__name__ in bot.extensions:
                     logger.info("reloading extension %s...", module.__name__)
                     await bot.reload_extension(module.__name__)
