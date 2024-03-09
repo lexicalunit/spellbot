@@ -635,7 +635,8 @@ class TestOperationsAddRole:
         guild.roles = []
         await safe_add_role(member, guild, "role")
         assert (
-            f"warning: in guild {guild.name} ({guild.id}), could not manage role:" " could not find role: role"
+            f"warning: in guild {guild.name} ({guild.id}), could not manage role:"
+            " could not find role: role"
         ) in caplog.text
 
     async def test_no_permissions(self, caplog: pytest.LogCaptureFixture) -> None:
@@ -706,7 +707,8 @@ class TestOperationsAddRole:
         guild.roles = [role]
         await safe_add_role(member, guild, "role")
         assert (
-            f"warning: in guild {guild.name} ({guild.id})," f" could not add role to member user#1234: {exception}"
+            f"warning: in guild {guild.name} ({guild.id}),"
+            f" could not add role to member user#1234: {exception}"
         ) in caplog.text
 
 

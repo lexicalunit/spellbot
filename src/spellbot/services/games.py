@@ -69,7 +69,9 @@ class GamesService:
 
         # upsert into queues
         DatabaseSession.execute(
-            insert(Queue).values([{"user_xid": player_xid, "game_id": self.game.id}]).on_conflict_do_nothing(),
+            insert(Queue)
+            .values([{"user_xid": player_xid, "game_id": self.game.id}])
+            .on_conflict_do_nothing(),
         )
         DatabaseSession.commit()
 
@@ -126,7 +128,9 @@ class GamesService:
         # upsert into queues
         user_xids = [*friends, author_xid]
         DatabaseSession.execute(
-            insert(Queue).values([{"user_xid": xid, "game_id": game.id} for xid in user_xids]).on_conflict_do_nothing(),
+            insert(Queue)
+            .values([{"user_xid": xid, "game_id": game.id} for xid in user_xids])
+            .on_conflict_do_nothing(),
         )
         DatabaseSession.commit()
 
@@ -181,7 +185,8 @@ class GamesService:
 
         joiners = [author_xid, *friends]
         xids_blocked_by_joiners = [
-            row.blocked_user_xid for row in DatabaseSession.query(Block).filter(Block.user_xid.in_(joiners))
+            row.blocked_user_xid
+            for row in DatabaseSession.query(Block).filter(Block.user_xid.in_(joiners))
         ]
 
         game: Game
@@ -335,7 +340,9 @@ class GamesService:
             )
         ]
         return list(
-            set(other_xids) - set(users_author_has_blocked) - set(users_who_blocked_author_or_other),
+            set(other_xids)
+            - set(users_author_has_blocked)
+            - set(users_who_blocked_author_or_other),
         )
 
     @sync_to_async()
@@ -349,7 +356,11 @@ class GamesService:
         ).group_by(Queue.user_xid)
         counts = {row[0]: row[1] for row in rows if row[0]}
 
-        user_xids = [user_xid for user_xid in user_xids if counts.get(user_xid, 0) + 1 < settings.MAX_PENDING_GAMES]
+        user_xids = [
+            user_xid
+            for user_xid in user_xids
+            if counts.get(user_xid, 0) + 1 < settings.MAX_PENDING_GAMES
+        ]
 
         result = []
         for user_xid in user_xids:
@@ -375,7 +386,8 @@ class GamesService:
     def blocked(self, author_xid: int) -> bool:
         assert self.game
         users_author_has_blocked = [
-            row.blocked_user_xid for row in DatabaseSession.query(Block).filter(Block.user_xid == author_xid)
+            row.blocked_user_xid
+            for row in DatabaseSession.query(Block).filter(Block.user_xid == author_xid)
         ]
         users_who_blocked_author = [
             row.user_xid
@@ -463,9 +475,15 @@ class GamesService:
     @sync_to_async()
     @tracer.wrap()
     def delete_games(self, game_ids: list[int]) -> int:
-        query = update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.now(tz=pytz.utc))
+        query = (
+            update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.now(tz=pytz.utc))
+        )
         DatabaseSession.execute(query)
-        dequeued = DatabaseSession.query(Queue).filter(Queue.game_id.in_(game_ids)).delete(synchronize_session=False)
+        dequeued = (
+            DatabaseSession.query(Queue)
+            .filter(Queue.game_id.in_(game_ids))
+            .delete(synchronize_session=False)
+        )
         logger.info("dequeued %s players from games %s", dequeued, game_ids)
         DatabaseSession.commit()
         return dequeued

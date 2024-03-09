@@ -5,8 +5,7 @@ from typing import Optional
 from discord.app_commands import AppCommandError
 
 
-class SpellBotError(AppCommandError):
-    ...
+class SpellBotError(AppCommandError): ...
 
 
 class AdminOnlyError(SpellBotError):
