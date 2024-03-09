@@ -449,7 +449,10 @@ class TestCogAdminChannels(InteractionMixin):
             await self.run(cog.channels, page=page)
 
             mock_call = admin_action.safe_send_channel
-            assert mock_call.call_args_list[0].kwargs["embed"].to_dict()["footer"]["text"] == f"page {page} of 3"
+            assert (
+                mock_call.call_args_list[0].kwargs["embed"].to_dict()["footer"]["text"]
+                == f"page {page} of 3"
+            )
 
 
 @pytest.mark.asyncio()
@@ -504,7 +507,8 @@ class TestCogAdminAwards(InteractionMixin):
         assert self.last_send_message("embed") == {
             "color": self.settings.INFO_EMBED_COLOR,
             "description": (
-                "**There are no awards configured on this server.**\n\n" "To add awards use the `/award add` command."
+                "**There are no awards configured on this server.**\n\n"
+                "To add awards use the `/award add` command."
             ),
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": f"SpellBot Player Awards for {self.guild.name}",

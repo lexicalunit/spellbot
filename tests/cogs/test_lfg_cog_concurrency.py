@@ -32,7 +32,9 @@ class TestCogLookingForGameConcurrency:
         cog = LookingForGameCog(bot)
         guild = build_guild()
         n = 100
-        interactions = [build_interaction(guild, build_channel(guild, i), build_author(i)) for i in range(n)]
+        interactions = [
+            build_interaction(guild, build_channel(guild, i), build_author(i)) for i in range(n)
+        ]
         tasks = [run_lfg(cog, interactions[i]) for i in range(n)]
 
         done, pending = await asyncio.wait(tasks)

@@ -112,7 +112,8 @@ class TestCogLookingForGamePoints(InteractionMixin):
                             "inline": False,
                             "name": "Players",
                             "value": (
-                                f"• <@{self.interaction.user.id}> ({self.interaction.user.display_name}) - 5 points\n"
+                                f"• <@{self.interaction.user.id}> "
+                                "({self.interaction.user.display_name}) - 5 points\n"
                                 f"• <@{other_user.xid}> ({other_user.name})"
                             ),
                         },
