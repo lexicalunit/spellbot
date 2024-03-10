@@ -1,16 +1,13 @@
-# pylint: disable=protected-access
 from __future__ import annotations
 
 import re
 from functools import wraps
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any
 
 from datadog import initialize
 from datadog.api.events import Event
 from ddtrace import tracer
-from ddtrace._trace.span import Span
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
-from discord.http import Route
 from wrapt import wrap_function_wrapper
 
 from . import __version__
@@ -23,6 +20,12 @@ from .errors import (
     UserVerifiedError,
 )
 from .settings import Settings
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ddtrace._trace.span import Span
+    from discord.http import Route
 
 settings = Settings()
 IS_RUNNING_IN_PYTEST = running_in_pytest()
@@ -50,11 +53,11 @@ def patch_discord() -> None:  # pragma: no cover
     interaction_callback = re.compile(r"/interactions/([0-9]+)/([^/]+)/callback")
     webhook_message = re.compile(r"/webhooks/([0-9]+)/([^/]+)/messages/@original")
 
-    def request(
-        wrapped: Callable,  # type: ignore # pragma: no cover
-        instance,  # noqa # type: ignore # pragma: no cover
-        args,  # noqa # type: ignore # pragma: no cover
-        kwargs,  # noqa # type: ignore # pragma: no cover
+    def request(  # pragma: no cover
+        wrapped: Callable,  # type: ignore
+        instance: Any,
+        args: Any,
+        kwargs: Any,
     ) -> Any:
         route: Route = args[0]
         path: str = route.path
@@ -96,21 +99,20 @@ def setup_metrics() -> None:  # pragma: no cover
 def alert_error(
     title: str,
     text: str = "",
-    tags: Optional[list[str]] = None,
+    tags: list[str] | None = None,
 ) -> None:  # pragma: no cover
     tags = tags or []
     tags.append(f"version:{__version__}")
-    Event.create(alert_type="error", title=title, text=text, tags=tags)  # type: ignore
+    Event.create(alert_type="error", title=title, text=text, tags=tags)
 
 
 @skip_if_no_metrics
-def add_span_context(interaction: Any) -> None:  # pragma: no cover
+def add_span_context(interaction: Any) -> None:
     if span := tracer.current_span():
         if interaction_id := getattr(interaction, "id", None):
             span.set_tag("interaction_id", interaction_id)
-        if user := getattr(interaction, "user", None):
-            if user_id := getattr(user, "id", None):
-                span.set_tag("user_id", user_id)
+        if (user := getattr(interaction, "user", None)) and (user_id := getattr(user, "id", None)):
+            span.set_tag("user_id", user_id)
         for prop in (
             "application_id",
             "channel_id",
@@ -145,8 +147,8 @@ def add_span_error(ex: BaseException) -> None:  # pragma: no cover
 
 @skip_if_no_metrics
 def setup_ignored_errors(span: Span) -> None:  # pragma: no cover
-    span._ignore_exception(AdminOnlyError)  # type: ignore
-    span._ignore_exception(GuildOnlyError)  # type: ignore
-    span._ignore_exception(UserBannedError)  # type: ignore
-    span._ignore_exception(UserUnverifiedError)  # type: ignore
-    span._ignore_exception(UserVerifiedError)  # type: ignore
+    span._ignore_exception(AdminOnlyError)  # type: ignore  # noqa: SLF001
+    span._ignore_exception(GuildOnlyError)  # type: ignore  # noqa: SLF001
+    span._ignore_exception(UserBannedError)  # type: ignore  # noqa: SLF001
+    span._ignore_exception(UserUnverifiedError)  # type: ignore  # noqa: SLF001
+    span._ignore_exception(UserVerifiedError)  # type: ignore  # noqa: SLF001

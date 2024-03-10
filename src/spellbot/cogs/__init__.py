@@ -10,7 +10,6 @@ from discord.ext.commands import AutoShardedBot
 from .about_cog import AboutCog
 from .admin_cog import AdminCog
 from .block_cog import BlockCog
-from .config_cog import ConfigCog
 from .events_cog import EventsCog
 from .leave_cog import LeaveGameCog
 from .lfg_cog import LookingForGameCog
@@ -28,7 +27,6 @@ __all__ = [
     "AboutCog",
     "AdminCog",
     "BlockCog",
-    "ConfigCog",
     "EventsCog",
     "LeaveGameCog",
     "LookingForGameCog",

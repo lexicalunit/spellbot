@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
-from aiohttp.client import ClientSession
+
+if TYPE_CHECKING:
+    from aiohttp.client import ClientSession
 
 
 @pytest.mark.asyncio()

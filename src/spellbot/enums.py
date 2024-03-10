@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from collections import namedtuple
 from enum import Enum
-from typing import Any
+from typing import Any, NamedTuple
+
 
 # Additional metadata related to supported game formats.
-FormatDetails = namedtuple("FormatDetails", ["players"])
+class FormatDetails(NamedTuple):
+    players: int
 
 
 class GameFormat(Enum):
     """A Magic: The Gathering game format."""
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Any:  # pylint: disable=W0613
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
         """Give each enum value an increasing numerical value starting at 1."""
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)

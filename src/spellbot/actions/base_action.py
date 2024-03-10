@@ -1,21 +1,23 @@
-# pylint: disable=wrong-import-order
 from __future__ import annotations
 
 import logging
-from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any, NoReturn, Optional, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, cast
 
 import discord
 from asgiref.sync import sync_to_async
 from ddtrace import tracer
 
-from .. import SpellBot
-from ..database import DatabaseSession, db_session_manager
-from ..errors import SpellBotError, UserBannedError, UserUnverifiedError, UserVerifiedError
-from ..metrics import setup_ignored_errors
-from ..services import ServicesRegistry
-from ..utils import user_can_moderate
+from spellbot.database import DatabaseSession, db_session_manager
+from spellbot.errors import SpellBotError, UserBannedError, UserUnverifiedError, UserVerifiedError
+from spellbot.metrics import setup_ignored_errors
+from spellbot.services import ServicesRegistry
+from spellbot.utils import user_can_moderate
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
+    from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +42,8 @@ class BaseAction:
     services: ServicesRegistry
     interaction: discord.Interaction
     member: discord.Member
-    guild: Optional[discord.Guild]
-    channel: Optional[discord.TextChannel]
+    guild: discord.Guild | None
+    channel: discord.TextChannel | None
     channel_data: dict[str, Any]
 
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
@@ -62,7 +64,7 @@ class BaseAction:
         await self.services.users.upsert(self.member)
 
         if await self.services.users.is_banned(self.member.id):
-            raise UserBannedError()
+            raise UserBannedError
 
         if self.should_do_verification():
             await self.handle_verification()
@@ -70,16 +72,16 @@ class BaseAction:
     async def handle_verification(self) -> None:
         if not self.guild:
             return
-        verified: Optional[bool] = None
+        verified: bool | None = None
         if self.channel_data["auto_verify"]:
             verified = True
         await self.services.verifies.upsert(self.guild.id, self.interaction.user.id, verified)
         if not user_can_moderate(self.interaction.user, self.guild, self.channel):
             user_is_verified = await self.services.verifies.is_verified()
             if user_is_verified and self.channel_data["unverified_only"]:
-                raise UserVerifiedError()
+                raise UserVerifiedError
             if not user_is_verified and self.channel_data["verified_only"]:
-                raise UserUnverifiedError()
+                raise UserUnverifiedError
 
     def should_do_verification(self) -> bool:
         return bool(self.guild and self.channel)
@@ -87,7 +89,7 @@ class BaseAction:
     @classmethod
     @asynccontextmanager
     async def create(
-        cls: Type[ActionType],
+        cls: type[ActionType],
         bot: SpellBot,
         interaction: discord.Interaction,
     ) -> AsyncGenerator[ActionType, None]:

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from tests.fixtures import Factories
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tests.fixtures import Factories
 
 
 class TestModelBlock:

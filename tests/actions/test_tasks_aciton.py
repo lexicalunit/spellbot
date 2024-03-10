@@ -3,23 +3,28 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import discord
 import pytest
 import pytest_asyncio
 import pytz
-from pytest_mock import MockerFixture
-from spellbot import SpellBot
 from spellbot.actions import TasksAction
 from spellbot.client import build_bot
 from spellbot.database import DatabaseSession
-from spellbot.models import Channel, Game, Guild
 from spellbot.services import ChannelsService, GamesService, GuildsService, ServicesRegistry
 
-from tests.fixtures import Factories
 from tests.mocks import mock_discord_object
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from pytest_mock import MockerFixture
+    from spellbot import SpellBot
+    from spellbot.models import Channel, Game, Guild
+
+    from tests.fixtures import Factories
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -110,7 +115,7 @@ async def make_category_channel(
         category.type = discord.ChannelType.category
         category.permissions_for = MagicMock(return_value=perms)
         category.voice_channels = voice_channels
-        discord_guild.categories.append(category)  # type: ignore
+        discord_guild.categories.append(category)
         return category
 
     return factory
@@ -147,7 +152,7 @@ class TestTaskExpireInactiveChannels:
     ) -> None:
         mocker.patch.object(action, "expire_games", AsyncMock(side_effect=RuntimeError))
         await action.expire_inactive_games()
-        assert "error: exception in background task:" in caplog.text
+        assert "error: exception in background task" in caplog.text
 
     async def test_when_active_game_exists(
         self,
@@ -233,7 +238,7 @@ class TestTaskExpireInactiveChannels:
         caplog: pytest.LogCaptureFixture,
         factories: Factories,
         mocker: MockerFixture,
-        message_xid: Optional[int],
+        message_xid: int | None,
         chan: Any,
         post: Any,
         delete_expired: bool,
@@ -302,7 +307,7 @@ class TestTaskCleanupOldVoiceChannels:
     ) -> None:
         mocker.patch.object(action, "gather_channels", AsyncMock(side_effect=RuntimeError))
         await action.cleanup_old_voice_channels()
-        assert "error: exception in background task:" in caplog.text
+        assert "error: exception in background task" in caplog.text
 
     async def test_when_guild_is_not_active(
         self,

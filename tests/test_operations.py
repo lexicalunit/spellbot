@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional, Union
+from typing import TYPE_CHECKING
 from unittest.mock import ANY, AsyncMock, MagicMock, Mock
 
 import discord
@@ -11,7 +11,6 @@ import pytest_asyncio
 from aiohttp.client_exceptions import ClientOSError
 from discord.errors import DiscordException
 from discord.utils import MISSING
-from pytest_mock import MockerFixture
 from spellbot import operations
 from spellbot.operations import (
     retry,
@@ -39,6 +38,9 @@ from spellbot.utils import CANT_SEND_CODE
 from tests.mixins import InteractionMixin
 from tests.mocks import build_message, mock_client
 
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
+
 
 @pytest.mark.asyncio()
 class TestOperationsRetry:
@@ -54,7 +56,7 @@ class TestOperationsRetry:
 
     async def test_failure(self) -> None:
         async def func() -> int:
-            raise ClientOSError()
+            raise ClientOSError
 
         with pytest.raises(ClientOSError):
             await retry(lambda: func())
@@ -66,7 +68,7 @@ class TestOperationsRetry:
             nonlocal tried_once
             if not tried_once:
                 tried_once = True
-                raise ClientOSError()
+                raise ClientOSError
             return 1
 
         assert await retry(lambda: func()) == 1
@@ -170,7 +172,6 @@ class TestOperationsGetPartialMessage:
         self.author = dpy_author
         self.message = build_message(self.guild, self.channel, self.author)
         self.channel.get_partial_message = MagicMock(return_value=self.message)
-        return None  # pylint: useless-return
 
     async def test_happy_path(self) -> None:
         self.channel.permissions_for = MagicMock(return_value=self.read_perms)
@@ -451,7 +452,7 @@ class TestOperationsSendUser:
         return mocker.patch.object(operations, "bad_users", set())
 
     async def test_happy_path(self) -> None:
-        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user = MagicMock(spec=discord.User | discord.Member)
         user.send = AsyncMock()
         embed = discord.Embed()
         await safe_send_user(user, "content", embed=embed)
@@ -469,10 +470,10 @@ class TestOperationsSendUser:
     async def test_forbidden(
         self,
         caplog: pytest.LogCaptureFixture,
-        user_xid: Optional[int,],
+        user_xid: int | None,
     ) -> None:
         caplog.set_level(logging.INFO)
-        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user = MagicMock(spec=discord.User | discord.Member)
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = user_xid
         user.send = AsyncMock(side_effect=discord.errors.Forbidden(MagicMock(), "msg"))
@@ -482,8 +483,8 @@ class TestOperationsSendUser:
     async def test_cant_send(self, caplog: pytest.LogCaptureFixture) -> None:
         caplog.set_level(logging.INFO)
         exception = discord.errors.HTTPException(MagicMock(), "msg")
-        setattr(exception, "code", CANT_SEND_CODE)
-        user = MagicMock(spec=Union[discord.User, discord.Member])
+        exception.code = CANT_SEND_CODE
+        user = MagicMock(spec=discord.User | discord.Member)
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 1234
         user.send = AsyncMock(side_effect=exception)
@@ -497,7 +498,7 @@ class TestOperationsSendUser:
 
     async def test_http_failure(self, caplog: pytest.LogCaptureFixture) -> None:
         exception = discord.errors.HTTPException(MagicMock(), "msg")
-        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user = MagicMock(spec=discord.User | discord.Member)
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 1234
         user.send = AsyncMock(side_effect=exception)
@@ -506,7 +507,7 @@ class TestOperationsSendUser:
 
     async def test_server_error(self, caplog: pytest.LogCaptureFixture) -> None:
         exception = discord.errors.DiscordServerError(MagicMock(), "msg")
-        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user = MagicMock(spec=discord.User | discord.Member)
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 1234
         user.send = AsyncMock(side_effect=exception)
@@ -515,7 +516,7 @@ class TestOperationsSendUser:
 
     async def test_client_error(self, caplog: pytest.LogCaptureFixture) -> None:
         exception = ClientOSError()
-        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user = MagicMock(spec=discord.User | discord.Member)
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 1234
         user.send = AsyncMock(side_effect=exception)
@@ -530,7 +531,7 @@ class TestOperationsAddRole:
     )
 
     async def test_happy_path(self) -> None:
-        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member = MagicMock(spec=discord.User | discord.Member)
         member.id = 101
         member.roles = []
         member.add_roles = AsyncMock()
@@ -549,7 +550,7 @@ class TestOperationsAddRole:
         member.add_roles.assert_called_once_with(role)
 
     async def test_add_everyone_role(self) -> None:
-        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member = MagicMock(spec=discord.User | discord.Member)
         member.id = 101
         member.roles = []
         member.add_roles = AsyncMock()
@@ -567,7 +568,7 @@ class TestOperationsAddRole:
         member.add_roles.assert_not_called()
 
     async def test_remove(self) -> None:
-        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member = MagicMock(spec=discord.User | discord.Member)
         member.id = 101
         member.roles = []
         member.remove_roles = AsyncMock()
@@ -586,9 +587,9 @@ class TestOperationsAddRole:
         member.remove_roles.assert_called_once_with(role)
 
     async def test_no_roles_attribute(self) -> None:
-        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user = MagicMock(spec=discord.User | discord.Member)
         user.id = 101
-        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member = MagicMock(spec=discord.User | discord.Member)
         member.id = user.id
         member.roles = []
         member.add_roles = AsyncMock()
@@ -608,7 +609,7 @@ class TestOperationsAddRole:
         member.add_roles.assert_called_once_with(role)
 
     async def test_no_member(self, caplog: pytest.LogCaptureFixture) -> None:
-        user = MagicMock(spec=Union[discord.User, discord.Member])
+        user = MagicMock(spec=discord.User | discord.Member)
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 101
         guild = MagicMock(spec=discord.Guild)
@@ -624,7 +625,7 @@ class TestOperationsAddRole:
         ) in caplog.text
 
     async def test_no_role(self, caplog: pytest.LogCaptureFixture) -> None:
-        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member = MagicMock(spec=discord.User | discord.Member)
         member.id = 101
         member.roles = []
         member.add_roles = AsyncMock()
@@ -640,7 +641,7 @@ class TestOperationsAddRole:
         ) in caplog.text
 
     async def test_no_permissions(self, caplog: pytest.LogCaptureFixture) -> None:
-        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member = MagicMock(spec=discord.User | discord.Member)
         member.id = 101
         member.roles = []
         member.add_roles = AsyncMock()
@@ -661,7 +662,7 @@ class TestOperationsAddRole:
         ) in caplog.text
 
     async def test_bad_role_hierarchy(self, caplog: pytest.LogCaptureFixture) -> None:
-        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member = MagicMock(spec=discord.User | discord.Member)
         member.id = 101
         member.roles = []
         member.add_roles = AsyncMock()
@@ -688,7 +689,7 @@ class TestOperationsAddRole:
         ) in caplog.text
 
     async def test_forbidden(self, caplog: pytest.LogCaptureFixture) -> None:
-        member = MagicMock(spec=Union[discord.User, discord.Member])
+        member = MagicMock(spec=discord.User | discord.Member)
         member.id = 101
         member.roles = []
         member.__str__ = lambda self: "user#1234"  # type: ignore
@@ -708,7 +709,7 @@ class TestOperationsAddRole:
         await safe_add_role(member, guild, "role")
         assert (
             f"warning: in guild {guild.name} ({guild.id}),"
-            f" could not add role to member user#1234: {exception}"
+            f" could not add role to member user#1234"
         ) in caplog.text
 
 

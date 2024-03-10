@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from asyncio import sleep
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import discord
 from aiohttp.client_exceptions import ClientOSError
@@ -25,11 +25,13 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from discord.abc import MessageableChannel, PrivateChannel
     from discord.guild import GuildChannel
     from discord.threads import Thread
 
-    GetChannelReturnType = Optional[Union[GuildChannel, Thread, PrivateChannel]]
+    GetChannelReturnType = GuildChannel | Thread | PrivateChannel | None
 
 logger = logging.getLogger(__name__)
 bad_users: set[int] = set()
@@ -42,7 +44,7 @@ async def retry(func: Callable[[], Awaitable[Any]]) -> Any:
         try:
             times += 1
             return await func()
-        except ClientOSError:
+        except ClientOSError:  # noqa: PERF203
             if times > 3:
                 raise
             await sleep(times / 100)  # 10ms, 20ms, 30ms, etc.
@@ -51,8 +53,8 @@ async def retry(func: Callable[[], Awaitable[Any]]) -> Any:
 @tracer.wrap()
 async def safe_original_response(
     interaction: discord.Interaction,
-) -> Optional[discord.InteractionMessage]:
-    response: Optional[discord.InteractionMessage] = None
+) -> discord.InteractionMessage | None:
+    response: discord.InteractionMessage | None = None
     with suppress(
         DiscordException,
         ClientOSError,
@@ -78,11 +80,11 @@ async def safe_defer_interaction(interaction: discord.Interaction) -> None:
 async def safe_fetch_user(
     client: discord.Client,
     user_xid: int,
-) -> Optional[discord.User]:
+) -> discord.User | None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"user_xid": str(user_xid)})
 
-    user: Optional[discord.User]
+    user: discord.User | None
     if user := client.get_user(user_xid):
         return user
 
@@ -100,11 +102,11 @@ async def safe_fetch_user(
 async def safe_fetch_guild(
     client: discord.Client,
     guild_xid: int,
-) -> Optional[discord.Guild]:
+) -> discord.Guild | None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid)})
 
-    guild: Optional[discord.Guild]
+    guild: discord.Guild | None
     if guild := client.get_guild(guild_xid):
         return guild
 
@@ -123,7 +125,7 @@ async def safe_fetch_text_channel(
     client: discord.Client,
     guild_xid: int,
     channel_xid: int,
-) -> Optional[discord.TextChannel]:
+) -> discord.TextChannel | None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid), "channel_xid": str(channel_xid)})
 
@@ -132,7 +134,7 @@ async def safe_fetch_text_channel(
             return None
         return got
 
-    channel: Optional[discord.TextChannel] = None
+    channel: discord.TextChannel | None = None
     with suppress(
         DiscordException,
         ClientOSError,
@@ -152,17 +154,17 @@ def safe_get_partial_message(
     channel: MessageableChannel,
     guild_xid: int,
     message_xid: int,
-) -> Optional[discord.PartialMessage]:
+) -> discord.PartialMessage | None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid), "message_xid": str(message_xid)})
 
-    if not hasattr(channel, "type") or getattr(channel, "type") != discord.ChannelType.text:
+    if not hasattr(channel, "type") or channel.type != discord.ChannelType.text:
         return None
 
     if not bot_can_read(channel):
         return None
 
-    message: Optional[discord.PartialMessage] = None
+    message: discord.PartialMessage | None = None
     text_channel = cast(discord.TextChannel, channel)
     with suppress(
         DiscordException,
@@ -177,14 +179,14 @@ def safe_get_partial_message(
 
 @tracer.wrap()
 async def safe_update_embed(
-    message: Union[discord.Message, discord.PartialMessage],
+    message: discord.Message | discord.PartialMessage,
     *args: Any,
     **kwargs: Any,
-) -> Optional[discord.Message]:
+) -> discord.Message | None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"message_xid": str(message.id)})
 
-    updated_message: Optional[discord.Message] = None
+    updated_message: discord.Message | None = None
     with suppress(
         DiscordException,
         ClientOSError,
@@ -200,7 +202,7 @@ async def safe_update_embed(
 
 
 @tracer.wrap()
-async def safe_delete_message(message: Union[discord.Message, discord.PartialMessage]) -> bool:
+async def safe_delete_message(message: discord.Message | discord.PartialMessage) -> bool:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"message_xid": str(message.id)})
 
@@ -259,18 +261,18 @@ async def safe_create_category_channel(
     client: discord.Client,
     guild_xid: int,
     name: str,
-) -> Optional[discord.CategoryChannel]:
+) -> discord.CategoryChannel | None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid), "name": name})
 
-    guild: Optional[discord.Guild]
+    guild: discord.Guild | None
     if not (guild := await retry(lambda: safe_fetch_guild(client, guild_xid))):
         return None
 
     if not bot_can_manage_channels(guild):
         return None
 
-    channel: Optional[discord.CategoryChannel] = None
+    channel: discord.CategoryChannel | None = None
     with suppress(
         DiscordException,
         ClientOSError,
@@ -286,16 +288,16 @@ async def safe_create_voice_channel(
     client: discord.Client,
     guild_xid: int,
     name: str,
-    category: Optional[discord.CategoryChannel] = None,
-) -> Optional[discord.VoiceChannel]:
+    category: discord.CategoryChannel | None = None,
+) -> discord.VoiceChannel | None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid), "name": name})
 
-    guild: Optional[discord.Guild]
+    guild: discord.Guild | None
     if not (guild := await retry(lambda: safe_fetch_guild(client, guild_xid))):
         return None
 
-    channel: Optional[discord.VoiceChannel] = None
+    channel: discord.VoiceChannel | None = None
     with suppress(
         DiscordException,
         ClientOSError,
@@ -307,15 +309,15 @@ async def safe_create_voice_channel(
 
 
 @tracer.wrap()
-async def safe_ensure_voice_category(
+async def safe_ensure_voice_category(  # noqa: C901
     client: discord.Client,
     guild_xid: int,
     prefix: str,
-) -> Optional[discord.CategoryChannel]:
+) -> discord.CategoryChannel | None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid), "prefix": prefix})
 
-    guild: Optional[discord.Guild]
+    guild: discord.Guild | None
     if not (guild := await retry(lambda: safe_fetch_guild(client, guild_xid))):
         return None
 
@@ -329,7 +331,7 @@ async def safe_ensure_voice_category(
     def category_name(i: int) -> str:
         return prefix if i == 0 else f"{prefix} {i + 1}"
 
-    available: Optional[discord.CategoryChannel] = None
+    available: discord.CategoryChannel | None = None
     full: list[discord.CategoryChannel] = []
     for i, cat in enumerate(
         sorted(
@@ -376,7 +378,7 @@ async def safe_delete_channel(
     if not hasattr(channel, "delete"):
         return False
 
-    channel_xid: int = getattr(channel, "id")
+    channel_xid: int = channel.id
     if span:  # pragma: no cover
         span.set_tag("channel_xid", channel_xid)
 
@@ -401,7 +403,7 @@ async def safe_send_channel(
     interaction: discord.Interaction,
     *args: Any,
     **kwargs: Any,
-) -> Optional[discord.Message]:
+) -> discord.Message | None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags(
             {
@@ -410,7 +412,7 @@ async def safe_send_channel(
             },
         )
 
-    message: Optional[discord.Message] = None
+    message: discord.Message | None = None
     with suppress(
         DiscordException,
         ClientOSError,
@@ -428,7 +430,7 @@ async def safe_followup_channel(
     interaction: discord.Interaction,
     *args: Any,
     **kwargs: Any,
-) -> Optional[discord.Message]:
+) -> discord.Message | None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags(
             {
@@ -442,7 +444,7 @@ async def safe_followup_channel(
         view_hack = MISSING if kwargs["view"] is None else kwargs["view"]
         kwargs["view"] = view_hack
 
-    message: Optional[discord.Message] = None
+    message: discord.Message | None = None
     with suppress(
         DiscordException,
         ClientOSError,
@@ -462,13 +464,13 @@ async def safe_channel_reply(
     channel: discord.TextChannel,
     *args: Any,
     **kwargs: Any,
-) -> Optional[discord.Message]:
+) -> discord.Message | None:
     guild_xid = channel.guild.id
     channel_xid = channel.id
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid), "channel_xid": str(channel_xid)})
 
-    message: Optional[discord.Message] = None
+    message: discord.Message | None = None
     with suppress(
         DiscordException,
         ClientOSError,
@@ -497,7 +499,7 @@ async def safe_message_reply(message: discord.Message, *args: Any, **kwargs: Any
 
 @tracer.wrap()
 async def safe_send_user(
-    user: Union[discord.User, discord.Member],
+    user: discord.User | discord.Member,
     *args: Any,
     **kwargs: Any,
 ) -> None:
@@ -554,10 +556,10 @@ async def safe_send_user(
 
 @tracer.wrap()
 async def safe_add_role(
-    user_or_member: Union[discord.User, discord.Member],
+    user_or_member: discord.User | discord.Member,
     guild: discord.Guild,
     role: str,
-    remove: Optional[bool] = False,
+    remove: bool | None = False,
 ) -> None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags(
@@ -574,7 +576,7 @@ async def safe_add_role(
 
     try:
         member = cast(
-            Optional[discord.Member],
+            discord.Member | None,
             (
                 user_or_member
                 if hasattr(user_or_member, "roles")
@@ -620,10 +622,8 @@ async def safe_add_role(
     ) as ex:
         add_span_error(ex)
         logger.exception(
-            "warning: in guild %s (%s), could not add role to member %s: %s",
+            "warning: in guild %s (%s), could not add role to member %s",
             guild.name,
             guild.id,
             str(user_or_member),
-            ex,
-            exc_info=True,
         )

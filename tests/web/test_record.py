@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import pytest
 import pytz
-from aiohttp.client import ClientSession
-from freezegun.api import FrozenDateTimeFactory
 from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
-from syrupy.assertion import SnapshotAssertion
 
-from tests.fixtures import Factories
+if TYPE_CHECKING:
+    from aiohttp.client import ClientSession
+    from freezegun.api import FrozenDateTimeFactory
+    from syrupy.assertion import SnapshotAssertion
+
+    from tests.fixtures import Factories
 
 
 @pytest.mark.asyncio()

@@ -9,8 +9,8 @@ from sqlalchemy.sql.sqltypes import Boolean
 
 from . import Base
 
-if TYPE_CHECKING:  # pragma: no cover
-    from . import Guild, User  # noqa
+if TYPE_CHECKING:
+    from . import Guild, User  # noqa: F401
 
 
 class GuildAward(Base):

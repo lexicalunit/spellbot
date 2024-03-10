@@ -1,10 +1,12 @@
-"""Adds user configuration per guild
+"""
+Adds user configuration per guild.
 
 Revision ID: ee653a3075c6
 Revises: 7abc75daaa94
 Create Date: 2021-11-18 11:44:25.588532
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -15,7 +17,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     op.create_table(
         "configs",
         sa.Column("guild_xid", sa.BigInteger(), nullable=False),
@@ -27,5 +29,5 @@ def upgrade():
     )
 
 
-def downgrade():
+def downgrade() -> None:
     op.drop_table("configs")

@@ -7,8 +7,8 @@ from sqlalchemy import BigInteger, Column, DateTime, ForeignKey
 
 from . import Base, now
 
-if TYPE_CHECKING:  # pragma: no cover
-    from . import User  # noqa
+if TYPE_CHECKING:
+    from . import User  # noqa: F401
 
 
 class Block(Base):

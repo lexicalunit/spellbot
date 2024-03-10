@@ -1,19 +1,23 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Callable, cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 import pytest
 import pytest_asyncio
 import pytz
-from freezegun.api import FrozenDateTimeFactory
-from spellbot import SpellBot
 from spellbot.cogs import ScoreCog
-from spellbot.models import Channel, User
 
 from tests.mixins import InteractionMixin
 from tests.mocks import build_channel, build_guild, build_interaction, mock_discord_object
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from freezegun.api import FrozenDateTimeFactory
+    from spellbot import SpellBot
+    from spellbot.models import Channel, User
 
 
 @pytest_asyncio.fixture

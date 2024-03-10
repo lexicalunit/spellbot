@@ -6,8 +6,8 @@ from sqlalchemy import BigInteger, Column, ForeignKey, String
 
 from . import Base
 
-if TYPE_CHECKING:  # pragma: no cover
-    from . import Guild, User  # noqa
+if TYPE_CHECKING:
+    from . import Guild, User  # noqa: F401
 
 
 class Watch(Base):

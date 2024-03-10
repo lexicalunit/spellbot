@@ -5,11 +5,11 @@ from ddtrace import tracer
 from discord import Color, Embed, app_commands
 from discord.ext import commands
 
-from .. import SpellBot, __version__
-from ..metrics import add_span_context
-from ..operations import safe_send_channel
-from ..settings import Settings
-from ..utils import for_all_callbacks, is_guild
+from spellbot import SpellBot, __version__
+from spellbot.metrics import add_span_context
+from spellbot.operations import safe_send_channel
+from spellbot.settings import Settings
+from spellbot.utils import for_all_callbacks, is_guild
 
 logger = logging.getLogger(__name__)
 

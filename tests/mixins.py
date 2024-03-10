@@ -1,37 +1,38 @@
 # pylint: disable=attribute-defined-outside-init
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from functools import partial
-from typing import Any, Awaitable, Callable, Literal, ParamSpec, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar, cast, overload
 
 import discord
 import pytest
-from discord.app_commands import Command
 from discord.ext import commands
-from spellbot import SpellBot
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Game, Guild, Queue, User
-from spellbot.settings import Settings
 
-from tests.fixtures import Factories
 from tests.mocks import build_message
+
+if TYPE_CHECKING:
+    from discord.app_commands import Command
+    from spellbot import SpellBot
+    from spellbot.settings import Settings
+
+    from tests.fixtures import Factories
 
 
 class BaseMixin:
     @pytest.fixture(autouse=True)
     def use_bot(self, bot: SpellBot) -> None:
         self.bot = bot
-        return None  # pylint: useless-return
 
     @pytest.fixture(autouse=True)
     def use_settings(self, settings: Settings) -> None:
         self.settings = settings
-        return None  # pylint: useless-return
 
     @pytest.fixture(autouse=True)
     def use_factories(self, factories: Factories) -> None:
         self.factories = factories
-        return None  # pylint: useless-return
 
 
 CogT = TypeVar("CogT", bound=commands.Cog)
@@ -72,7 +73,7 @@ class InteractionMixin(BaseMixin):
     ) -> Channel:
         assert interaction.channel is not None
         assert hasattr(interaction.channel, "name")
-        channel_name = getattr(interaction.channel, "name")
+        channel_name = interaction.channel.name  # type: ignore
         self.channel = add_channel(xid=interaction.channel_id, name=channel_name)
         return self.channel
 
@@ -106,7 +107,7 @@ class InteractionMixin(BaseMixin):
 
     @pytest.fixture()
     def player(self, user: User, game: Game) -> User:
-        """Puts self.user into a game."""
+        """Put self.user into a game."""
         DatabaseSession.add(Queue(user_xid=user.xid, game_id=game.id))
         DatabaseSession.commit()
         return user
@@ -120,7 +121,7 @@ class InteractionMixin(BaseMixin):
     @overload  # pragma: no cover
     def last_send_message(self, kwarg: str) -> Any: ...
 
-    def last_send_message(self, kwarg: str) -> Union[dict[str, Any], list[dict[str, Any]], Any]:
+    def last_send_message(self, kwarg: str) -> dict[str, Any] | list[dict[str, Any]] | Any:
         send_message = self.interaction.response.send_message
         send_message.assert_called_once()
         send_message_call = send_message.call_args_list[0]
@@ -137,7 +138,7 @@ class InteractionMixin(BaseMixin):
     @overload  # pragma: no cover
     def last_edit_message(self, kwarg: Literal["view"]) -> list[dict[str, Any]]: ...
 
-    def last_edit_message(self, kwarg: str) -> Union[dict[str, Any], list[dict[str, Any]], Any]:
+    def last_edit_message(self, kwarg: str) -> dict[str, Any] | list[dict[str, Any]] | Any:
         edit_message = self.interaction.edit_original_response
         edit_message.assert_called_once()
         edit_message_call = edit_message.call_args_list[0]

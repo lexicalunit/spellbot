@@ -1,24 +1,22 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
-from ..database import DatabaseSession
-from ..models import Verify
+from spellbot.database import DatabaseSession
+from spellbot.models import Verify
 
 
 class VerifiesService:
-    current: Optional[Verify] = None
+    current: Verify | None = None
 
     @sync_to_async()
     def upsert(
         self,
         guild_xid: int,
         user_xid: int,
-        verified: Optional[bool] = None,
+        verified: bool | None = None,
     ) -> None:
         values = {
             "user_xid": user_xid,

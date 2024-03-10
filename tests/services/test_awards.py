@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
-from spellbot.models import Channel, Guild
 from spellbot.services import AwardsService, NewAward
 
-from tests.fixtures import Factories
+if TYPE_CHECKING:
+    from spellbot.models import Channel, Guild
+
+    from tests.fixtures import Factories
 
 
 @pytest.mark.asyncio()

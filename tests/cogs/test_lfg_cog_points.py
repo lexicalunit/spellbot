@@ -1,21 +1,25 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import discord
 import pytest
-from spellbot import SpellBot
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat
 from spellbot.models import Channel, Game, Play
-from spellbot.settings import Settings
 from spellbot.views import StartedGameSelect, StartedGameView
 
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from spellbot import SpellBot
+    from spellbot.settings import Settings
 
 
 @pytest.fixture()
@@ -113,7 +117,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                             "name": "Players",
                             "value": (
                                 f"• <@{self.interaction.user.id}> "
-                                "({self.interaction.user.display_name}) - 5 points\n"
+                                f"({self.interaction.user.display_name})\n**ﾠ⮑ 5 points**\n"
                                 f"• <@{other_user.xid}> ({other_user.name})"
                             ),
                         },

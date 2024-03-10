@@ -2,18 +2,21 @@ from __future__ import annotations
 
 import re
 import sys
-import warnings
 from os import chdir
 from pathlib import Path
 from subprocess import getoutput, run
-from typing import Generator, cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
 import toml
-from git.objects import Tree
 from git.repo import Repo
 
 from . import REPO_ROOT, SRC_DIRS
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from git.objects import Tree
 
 
 class TestCodebase:
@@ -38,16 +41,16 @@ class TestCodebase:
         chdir(REPO_ROOT)
         cmd = ["pyright", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
-        proc = run(cmd, capture_output=True)
+        proc = run(cmd, capture_output=True, check=False)  # noqa: S603
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"pyright issues:\n{proc.stdout.decode('utf-8')}"
 
     def test_ruff(self) -> None:
         """Checks that the Python codebase passes configured ruff checks."""
         chdir(REPO_ROOT)
-        cmd = ["ruff", *SRC_DIRS]
+        cmd = ["ruff", "check", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
-        proc = run(cmd, capture_output=True)
+        proc = run(cmd, capture_output=True, check=False)  # noqa: S603
         exitcode: int = cast(int, proc.returncode)
         assert (
             exitcode == 0
@@ -58,29 +61,16 @@ class TestCodebase:
         chdir(REPO_ROOT)
         cmd = ["ruff", "format", "--check", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
-        proc = run(cmd, capture_output=True)
+        proc = run(cmd, capture_output=True, check=False)  # noqa: S603
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"ruff format issues:\n{proc.stderr.decode('utf-8')}"
-
-    @pytest.mark.skip(reason="Disabled until TODOs from v7 refactor are fixed.")
-    def test_pylint(self) -> None:  # pragma: no cover
-        """Checks that the Python codebase passes configured pylint checks."""
-        chdir(REPO_ROOT)
-        cmd = ["pylint", *SRC_DIRS]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
-        try:
-            proc = run(cmd, capture_output=True)
-            exitcode: int = cast(int, proc.returncode)
-            assert exitcode == 0, f"pylint issues:\n{proc.stdout.decode('utf-8')}"
-        except FileNotFoundError:  # pragma: no cover
-            warnings.warn(UserWarning("test skipped: pylint not installed"))
 
     def test_pylic(self) -> None:
         """Checks that the Python codebase passes configured pylic checks."""
         chdir(REPO_ROOT)
         cmd = ["pylic", "check"]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
-        proc = run(cmd, capture_output=True)
+        proc = run(cmd, capture_output=True, check=False)  # noqa: S603
         exitcode: int = cast(int, proc.returncode)
         assert exitcode == 0, f"pylic issues:\n{proc.stdout.decode('utf-8')}"
 
@@ -94,23 +84,7 @@ class TestCodebase:
         deps = list(pyproject["tool"]["poetry"]["dependencies"].keys())
         assert deps == sorted(deps)
 
-    def test_relative_imports(self) -> None:
-        """Checks that relative imports are used in spellbot package."""
-        chdir(REPO_ROOT / "src")
-        cmd = ["/usr/bin/grep", "-HIRn", "--exclude-dir=migrations", "from spellbot", "."]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
-        proc = run(cmd, capture_output=True)
-        exitcode: int = cast(int, proc.returncode)
-        assert exitcode == 1, f"non-relative imports:\n{proc.stdout.decode('utf-8')}"
-
-        chdir(REPO_ROOT / "tests")
-        cmd = ["/usr/bin/grep", "-HIRn", "from spellbot.[a-z]*\\.", "."]
-        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
-        proc = run(cmd, capture_output=True)
-        exitcode: int = cast(int, proc.returncode)
-        assert exitcode == 1, f"non-exported imports:\n{proc.stdout.decode('utf-8')}"
-
-    def test_whitespace(self) -> None:  # pragma: no cover
+    def test_whitespace(self) -> None:  # noqa: C901 # pragma: no cover
         """Checks for problematic trailing whitespace and missing ending newlines."""
         EXCLUDE_EXTS = (".gif", ".ico", ".ics", ".jpg", ".lock", ".svg", ".png")
         repo = Repo(REPO_ROOT)
@@ -141,9 +115,8 @@ class TestCodebase:
                     if prog.match(line) and rel_path not in WHITESPACE_EXCEPTIONS:
                         errors.add(f"\t{key} - trailing whitespace")
                     lastline = line
-                if not rels.endswith("CNAME"):
-                    if lastline and not lastline.endswith("\n"):
-                        errors.add(f"\t{key} - missing endline")
+                if not rels.endswith("CNAME") and lastline and not lastline.endswith("\n"):
+                    errors.add(f"\t{key} - missing endline")
 
         for path in paths(repo.tree(), REPO_ROOT):
             check(path)

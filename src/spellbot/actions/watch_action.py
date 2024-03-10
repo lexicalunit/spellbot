@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import Optional, Union
 
 import discord
 from discord.embeds import Embed
 
-from ..operations import safe_send_channel
-from ..services import WatchesService
-from ..settings import Settings
-from ..utils import EMBED_DESCRIPTION_SIZE_LIMIT
+from spellbot.operations import safe_send_channel
+from spellbot.services import WatchesService
+from spellbot.settings import Settings
+from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
+
 from .base_action import BaseAction
 
 logger = logging.getLogger(__name__)
@@ -25,14 +25,14 @@ class WatchAction(BaseAction):
     async def execute(
         self,
         action: ActionType,
-        target: Optional[Union[discord.User, discord.Member]] = None,
-        id: Optional[int] = None,
-        note: Optional[str] = None,
+        target: discord.User | discord.Member | None = None,
+        id: int | None = None,
+        note: str | None = None,
     ) -> None:
         if target:
             await self.services.users.upsert(target)
 
-        target_xid: Optional[int] = None
+        target_xid: int | None = None
         assert target is not None or id is not None
         if target and hasattr(target, "id"):
             target_xid = target.id
@@ -56,9 +56,9 @@ class WatchAction(BaseAction):
 
     async def watch(
         self,
-        target: Optional[Union[discord.User, discord.Member]],
-        id: Optional[str] = None,
-        note: Optional[str] = None,
+        target: discord.User | discord.Member | None,
+        id: str | None = None,
+        note: str | None = None,
     ) -> None:
         if not target and not id:
             await safe_send_channel(
@@ -68,7 +68,7 @@ class WatchAction(BaseAction):
             )
             return
 
-        xid: Optional[int] = None
+        xid: int | None = None
         if id:
             try:
                 xid = int(id)
@@ -84,8 +84,8 @@ class WatchAction(BaseAction):
 
     async def unwatch(
         self,
-        target: Optional[Union[discord.User, discord.Member]] = None,
-        id: Optional[str] = None,
+        target: discord.User | discord.Member | None = None,
+        id: str | None = None,
     ) -> None:
         if not target and not id:
             await safe_send_channel(
@@ -95,7 +95,7 @@ class WatchAction(BaseAction):
             )
             return
 
-        xid: Optional[int] = None
+        xid: int | None = None
         if id:
             try:
                 xid = int(id)
