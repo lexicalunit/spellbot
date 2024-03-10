@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import logging
-from typing import Union
+from typing import TYPE_CHECKING
 
-import discord
+from spellbot.operations import safe_send_channel
 
-from ..operations import safe_send_channel
 from .base_action import BaseAction
+
+if TYPE_CHECKING:
+    import discord
 
 logger = logging.getLogger(__name__)
 
 
 class VerifyAction(BaseAction):
-    async def execute(self, target: Union[discord.User, discord.Member], setting: bool) -> None:
+    async def execute(self, target: discord.User | discord.Member, setting: bool) -> None:
         assert hasattr(target, "id")
         target_xid = target.id
 
@@ -24,8 +26,8 @@ class VerifyAction(BaseAction):
             ephemeral=True,
         )
 
-    async def verify(self, target: Union[discord.User, discord.Member]) -> None:
+    async def verify(self, target: discord.User | discord.Member) -> None:
         await self.execute(target, setting=True)
 
-    async def unverify(self, target: Union[discord.User, discord.Member]) -> None:
+    async def unverify(self, target: discord.User | discord.Member) -> None:
         await self.execute(target, setting=False)

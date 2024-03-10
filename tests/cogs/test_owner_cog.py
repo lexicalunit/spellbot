@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from functools import partial
 from inspect import cleandoc
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from discord.ext import commands
-from pytest_mock import MockerFixture
 from spellbot.cogs import OwnerCog
 from spellbot.database import DatabaseSession
 from spellbot.models import User
 
 from tests.mixins import ContextMixin
+
+if TYPE_CHECKING:
+    from discord.ext import commands
+    from pytest_mock import MockerFixture
 
 
 @pytest.mark.asyncio()

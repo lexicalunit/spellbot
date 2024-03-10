@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import and_
 
-from . import Base, Config, GameStatus, Play, now
+from . import Base, GameStatus, Play, now
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from . import Game
 
 
@@ -74,24 +74,9 @@ class User(Base):
     #
     # Allows for application code like: `some_user.points[game_id].points`
 
-    configs = relationship(
-        "Config",
-        primaryjoin="User.xid == Config.user_xid",
-        lazy="dynamic",  # this is a sqlalchemy legacy feature not supported in 2.0
-        doc="Queryset of guild specific user configs for this user",
-    )
-    # A possible alternative -- less performant?
-    #
-    # configs = relationship(
-    #     "Config",
-    #     primaryjoin="User.xid == Config.user_xid",
-    #     collection_class=attribute_mapped_collection("guild_xid"),
-    # )
-    #
-    # Allows for application code like: `some_user.points[game_id].points`
+    def game(self, channel_xid: int) -> Game | None:
+        from spellbot.database import DatabaseSession
 
-    def game(self, channel_xid: int) -> Optional[Game]:
-        from ..database import DatabaseSession
         from . import Game, Queue
 
         session = DatabaseSession.object_session(self)
@@ -109,13 +94,9 @@ class User(Base):
         )
         return session.query(Game).get(queue.game_id) if queue else None
 
-    def points(self, game_id: int) -> Optional[int]:
-        play = self.plays.filter(Play.game_id == game_id).one_or_none()
-        return play.points if play else None
-
-    def config(self, guild_xid: int) -> Optional[dict[str, Any]]:
-        guild_config = self.configs.filter(Config.guild_xid == guild_xid).one_or_none()
-        return guild_config.to_dict() if guild_config else None
+    def points(self, game_id: int) -> tuple[int | None, bool] | None:
+        play: Play | None = self.plays.filter(Play.game_id == game_id).one_or_none()
+        return (play.points, play.confirmed_at is not None) if play else None
 
     def waiting(self, channel_xid: int) -> bool:
         game = self.game(channel_xid)
@@ -127,7 +108,8 @@ class User(Base):
         )
 
     def pending_games(self) -> int:
-        from ..database import DatabaseSession
+        from spellbot.database import DatabaseSession
+
         from . import Queue
 
         session = DatabaseSession.object_session(self)

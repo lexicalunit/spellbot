@@ -1,15 +1,14 @@
 import logging
-from typing import Optional, Union
 
 import discord
 from ddtrace import tracer
 from discord import app_commands
 from discord.ext import commands
 
-from .. import SpellBot
-from ..actions import ScoreAction
-from ..metrics import add_span_context
-from ..utils import for_all_callbacks, is_guild
+from spellbot import SpellBot
+from spellbot.actions import ScoreAction
+from spellbot.metrics import add_span_context
+from spellbot.utils import for_all_callbacks, is_guild
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ class ScoreCog(commands.Cog):
     async def score(
         self,
         interaction: discord.Interaction,
-        user: Optional[Union[discord.User, discord.Member]] = None,
+        user: discord.User | discord.Member | None = None,
     ) -> None:
         add_span_context(interaction)
         async with ScoreAction.create(self.bot, interaction) as action:

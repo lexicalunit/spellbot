@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
-from spellbot.settings import Settings
+
+if TYPE_CHECKING:
+    from spellbot.settings import Settings
 
 
 class TestMigrations:

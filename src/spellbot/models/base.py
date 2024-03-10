@@ -2,17 +2,19 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import alembic
 import alembic.command
 import alembic.config
 from sqlalchemy import String, create_engine, text
-from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import create_database, database_exists
 
 from . import import_models
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine.base import Connection
 
 MODULE_ROOT = Path(__file__).resolve().parent
 PACKAGE_ROOT = MODULE_ROOT.parent
@@ -25,27 +27,27 @@ now = text("(now() at time zone 'utc')")
 Base = declarative_base()
 
 
-def create_all(DATABASE_URL: str) -> None:
+def create_all(database_url: str) -> None:
     import_models()
-    engine = create_engine(DATABASE_URL, echo=False)
+    engine = create_engine(database_url, echo=False)
     if not database_exists(engine.url):  # pragma: no cover
         create_database(engine.url)
     connection: Connection = engine.connect()
     config = alembic.config.Config(str(ALEMBIC_INI))
     config.set_main_option("script_location", str(MIGRATIONS_DIR))
-    config.set_main_option("sqlalchemy.url", DATABASE_URL)
-    config.attributes["connection"] = connection  # pylint: disable=E1137
+    config.set_main_option("sqlalchemy.url", database_url)
+    config.attributes["connection"] = connection
     alembic.command.upgrade(config, "head")
 
 
-def reverse_all(DATABASE_URL: str) -> None:
+def reverse_all(database_url: str) -> None:
     import_models()
-    engine = create_engine(DATABASE_URL, echo=False)
+    engine = create_engine(database_url, echo=False)
     connection: Connection = engine.connect()
     config = alembic.config.Config(str(ALEMBIC_INI))
     config.set_main_option("script_location", str(MIGRATIONS_DIR))
-    config.set_main_option("sqlalchemy.url", DATABASE_URL)
-    config.attributes["connection"] = connection  # pylint: disable=E1137
+    config.set_main_option("sqlalchemy.url", database_url)
+    config.attributes["connection"] = connection
     alembic.command.downgrade(config, "base")
 
 
@@ -58,9 +60,9 @@ class StringLiteral(String):  # pragma: no cover
                 return text(value)  # type: ignore
             if not isinstance(value, str):
                 value = text(value)
-            result = super_processor(value)  # type: ignore
+            result = super_processor(value)
             if isinstance(result, bytes):
-                result = result.decode(dialect.encoding)  # type: ignore
+                result = result.decode(dialect.encoding)
             return result
 
         return process

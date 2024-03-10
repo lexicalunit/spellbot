@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import discord
 
-from .. import SpellBot
-from ..utils import handle_view_errors
+from spellbot.utils import handle_view_errors
+
+if TYPE_CHECKING:
+    from spellbot import SpellBot
 
 
 class BaseView(discord.ui.View):

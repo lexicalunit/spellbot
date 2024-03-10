@@ -1,10 +1,12 @@
-"""Remove legacy prefix
+"""
+Remove legacy prefix.
 
 Revision ID: 6267f69c5dfd
 Revises: ee653a3075c6
 Create Date: 2021-11-25 20:23:35.556348
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -15,11 +17,11 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     op.drop_column("guilds", "legacy_prefix")
 
 
-def downgrade():
+def downgrade() -> None:
     op.add_column(
         "guilds",
         sa.Column(

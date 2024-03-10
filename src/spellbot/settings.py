@@ -1,19 +1,20 @@
-# pylint: disable=too-many-instance-attributes
 from __future__ import annotations
 
 from datetime import datetime
 from os import getenv
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import pytz
 from discord import Object
-from discord.abc import Snowflake
 
 from .environment import running_in_pytest
 
+if TYPE_CHECKING:
+    from discord.abc import Snowflake
+
 
 class Settings:
-    def __init__(self, guild_xid: Optional[int] = None) -> None:
+    def __init__(self, guild_xid: int | None = None) -> None:
         self.guild_xid = guild_xid
 
         # content
@@ -100,5 +101,5 @@ class Settings:
         )
 
     @property
-    def GUILD_OBJECT(self) -> Optional[Snowflake]:
+    def GUILD_OBJECT(self) -> Snowflake | None:
         return Object(id=self.DEBUG_GUILD) if self.DEBUG_GUILD else None

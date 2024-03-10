@@ -1,21 +1,23 @@
-# pylint: disable=too-many-public-methods
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import discord
 from discord.embeds import Embed
 
-from .. import SpellBot
-from ..enums import GameFormat
-from ..models import Channel, GuildAward
-from ..operations import safe_fetch_text_channel, safe_send_channel, safe_update_embed_origin
-from ..services import GamesService
-from ..settings import Settings
-from ..utils import EMBED_DESCRIPTION_SIZE_LIMIT
-from ..views import SetupView
+from spellbot.enums import GameFormat
+from spellbot.models import Channel, GuildAward
+from spellbot.operations import safe_fetch_text_channel, safe_send_channel, safe_update_embed_origin
+from spellbot.services import GamesService
+from spellbot.settings import Settings
+from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
+from spellbot.views import SetupView
+
 from .base_action import BaseAction
+
+if TYPE_CHECKING:
+    from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +53,7 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def _build_channels_embeds(self) -> list[Embed]:
+    async def _build_channels_embeds(self) -> list[Embed]:  # noqa: C901
         guild = await self.services.guilds.to_dict()
         embeds: list[Embed] = []
 
@@ -87,6 +89,7 @@ class AdminAction(BaseAction):
             update_channel_settings(channel, channel_settings, "verified_only")
             update_channel_settings(channel, channel_settings, "voice_category")
             update_channel_settings(channel, channel_settings, "show_points")
+            update_channel_settings(channel, channel_settings, "require_confirmation")
             if channel_settings:
                 all_default = False
                 deets = ", ".join(
@@ -210,6 +213,7 @@ class AdminAction(BaseAction):
 
         embed = await games.to_embed(dm=True)
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
+        return None
 
     async def setup(self) -> None:
         embed = await self._build_setup_embed()
@@ -235,7 +239,7 @@ class AdminAction(BaseAction):
         count: int,
         role: str,
         message: str,
-        **options: Optional[bool],
+        **options: bool | None,
     ) -> None:
         repeating = bool(options.get("repeating", False))
         remove = bool(options.get("remove", False))
@@ -296,7 +300,7 @@ class AdminAction(BaseAction):
         embed.color = self.settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
-    async def set_motd(self, message: Optional[str] = None) -> None:
+    async def set_motd(self, message: str | None = None) -> None:
         await self.services.guilds.set_motd(message)
         await safe_send_channel(self.interaction, "Message of the day updated.", ephemeral=True)
 
@@ -362,7 +366,7 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def set_channel_motd(self, message: Optional[str] = None) -> None:
+    async def set_channel_motd(self, message: str | None = None) -> None:
         assert self.interaction.channel_id is not None
         motd = await self.services.channels.set_motd(self.interaction.channel_id, message)
         await safe_send_channel(
@@ -371,7 +375,7 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def set_channel_extra(self, message: Optional[str] = None) -> None:
+    async def set_channel_extra(self, message: str | None = None) -> None:
         assert self.interaction.channel_id is not None
         extra = await self.services.channels.set_extra(self.interaction.channel_id, message)
         await safe_send_channel(
@@ -404,6 +408,17 @@ class AdminAction(BaseAction):
         await safe_send_channel(
             self.interaction,
             f"Show points setting for this channel has been set to: {name}",
+            ephemeral=True,
+        )
+
+    async def set_require_confirmation(self, value: bool) -> None:
+        assert self.interaction.channel_id is not None
+        name = await self.services.channels.set_require_confirmation(
+            self.interaction.channel_id, value
+        )
+        await safe_send_channel(
+            self.interaction,
+            f"Require confirmation setting for this channel has been set to: {name}",
             ephemeral=True,
         )
 

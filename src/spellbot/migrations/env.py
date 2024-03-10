@@ -1,4 +1,3 @@
-# type: ignore
 from __future__ import annotations
 
 from alembic import context
@@ -20,6 +19,7 @@ def run_migrations_offline() -> None:
     the script output.
     """
     url = config.get_main_option("sqlalchemy.url")
+    assert url is not None
     is_sqlite = url.startswith("sqlite:")
     context.configure(
         url=url,

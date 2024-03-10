@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import logging
-from typing import Union
 
 import discord
 
-from ..operations import safe_send_channel
-from ..settings import Settings
+from spellbot.operations import safe_send_channel
+from spellbot.settings import Settings
+
 from .base_action import BaseAction
 
 logger = logging.getLogger(__name__)
 
 
 class ScoreAction(BaseAction):
-    async def execute(self, target: Union[discord.Member, discord.User]) -> None:
+    async def execute(self, target: discord.Member | discord.User) -> None:
         assert self.interaction.guild
         assert self.interaction.guild_id is not None
         guild_name = self.interaction.guild.name

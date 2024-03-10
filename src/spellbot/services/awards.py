@@ -1,20 +1,25 @@
 from __future__ import annotations
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict
+from typing import NamedTuple
 
 from asgiref.sync import sync_to_async
 from sqlalchemy.sql.expression import and_, or_
 
-from ..database import DatabaseSession
-from ..models import Game, GuildAward, Play, UserAward, Verify
+from spellbot.database import DatabaseSession
+from spellbot.models import Game, GuildAward, Play, UserAward, Verify
 
-NewAward = namedtuple("NewAward", ["role", "message", "remove"])
+
+class NewAward(NamedTuple):
+    role: str
+    message: str
+    remove: bool
 
 
 class AwardsService:
     @sync_to_async()
     def give_awards(self, guild_xid: int, player_xids: list[int]) -> dict[int, list[NewAward]]:
-        """Returns dict of discord user ids -> role names to assign to that user."""
+        """Return dict of discord user ids -> role names to assign to that user."""
         new_roles: dict[int, list[NewAward]] = defaultdict(list)
 
         for player_xid in player_xids:

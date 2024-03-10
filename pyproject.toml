@@ -1,10 +1,8 @@
-[tool.pylint.'MESSAGES CONTROL']
-max-line-length = 100
-
 [tool.pyright]
 enableTypeIgnoreComments = true
 reportMissingParameterType = true
 reportMissingTypeArgument = true
+reportUnnecessaryTypeIgnoreComment = "error"
 typeCheckingMode = "basic"
 
 [tool.ruff]
@@ -30,34 +28,64 @@ exclude = [
   "dist",
   "env",
   "node_modules",
-  "src/spellbot/migrations/versions",
   "venv",
 ]
 line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-extend-select = [
-  "ANN",
-  "C4",
-  "DTZ",
-  "E",
-  "F",
-  "I",
-  "ISC",
-  "PT",
-  "PTH",
-  "Q",
-  "RUF",
-  "T20",
-  "W",
-]
+extend-select = ["ALL"]
 ignore = [
+  "A001",
+  "A002",
   "ANN101",
   "ANN102",
+  "ANN202",
   "ANN401",
+  "ARG001",
+  "ARG002",
+  "ARG003",
+  "ARG005",
+  "BLE001",
   "COM812",
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D106",
+  "D107",
+  "D203",
+  "D211",
+  "D212",
+  "ERA001",
+  "FBT001",
+  "FBT002",
+  "FBT003",
+  "FIX002",
   "ISC001",
+  "N801",
+  "N802",
+  "N806",
+  "PGH003",
+  "PIE796",
+  "PLR0911",
+  "PLR0913",
+  "PLR2004",
+  "S101",
+  "TD002",
+  "TD003",
+]
+[tool.ruff.lint.per-file-ignores]
+"src/spellbot/migrations/*" = ["INP001"]
+"src/spellbot/operations.py" = ["RET504"]
+"tests/*" = [
+  "EM101",
+  "PT004",
+  "S105",
+  "SLF001",
+  "TRY003",
 ]
 
 [tool.ruff.lint.pycodestyle]
@@ -65,11 +93,6 @@ max-doc-length = 100
 max-line-length = 100
 
 [tool.pylic]
-ignore_packages = [
-  # we only install these as part of dev tools to avoid GPL usage in main application
-  "astroid",
-  "pylint",
-]
 safe_licenses = [
   "3-Clause BSD License",
   "Apache Software License",
@@ -161,7 +184,6 @@ gitpython = "^3"
 pexpect = "^4"
 ptyprocess = "^0"
 pylic = "^3.5.0"
-pylint = "3.1.0"
 pyright = "^1"
 pytest = "^7,<8.0.0"
 pytest-aiohttp = "^1"

@@ -1,11 +1,9 @@
-# pylint: disable=too-many-arguments,too-many-locals,too-many-statements
 from __future__ import annotations
 
 import asyncio
 import time
 from os import getenv
 from socket import socket
-from typing import Optional
 
 import click
 import hupper
@@ -69,12 +67,12 @@ uvloop.install()
 )
 @click.version_option(version=__version__)
 def main(
-    log_level: Optional[str],
+    log_level: str | None,
     dev: bool,
     debug: bool,
     mock_games: bool,
     api: bool,
-    port: Optional[int] = None,
+    port: int | None = None,
 ) -> None:
     if dev:
         hupper.start_reloader("spellbot.main")
@@ -96,7 +94,7 @@ def main(
     # When metrics are enabled, let's ensure that datadog-agent is running first...
     if not no_metrics():  # pragma: no cover
         logger = logging.root
-        conn: Optional[socket] = None
+        conn: socket | None = None
         connected = False
 
         logger.info("metrics enabled, checking for connection to statsd server...")
@@ -108,7 +106,7 @@ def main(
                 connected = True
                 logger.info("waiting for statsd server to finish initialization...")
                 time.sleep(5)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.info("statsd connection error: %s, retrying...", str(e))
                 time.sleep(1)
             finally:

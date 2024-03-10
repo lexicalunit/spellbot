@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import Callable, cast
+from typing import TYPE_CHECKING, cast
 
-import discord
 import pytest
 from spellbot.actions import lfg_action
-from spellbot.client import SpellBot
 from spellbot.cogs import EventsCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat
@@ -14,6 +12,12 @@ from sqlalchemy.sql.expression import and_
 
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    import discord
+    from spellbot.client import SpellBot
 
 
 @pytest.fixture()

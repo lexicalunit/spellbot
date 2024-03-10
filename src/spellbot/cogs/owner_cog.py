@@ -1,22 +1,21 @@
 import logging
 from inspect import cleandoc
-from typing import Optional
 
 from ddtrace import tracer
 from discord.ext import commands
 
-from .. import SpellBot
-from ..actions.base_action import handle_exception
-from ..database import db_session_manager
-from ..metrics import add_span_context
-from ..operations import bad_users, safe_send_user
-from ..services import UsersService
-from ..utils import for_all_callbacks
+from spellbot import SpellBot
+from spellbot.actions.base_action import handle_exception
+from spellbot.database import db_session_manager
+from spellbot.metrics import add_span_context
+from spellbot.operations import bad_users, safe_send_user
+from spellbot.services import UsersService
+from spellbot.utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
 
 
-async def set_banned(banned: bool, ctx: commands.Context[SpellBot], arg: Optional[str]) -> None:
+async def set_banned(banned: bool, ctx: commands.Context[SpellBot], arg: str | None) -> None:
     assert ctx.message
     if arg is None:
         return await safe_send_user(ctx.message.author, "No target user.")
@@ -30,6 +29,7 @@ async def set_banned(banned: bool, ctx: commands.Context[SpellBot], arg: Optiona
         ctx.message.author,
         f"User <@{user_xid}> has been {'banned' if banned else 'unbanned'}.",
     )
+    return None
 
 
 @for_all_callbacks(commands.is_owner())
@@ -39,7 +39,7 @@ class OwnerCog(commands.Cog):
 
     @commands.command(name="ban")
     @tracer.wrap(name="interaction", resource="ban")
-    async def ban(self, ctx: commands.Context[SpellBot], arg: Optional[str] = None) -> None:
+    async def ban(self, ctx: commands.Context[SpellBot], arg: str | None = None) -> None:
         add_span_context(ctx)
         async with db_session_manager():
             try:
@@ -49,7 +49,7 @@ class OwnerCog(commands.Cog):
 
     @commands.command(name="unban")
     @tracer.wrap(name="interaction", resource="unban")
-    async def unban(self, ctx: commands.Context[SpellBot], arg: Optional[str] = None) -> None:
+    async def unban(self, ctx: commands.Context[SpellBot], arg: str | None = None) -> None:
         add_span_context(ctx)
         async with db_session_manager():
             try:

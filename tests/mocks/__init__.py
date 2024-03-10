@@ -2,14 +2,16 @@
 from __future__ import annotations
 
 import importlib
-from collections.abc import Generator
 from contextlib import contextmanager
-from types import ModuleType
-from typing import Any, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, cast, overload
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
 from spellbot.models import Channel, Guild, User
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from types import ModuleType
 
 CLIENT_USER_ID = 1  # id of the test bot itself
 OWNER_USER_ID = 2  # id of the test guild owner
@@ -19,49 +21,52 @@ class MockClient:
     def __init__(
         self,
         *,
-        user: discord.User = MagicMock(spec=discord.User),
-        channels: Optional[list[discord.TextChannel]] = None,
-        guilds: Optional[list[discord.Guild]] = None,
-        users: Optional[list[discord.User]] = None,
-        categories: Optional[list[discord.CategoryChannel]] = None,
+        user: discord.User | None = None,
+        channels: list[discord.TextChannel] | None = None,
+        guilds: list[discord.Guild] | None = None,
+        users: list[discord.User] | None = None,
+        categories: list[discord.CategoryChannel] | None = None,
     ) -> None:
-        self.user = user
+        self.user = user or MagicMock(spec=discord.User)
         self.channels = channels or []
         self.guilds = guilds or []
         self.users = users or []
         self.categoies = categories or []
 
-    def __get_user(self, xid: int) -> Optional[discord.User]:
+    def __get_user(self, xid: int) -> discord.User | None:
         for user in self.users:
             if user.id == xid:
                 return user
+        return None
 
-    def get_user(self, xid: int) -> Optional[discord.User]:
+    def get_user(self, xid: int) -> discord.User | None:
         return self.__get_user(xid)
 
-    async def fetch_user(self, xid: int) -> Optional[discord.User]:
+    async def fetch_user(self, xid: int) -> discord.User | None:
         return self.__get_user(xid)
 
-    def __get_channel(self, xid: int) -> Optional[discord.TextChannel]:
+    def __get_channel(self, xid: int) -> discord.TextChannel | None:
         for channel in self.channels:
             if channel.id == xid:
                 return channel
+        return None
 
-    def get_channel(self, xid: int) -> Optional[discord.TextChannel]:
+    def get_channel(self, xid: int) -> discord.TextChannel | None:
         return self.__get_channel(xid)
 
-    async def fetch_channel(self, xid: int) -> Optional[discord.TextChannel]:
+    async def fetch_channel(self, xid: int) -> discord.TextChannel | None:
         return self.__get_channel(xid)
 
-    def __get_guild(self, xid: int) -> Optional[discord.Guild]:
+    def __get_guild(self, xid: int) -> discord.Guild | None:
         for guild in self.guilds:
             if guild.id == xid:
                 return guild
+        return None
 
-    def get_guild(self, xid: int) -> Optional[discord.Guild]:
+    def get_guild(self, xid: int) -> discord.Guild | None:
         return self.__get_guild(xid)
 
-    async def fetch_guild(self, xid: int) -> Optional[discord.Guild]:
+    async def fetch_guild(self, xid: int) -> discord.Guild | None:
         return self.__get_guild(xid)
 
 
@@ -72,10 +77,10 @@ def mock_client(*args: Any, **kwargs: Any) -> discord.Client:
 @contextmanager
 def mock_operations(
     module: ModuleType,
-    users: Optional[list[discord.User]] = None,
+    users: list[discord.User] | None = None,
 ) -> Generator[None, None, None]:
     """
-    Mocks out all operations.py functions found in a given module.
+    Mock out all operations.py functions found in a given module.
 
     Special care is given to the mock for `safe_fetch_user()` so that users passed
     into `mock_operations()` will be findable via calls to `safe_fetch_user()`.
@@ -104,7 +109,7 @@ def mock_operations(
             elif name.startswith("safe_"):  # all others we can assume are async
                 if name == "safe_fetch_user":
 
-                    async def finder(_: Any, xid: int) -> Optional[discord.User]:
+                    async def finder(_: Any, xid: int) -> discord.User | None:
                         return next((user for user in _users if user.id == xid), None)
 
                     monkeypatch.setattr(module, name, AsyncMock(side_effect=finder))
@@ -165,7 +170,7 @@ def build_channel(guild: discord.Guild, offset: int = 1) -> discord.TextChannel:
 def build_message(
     guild: discord.Guild,
     channel: discord.TextChannel,
-    author: Union[discord.Member, discord.User],
+    author: discord.Member | discord.User,
     offset: int = 1,
 ) -> discord.Message:
     message = MagicMock(spec=discord.Message)
@@ -223,7 +228,7 @@ def mock_discord_user(user: User) -> discord.User:
 def mock_discord_channel(
     channel: Channel,
     *,
-    guild: Optional[discord.Guild] = None,
+    guild: discord.Guild | None = None,
 ) -> discord.TextChannel:
     discord_channel = MagicMock(spec=discord.TextChannel)
     discord_channel.id = channel.xid
@@ -263,12 +268,12 @@ def mock_discord_object(obj: Guild) -> discord.Guild:  # pragma: no cover
 
 
 def mock_discord_object(
-    obj: Union[User, Channel, Guild],
-) -> Union[discord.User, discord.TextChannel, discord.Guild]:
+    obj: User | Channel | Guild,
+) -> discord.User | discord.TextChannel | discord.Guild:
     if isinstance(obj, User):
         return mock_discord_user(obj)
     if isinstance(obj, Channel):
         return mock_discord_channel(obj)
     if isinstance(obj, Guild):
         return mock_discord_guild(obj)
-    raise NotImplementedError()
+    raise NotImplementedError

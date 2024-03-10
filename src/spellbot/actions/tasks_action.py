@@ -5,17 +5,15 @@ import logging
 import re
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import Any, AsyncGenerator
+from typing import TYPE_CHECKING, Any
 
 import pytz
 from dateutil import tz
 from ddtrace import tracer
-from discord.channel import VoiceChannel
 
-from .. import SpellBot
-from ..database import db_session_manager, rollback_session
-from ..metrics import add_span_error, setup_ignored_errors
-from ..operations import (
+from spellbot.database import db_session_manager, rollback_session
+from spellbot.metrics import add_span_error, setup_ignored_errors
+from spellbot.operations import (
     bot_can_delete_channel,
     safe_delete_channel,
     safe_delete_message,
@@ -23,9 +21,17 @@ from ..operations import (
     safe_get_partial_message,
     safe_update_embed,
 )
-from ..services import GamesService, ServicesRegistry
-from ..settings import Settings
+from spellbot.services import GamesService, ServicesRegistry
+from spellbot.settings import Settings
+
 from .base_action import handle_exception
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
+    from discord.channel import VoiceChannel
+
+    from spellbot import SpellBot
 
 settings = Settings()
 logger = logging.getLogger(__name__)
@@ -99,7 +105,7 @@ class TasksAction:
             await self.delete_channels(channels)
         except BaseException as e:  # Catch EVERYTHING so tasks don't die
             add_span_error(e)
-            logger.exception("error: exception in background task: %s", e)
+            logger.exception("error: exception in background task")
             await rollback_session()
 
     async def gather_channels(self) -> list[VoiceChannel]:
@@ -134,15 +140,13 @@ class TasksAction:
         return channels
 
     async def delete_channels(self, channels: list[VoiceChannel]) -> None:
-        batch = 0
-        for channel in sorted(channels, key=lambda c: c.created_at):
+        for batch, channel in enumerate(sorted(channels, key=lambda c: c.created_at)):
             logger.info("deleting channel %s(%s)", channel.name, channel.id)
             await safe_delete_channel(channel, channel.guild.id)
             await asyncio.sleep(5)
 
             # Try to avoid rate limiting by the Discord API
-            batch += 1
-            if batch > settings.VOICE_CLEANUP_BATCH:
+            if batch + 1 > settings.VOICE_CLEANUP_BATCH:
                 remaining = len(channels) - settings.VOICE_CLEANUP_BATCH
                 logger.info("batch limit reached, %s channels remain", remaining)
                 break
@@ -154,7 +158,7 @@ class TasksAction:
             await self.expire_games(games)
         except BaseException as e:  # Catch EVERYTHING so tasks don't die
             add_span_error(e)
-            logger.exception("error: exception in background task: %s", e)
+            logger.exception("error: exception in background task")
             await rollback_session()
 
     async def expire_games(self, games: list[dict[str, Any]]) -> None:

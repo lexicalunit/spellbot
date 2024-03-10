@@ -8,10 +8,10 @@ from sqlalchemy.orm import relationship
 
 from . import Base, now
 
-if TYPE_CHECKING:  # pragma: no cover
-    from typing import Iterable
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
-    from . import Channel, Game, GuildAward  # noqa
+    from . import Channel, Game, GuildAward  # noqa: F401
 
 
 class Guild(Base):

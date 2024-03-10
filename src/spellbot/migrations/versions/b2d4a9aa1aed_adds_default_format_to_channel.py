@@ -1,8 +1,11 @@
-"""Adds default_format to channel
+"""
+Adds default_format to channel.
+
 Revision ID: b2d4a9aa1aed
 Revises: 1503d49ae8e1
-Create Date: 2023-10-15 18:05:00.085956
+Create Date: 2023-10-15 18:05:00.085956.
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -13,7 +16,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     op.add_column(
         "channels",
         sa.Column(
@@ -31,6 +34,6 @@ def upgrade():
     )
 
 
-def downgrade():
+def downgrade() -> None:
     op.drop_index(op.f("ix_channels_default_format"), table_name="channels")
     op.drop_column("channels", "default_format")

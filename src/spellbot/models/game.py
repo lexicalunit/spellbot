@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import discord
 from dateutil import tz
@@ -10,12 +10,13 @@ from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
-from ..enums import GameFormat
-from ..settings import Settings
+from spellbot.enums import GameFormat
+from spellbot.settings import Settings
+
 from . import Base, now
 
-if TYPE_CHECKING:  # pragma: no cover
-    from . import Channel, Guild, User  # noqa
+if TYPE_CHECKING:
+    from . import Channel, Guild, User  # noqa: F401
 
 
 class GameStatus(Enum):
@@ -143,14 +144,16 @@ class Game(Base):
 
     @property
     def players(self) -> list[User]:
-        from ..database import DatabaseSession
+        from spellbot.database import DatabaseSession
+
         from . import User
 
         return DatabaseSession.query(User).filter(User.xid.in_(self.player_xids)).all()
 
     @property
     def player_xids(self) -> list[int]:
-        from ..database import DatabaseSession
+        from spellbot.database import DatabaseSession
+
         from . import Play, Queue
 
         if self.started_at is None:
@@ -217,10 +220,7 @@ class Game(Base):
 
     @property
     def placeholders(self) -> dict[str, str]:
-        if self.started_at:
-            game_start = f"<t:{self.started_at_timestamp}>"
-        else:
-            game_start = "pending"
+        game_start = f"<t:{self.started_at_timestamp}>" if self.started_at else "pending"
         placeholders = {
             "game_id": str(self.id),
             "game_format": self.format_name,
@@ -237,25 +237,29 @@ class Game(Base):
 
     @property
     def embed_players(self) -> str:
-        player_parts: list[tuple[int, str, str, str]] = []
+        player_parts: list[tuple[int, str, str]] = []
         for player in self.players:
             points_str = ""
             if self.status == GameStatus.STARTED.value:
                 points = player.points(cast(int, self.id))
-                if points:
-                    points_str = f" - {points} point{'s' if points > 1 else ''}"
+                if points and points[0]:
+                    points_value: int = points[0]
+                    points_confirmed: bool = points[1]
+                    value_str = f"{points_value} point{'s' if points_value > 1 else ''}"
+                    confirmed_str = (
+                        "✅ "
+                        if points_confirmed
+                        else "❌ "
+                        if self.channel.require_confirmation
+                        else ""
+                    )
+                    points_str = f"\n**ﾠ⮑ {confirmed_str}{value_str}**"
 
-            power_level_str = ""
-            if self.status == GameStatus.PENDING.value:
-                config = player.config(cast(int, self.guild_xid)) or {}
-                power_level = config.get("power_level", None)
-                if power_level:
-                    power_level_str = f" - power level: {power_level}"
-            player_parts.append((player.xid, player.name, power_level_str, points_str))
+            player_parts.append((player.xid, player.name, points_str))
 
-        player_strs: list[str] = []
-        for parts in sorted(player_parts):
-            player_strs.append(f"• <@{parts[0]}> ({parts[1]}){parts[2]}{parts[3]}")
+        player_strs: list[str] = [
+            f"• <@{parts[0]}> ({parts[1]}){parts[2]}" for parts in sorted(player_parts)
+        ]
         return "\n".join(player_strs)
 
     @property
@@ -263,7 +267,7 @@ class Game(Base):
         return f"SpellBot Game ID: #SB{self.id}"
 
     @property
-    def spectate_link(self) -> Optional[str]:
+    def spectate_link(self) -> str | None:
         return f"{self.spelltable_link}?spectate=true" if self.spelltable_link else None
 
     @property
@@ -275,11 +279,28 @@ class Game(Base):
 
     @property
     def format_name(self) -> str:
-        format = GameFormat(self.format)  # type: ignore
+        format = GameFormat(self.format)
         return format.name.replace("_", " ").title()
 
+    @property
+    def confirmed(self) -> bool:
+        from spellbot.database import DatabaseSession
+
+        from . import Play, User
+
+        player_count = DatabaseSession.query(User).filter(User.xid.in_(self.player_xids)).count()
+        confirmed_count = (
+            DatabaseSession.query(Play)
+            .filter(
+                Play.game_id == self.id,
+                ~Play.confirmed_at.is_(None),
+            )
+            .count()
+        )
+        return player_count == confirmed_count
+
     def to_embed(self, dm: bool = False) -> discord.Embed:
-        settings = Settings(self.guild_xid)  # type: ignore
+        settings = Settings(self.guild_xid)
         embed = discord.Embed(title=self.embed_title)
         embed.set_thumbnail(url=settings.THUMB_URL)
         embed.description = self.embed_description(dm)
@@ -318,4 +339,5 @@ class Game(Base):
             "spelltable_link": self.spelltable_link,
             "spectate_link": self.spectate_link,
             "jump_link": self.jump_link,
+            "confirmed": self.confirmed,
         }

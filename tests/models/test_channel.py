@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from spellbot.enums import GameFormat
 
-from tests.fixtures import Factories
+if TYPE_CHECKING:
+    from tests.fixtures import Factories
 
 
 class TestModelChannel:
@@ -26,4 +29,5 @@ class TestModelChannel:
             "voice_category": channel.voice_category,
             "delete_expired": channel.delete_expired,
             "show_points": channel.show_points,
+            "require_confirmation": channel.require_confirmation,
         }

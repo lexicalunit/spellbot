@@ -1,10 +1,12 @@
-"""Adds voice category per channel
+"""
+Adds voice category per channel.
 
 Revision ID: 6e982c9318a6
 Revises: ef54f035a75c
 Create Date: 2021-12-03 13:18:57.468342
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -15,7 +17,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     op.add_column(
         "channels",
         sa.Column(
@@ -27,5 +29,5 @@ def upgrade():
     )
 
 
-def downgrade():
+def downgrade() -> None:
     op.drop_column("channels", "voice_category")

@@ -2,19 +2,22 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from functools import partial
-from typing import Any, Awaitable, Callable, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
-from spellbot import SpellBot
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Game
 
 from tests.mocks import build_author, build_channel, build_guild, build_interaction
+
+if TYPE_CHECKING:
+    from spellbot import SpellBot
 
 
 async def run_lfg(cog: LookingForGameCog, interaction: discord.Interaction) -> None:
@@ -48,13 +51,13 @@ class TestCogLookingForGameConcurrency:
         # Since all these lfg requests should be handled concurrently, we should
         # see message_xids OUT of order in the created games (as ordered by created at).
         messages_out_of_order = False
-        message_xid: Optional[int] = None
+        message_xid: int | None = None
         for game in games:  # pragma: no cover
             if message_xid is not None and game.message_xid != message_xid + 1:
                 # At leat one game is out of order, this is good!
                 messages_out_of_order = True
                 break
-            message_xid = cast(Optional[int], game.message_xid)
+            message_xid = cast(int | None, game.message_xid)
         assert messages_out_of_order
 
     async def test_concurrent_lfg_requests_same_channel(
@@ -104,11 +107,11 @@ class TestCogLookingForGameConcurrency:
         # Since all these lfg requests should be handled concurrently, we should
         # see message_xids OUT of order in the created games (as ordered by created at).
         messages_out_of_order = False
-        message_xid: Optional[int] = None
+        message_xid: int | None = None
         for game in games:  # pragma: no cover
             if message_xid is not None and game.message_xid != message_xid + 1:
                 # At leat one game is out of order, this is good!
                 messages_out_of_order = True
                 break
-            message_xid = cast(Optional[int], game.message_xid)
+            message_xid = cast(int | None, game.message_xid)
         assert messages_out_of_order

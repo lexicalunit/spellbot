@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import pytz
 from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import update
 
-from ..database import DatabaseSession
-from ..models import Channel
+from spellbot.database import DatabaseSession
+from spellbot.models import Channel
 
 if TYPE_CHECKING:
     from discord.abc import MessageableChannel
@@ -48,7 +48,7 @@ class ChannelsService:
         DatabaseSession.query(Channel).filter(Channel.xid == xid).delete(synchronize_session=False)
 
     @sync_to_async()
-    def select(self, xid: int) -> Optional[dict[str, Any]]:
+    def select(self, xid: int) -> dict[str, Any] | None:
         channel = DatabaseSession.query(Channel).filter(Channel.xid == xid).one_or_none()
         return channel.to_dict() if channel else None
 
@@ -108,7 +108,7 @@ class ChannelsService:
         DatabaseSession.commit()
 
     @sync_to_async()
-    def set_motd(self, xid: int, message: Optional[str] = None) -> str:
+    def set_motd(self, xid: int, message: str | None = None) -> str:
         if message:
             max_len = Channel.motd.property.columns[0].type.length  # type: ignore
             motd = message[:max_len]
@@ -125,7 +125,7 @@ class ChannelsService:
         return motd
 
     @sync_to_async()
-    def set_extra(self, xid: int, message: Optional[str] = None) -> str:
+    def set_extra(self, xid: int, message: str | None = None) -> str:
         if message:
             max_len = Channel.extra.property.columns[0].type.length  # type: ignore
             extra = message[:max_len]
@@ -173,6 +173,18 @@ class ChannelsService:
             update(Channel)
             .where(Channel.xid == xid)
             .values(show_points=value)
+            .execution_options(synchronize_session=False)
+        )
+        DatabaseSession.execute(query)
+        DatabaseSession.commit()
+        return value
+
+    @sync_to_async()
+    def set_require_confirmation(self, xid: int, value: bool) -> bool:
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(require_confirmation=value)
             .execution_options(synchronize_session=False)
         )
         DatabaseSession.execute(query)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Optional
+from typing import Any
 
 import pytz
 from asgiref.sync import sync_to_async
@@ -9,9 +9,9 @@ from dateutil import tz
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.sql.expression import and_, extract, func, text
 
-from ..database import DatabaseSession
-from ..enums import GameFormat
-from ..models import Channel, Game, Guild, Play
+from spellbot.database import DatabaseSession
+from spellbot.enums import GameFormat
+from spellbot.models import Channel, Game, Guild, Play
 
 USER_PAGE_SIZE = 25
 CHANNEL_PAGE_SIZE = 10
@@ -159,7 +159,7 @@ class PlaysService:
         guild_xid: int,
         user_xid: int,
         page: int = 0,
-    ) -> Optional[list[dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
         if not guild:
             return None
@@ -195,7 +195,7 @@ class PlaysService:
         guild_xid: int,
         channel_xid: int,
         page: int = 0,
-    ) -> Optional[list[dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
         if not guild:
             return None
@@ -249,7 +249,7 @@ class PlaysService:
         result = (
             DatabaseSession.query(
                 Play.user_xid,
-                func.count(Play.game_id).label("count"),  # pylint: disable=not-callable
+                func.count(Play.game_id).label("count"),
             )
             .filter(*filters)
             .group_by(Play.user_xid)

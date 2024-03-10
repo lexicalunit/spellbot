@@ -1,6 +1,4 @@
-# pylint: disable=too-many-arguments
 import logging
-from typing import Optional
 
 import discord
 from ddtrace import tracer
@@ -8,11 +6,11 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from .. import SpellBot
-from ..actions import AdminAction
-from ..enums import GameFormat
-from ..metrics import add_span_context
-from ..utils import for_all_callbacks, is_admin, is_guild
+from spellbot import SpellBot
+from spellbot.actions import AdminAction
+from spellbot.enums import GameFormat
+from spellbot.metrics import add_span_context
+from spellbot.utils import for_all_callbacks, is_admin, is_guild
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +44,7 @@ class AdminCog(commands.Cog):
     )
     @app_commands.describe(message="Message content")
     @tracer.wrap(name="interaction", resource="set_motd")
-    async def motd(self, interaction: discord.Interaction, message: Optional[str] = None) -> None:
+    async def motd(self, interaction: discord.Interaction, message: str | None = None) -> None:
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_motd(message)
@@ -59,7 +57,7 @@ class AdminCog(commands.Cog):
     async def channel_motd(
         self,
         interaction: discord.Interaction,
-        message: Optional[str] = None,
+        message: str | None = None,
     ) -> None:
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
@@ -73,7 +71,7 @@ class AdminCog(commands.Cog):
     async def channel_extra(
         self,
         interaction: discord.Interaction,
-        message: Optional[str] = None,
+        message: str | None = None,
     ) -> None:
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
@@ -85,7 +83,7 @@ class AdminCog(commands.Cog):
     )
     @app_commands.describe(page="If there are multiple pages of output, which one?")
     @tracer.wrap(name="interaction", resource="channels")
-    async def channels(self, interaction: discord.Interaction, page: Optional[int] = 1) -> None:
+    async def channels(self, interaction: discord.Interaction, page: int | None = 1) -> None:
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
             page = page or 1
@@ -94,7 +92,7 @@ class AdminCog(commands.Cog):
     @app_commands.command(name="awards", description="Setup player awards on your server.")
     @app_commands.describe(page="If there are multiple pages of output, which one?")
     @tracer.wrap(name="interaction", resource="awards")
-    async def awards(self, interaction: discord.Interaction, page: Optional[int] = 1) -> None:
+    async def awards(self, interaction: discord.Interaction, page: int | None = 1) -> None:
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
             page = page or 1
@@ -117,10 +115,10 @@ class AdminCog(commands.Cog):
         count: int,
         role: discord.Role,
         message: str,
-        repeating: Optional[bool] = False,
-        remove: Optional[bool] = False,
-        verified_only: Optional[bool] = False,
-        unverified_only: Optional[bool] = False,
+        repeating: bool | None = False,
+        remove: bool | None = False,
+        verified_only: bool | None = False,
+        unverified_only: bool | None = False,
     ) -> None:
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
@@ -250,6 +248,17 @@ class AdminCog(commands.Cog):
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_show_points(setting)
+
+    @set_group.command(
+        name="require_confirmation",
+        description="Set the option for requiring points confirmation on games in this channel.",
+    )
+    @app_commands.describe(setting="Setting")
+    @tracer.wrap(name="interaction", resource="set_require_confirmation")
+    async def require_confirmation(self, interaction: discord.Interaction, setting: bool) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_require_confirmation(setting)
 
     @app_commands.command(name="move_user", description="Move one user's data to another user.")
     @tracer.wrap(name="interaction", resource="move_user")

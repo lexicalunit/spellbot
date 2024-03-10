@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from tests.fixtures import Factories
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tests.fixtures import Factories
 
 
 class TestModelPlay:
@@ -17,4 +20,5 @@ class TestModelPlay:
             "points": play.points,
             "created_at": play.created_at,
             "updated_at": play.updated_at,
+            "confirmed_at": play.confirmed_at,
         }
