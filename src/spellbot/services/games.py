@@ -1,11 +1,9 @@
-# pylint: disable=too-many-public-methods
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
-import discord
 import pytz
 from asgiref.sync import sync_to_async
 from ddtrace import tracer
@@ -15,17 +13,12 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import and_, asc, column, or_
 from sqlalchemy.sql.functions import count
 
-from ..database import DatabaseSession
-from ..models import (
-    Block,
-    Game,
-    GameStatus,
-    Play,
-    Queue,
-    UserAward,
-    Watch,
-)
-from ..settings import Settings
+from spellbot.database import DatabaseSession
+from spellbot.models import Block, Game, GameStatus, Play, Queue, UserAward, Watch
+from spellbot.settings import Settings
+
+if TYPE_CHECKING:
+    import discord
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +26,7 @@ MAX_SPELLTABLE_LINK_LEN = Game.spelltable_link.property.columns[0].type.length  
 
 
 class GamesService:
-    game: Optional[Game] = None
+    game: Game | None = None
 
     @sync_to_async()
     @tracer.wrap()
@@ -49,7 +42,7 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def select_by_message_xid(self, message_xid: int) -> Optional[dict[str, Any]]:
+    def select_by_message_xid(self, message_xid: int) -> dict[str, Any] | None:
         self.game = (
             DatabaseSession.query(Game)
             .filter(
@@ -58,6 +51,22 @@ class GamesService:
             .one_or_none()
         )
         return self.game.to_dict() if self.game else None
+
+    @sync_to_async()
+    @tracer.wrap()
+    def get_play(self, player_xid: int) -> dict[str, Any] | None:
+        assert self.game
+        play = (
+            DatabaseSession.query(Play)
+            .filter(
+                and_(
+                    Play.user_xid == player_xid,
+                    Play.game_id == self.game.id,
+                ),
+            )
+            .one_or_none()
+        )
+        return play.to_dict() if play else None
 
     @sync_to_async()
     @tracer.wrap()
@@ -98,7 +107,7 @@ class GamesService:
         format: int,
         create_new: bool = False,
     ) -> bool:
-        existing: Optional[Game] = None
+        existing: Game | None = None
         if not create_new:
             existing = self._find_existing(
                 guild_xid=guild_xid,
@@ -138,7 +147,7 @@ class GamesService:
         return new
 
     @tracer.wrap()
-    def _find_existing(  # pylint: disable=too-many-locals
+    def _find_existing(
         self,
         *,
         guild_xid: int,
@@ -147,7 +156,7 @@ class GamesService:
         friends: list[int],
         seats: int,
         format: int,
-    ) -> Optional[Game]:
+    ) -> Game | None:
         required_seats = 1 + len(friends)
 
         player_count = count(Queue.user_xid).over(partition_by=Game.id)
@@ -218,7 +227,7 @@ class GamesService:
     @tracer.wrap()
     def set_message_xid(self, message_xid: int) -> None:
         assert self.game
-        self.game.message_xid = message_xid  # type: ignore
+        self.game.message_xid = message_xid
         DatabaseSession.commit()
 
     @sync_to_async()
@@ -231,7 +240,7 @@ class GamesService:
     @sync_to_async
     @tracer.wrap()
     def other_game_ids(self) -> list[int]:
-        """Using the currently selected game, return any other games with overlapping players."""
+        """Use the currently selected game, return any other games with overlapping players."""
         assert self.game
         player_xids = self.game.player_xids
         rows = DatabaseSession.query(Queue.game_id).filter(
@@ -242,16 +251,16 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def make_ready(self, spelltable_link: Optional[str]) -> int:
+    def make_ready(self, spelltable_link: str | None) -> int:
         assert self.game
         assert len(spelltable_link or "") <= MAX_SPELLTABLE_LINK_LEN
         queued_xids = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == self.game.id)
         player_xids = [int(row[0]) for row in queued_xids if row[0]]
 
         # update game's state
-        self.game.spelltable_link = spelltable_link  # type: ignore
-        self.game.status = GameStatus.STARTED.value  # type: ignore
-        self.game.started_at = datetime.now(tz=pytz.utc)  # type: ignore
+        self.game.spelltable_link = spelltable_link
+        self.game.status = GameStatus.STARTED.value
+        self.game.started_at = datetime.now(tz=pytz.utc)
 
         if not player_xids:
             DatabaseSession.commit()
@@ -303,7 +312,7 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def watch_notes(self, player_xids: list[int]) -> dict[int, Optional[str]]:
+    def watch_notes(self, player_xids: list[int]) -> dict[int, str | None]:
         assert self.game
         watched = (
             DatabaseSession.query(Watch)
@@ -315,13 +324,13 @@ class GamesService:
             )
             .all()
         )
-        return {cast(int, watch.user_xid): cast(Optional[str], watch.note) for watch in watched}
+        return {cast(int, watch.user_xid): cast(str | None, watch.note) for watch in watched}
 
     @sync_to_async()
     @tracer.wrap()
     def set_voice(self, voice_xid: int) -> None:
         assert self.game
-        self.game.voice_xid = voice_xid  # type: ignore
+        self.game.voice_xid = voice_xid
         DatabaseSession.commit()
 
     @sync_to_async()
@@ -352,7 +361,7 @@ class GamesService:
 
         rows = DatabaseSession.query(
             Queue.user_xid,
-            func.count(Queue.user_xid).label("pending"),  # pylint: disable=not-callable
+            func.count(Queue.user_xid).label("pending"),
         ).group_by(Queue.user_xid)
         counts = {row[0]: row[1] for row in rows if row[0]}
 
@@ -446,6 +455,17 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
+    def confirm_points(self, player_xid: int | None = None) -> None:
+        assert self.game
+        filters = [Play.game_id == self.game.id]
+        if player_xid:
+            filters.append(Play.user_xid == player_xid)
+        query = update(Play).where(*filters).values(confirmed_at=datetime.now(tz=pytz.utc))
+        DatabaseSession.execute(query)
+        DatabaseSession.commit()
+
+    @sync_to_async()
+    @tracer.wrap()
     def to_dict(self) -> dict[str, Any]:
         assert self.game
         return self.game.to_dict()
@@ -466,7 +486,7 @@ class GamesService:
             .having(
                 or_(
                     Game.updated_at <= limit,
-                    func.count(Queue.game_id) == 0,  # pylint: disable=not-callable
+                    func.count(Queue.game_id) == 0,
                 ),
             )
         )
@@ -499,7 +519,7 @@ class GamesService:
     @sync_to_async()
     @tracer.wrap()
     def dequeue_players(self, player_xids: list[int]) -> list[int]:
-        """Removes the given players from any queues that they're in; returns changed game ids."""
+        """Remove the given players from any queues that they're in; returns changed game ids."""
         queues = DatabaseSession.query(Queue).filter(Queue.user_xid.in_(player_xids)).all()
         game_ids = {cast(int, queue.game_id) for queue in queues}
         for queue in queues:

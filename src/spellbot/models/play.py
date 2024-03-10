@@ -7,8 +7,8 @@ from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer
 
 from . import Base, now
 
-if TYPE_CHECKING:  # pragma: no cover
-    from . import Game, User  # noqa
+if TYPE_CHECKING:
+    from . import Game, User  # noqa: F401
 
 
 class Play(Base):
@@ -21,7 +21,7 @@ class Play(Base):
         nullable=False,
         default=datetime.utcnow,
         server_default=now,
-        doc="UTC timestamp when this games was first created",
+        doc="UTC timestamp when this play was first created",
     )
     updated_at = Column(
         DateTime,
@@ -29,14 +29,14 @@ class Play(Base):
         default=datetime.utcnow,
         server_default=now,
         onupdate=datetime.utcnow,
-        doc="UTC timestamp when this games was last updated",
+        doc="UTC timestamp when this play was last updated",
     )
     user_xid = Column(
         BigInteger,
         ForeignKey("users.xid", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        doc="The external Discord ID of the user who played a game",
+        doc="The external Discord ID of the user who played this game",
     )
     game_id = cast(
         int,
@@ -54,6 +54,12 @@ class Play(Base):
         nullable=True,
         doc="The number of points reported by the user",
     )
+    confirmed_at = Column(
+        DateTime,
+        nullable=True,
+        default=None,
+        doc="UTC timestamp when this play was confirmed",
+    )
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -62,4 +68,5 @@ class Play(Base):
             "user_xid": self.user_xid,
             "game_id": self.game_id,
             "points": self.points,
+            "confirmed_at": self.confirmed_at,
         }

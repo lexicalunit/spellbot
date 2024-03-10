@@ -5,7 +5,7 @@ from typing import Any, cast
 
 from ddtrace import tracer
 
-from ..operations import (
+from spellbot.operations import (
     safe_fetch_text_channel,
     safe_get_partial_message,
     safe_original_response,
@@ -14,7 +14,8 @@ from ..operations import (
     safe_update_embed,
     safe_update_embed_origin,
 )
-from ..views import PendingGameView
+from spellbot.views import PendingGameView
+
 from .base_action import BaseAction
 
 logger = logging.getLogger(__name__)
@@ -96,6 +97,7 @@ class LeaveAction(BaseAction):
         embed = await self.services.games.to_embed()
         await safe_update_embed(message, embed=embed)
         await self._removed(channel_xid)
+        return None
 
     @tracer.wrap()
     async def execute(self, origin: bool = False) -> None:
@@ -116,18 +118,19 @@ class LeaveAction(BaseAction):
 
             channel_xid = data["channel_xid"]
             guild_xid = data["guild_xid"]
-            if channel := await safe_fetch_text_channel(self.bot, guild_xid, channel_xid):
-                if message := safe_get_partial_message(
+            if (channel := await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)) and (
+                message := safe_get_partial_message(
                     channel,
                     guild_xid,
                     message_xid,
-                ):
-                    embed = await self.services.games.to_embed()
-                    await safe_update_embed(
-                        message,
-                        embed=embed,
-                        view=PendingGameView(bot=self.bot),
-                    )
+                )
+            ):
+                embed = await self.services.games.to_embed()
+                await safe_update_embed(
+                    message,
+                    embed=embed,
+                    view=PendingGameView(bot=self.bot),
+                )
         await safe_send_channel(
             self.interaction,
             "You were removed from all pending games.",

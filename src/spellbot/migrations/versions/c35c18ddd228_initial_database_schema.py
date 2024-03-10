@@ -1,10 +1,12 @@
-"""initial database schema
+"""
+initial database schema.
 
 Revision ID: c35c18ddd228
 Revises:
 Create Date: 2021-10-22 01:48:21.117002
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -15,7 +17,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     op.create_table(
         "guilds",
         sa.Column("xid", sa.BigInteger(), nullable=False),
@@ -268,7 +270,7 @@ def upgrade():
     )
 
 
-def downgrade():
+def downgrade() -> None:
     op.drop_table("watches")
     op.drop_index(op.f("ix_user_awards_user_xid"), table_name="user_awards")
     op.drop_index(op.f("ix_user_awards_guild_xid"), table_name="user_awards")

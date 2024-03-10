@@ -2,17 +2,14 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Optional, Union
+from typing import TYPE_CHECKING
 
-import discord
 from ddtrace import tracer
 from discord.embeds import Embed
-from discord.message import Message
 
-from .. import SpellBot
-from ..enums import GameFormat
-from ..models import GameStatus
-from ..operations import (
+from spellbot.enums import GameFormat
+from spellbot.models import GameStatus
+from spellbot.operations import (
     safe_add_role,
     safe_channel_reply,
     safe_create_voice_channel,
@@ -25,9 +22,16 @@ from ..operations import (
     safe_update_embed,
     safe_update_embed_origin,
 )
-from ..settings import Settings
-from ..views import BaseView, PendingGameView, StartedGameView
+from spellbot.settings import Settings
+from spellbot.views import BaseView, PendingGameView, StartedGameView, StartedGameViewWithConfirm
+
 from .base_action import BaseAction
+
+if TYPE_CHECKING:
+    import discord
+    from discord.message import Message
+
+    from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
 
@@ -38,21 +42,21 @@ class LookingForGameAction(BaseAction):
         self.settings = Settings()
 
     @tracer.wrap()
-    async def get_friends(self, friends: Optional[str] = None) -> str:
+    async def get_friends(self, friends: str | None = None) -> str:
         return friends or ""
 
     @tracer.wrap()
     async def get_seats(
         self,
-        format: Optional[int] = None,
-        seats: Optional[int] = None,
+        format: int | None = None,
+        seats: int | None = None,
     ) -> int:
         if format and not seats:
             return GameFormat(format).players
         return seats or self.channel_data["default_seats"]
 
     @tracer.wrap()
-    async def get_format(self, format: Optional[int] = None) -> int:
+    async def get_format(self, format: int | None = None) -> int:
         if format is not None:
             return format
         if self.channel_data["default_format"] is not None:
@@ -79,8 +83,8 @@ class LookingForGameAction(BaseAction):
         friend_xids: list[int],
         seats: int,
         format: int,
-        message_xid: Optional[int],
-    ) -> Optional[bool]:
+        message_xid: int | None,
+    ) -> bool | None:
         assert self.guild
         assert self.channel
 
@@ -124,9 +128,12 @@ class LookingForGameAction(BaseAction):
                 message_xid,
             ):
                 embed = await self.services.games.to_embed()
-                view: Optional[BaseView] = None
-                if self.channel_data.get("show_points", False):
-                    view = StartedGameView(bot=self.bot)
+                view: BaseView | None = None
+                if self.channel_data.get("show_points", False) and not found["confirmed"]:
+                    if self.channel_data.get("require_confirmation", False):
+                        view = StartedGameViewWithConfirm(bot=self.bot)
+                    else:
+                        view = StartedGameView(bot=self.bot)
                 await safe_update_embed(message, embed=embed, view=view)
 
             return None
@@ -135,12 +142,12 @@ class LookingForGameAction(BaseAction):
         return False
 
     @tracer.wrap()
-    async def execute(
+    async def execute(  # noqa: C901
         self,
-        friends: Optional[str] = None,
-        seats: Optional[int] = None,
-        format: Optional[int] = None,
-        message_xid: Optional[int] = None,
+        friends: str | None = None,
+        seats: int | None = None,
+        format: int | None = None,
+        message_xid: int | None = None,
     ) -> None:
         if not self.guild or not self.channel:
             # Someone tried to lfg in a Discord thread rather than in the channel itself.
@@ -148,7 +155,7 @@ class LookingForGameAction(BaseAction):
                 self.interaction.user,
                 "Sorry, that command is not supported in this context.",
             )
-            return
+            return None
 
         # True if user clicked on a Join Game button.
         # False if user issued a /lfg command in chat.
@@ -163,21 +170,21 @@ class LookingForGameAction(BaseAction):
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
             await safe_followup_channel(self.interaction, msg)
-            return
+            return None
 
         if await self.services.users.pending_games() + 1 > self.settings.MAX_PENDING_GAMES:
             msg = "You're in too many pending games to join another one at this time."
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
             await safe_followup_channel(self.interaction, msg)
-            return
+            return None
 
         if await self.services.users.queued_in_another_guild(self.guild.id):
             msg = "You're in a pending game in another server, leave that one first."
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
             await safe_followup_channel(self.interaction, msg)
-            return
+            return None
 
         friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", actual_friends)))
 
@@ -186,7 +193,7 @@ class LookingForGameAction(BaseAction):
                 self.interaction.user,
                 "You mentioned too many players.",
             )
-            return
+            return None
 
         friend_xids = await self.filter_friend_xids(friend_xids)
 
@@ -197,10 +204,10 @@ class LookingForGameAction(BaseAction):
             message_xid,
         )
         if new is None:
-            return
+            return None
 
         fully_seated = await self.services.games.fully_seated()
-        started_game_id: Optional[int] = None
+        started_game_id: int | None = None
         other_game_ids: list[int] = []
         if fully_seated:
             other_game_ids = await self.services.games.other_game_ids()
@@ -217,6 +224,8 @@ class LookingForGameAction(BaseAction):
             assert started_game_id is not None
             await self._handle_direct_messages()
             await self._update_other_game_posts(other_game_ids)
+            return None
+        return None
 
     @tracer.wrap()
     async def _update_other_game_posts(self, other_game_ids: list[int]) -> None:
@@ -234,18 +243,19 @@ class LookingForGameAction(BaseAction):
 
             channel_xid = data["channel_xid"]
             guild_xid = data["guild_xid"]
-            if channel := await safe_fetch_text_channel(self.bot, guild_xid, channel_xid):
-                if message := safe_get_partial_message(
+            if (channel := await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)) and (
+                message := safe_get_partial_message(
                     channel,
                     guild_xid,
                     message_xid,
-                ):
-                    embed = await self.services.games.to_embed()
-                    await safe_update_embed(
-                        message,
-                        embed=embed,
-                        view=PendingGameView(bot=self.bot),
-                    )
+                )
+            ):
+                embed = await self.services.games.to_embed()
+                await safe_update_embed(
+                    message,
+                    embed=embed,
+                    view=PendingGameView(bot=self.bot),
+                )
 
     @tracer.wrap()
     async def add_points(self, message: Message, points: int) -> None:
@@ -260,15 +270,53 @@ class LookingForGameAction(BaseAction):
             )
             return
 
+        play = await self.services.games.get_play(self.interaction.user.id)
+        if play and play["confirmed_at"]:
+            await safe_send_user(
+                self.interaction.user,
+                "You've already confirmed your points.",
+            )
+            return
+
         await self.services.games.add_points(self.interaction.user.id, points)
         embed = await self.services.games.to_embed()
         await safe_update_embed(message, embed=embed)
 
     @tracer.wrap()
-    async def create_game(self, players: str, format: Optional[int] = None) -> None:
+    async def confirm_points(self, message: Message) -> None:
+        found = await self.services.games.select_by_message_xid(message.id)
+        if not found:
+            return
+
+        if not await self.services.games.players_included(self.interaction.user.id):
+            await safe_send_user(
+                self.interaction.user,
+                "You are not one of the players in this game.",
+            )
+            return
+
+        play = await self.services.games.get_play(self.interaction.user.id)
+        if play and play["confirmed_at"]:
+            await safe_send_user(
+                self.interaction.user,
+                "You've already confirmed your points.",
+            )
+            return
+
+        # TODO: Allow for mods to confirm points for other players?
+        await self.services.games.confirm_points(player_xid=self.interaction.user.id)
+        embed = await self.services.games.to_embed()
+        data = await self.services.games.to_dict()
+        if data["confirmed"]:
+            await safe_update_embed(message, embed=embed, view=None)
+        else:
+            await safe_update_embed(message, embed=embed)
+
+    @tracer.wrap()
+    async def create_game(self, players: str, format: int | None = None) -> None:
         assert self.channel
 
-        game_format = GameFormat(format or GameFormat.COMMANDER.value)  # type: ignore
+        game_format = GameFormat(format or GameFormat.COMMANDER.value)
         player_xids = list(map(int, re.findall(r"<@!?(\d+)>", players)))
         requested_seats = len(player_xids)
         if requested_seats < 2 or requested_seats > game_format.players:
@@ -340,7 +388,7 @@ class LookingForGameAction(BaseAction):
         await self.services.games.set_voice(voice_channel.id)
 
     @tracer.wrap()
-    async def _handle_embed_creation(  # pylint: disable=too-many-branches
+    async def _handle_embed_creation(  # noqa: C901,PLR0912
         self,
         new: bool,
         origin: bool,
@@ -352,11 +400,15 @@ class LookingForGameAction(BaseAction):
         # build the game post's embed and view:
         embed: discord.Embed = await self.services.games.to_embed()
         content = self.channel_data.get("extra", None)
+        game_data = await self.services.games.to_dict()
 
-        view: Optional[BaseView] = None
+        view: BaseView | None = None
         if fully_seated:
-            if self.channel_data.get("show_points", False):
-                view = StartedGameView(bot=self.bot)
+            if self.channel_data.get("show_points", False) and not game_data["confirmed"]:
+                if self.channel_data.get("require_confirmation", False):
+                    view = StartedGameViewWithConfirm(bot=self.bot)
+                else:
+                    view = StartedGameView(bot=self.bot)
         else:
             view = PendingGameView(bot=self.bot)
 
@@ -366,19 +418,18 @@ class LookingForGameAction(BaseAction):
                 content=content,
                 embed=embed,
                 view=view,
-            ):
-                await self.services.games.set_message_xid(message.id)
-            elif message := await safe_channel_reply(
-                self.channel,
-                content=content,
-                embed=embed,
-                view=view,
+            ) or (
+                message := await safe_channel_reply(
+                    self.channel,
+                    content=content,
+                    embed=embed,
+                    view=view,
+                )
             ):
                 await self.services.games.set_message_xid(message.id)
             return
 
-        message: Optional[Union[discord.Message, discord.PartialMessage]] = None
-        game_data = await self.services.games.to_dict()
+        message: discord.Message | discord.PartialMessage | None = None
         message_xid = game_data["message_xid"]
         if message_xid:
             message = safe_get_partial_message(self.channel, self.guild.id, message_xid)
@@ -479,7 +530,7 @@ class LookingForGameAction(BaseAction):
     async def _handle_watched_players(self, player_xids: list[int]) -> None:
         """Notify moderators about watched players."""
         assert self.interaction.guild
-        mod_role: Optional[discord.Role] = None
+        mod_role: discord.Role | None = None
         for role in self.interaction.guild.roles:
             if role.name.startswith(self.settings.MOD_PREFIX):
                 mod_role = role

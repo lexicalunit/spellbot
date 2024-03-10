@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING
 
-from click.testing import CliRunner
 from spellbot.cli import main
-from syrupy.assertion import SnapshotAssertion
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
+
+    from click.testing import CliRunner
+    from syrupy.assertion import SnapshotAssertion
 
 
 class TestCLI:

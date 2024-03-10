@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Union
-
 import coloredlogs
 
 
 # Note: be sure to call this before importing any application modules!
-def configure_logging(level: Union[int, str]) -> None:  # pragma: no cover
+def configure_logging(level: int | str) -> None:  # pragma: no cover
     coloredlogs.install(
         level=level,
         fmt="[%(asctime)s][%(name)s][%(levelname)s] - %(message)s",

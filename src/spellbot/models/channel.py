@@ -9,11 +9,12 @@ from sqlalchemy.sql.expression import false, text
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import Boolean, Integer
 
-from ..enums import GameFormat
+from spellbot.enums import GameFormat
+
 from . import Base, now
 
-if TYPE_CHECKING:  # pragma: no cover
-    from . import Game, Guild  # noqa
+if TYPE_CHECKING:
+    from . import Game, Guild  # noqa: F401
 
 
 class Channel(Base):
@@ -121,6 +122,13 @@ class Channel(Base):
         server_default=false(),
         doc="Configuration for showing points reporting on started games",
     )
+    require_confirmation = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="Configuration for requiring confirmation on points reporting",
+    )
 
     guild = relationship(
         "Guild",
@@ -151,4 +159,5 @@ class Channel(Base):
             "voice_category": self.voice_category,
             "delete_expired": self.delete_expired,
             "show_points": self.show_points,
+            "require_confirmation": self.require_confirmation,
         }

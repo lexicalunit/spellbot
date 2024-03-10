@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 from .base_view import BaseView
-from .lfg_view import PendingGameView, StartedGameSelect, StartedGameView
+from .lfg_view import (
+    PendingGameView,
+    StartedGameSelect,
+    StartedGameView,
+    StartedGameViewWithConfirm,
+)
 from .setup_view import SetupView
 
 __all__ = [
@@ -10,4 +15,5 @@ __all__ = [
     "SetupView",
     "StartedGameSelect",
     "StartedGameView",
+    "StartedGameViewWithConfirm",
 ]

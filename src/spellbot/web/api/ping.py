@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from aiohttp import web
-from aiohttp.web_response import Response as WebResponse
+
+if TYPE_CHECKING:
+    from aiohttp.web_response import Response as WebResponse
 
 logger = logging.getLogger(__name__)
 

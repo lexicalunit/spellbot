@@ -1,10 +1,12 @@
-"""Support multiple queues
+"""
+Support multiple queues.
 
 Revision ID: 01766a5fb976
 Revises: fd7ff2703f57
 Create Date: 2023-07-04 10:41:25.260104
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -15,7 +17,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     op.create_table(
         "queues",
         sa.Column("user_xid", sa.BigInteger(), nullable=False),
@@ -31,7 +33,7 @@ def upgrade():
     # inject all users' game_id into the new queue table
     conn = op.get_bind()
     rows = conn.execute(sa.text("SELECT xid, game_id FROM users"))
-    data = [r for r in rows]
+    data = list(rows)
     for row in data:  # pragma: no cover
         user_xid = row[0]
         game_id = row[1]
@@ -39,7 +41,7 @@ def upgrade():
             sa.text("SELECT started_at, deleted_at FROM games WHERE id = :game_id"),
             {"game_id": game_id},
         )
-        game_data = [r for r in rows]
+        game_data = list(rows)
         # There _should_ only be one row, but just in case we'll default to False.
         # We only want to inject queue rows for games that have NOT started yet
         # and are NOT deleted.
@@ -56,7 +58,7 @@ def upgrade():
     op.drop_column("users", "game_id")
 
 
-def downgrade():
+def downgrade() -> None:
     op.add_column("users", sa.Column("game_id", sa.INTEGER(), autoincrement=False, nullable=True))
     op.create_foreign_key(
         "users_game_id_fkey",
@@ -71,7 +73,7 @@ def downgrade():
     # users' game_id will be the id from the last game they joined
     conn = op.get_bind()
     rows = conn.execute(sa.text("SELECT user_xid, MAX(game_id) FROM queues GROUP BY user_xid;"))
-    data = [row for row in rows]
+    data = list(rows)
     for row in data:  # pragma: no cover
         conn.execute(
             sa.text("UPDATE users SET game_id = :game_id WHERE xid = :user_xid"),

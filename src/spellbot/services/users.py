@@ -2,28 +2,30 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
-import discord
 import pytz
 from asgiref.sync import sync_to_async
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
-from ..database import DatabaseSession
-from ..models import Block, Config, Game, Play, Queue, User, UserAward, Verify, Watch
+from spellbot.database import DatabaseSession
+from spellbot.models import Block, Game, Play, Queue, User, UserAward, Verify, Watch
+
+if TYPE_CHECKING:
+    import discord
 
 logger = logging.getLogger(__name__)
 
 
 class UsersService:
-    user: Optional[User] = None
+    user: User | None = None
 
     @sync_to_async()
-    def upsert(self, target: Union[discord.User, discord.Member]) -> dict[str, Any]:
+    def upsert(self, target: discord.User | discord.Member) -> dict[str, Any]:
         assert hasattr(target, "id")
-        xid = target.id  # type: ignore
+        xid = target.id
         max_name_len = User.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(target, "display_name", "")
         name = raw_name[:max_name_len]
@@ -69,8 +71,8 @@ class UsersService:
         DatabaseSession.commit()
 
     @sync_to_async()
-    def current_game_id(self, channel_xid: int) -> Optional[int]:
-        """Gets the current PENDING game ID for the user in the given channel."""
+    def current_game_id(self, channel_xid: int) -> int | None:
+        """Get the current PENDING game ID for the user in the given channel."""
         assert self.user
         queue = (
             DatabaseSession.query(Queue)
@@ -141,7 +143,7 @@ class UsersService:
         return self.user.pending_games()
 
     @sync_to_async()
-    def is_banned(self, target_xid: Optional[int] = None) -> bool:
+    def is_banned(self, target_xid: int | None = None) -> bool:
         if target_xid is not None:
             row = DatabaseSession.query(User.banned).filter(User.xid == target_xid).one_or_none()
             return bool(row[0]) if row else False
@@ -171,7 +173,7 @@ class UsersService:
         DatabaseSession.commit()
 
     @sync_to_async()
-    def watch(self, guild_xid: int, user_xid: int, note: Optional[str] = None) -> None:
+    def watch(self, guild_xid: int, user_xid: int, note: str | None = None) -> None:
         values: dict[str, Any] = {
             "guild_xid": guild_xid,
             "user_xid": user_xid,
@@ -211,7 +213,12 @@ class UsersService:
         ]
 
     @sync_to_async()
-    def move_user(self, guild_xid: int, from_user_xid: int, to_user_xid: int) -> Optional[str]:
+    def move_user(
+        self,
+        guild_xid: int,
+        from_user_xid: int,
+        to_user_xid: int,
+    ) -> str | None:
         from_user = DatabaseSession.query(User).filter(User.xid == from_user_xid).one_or_none()
         if not from_user:
             return "user not found"
@@ -344,31 +351,6 @@ class UsersService:
                 )
                 DatabaseSession.execute(play_upsert, play_values)
 
-            # upsert configs
-            for config in DatabaseSession.query(Config).filter(
-                Config.user_xid == from_user_xid,
-                Config.guild_xid == guild_xid,
-            ):
-                config_values = {
-                    "guild_xid": config.guild_xid,
-                    "user_xid": to_user_xid,
-                    "power_level": config.power_level,
-                }
-                logger.info("upsert config: %s", config_values)
-                config_upsert = insert(Config).values(**config_values)
-                config_upsert = config_upsert.on_conflict_do_update(
-                    index_elements=[Config.guild_xid, Config.user_xid],
-                    index_where=and_(
-                        Config.guild_xid == config_values["guild_xid"],
-                        Config.user_xid == config_values["user_xid"],
-                    ),
-                    set_={
-                        "user_xid": to_user_xid,
-                        "power_level": config_upsert.excluded.power_level,
-                    },
-                )
-                DatabaseSession.execute(config_upsert, config_values)
-
             # upsert user awards
             for award in DatabaseSession.query(UserAward).filter(
                 UserAward.user_xid == from_user_xid,
@@ -395,8 +377,8 @@ class UsersService:
                 DatabaseSession.execute(award_upsert, award_values)
 
             DatabaseSession.commit()
-        except Exception as e:
-            logger.error("error moving user: %s", e, exc_info=True)
+        except Exception:
+            logger.exception("error moving user")
             DatabaseSession.rollback()
             return "database error"
 

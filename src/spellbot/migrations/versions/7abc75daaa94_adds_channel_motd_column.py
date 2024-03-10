@@ -1,10 +1,12 @@
-"""Adds channel motd column
+"""
+Adds channel motd column.
 
 Revision ID: 7abc75daaa94
 Revises: c35c18ddd228
 Create Date: 2021-11-09 14:37:10.136399
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -15,9 +17,9 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     op.add_column("channels", sa.Column("motd", sa.String(length=255), nullable=True))
 
 
-def downgrade():
+def downgrade() -> None:
     op.drop_column("channels", "motd")

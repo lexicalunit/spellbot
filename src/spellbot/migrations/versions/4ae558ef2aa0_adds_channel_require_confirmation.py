@@ -1,9 +1,9 @@
 """
-Adds removeable role awards.
+Adds channel require_confirmation.
 
-Revision ID: 42f55401ef2b
-Revises: 6e982c9318a6
-Create Date: 2021-12-31 17:50:24.259796
+Revision ID: 4ae558ef2aa0
+Revises: c73823532391
+Create Date: 2024-03-10 12:10:08.955294
 
 """
 
@@ -11,17 +11,17 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "42f55401ef2b"
-down_revision = "6e982c9318a6"
+revision = "4ae558ef2aa0"
+down_revision = "c73823532391"
 branch_labels = None
 depends_on = None
 
 
 def upgrade() -> None:
     op.add_column(
-        "guild_awards",
+        "channels",
         sa.Column(
-            "remove",
+            "require_confirmation",
             sa.Boolean(),
             server_default=sa.text("false"),
             nullable=False,
@@ -30,4 +30,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_column("guild_awards", "remove")
+    op.drop_column("channels", "require_confirmation")

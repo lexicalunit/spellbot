@@ -4,8 +4,8 @@ from typing import Any
 
 from asgiref.sync import sync_to_async
 
-from ..database import DatabaseSession
-from ..models import Watch
+from spellbot.database import DatabaseSession
+from spellbot.models import Watch
 
 
 class WatchesService:

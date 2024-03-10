@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from spellbot.models import GameStatus
 
-from tests.fixtures import Factories
+if TYPE_CHECKING:
+    from tests.fixtures import Factories
 
 
 class TestModelUser:
@@ -40,5 +43,5 @@ class TestModelUser:
             "name": user2.name,
             "banned": user2.banned,
         }
-        assert player1.points(game2.id) == play1.points
-        assert player2.points(game2.id) == play2.points
+        assert player1.points(game2.id) == (play1.points, False)
+        assert player2.points(game2.id) == (play2.points, False)

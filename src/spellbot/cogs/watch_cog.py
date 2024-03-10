@@ -1,15 +1,14 @@
 import logging
-from typing import Optional, Union
 
 import discord
 from ddtrace import tracer
 from discord import app_commands
 from discord.ext import commands
 
-from .. import SpellBot
-from ..actions import WatchAction
-from ..metrics import add_span_context
-from ..utils import for_all_callbacks, is_admin, is_guild
+from spellbot import SpellBot
+from spellbot.actions import WatchAction
+from spellbot.metrics import add_span_context
+from spellbot.utils import for_all_callbacks, is_admin, is_guild
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ class WatchCog(commands.Cog):
     )
     @app_commands.describe(page="If there are multiple pages of output, which one?")
     @tracer.wrap(name="interaction", resource="watched")
-    async def watched(self, interaction: discord.Interaction, page: Optional[int] = 1) -> None:
+    async def watched(self, interaction: discord.Interaction, page: int | None = 1) -> None:
         add_span_context(interaction)
         async with WatchAction.create(self.bot, interaction) as action:
             assert page
@@ -43,9 +42,9 @@ class WatchCog(commands.Cog):
     async def watch(
         self,
         interaction: discord.Interaction,
-        target: Optional[Union[discord.User, discord.Member]] = None,
-        id: Optional[str] = None,
-        note: Optional[str] = None,
+        target: discord.User | discord.Member | None = None,
+        id: str | None = None,
+        note: str | None = None,
     ) -> None:
         add_span_context(interaction)
         async with WatchAction.create(self.bot, interaction) as action:
@@ -61,8 +60,8 @@ class WatchCog(commands.Cog):
     async def unwatch(
         self,
         interaction: discord.Interaction,
-        target: Optional[Union[discord.User, discord.Member]] = None,
-        id: Optional[str] = None,
+        target: discord.User | discord.Member | None = None,
+        id: str | None = None,
     ) -> None:
         add_span_context(interaction)
         async with WatchAction.create(self.bot, interaction) as action:

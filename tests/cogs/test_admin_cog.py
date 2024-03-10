@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import TYPE_CHECKING
 from unittest.mock import ANY, MagicMock
 
 import discord
 import pytest
 import pytest_asyncio
-from pytest_mock import MockerFixture
 from spellbot.actions import admin_action
-from spellbot.client import SpellBot
 from spellbot.cogs import AdminCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat
@@ -16,9 +14,16 @@ from spellbot.errors import AdminOnlyError
 from spellbot.models import Channel, Game, Guild, GuildAward
 from spellbot.views import SetupView
 
-from tests.fixtures import Factories
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_user, mock_operations
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from pytest_mock import MockerFixture
+    from spellbot.client import SpellBot
+
+    from tests.fixtures import Factories
 
 
 @pytest_asyncio.fixture

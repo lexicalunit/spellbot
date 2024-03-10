@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import discord
 from ddtrace import tracer
@@ -7,12 +6,12 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from .. import SpellBot
-from ..actions import LookingForGameAction
-from ..enums import GameFormat
-from ..metrics import add_span_context
-from ..operations import safe_defer_interaction
-from ..utils import for_all_callbacks, is_admin, is_guild
+from spellbot import SpellBot
+from spellbot.actions import LookingForGameAction
+from spellbot.enums import GameFormat
+from spellbot.metrics import add_span_context
+from spellbot.operations import safe_defer_interaction
+from spellbot.utils import for_all_callbacks, is_admin, is_guild
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class EventsCog(commands.Cog):
         self,
         interaction: discord.Interaction,
         players: str,
-        format: Optional[int] = None,
+        format: int | None = None,
     ) -> None:
         assert interaction.channel_id is not None
         add_span_context(interaction)

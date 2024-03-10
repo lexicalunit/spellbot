@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from typing import Any, AsyncGenerator, Generic, NoReturn, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, NoReturn, TypeVar
 from uuid import uuid4
 
 from asgiref.sync import sync_to_async
@@ -15,9 +15,12 @@ from wrapt import CallableObjectProxy
 
 from .models import create_all
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
 logger = logging.getLogger(__name__)
 ProxiedObject = TypeVar("ProxiedObject")
-context_vars: dict["ContextLocal", ContextVar] = {}  # type: ignore
+context_vars: dict[ContextLocal, ContextVar] = {}  # type: ignore
 
 
 class ContextLocal(Generic[ProxiedObject]):
@@ -25,7 +28,7 @@ class ContextLocal(Generic[ProxiedObject]):
         context_vars[self] = ContextVar(str(uuid4()))
 
     @classmethod
-    def of_type(cls, _: Type[ProxiedObject]) -> ProxiedObject:
+    def of_type(cls, _: type[ProxiedObject]) -> ProxiedObject:
         return cls()  # type: ignore
 
     def set(self, obj: ProxiedObject) -> None:
@@ -36,10 +39,10 @@ class ContextLocal(Generic[ProxiedObject]):
         return getattr(obj, name)
 
     def __copy__(self) -> NoReturn:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def __deepcopy__(self, memo: Any) -> NoReturn:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class TypedProxy(Generic[ProxiedObject], CallableObjectProxy):
@@ -47,17 +50,17 @@ class TypedProxy(Generic[ProxiedObject], CallableObjectProxy):
         super().__init__(None)  # type: ignore
 
     @classmethod
-    def of_type(cls, _: Type[ProxiedObject]) -> ProxiedObject:
+    def of_type(cls, _: type[ProxiedObject]) -> ProxiedObject:
         return cls()  # type: ignore
 
     def set(self, obj: ProxiedObject) -> None:
         super().__init__(obj)  # type: ignore
 
     def __copy__(self) -> NoReturn:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def __deepcopy__(self, memo: Any) -> NoReturn:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 engine = TypedProxy.of_type(Engine)

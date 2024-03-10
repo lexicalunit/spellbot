@@ -1,29 +1,27 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import dunamai as _dunamai
 
 
-def version_from_git() -> Optional[str]:
+def version_from_git() -> str | None:
     try:
         choice = _dunamai.Version.from_any_vcs
         version = _dunamai.get_version("spellbot", first_choice=choice).serialize()
-        return version if version is not None and version != "0.0.0" else None
     except Exception:
         return None
+    return version if version is not None and version != "0.0.0" else None
 
 
-def version_from_package() -> Optional[str]:
+def version_from_package() -> str | None:
     try:
         choice = _dunamai.Version.from_any_vcs
         version = _dunamai.get_version("spellbot", third_choice=choice).serialize()
-        return version if version is not None and version != "0.0.0" else None
     except Exception:
         return None
+    return version if version is not None and version != "0.0.0" else None
 
 
-def version_from_toml() -> Optional[str]:
+def version_from_toml() -> str | None:
     from os.path import realpath
     from pathlib import Path
 

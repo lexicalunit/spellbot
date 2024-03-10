@@ -4,8 +4,7 @@ import asyncio
 import logging
 import traceback
 from contextlib import AbstractContextManager
-from inspect import Traceback
-from typing import TYPE_CHECKING, Any, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import discord
 from ddtrace import tracer
@@ -14,7 +13,6 @@ from discord.app_commands import AppCommandError, ContextMenu, NoPrivateMessage
 from discord.app_commands import Command as AppCommand
 from discord.ext.commands import AutoShardedBot
 from discord.ext.commands import Command as ExtCommand
-from discord.ui import Item
 
 from .errors import (
     AdminOnlyError,
@@ -27,7 +25,10 @@ from .metrics import add_span_error
 from .settings import Settings
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
     from discord.abc import MessageableChannel
+    from discord.ui import Item
 
 
 logger = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ def log_info(log: str, exec_info: bool = False, **kwargs: Any) -> None:
     logger.info(message, kwargs, exc_info=exec_info)
 
 
-def safe_permissions_for(obj: Any, *args: Any) -> Optional[discord.Permissions]:
+def safe_permissions_for(obj: Any, *args: Any) -> discord.Permissions | None:
     try:
         return obj.permissions_for(*args)
     except Exception:
@@ -78,7 +79,7 @@ def bot_can_reply_to(message: discord.Message) -> bool:
     return True
 
 
-def bot_can_role(guild: discord.Guild, role: Optional[discord.Role] = None) -> bool:
+def bot_can_role(guild: discord.Guild, role: discord.Role | None = None) -> bool:
     if not guild.me:
         return False
     perms = guild.me.guild_permissions
@@ -93,13 +94,13 @@ def bot_can_role(guild: discord.Guild, role: Optional[discord.Role] = None) -> b
 def bot_can_read(channel: MessageableChannel) -> bool:
     if not hasattr(channel, "type"):
         return False
-    channel_type = getattr(channel, "type")
+    channel_type = channel.type
     if channel_type == discord.ChannelType.private:
         return True
     guild_channel = cast(discord.abc.GuildChannel, channel)
     if not hasattr(guild_channel, "guild"):
         return True
-    guild: discord.Guild = getattr(guild_channel, "guild")
+    guild: discord.Guild = guild_channel.guild
     perms = safe_permissions_for(guild_channel, guild.me)
     for req in ("read_messages", "read_message_history"):
         if not hasattr(perms, req) or not getattr(perms, req):
@@ -117,11 +118,11 @@ def bot_can_manage_channels(guild: discord.Guild) -> bool:
     return True
 
 
-def bot_can_delete_message(message: Union[discord.Message, discord.PartialMessage]) -> bool:
+def bot_can_delete_message(message: discord.Message | discord.PartialMessage) -> bool:
     if not hasattr(message, "guild"):
         return False
-    guild = getattr(message, "guild")
-    if not guild.me:
+    guild = message.guild
+    if not guild or not guild.me:
         return False
     perms = guild.me.guild_permissions
     req = "manage_messages"
@@ -133,13 +134,13 @@ def bot_can_delete_message(message: Union[discord.Message, discord.PartialMessag
 def bot_can_delete_channel(channel: MessageableChannel) -> bool:
     if not hasattr(channel, "type"):
         return False
-    channel_type = getattr(channel, "type")
+    channel_type = channel.type
     if channel_type == discord.ChannelType.private:
         return False
     guild_channel = cast(discord.abc.GuildChannel, channel)
     if not hasattr(guild_channel, "guild"):
         return False
-    guild: discord.Guild = getattr(guild_channel, "guild")
+    guild: discord.Guild = guild_channel.guild
     if not (perms := safe_permissions_for(guild_channel, guild.me)):
         return False
     channel_id = getattr(channel, "id", None)
@@ -154,40 +155,40 @@ def is_admin(interaction: discord.Interaction) -> bool:
     guild = getattr(interaction, "guild", None)
     channel = getattr(interaction, "channel", None)
     if not guild or not channel:
-        raise AdminOnlyError()
+        raise AdminOnlyError
     if interaction.user.id == guild.owner_id:
         return True
     if (perms := safe_permissions_for(channel, interaction.user)) and perms.administrator:
         return True
     if not hasattr(interaction.user, "roles"):
-        raise AdminOnlyError()
+        raise AdminOnlyError
     author_roles = interaction.user.roles  # type: ignore
     settings = Settings()
     has_admin_role = any(
         role.name == settings.ADMIN_ROLE for role in cast(list[discord.Role], author_roles)
     )
     if not has_admin_role:
-        raise AdminOnlyError()
+        raise AdminOnlyError
     return True
 
 
 def is_guild(interaction: discord.Interaction) -> bool:
     guild = getattr(interaction, "guild", None)
     if guild is None:
-        raise GuildOnlyError()
+        raise GuildOnlyError
     return True
 
 
 def user_can_moderate(
-    author: Optional[Union[discord.User, discord.Member]],
-    guild: Optional[discord.Guild],
-    channel: Optional[MessageableChannel],
+    author: discord.User | discord.Member | None,
+    guild: discord.Guild | None,
+    channel: MessageableChannel | None,
 ) -> bool:
     if not guild or not channel or not author:
         return False
     if not hasattr(author, "id"):
         return False
-    author_id = author.id  # type: ignore
+    author_id = author.id
     if author_id == guild.owner_id:
         return True
     if not hasattr(author, "roles"):
@@ -220,7 +221,7 @@ class suppress(AbstractContextManager[None]):
     be able to understand that code following the context is reachable.
     """
 
-    def __init__(self, *exceptions: Type[Exception], log: str, **kwargs: Any) -> None:
+    def __init__(self, *exceptions: type[Exception], log: str, **kwargs: Any) -> None:
         self._exceptions = exceptions
         self._log = log
         self._kwargs = kwargs
@@ -228,7 +229,12 @@ class suppress(AbstractContextManager[None]):
     def __enter__(self) -> None:
         pass
 
-    def __exit__(self, exctype: Type[Exception], excinst: Exception, exctb: Traceback) -> bool:
+    def __exit__(
+        self,
+        exctype: type[BaseException] | None,
+        excinst: BaseException | None,
+        exctb: TracebackType | None,
+    ) -> bool:
         if captured := exctype is not None and issubclass(exctype, self._exceptions):
             log_warning(self._log, exec_info=True, **self._kwargs)
             if span := tracer.current_span():  # pragma: no cover
@@ -249,7 +255,7 @@ def for_all_callbacks(decorator: Any) -> Any:
     def decorate(cls: Any) -> Any:
         for attr in cls.__dict__:
             method = getattr(cls, attr)
-            if isinstance(method, (AppCommand, ExtCommand)):
+            if isinstance(method, AppCommand | ExtCommand):
                 setattr(cls, attr, decorator(method))
 
         return cls
@@ -276,13 +282,14 @@ async def handle_interaction_errors(interaction: discord.Interaction, error: Exc
     add_span_error(error)
     ref = (
         f"command `{interaction.command.qualified_name}`"
-        if interaction.command is not None and isinstance(interaction, (AppCommand, ExtCommand))
+        if interaction.command is not None and isinstance(interaction, AppCommand | ExtCommand)
         else f"component `{interaction.command.qualified_name}`"
         if interaction.command is not None and isinstance(interaction, ContextMenu)
         else f"interaction `{interaction.id}`"
     )
     logger.error("error: unhandled exception in %s: %s: %s", ref, error.__class__.__name__, error)
     traceback.print_tb(error.__traceback__)
+    return None
 
 
 async def handle_view_errors(

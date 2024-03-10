@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import discord
 from ddtrace import tracer
@@ -7,12 +6,12 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from .. import SpellBot
-from ..actions.lfg_action import LookingForGameAction
-from ..enums import GameFormat
-from ..metrics import add_span_context
-from ..operations import safe_defer_interaction
-from ..utils import for_all_callbacks, is_guild
+from spellbot import SpellBot
+from spellbot.actions.lfg_action import LookingForGameAction
+from spellbot.enums import GameFormat
+from spellbot.metrics import add_span_context
+from spellbot.operations import safe_defer_interaction
+from spellbot.utils import for_all_callbacks, is_guild
 
 logger = logging.getLogger(__name__)
 
@@ -40,16 +39,18 @@ class LookingForGameCog(commands.Cog):
     async def lfg(
         self,
         interaction: discord.Interaction,
-        friends: Optional[str] = None,
-        seats: Optional[int] = None,
-        format: Optional[int] = None,
+        friends: str | None = None,
+        seats: int | None = None,
+        format: int | None = None,
     ) -> None:
         assert interaction.guild is not None
         add_span_context(interaction)
         await safe_defer_interaction(interaction)
-        async with self.bot.guild_lock(interaction.guild.id):
-            async with LookingForGameAction.create(self.bot, interaction) as action:
-                await action.execute(friends=friends, seats=seats, format=format)
+        async with (
+            self.bot.guild_lock(interaction.guild.id),
+            LookingForGameAction.create(self.bot, interaction) as action,
+        ):
+            await action.execute(friends=friends, seats=seats, format=format)
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover

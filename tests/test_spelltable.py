@@ -1,9 +1,8 @@
 # pylint: disable=unreachable
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -12,6 +11,9 @@ from aiohttp_retry.client import RetryClient
 from spellbot import spelltable
 from spellbot.settings import Settings
 from spellbot.spelltable import generate_link
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 
 @pytest.mark.asyncio()
@@ -30,16 +32,13 @@ class TestSpellTable:
 
         class MockClient:
             @asynccontextmanager
-            async def post(self, *args: Any, **kwargs: Any):  # noqa
+            async def post(self, *args: Any, **kwargs: Any):
                 yield mock_response
 
         mock_client = MockClient()
 
         @asynccontextmanager
-        async def MockRetryClient(  # pylint: disable=W0613
-            *args: Any,
-            **kwargs: Any,
-        ) -> AsyncGenerator[RetryClient, None]:
+        async def MockRetryClient(*args: Any, **kwargs: Any) -> AsyncGenerator[RetryClient, None]:
             yield cast(RetryClient, mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
@@ -57,16 +56,13 @@ class TestSpellTable:
 
         class MockClient:
             @asynccontextmanager
-            async def post(self, *args: Any, **kwargs: Any):  # noqa
+            async def post(self, *args: Any, **kwargs: Any):
                 yield mock_response
 
         mock_client = MockClient()
 
         @asynccontextmanager
-        async def MockRetryClient(  # pylint: disable=W0613
-            *args: Any,
-            **kwargs: Any,
-        ) -> AsyncGenerator[RetryClient, None]:
+        async def MockRetryClient(*args: Any, **kwargs: Any) -> AsyncGenerator[RetryClient, None]:
             yield cast(RetryClient, mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
@@ -84,16 +80,13 @@ class TestSpellTable:
 
         class MockClient:
             @asynccontextmanager
-            async def post(self, *args: Any, **kwargs: Any):  # noqa
+            async def post(self, *args: Any, **kwargs: Any):
                 yield mock_response
 
         mock_client = MockClient()
 
         @asynccontextmanager
-        async def MockRetryClient(  # pylint: disable=W0613
-            *args: Any,
-            **kwargs: Any,
-        ) -> AsyncGenerator[RetryClient, None]:
+        async def MockRetryClient(*args: Any, **kwargs: Any) -> AsyncGenerator[RetryClient, None]:
             yield cast(RetryClient, mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
@@ -111,7 +104,7 @@ class TestSpellTable:
 
         class MockClient:
             @asynccontextmanager
-            async def post(self, *args: Any, **kwargs: Any):  # noqa
+            async def post(self, *args: Any, **kwargs: Any):
                 yield mock_response
 
         mock_client = MockClient()
@@ -135,8 +128,8 @@ class TestSpellTable:
 
         class MockClient:  # pragma: no cover
             @asynccontextmanager
-            async def post(self, *args: Any, **kwargs: Any):  # noqa
-                raise ClientError()
+            async def post(self, *args: Any, **kwargs: Any):
+                raise ClientError
 
                 # Need to yield to satisfy static analysis of @asynccontextmanager.
                 yield
@@ -144,10 +137,7 @@ class TestSpellTable:
         mock_client = MockClient()
 
         @asynccontextmanager
-        async def MockRetryClient(  # pylint: disable=W0613
-            *args: Any,
-            **kwargs: Any,
-        ) -> AsyncGenerator[RetryClient, None]:
+        async def MockRetryClient(*args: Any, **kwargs: Any) -> AsyncGenerator[RetryClient, None]:
             yield cast(RetryClient, mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)

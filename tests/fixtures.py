@@ -2,17 +2,14 @@
 from __future__ import annotations
 
 import contextvars
-from asyncio import AbstractEventLoop
-from typing import Awaitable, Callable, Generator
+import logging
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import discord
 import pytest
 import pytest_asyncio
-from aiohttp.test_utils import TestClient
 from click.testing import CliRunner
 from discord.ext import commands
-from spellbot import SpellBot
 from spellbot.client import build_bot
 from spellbot.database import (
     DatabaseSession,
@@ -20,14 +17,12 @@ from spellbot.database import (
     initialize_connection,
     rollback_transaction,
 )
-from spellbot.models import Channel, Game, Guild
 from spellbot.settings import Settings
 from spellbot.web import build_web_app
 
 from tests.factories import (
     BlockFactory,
     ChannelFactory,
-    ConfigFactory,
     GameFactory,
     GuildAwardFactory,
     GuildFactory,
@@ -40,11 +35,21 @@ from tests.factories import (
 )
 from tests.mocks import build_author, build_channel, build_guild, build_interaction, build_message
 
+if TYPE_CHECKING:
+    from asyncio import AbstractEventLoop
+    from collections.abc import Awaitable, Callable, Generator
+
+    import discord
+    from aiohttp.test_utils import TestClient
+    from spellbot import SpellBot
+    from spellbot.models import Channel, Game, Guild
+
+logger = logging.getLogger(__name__)
+
 
 class Factories:
     block = BlockFactory
     channel = ChannelFactory
-    config = ConfigFactory
     game = GameFactory
     guild = GuildFactory
     guild_award = GuildAwardFactory
@@ -74,7 +79,6 @@ async def session_context(
 
         BlockFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         ChannelFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        ConfigFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         GameFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         GuildAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         GuildFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
@@ -90,7 +94,7 @@ async def session_context(
                 try:
                     await rollback_transaction()
                 except Exception:  # pragma: no cover
-                    pass
+                    logger.exception("Error rolling back transaction")
 
             event_loop.run_until_complete(finalizer())
 

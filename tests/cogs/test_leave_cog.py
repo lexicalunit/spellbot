@@ -1,18 +1,21 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import ANY
 
-import discord
 import pytest
 import pytest_asyncio
 from spellbot.actions import leave_action
-from spellbot.client import SpellBot
 from spellbot.cogs import LeaveGameCog
 from spellbot.database import DatabaseSession
-from spellbot.models import User
 
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_operations
+
+if TYPE_CHECKING:
+    import discord
+    from spellbot.client import SpellBot
+    from spellbot.models import User
 
 
 @pytest_asyncio.fixture

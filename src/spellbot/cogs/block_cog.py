@@ -1,15 +1,14 @@
 import logging
-from typing import Optional, Union
 
 import discord
 from ddtrace import tracer
 from discord import app_commands
 from discord.ext import commands
 
-from .. import SpellBot
-from ..actions import BlockAction
-from ..metrics import add_span_context
-from ..utils import for_all_callbacks, is_guild
+from spellbot import SpellBot
+from spellbot.actions import BlockAction
+from spellbot.metrics import add_span_context
+from spellbot.utils import for_all_callbacks, is_guild
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ class BlockCog(commands.Cog):
     async def block(
         self,
         interaction: discord.Interaction,
-        target: Union[discord.User, discord.Member],
+        target: discord.User | discord.Member,
     ) -> None:
         add_span_context(interaction)
         async with BlockAction.create(self.bot, interaction) as action:
@@ -43,7 +42,7 @@ class BlockCog(commands.Cog):
     async def unblock(
         self,
         interaction: discord.Interaction,
-        target: Union[discord.User, discord.Member],
+        target: discord.User | discord.Member,
     ) -> None:
         add_span_context(interaction)
         async with BlockAction.create(self.bot, interaction) as action:
@@ -55,7 +54,7 @@ class BlockCog(commands.Cog):
     )
     @app_commands.describe(page="If there are multiple pages of output, which one?")
     @tracer.wrap(name="interaction", resource="blocked")
-    async def blocked(self, interaction: discord.Interaction, page: Optional[int] = 1) -> None:
+    async def blocked(self, interaction: discord.Interaction, page: int | None = 1) -> None:
         add_span_context(interaction)
         async with BlockAction.create(self.bot, interaction) as action:
             page = page or 1

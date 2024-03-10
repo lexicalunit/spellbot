@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
-from asyncio.events import AbstractEventLoop as Loop
+from contextlib import suppress
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import aiohttp_jinja2
 import jinja2
@@ -11,10 +12,14 @@ import pytz
 from aiohttp import web
 from babel.dates import format_datetime
 
-from ..database import initialize_connection
-from ..models import import_models
-from ..settings import Settings
-from ..web.api import ping, record
+from spellbot.database import initialize_connection
+from spellbot.models import import_models
+from spellbot.web.api import ping, record
+
+if TYPE_CHECKING:
+    from asyncio.events import AbstractEventLoop as Loop
+
+    from spellbot.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +28,8 @@ TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
 
 def humanize(ts: int, offset: int, zone: str) -> str:
     d = datetime.fromtimestamp(ts / 1e3, tz=pytz.UTC) - timedelta(minutes=offset)
-    try:
+    with suppress(pytz.UnknownTimeZoneError):
         d = d.replace(tzinfo=pytz.timezone(zone))
-    except pytz.UnknownTimeZoneError:
-        pass
     return format_datetime(d, format="long")
 
 

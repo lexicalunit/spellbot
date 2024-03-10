@@ -1,15 +1,14 @@
 import logging
-from typing import Union
 
 import discord
 from ddtrace import tracer
 from discord import app_commands
 from discord.ext import commands
 
-from .. import SpellBot
-from ..actions import VerifyAction
-from ..metrics import add_span_context
-from ..utils import for_all_callbacks, is_admin, is_guild
+from spellbot import SpellBot
+from spellbot.actions import VerifyAction
+from spellbot.metrics import add_span_context
+from spellbot.utils import for_all_callbacks, is_admin, is_guild
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ class VerifyCog(commands.Cog):
     async def verify(
         self,
         interaction: discord.Interaction,
-        target: Union[discord.User, discord.Member],
+        target: discord.User | discord.Member,
     ) -> None:
         add_span_context(interaction)
         async with VerifyAction.create(self.bot, interaction) as action:
@@ -38,7 +37,7 @@ class VerifyCog(commands.Cog):
     async def unverify(
         self,
         interaction: discord.Interaction,
-        target: Union[discord.User, discord.Member],
+        target: discord.User | discord.Member,
     ) -> None:
         add_span_context(interaction)
         async with VerifyAction.create(self.bot, interaction) as action:

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import discord
 import pytest
 from spellbot.actions import lfg_action
-from spellbot.client import SpellBot
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat
@@ -14,6 +13,11 @@ from spellbot.models import Channel, Game, User
 
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from spellbot.client import SpellBot
 
 
 @pytest.fixture()
@@ -94,7 +98,7 @@ class TestCogLookingForGame(InteractionMixin):
             }
 
 
-# TODO
+# TODO: fix this
 #     async def test_lfg_when_blocked(self):
 #         guild = self.factories.guild.create(xid=self.ctx.guild_id)
 #         channel = self.factories.channel.create(xid=self.ctx.channel_id, guild=guild)

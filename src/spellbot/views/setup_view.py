@@ -5,16 +5,16 @@ import logging
 import discord
 from ddtrace import tracer
 
-from ..metrics import add_span_context
-from ..operations import safe_defer_interaction
-from ..utils import is_admin
-from ..views import BaseView
+from spellbot.metrics import add_span_context
+from spellbot.operations import safe_defer_interaction
+from spellbot.utils import is_admin
+from spellbot.views import BaseView
 
 logger = logging.getLogger(__name__)
 
 
 class SetupView(BaseView):
-    async def interaction_check(  # pylint: disable=arguments-differ
+    async def interaction_check(
         self,
         interaction: discord.Interaction,
     ) -> bool:
@@ -31,7 +31,7 @@ class SetupView(BaseView):
         interaction: discord.Interaction,
         button: discord.ui.Button[SetupView],
     ) -> None:
-        from ..actions.admin_action import AdminAction
+        from spellbot.actions.admin_action import AdminAction
 
         with tracer.trace(name="interaction", resource="toggle_show_links"):
             await safe_defer_interaction(interaction)
@@ -50,7 +50,7 @@ class SetupView(BaseView):
         interaction: discord.Interaction,
         button: discord.ui.Button[SetupView],
     ) -> None:
-        from ..actions.admin_action import AdminAction
+        from spellbot.actions.admin_action import AdminAction
 
         with tracer.trace(name="interaction", resource="toggle_voice_create"):
             await safe_defer_interaction(interaction)
@@ -69,7 +69,7 @@ class SetupView(BaseView):
         interaction: discord.Interaction,
         button: discord.ui.Button[SetupView],
     ) -> None:
-        from ..actions.admin_action import AdminAction
+        from spellbot.actions.admin_action import AdminAction
 
         with tracer.trace(name="interaction", resource="refresh_setup"):
             await safe_defer_interaction(interaction)

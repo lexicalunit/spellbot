@@ -3,11 +3,11 @@ import logging
 from ddtrace import tracer
 from discord.ext import commands
 
-from .. import SpellBot
-from ..actions.base_action import handle_exception
-from ..metrics import add_span_context
-from ..operations import safe_send_user
-from ..utils import load_extensions
+from spellbot import SpellBot
+from spellbot.actions.base_action import handle_exception
+from spellbot.metrics import add_span_context
+from spellbot.operations import safe_send_user
+from spellbot.utils import load_extensions
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class SyncCog(commands.Cog):
             try:
                 await safe_send_user(ctx.message.author, f"Error: {ex}")
             except Exception:  # pragma: no cover
-                pass
+                logger.exception("Failed to send error message to user.")
             await handle_exception(ex)
 
 

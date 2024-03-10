@@ -1,10 +1,12 @@
-"""Adds delete_expired column to channel
+"""
+Adds delete_expired column to channel.
 
 Revision ID: c0bc12b1b482
 Revises: 42f55401ef2b
 Create Date: 2022-10-15 10:52:55.916210
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -15,7 +17,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     op.add_column(
         "channels",
         sa.Column(
@@ -27,5 +29,5 @@ def upgrade():
     )
 
 
-def downgrade():
+def downgrade() -> None:
     op.drop_column("channels", "delete_expired")

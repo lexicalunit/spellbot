@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import logging
-from collections import namedtuple
+from contextlib import suppress
 from enum import Enum, auto
-from typing import Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 import aiohttp_jinja2
-from aiohttp import web
 from aiohttp.web_response import Response as WebResponse
 
-from ...database import db_session_manager
-from ...services import PlaysService
+from spellbot.database import db_session_manager
+from spellbot.services import PlaysService
+
+if TYPE_CHECKING:
+    from aiohttp import web
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,12 @@ class RecordKind(Enum):
     USER = auto()
 
 
-Opts = namedtuple("Opts", ["guild_xid", "target_xid", "page", "tz_offset", "tz_name"])
+class Opts(NamedTuple):
+    guild_xid: int
+    target_xid: int
+    page: int
+    tz_offset: int | None
+    tz_name: str | None
 
 
 async def parse_opts(request: web.Request, kind: RecordKind) -> Opts:
@@ -35,12 +42,10 @@ async def parse_opts(request: web.Request, kind: RecordKind) -> Opts:
     page = max(int(request.query.get("page", 0)), 0)
 
     tz_offset_cookie = request.cookies.get("timezone_offset")
-    tz_offset: Optional[int] = None
+    tz_offset: int | None = None
     if tz_offset_cookie:
-        try:
+        with suppress(ValueError):
             tz_offset = int(tz_offset_cookie)
-        except ValueError:
-            pass
 
     tz_name = request.cookies.get("timezone_name")
 

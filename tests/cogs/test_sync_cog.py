@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 from functools import partial
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
 
 import pytest
-from pytest_mock import MockerFixture
 from spellbot.cogs import SyncCog
 
 from tests.mixins import ContextMixin
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 
 @pytest.mark.asyncio()

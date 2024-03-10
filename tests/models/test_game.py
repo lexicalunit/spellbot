@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 from unittest.mock import ANY
 
 import pytz
 from spellbot.database import DatabaseSession
 from spellbot.models import GameStatus, Play
-from spellbot.settings import Settings
 
-from tests.fixtures import Factories
+if TYPE_CHECKING:
+    from spellbot.settings import Settings
+
+    from tests.fixtures import Factories
 
 
 class TestModelGame:
@@ -33,6 +36,7 @@ class TestModelGame:
             "spelltable_link": game.spelltable_link,
             "jump_link": game.jump_link,
             "spectate_link": game.spectate_link,
+            "confirmed": game.confirmed,
         }
 
     def test_game_show_links(self, factories: Factories) -> None:
@@ -109,43 +113,6 @@ class TestModelGame:
             ),
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
-                {"inline": True, "name": "Format", "value": "Commander"},
-                {"inline": True, "name": "Updated at", "value": ANY},
-            ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-            "thumbnail": {
-                "url": settings.THUMB_URL,
-            },
-            "title": "**Waiting for 3 more players to join...**",
-            "type": "rich",
-        }
-
-    def test_game_embed_pending_with_power_level(
-        self,
-        settings: Settings,
-        factories: Factories,
-    ) -> None:
-        guild = factories.guild.create(motd=None)
-        channel = factories.channel.create(guild=guild, motd=None)
-        game = factories.game.create(guild=guild, channel=channel)
-        player = factories.user.create(game=game)
-        config = factories.config.create(
-            guild_xid=guild.xid,
-            user_xid=player.xid,
-            power_level=10,
-        )
-
-        assert game.to_embed().to_dict() == {
-            "color": settings.PENDING_EMBED_COLOR,
-            "description": ("_A SpellTable link will be created when all players have joined._"),
-            "fields": [
-                {
-                    "inline": False,
-                    "name": "Players",
-                    "value": (
-                        f"• <@{player.xid}> ({player.name}) - power level: {config.power_level}"
-                    ),
-                },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
             ],
@@ -269,8 +236,8 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name}) - 5 points\n"
-                        f"• <@{player2.xid}> ({player2.name}) - 1 point"
+                        f"• <@{player1.xid}> ({player1.name})\n**ﾠ⮑ 5 points**\n"
+                        f"• <@{player2.xid}> ({player2.name})\n**ﾠ⮑ 1 point**"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},

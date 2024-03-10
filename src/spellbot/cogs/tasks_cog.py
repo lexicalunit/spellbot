@@ -5,10 +5,10 @@ from ddtrace import tracer
 from discord import Client
 from discord.ext import commands, tasks
 
-from .. import SpellBot
-from ..actions import TasksAction
-from ..environment import running_in_pytest
-from ..settings import Settings
+from spellbot import SpellBot
+from spellbot.actions import TasksAction
+from spellbot.environment import running_in_pytest
+from spellbot.settings import Settings
 
 logger = logging.getLogger(__name__)
 settings = Settings()
@@ -43,16 +43,16 @@ async def wait_until_ready(bot: Client) -> None:  # pragma: no cover
         except TimeoutError:
             logger.warning("wait_until_ready: timeout waiting for ready or resumed")
             break
-        except BaseException as e:  # Catch EVERYTHING so tasks don't die
-            logger.exception("error: exception in task before loop: %s", e)
+        except BaseException:  # Catch EVERYTHING so tasks don't die
+            logger.exception("error: exception in task before loop")
 
 
 class TasksCog(commands.Cog):
     def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
         if not running_in_pytest():
-            self.cleanup_old_voice_channels.start()  # pylint: disable=no-member
-            self.expire_inactive_games.start()  # pylint: disable=no-member
+            self.cleanup_old_voice_channels.start()
+            self.expire_inactive_games.start()
 
     @tasks.loop(minutes=settings.VOICE_CLEANUP_LOOP_M)
     async def cleanup_old_voice_channels(self) -> None:
@@ -60,8 +60,8 @@ class TasksCog(commands.Cog):
             with tracer.trace(name="command", resource="cleanup_old_voice_channels"):
                 async with TasksAction.create(self.bot) as action:
                     await action.cleanup_old_voice_channels()
-        except BaseException as e:  # Catch EVERYTHING so tasks don't die
-            logger.exception("error: exception in task cog: %s", e)
+        except BaseException:  # Catch EVERYTHING so tasks don't die
+            logger.exception("error: exception in task cog")
 
     @cleanup_old_voice_channels.before_loop
     async def before_cleanup_old_voice_channels(self) -> None:
@@ -73,8 +73,8 @@ class TasksCog(commands.Cog):
             with tracer.trace(name="command", resource="expire_inactive_games"):
                 async with TasksAction.create(self.bot) as action:
                     await action.expire_inactive_games()
-        except BaseException as e:  # Catch EVERYTHING so tasks don't die
-            logger.exception("error: exception in task cog: %s", e)
+        except BaseException:  # Catch EVERYTHING so tasks don't die
+            logger.exception("error: exception in task cog")
 
     @expire_inactive_games.before_loop
     async def before_expire_inactive_games(self) -> None:

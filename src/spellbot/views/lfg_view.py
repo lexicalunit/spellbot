@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, TypeVar
+
 import discord
 from ddtrace import tracer
 from discord import ui
 
-from ..client import SpellBot
-from ..metrics import add_span_context
-from ..operations import safe_defer_interaction, safe_original_response
+from spellbot.metrics import add_span_context
+from spellbot.operations import safe_defer_interaction, safe_original_response
+
 from . import BaseView
+
+if TYPE_CHECKING:
+    from spellbot.client import SpellBot
 
 
 class PendingGameView(BaseView):
@@ -20,20 +25,22 @@ class PendingGameView(BaseView):
     async def join(
         self,
         interaction: discord.Interaction,
-        button: ui.Button["PendingGameView"],
+        button: ui.Button[PendingGameView],
     ) -> None:
-        from ..actions import LookingForGameAction
+        from spellbot.actions import LookingForGameAction
 
         assert interaction.guild is not None
-        with tracer.trace(name="interaction", resource="join"):  # type: ignore
+        with tracer.trace(name="interaction", resource="join"):
             add_span_context(interaction)
             assert interaction.original_response
             await safe_defer_interaction(interaction)
-            async with self.bot.guild_lock(interaction.guild.id):
-                async with LookingForGameAction.create(self.bot, interaction) as action:
-                    original_response = await safe_original_response(interaction)
-                    if original_response:
-                        await action.execute(message_xid=original_response.id)
+            async with (
+                self.bot.guild_lock(interaction.guild.id),
+                LookingForGameAction.create(self.bot, interaction) as action,
+            ):
+                original_response = await safe_original_response(interaction)
+                if original_response:
+                    await action.execute(message_xid=original_response.id)
 
     @ui.button(
         custom_id="leave",
@@ -44,26 +51,31 @@ class PendingGameView(BaseView):
     async def leave(
         self,
         interaction: discord.Interaction,
-        button: ui.Button["PendingGameView"],
+        button: ui.Button[PendingGameView],
     ) -> None:
-        from ..actions import LeaveAction
+        from spellbot.actions import LeaveAction
 
         assert interaction.guild is not None
-        with tracer.trace(name="interaction", resource="leave"):  # type: ignore
+        with tracer.trace(name="interaction", resource="leave"):
             add_span_context(interaction)
             await safe_defer_interaction(interaction)
-            async with self.bot.guild_lock(interaction.guild.id):
-                async with LeaveAction.create(self.bot, interaction) as action:
-                    await action.execute(origin=True)
+            async with (
+                self.bot.guild_lock(interaction.guild.id),
+                LeaveAction.create(self.bot, interaction) as action,
+            ):
+                await action.execute(origin=True)
+
+
+T = TypeVar("T", bound=ui.View)
 
 
 class StartedGameView(BaseView):
     def __init__(self, bot: SpellBot) -> None:
         super().__init__(bot)
-        self.add_item(StartedGameSelect(self.bot))
+        self.add_item(StartedGameSelect[StartedGameView](self.bot))
 
 
-class StartedGameSelect(ui.Select[StartedGameView]):
+class StartedGameSelect(ui.Select[T]):
     def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
         super().__init__(
@@ -85,9 +97,9 @@ class StartedGameSelect(ui.Select[StartedGameView]):
         )
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        from ..actions import LookingForGameAction
+        from spellbot.actions import LookingForGameAction
 
-        with tracer.trace(name="interaction", resource="points"):  # type: ignore
+        with tracer.trace(name="interaction", resource="points"):
             add_span_context(interaction)
             await safe_defer_interaction(interaction)
             assert interaction.original_response
@@ -96,3 +108,32 @@ class StartedGameSelect(ui.Select[StartedGameView]):
                 original_response = await safe_original_response(interaction)
                 if original_response:
                     await action.add_points(original_response, points)
+
+
+class StartedGameViewWithConfirm(BaseView):
+    def __init__(self, bot: SpellBot) -> None:
+        super().__init__(bot)
+        self.add_item(StartedGameSelect[StartedGameViewWithConfirm](self.bot))
+        self.add_item(StartedGameConfirm[StartedGameViewWithConfirm](self.bot))
+
+
+class StartedGameConfirm(ui.Button[T]):
+    def __init__(self, bot: SpellBot) -> None:
+        self.bot = bot
+        super().__init__(
+            custom_id="confirm",
+            emoji="✔️",
+            label="Confirm points",
+            style=discord.ButtonStyle.blurple,
+        )
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        from spellbot.actions import LookingForGameAction
+
+        with tracer.trace(name="interaction", resource="confirm"):
+            add_span_context(interaction)
+            await safe_defer_interaction(interaction)
+            async with LookingForGameAction.create(self.bot, interaction) as action:
+                original_response = await safe_original_response(interaction)
+                if original_response:
+                    await action.confirm_points(original_response)

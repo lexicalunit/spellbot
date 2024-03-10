@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import discord
 import pytest
 from spellbot.errors import AdminOnlyError
-from spellbot.settings import Settings
 from spellbot.utils import (
     bot_can_delete_channel,
     bot_can_read,
@@ -15,6 +15,9 @@ from spellbot.utils import (
     log_warning,
     user_can_moderate,
 )
+
+if TYPE_CHECKING:
+    from spellbot.settings import Settings
 
 
 class TestUtilsLogging:

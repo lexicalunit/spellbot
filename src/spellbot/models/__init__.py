@@ -11,9 +11,8 @@ def import_models() -> None:  # pragma: no cover
     for info in iter_modules([str(package_dir)]):
         module = import_module(f"{__name__}.{info.name}")
         for name, _object in getmembers(module, isclass):
-            if isclass(_object) and issubclass(_object, Base):
-                if name not in globals():
-                    globals()[name] = _object
+            if isclass(_object) and issubclass(_object, Base) and name not in globals():
+                globals()[name] = _object
 
 
 from .base import Base, create_all, literalquery, now, reverse_all  # noqa: I001,E402
@@ -21,7 +20,6 @@ from .base import Base, create_all, literalquery, now, reverse_all  # noqa: I001
 from .award import GuildAward, UserAward  # noqa: E402
 from .block import Block  # noqa: E402
 from .channel import Channel  # noqa: E402
-from .config import Config  # noqa: E402
 from .game import Game, GameStatus  # noqa: E402
 from .guild import Guild  # noqa: E402
 from .play import Play  # noqa: E402
@@ -34,7 +32,6 @@ __all__ = [
     "Base",
     "Block",
     "Channel",
-    "Config",
     "create_all",
     "Game",
     "GameStatus",

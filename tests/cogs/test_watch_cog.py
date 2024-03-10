@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-from typing import Callable, cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 import pytest
-from spellbot import SpellBot
 from spellbot.cogs import WatchCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Guild, User, Watch
 
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from spellbot import SpellBot
 
 
 @pytest.fixture()

@@ -1,20 +1,22 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
-import discord
 import pytz
 from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
-from ..database import DatabaseSession
-from ..models import Channel, Guild, GuildAward
+from spellbot.database import DatabaseSession
+from spellbot.models import Channel, Guild, GuildAward
+
+if TYPE_CHECKING:
+    import discord
 
 
 class GuildsService:
-    guild: Optional[Guild] = None
+    guild: Guild | None = None
 
     @sync_to_async()
     def upsert(self, guild: discord.Guild) -> None:
@@ -62,7 +64,7 @@ class GuildsService:
         return cast(bool, self.guild.voice_create)
 
     @sync_to_async()
-    def set_motd(self, message: Optional[str] = None) -> None:
+    def set_motd(self, message: str | None = None) -> None:
         if message:
             motd = message[: Guild.motd.property.columns[0].type.length]  # type: ignore
             self.guild.motd = motd  # type: ignore
@@ -73,19 +75,19 @@ class GuildsService:
     @sync_to_async()
     def toggle_show_links(self) -> None:
         assert self.guild
-        self.guild.show_links = not self.guild.show_links  # type: ignore
+        self.guild.show_links = not self.guild.show_links
         DatabaseSession.commit()
 
     @sync_to_async()
     def toggle_voice_create(self) -> None:
         assert self.guild
-        self.guild.voice_create = not self.guild.voice_create  # type: ignore
+        self.guild.voice_create = not self.guild.voice_create
         DatabaseSession.commit()
 
     @sync_to_async()
     def current_name(self) -> str:
         assert self.guild
-        return cast(Optional[str], self.guild.name) or ""
+        return cast(str | None, self.guild.name) or ""
 
     @sync_to_async()
     def voice_category_prefixes(self) -> list[str]:
@@ -130,7 +132,7 @@ class GuildsService:
         count: int,
         role: str,
         message: str,
-        **options: Optional[bool],
+        **options: bool | None,
     ) -> dict[str, Any]:
         assert self.guild
         repeating = bool(options.get("repeating", False))
@@ -146,7 +148,7 @@ class GuildsService:
             remove=remove,
             verified_only=verified_only,
             unverified_only=unverified_only,
-        )  # type: ignore
+        )
         DatabaseSession.add(award)
         DatabaseSession.commit()
         return award.to_dict()
