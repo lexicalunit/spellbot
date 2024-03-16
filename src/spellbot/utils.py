@@ -179,6 +179,12 @@ def is_guild(interaction: discord.Interaction) -> bool:
     return True
 
 
+def is_mod(interaction: discord.Interaction) -> bool:
+    guild = getattr(interaction, "guild", None)
+    channel = getattr(interaction, "channel", None)
+    return user_can_moderate(interaction.user, guild, channel)
+
+
 def user_can_moderate(
     author: discord.User | discord.Member | None,
     guild: discord.Guild | None,
