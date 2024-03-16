@@ -327,6 +327,12 @@ class Game(Base):
             embed.add_field(name="Started at", value=f"<t:{self.started_at_timestamp}>")
         else:
             embed.add_field(name="Updated at", value=f"<t:{self.updated_at_timestamp}>")
+        if self.service != GameService.SPELLTABLE.value:
+            embed.add_field(
+                name="Service",
+                value=GameService(self.service).title,
+                inline=False,
+            )
         if self.players:
             embed.color = (
                 discord.Color(settings.STARTED_EMBED_COLOR)

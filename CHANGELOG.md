@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed parameter name for the `/set default_service` command.
+
 ## [v10.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v10.1.0) - 2024-03-15
 
 ### Added

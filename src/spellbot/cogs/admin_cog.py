@@ -179,15 +179,15 @@ class AdminCog(commands.Cog):
         name="default_service",
         description="Set the default game service for new games in this channel.",
     )
-    @app_commands.describe(format="Default service")
+    @app_commands.describe(service="Default service")
     @app_commands.choices(
-        format=[Choice(name=service.title, value=service.value) for service in GameService],
+        service=[Choice(name=service.title, value=service.value) for service in GameService],
     )
     @tracer.wrap(name="interaction", resource="set_default_service")
-    async def default_service(self, interaction: discord.Interaction, format: int) -> None:
+    async def default_service(self, interaction: discord.Interaction, service: int) -> None:
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
-            await action.set_default_service(format)
+            await action.set_default_service(service)
 
     @set_group.command(
         name="auto_verify",
