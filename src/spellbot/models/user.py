@@ -107,6 +107,32 @@ class User(Base):
             and not game.deleted_at,
         )
 
+    def confirmed(self, channel_xid: int) -> bool:
+        from spellbot.database import DatabaseSession
+
+        from . import Game, Play
+
+        session = DatabaseSession.object_session(self)
+        last_game = (
+            session.query(Game)
+            .filter(
+                Game.channel_xid == channel_xid,
+                Game.status == GameStatus.STARTED.value,
+            )
+            .order_by(Game.started_at.desc())
+            .first()
+        )
+        if not last_game:
+            return True
+        last_play = (
+            session.query(Play)
+            .filter(Play.user_xid == self.xid, Play.game_id == last_game.id)
+            .first()
+        )
+        if not last_play:
+            return True
+        return last_play.confirmed_at is not None
+
     def pending_games(self) -> int:
         from spellbot.database import DatabaseSession
 
