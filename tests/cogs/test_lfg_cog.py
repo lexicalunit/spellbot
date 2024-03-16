@@ -71,7 +71,7 @@ class TestCogLookingForGame(InteractionMixin):
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": self.settings.STARTED_EMBED_COLOR,
                 "description": (
-                    "Please check your Direct Messages for your SpellTable link.\n\n"
+                    "Please check your Direct Messages for your game details.\n\n"
                     f"{self.guild.motd}\n\n{channel.motd}"
                 ),
                 "fields": [
@@ -412,7 +412,7 @@ class TestCogLookingForGame(InteractionMixin):
 #             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
 #                 "color": self.settings.STARTED_EMBED_COLOR,
 #                 "description": (
-#                     "Please check your Direct Messages for your SpellTable link.\n\n"
+#                     "Please check your Direct Messages for your game details.\n\n"
 #                     "When your game is over use the drop down to report your points.\n\n"
 #                     f"{guild.motd}\n\n{channel.motd}"
 #                 ),

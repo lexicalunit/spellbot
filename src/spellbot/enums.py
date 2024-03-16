@@ -9,6 +9,30 @@ class FormatDetails(NamedTuple):
     players: int
 
 
+class GameService(Enum):
+    """A service for playing Magic: The Gathering games."""
+
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+        """Give each enum value an increasing numerical value starting at 1."""
+        value = len(cls.__members__) + 1
+        obj = object.__new__(cls)
+        obj._value_ = value
+        return obj
+
+    def __init__(self, title: str) -> None:
+        self.title = title
+
+    def __str__(self) -> str:
+        return self.title
+
+    NOT_ANY = "Not any"
+    SPELLTABLE = "SpellTable"
+    COCKATRICE = "Cockatrice"
+    X_MAGE = "XMage"
+    MTG_ARENA = "MTG Arena"
+    MTG_ONLINE = "MTG Online"
+
+
 class GameFormat(Enum):
     """A Magic: The Gathering game format."""
 

@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from spellbot import SpellBot
 from spellbot.actions import AdminAction
-from spellbot.enums import GameFormat
+from spellbot.enums import GameFormat, GameService
 from spellbot.metrics import add_span_context
 from spellbot.utils import for_all_callbacks, is_admin, is_guild
 
@@ -174,6 +174,20 @@ class AdminCog(commands.Cog):
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_default_format(format)
+
+    @set_group.command(
+        name="default_service",
+        description="Set the default game service for new games in this channel.",
+    )
+    @app_commands.describe(format="Default service")
+    @app_commands.choices(
+        format=[Choice(name=service.title, value=service.value) for service in GameService],
+    )
+    @tracer.wrap(name="interaction", resource="set_default_service")
+    async def default_service(self, interaction: discord.Interaction, format: int) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_default_service(format)
 
     @set_group.command(
         name="auto_verify",

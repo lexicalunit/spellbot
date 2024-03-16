@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from ddtrace import tracer
 from discord.embeds import Embed
 
-from spellbot.enums import GameFormat
+from spellbot.enums import GameFormat, GameService
 from spellbot.models import GameStatus
 from spellbot.operations import (
     safe_add_role,
@@ -56,6 +56,14 @@ class LookingForGameAction(BaseAction):
         return seats or self.channel_data["default_seats"]
 
     @tracer.wrap()
+    async def get_service(self, service: int | None = None) -> int:
+        if service is not None:
+            return service
+        if self.channel_data["default_service"] is not None:
+            return self.channel_data["default_service"].value
+        return GameService.SPELLTABLE.value
+
+    @tracer.wrap()
     async def get_format(self, format: int | None = None) -> int:
         if format is not None:
             return format
@@ -83,6 +91,7 @@ class LookingForGameAction(BaseAction):
         friend_xids: list[int],
         seats: int,
         format: int,
+        service: int,
         message_xid: int | None,
     ) -> bool | None:
         assert self.guild
@@ -91,6 +100,8 @@ class LookingForGameAction(BaseAction):
         # True if user clicked on a Join Game button.
         # False if user issued a /lfg command in chat.
         origin = bool(message_xid is not None)
+
+        assert isinstance(service, int), "Expected service to be an integer."
 
         if not origin:
             assert self.interaction.guild_id is not None
@@ -101,6 +112,7 @@ class LookingForGameAction(BaseAction):
                 friends=friend_xids,
                 seats=seats,
                 format=format,
+                service=service,
             )
 
         assert message_xid
@@ -148,6 +160,7 @@ class LookingForGameAction(BaseAction):
         seats: int | None = None,
         format: int | None = None,
         message_xid: int | None = None,
+        service: int | None = None,
     ) -> None:
         if not self.guild or not self.channel:
             # Someone tried to lfg in a Discord thread rather than in the channel itself.
@@ -164,6 +177,7 @@ class LookingForGameAction(BaseAction):
         actual_friends: str = await self.get_friends(friends)
         actual_format: int = await self.get_format(format)
         actual_seats: int = await self.get_seats(actual_format, seats)
+        actual_service: int = await self.get_service(service)
 
         if await self.services.users.is_waiting(self.channel.id):
             msg = "You're already in a game in this channel."
@@ -201,6 +215,7 @@ class LookingForGameAction(BaseAction):
             friend_xids,
             actual_seats,
             actual_format,
+            actual_service,
             message_xid,
         )
         if new is None:
@@ -211,7 +226,7 @@ class LookingForGameAction(BaseAction):
         other_game_ids: list[int] = []
         if fully_seated:
             other_game_ids = await self.services.games.other_game_ids()
-            started_game_id = await self.make_game_ready()
+            started_game_id = await self.make_game_ready(GameService(actual_service))
             await self._handle_voice_creation(self.guild.id)
 
         await self._handle_embed_creation(
@@ -313,10 +328,16 @@ class LookingForGameAction(BaseAction):
             await safe_update_embed(message, embed=embed)
 
     @tracer.wrap()
-    async def create_game(self, players: str, format: int | None = None) -> None:
+    async def create_game(
+        self,
+        players: str,
+        format: int | None = None,
+        service: int | None = None,
+    ) -> None:
         assert self.channel
 
         game_format = GameFormat(format or GameFormat.COMMANDER.value)
+        game_service = GameService(service or GameService.SPELLTABLE.value)
         player_xids = list(map(int, re.findall(r"<@!?(\d+)>", players)))
         requested_seats = len(player_xids)
         if requested_seats < 2 or requested_seats > game_format.players:
@@ -349,16 +370,19 @@ class LookingForGameAction(BaseAction):
             friends=found_players[1:],
             seats=requested_seats,
             format=game_format.value,
+            service=game_service.value,
             create_new=True,
         )
-        await self.make_game_ready()
+        await self.make_game_ready(game_service)
         await self._handle_voice_creation(self.interaction.guild_id)
         await self._handle_embed_creation(new=True, origin=False, fully_seated=True)
         await self._handle_direct_messages()
 
     @tracer.wrap()
-    async def make_game_ready(self) -> int:
-        spelltable_link = await self.bot.create_spelltable_link()
+    async def make_game_ready(self, service: GameService) -> int:
+        spelltable_link = (
+            await self.bot.create_spelltable_link() if service == GameService.SPELLTABLE else None
+        )
         return await self.services.games.make_ready(spelltable_link)
 
     @tracer.wrap()

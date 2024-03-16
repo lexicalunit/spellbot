@@ -10,7 +10,7 @@ from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
-from spellbot.enums import GameFormat
+from spellbot.enums import GameFormat, GameService
 from spellbot.settings import Settings
 
 from . import Base, now
@@ -122,6 +122,17 @@ class Game(Base):
             doc="The Magic: The Gathering format for this game",
         ),
     )
+    service: int = cast(
+        int,
+        Column(
+            Integer(),
+            default=GameService.SPELLTABLE.value,
+            server_default=text(str(GameService.SPELLTABLE.value)),
+            index=True,
+            nullable=False,
+            doc="The service that will be used to create this game",
+        ),
+    )
     spelltable_link = Column(
         String(255),
         doc="The generated SpellTable link for this game",
@@ -183,7 +194,7 @@ class Game(Base):
         plural = "s" if remaining > 1 else ""
         return f"**Waiting for {remaining} more player{plural} to join...**"
 
-    def embed_description(self, dm: bool = False) -> str:
+    def embed_description(self, dm: bool = False) -> str:  # noqa: C901
         description = ""
         if self.status == GameStatus.PENDING.value:
             description += "_A SpellTable link will be created when all players have joined._"
@@ -194,16 +205,21 @@ class Game(Base):
                         f"[Join your SpellTable game now!]({self.spelltable_link})"
                         f" (or [spectate this game]({self.spectate_link}))"
                     )
-                else:
+                elif self.service == GameService.SPELLTABLE.value:
                     description += (
                         "Sorry but SpellBot was unable to create a SpellTable link"
                         " for this game. Please go to [SpellTable]"
                         "(https://spelltable.wizards.com/) to create one."
                     )
+                elif self.service != GameService.NOT_ANY:
+                    description += (
+                        f"Please use {GameService(self.service).title} to play this game."
+                    )
+
                 if self.voice_xid:
                     description += f"\n\nJoin your voice chat now: <#{self.voice_xid}>"
             else:
-                description += "Please check your Direct Messages for your SpellTable link."
+                description += "Please check your Direct Messages for your game details."
             if dm:
                 description += (
                     "\n\nYou can also [jump to the original game post]"
@@ -336,6 +352,7 @@ class Game(Base):
             "seats": self.seats,
             "status": self.status,
             "format": self.format,
+            "service": self.service,
             "spelltable_link": self.spelltable_link,
             "spectate_link": self.spectate_link,
             "jump_link": self.jump_link,
