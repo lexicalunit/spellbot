@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Allow mods to set/confirm points for players for games.
+
 ## [v10.1.2](https://github.com/lexicalunit/spellbot/releases/tag/v10.1.2) - 2024-03-16
 
 ### Added

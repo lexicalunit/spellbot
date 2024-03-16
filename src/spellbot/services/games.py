@@ -30,9 +30,9 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def select(self, game_id: int) -> bool:
+    def select(self, game_id: int) -> dict[str, Any] | None:
         self.game = DatabaseSession.query(Game).get(game_id)
-        return bool(self.game)
+        return self.game.to_dict() if self.game else None
 
     @sync_to_async()
     @tracer.wrap()
@@ -451,12 +451,18 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def confirm_points(self, player_xid: int | None = None) -> None:
+    def confirm_points(self, player_xid: int) -> None:
         assert self.game
-        filters = [Play.game_id == self.game.id]
-        if player_xid:
-            filters.append(Play.user_xid == player_xid)
-        query = update(Play).where(*filters).values(confirmed_at=datetime.now(tz=pytz.utc))
+        query = (
+            update(Play)
+            .where(
+                and_(
+                    Play.game_id == self.game.id,
+                    Play.user_xid == player_xid,
+                ),
+            )
+            .values(confirmed_at=datetime.now(tz=pytz.utc))
+        )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
 

@@ -312,7 +312,6 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        # TODO: Allow for mods to confirm points for other players?
         await self.services.games.add_points(self.interaction.user.id, points)
         embed = await self.services.games.to_embed()
         await safe_update_embed(message, embed=embed)
@@ -348,7 +347,6 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        # TODO: Allow for mods to confirm points for other players?
         await self.services.games.confirm_points(player_xid=self.interaction.user.id)
         embed = await self.services.games.to_embed()
         data = await self.services.games.to_dict()

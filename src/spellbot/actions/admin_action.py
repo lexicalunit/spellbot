@@ -8,7 +8,13 @@ from discord.embeds import Embed
 
 from spellbot.enums import GameFormat, GameService
 from spellbot.models import Channel, GuildAward
-from spellbot.operations import safe_fetch_text_channel, safe_send_channel, safe_update_embed_origin
+from spellbot.operations import (
+    safe_fetch_text_channel,
+    safe_get_partial_message,
+    safe_send_channel,
+    safe_update_embed,
+    safe_update_embed_origin,
+)
 from spellbot.services import GamesService
 from spellbot.settings import Settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
@@ -440,5 +446,39 @@ class AdminAction(BaseAction):
         await safe_send_channel(
             self.interaction,
             f"User {from_user_xid} has been moved to {to_user_xid}",
+            ephemeral=True,
+        )
+
+    async def set_points(self, game_id: int, player_xid: int, points: int) -> None:
+        found = await self.services.games.select(game_id)
+        if not found:
+            await safe_send_channel(
+                self.interaction,
+                "There is no game with that ID.",
+                ephemeral=True,
+            )
+            return
+
+        if not await self.services.games.players_included(player_xid):
+            await safe_send_channel(
+                self.interaction,
+                f"User <@{player_xid}> did not play in game SB{found.get('id')}.",
+                ephemeral=True,
+            )
+            return
+
+        await self.services.games.add_points(player_xid, points)
+        await self.services.games.confirm_points(player_xid)
+
+        channel = await safe_fetch_text_channel(self.bot, found["guild_xid"], found["channel_xid"])
+        if channel:
+            message = safe_get_partial_message(channel, found["guild_xid"], found["message_xid"])
+            if message:
+                embed = await self.services.games.to_embed()
+                await safe_update_embed(message, embed=embed)
+
+        await safe_send_channel(
+            self.interaction,
+            f"Points for <@{player_xid}> for game SB{game_id} set to {points}.",
             ephemeral=True,
         )
