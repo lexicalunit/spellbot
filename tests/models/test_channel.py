@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from spellbot.enums import GameFormat
+from spellbot.enums import GameFormat, GameService
 
 if TYPE_CHECKING:
     from tests.fixtures import Factories
@@ -21,6 +21,7 @@ class TestModelChannel:
             "name": channel.name,
             "default_seats": channel.default_seats,
             "default_format": GameFormat(channel.default_format),
+            "default_service": GameService(channel.default_service),
             "auto_verify": channel.auto_verify,
             "unverified_only": channel.unverified_only,
             "verified_only": channel.verified_only,

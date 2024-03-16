@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 import discord
 from discord.embeds import Embed
 
-from spellbot.enums import GameFormat
+from spellbot.enums import GameFormat, GameService
 from spellbot.models import Channel, GuildAward
 from spellbot.operations import safe_fetch_text_channel, safe_send_channel, safe_update_embed_origin
 from spellbot.services import GamesService
@@ -68,9 +68,10 @@ class AdminAction(BaseAction):
             channel_settings: dict[str, Any],
             col: str,
         ) -> None:
-            value = channel[col].value if col == "default_format" else channel[col]
+            is_enum = col in ("default_format", "default_service")
+            value = channel[col].value if is_enum else channel[col]
             if value != getattr(Channel, col).default.arg:
-                channel_settings[col] = value
+                channel_settings[col] = str(channel[col]) if is_enum else value
 
         all_default = True
         embed = new_embed()
@@ -84,6 +85,7 @@ class AdminAction(BaseAction):
             channel_settings: dict[str, Any] = {}
             update_channel_settings(channel, channel_settings, "default_seats")
             update_channel_settings(channel, channel_settings, "default_format")
+            update_channel_settings(channel, channel_settings, "default_service")
             update_channel_settings(channel, channel_settings, "auto_verify")
             update_channel_settings(channel, channel_settings, "unverified_only")
             update_channel_settings(channel, channel_settings, "verified_only")
@@ -336,6 +338,15 @@ class AdminAction(BaseAction):
         await safe_send_channel(
             self.interaction,
             f"Default format set to {GameFormat(format)} for this channel.",
+            ephemeral=True,
+        )
+
+    async def set_default_service(self, service: int) -> None:
+        assert self.interaction.channel_id is not None
+        await self.services.channels.set_default_service(self.interaction.channel_id, service)
+        await safe_send_channel(
+            self.interaction,
+            f"Default service set to {GameService(service)} for this channel.",
             ephemeral=True,
         )
 

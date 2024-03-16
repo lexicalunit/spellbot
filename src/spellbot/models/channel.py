@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import false, text
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import Boolean, Integer
 
-from spellbot.enums import GameFormat
+from spellbot.enums import GameFormat, GameService
 
 from . import Base, now
 
@@ -71,6 +71,14 @@ class Channel(Base):
         index=True,
         nullable=False,
         doc="The default Magic: The Gathering format for this channel",
+    )
+    default_service = Column(
+        Integer(),
+        default=GameService.SPELLTABLE.value,
+        server_default=text(str(GameService.SPELLTABLE.value)),
+        index=True,
+        nullable=False,
+        doc="The default service for games in this channel",
     )
     auto_verify = Column(
         Boolean,
@@ -151,6 +159,7 @@ class Channel(Base):
             "name": self.name,
             "default_seats": self.default_seats,
             "default_format": GameFormat(cast(int, self.default_format)),
+            "default_service": GameService(cast(int, self.default_service)),
             "auto_verify": self.auto_verify,
             "unverified_only": self.unverified_only,
             "verified_only": self.verified_only,

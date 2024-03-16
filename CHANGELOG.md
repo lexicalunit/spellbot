@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds ability to select service for game creation (SpellTable, MTG Arena, etc...)
+
 ## [v10.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v10.0.0) - 2024-03-10
+
+### Changed
+
+- Updated dependencies.
+
+### Removed
+
+- Removed power level per player settings.
+
+### Added
+
+- Initial beta support for ELO ratings.
 
 ## [v9.7.0](https://github.com/lexicalunit/spellbot/releases/tag/v9.7.0) - 2024-02-02
 

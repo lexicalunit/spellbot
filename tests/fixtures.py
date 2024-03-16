@@ -75,7 +75,7 @@ async def session_context(
         await initialize_connection("spellbot-test", use_transaction=True)
 
         test_session = db_session_maker()
-        DatabaseSession.set(test_session)  # type: ignore
+        DatabaseSession.set(test_session)
 
         BlockFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         ChannelFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore

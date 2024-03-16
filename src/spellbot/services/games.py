@@ -105,6 +105,7 @@ class GamesService:
         friends: list[int],
         seats: int,
         format: int,
+        service: int,
         create_new: bool = False,
     ) -> bool:
         existing: Game | None = None
@@ -116,6 +117,7 @@ class GamesService:
                 friends=friends,
                 seats=seats,
                 format=format,
+                service=service,
             )
 
         new: bool
@@ -129,6 +131,7 @@ class GamesService:
                 channel_xid=channel_xid,
                 seats=seats,
                 format=format,
+                service=service,
             )
             DatabaseSession.add(game)
             DatabaseSession.commit()
@@ -156,6 +159,7 @@ class GamesService:
         friends: list[int],
         seats: int,
         format: int,
+        service: int,
     ) -> Game | None:
         required_seats = 1 + len(friends)
 
@@ -173,6 +177,7 @@ class GamesService:
                     Game.channel_xid == channel_xid,
                     Game.seats == seats,
                     Game.format == format,
+                    Game.service == service,
                     Game.status == GameStatus.PENDING.value,
                     Game.deleted_at.is_(None),
                 ),

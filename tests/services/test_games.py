@@ -4,7 +4,7 @@ from typing import cast
 
 import pytest
 from spellbot.database import DatabaseSession
-from spellbot.enums import GameFormat
+from spellbot.enums import GameFormat, GameService
 from spellbot.models import (
     Channel,
     Game,
@@ -260,6 +260,7 @@ class TestServiceGamesUpsert:
             friends=[],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            service=GameService.SPELLTABLE.value,
         )
         assert not new
 
@@ -289,6 +290,7 @@ class TestServiceGamesUpsert:
             friends=[user2.xid],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            service=GameService.SPELLTABLE.value,
         )
         assert not new
 
@@ -305,6 +307,7 @@ class TestServiceGamesUpsert:
             friends=[],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            service=GameService.SPELLTABLE.value,
         )
         assert new
 
@@ -329,6 +332,7 @@ class TestServiceGamesUpsert:
             friends=[user2.xid],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            service=GameService.SPELLTABLE.value,
         )
         assert new
 
@@ -353,6 +357,7 @@ class TestServiceGamesUpsert:
             friends=[user2.xid, user3.xid],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            service=GameService.SPELLTABLE.value,
         )
         assert new
 
@@ -386,6 +391,7 @@ class TestServiceGamesUpsert:
             friends=[user2.xid, user3.xid],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            service=GameService.SPELLTABLE.value,
         )
         assert new
 
@@ -409,6 +415,7 @@ class TestServiceGamesUpsert:
             friends=[],
             seats=game.seats,
             format=game.format,
+            service=GameService.SPELLTABLE.value,
         )
 
         DatabaseSession.expire_all()
@@ -430,6 +437,7 @@ class TestServiceGamesUpsert:
             friends=[],
             seats=game.seats,
             format=game.format,
+            service=GameService.SPELLTABLE.value,
         )
 
         DatabaseSession.expire_all()

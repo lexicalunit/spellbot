@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from spellbot import SpellBot
 from spellbot.actions.lfg_action import LookingForGameAction
-from spellbot.enums import GameFormat
+from spellbot.enums import GameFormat, GameService
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_defer_interaction
 from spellbot.utils import for_all_callbacks, is_guild
@@ -35,6 +35,9 @@ class LookingForGameCog(commands.Cog):
     @app_commands.choices(
         format=[Choice(name=str(format), value=format.value) for format in GameFormat],
     )
+    @app_commands.choices(
+        service=[Choice(name=service.title, value=service.value) for service in GameService],
+    )
     @tracer.wrap(name="interaction", resource="lfg")
     async def lfg(
         self,
@@ -42,6 +45,7 @@ class LookingForGameCog(commands.Cog):
         friends: str | None = None,
         seats: int | None = None,
         format: int | None = None,
+        service: int | None = None,
     ) -> None:
         assert interaction.guild is not None
         add_span_context(interaction)
@@ -50,7 +54,7 @@ class LookingForGameCog(commands.Cog):
             self.bot.guild_lock(interaction.guild.id),
             LookingForGameAction.create(self.bot, interaction) as action,
         ):
-            await action.execute(friends=friends, seats=seats, format=format)
+            await action.execute(friends=friends, seats=seats, format=format, service=service)
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover

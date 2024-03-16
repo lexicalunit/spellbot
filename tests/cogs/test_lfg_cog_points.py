@@ -72,7 +72,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                 assert lfg_action.safe_update_embed.call_args_list[0].kwargs["embed"].to_dict() == {
                     "color": self.settings.STARTED_EMBED_COLOR,
                     "description": (
-                        "Please check your Direct Messages for your SpellTable link.\n\n"
+                        "Please check your Direct Messages for your game details.\n\n"
                         "When your game is over use the drop down to report your points.\n\n"
                         f"{self.guild.motd}\n\n{channel.motd}"
                     ),
@@ -107,7 +107,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                 assert lfg_action.safe_update_embed.call_args_list[1].kwargs["embed"].to_dict() == {
                     "color": settings.STARTED_EMBED_COLOR,
                     "description": (
-                        "Please check your Direct Messages for your SpellTable link.\n\n"
+                        "Please check your Direct Messages for your game details.\n\n"
                         "When your game is over use the drop down to report your points.\n\n"
                         f"{self.guild.motd}\n\n{channel.motd}"
                     ),
@@ -177,7 +177,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                 assert lfg_action.safe_update_embed.call_args_list[0].kwargs["embed"].to_dict() == {
                     "color": self.settings.STARTED_EMBED_COLOR,
                     "description": (
-                        "Please check your Direct Messages for your SpellTable link.\n\n"
+                        "Please check your Direct Messages for your game details.\n\n"
                         "When your game is over use the drop down to report your points.\n\n"
                         f"{self.guild.motd}\n\n{channel.motd}"
                     ),
