@@ -125,6 +125,11 @@ class UsersService:
         return self.user.waiting(channel_xid)
 
     @sync_to_async()
+    def is_confirmed(self, channel_xid: int) -> bool:
+        assert self.user
+        return self.user.confirmed(channel_xid)
+
+    @sync_to_async()
     def queued_in_another_guild(self, guild_xid: int) -> bool:
         assert self.user
         return bool(

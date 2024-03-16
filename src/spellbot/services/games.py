@@ -54,19 +54,10 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def get_play(self, player_xid: int) -> dict[str, Any] | None:
+    def get_plays(self, player_xid: int) -> dict[int, dict[str, Any]]:
         assert self.game
-        play = (
-            DatabaseSession.query(Play)
-            .filter(
-                and_(
-                    Play.user_xid == player_xid,
-                    Play.game_id == self.game.id,
-                ),
-            )
-            .one_or_none()
-        )
-        return play.to_dict() if play else None
+        plays = DatabaseSession.query(Play).filter(Play.game_id == self.game.id).all()
+        return {play.user_xid: play.to_dict() for play in plays}
 
     @sync_to_async()
     @tracer.wrap()

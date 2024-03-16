@@ -263,5 +263,5 @@ class TestCogLookingForGamePoints(InteractionMixin):
 
                 lfg_action.safe_send_user.assert_called_once_with(
                     outside_player,
-                    "You are not one of the players in this game.",
+                    f"You are not one of the players in game SB{game.id}.",
                 )

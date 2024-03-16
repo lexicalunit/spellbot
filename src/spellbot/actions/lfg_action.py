@@ -154,7 +154,7 @@ class LookingForGameAction(BaseAction):
         return False
 
     @tracer.wrap()
-    async def execute(  # noqa: C901
+    async def execute(  # noqa: C901,PLR0912
         self,
         friends: str | None = None,
         seats: int | None = None,
@@ -181,6 +181,14 @@ class LookingForGameAction(BaseAction):
 
         if await self.services.users.is_waiting(self.channel.id):
             msg = "You're already in a game in this channel."
+            if origin:
+                return await safe_send_user(self.interaction.user, msg)
+            await safe_followup_channel(self.interaction, msg)
+            return None
+
+        req_confirm = self.channel_data["require_confirmation"]
+        if req_confirm and not await self.services.users.is_confirmed(self.channel.id):
+            msg = "You need to confirm your points before joining another game."
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
             await safe_followup_channel(self.interaction, msg)
@@ -281,18 +289,30 @@ class LookingForGameAction(BaseAction):
         if not await self.services.games.players_included(self.interaction.user.id):
             await safe_send_user(
                 self.interaction.user,
-                "You are not one of the players in this game.",
+                f"You are not one of the players in game SB{found.get('id')}.",
             )
             return
 
-        play = await self.services.games.get_play(self.interaction.user.id)
-        if play and play["confirmed_at"]:
+        plays = await self.services.games.get_plays(self.interaction.user.id)
+        if plays.get(self.interaction.user.id, {}).get("confirmed_at", None):
             await safe_send_user(
                 self.interaction.user,
-                "You've already confirmed your points.",
+                f"You've already confirmed your points for game SB{found.get('id')}.",
             )
             return
 
+        # if at least one player has confirmed their points, then changing points not allowed
+        if any(play.get("confirmed_at") is not None for play in plays.values()):
+            await safe_send_user(
+                self.interaction.user,
+                (
+                    f"Points for game SB{found.get('id')} are locked in,"
+                    " please confirm them or contact a mod."
+                ),
+            )
+            return
+
+        # TODO: Allow for mods to confirm points for other players?
         await self.services.games.add_points(self.interaction.user.id, points)
         embed = await self.services.games.to_embed()
         await safe_update_embed(message, embed=embed)
@@ -306,15 +326,25 @@ class LookingForGameAction(BaseAction):
         if not await self.services.games.players_included(self.interaction.user.id):
             await safe_send_user(
                 self.interaction.user,
-                "You are not one of the players in this game.",
+                f"You are not one of the players in game SB{found.get('id')}.",
             )
             return
 
-        play = await self.services.games.get_play(self.interaction.user.id)
-        if play and play["confirmed_at"]:
+        plays = await self.services.games.get_plays(self.interaction.user.id)
+        if plays.get(self.interaction.user.id, {}).get("confirmed_at", None):
             await safe_send_user(
                 self.interaction.user,
-                "You've already confirmed your points.",
+                f"You've already confirmed your points for game SB{found.get('id')}",
+            )
+            return
+
+        if not all(play.get("points") is not None for play in plays.values()):
+            await safe_send_user(
+                self.interaction.user,
+                (
+                    "Please wait until all players have reported"
+                    f" before confirming points for game SB{found.get('id')}"
+                ),
             )
             return
 
