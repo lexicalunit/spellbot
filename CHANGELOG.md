@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v10.1.2](https://github.com/lexicalunit/spellbot/releases/tag/v10.1.2) - 2024-03-16
+
 ### Added
 
 - Prevent users from joining a new game if reporting is still pending for their last game.
