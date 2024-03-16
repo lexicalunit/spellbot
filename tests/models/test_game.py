@@ -33,6 +33,7 @@ class TestModelGame:
             "seats": game.seats,
             "status": game.status,
             "format": game.format,
+            "service": game.service,
             "spelltable_link": game.spelltable_link,
             "jump_link": game.jump_link,
             "spectate_link": game.spectate_link,
@@ -144,7 +145,7 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
-            "description": "Please check your Direct Messages for your SpellTable link.",
+            "description": "Please check your Direct Messages for your game details.",
             "fields": [
                 {
                     "inline": False,
@@ -227,7 +228,7 @@ class TestModelGame:
         assert game.to_embed().to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "Please check your Direct Messages for your SpellTable link.\n"
+                "Please check your Direct Messages for your game details.\n"
                 "\n"
                 "When your game is over use the drop down to report your points."
             ),
@@ -268,7 +269,7 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
-            "description": "Please check your Direct Messages for your SpellTable link.",
+            "description": "Please check your Direct Messages for your game details.",
             "fields": [
                 {
                     "inline": False,
@@ -336,7 +337,7 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
-            "description": "Please check your Direct Messages for your SpellTable link.",
+            "description": "Please check your Direct Messages for your game details.",
             "fields": [
                 {
                     "inline": False,
@@ -402,7 +403,7 @@ class TestModelGame:
         assert game.to_embed().to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "Please check your Direct Messages for your SpellTable link.\n"
+                "Please check your Direct Messages for your game details.\n"
                 "\n"
                 "this is a message of the day"
             ),

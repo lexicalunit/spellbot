@@ -25,7 +25,7 @@ class TestCodebase:
         chdir(REPO_ROOT)
         output = getoutput(
             (
-                r"find . -type d \( "
+                r"find . -type d \( "  # noqa: S607, S605
                 r"    -path ./env -o "
                 r"    -path ./src/spellbot/migrations/versions -o "
                 r"    -path ./src/spellbot/cogs "
