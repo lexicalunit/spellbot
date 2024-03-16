@@ -111,19 +111,19 @@ def initialize_connection(
 
     if use_transaction:  # pragma: no cover
         transaction_obj = connection_obj.begin()
-        transaction.set(transaction_obj)  # type: ignore
+        transaction.set(transaction_obj)
 
     db_session_maker_obj = sessionmaker(bind=connection_obj)
 
-    engine.set(engine_obj)  # type: ignore
-    connection.set(connection_obj)  # type: ignore
-    db_session_maker.set(db_session_maker_obj)  # type: ignore
+    engine.set(engine_obj)
+    connection.set(connection_obj)
+    db_session_maker.set(db_session_maker_obj)
 
 
 @sync_to_async()
 def begin_session() -> None:
     db_session = db_session_maker()
-    DatabaseSession.set(db_session)  # type: ignore
+    DatabaseSession.set(db_session)
 
 
 @sync_to_async()

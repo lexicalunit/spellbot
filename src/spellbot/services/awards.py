@@ -89,7 +89,7 @@ class AwardsService:
                                 next_award.remove,
                             ),
                         )
-                        user_award.guild_award_id = next_award.id  # type: ignore
+                        user_award.guild_award_id = next_award.id
         DatabaseSession.commit()
 
         return new_roles

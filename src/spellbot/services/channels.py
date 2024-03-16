@@ -40,8 +40,8 @@ class ChannelsService:
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
 
-        channel = DatabaseSession.query(Channel).filter(Channel.xid == channel.id).one()
-        return channel.to_dict()
+        db_channel = DatabaseSession.query(Channel).filter(Channel.xid == channel.id).one()
+        return db_channel.to_dict()
 
     @sync_to_async()
     def forget(self, xid: int) -> None:
