@@ -21,6 +21,7 @@ from spellbot.operations import (
     safe_send_user,
     safe_update_embed,
     safe_update_embed_origin,
+    save_create_channel_invite,
 )
 from spellbot.settings import Settings
 from spellbot.views import BaseView, PendingGameView, StartedGameView, StartedGameViewWithConfirm
@@ -82,7 +83,7 @@ class LookingForGameAction(BaseAction):
                 friend_xids,
             )
         if friend_xids:
-            friend_xids = await self.services.games.filter_pending_games(friend_xids, self.guild.id)
+            friend_xids = await self.services.games.filter_pending_games(friend_xids)
         return friend_xids
 
     @tracer.wrap()
@@ -154,7 +155,7 @@ class LookingForGameAction(BaseAction):
         return False
 
     @tracer.wrap()
-    async def execute(  # noqa: C901,PLR0912
+    async def execute(  # noqa: C901
         self,
         friends: str | None = None,
         seats: int | None = None,
@@ -196,13 +197,6 @@ class LookingForGameAction(BaseAction):
 
         if await self.services.users.pending_games() + 1 > self.settings.MAX_PENDING_GAMES:
             msg = "You're in too many pending games to join another one at this time."
-            if origin:
-                return await safe_send_user(self.interaction.user, msg)
-            await safe_followup_channel(self.interaction, msg)
-            return None
-
-        if await self.services.users.queued_in_another_guild(self.guild.id):
-            msg = "You're in a pending game in another server, leave that one first."
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
             await safe_followup_channel(self.interaction, msg)
@@ -428,16 +422,73 @@ class LookingForGameAction(BaseAction):
             return
 
         game_data = await self.services.games.to_dict()
+        game_id = game_data["id"]
         voice_channel = await safe_create_voice_channel(
             self.bot,
             guild_xid,
-            f"Game-SB{game_data['id']}",
+            f"Game-SB{game_id}",
             category,
         )
         if not voice_channel:
             return
 
-        await self.services.games.set_voice(voice_channel.id)
+        should_create_invite = self.channel_data.get("voice_invite", False)
+        invite: discord.Invite | None = None
+        if should_create_invite:
+            invite = await save_create_channel_invite(
+                voice_channel,
+                max_age=10 * 60,  # 10 minutes
+                max_uses=0,  # unlimited uses
+                temporary=True,
+                reason=f"Creating temporary voice channel invite for Game-SB{game_id}",
+            )
+
+        await self.services.games.set_voice(
+            voice_xid=voice_channel.id,
+            voice_invite_link=invite.url if invite else None,
+        )
+
+    @tracer.wrap()
+    async def _create_initial_post(
+        self,
+        embed: discord.Embed,
+        view: BaseView | None = None,
+        content: str | None = None,
+    ) -> None:
+        assert self.guild
+        assert self.channel
+
+        if message := await safe_followup_channel(
+            self.interaction,
+            content=content,
+            embed=embed,
+            view=view,
+        ) or (
+            message := await safe_channel_reply(
+                self.channel,
+                content=content,
+                embed=embed,
+                view=view,
+            )
+        ):
+            await self.services.games.add_post(self.guild.id, self.channel.id, message.id)
+
+        # also send the game post to all configured mirrors
+        mirrors = await self.services.mirrors.get(self.guild.id, self.channel.id)
+        for mirror in mirrors:
+            other_guild_xid = mirror["to_guild_xid"]
+            other_channel_xid = mirror["to_channel_xid"]
+            other_channel = await safe_fetch_text_channel(
+                self.bot, other_guild_xid, other_channel_xid
+            )
+            if other_channel:
+                other_message = await safe_channel_reply(
+                    other_channel, content=content, embed=embed, view=view
+                )
+                if other_message:
+                    await self.services.games.add_post(
+                        other_guild_xid, other_channel_xid, other_message.id
+                    )
 
     @tracer.wrap()
     async def _handle_embed_creation(  # noqa: C901,PLR0912
@@ -465,53 +516,56 @@ class LookingForGameAction(BaseAction):
             view = PendingGameView(bot=self.bot)
 
         if new:  # create the initial game post:
-            if message := await safe_followup_channel(
-                self.interaction,
-                content=content,
-                embed=embed,
-                view=view,
-            ) or (
-                message := await safe_channel_reply(
-                    self.channel,
+            await self._create_initial_post(embed, view, content)
+            return
+
+        for post in game_data.get("posts", []):
+            message: discord.Message | discord.PartialMessage | None = None
+            guild_xid = post["guild_xid"]
+            channel_xid = post["channel_xid"]
+            message_xid = post["message_xid"]
+            channel: discord.TextChannel | None = None
+            if self.guild.id == guild_xid and self.channel.id == channel_xid:
+                # this post is for the current channel and guild
+                channel = self.channel
+            else:
+                # the post is in a different channel/guild, so we need to fetch it
+                channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
+            assert channel is not None
+
+            if message_xid:
+                message = safe_get_partial_message(channel, guild_xid, message_xid)
+
+            # update the existing game post:
+
+            if (
+                origin
+                and message
+                and self.interaction.message
+                and self.interaction.message.id == message_xid
+            ):
+                # Try to update the origin embed. Sometimes this can fail.
+                # If it does fail, we will fallback to doing a standard
+                # message.edit() call, which should hopefully at least update
+                # the game embed, even if the interaction shows as "failed".
+                content = self.channel_data.get("extra", None)
+                if await safe_update_embed_origin(
+                    self.interaction,
                     content=content,
                     embed=embed,
                     view=view,
-                )
-            ):
-                await self.services.games.set_message_xid(message.id)
-            return
+                ):
+                    continue
 
-        message: discord.Message | discord.PartialMessage | None = None
-        message_xid = game_data["message_xid"]
-        if message_xid:
-            message = safe_get_partial_message(self.channel, self.guild.id, message_xid)
+            if message:
+                if await safe_update_embed(message, embed=embed, view=view):
+                    continue
 
-        # update the existing game post:
-
-        if origin:
-            # Try to update the origin embed. Sometimes this can fail.
-            # If it does fail, we will fallback to doing a standard
-            # message.edit() call, which should hopefully at least update
-            # the game embed, even if the interaction shows as "failed".
-            content = self.channel_data.get("extra", None)
-            if await safe_update_embed_origin(
-                self.interaction,
-                content=content,
-                embed=embed,
-                view=view,
-            ):
-                return
-
-        if message:
-            if await safe_update_embed(message, embed=embed, view=view):
-                pass
-            elif updated := await safe_channel_reply(
-                self.channel,
-                content=content,
-                embed=embed,
-                view=view,
-            ):
-                await self.services.games.set_message_xid(updated.id)
+                if updated := await safe_channel_reply(
+                    channel, content=content, embed=embed, view=view
+                ):
+                    await self.services.games.del_post(self.guild.id, self.channel.id, message_xid)
+                    await self.services.games.add_post(self.guild.id, self.channel.id, updated.id)
 
         if not origin:
             await self._reply_found_embed()
@@ -609,6 +663,7 @@ class LookingForGameAction(BaseAction):
         for user_xid, note in watch_notes.items():
             description += f"\n• <@{user_xid}>: {note}"
         embed.description = description
+        embed.add_field(name="Game ID", value=f"SB{data['id']}", inline=False)
 
         for member in mod_role.members:
             await safe_send_user(member, embed=embed)

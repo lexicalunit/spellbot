@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+from datetime import datetime
 from unittest.mock import ANY, MagicMock
 
 import pytest
+import pytz
 from spellbot.database import DatabaseSession
-from spellbot.models import Block, Game, Guild, Queue, User, Watch
+from spellbot.models import Block, Channel, Game, Guild, Queue, User, Watch
 from spellbot.services import UsersService
 
-from tests.factories import UserFactory
+from tests.factories import GameFactory, UserFactory
 
 
 @pytest.mark.asyncio()
@@ -85,6 +87,19 @@ class TestServiceUsers:
         assert await users.is_waiting(game.channel_xid)
         await users.select(user2.xid)
         assert not await users.is_waiting(game.channel_xid)
+
+    async def test_users_is_confirmed(self, guild: Guild, channel: Channel) -> None:
+        game = GameFactory.create(
+            guild=guild,
+            channel=channel,
+            started_at=datetime.now(tz=pytz.utc),
+        )
+        user = UserFactory.create(game=game)
+        user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)
+
+        users = UsersService()
+        await users.select(user.xid)
+        assert await users.is_confirmed(game.channel_xid)
 
     async def test_users_block(self) -> None:
         user1 = UserFactory.create()

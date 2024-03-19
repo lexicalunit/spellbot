@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 import pytz
 from asgiref.sync import sync_to_async
@@ -14,7 +14,18 @@ from sqlalchemy.sql.expression import and_, asc, column, or_
 from sqlalchemy.sql.functions import count
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Block, Game, GameStatus, Play, Queue, UserAward, Watch
+from spellbot.models import (
+    Block,
+    Game,
+    GameDict,
+    GameStatus,
+    Play,
+    Post,
+    Queue,
+    QueueDict,
+    UserAward,
+    Watch,
+)
 from spellbot.settings import Settings
 
 if TYPE_CHECKING:
@@ -30,7 +41,7 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def select(self, game_id: int) -> dict[str, Any] | None:
+    def select(self, game_id: int) -> GameDict | None:
         self.game = DatabaseSession.query(Game).get(game_id)
         return self.game.to_dict() if self.game else None
 
@@ -42,19 +53,18 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def select_by_message_xid(self, message_xid: int) -> dict[str, Any] | None:
+    def select_by_message_xid(self, message_xid: int) -> GameDict | None:
         self.game = (
             DatabaseSession.query(Game)
-            .filter(
-                Game.message_xid == message_xid,
-            )
+            .join(Post)
+            .filter(Post.message_xid == message_xid)
             .one_or_none()
         )
         return self.game.to_dict() if self.game else None
 
     @sync_to_async()
     @tracer.wrap()
-    def get_plays(self, player_xid: int) -> dict[int, dict[str, Any]]:
+    def get_plays(self, player_xid: int) -> dict[int, GameDict]:
         assert self.game
         plays = DatabaseSession.query(Play).filter(Play.game_id == self.game.id).all()
         return {play.user_xid: play.to_dict() for play in plays}
@@ -70,7 +80,15 @@ class GamesService:
         # upsert into queues
         DatabaseSession.execute(
             insert(Queue)
-            .values([{"user_xid": player_xid, "game_id": self.game.id}])
+            .values(
+                [
+                    {
+                        "user_xid": player_xid,
+                        "game_id": self.game.id,
+                        "og_guild_xid": self.game.guild_xid,
+                    }
+                ]
+            )
             .on_conflict_do_nothing(),
         )
         DatabaseSession.commit()
@@ -132,7 +150,16 @@ class GamesService:
         user_xids = [*friends, author_xid]
         DatabaseSession.execute(
             insert(Queue)
-            .values([{"user_xid": xid, "game_id": game.id} for xid in user_xids])
+            .values(
+                [
+                    {
+                        "user_xid": xid,
+                        "game_id": game.id,
+                        "og_guild_xid": guild_xid,
+                    }
+                    for xid in user_xids
+                ]
+            )
             .on_conflict_do_nothing(),
         )
         DatabaseSession.commit()
@@ -221,9 +248,34 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def set_message_xid(self, message_xid: int) -> None:
+    def del_post(self, guild_xid: int, channel_xid: int, message_xid: int) -> None:
         assert self.game
-        self.game.message_xid = message_xid
+        DatabaseSession.query(Post).filter(
+            Post.game_id == self.game.id,
+            Post.guild_xid == guild_xid,
+            Post.channel_xid == channel_xid,
+            Post.message_xid == message_xid,
+        ).delete(synchronize_session=False)
+        DatabaseSession.commit()
+
+    @sync_to_async()
+    @tracer.wrap()
+    def add_post(self, guild_xid: int, channel_xid: int, message_xid: int) -> None:
+        assert self.game
+        DatabaseSession.execute(
+            insert(Post)
+            .values(
+                [
+                    {
+                        "game_id": self.game.id,
+                        "guild_xid": guild_xid,
+                        "channel_xid": channel_xid,
+                        "message_xid": message_xid,
+                    }
+                ],
+            )
+            .on_conflict_do_nothing(),
+        )
         DatabaseSession.commit()
 
     @sync_to_async()
@@ -250,15 +302,17 @@ class GamesService:
     def make_ready(self, spelltable_link: str | None) -> int:
         assert self.game
         assert len(spelltable_link or "") <= MAX_SPELLTABLE_LINK_LEN
-        queued_xids = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == self.game.id)
-        player_xids = [int(row[0]) for row in queued_xids if row[0]]
+        queues: list[QueueDict] = [
+            queue.to_dict()
+            for queue in DatabaseSession.query(Queue).filter(Queue.game_id == self.game.id).all()
+        ]
 
         # update game's state
         self.game.spelltable_link = spelltable_link
         self.game.status = GameStatus.STARTED.value
         self.game.started_at = datetime.now(tz=pytz.utc)
 
-        if not player_xids:
+        if not queues:  # TODO: How would this ever even happen?
             DatabaseSession.commit()
             return cast(int, self.game.id)
 
@@ -268,10 +322,11 @@ class GamesService:
             .values(
                 [
                     {
-                        "user_xid": player_xid,
+                        "user_xid": queue["user_xid"],
                         "game_id": self.game.id,
+                        "og_guild_xid": queue["og_guild_xid"],
                     }
-                    for player_xid in player_xids
+                    for queue in queues
                 ],
             )
             .on_conflict_do_nothing(),
@@ -284,15 +339,16 @@ class GamesService:
                 [
                     {
                         "guild_xid": self.game.guild_xid,
-                        "user_xid": player_xid,
+                        "user_xid": queue["user_xid"],
                     }
-                    for player_xid in player_xids
+                    for queue in queues
                 ],
             )
             .on_conflict_do_nothing(),
         )
 
         # drop the players from any other queues
+        player_xids = [queue["user_xid"] for queue in queues]
         DatabaseSession.query(Queue).filter(Queue.user_xid.in_(player_xids)).delete(
             synchronize_session=False,
         )
@@ -324,9 +380,10 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def set_voice(self, voice_xid: int) -> None:
+    def set_voice(self, *, voice_xid: int, voice_invite_link: str | None = None) -> None:
         assert self.game
         self.game.voice_xid = voice_xid
+        self.game.voice_invite_link = voice_invite_link
         DatabaseSession.commit()
 
     @sync_to_async()
@@ -352,7 +409,7 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def filter_pending_games(self, user_xids: list[int], guild_xid: int) -> list[int]:
+    def filter_pending_games(self, user_xids: list[int]) -> list[int]:
         settings = Settings()
 
         rows = DatabaseSession.query(
@@ -361,30 +418,11 @@ class GamesService:
         ).group_by(Queue.user_xid)
         counts = {row[0]: row[1] for row in rows if row[0]}
 
-        user_xids = [
+        return [
             user_xid
             for user_xid in user_xids
             if counts.get(user_xid, 0) + 1 < settings.MAX_PENDING_GAMES
         ]
-
-        result = []
-        for user_xid in user_xids:
-            in_another_guild = (
-                bool(
-                    DatabaseSession.query(Queue)
-                    .join(Game, Queue.game_id == Game.id)
-                    .filter(
-                        Queue.user_xid == user_xid,
-                        Game.guild_xid != guild_xid,
-                    )
-                    .count(),
-                )
-                > 0
-            )
-            if not in_another_guild:
-                result.append(user_xid)
-
-        return result
 
     @sync_to_async()
     @tracer.wrap()
@@ -436,6 +474,7 @@ class GamesService:
             "user_xid": player_xid,
             "game_id": self.game.id,
             "points": points,
+            "og_guild_xid": self.game.guild_xid,
         }
         upsert = insert(Play).values(**values)
         upsert = upsert.on_conflict_do_update(
@@ -444,7 +483,10 @@ class GamesService:
                 Play.user_xid == values["user_xid"],
                 Play.game_id == values["game_id"],
             ),
-            set_={"points": upsert.excluded.points},
+            set_={
+                "points": upsert.excluded.points,
+                "og_guild_xid": upsert.excluded.og_guild_xid,
+            },
         )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
@@ -468,13 +510,13 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> GameDict:
         assert self.game
         return self.game.to_dict()
 
     @sync_to_async()
     @tracer.wrap()
-    def inactive_games(self) -> list[dict[str, Any]]:
+    def inactive_games(self) -> list[GameDict]:
         settings = Settings()
         limit = datetime.now(tz=pytz.utc) - timedelta(minutes=settings.EXPIRE_TIME_M)
         records = (
@@ -514,8 +556,8 @@ class GamesService:
     @tracer.wrap()
     def message_xids(self, game_ids: list[int]) -> list[int]:
         query = select(
-            Game.message_xid,  # type: ignore
-        ).where(Game.id.in_(game_ids))
+            Post.message_xid,  # type: ignore
+        ).where(Post.game_id.in_(game_ids))
         return [int(row[0]) for row in DatabaseSession.execute(query) if row[0]]
 
     @sync_to_async()

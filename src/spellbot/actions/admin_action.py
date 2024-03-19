@@ -7,7 +7,7 @@ import discord
 from discord.embeds import Embed
 
 from spellbot.enums import GameFormat, GameService
-from spellbot.models import Channel, GuildAward
+from spellbot.models import Channel, ChannelDict, GuildAward, GuildAwardDict
 from spellbot.operations import (
     safe_fetch_text_channel,
     safe_get_partial_message,
@@ -32,7 +32,7 @@ def humanize_bool(setting: bool) -> str:
     return "✅ On" if setting else "❌ Off"
 
 
-def award_line(award: dict[str, Any]) -> str:
+def award_line(award: GuildAwardDict) -> str:
     kind = "every" if award["repeating"] else "after"
     give_or_take = "take" if award["remove"] else "give"
     verified_only = "verified only" if award["verified_only"] else ""
@@ -70,7 +70,7 @@ class AdminAction(BaseAction):
             return embed
 
         def update_channel_settings(
-            channel: dict[str, Any],
+            channel: ChannelDict,
             channel_settings: dict[str, Any],
             col: str,
         ) -> None:
@@ -98,6 +98,7 @@ class AdminAction(BaseAction):
             update_channel_settings(channel, channel_settings, "voice_category")
             update_channel_settings(channel, channel_settings, "show_points")
             update_channel_settings(channel, channel_settings, "require_confirmation")
+            update_channel_settings(channel, channel_settings, "voice_invite")
             if channel_settings:
                 all_default = False
                 deets = ", ".join(
@@ -385,61 +386,76 @@ class AdminAction(BaseAction):
 
     async def set_channel_motd(self, message: str | None = None) -> None:
         assert self.interaction.channel_id is not None
-        motd = await self.services.channels.set_motd(self.interaction.channel_id, message)
+        setting = await self.services.channels.set_motd(self.interaction.channel_id, message)
         await safe_send_channel(
             self.interaction,
-            f"Message of the day for this channel has been set to: {motd}",
+            f"Message of the day for this channel has been set to: {setting}",
             ephemeral=True,
         )
 
     async def set_channel_extra(self, message: str | None = None) -> None:
         assert self.interaction.channel_id is not None
-        extra = await self.services.channels.set_extra(self.interaction.channel_id, message)
+        setting = await self.services.channels.set_extra(self.interaction.channel_id, message)
         await safe_send_channel(
             self.interaction,
-            f"Extra message for this channel has been set to: {extra}",
+            f"Extra message for this channel has been set to: {setting}",
             ephemeral=True,
         )
 
     async def set_voice_category(self, value: str) -> None:
         assert self.interaction.channel_id is not None
-        name = await self.services.channels.set_voice_category(self.interaction.channel_id, value)
+        setting = await self.services.channels.set_voice_category(
+            self.interaction.channel_id, value
+        )
         await safe_send_channel(
             self.interaction,
-            f"Voice category prefix for this channel has been set to: {name}",
+            f"Voice category prefix for this channel has been set to: {setting}",
             ephemeral=True,
         )
 
     async def set_delete_expired(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
-        name = await self.services.channels.set_delete_expired(self.interaction.channel_id, value)
+        setting = await self.services.channels.set_delete_expired(
+            self.interaction.channel_id, value
+        )
         await safe_send_channel(
             self.interaction,
-            f"Delete expired setting for this channel has been set to: {name}",
+            f"Delete expired setting for this channel has been set to: {setting}",
             ephemeral=True,
         )
 
     async def set_show_points(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
-        name = await self.services.channels.set_show_points(self.interaction.channel_id, value)
+        setting = await self.services.channels.set_show_points(self.interaction.channel_id, value)
         await safe_send_channel(
             self.interaction,
-            f"Show points setting for this channel has been set to: {name}",
+            f"Show points setting for this channel has been set to: {setting}",
             ephemeral=True,
         )
 
     async def set_require_confirmation(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
-        name = await self.services.channels.set_require_confirmation(
+        setting = await self.services.channels.set_require_confirmation(
             self.interaction.channel_id, value
         )
         await safe_send_channel(
             self.interaction,
-            f"Require confirmation setting for this channel has been set to: {name}",
+            f"Require confirmation setting for this channel has been set to: {setting}",
             ephemeral=True,
         )
 
-    async def move_user(self, guild_xid: int, from_user_xid: int, to_user_xid: int) -> None:
+    async def set_voice_invite(self, value: bool) -> None:
+        assert self.interaction.channel_id is not None
+        setting = await self.services.channels.set_voice_invite(self.interaction.channel_id, value)
+        await safe_send_channel(
+            self.interaction,
+            f"Voice invite setting for this channel has been set to: {setting}",
+            ephemeral=True,
+        )
+
+    async def move_user(
+        self, guild_xid: int, from_user_xid: int, to_user_xid: int
+    ) -> None:  # pragma: no cover
         if error := await self.services.users.move_user(guild_xid, from_user_xid, to_user_xid):
             await safe_send_channel(self.interaction, f"Error: {error}", ephemeral=True)
             return
@@ -470,12 +486,16 @@ class AdminAction(BaseAction):
         await self.services.games.add_points(player_xid, points)
         await self.services.games.confirm_points(player_xid)
 
-        channel = await safe_fetch_text_channel(self.bot, found["guild_xid"], found["channel_xid"])
-        if channel:
-            message = safe_get_partial_message(channel, found["guild_xid"], found["message_xid"])
-            if message:
-                embed = await self.services.games.to_embed()
-                await safe_update_embed(message, embed=embed)
+        for post in found.get("posts", []):
+            guild_xid = post["guild_xid"]
+            channel_xid = post["channel_xid"]
+            channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
+            if channel:
+                message_xid = post["message_xid"]
+                message = safe_get_partial_message(channel, guild_xid, message_xid)
+                if message:
+                    embed = await self.services.games.to_embed()
+                    await safe_update_embed(message, embed=embed)
 
         await safe_send_channel(
             self.interaction,

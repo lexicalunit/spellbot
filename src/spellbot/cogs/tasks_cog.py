@@ -47,7 +47,7 @@ async def wait_until_ready(bot: Client) -> None:  # pragma: no cover
             logger.exception("error: exception in task before loop")
 
 
-class TasksCog(commands.Cog):
+class TasksCog(commands.Cog):  # pragma: no cover
     def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
         if not running_in_pytest():

@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from typing import Any
-
 from asgiref.sync import sync_to_async
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Watch
+from spellbot.models import Watch, WatchDict
 
 
 class WatchesService:
     @sync_to_async()
-    def fetch(self, guild_xid: int) -> list[dict[str, Any]]:
+    def fetch(self, guild_xid: int) -> list[WatchDict]:
         watches = (
             DatabaseSession.query(Watch)
             .filter(Watch.guild_xid == guild_xid)

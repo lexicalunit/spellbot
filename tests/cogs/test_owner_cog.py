@@ -111,3 +111,47 @@ class TestCogOwner(ContextMixin):
         self.context.author.send.assert_called_once_with(
             "Naughty users: <@1> (1)\n<@2> (2)\n<@3> (3)",
         )
+
+    async def test_add_mirror(self) -> None:
+        cog = OwnerCog(self.bot)
+        from_guild = self.factories.guild.create()
+        from_channel = self.factories.channel.create(guild=from_guild)
+        to_guild = self.factories.guild.create()
+        to_channel = self.factories.channel.create(guild=to_guild)
+
+        await self.run(
+            cog,
+            cog.mirror,
+            self.context,
+            from_guild_xid=from_guild.xid,
+            from_channel_xid=from_channel.xid,
+            to_guild_xid=to_guild.xid,
+            to_channel_xid=to_channel.xid,
+        )
+
+        self.context.author.send.assert_called_once_with(
+            f"Mirroring from {from_guild.xid}/{from_channel.xid}"
+            f" to {to_guild.xid}/{to_channel.xid}"
+        )
+
+    async def test_add_mirror_exception(
+        self,
+        mocker: MockerFixture,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        cog = OwnerCog(self.bot)
+
+        mocker.patch("spellbot.cogs.owner_cog.add_mirror", AsyncMock(side_effect=RuntimeError()))
+
+        with pytest.raises(RuntimeError):
+            await self.run(
+                cog,
+                cog.mirror,
+                self.context,
+                from_guild_xid=404,
+                from_channel_xid=404,
+                to_guild_xid=404,
+                to_channel_xid=404,
+            )
+
+        assert "rolling back database session due to unhandled exception" in caplog.text

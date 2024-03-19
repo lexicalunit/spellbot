@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, cast
+from typing import TYPE_CHECKING, NoReturn, TypeVar, cast
 
 import discord
 from asgiref.sync import sync_to_async
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
     from spellbot import SpellBot
+    from spellbot.models import ChannelDict
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class BaseAction:
     member: discord.Member
     guild: discord.Guild | None
     channel: discord.TextChannel | None
-    channel_data: dict[str, Any]
+    channel_data: ChannelDict
 
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         self.bot = bot

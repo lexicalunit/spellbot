@@ -181,7 +181,7 @@ class AdminCog(commands.Cog):
     )
     @app_commands.describe(service="Default service")
     @app_commands.choices(
-        service=[Choice(name=service.title, value=service.value) for service in GameService],
+        service=[Choice(name=str(service), value=service.value) for service in GameService],
     )
     @tracer.wrap(name="interaction", resource="set_default_service")
     async def default_service(self, interaction: discord.Interaction, service: int) -> None:
@@ -274,6 +274,17 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_require_confirmation(setting)
 
+    @set_group.command(
+        name="voice_invite",
+        description="Set the option for voice invite creation on games in this channel.",
+    )
+    @app_commands.describe(setting="Setting")
+    @tracer.wrap(name="interaction", resource="set_voice_invite")
+    async def voice_invite(self, interaction: discord.Interaction, setting: bool) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_voice_invite(setting)
+
     @app_commands.command(name="move_user", description="Move one user's data to another user.")
     @tracer.wrap(name="interaction", resource="move_user")
     @app_commands.describe(from_user_id="User ID of the old user")
@@ -283,7 +294,7 @@ class AdminCog(commands.Cog):
         interaction: discord.Interaction,
         from_user_id: str,
         to_user_id: str,
-    ) -> None:
+    ) -> None:  # pragma: no cover
         add_span_context(interaction)
         assert interaction.guild_id is not None
         # note: no user input validation is being done here

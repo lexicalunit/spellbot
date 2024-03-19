@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, cast
 
 from ddtrace import tracer
 
@@ -29,35 +28,35 @@ class LeaveAction(BaseAction):
         if not (game_id := await self.services.users.current_game_id(channel_xid)):
             return
 
-        if not await self.services.games.select(game_id):
-            return
+        success = await self.services.games.select(game_id)
+        assert success  # given that the game_id was found, above, this should never fail
 
         await self.services.users.leave_game(channel_xid)
 
         game_data = await self.services.games.to_dict()
-        message_xid = game_data.get("message_xid")
+        posts = game_data.get("posts")
+        for post in posts:
+            guild_xid = post["guild_xid"]
+            channel_xid = post["channel_xid"]
+            message_xid = post["message_xid"]
 
-        original_response = await safe_original_response(self.interaction)
-        if original_response and message_xid and original_response.id == message_xid:
+            original_response = await safe_original_response(self.interaction)
+            if original_response and message_xid and original_response.id == message_xid:
+                embed = await self.services.games.to_embed()
+                await safe_update_embed_origin(self.interaction, embed=embed)
+                continue
+
+            channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
+            if channel is None:
+                continue
+
+            message = safe_get_partial_message(channel, guild_xid, message_xid)
+            if message is None:
+                continue
+
             embed = await self.services.games.to_embed()
-            await safe_update_embed_origin(self.interaction, embed=embed)
-            return
+            await safe_update_embed(message, embed=embed)
 
-        # We couldn't get the original response, so let's fallback to fetching
-        # the channel message associated with the game and updating it.
-        if not self.interaction.channel or not self.interaction.guild or not message_xid:
-            return
-
-        message = safe_get_partial_message(
-            cast(Any, self.interaction.channel),
-            self.interaction.guild.id,
-            message_xid,
-        )
-        if message is None:
-            return
-
-        embed = await self.services.games.to_embed()
-        await safe_update_embed(message, embed=embed)
         await safe_send_user(
             self.interaction.user,
             "You were removed from any pending games in this channel.",
@@ -84,19 +83,21 @@ class LeaveAction(BaseAction):
         await self.services.users.leave_game(channel_xid)
 
         game_data = await self.services.games.to_dict()
-        chan_xid = game_data["channel_xid"]
-        guild_xid = game_data["guild_xid"]
+        for post in game_data.get("posts", []):
+            chan_xid = post["channel_xid"]
+            guild_xid = post["guild_xid"]
+            message_xid = post["message_xid"]
 
-        if not (channel := await safe_fetch_text_channel(self.bot, guild_xid, chan_xid)):
-            return await self._removed(channel_xid)
-        if not (message_xid := game_data["message_xid"]):
-            return await self._removed(channel_xid)
-        if not (message := safe_get_partial_message(channel, guild_xid, message_xid)):
-            return await self._removed(channel_xid)
+            if not (channel := await safe_fetch_text_channel(self.bot, guild_xid, chan_xid)):
+                await self._removed(channel_xid)
+                continue
+            if not (message := safe_get_partial_message(channel, guild_xid, message_xid)):
+                await self._removed(channel_xid)
+                continue
 
-        embed = await self.services.games.to_embed()
-        await safe_update_embed(message, embed=embed)
-        await self._removed(channel_xid)
+            embed = await self.services.games.to_embed()
+            await safe_update_embed(message, embed=embed)
+            await self._removed(channel_xid)
         return None
 
     @tracer.wrap()
@@ -113,24 +114,21 @@ class LeaveAction(BaseAction):
         message_xids = await self.services.games.message_xids(game_ids)
         for message_xid in message_xids:
             data = await self.services.games.select_by_message_xid(message_xid)
-            if not data:
-                continue
+            assert data is not None  # This should never happen
 
-            channel_xid = data["channel_xid"]
-            guild_xid = data["guild_xid"]
-            if (channel := await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)) and (
-                message := safe_get_partial_message(
-                    channel,
-                    guild_xid,
-                    message_xid,
-                )
-            ):
-                embed = await self.services.games.to_embed()
-                await safe_update_embed(
-                    message,
-                    embed=embed,
-                    view=PendingGameView(bot=self.bot),
-                )
+            for post in data.get("posts", []):
+                guild_xid = post["guild_xid"]
+                channel_xid = post["channel_xid"]
+                channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
+                if channel:
+                    message = safe_get_partial_message(channel, guild_xid, message_xid)
+                    if message:
+                        embed = await self.services.games.to_embed()
+                        await safe_update_embed(
+                            message,
+                            embed=embed,
+                            view=PendingGameView(bot=self.bot),
+                        )
         await safe_send_channel(
             self.interaction,
             "You were removed from all pending games.",

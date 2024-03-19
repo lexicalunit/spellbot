@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, TypedDict
 
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey
 
@@ -9,6 +9,13 @@ from . import Base, now
 
 if TYPE_CHECKING:
     from . import User  # noqa: F401
+
+
+class BlockDict(TypedDict):
+    created_at: datetime
+    updated_at: datetime
+    user_xid: int
+    blocked_user_xid: int
 
 
 class Block(Base):
@@ -48,7 +55,7 @@ class Block(Base):
         doc="The user who is being blocked by someone",
     )
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> BlockDict:
         return {
             "created_at": self.created_at,
             "updated_at": self.updated_at,
