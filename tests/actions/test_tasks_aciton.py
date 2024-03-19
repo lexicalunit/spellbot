@@ -1,4 +1,3 @@
-# pylint: disable=too-many-arguments
 from __future__ import annotations
 
 import logging
@@ -249,8 +248,9 @@ class TestTaskExpireInactiveChannels:
             guild=guild,
             channel=channel,
             updated_at=datetime.now(tz=pytz.utc) - timedelta(days=1),
-            message_xid=message_xid,
         )
+        if message_xid is not None:
+            factories.post.create(guild=guild, channel=channel, game=game, message_xid=message_xid)
         factories.user.create(game=game)
         action.services = mock_services
         action.services.games.inactive_games.return_value = [game.to_dict()]
@@ -376,7 +376,7 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,
         )
         voice_channel = make_voice_channel(
             id=4001,
@@ -406,7 +406,7 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,
         )
         voice_channel = make_voice_channel(
             id=4001,
@@ -466,7 +466,7 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,
         )
         voice_channel = make_voice_channel(
             id=4001,
@@ -498,7 +498,7 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,
         )
         voice_channel = make_voice_channel(
             id=4001,
@@ -530,7 +530,7 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,
         )
         voice_channel = make_voice_channel(
             id=4001,
@@ -561,7 +561,7 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
     ) -> None:
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,
         )
         voice_channel = make_voice_channel(
             id=4001,
@@ -596,7 +596,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         mocker.patch.object(mod.settings, "VOICE_CLEANUP_BATCH", 0)
         manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
+            discord.Permissions.manage_channels.flag,
         )
         voice_channel = make_voice_channel(
             id=4001,

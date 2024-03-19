@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Block, Game, Play, Queue, User, UserAward, Verify, Watch
+from spellbot.models import Block, Game, Play, Post, Queue, User, UserAward, UserDict, Verify, Watch
 
 if TYPE_CHECKING:
     import discord
@@ -23,7 +23,7 @@ class UsersService:
     user: User | None = None
 
     @sync_to_async()
-    def upsert(self, target: discord.User | discord.Member) -> dict[str, Any]:
+    def upsert(self, target: discord.User | discord.Member) -> UserDict:
         assert hasattr(target, "id")
         xid = target.id
         max_name_len = User.name.property.columns[0].type.length  # type: ignore
@@ -77,10 +77,11 @@ class UsersService:
         queue = (
             DatabaseSession.query(Queue)
             .join(Game)
+            .join(Post)
             .filter(
                 and_(
                     Queue.user_xid == self.user.xid,
-                    Game.channel_xid == channel_xid,
+                    Post.channel_xid == channel_xid,
                 ),
             )
             .first()
@@ -93,10 +94,11 @@ class UsersService:
         pending_games = (
             DatabaseSession.query(Queue)
             .join(Game)
+            .join(Post)
             .filter(
                 and_(
                     Queue.user_xid == self.user.xid,
-                    Game.channel_xid == channel_xid,
+                    Post.channel_xid == channel_xid,
                 ),
             )
         )
@@ -128,19 +130,6 @@ class UsersService:
     def is_confirmed(self, channel_xid: int) -> bool:
         assert self.user
         return self.user.confirmed(channel_xid)
-
-    @sync_to_async()
-    def queued_in_another_guild(self, guild_xid: int) -> bool:
-        assert self.user
-        return bool(
-            DatabaseSession.query(Queue)
-            .join(Game, Queue.game_id == Game.id)
-            .filter(
-                Queue.user_xid == self.user.xid,
-                Game.guild_xid != guild_xid,
-            )
-            .count(),
-        )
 
     @sync_to_async()
     def pending_games(self) -> int:
@@ -218,7 +207,7 @@ class UsersService:
         ]
 
     @sync_to_async()
-    def move_user(
+    def move_user(  # pragma: no cover
         self,
         guild_xid: int,
         from_user_xid: int,

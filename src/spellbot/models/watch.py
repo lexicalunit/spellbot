@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, TypedDict
 
 from sqlalchemy import BigInteger, Column, ForeignKey, String
 
@@ -8,6 +8,12 @@ from . import Base
 
 if TYPE_CHECKING:
     from . import Guild, User  # noqa: F401
+
+
+class WatchDict(TypedDict):
+    guild_xid: int
+    user_xid: int
+    note: str
 
 
 class Watch(Base):
@@ -34,7 +40,7 @@ class Watch(Base):
         doc="The note to DM to moderators when this user enters a game",
     )
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> WatchDict:
         return {
             "guild_xid": self.guild_xid,
             "user_xid": self.user_xid,

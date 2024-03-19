@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, TypedDict, cast
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
 from sqlalchemy.orm import relationship
@@ -11,7 +11,19 @@ from . import Base, now
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from . import Channel, Game, GuildAward  # noqa: F401
+    from . import Channel, ChannelDict, Game, GuildAward, GuildAwardDict  # noqa: F401
+
+
+class GuildDict(TypedDict):
+    xid: int
+    created_at: datetime
+    updated_at: datetime
+    name: str
+    motd: str
+    show_links: bool
+    voice_create: bool
+    channels: list[ChannelDict]
+    awards: list[GuildAwardDict]
 
 
 class Guild(Base):
@@ -78,7 +90,7 @@ class Guild(Base):
         doc="Awards available in this guild",
     )
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> GuildDict:
         return {
             "xid": self.xid,
             "created_at": self.created_at,

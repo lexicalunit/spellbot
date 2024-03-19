@@ -332,9 +332,7 @@ class TestSpellBotHandleVerification(BaseMixin):
     async def test_message_from_administrator(self, dpy_message: discord.Message) -> None:
         assert dpy_message.guild
         assert isinstance(dpy_message.guild, discord.Guild)
-        admin_perms = discord.Permissions(
-            discord.Permissions.administrator.flag,  # pylint: disable=no-member
-        )
+        admin_perms = discord.Permissions(discord.Permissions.administrator.flag)
         dpy_message.channel.permissions_for = MagicMock(return_value=admin_perms)
         self.factories.guild.create(xid=dpy_message.guild.id)
         self.factories.channel.create(

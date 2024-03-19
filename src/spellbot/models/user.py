@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, TypedDict
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.expression import and_
 
 from . import Base, GameStatus, Play, now
 
 if TYPE_CHECKING:
     from . import Game
+
+
+class UserDict(TypedDict):
+    xid: int
+    created_at: datetime
+    updated_at: datetime
+    name: str
+    banned: bool
 
 
 class User(Base):
@@ -77,17 +84,16 @@ class User(Base):
     def game(self, channel_xid: int) -> Game | None:
         from spellbot.database import DatabaseSession
 
-        from . import Game, Queue
+        from . import Game, Post, Queue
 
         session = DatabaseSession.object_session(self)
         queue = (
             session.query(Queue)
             .join(Game)
+            .join(Post)
             .filter(
-                and_(
-                    Queue.user_xid == self.xid,
-                    Game.channel_xid == channel_xid,
-                ),
+                Queue.user_xid == self.xid,
+                Post.channel_xid == channel_xid,
             )
             .order_by(Game.updated_at.desc())
             .first()
@@ -100,23 +106,28 @@ class User(Base):
 
     def waiting(self, channel_xid: int) -> bool:
         game = self.game(channel_xid)
-        return bool(
-            game
-            and game.channel_xid == channel_xid
-            and game.status == GameStatus.PENDING.value
-            and not game.deleted_at,
-        )
+        if game is None:
+            return False
+        if game.status != GameStatus.PENDING.value:
+            return False
+        if game.deleted_at is not None:
+            return False
+        # Not required because self.game() already filters by posts + channel.
+        # if not any(post.channel_xid == channel_xid for post in game.posts):
+        #     return False
+        return True
 
     def confirmed(self, channel_xid: int) -> bool:
         from spellbot.database import DatabaseSession
 
-        from . import Game, Play
+        from . import Game, Play, Post
 
         session = DatabaseSession.object_session(self)
         last_game = (
             session.query(Game)
+            .join(Post)
             .filter(
-                Game.channel_xid == channel_xid,
+                Post.channel_xid == channel_xid,
                 Game.status == GameStatus.STARTED.value,
             )
             .order_by(Game.started_at.desc())
@@ -141,7 +152,7 @@ class User(Base):
         session = DatabaseSession.object_session(self)
         return session.query(Queue).filter(Queue.user_xid == self.xid).count()
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> UserDict:
         return {
             "xid": self.xid,
             "created_at": self.created_at,

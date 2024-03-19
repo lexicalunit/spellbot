@@ -1,4 +1,3 @@
-# pylint: disable=protected-access
 from __future__ import annotations
 
 import contextvars
@@ -26,7 +25,9 @@ from tests.factories import (
     GameFactory,
     GuildAwardFactory,
     GuildFactory,
+    MirrorFactory,
     PlayFactory,
+    PostFactory,
     QueueFactory,
     UserAwardFactory,
     UserFactory,
@@ -53,7 +54,9 @@ class Factories:
     game = GameFactory
     guild = GuildFactory
     guild_award = GuildAwardFactory
+    mirror = MirrorFactory
     play = PlayFactory
+    post = PostFactory
     queue = QueueFactory
     user = UserFactory
     user_award = UserAwardFactory
@@ -82,7 +85,9 @@ async def session_context(
         GameFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         GuildAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         GuildFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        MirrorFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         PlayFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        PostFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         QueueFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         UserAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         UserFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore

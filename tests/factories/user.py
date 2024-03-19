@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from random import randint
 from typing import Any
 
 import factory
-from spellbot.models import Game, Play, Queue, User
+from spellbot.models import Game, Play, Post, Queue, User
 
 
 class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -19,11 +20,21 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
         if "game" in kwargs:
             game: Game = kwargs.pop("game")
             if game.started_at is None:
-                queue = Queue(game_id=game.id, user_xid=kwargs["xid"])
+                queue = Queue(game_id=game.id, user_xid=kwargs["xid"], og_guild_xid=game.guild_xid)
                 session.add(queue)
             else:
-                play = Play(game_id=game.id, user_xid=kwargs["xid"])
+                play = Play(game_id=game.id, user_xid=kwargs["xid"], og_guild_xid=game.guild_xid)
                 session.add(play)
+            with session.no_autoflush:
+                if not game.posts:
+                    post = Post(
+                        game_id=game.id,
+                        guild_xid=game.guild_xid,
+                        channel_xid=game.channel_xid,
+                        message_xid=randint(1000, 9999),  # noqa: S311
+                    )
+                    session.add(post)
+                    game.posts = [post]  # type: ignore
 
         return super()._create(model_class, *args, **kwargs)
 

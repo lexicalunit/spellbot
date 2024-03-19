@@ -5,6 +5,8 @@ from spellbot.models import Queue
 
 
 class QueueFactory(factory.alchemy.SQLAlchemyModelFactory):
+    og_guild_xid = factory.Faker("random_int")
+
     class Meta:
         model = Queue
         sqlalchemy_session_persistence = "flush"

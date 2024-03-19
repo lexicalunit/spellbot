@@ -17,34 +17,52 @@ def import_models() -> None:  # pragma: no cover
 
 from .base import Base, create_all, literalquery, now, reverse_all  # noqa: I001,E402
 
-from .award import GuildAward, UserAward  # noqa: E402
-from .block import Block  # noqa: E402
-from .channel import Channel  # noqa: E402
-from .game import Game, GameStatus  # noqa: E402
-from .guild import Guild  # noqa: E402
-from .play import Play  # noqa: E402
-from .queue import Queue  # noqa: E402
-from .user import User  # noqa: E402
-from .verify import Verify  # noqa: E402
-from .watch import Watch  # noqa: E402
+from .award import GuildAward, UserAward, GuildAwardDict, UserAwardDict  # noqa: E402
+from .block import Block, BlockDict  # noqa: E402
+from .channel import Channel, ChannelDict  # noqa: E402
+from .game import Game, GameStatus, GameDict  # noqa: E402
+from .guild import Guild, GuildDict  # noqa: E402
+from .mirror import Mirror, MirrorDict  # noqa: E402
+from .play import Play, PlayDict  # noqa: E402
+from .post import Post, PostDict  # noqa: E402
+from .queue import Queue, QueueDict  # noqa: E402
+from .user import User, UserDict  # noqa: E402
+from .verify import Verify, VerifyDict  # noqa: E402
+from .watch import Watch, WatchDict  # noqa: E402
 
 __all__ = [
     "Base",
     "Block",
+    "BlockDict",
     "Channel",
+    "ChannelDict",
     "create_all",
     "Game",
+    "GameDict",
+    "GameDict",
     "GameStatus",
     "Guild",
     "GuildAward",
+    "GuildAwardDict",
+    "GuildDict",
     "import_models",
     "literalquery",
+    "Mirror",
+    "MirrorDict",
     "now",
     "Play",
+    "PlayDict",
+    "Post",
+    "PostDict",
     "Queue",
+    "QueueDict",
     "reverse_all",
     "User",
     "UserAward",
+    "UserAwardDict",
+    "UserDict",
     "Verify",
+    "VerifyDict",
     "Watch",
+    "WatchDict",
 ]

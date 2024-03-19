@@ -9,7 +9,6 @@ from uuid import uuid4
 import discord
 from ddtrace import tracer
 from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, Context
-from expiringdict import ExpiringDict
 
 from .database import db_session_manager, initialize_connection
 from .metrics import setup_ignored_errors, setup_metrics
@@ -45,7 +44,7 @@ class SpellBot(AutoShardedBot):
         )
         self.mock_games = mock_games
         self.create_connection = create_connection
-        self.guild_locks = ExpiringDict(max_len=100, max_age_seconds=3600)  # 1 hr
+        self.critical_lock = asyncio.Lock()
 
     async def on_ready(self) -> None:  # pragma: no cover
         logger.info("client ready")
@@ -74,9 +73,13 @@ class SpellBot(AutoShardedBot):
 
     @asynccontextmanager
     async def guild_lock(self, guild_xid: int) -> AsyncGenerator[None, None]:
-        if not self.guild_locks.get(guild_xid):
-            self.guild_locks[guild_xid] = asyncio.Lock()
-        async with self.guild_locks[guild_xid]:  # type: ignore
+        # We used to have a lock per guild, but now that users can join games in
+        # multiple guilds at the same time, we need to have a global lock for the
+        # critical paths related to joining and leaving games. That is why we're
+        # ignoring the passed in guild_xid parameter. In the future this could be
+        # refactored to use a more fine-grained locking mechanism, or else remove
+        # the unused parameter.
+        async with self.critical_lock:
             yield
 
     @tracer.wrap()

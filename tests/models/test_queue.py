@@ -17,4 +17,5 @@ class TestModelQueue:
         assert queue.to_dict() == {
             "user_xid": queue.user_xid,
             "game_id": queue.game_id,
+            "og_guild_xid": queue.og_guild_xid,
         }

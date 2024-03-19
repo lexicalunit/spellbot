@@ -5,7 +5,7 @@ import logging
 import re
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytz
 from dateutil import tz
@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from discord.channel import VoiceChannel
 
     from spellbot import SpellBot
+    from spellbot.models import GameDict
 
 settings = Settings()
 logger = logging.getLogger(__name__)
@@ -161,7 +162,7 @@ class TasksAction:
             logger.exception("error: exception in background task")
             await rollback_session()
 
-    async def expire_games(self, games: list[dict[str, Any]]) -> None:
+    async def expire_games(self, games: list[GameDict]) -> None:
         batch = 0
         for game in games:
             game_id = game["id"]
@@ -176,27 +177,26 @@ class TasksAction:
             else:
                 await asyncio.sleep(1)
 
-    async def expire_game(self, game: dict[str, Any], dequeued: int) -> None:
-        message_xid = game["message_xid"]
-        if message_xid is None:
-            return
+    async def expire_game(self, game: GameDict, dequeued: int) -> None:
+        for post in game.get("posts", []):
+            guild_xid = post["guild_xid"]
+            channel_xid = post["channel_xid"]
+            message_xid = post["message_xid"]
 
-        guild_xid = game["guild_xid"]
-        channel_xid = game["channel_xid"]
-        chan = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
-        if not chan:
-            return
+            chan = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
+            if not chan:
+                continue
 
-        if not (post := safe_get_partial_message(chan, guild_xid, message_xid)):
-            return
+            if not (post := safe_get_partial_message(chan, guild_xid, message_xid)):
+                continue
 
-        channel_data = await self.services.channels.select(channel_xid)
-        if not dequeued or channel_data and channel_data["delete_expired"]:
-            await safe_delete_message(post)
-        else:
-            await safe_update_embed(
-                post,
-                content="Sorry, this game was expired due to inactivity.",
-                embed=None,
-                view=None,
-            )
+            channel_data = await self.services.channels.select(channel_xid)
+            if not dequeued or channel_data and channel_data["delete_expired"]:
+                await safe_delete_message(post)
+            else:
+                await safe_update_embed(
+                    post,
+                    content="Sorry, this game was expired due to inactivity.",
+                    embed=None,
+                    view=None,
+                )

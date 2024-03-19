@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
+from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 import pytest_asyncio
@@ -64,3 +64,65 @@ class TestCogBlock(InteractionMixin):
         )
         blocks = list(DatabaseSession.query(Block).all())
         assert len(blocks) == 0
+
+    async def test_blocked_happy_path(self, cog: BlockCog, user: User) -> None:
+        target = self.factories.user.create()
+        self.factories.block.create(user_xid=user.xid, blocked_user_xid=target.xid)
+
+        await self.run(cog.blocked)
+
+        self.interaction.response.send_message.assert_called_once_with(embed=ANY, ephemeral=True)
+        assert self.last_send_message("embed") == {
+            "color": self.settings.INFO_EMBED_COLOR,
+            "description": f"<@{target.xid}>\n",
+            "thumbnail": {"url": self.settings.ICO_URL},
+            "title": "Blocked Users",
+            "type": "rich",
+            "footer": {"text": "Page 1 of 1"},
+        }
+
+    async def test_blocked_no_one(self, cog: BlockCog, user: User) -> None:
+        await self.run(cog.blocked)
+
+        self.interaction.response.send_message.assert_called_once_with(embed=ANY, ephemeral=True)
+        assert self.last_send_message("embed") == {
+            "color": self.settings.INFO_EMBED_COLOR,
+            "description": "You have no blocked users.",
+            "thumbnail": {"url": self.settings.ICO_URL},
+            "title": "Blocked Users",
+            "type": "rich",
+        }
+
+    async def test_blocked_pagination(self, cog: BlockCog, user: User) -> None:
+        target1 = self.factories.user.create()
+        target2 = self.factories.user.create()
+        self.factories.block.create(user_xid=user.xid, blocked_user_xid=target1.xid)
+        self.factories.block.create(user_xid=user.xid, blocked_user_xid=target2.xid)
+
+        with patch("spellbot.actions.block_action.EMBED_DESCRIPTION_SIZE_LIMIT", 10):
+            await self.run(cog.blocked)
+
+        self.interaction.response.send_message.assert_called_once_with(embed=ANY, ephemeral=True)
+        assert self.last_send_message("embed") == {
+            "color": self.settings.INFO_EMBED_COLOR,
+            "description": f"<@{target1.xid}>\n",
+            "thumbnail": {"url": self.settings.ICO_URL},
+            "title": "Blocked Users",
+            "type": "rich",
+            "footer": {"text": "Page 1 of 2"},
+        }
+
+        self.interaction.response.send_message.reset_mock()
+
+        with patch("spellbot.actions.block_action.EMBED_DESCRIPTION_SIZE_LIMIT", 10):
+            await self.run(cog.blocked, page=2)
+
+        self.interaction.response.send_message.assert_called_once_with(embed=ANY, ephemeral=True)
+        assert self.last_send_message("embed") == {
+            "color": self.settings.INFO_EMBED_COLOR,
+            "description": f"<@{target2.xid}>\n",
+            "thumbnail": {"url": self.settings.ICO_URL},
+            "title": "Blocked Users",
+            "type": "rich",
+            "footer": {"text": "Page 2 of 2"},
+        }

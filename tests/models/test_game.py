@@ -6,7 +6,8 @@ from unittest.mock import ANY
 
 import pytz
 from spellbot.database import DatabaseSession
-from spellbot.models import GameStatus, Play
+from spellbot.enums import GameService
+from spellbot.models import Game, GameStatus, Play
 
 if TYPE_CHECKING:
     from spellbot.settings import Settings
@@ -18,7 +19,7 @@ class TestModelGame:
     def test_game_to_dict(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
-        game = factories.game.create(guild=guild, channel=channel)
+        game: Game = factories.game.create(guild=guild, channel=channel)
 
         assert game.to_dict() == {
             "id": game.id,
@@ -28,8 +29,9 @@ class TestModelGame:
             "started_at": game.started_at,
             "guild_xid": game.guild_xid,
             "channel_xid": game.channel_xid,
-            "message_xid": game.message_xid,
+            "posts": game.posts,
             "voice_xid": game.voice_xid,
+            "voice_invite_link": game.voice_invite_link,
             "seats": game.seats,
             "status": game.status,
             "format": game.format,
@@ -140,6 +142,7 @@ class TestModelGame:
             guild=guild,
             channel=channel,
         )
+        factories.post.create(guild=guild, channel=channel, game=game)
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
@@ -172,7 +175,7 @@ class TestModelGame:
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.message_xid}) in <#{channel.xid}>."
+                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
                 {
@@ -185,6 +188,75 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+
+    def test_game_embed_started_with_no_service(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            seats=2,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            spelltable_link=None,
+            guild=guild,
+            channel=channel,
+            service=GameService.NOT_ANY.value,
+        )
+        factories.post.create(guild=guild, channel=channel, game=game)
+        player1 = factories.user.create(game=game)
+        player2 = factories.user.create(game=game)
+
+        assert game.to_embed().to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": "Please check your Direct Messages for your game details.",
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n"
+                        f"• <@{player2.xid}> ({player2.name})"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {"inline": False, "name": "Service", "value": "Not any"},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+        assert game.to_embed(dm=True).to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": (
+                "Contact the other players in your game to organize this match.\n"
+                "\n"
+                "You can also [jump to the original game post]"
+                "(https://discordapp.com/channels/"
+                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
+            ),
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n"
+                        f"• <@{player2.xid}> ({player2.name})"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {"inline": False, "name": "Service", "value": "Not any"},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -264,6 +336,7 @@ class TestModelGame:
             guild=guild,
             channel=channel,
         )
+        factories.post.create(guild=guild, channel=channel, game=game)
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
@@ -296,7 +369,7 @@ class TestModelGame:
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.message_xid}) in <#{channel.xid}>."
+                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
                 {
@@ -332,6 +405,7 @@ class TestModelGame:
             guild=guild,
             channel=channel,
         )
+        factories.post.create(guild=guild, channel=channel, game=game)
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
@@ -366,7 +440,80 @@ class TestModelGame:
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.message_xid}) in <#{channel.xid}>."
+                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
+            ),
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n"
+                        f"• <@{player2.xid}> ({player2.name})"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+
+    def test_game_embed_started_with_voice_channel_and_link(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            seats=2,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            spelltable_link="https://spelltable/link",
+            voice_xid=501,
+            voice_invite_link="https://voice/invite",
+            guild=guild,
+            channel=channel,
+        )
+        factories.post.create(guild=guild, channel=channel, game=game)
+        player1 = factories.user.create(game=game)
+        player2 = factories.user.create(game=game)
+
+        assert game.to_embed().to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": "Please check your Direct Messages for your game details.",
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n"
+                        f"• <@{player2.xid}> ({player2.name})"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+        assert game.to_embed(dm=True).to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": (
+                "[Join your SpellTable game now!]"
+                f"({game.spelltable_link}) (or [spectate this game]"
+                f"({game.spectate_link}))\n"
+                "\n"
+                f"Join your voice chat now: <#{game.voice_xid}>\n"
+                f"Or use this voice channel invite: {game.voice_invite_link}\n"
+                "\n"
+                "You can also [jump to the original game post]"
+                "(https://discordapp.com/channels/"
+                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
                 {
@@ -397,6 +544,7 @@ class TestModelGame:
             guild=guild,
             channel=channel,
         )
+        factories.post.create(guild=guild, channel=channel, game=game)
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
@@ -433,7 +581,7 @@ class TestModelGame:
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.message_xid}) in <#{channel.xid}>.\n"
+                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>.\n"
                 "\n"
                 "this is a message of the day"
             ),

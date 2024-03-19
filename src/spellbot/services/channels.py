@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytz
 from asgiref.sync import sync_to_async
@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import update
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Channel
+from spellbot.models import Channel, ChannelDict
 
 if TYPE_CHECKING:
     from discord.abc import MessageableChannel
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 class ChannelsService:
     @sync_to_async()
-    def upsert(self, channel: MessageableChannel) -> dict[str, Any]:
+    def upsert(self, channel: MessageableChannel) -> ChannelDict:
         assert channel.guild is not None
         name_max_len = Channel.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(channel, "name", "")
@@ -48,7 +48,7 @@ class ChannelsService:
         DatabaseSession.query(Channel).filter(Channel.xid == xid).delete(synchronize_session=False)
 
     @sync_to_async()
-    def select(self, xid: int) -> dict[str, Any] | None:
+    def select(self, xid: int) -> ChannelDict | None:
         channel = DatabaseSession.query(Channel).filter(Channel.xid == xid).one_or_none()
         return channel.to_dict() if channel else None
 
@@ -196,6 +196,18 @@ class ChannelsService:
             update(Channel)
             .where(Channel.xid == xid)
             .values(require_confirmation=value)
+            .execution_options(synchronize_session=False)
+        )
+        DatabaseSession.execute(query)
+        DatabaseSession.commit()
+        return value
+
+    @sync_to_async()
+    def set_voice_invite(self, xid: int, value: bool) -> bool:
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(voice_invite=value)
             .execution_options(synchronize_session=False)
         )
         DatabaseSession.execute(query)

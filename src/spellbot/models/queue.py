@@ -1,10 +1,16 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TypedDict
 
 from sqlalchemy import BigInteger, Column, ForeignKey, Integer
 
 from . import Base
+
+
+class QueueDict(TypedDict):
+    user_xid: int
+    game_id: int
+    og_guild_xid: int
 
 
 class Queue(Base):
@@ -27,9 +33,15 @@ class Queue(Base):
         index=True,
         doc="The SpellBot game ID of a pending game the user is queued for",
     )
+    og_guild_xid = Column(
+        BigInteger,
+        nullable=False,
+        doc="The external Discord ID of the guild where the user entered this game",
+    )
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> QueueDict:
         return {
             "user_xid": self.user_xid,
             "game_id": self.game_id,
+            "og_guild_xid": self.og_guild_xid,
         }

@@ -21,4 +21,5 @@ class TestModelPlay:
             "created_at": play.created_at,
             "updated_at": play.updated_at,
             "confirmed_at": play.confirmed_at,
+            "og_guild_xid": play.og_guild_xid,
         }

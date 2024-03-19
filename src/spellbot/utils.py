@@ -69,13 +69,12 @@ def bot_can_reply_to(message: discord.Message) -> bool:
         return False
     if message.channel.guild is None:
         return False
-    try:
-        perms = safe_permissions_for(message.channel, message.channel.guild.me)
-        for req in ("send_messages",):
-            if not hasattr(perms, req) or not getattr(perms, req):
-                return False
-    except Exception:
+    perms = safe_permissions_for(message.channel, message.channel.guild.me)
+    if perms is None:
         return False
+    for req in ("send_messages",):
+        if not hasattr(perms, req) or not getattr(perms, req):
+            return False
     return True
 
 
@@ -126,9 +125,9 @@ def bot_can_delete_message(message: discord.Message | discord.PartialMessage) ->
         return False
     perms = guild.me.guild_permissions
     req = "manage_messages"
-    if not hasattr(perms, req) or not getattr(perms, req):
-        return False
-    return True
+    if hasattr(perms, req) and getattr(perms, req):
+        return True
+    return False
 
 
 def bot_can_delete_channel(channel: MessageableChannel) -> bool:
@@ -141,7 +140,8 @@ def bot_can_delete_channel(channel: MessageableChannel) -> bool:
     if not hasattr(guild_channel, "guild"):
         return False
     guild: discord.Guild = guild_channel.guild
-    if not (perms := safe_permissions_for(guild_channel, guild.me)):
+    perms = safe_permissions_for(guild_channel, guild.me)
+    if perms is None:
         return False
     channel_id = getattr(channel, "id", None)
     logger.info("bot permissions (%s): %s", channel_id, str(perms.value))
@@ -158,7 +158,8 @@ def is_admin(interaction: discord.Interaction) -> bool:
         raise AdminOnlyError
     if interaction.user.id == guild.owner_id:
         return True
-    if (perms := safe_permissions_for(channel, interaction.user)) and perms.administrator:
+    perms = safe_permissions_for(channel, interaction.user)
+    if perms is not None and perms.administrator:
         return True
     if not hasattr(interaction.user, "roles"):
         raise AdminOnlyError
@@ -302,22 +303,24 @@ async def handle_view_errors(
     interaction: discord.Interaction,
     error: Exception,
     item: Item[Any],
-) -> None:
+) -> None:  # pragma: no cover
     return await handle_interaction_errors(interaction, error)
 
 
-async def handle_command_errors(interaction: discord.Interaction, error: AppCommandError) -> None:
+async def handle_command_errors(
+    interaction: discord.Interaction, error: AppCommandError
+) -> None:  # pragma: no cover
     return await handle_interaction_errors(interaction, error)
 
 
-async def load_extensions(bot: AutoShardedBot, do_sync: bool = False) -> None:
+async def load_extensions(bot: AutoShardedBot, do_sync: bool = False) -> None:  # pragma: no cover
     from .cogs import load_all_cogs
 
     settings = Settings()
     guild = settings.GUILD_OBJECT
 
     if do_sync:
-        if guild:  # pragma: no cover
+        if guild:
             logger.info("syncing commands to debug guild: %s", guild.id)
         else:
             logger.info("syncing global commands")

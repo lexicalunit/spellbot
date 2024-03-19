@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, TypedDict
 
 from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
@@ -11,6 +11,18 @@ from . import Base
 
 if TYPE_CHECKING:
     from . import Guild, User  # noqa: F401
+
+
+class GuildAwardDict(TypedDict):
+    id: int
+    guild_xid: int
+    count: int
+    repeating: bool
+    remove: bool
+    role: str
+    message: str
+    verified_only: bool
+    unverified_only: bool
 
 
 class GuildAward(Base):
@@ -83,7 +95,7 @@ class GuildAward(Base):
         doc="The guild where this award is available",
     )
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> GuildAwardDict:
         return {
             "id": self.id,
             "guild_xid": self.guild_xid,
@@ -95,6 +107,12 @@ class GuildAward(Base):
             "verified_only": self.verified_only,
             "unverified_only": self.unverified_only,
         }
+
+
+class UserAwardDict(TypedDict):
+    user_xid: int
+    guild_xid: int
+    guild_award_id: int
 
 
 class UserAward(Base):
@@ -118,7 +136,7 @@ class UserAward(Base):
     )
     guild_award_id = Column(Integer, nullable=True)
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> UserAwardDict:
         return {
             "user_xid": self.user_xid,
             "guild_xid": self.guild_xid,

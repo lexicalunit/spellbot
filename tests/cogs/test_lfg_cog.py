@@ -8,8 +8,8 @@ import pytest
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
-from spellbot.enums import GameFormat
-from spellbot.models import Channel, Game, User
+from spellbot.enums import GameFormat, GameService
+from spellbot.models import Channel, Game, Queue, User
 
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
@@ -45,6 +45,7 @@ class TestCogLookingForGame(InteractionMixin):
     ) -> None:
         channel = add_channel(
             default_format=GameFormat.MODERN.value,
+            default_service=GameService.COCKATRICE.value,
             default_seats=2,
             xid=self.interaction.channel_id,
         )
@@ -53,14 +54,16 @@ class TestCogLookingForGame(InteractionMixin):
             channel=channel,
             seats=2,
             format=GameFormat.MODERN.value,
-            message_xid=123,
+            service=GameService.COCKATRICE.value,
         )
+        self.factories.post.create(guild=self.guild, channel=channel, game=game, message_xid=123)
+
         other_user = self.factories.user.create(xid=self.interaction.user.id + 1, game=game)
         other_player = mock_discord_object(other_user)
 
         with mock_operations(lfg_action, users=[other_player]):
             message = MagicMock(spec=discord.Message)
-            message.id = game.message_xid
+            message.id = game.posts[0].message_xid
             lfg_action.safe_get_partial_message.return_value = message
 
             await self.run(cog.lfg)
@@ -90,6 +93,7 @@ class TestCogLookingForGame(InteractionMixin):
                         "name": "Started at",
                         "value": f"<t:{game.started_at_timestamp}>",
                     },
+                    {"inline": False, "name": "Service", "value": "Cockatrice"},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
                 "thumbnail": {"url": self.settings.THUMB_URL},
@@ -97,266 +101,81 @@ class TestCogLookingForGame(InteractionMixin):
                 "type": "rich",
             }
 
+    async def test_lfg_when_blocked(self, game: Game, user: User) -> None:
+        other_user = self.factories.user.create(game=game)
+        self.factories.block.create(user_xid=other_user.xid, blocked_user_xid=self.user.xid)
 
-# TODO: fix this
-#     async def test_lfg_when_blocked(self):
-#         guild = self.factories.guild.create(xid=self.ctx.guild_id)
-#         channel = self.factories.channel.create(xid=self.ctx.channel_id, guild=guild)
-#         author_user = self.factories.user.create(xid=self.ctx.author_id)
-#         game = self.factories.game.create(guild=guild, channel=channel)
-#         other_user = self.factories.user.create(xid=self.ctx.author_id + 1, game=game)
-#         self.factories.block.create(
-#             user_xid=other_user.xid,
-#             blocked_user_xid=author_user.xid,
-#         )
+        cog = LookingForGameCog(self.bot)
+        await self.run(cog.lfg)
 
-#         cog = LookingForGameCog(self.bot)
-#         await cog.lfg.func(cog, self.ctx)
-#         other_game = DatabaseSession.query(Game).filter(Game.id == game.id).one_or_none()
-#         assert other_game
-#         author_game = DatabaseSession.query(Game).filter(Game.id != game.id).one_or_none()
-#         assert author_game
-#         assert other_game != author_game
+        other_game = DatabaseSession.query(Game).filter(Game.id == game.id).one()
+        user_game = DatabaseSession.query(Game).filter(Game.id != game.id).one()
+        assert other_game.id != user_game.id
 
-#     async def test_lfg_when_already_in_game(self):
-#         guild = ctx_guild(self.ctx)
-#         channel = ctx_channel(self.ctx, guild)
-#         game = ctx_game(self.ctx, guild, channel)
-#         user = ctx_user(self.ctx, game=game)
-#         author = mock_discord_user(user)
+    async def test_lfg_when_already_in_game(self, game: Game, player: User) -> None:
+        with mock_operations(lfg_action, users=[mock_discord_object(player)]):
+            cog = LookingForGameCog(self.bot)
+            await self.run(cog.lfg)
 
-#         with mock_operations(lfg_action, users=[author]):
-#             cog = LookingForGameCog(self.bot)
-#             await cog.lfg.func(cog, self.ctx)
-#             lfg_action.safe_send_channel.assert_called_once_with(
-#                 self.ctx,
-#                 "You're already in a game in this channel.",
-#             )
+            lfg_action.safe_followup_channel.assert_called_once_with(
+                self.interaction,
+                "You're already in a game in this channel.",
+            )
 
-#         found = DatabaseSession.query(User).one()
-#         assert found.game_id == game.id
+        found = DatabaseSession.query(User).one()
+        assert found.game(self.channel.xid).id == game.id
+        assert DatabaseSession.query(Game).count() == 1
 
-#     async def test_lfg_with_format(self):
-#         cog = LookingForGameCog(self.bot)
-#         await cog.lfg.func(cog, self.ctx, format=GameFormat.MODERN.value)
-#         assert DatabaseSession.query(Game).one().format == GameFormat.MODERN.value
+    async def test_lfg_with_format(self) -> None:
+        cog = LookingForGameCog(self.bot)
+        await self.run(cog.lfg, format=GameFormat.MODERN.value)
+        assert DatabaseSession.query(Game).one().format == GameFormat.MODERN.value
 
-#     async def test_lfg_with_seats(self):
-#         cog = LookingForGameCog(self.bot)
-#         await cog.lfg.func(cog, self.ctx, seats=2)
-#         assert DatabaseSession.query(Game).one().seats == 2
+    async def test_lfg_with_seats(self) -> None:
+        cog = LookingForGameCog(self.bot)
+        await self.run(cog.lfg, seats=2)
+        assert DatabaseSession.query(Game).one().seats == 2
 
-#     async def test_lfg_with_friends(self):
-#         assert self.ctx.guild
-#         assert self.ctx.channel
-#         assert isinstance(self.ctx.channel, discord.TextChannel)
-#         assert isinstance(self.ctx.author, discord.User)
-#         friend1 = build_author(10)
-#         friend2 = build_author(20)
-#         game_post = build_message(self.ctx.guild, self.ctx.channel, self.ctx.author)
+    async def test_lfg_with_friends(self, user: User, message: discord.Message) -> None:
+        friend1 = self.factories.user.create()
+        friend2 = self.factories.user.create()
+        players = [mock_discord_object(x) for x in (self.user, friend1, friend2)]
+        with mock_operations(lfg_action, users=players):
+            lfg_action.safe_followup_channel.return_value = self.message
 
-#         with mock_operations(lfg_action, users=[self.ctx.author, friend1, friend2]):
-#             lfg_action.safe_send_channel.return_value = game_post
+            cog = LookingForGameCog(self.bot)
+            await self.run(cog.lfg, friends=f"<@{friend1.xid}><@{friend2.xid}>")
 
-#             cog = LookingForGameCog(self.bot)
-#             await cog.lfg.func(cog, self.ctx, friends=f"<@{friend1.id}><@{friend2.id}>")
+        DatabaseSession.expire_all()
+        game = DatabaseSession.query(Game).one()
+        queues = DatabaseSession.query(Queue).all()
+        assert len(queues) == 3
+        assert all(queue.game_id == game.id for queue in queues)
 
-#         DatabaseSession.expire_all()
-#         game = DatabaseSession.query(Game).one()
-#         users = DatabaseSession.query(User).all()
-#         assert len(users) == 3
-#         for user in users:
-#             assert user.game_id == game.id
+    async def test_lfg_with_too_many_friends(self, user: User, message: discord.Message) -> None:
+        friend1 = self.factories.user.create()
+        friend2 = self.factories.user.create()
+        friend3 = self.factories.user.create()
+        friend4 = self.factories.user.create()
+        players = [mock_discord_object(x) for x in (self.user, friend1, friend2, friend3, friend4)]
+        with mock_operations(lfg_action, users=players):
+            lfg_action.safe_followup_channel.return_value = self.message
 
-#     async def test_lfg_with_too_many_friends(self):
-#         assert self.ctx.author
-#         assert isinstance(self.ctx.author, discord.User)
-#         friend1 = build_author(10)
-#         friend2 = build_author(20)
-#         friend3 = build_author(30)
-#         friend4 = build_author(40)
+            cog = LookingForGameCog(self.bot)
+            await self.run(
+                cog.lfg,
+                friends=f"<@{friend1.xid}><@{friend2.xid}><@{friend3.xid}><@{friend4.xid}>",
+            )
 
-#         with mock_operations(
-#             lfg_action,
-#             users=[self.ctx.author, friend1, friend2, friend3, friend4],
-#         ):
-#             cog = LookingForGameCog(self.bot)
-#             await cog.lfg.func(
-#                 cog,
-#                 self.ctx,
-#                 friends=f"<@{friend1.id}><@{friend2.id}><@{friend3.id}><@{friend4.id}>",
-#             )
+        assert not DatabaseSession.query(Game).one_or_none()
 
-#         assert not DatabaseSession.query(Game).one_or_none()
-
-#     async def test_lfg_when_initial_post_fails(self):
-#         assert self.ctx.author
-#         assert isinstance(self.ctx.author, discord.User)
-
-#         with mock_operations(lfg_action, users=[self.ctx.author]):
-#             lfg_action.safe_send_channel.return_value = None
-
-#             post = MagicMock(spec=discord.Message)
-#             post.id = 12345
-#             lfg_action.safe_channel_reply.return_value = post
-
-#             cog = LookingForGameCog(self.bot)
-#             await cog.lfg.func(cog, self.ctx)
-
-#             game = DatabaseSession.query(Game).one()
-#             mock_call = lfg_action.safe_channel_reply
-#             mock_call.assert_called_once()
-#             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-#                 "color": self.settings.PENDING_EMBED_COLOR,
-#                 "description": (
-#                     "**A temporary issue prevented buttons from being added to this game"
-#                     " post. To join or leave this game use `/lfg` or `/leave`.**\n\n"
-#                     "_A SpellTable link will be created when all players have joined._"
-#                 ),
-#                 "fields": [
-#                     {
-#                         "inline": False,
-#                         "name": "Players",
-#                         "value": f"<@{self.ctx.author_id}>",
-#                     },
-#                     {"inline": True, "name": "Format", "value": "Commander"},
-#                 ],
-#                 "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-#                 "thumbnail": {"url": self.settings.THUMB_URL},
-#                 "title": "**Waiting for 3 more players to join...**",
-#                 "type": "rich",
-#             }
-
-#     async def test_lfg_when_initial_post_and_reply_fails(self):
-#         assert self.ctx.author
-#         assert isinstance(self.ctx.author, discord.User)
-
-#         with mock_operations(lfg_action, users=[self.ctx.author]):
-#             lfg_action.safe_send_channel.return_value = None
-#             lfg_action.safe_channel_reply.return_value = None
-
-#             cog = LookingForGameCog(self.bot)
-#             await cog.lfg.func(cog, self.ctx)
-
-#             lfg_action.safe_send_channel.assert_called_once()
-#             lfg_action.safe_channel_reply.assert_called_once()
-#             game = DatabaseSession.query(Game).one()
-#             assert game.message_xid is None
+    async def test_lfg_multiple_times(self, cog: LookingForGameCog, channel: Channel) -> None:
+        await self.run(cog.lfg)
+        await self.run(cog.lfg)
+        assert DatabaseSession.query(Game).count() == 1
 
 
-# @pytest.mark.asyncio()
-# class TestCogLookingForGameCrossContext(BaseMixin):
-#     # TODO: Refactor.
-#     @pytest.mark.skip(reason="needs refactoring")
-#     async def test_lfg_when_game_has_no_message_xid(self, guild: Guild, channel: Channel):
-#         cog = LookingForGameCog(self.bot)
-#         discord_guild = mock_discord_guild(guild)
-#         discord_channel = mock_discord_channel(channel, guild=discord_guild)
-#         player1 = mock_discord_user(self.factories.user.create())
-#         player2 = mock_discord_user(self.factories.user.create())
-#         ctx1 = build_ctx(discord_guild, discord_channel, player1, 1)
-#         ctx2 = build_ctx(discord_guild, discord_channel, player2, 2)
-
-#         with mock_operations(lfg_action, users=[player1, player2]):
-#             # initial game post creation
-#             lfg_action.safe_send_channel.return_value = build_message(
-#                 discord_guild,
-#                 discord_channel,
-#                 build_client_user(),
-#                 1,
-#             )
-#             await cog.lfg.func(cog, ctx1)
-#             message_xid1 = DatabaseSession.query(Game.message_xid).scalar()
-
-#             # simulate the game having a missing message_xid
-#             DatabaseSession.execute(update(Game).values(message_xid=None))
-#             DatabaseSession.commit()
-
-#             # repost game post
-#             lfg_action.safe_send_channel.return_value = build_message(
-#                 discord_guild,
-#                 discord_channel,
-#                 build_client_user(),
-#                 2,
-#             )
-#             await cog.lfg.func(cog, ctx2)
-#             message_xid2 = DatabaseSession.query(Game.message_xid).scalar()
-
-#             assert message_xid1 != message_xid2
-
-#     # TODO: Refactor.
-#     @pytest.mark.skip(reason="needs refactoring")
-#     async def test_lfg_when_repost_game_fails(self, guild: Guild, channel: Channel):
-#         cog = LookingForGameCog(self.bot)
-#         discord_guild = mock_discord_guild(guild)
-#         discord_channel = mock_discord_channel(channel, guild=discord_guild)
-#         player1 = mock_discord_user(self.factories.user.create())
-#         player2 = mock_discord_user(self.factories.user.create())
-#         ctx1 = build_ctx(discord_guild, discord_channel, player1, 1)
-#         ctx2 = build_ctx(discord_guild, discord_channel, player2, 2)
-
-#         with mock_operations(lfg_action, users=[player1, player2]):
-#             # initial game post creation
-#             lfg_action.safe_send_channel.return_value = build_message(
-#                 discord_guild,
-#                 discord_channel,
-#                 build_client_user(),
-#                 1,
-#             )
-#             await cog.lfg.func(cog, ctx1)
-#             message_xid1 = DatabaseSession.query(Game.message_xid).scalar()
-
-#             # simulate the game having a missing message_xid
-#             DatabaseSession.execute(update(Game).values(message_xid=None))
-#             DatabaseSession.commit()
-
-#             # repost game post
-#             lfg_action.safe_send_channel.return_value = None
-#             await cog.lfg.func(cog, ctx2)
-#             message_xid2 = DatabaseSession.query(Game.message_xid).scalar()
-
-#             assert message_xid1 != message_xid2
-#             assert not message_xid2
-
-#     async def test_lfg_multiple_times(self):
-#         guild = build_guild()
-#         channel = build_channel(guild=guild)
-#         author1 = build_author(1)
-#         author2 = build_author(2)
-#         ctx1 = build_ctx(guild, channel, author1, 1)
-#         ctx2 = build_ctx(guild, channel, author2, 2)
-#         client_user = build_client_user()
-#         game_post = build_message(guild, channel, client_user, 3)
-
-#         cog = LookingForGameCog(self.bot)
-
-#         with mock_operations(lfg_action, users=[author1, author2]):
-#             lfg_action.safe_send_channel.return_value = game_post
-#             await cog.lfg.func(cog, ctx1, seats=2)
-
-#         with mock_operations(lfg_action, users=[author1, author2]):
-#             await cog.lfg.func(cog, ctx2, seats=2)
-
-#         game = DatabaseSession.query(Game).one()
-#         assert game.to_dict() == {
-#             "channel_xid": channel.id,
-#             "created_at": game.created_at,
-#             "deleted_at": None,
-#             "format": game.format,
-#             "guild_xid": guild.id,
-#             "id": game.id,
-#             "jump_link": game.jump_link,
-#             "message_xid": game_post.id,
-#             "seats": 2,
-#             "spectate_link": game.spectate_link,
-#             "spelltable_link": game.spelltable_link,
-#             "started_at": game.started_at,
-#             "status": GameStatus.STARTED.value,
-#             "updated_at": game.updated_at,
-#             "voice_xid": None,
-#         }
-
-
+# TODO: Refactor all this:
 # @pytest.mark.asyncio()
 # class TestCogLookingForGameJoinButton(ComponentContextMixin):
 #     async def test_join(self):

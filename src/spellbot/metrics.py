@@ -107,7 +107,7 @@ def alert_error(
 
 
 @skip_if_no_metrics
-def add_span_context(interaction: Any) -> None:
+def add_span_context(interaction: Any) -> None:  # pragma: no cover
     if span := tracer.current_span():
         if interaction_id := getattr(interaction, "id", None):
             span.set_tag("interaction_id", interaction_id)

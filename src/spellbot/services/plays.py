@@ -22,11 +22,14 @@ USER_RECORDS_SQL = r"""
             games.id AS game_id,
             games.updated_at,
             games.channel_xid,
-            games.message_xid,
+            posts.message_xid,
             games.spelltable_link,
             games.format
         FROM games
         JOIN plays ON plays.game_id = games.id
+        JOIN posts ON posts.game_id = games.id
+            AND posts.guild_xid = games.guild_xid
+            AND posts.channel_xid = games.channel_xid
         WHERE
             games.guild_xid = :guild_xid AND
             plays.user_xid = :user_xid
@@ -73,7 +76,7 @@ CHANNEL_RECORDS_SQL = r"""
     SELECT
         games.id,
         games.updated_at,
-        games.message_xid,
+        posts.message_xid,
         games.spelltable_link,
         games.format,
         STRING_AGG(
@@ -90,13 +93,16 @@ CHANNEL_RECORDS_SQL = r"""
     FROM games
     JOIN plays ON plays.game_id = games.id
     JOIN users ON users.xid = plays.user_xid
+    JOIN posts ON posts.game_id = games.id
+        AND posts.guild_xid = games.guild_xid
+        AND posts.channel_xid = games.channel_xid
     WHERE
         games.guild_xid = :guild_xid AND
         games.channel_xid = :channel_xid
     GROUP BY
         games.id,
         games.updated_at,
-        games.message_xid,
+        posts.message_xid,
         games.spelltable_link,
         games.format
     ORDER BY games.updated_at DESC
