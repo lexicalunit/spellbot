@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 import pytz
 from asgiref.sync import sync_to_async
@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Channel, Guild, GuildAward
+from spellbot.models import Channel, Guild, GuildAward, GuildAwardDict, GuildDict
 
 if TYPE_CHECKING:
     import discord
@@ -108,7 +108,7 @@ class GuildsService:
         return [int(row[0]) for row in rows]
 
     @sync_to_async()
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> GuildDict:
         assert self.guild
         return self.guild.to_dict()
 
@@ -133,7 +133,7 @@ class GuildsService:
         role: str,
         message: str,
         **options: bool | None,
-    ) -> dict[str, Any]:
+    ) -> GuildAwardDict:
         assert self.guild
         repeating = bool(options.get("repeating", False))
         remove = bool(options.get("remove", False))

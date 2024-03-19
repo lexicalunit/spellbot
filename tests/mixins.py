@@ -1,4 +1,3 @@
-# pylint: disable=attribute-defined-outside-init
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
@@ -102,13 +101,14 @@ class InteractionMixin(BaseMixin):
         channel: Channel,
         message: discord.Message,
     ) -> Game:
-        self.game = factories.game.create(guild=guild, channel=channel, message_xid=message.id)
+        self.game = factories.game.create(guild=guild, channel=channel)
+        factories.post.create(guild=guild, channel=channel, game=self.game, message_xid=message.id)
         return self.game
 
     @pytest.fixture()
     def player(self, user: User, game: Game) -> User:
         """Put self.user into a game."""
-        DatabaseSession.add(Queue(user_xid=user.xid, game_id=game.id))
+        DatabaseSession.add(Queue(user_xid=user.xid, game_id=game.id, og_guild_xid=game.guild_xid))
         DatabaseSession.commit()
         return user
 

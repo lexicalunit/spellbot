@@ -1,4 +1,3 @@
-# pylint: disable=attribute-defined-outside-init
 from __future__ import annotations
 
 import logging
@@ -20,6 +19,7 @@ from spellbot.operations import (
     safe_create_voice_channel,
     safe_defer_interaction,
     safe_delete_channel,
+    safe_delete_message,
     safe_ensure_voice_category,
     safe_fetch_guild,
     safe_fetch_text_channel,
@@ -32,6 +32,7 @@ from spellbot.operations import (
     safe_send_user,
     safe_update_embed,
     safe_update_embed_origin,
+    save_create_channel_invite,
 )
 from spellbot.utils import CANT_SEND_CODE
 
@@ -156,8 +157,7 @@ class TestOperationsFetchTextChannel:
 @pytest.mark.asyncio()
 class TestOperationsGetPartialMessage:
     read_perms = discord.Permissions(
-        discord.Permissions.read_messages.flag  # pylint: disable=no-member
-        | discord.Permissions.read_message_history.flag,  # pylint: disable=no-member
+        discord.Permissions.read_messages.flag | discord.Permissions.read_message_history.flag
     )
 
     @pytest.fixture(autouse=True)
@@ -263,6 +263,18 @@ class TestOperationsCreateCategoryChannel:
 
 
 @pytest.mark.asyncio()
+class TestOperationsCreateChannelInvite:
+    async def test_happy_path(self, dpy_channel: discord.TextChannel) -> None:
+        await save_create_channel_invite(dpy_channel)
+        dpy_channel.create_invite.assert_called_once()
+
+    async def test_exception(self, dpy_channel: discord.TextChannel) -> None:
+        dpy_channel.create_invite.side_effect = DiscordException
+        invite = await save_create_channel_invite(dpy_channel)
+        assert invite is None
+
+
+@pytest.mark.asyncio()
 class TestOperationsCreateVoiceChannel:
     async def test_happy_path(self, dpy_guild: discord.Guild) -> None:
         category = MagicMock(spec=discord.CategoryChannel)
@@ -356,9 +368,7 @@ class TestOperationsFollowupChannel:
 
 @pytest.mark.asyncio()
 class TestOperationsDeleteChannel:
-    delete_perms = discord.Permissions(
-        discord.Permissions.manage_channels.flag,  # pylint: disable=no-member
-    )
+    delete_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
 
     async def test_happy_path(self) -> None:
         guild = MagicMock(spec=discord.Guild)
@@ -526,9 +536,7 @@ class TestOperationsSendUser:
 
 @pytest.mark.asyncio()
 class TestOperationsAddRole:
-    role_perms = discord.Permissions(
-        discord.Permissions.manage_roles.flag,  # pylint: disable=no-member
-    )
+    role_perms = discord.Permissions(discord.Permissions.manage_roles.flag)
 
     async def test_happy_path(self) -> None:
         member = MagicMock(spec=discord.User | discord.Member)
@@ -716,9 +724,7 @@ class TestOperationsAddRole:
 @pytest.mark.asyncio()
 class TestOperationsMessageReply:
     async def test_happy_path(self) -> None:
-        send_permisions = discord.Permissions(
-            discord.Permissions.send_messages.flag,  # pylint: disable=no-member
-        )
+        send_permisions = discord.Permissions(discord.Permissions.send_messages.flag)
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
         channel = MagicMock(spec=discord.TextChannel)
@@ -751,9 +757,7 @@ class TestOperationsMessageReply:
 
     async def test_reply_failure(self, caplog: pytest.LogCaptureFixture) -> None:
         caplog.set_level(logging.DEBUG)
-        send_permisions = discord.Permissions(
-            discord.Permissions.send_messages.flag,  # pylint: disable=no-member
-        )
+        send_permisions = discord.Permissions(discord.Permissions.send_messages.flag)
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
         channel = MagicMock(spec=discord.TextChannel)
@@ -769,6 +773,32 @@ class TestOperationsMessageReply:
         await safe_message_reply(message, "content", embed=embed)
         message.reply.assert_called_once_with("content", embed=embed)
         assert "something-failed" in caplog.text
+
+
+@pytest.mark.asyncio()
+class TestOperationsDeleteMessage:
+    async def test_happy_path(self) -> None:
+        permissions = discord.Permissions(discord.Permissions.manage_messages.flag)
+        message = MagicMock(spec=discord.Message)
+        message.guild = MagicMock(spec=discord.Guild)
+        message.guild.id = 101
+        message.guild.me = MagicMock()
+        message.guild.me.guild_permissions = permissions
+        message = MagicMock(spec=discord.Message)
+        message.delete = AsyncMock()
+        assert await safe_delete_message(message)
+        message.delete.assert_called_once_with()
+
+    async def test_bad_permissions(self) -> None:
+        permissions = discord.Permissions(discord.Permissions.read_messages.flag)
+        message = MagicMock(spec=discord.Message)
+        message.guild = MagicMock(spec=discord.Guild)
+        message.guild.id = 101
+        message.guild.me = MagicMock()
+        message.guild.me.guild_permissions = permissions
+        message.delete = AsyncMock()
+        assert not await safe_delete_message(message)
+        message.delete.assert_not_called()
 
 
 @pytest.mark.asyncio()

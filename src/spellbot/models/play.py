@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, TypedDict, cast
 
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer
 
@@ -9,6 +9,16 @@ from . import Base, now
 
 if TYPE_CHECKING:
     from . import Game, User  # noqa: F401
+
+
+class PlayDict(TypedDict):
+    created_at: datetime
+    updated_at: datetime
+    user_xid: int
+    game_id: int
+    og_guild_xid: int
+    points: int
+    confirmed_at: datetime
 
 
 class Play(Base):
@@ -49,6 +59,11 @@ class Play(Base):
             doc="The SpellBot game ID of the game the user played",
         ),
     )
+    og_guild_xid = Column(
+        BigInteger,
+        nullable=False,
+        doc="The external Discord ID of the guild where the user entered this game",
+    )
     points = Column(
         Integer,
         nullable=True,
@@ -61,12 +76,13 @@ class Play(Base):
         doc="UTC timestamp when this play was confirmed",
     )
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> PlayDict:
         return {
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "user_xid": self.user_xid,
             "game_id": self.game_id,
+            "og_guild_xid": self.og_guild_xid,
             "points": self.points,
             "confirmed_at": self.confirmed_at,
         }

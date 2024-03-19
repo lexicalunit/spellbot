@@ -36,7 +36,7 @@ class LookingForGameCog(commands.Cog):
         format=[Choice(name=str(format), value=format.value) for format in GameFormat],
     )
     @app_commands.choices(
-        service=[Choice(name=service.title, value=service.value) for service in GameService],
+        service=[Choice(name=str(service), value=service.value) for service in GameService],
     )
     @tracer.wrap(name="interaction", resource="lfg")
     async def lfg(

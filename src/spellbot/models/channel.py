@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, TypedDict, cast
 
 from sqlalchemy import BigInteger, Column, DateTime, String
 from sqlalchemy.orm import relationship
@@ -15,6 +15,27 @@ from . import Base, now
 
 if TYPE_CHECKING:
     from . import Game, Guild  # noqa: F401
+
+
+class ChannelDict(TypedDict):
+    xid: int
+    created_at: datetime
+    updated_at: datetime
+    guild_xid: int
+    name: str
+    default_seats: int
+    default_format: GameFormat
+    default_service: GameService
+    auto_verify: bool
+    unverified_only: bool
+    verified_only: bool
+    motd: str
+    extra: str
+    voice_category: str
+    voice_invite: bool
+    delete_expired: bool
+    show_points: bool
+    require_confirmation: bool
 
 
 class Channel(Base):
@@ -137,6 +158,13 @@ class Channel(Base):
         server_default=false(),
         doc="Configuration for requiring confirmation on points reporting",
     )
+    voice_invite = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="Configuration for creating voice invites for games in this channel.",
+    )
 
     guild = relationship(
         "Guild",
@@ -150,7 +178,7 @@ class Channel(Base):
         doc="The games created in this channel",
     )
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> ChannelDict:
         return {
             "xid": self.xid,
             "created_at": self.created_at,
@@ -166,6 +194,7 @@ class Channel(Base):
             "motd": self.motd,
             "extra": self.extra,
             "voice_category": self.voice_category,
+            "voice_invite": self.voice_invite,
             "delete_expired": self.delete_expired,
             "show_points": self.show_points,
             "require_confirmation": self.require_confirmation,

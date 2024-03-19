@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed some issues with permissions handling.
+- Much improved test coverage.
+
+### Changed
+
+- Updated dependencies.
+- Global async lock on all activities that can cause users to join/leave games.
+- Users can queue in multiple guilds at the same time now.
+- Show Game ID in watched user notifications.
+
+### Added
+
+- Allow mods to set/confirm points for players for games.
+- `/set voice_invite` in a channel to turn on/off creation of temp voice channel invites.
+- Ability to mirror or link two channels, even on different guilds, together for cross-queue.
+- An owner command to configure mirror settings.
+
 ## [v10.1.3](https://github.com/lexicalunit/spellbot/releases/tag/v10.1.3) - 2024-03-16
 
 ### Added

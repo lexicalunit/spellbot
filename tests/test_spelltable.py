@@ -1,4 +1,3 @@
-# pylint: disable=unreachable
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -110,7 +109,7 @@ class TestSpellTable:
         mock_client = MockClient()
 
         @asynccontextmanager
-        async def MockRetryClient(  # pylint: disable=W0613
+        async def MockRetryClient(
             *args: Any,
             **kwargs: Any,
         ) -> AsyncGenerator[RetryClient, None]:

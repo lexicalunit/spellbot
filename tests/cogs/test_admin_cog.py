@@ -9,7 +9,7 @@ import pytest_asyncio
 from spellbot.actions import admin_action
 from spellbot.cogs import AdminCog
 from spellbot.database import DatabaseSession
-from spellbot.enums import GameFormat
+from spellbot.enums import GameFormat, GameService
 from spellbot.errors import AdminOnlyError
 from spellbot.models import Channel, Game, Guild, GuildAward
 from spellbot.views import SetupView
@@ -265,6 +265,16 @@ class TestCogAdminChannels(InteractionMixin):
         channel = DatabaseSession.query(Channel).one()
         assert channel.default_format == format
 
+    async def test_default_service(self, cog: AdminCog) -> None:
+        service = Channel.default_service.default.arg + 1  # type: ignore
+        await self.run(cog.default_service, service=service)
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Default service set to {GameService(service)} for this channel.",
+            ephemeral=True,
+        )
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.default_service == service
+
     async def test_auto_verify(self, cog: AdminCog) -> None:
         default_value = Channel.auto_verify.default.arg  # type: ignore
         await self.run(cog.auto_verify, setting=not default_value)
@@ -320,6 +330,21 @@ class TestCogAdminChannels(InteractionMixin):
         DatabaseSession.expire_all()
         channel = DatabaseSession.query(Channel).one()
         assert channel.motd == ""
+
+    async def test_channel_extra(self, cog: AdminCog) -> None:
+        extra = "this is some extra content"
+        await self.run(cog.channel_extra, message=extra)
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Extra message for this channel has been set to: {extra}",
+            ephemeral=True,
+        )
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.extra == extra
+
+        await self.run(cog.channel_extra)
+        DatabaseSession.expire_all()
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.extra == ""
 
     async def test_channels(self, cog: AdminCog, add_channel: Callable[..., Channel]) -> None:
         channel1 = add_channel(auto_verify=True)
@@ -621,3 +646,29 @@ class TestCogAdminShowPoints(InteractionMixin):
         )
         channel = DatabaseSession.query(Channel).one()
         assert channel.show_points is setting
+
+
+@pytest.mark.asyncio()
+class TestCogAdminRequireConfirmation(InteractionMixin):
+    @pytest.mark.parametrize("setting", [True, False])
+    async def test_set_require_confirmation(self, cog: AdminCog, setting: bool) -> None:
+        await self.run(cog.require_confirmation, setting=setting)
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Require confirmation setting for this channel has been set to: {setting}",
+            ephemeral=True,
+        )
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.require_confirmation is setting
+
+
+@pytest.mark.asyncio()
+class TestCogAdminVoiceInvite(InteractionMixin):
+    @pytest.mark.parametrize("setting", [True, False])
+    async def test_set_voice_invite(self, cog: AdminCog, setting: bool) -> None:
+        await self.run(cog.voice_invite, setting=setting)
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Voice invite setting for this channel has been set to: {setting}",
+            ephemeral=True,
+        )
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.voice_invite is setting

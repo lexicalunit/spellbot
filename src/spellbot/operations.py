@@ -483,6 +483,29 @@ async def safe_channel_reply(
 
 
 @tracer.wrap()
+async def save_create_channel_invite(
+    channel: discord.abc.GuildChannel,
+    *args: Any,
+    **kwargs: Any,
+) -> discord.Invite | None:
+    guild_xid = channel.guild.id
+    channel_xid = channel.id
+    if span := tracer.current_span():  # pragma: no cover
+        span.set_tags({"guild_xid": str(guild_xid), "channel_xid": str(channel_xid)})
+
+    invite: discord.Invite | None = None
+    with suppress(
+        DiscordException,
+        ClientOSError,
+        log="in guild %(guild_xid)s, could not create invite to channel %(channel_xid)s",
+        guild_xid=guild_xid,
+        channel_xid=channel_xid,
+    ):
+        invite = await retry(lambda: channel.create_invite(*args, **kwargs))
+    return invite
+
+
+@tracer.wrap()
 async def safe_message_reply(message: discord.Message, *args: Any, **kwargs: Any) -> None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"message_xid": str(message.id)})

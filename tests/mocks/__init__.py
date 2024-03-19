@@ -1,4 +1,3 @@
-# pylint: disable=inconsistent-return-statements
 from __future__ import annotations
 
 import importlib

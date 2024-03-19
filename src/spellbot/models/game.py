@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, TypedDict, cast
 
 import discord
 from dateutil import tz
@@ -16,12 +16,33 @@ from spellbot.settings import Settings
 from . import Base, now
 
 if TYPE_CHECKING:
-    from . import Channel, Guild, User  # noqa: F401
+    from . import Channel, Guild, Post, PostDict, User  # noqa: F401
 
 
 class GameStatus(Enum):
     PENDING = auto()
     STARTED = auto()
+
+
+class GameDict(TypedDict):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    started_at: datetime | None
+    deleted_at: datetime | None
+    guild_xid: int
+    channel_xid: int
+    posts: list[PostDict]
+    voice_xid: int | None
+    voice_invite_link: str | None
+    seats: int
+    status: int
+    format: int
+    service: int
+    spelltable_link: str | None
+    spectate_link: str | None
+    jump_link: str | None
+    confirmed: bool
 
 
 class Game(Base):
@@ -79,12 +100,6 @@ class Game(Base):
             doc="The external Discord ID of the associated channel",
         ),
     )
-    message_xid = Column(
-        BigInteger,
-        index=True,
-        nullable=True,
-        doc="The external Discord ID of the messsage where this game's embed is found",
-    )
     voice_xid = Column(
         BigInteger,
         index=True,
@@ -133,15 +148,15 @@ class Game(Base):
             doc="The service that will be used to create this game",
         ),
     )
-    spelltable_link = Column(
-        String(255),
-        doc="The generated SpellTable link for this game",
-    )
-    voice_invite_link = Column(
-        String(255),
-        doc="The generate voice channel invite link for this game",
-    )
+    spelltable_link = Column(String(255), doc="The generated SpellTable link for this game")
+    voice_invite_link = Column(String(255), doc="The voice channel invite link for this game")
 
+    posts = relationship(
+        "Post",
+        back_populates="game",
+        uselist=True,
+        doc="The posts associated with this game",
+    )
     guild = relationship(
         "Guild",
         back_populates="games",
@@ -194,7 +209,7 @@ class Game(Base):
         plural = "s" if remaining > 1 else ""
         return f"**Waiting for {remaining} more player{plural} to join...**"
 
-    def embed_description(self, dm: bool = False) -> str:  # noqa: C901
+    def embed_description(self, dm: bool = False) -> str:  # noqa: C901,PLR0912
         description = ""
         if self.status == GameStatus.PENDING.value:
             description += "_A SpellTable link will be created when all players have joined._"
@@ -211,13 +226,15 @@ class Game(Base):
                         " for this game. Please go to [SpellTable]"
                         "(https://spelltable.wizards.com/) to create one."
                     )
-                elif self.service != GameService.NOT_ANY:
-                    description += (
-                        f"Please use {GameService(self.service).title} to play this game."
-                    )
+                elif self.service != GameService.NOT_ANY.value:
+                    description += f"Please use {GameService(self.service)} to play this game."
+                else:
+                    description += "Contact the other players in your game to organize this match."
 
                 if self.voice_xid:
                     description += f"\n\nJoin your voice chat now: <#{self.voice_xid}>"
+                if self.voice_invite_link:
+                    description += f"\nOr use this voice channel invite: {self.voice_invite_link}"
             else:
                 description += "Please check your Direct Messages for your game details."
             if dm:
@@ -287,11 +304,10 @@ class Game(Base):
         return f"{self.spelltable_link}?spectate=true" if self.spelltable_link else None
 
     @property
-    def jump_link(self) -> str:
-        guild = self.guild_xid
-        channel = self.channel_xid
-        message = self.message_xid
-        return f"https://discordapp.com/channels/{guild}/{channel}/{message}"
+    def jump_link(self) -> str | None:
+        if not self.posts:
+            return None
+        return self.posts[0].jump_link
 
     @property
     def format_name(self) -> str:
@@ -330,7 +346,7 @@ class Game(Base):
         if self.service != GameService.SPELLTABLE.value:
             embed.add_field(
                 name="Service",
-                value=GameService(self.service).title,
+                value=str(GameService(self.service)),
                 inline=False,
             )
         if self.players:
@@ -344,7 +360,7 @@ class Game(Base):
         embed.set_footer(text=self.embed_footer)
         return embed
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> GameDict:
         return {
             "id": self.id,
             "created_at": self.created_at,
@@ -353,8 +369,9 @@ class Game(Base):
             "deleted_at": self.deleted_at,
             "guild_xid": self.guild_xid,
             "channel_xid": self.channel_xid,
-            "message_xid": self.message_xid,
+            "posts": [post.to_dict() for post in self.posts],
             "voice_xid": self.voice_xid,
+            "voice_invite_link": self.voice_invite_link,
             "seats": self.seats,
             "status": self.status,
             "format": self.format,

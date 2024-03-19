@@ -39,8 +39,8 @@ class TestWebRecord:
             channel=channel,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
-            message_xid=901,
         )
+        factories.post.create(guild=guild, channel=channel, game=game1, message_xid=901)
         game2 = factories.game.create(
             id=2,
             seats=2,
@@ -50,8 +50,8 @@ class TestWebRecord:
             channel=channel,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
-            message_xid=902,
         )
+        factories.post.create(guild=guild, channel=channel, game=game2, message_xid=902)
         game3 = factories.game.create(
             id=3,
             seats=2,
@@ -61,8 +61,8 @@ class TestWebRecord:
             channel=channel,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
-            message_xid=903,
         )
+        factories.post.create(guild=guild, channel=channel, game=game3, message_xid=903)
         factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
         factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
         factories.play.create(game_id=game2.id, user_xid=user1.xid, points=None)
@@ -96,8 +96,8 @@ class TestWebRecord:
             channel=channel,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
-            message_xid=901,
         )
+        factories.post.create(guild=guild, channel=channel, game=game1, message_xid=901)
         game2 = factories.game.create(
             id=2,
             seats=2,
@@ -107,8 +107,8 @@ class TestWebRecord:
             channel=channel,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
-            message_xid=902,
         )
+        factories.post.create(guild=guild, channel=channel, game=game2, message_xid=902)
         game3 = factories.game.create(
             id=3,
             seats=2,
@@ -118,8 +118,8 @@ class TestWebRecord:
             channel=channel,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
-            message_xid=903,
         )
+        factories.post.create(guild=guild, channel=channel, game=game3, message_xid=903)
         factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
         factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
         factories.play.create(game_id=game2.id, user_xid=user1.xid, points=None)
@@ -171,10 +171,10 @@ class TestWebRecord:
             format=GameFormat.MODERN.value,
             guild=guild,
             channel=channel,
-            message_xid=901,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
         )
+        factories.post.create(guild=guild, channel=channel, game=game1, message_xid=901)
         game2 = factories.game.create(
             id=2,
             seats=2,
@@ -182,10 +182,10 @@ class TestWebRecord:
             format=GameFormat.STANDARD.value,
             guild=guild,
             channel=channel,
-            message_xid=902,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
         )
+        factories.post.create(guild=guild, channel=channel, game=game2, message_xid=902)
         game3 = factories.game.create(
             id=3,
             seats=2,
@@ -193,10 +193,10 @@ class TestWebRecord:
             format=GameFormat.LEGACY.value,
             guild=guild,
             channel=channel,
-            message_xid=903,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
         )
+        factories.post.create(guild=guild, channel=channel, game=game3, message_xid=903)
         factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
         factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
         factories.play.create(game_id=game2.id, user_xid=user1.xid, points=0)
@@ -228,10 +228,10 @@ class TestWebRecord:
             format=GameFormat.MODERN.value,
             guild=guild,
             channel=channel,
-            message_xid=901,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
         )
+        factories.post.create(guild=guild, channel=channel, game=game1, message_xid=901)
         game2 = factories.game.create(
             id=2,
             seats=2,
@@ -239,10 +239,10 @@ class TestWebRecord:
             format=GameFormat.STANDARD.value,
             guild=guild,
             channel=channel,
-            message_xid=902,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
         )
+        factories.post.create(guild=guild, channel=channel, game=game2, message_xid=902)
         game3 = factories.game.create(
             id=3,
             seats=2,
@@ -250,10 +250,10 @@ class TestWebRecord:
             format=GameFormat.LEGACY.value,
             guild=guild,
             channel=channel,
-            message_xid=903,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
         )
+        factories.post.create(guild=guild, channel=channel, game=game3, message_xid=903)
         factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
         factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
         factories.play.create(game_id=game2.id, user_xid=user1.xid, points=0)
@@ -291,10 +291,10 @@ class TestWebRecord:
             format=GameFormat.MODERN.value,
             guild=guild,
             channel=channel,
-            message_xid=901,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
         )
+        factories.post.create(guild=guild, channel=channel, game=game1, message_xid=901)
         game2 = factories.game.create(
             id=2,
             seats=2,
@@ -302,10 +302,10 @@ class TestWebRecord:
             format=GameFormat.STANDARD.value,
             guild=guild,
             channel=channel,
-            message_xid=902,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
         )
+        factories.post.create(guild=guild, channel=channel, game=game2, message_xid=902)
         game3 = factories.game.create(
             id=3,
             seats=2,
@@ -313,10 +313,10 @@ class TestWebRecord:
             format=GameFormat.LEGACY.value,
             guild=guild,
             channel=channel,
-            message_xid=903,
             created_at=datetime.now(tz=pytz.utc),
             updated_at=datetime.now(tz=pytz.utc),
         )
+        factories.post.create(guild=guild, channel=channel, game=game3, message_xid=903)
         factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
         factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
         factories.play.create(game_id=game2.id, user_xid=user1.xid, points=0)

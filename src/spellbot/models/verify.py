@@ -1,10 +1,16 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TypedDict
 
 from sqlalchemy import BigInteger, Boolean, Column, false
 
 from . import Base
+
+
+class VerifyDict(TypedDict):
+    guild_xid: int
+    user_xid: int
+    verified: bool
 
 
 class Verify(Base):
@@ -32,7 +38,7 @@ class Verify(Base):
         doc="If true, this user is considered verified for this guild",
     )
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> VerifyDict:
         return {
             "guild_xid": self.guild_xid,
             "user_xid": self.user_xid,
