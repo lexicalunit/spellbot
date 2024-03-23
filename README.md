@@ -67,7 +67,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
         <td align="center"><a href="https://www.patreon.com/tolariancommunitycollege"><img height="160" src="https://user-images.githubusercontent.com/1903876/184271392-39ca23ba-36d9-4aa0-a6e5-26af5e0acfc1.jpg" alt="Tolarian Community College" /><br /><span class="small">Tolarian&nbsp;Community&nbsp;College</span></a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://www.commandthecause.org/"><img width="160" height="160" src="https://user-images.githubusercontent.com/1903876/161826326-43cbd3ff-976f-46ff-9608-dacea67d9c42.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
+        <td align="center"><a href="https://discord.gg/ZmPsjrxe4h"><img width="160" height="160" src="https://github.com/lexicalunit/spellbot/assets/1903876/47d68a5b-fe08-497c-a76b-c8dde5f56af3" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
         <td align="center"><a href="https://www.patreon.com/NitpickingNerds"><img height="160" src="https://user-images.githubusercontent.com/1903876/140844623-8d8528a9-b60c-49c6-be0f-1d627b85adba.png" alt="The Nitpicking Nerds" /><br />The&nbsp;Nitpicking&nbsp;Nerds</a></td>
         <td align="center"><a href="https://www.facebook.com/EDHTambayan/"><img height="160" src="https://user-images.githubusercontent.com/1903876/161825614-64e432d4-85e8-481e-8f41-f66ab8c940cc.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></td>
     </tr>
