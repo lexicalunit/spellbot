@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v10.2.1](https://github.com/lexicalunit/spellbot/releases/tag/v10.2.1) - 2024-03-24
+
 ### Fixed
 
 - Fixed issue with SpellBot sending messages to users when they leave games.
