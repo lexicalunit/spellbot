@@ -4,6 +4,7 @@ from .admin_action import AdminAction
 from .block_action import BlockAction
 from .leave_action import LeaveAction
 from .lfg_action import LookingForGameAction
+from .record_action import RecordAction
 from .score_action import ScoreAction
 from .tasks_action import TasksAction
 from .verify_action import VerifyAction
@@ -14,6 +15,7 @@ __all__ = [
     "BlockAction",
     "LeaveAction",
     "LookingForGameAction",
+    "RecordAction",
     "ScoreAction",
     "TasksAction",
     "VerifyAction",
