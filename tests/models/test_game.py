@@ -40,6 +40,7 @@ class TestModelGame:
             "jump_link": game.jump_link,
             "spectate_link": game.spectate_link,
             "confirmed": game.confirmed,
+            "requires_confirmation": game.requires_confirmation,
         }
 
     def test_game_show_links(self, factories: Factories) -> None:
