@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed issue with SpellBot sending messages to users when they leave games.
+
 ### Changed
 
 - Updated logo for command the cause.
