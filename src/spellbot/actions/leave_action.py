@@ -9,7 +9,6 @@ from spellbot.operations import (
     safe_get_partial_message,
     safe_original_response,
     safe_send_channel,
-    safe_send_user,
     safe_update_embed,
     safe_update_embed_origin,
 )
@@ -57,25 +56,17 @@ class LeaveAction(BaseAction):
             embed = await self.services.games.to_embed()
             await safe_update_embed(message, embed=embed)
 
-        await safe_send_user(
-            self.interaction.user,
-            "You were removed from any pending games in this channel.",
-        )
-
-    async def _removed(self, channel_xid: int) -> None:
-        # Note: Ok to use safe_send_channel() so long as this is not an origin context!
-        await safe_send_channel(
-            self.interaction,
-            "You were removed from any pending games in this channel.",
-            ephemeral=True,
-        )
-
     @tracer.wrap()
     async def _handle_command(self) -> None:
         assert self.interaction.channel is not None
         channel_xid = self.interaction.channel.id
         if not (game_id := await self.services.users.current_game_id(channel_xid)):
-            return await self._removed(channel_xid)
+            await safe_send_channel(
+                self.interaction,
+                "You were removed from any pending games in this channel.",
+                ephemeral=True,
+            )
+            return
 
         found = await self.services.games.select(game_id)
         assert found
@@ -89,16 +80,18 @@ class LeaveAction(BaseAction):
             message_xid = post["message_xid"]
 
             if not (channel := await safe_fetch_text_channel(self.bot, guild_xid, chan_xid)):
-                await self._removed(channel_xid)
                 continue
             if not (message := safe_get_partial_message(channel, guild_xid, message_xid)):
-                await self._removed(channel_xid)
                 continue
 
             embed = await self.services.games.to_embed()
             await safe_update_embed(message, embed=embed)
-            await self._removed(channel_xid)
-        return None
+
+        await safe_send_channel(
+            self.interaction,
+            "You were removed from any pending games in this channel.",
+            ephemeral=True,
+        )
 
     @tracer.wrap()
     async def execute(self, origin: bool = False) -> None:
