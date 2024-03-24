@@ -4,8 +4,8 @@ import logging
 import re
 from typing import TYPE_CHECKING
 
+import discord
 from ddtrace import tracer
-from discord.embeds import Embed
 
 from spellbot.enums import GameFormat, GameService
 from spellbot.models import GameStatus
@@ -29,7 +29,6 @@ from spellbot.views import BaseView, PendingGameView, StartedGameView, StartedGa
 from .base_action import BaseAction
 
 if TYPE_CHECKING:
-    import discord
     from discord.message import Message
 
     from spellbot import SpellBot
@@ -287,7 +286,7 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        plays = await self.services.games.get_plays(self.interaction.user.id)
+        plays = await self.services.games.get_plays()
         if plays.get(self.interaction.user.id, {}).get("confirmed_at", None):
             await safe_send_user(
                 self.interaction.user,
@@ -323,7 +322,7 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        plays = await self.services.games.get_plays(self.interaction.user.id)
+        plays = await self.services.games.get_plays()
         if plays.get(self.interaction.user.id, {}).get("confirmed_at", None):
             await safe_send_user(
                 self.interaction.user,
@@ -331,7 +330,7 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        if not all(play.get("points") is not None for play in plays.values()):
+        if any(play.get("points") is None for play in plays.values()):
             await safe_send_user(
                 self.interaction.user,
                 (
@@ -341,13 +340,16 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        await self.services.games.confirm_points(player_xid=self.interaction.user.id)
+        confirmed_at = await self.services.games.confirm_points(player_xid=self.interaction.user.id)
         embed = await self.services.games.to_embed()
         data = await self.services.games.to_dict()
         if data["confirmed"]:
             await safe_update_embed(message, embed=embed, view=None)
         else:
             await safe_update_embed(message, embed=embed)
+        plays[self.interaction.user.id]["confirmed_at"] = confirmed_at
+        if all(play["confirmed_at"] is not None for play in plays.values()):
+            await self.services.games.update_records(plays)
 
     @tracer.wrap()
     async def create_game(
@@ -570,7 +572,7 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def _reply_found_embed(self) -> None:
-        embed = Embed()
+        embed = discord.Embed()
         embed.set_thumbnail(url=self.settings.ICO_URL)
         game_data = await self.services.games.to_dict()
         link = game_data["jump_link"]
@@ -650,7 +652,7 @@ class LookingForGameAction(BaseAction):
 
         data = await self.services.games.to_dict()
 
-        embed = Embed()
+        embed = discord.Embed()
         embed.set_thumbnail(url=self.settings.ICO_URL)
         embed.set_author(name="Watched user(s) joined a game")
         embed.color = self.settings.INFO_EMBED_COLOR

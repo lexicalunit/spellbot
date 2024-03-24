@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, TypedDict, cast
 
 import discord
 from dateutil import tz
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.expression import text
+from sqlalchemy.sql.expression import false, text
 
 from spellbot.enums import GameFormat, GameService
 from spellbot.settings import Settings
@@ -43,6 +43,7 @@ class GameDict(TypedDict):
     spectate_link: str | None
     jump_link: str | None
     confirmed: bool
+    requires_confirmation: bool
 
 
 class Game(Base):
@@ -150,6 +151,13 @@ class Game(Base):
     )
     spelltable_link = Column(String(255), doc="The generated SpellTable link for this game")
     voice_invite_link = Column(String(255), doc="The voice channel invite link for this game")
+    requires_confirmation = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="Configuration for requiring confirmation on points reporting",
+    )
 
     posts = relationship(
         "Post",
@@ -270,15 +278,16 @@ class Game(Base):
 
     @property
     def embed_players(self) -> str:
-        player_parts: list[tuple[int, str, str]] = []
+        player_parts: list[tuple[str, int, str, str]] = []
         for player in self.players:
             points_str = ""
             if self.status == GameStatus.STARTED.value:
                 points = player.points(cast(int, self.id))
-                if points and points[0]:
+                if points is not None and points[0] is not None:
                     points_value: int = points[0]
                     points_confirmed: bool = points[1]
-                    value_str = f"{points_value} point{'s' if points_value > 1 else ''}"
+                    plural_str = "s" if points_value > 1 or points_value == 0 else ""
+                    value_str = f"{points_value} point{plural_str}"
                     confirmed_str = (
                         "✅ "
                         if points_confirmed
@@ -288,10 +297,12 @@ class Game(Base):
                     )
                     points_str = f"\n**ﾠ⮑ {confirmed_str}{value_str}**"
 
-            player_parts.append((player.xid, player.name, points_str))
+            elo = player.elo(self.guild_xid, self.channel_xid)
+            elo_str = f"**ELO {elo}** - " if elo else ""
+            player_parts.append((elo_str, player.xid, player.name, points_str))
 
         player_strs: list[str] = [
-            f"• <@{parts[0]}> ({parts[1]}){parts[2]}" for parts in sorted(player_parts)
+            f"• {parts[0]}<@{parts[1]}> ({parts[2]}){parts[3]}" for parts in sorted(player_parts)
         ]
         return "\n".join(player_strs)
 
@@ -380,4 +391,5 @@ class Game(Base):
             "spectate_link": self.spectate_link,
             "jump_link": self.jump_link,
             "confirmed": self.confirmed,
+            "requires_confirmation": self.channel.require_confirmation,
         }
