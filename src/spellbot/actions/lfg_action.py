@@ -476,19 +476,24 @@ class LookingForGameAction(BaseAction):
         # also send the game post to all configured mirrors
         mirrors = await self.services.mirrors.get(self.guild.id, self.channel.id)
         for mirror in mirrors:
-            other_guild_xid = mirror["to_guild_xid"]
-            other_channel_xid = mirror["to_channel_xid"]
-            other_channel = await safe_fetch_text_channel(
-                self.bot, other_guild_xid, other_channel_xid
+            to_guild_xid = mirror["to_guild_xid"]
+            to_channel_xid = mirror["to_channel_xid"]
+            logger.info("Mirroring game post to %s/%s ...", to_guild_xid, to_channel_xid)
+
+            to_channel = await safe_fetch_text_channel(self.bot, to_guild_xid, to_channel_xid)
+            if to_channel is None:
+                logger.error("Failed to fetch channel %s", to_channel_xid)
+                continue
+            logger.info("Mirroring game post to %s ...", to_channel)
+
+            to_message = await safe_channel_reply(
+                to_channel, content=content, embed=embed, view=view
             )
-            if other_channel:
-                other_message = await safe_channel_reply(
-                    other_channel, content=content, embed=embed, view=view
-                )
-                if other_message:
-                    await self.services.games.add_post(
-                        other_guild_xid, other_channel_xid, other_message.id
-                    )
+            if to_message is None:
+                logger.error("Failed to create post in channel %s", to_channel)
+                continue
+            logger.info("Mirrored game post to %s", to_message)
+            await self.services.games.add_post(to_guild_xid, to_channel_xid, to_message.id)
 
     @tracer.wrap()
     async def _handle_embed_creation(  # noqa: C901,PLR0912
@@ -519,11 +524,14 @@ class LookingForGameAction(BaseAction):
             await self._create_initial_post(embed, view, content)
             return
 
+        # update the game post(s) for this game, which should already exist
+
         for post in game_data.get("posts", []):
             message: discord.Message | discord.PartialMessage | None = None
             guild_xid = post["guild_xid"]
             channel_xid = post["channel_xid"]
             message_xid = post["message_xid"]
+
             channel: discord.TextChannel | None = None
             if self.guild.id == guild_xid and self.channel.id == channel_xid:
                 # this post is for the current channel and guild
@@ -531,23 +539,13 @@ class LookingForGameAction(BaseAction):
             else:
                 # the post is in a different channel/guild, so we need to fetch it
                 channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
-            assert channel is not None
 
-            if message_xid:
-                message = safe_get_partial_message(channel, guild_xid, message_xid)
+            if channel is None:
+                # failed for find the channel for this post
+                continue
 
-            # update the existing game post:
-
-            if (
-                origin
-                and message
-                and self.interaction.message
-                and self.interaction.message.id == message_xid
-            ):
-                # Try to update the origin embed. Sometimes this can fail.
-                # If it does fail, we will fallback to doing a standard
-                # message.edit() call, which should hopefully at least update
-                # the game embed, even if the interaction shows as "failed".
+            # The post we're going to update here is the origin post:
+            if self.interaction.message and self.interaction.message.id == message_xid:
                 content = self.channel_data.get("extra", None)
                 if await safe_update_embed_origin(
                     self.interaction,
@@ -555,17 +553,17 @@ class LookingForGameAction(BaseAction):
                     embed=embed,
                     view=view,
                 ):
+                    # successfully updated the origin post
                     continue
 
-            if message:
-                if await safe_update_embed(message, embed=embed, view=view):
-                    continue
+            message = safe_get_partial_message(channel, guild_xid, message_xid)
+            if not message:
+                # failed to find the message for this post
+                continue
 
-                if updated := await safe_channel_reply(
-                    channel, content=content, embed=embed, view=view
-                ):
-                    await self.services.games.del_post(self.guild.id, self.channel.id, message_xid)
-                    await self.services.games.add_post(self.guild.id, self.channel.id, updated.id)
+            if not await safe_update_embed(message, embed=embed, view=view):
+                # failed to update the message for this post
+                continue
 
         if not origin:
             await self._reply_found_embed()
