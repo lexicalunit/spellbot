@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
+from unittest.mock import ANY, MagicMock, patch
 
 import discord
 import pytest
@@ -10,6 +10,7 @@ from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat, GameService
 from spellbot.models import Channel, Game, Queue, User
+from spellbot.views import PendingGameView
 
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
@@ -175,40 +176,46 @@ class TestCogLookingForGame(InteractionMixin):
         assert DatabaseSession.query(Game).count() == 1
 
 
-# TODO: Refactor all this:
-# @pytest.mark.asyncio()
-# class TestCogLookingForGameJoinButton(ComponentContextMixin):
-#     async def test_join(self):
-#         assert self.ctx.author
-#         assert isinstance(self.ctx.author, discord.User)
-#         guild = ctx_guild(self.ctx)
-#         channel = ctx_channel(self.ctx, guild, motd=None)
-#         game = ctx_game(self.ctx, guild, channel)
-#         user = ctx_user(self.ctx)
+@pytest.mark.asyncio()
+class TestCogLookingForGameJoinButton(InteractionMixin):
+    async def test_join(self, game: Game, user: User, message: discord.Message) -> None:
+        with (
+            mock_operations(lfg_action, users=[mock_discord_object(user)]),
+            patch(
+                "spellbot.views.lfg_view.safe_original_response",
+                return_value=message,
+            ),
+        ):
+            lfg_action.safe_update_embed_origin.return_value = message
+            self.interaction.message = message
+            view = PendingGameView(bot=self.bot)
 
-#         with mock_operations(lfg_action, users=[self.ctx.author]):
-#             lfg_action.safe_get_partial_message.return_value = self.ctx.message
+            await view.join.callback(self.interaction)
 
-#             cog = LookingForGameCog(self.bot)
-#             await cog.join.func(cog, self.ctx)
+            mock_call = lfg_action.safe_update_embed_origin
+            mock_call.assert_called_once()
+            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
+                "color": self.settings.PENDING_EMBED_COLOR,
+                "description": (
+                    "_A SpellTable link will be created when all players have joined._\n"
+                    f"\n{self.guild.motd}\n"
+                    f"\n{self.channel.motd}"
+                ),
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": f"• <@{user.xid}> (user-{user.xid})",
+                    },
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Updated at", "value": ANY},
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "thumbnail": {"url": self.settings.THUMB_URL},
+                "title": "**Waiting for 3 more players to join...**",
+                "type": "rich",
+            }
 
-#             mock_call = lfg_action.safe_update_embed_origin
-#             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-#                 "color": self.settings.PENDING_EMBED_COLOR,
-#                 "description": (
-#                     "_A SpellTable link will be created when all players have joined._\n"
-#                     "\n"
-#                     f"{guild.motd}"
-#                 ),
-#                 "fields": [
-#                     {"inline": False, "name": "Players", "value": f"<@{user.xid}>"},
-#                     {"inline": True, "name": "Format", "value": "Commander"},
-#                 ],
-#                 "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-#                 "thumbnail": {"url": self.settings.THUMB_URL},
-#                 "title": "**Waiting for 3 more players to join...**",
-#                 "type": "rich",
-#             }
 
 #     async def test_join_with_show_points(self, snapshot: SnapshotAssertion):
 #         assert self.ctx.author

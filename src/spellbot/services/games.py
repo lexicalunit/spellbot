@@ -248,18 +248,6 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def del_post(self, guild_xid: int, channel_xid: int, message_xid: int) -> None:
-        assert self.game
-        DatabaseSession.query(Post).filter(
-            Post.game_id == self.game.id,
-            Post.guild_xid == guild_xid,
-            Post.channel_xid == channel_xid,
-            Post.message_xid == message_xid,
-        ).delete(synchronize_session=False)
-        DatabaseSession.commit()
-
-    @sync_to_async()
-    @tracer.wrap()
     def add_post(self, guild_xid: int, channel_xid: int, message_xid: int) -> None:
         assert self.game
         DatabaseSession.execute(
