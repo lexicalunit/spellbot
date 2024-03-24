@@ -17,7 +17,7 @@ class PlayDict(TypedDict):
     user_xid: int
     game_id: int
     og_guild_xid: int
-    points: int
+    points: int | None
     confirmed_at: datetime
 
 

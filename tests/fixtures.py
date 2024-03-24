@@ -29,6 +29,7 @@ from tests.factories import (
     PlayFactory,
     PostFactory,
     QueueFactory,
+    RecordFactory,
     UserAwardFactory,
     UserFactory,
     VerifyFactory,
@@ -58,6 +59,7 @@ class Factories:
     play = PlayFactory
     post = PostFactory
     queue = QueueFactory
+    record = RecordFactory
     user = UserFactory
     user_award = UserAwardFactory
     verify = VerifyFactory
@@ -89,6 +91,7 @@ async def session_context(
         PlayFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         PostFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         QueueFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        RecordFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         UserAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         UserFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         VerifyFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore

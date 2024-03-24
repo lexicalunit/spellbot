@@ -104,6 +104,22 @@ class User(Base):
         play: Play | None = self.plays.filter(Play.game_id == game_id).one_or_none()
         return (play.points, play.confirmed_at is not None) if play else None
 
+    def elo(self, guild_xid: int, channel_xid: int) -> int | None:
+        from spellbot.database import DatabaseSession
+
+        from . import Record
+
+        record: Record | None = (
+            DatabaseSession.query(Record)
+            .filter(
+                Record.guild_xid == guild_xid,
+                Record.channel_xid == channel_xid,
+                Record.user_xid == self.xid,
+            )
+            .one_or_none()
+        )
+        return record.elo if record else None
+
     def waiting(self, channel_xid: int) -> bool:
         game = self.game(channel_xid)
         if game is None:
@@ -133,7 +149,7 @@ class User(Base):
             .order_by(Game.started_at.desc())
             .first()
         )
-        if not last_game:
+        if not last_game or last_game.requires_confirmation is False:
             return True
         last_play = (
             session.query(Play)
