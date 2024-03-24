@@ -150,4 +150,5 @@ def rollback_transaction() -> None:
         transaction.rollback()
     if not connection.closed:  # pragma: no cover
         connection.close()
+    print(engine.pool.status())  # noqa: T201
     engine.dispose()

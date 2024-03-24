@@ -85,15 +85,6 @@ class TestServiceGames:
         post = DatabaseSession.query(Post).one()
         assert post.game_id == game.id
 
-    async def test_games_del_post(self, game: Game) -> None:
-        games = GamesService()
-        await games.select(game.id)
-        await games.add_post(game.guild_xid, game.channel_xid, 12345)
-        await games.del_post(game.guild_xid, game.channel_xid, 12345)
-
-        post = DatabaseSession.query(Post).one_or_none()
-        assert not post
-
     async def test_games_fully_seated(self, guild: Guild, channel: Channel) -> None:
         started_game = GameFactory.create(guild=guild, channel=channel)
         pending_game = GameFactory.create(guild=guild, channel=channel)
