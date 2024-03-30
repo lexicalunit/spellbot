@@ -572,9 +572,10 @@ class LookingForGameAction(BaseAction):
     async def _reply_found_embed(self) -> None:
         embed = Embed()
         embed.set_thumbnail(url=self.settings.ICO_URL)
-        embed.set_author(name="I found a game for you!")
         game_data = await self.services.games.to_dict()
         link = game_data["jump_link"]
+        format = game_data["format"]
+        embed.set_author(name=f"I found a {GameFormat(format)} game for you!")
         embed.description = f"You can [jump to the game post]({link}) to see it!"
         embed.color = self.settings.INFO_EMBED_COLOR
         await safe_followup_channel(self.interaction, embed=embed)

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- More debugging and logging around the cross-queue feature.
+
+### Changed
+
+- Add the game format to the "found you a game" embed posts.
+
 ## [v10.2.1](https://github.com/lexicalunit/spellbot/releases/tag/v10.2.1) - 2024-03-24
 
 ### Fixed
