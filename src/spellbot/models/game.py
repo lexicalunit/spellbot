@@ -287,7 +287,15 @@ class Game(Base):
                     points_value: int = points[0]
                     points_confirmed: bool = points[1]
                     plural_str = "s" if points_value > 1 or points_value == 0 else ""
-                    value_str = f"{points_value} point{plural_str}"
+                    if self.requires_confirmation:
+                        if points_value == 3:
+                            value_str = "WIN"
+                        elif 1 <= points_value <= 2:
+                            value_str = "TIE"
+                        else:
+                            value_str = "LOSS"
+                    else:
+                        value_str = f"{points_value} point{plural_str}"
                     confirmed_str = (
                         "✅ "
                         if points_confirmed

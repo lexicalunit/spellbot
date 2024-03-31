@@ -110,10 +110,37 @@ class StartedGameSelect(ui.Select[T]):
                     await action.add_points(original_response, points)
 
 
+class StartedGameSelectWinLoss(ui.Select[T]):
+    def __init__(self, bot: SpellBot) -> None:
+        self.bot = bot
+        super().__init__(
+            custom_id="points",
+            placeholder="Report game outcome",
+            options=[
+                discord.SelectOption(label="Loss", value="0", emoji="❤️‍🩹"),
+                discord.SelectOption(label="Tie", value="1", emoji="🏅"),
+                discord.SelectOption(label="Win", value="3", emoji="🏆"),
+            ],
+        )
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        from spellbot.actions import LookingForGameAction
+
+        with tracer.trace(name="interaction", resource="points"):
+            add_span_context(interaction)
+            await safe_defer_interaction(interaction)
+            assert interaction.original_response
+            points = int(self.values[0])
+            async with LookingForGameAction.create(self.bot, interaction) as action:
+                original_response = await safe_original_response(interaction)
+                if original_response:
+                    await action.add_points(original_response, points)
+
+
 class StartedGameViewWithConfirm(BaseView):
     def __init__(self, bot: SpellBot) -> None:
         super().__init__(bot)
-        self.add_item(StartedGameSelect[StartedGameViewWithConfirm](self.bot))
+        self.add_item(StartedGameSelectWinLoss[StartedGameViewWithConfirm](self.bot))
         self.add_item(StartedGameConfirm[StartedGameViewWithConfirm](self.bot))
 
 

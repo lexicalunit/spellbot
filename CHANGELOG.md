@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- For channels with show_points and require_confirmation set to True, use win/loss/tie ranking.
+
+### Fixed
+
+- Fixes check for when a user can run the `/confirm` command.
+- The reporting commands now properly update game posts.
+- Don't ask players to confirm their game if it's already confirmed.
+
 ## [v10.3.0](https://github.com/lexicalunit/spellbot/releases/tag/v10.3.0) - 2024-03-30
 
 ### Added

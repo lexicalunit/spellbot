@@ -6,7 +6,12 @@ from typing import TYPE_CHECKING
 import discord
 from ddtrace import tracer
 
-from spellbot.operations import safe_send_channel
+from spellbot.operations import (
+    safe_fetch_text_channel,
+    safe_get_partial_message,
+    safe_send_channel,
+    safe_update_embed,
+)
 from spellbot.settings import Settings
 
 from .base_action import BaseAction
@@ -37,10 +42,25 @@ class RecordAction(BaseAction):
             points_str = f"{points} points" if points is not None else "not reported"
             points_line = f"\n**ﾠ⮑ {confirmed_str}{points_str}**"
             description += f"• <@{play['user_xid']}>{points_line}\n"
-        description += "\nPlease confirm points with `/confirm` when all players have reported.\n"
+        if any(play["confirmed_at"] is None for play in plays):
+            description += (
+                "\nPlease confirm points with `/confirm` when all players have reported.\n"
+            )
         description += f"\n[Jump to game post]({game['jump_link']})"
         embed.description = description
         return embed
+
+    async def _update_posts(self, game: GameDict) -> None:
+        for post in game["posts"]:
+            guild_xid = post["guild_xid"]
+            channel_xid = post["channel_xid"]
+            message_xid = post["message_xid"]
+            channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
+            if channel:
+                message = safe_get_partial_message(channel, guild_xid, message_xid)
+                if message:
+                    embed = await self.services.games.to_embed()
+                    await safe_update_embed(message, embed=embed)
 
     @tracer.wrap()
     async def process(self, user_xid: int, points: int) -> None:
@@ -76,6 +96,7 @@ class RecordAction(BaseAction):
 
         embed = await self._report_embed(game, plays.values())
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
+        await self._update_posts(game)
 
     @tracer.wrap()
     async def loss(self) -> None:
@@ -98,7 +119,7 @@ class RecordAction(BaseAction):
             return
         plays = await self.services.games.get_plays()
         for play in plays.values():
-            if play["confirmed_at"] is None:
+            if play["points"] is None:
                 embed = await self._report_embed(game, plays.values())
                 await safe_send_channel(
                     self.interaction,
@@ -111,6 +132,7 @@ class RecordAction(BaseAction):
         plays[user_xid]["confirmed_at"] = confirmed_at
         embed = await self._report_embed(game, plays.values())
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
+        await self._update_posts(game)
         if all(play["confirmed_at"] is not None for play in plays.values()):
             await self.services.games.update_records(plays)
 
