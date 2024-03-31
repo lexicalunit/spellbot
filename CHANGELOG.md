@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v10.3.1](https://github.com/lexicalunit/spellbot/releases/tag/v10.3.1) - 2024-03-30
+
 ### Changed
 
 - For channels with show_points and require_confirmation set to True, use win/loss/tie ranking.
