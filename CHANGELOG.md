@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes `/lfg` in cross-queue channels so that it sees games created in the other channel.
+
 ## [v10.3.1](https://github.com/lexicalunit/spellbot/releases/tag/v10.3.1) - 2024-03-30
 
 ### Changed

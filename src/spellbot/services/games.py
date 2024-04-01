@@ -22,6 +22,7 @@ from spellbot.models import (
     Game,
     GameDict,
     GameStatus,
+    MirrorDict,
     Play,
     PlayDict,
     Post,
@@ -164,7 +165,9 @@ class GamesService:
         format: int,
         service: int,
         create_new: bool = False,
+        mirrors: list[MirrorDict] | None = None,
     ) -> bool:
+        mirrors = mirrors or []
         existing: Game | None = None
         if not create_new:
             existing = self._find_existing(
@@ -175,6 +178,7 @@ class GamesService:
                 seats=seats,
                 format=format,
                 service=service,
+                mirrors=mirrors,
             )
 
         new: bool
@@ -228,8 +232,23 @@ class GamesService:
         seats: int,
         format: int,
         service: int,
+        mirrors: list[MirrorDict] | None = None,
     ) -> Game | None:
+        mirrors = mirrors or []
         required_seats = 1 + len(friends)
+
+        guild_channel_filter = or_(
+            *[
+                and_(
+                    Game.guild_xid == gid,
+                    Game.channel_xid == cid,
+                )
+                for gid, cid in [
+                    (guild_xid, channel_xid),
+                    *[(m["to_guild_xid"], m["to_channel_xid"]) for m in mirrors],
+                ]
+            ]
+        )
 
         player_count = count(Queue.user_xid).over(partition_by=Game.id)
         inner = (
@@ -241,8 +260,7 @@ class GamesService:
             .join(Queue, isouter=True)
             .filter(  # type: ignore
                 and_(
-                    Game.guild_xid == guild_xid,
-                    Game.channel_xid == channel_xid,
+                    guild_channel_filter,
                     Game.seats == seats,
                     Game.format == format,
                     Game.service == service,
