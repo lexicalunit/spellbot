@@ -105,6 +105,7 @@ class LookingForGameAction(BaseAction):
 
         if not origin:
             assert self.interaction.guild_id is not None
+            mirrors = await self.services.mirrors.get(self.guild.id, self.channel.id)
             return await self.services.games.upsert(
                 guild_xid=self.interaction.guild_id,
                 channel_xid=self.channel.id,
@@ -113,6 +114,7 @@ class LookingForGameAction(BaseAction):
                 seats=seats,
                 format=format,
                 service=service,
+                mirrors=mirrors,
             )
 
         assert message_xid
