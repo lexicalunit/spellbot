@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes the jump link for watched user notifications.
+
 ## [v10.3.4](https://github.com/lexicalunit/spellbot/releases/tag/v10.3.4) - 2024-04-02
 
 ### Changed
