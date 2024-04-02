@@ -265,6 +265,75 @@ class TestModelGame:
             "type": "rich",
         }
 
+    def test_game_embed_started_with_arena(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            seats=2,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            spelltable_link=None,
+            guild=guild,
+            channel=channel,
+            service=GameService.MTG_ARENA.value,
+        )
+        factories.post.create(guild=guild, channel=channel, game=game)
+        player1 = factories.user.create(game=game)
+        player2 = factories.user.create(game=game)
+
+        assert game.to_embed().to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": "Please check your Direct Messages for your game details.",
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n"
+                        f"• <@{player2.xid}> ({player2.name})"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {"inline": False, "name": "Service", "value": "MTG Arena"},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+        assert game.to_embed(dm=True).to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": (
+                "Please use MTG Arena to play this game.\n"
+                "\n"
+                "You can also [jump to the original game post]"
+                "(https://discordapp.com/channels/"
+                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
+            ),
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n"
+                        f"• <@{player2.xid}> ({player2.name})"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {"inline": False, "name": "Service", "value": "MTG Arena"},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+
     def test_game_embed_started_with_points(
         self,
         settings: Settings,
@@ -593,6 +662,68 @@ class TestModelGame:
                     "value": (
                         f"• <@{player1.xid}> ({player1.name})\n"
                         f"• <@{player2.xid}> ({player2.name})"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+
+    def test_game_embed_started_with_win_loss(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(
+            guild=guild,
+            show_points=True,
+            require_confirmation=True,
+            motd=None,
+        )
+        game = factories.game.create(
+            seats=2,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            guild=guild,
+            channel=channel,
+            requires_confirmation=True,
+        )
+        player1 = factories.user.create(game=game, xid=1)
+        player2 = factories.user.create(game=game, xid=2)
+        player3 = factories.user.create(game=game, xid=3)
+        DatabaseSession.query(Play).filter(
+            Play.game_id == game.id,
+            Play.user_xid == player1.xid,
+        ).update({Play.points: 3})  # type: ignore
+        DatabaseSession.query(Play).filter(
+            Play.game_id == game.id,
+            Play.user_xid == player2.xid,
+        ).update({Play.points: 1})  # type: ignore
+        DatabaseSession.query(Play).filter(
+            Play.game_id == game.id,
+            Play.user_xid == player3.xid,
+        ).update({Play.points: 0})  # type: ignore
+
+        assert game.to_embed().to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": (
+                "Please check your Direct Messages for your game details.\n"
+                "\n"
+                "When your game is over use the drop down to report your points."
+            ),
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n**ﾠ⮑ ❌ WIN**\n"
+                        f"• <@{player2.xid}> ({player2.name})\n**ﾠ⮑ ❌ TIE**\n"
+                        f"• <@{player3.xid}> ({player3.name})\n**ﾠ⮑ ❌ LOSS**"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
