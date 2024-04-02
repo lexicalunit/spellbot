@@ -574,10 +574,12 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def _reply_found_embed(self) -> None:
+        assert self.guild is not None
         embed = discord.Embed()
         embed.set_thumbnail(url=self.settings.ICO_URL)
         game_data = await self.services.games.to_dict()
-        link = game_data["jump_link"]
+        links = game_data["jump_links"]
+        link = links[self.guild.id]
         format = game_data["format"]
         embed.set_author(name=f"I found a {GameFormat(format)} game for you!")
         embed.description = f"You can [jump to the game post]({link}) to see it!"
@@ -659,7 +661,7 @@ class LookingForGameAction(BaseAction):
         embed.set_author(name="Watched user(s) joined a game")
         embed.color = self.settings.INFO_EMBED_COLOR
         description = (
-            f"[⇤ Jump to the game post]({data['jump_link']})\n"
+            f"[⇤ Jump to the game post]({data['jump_links'][0]})\n"
             f"[➤ Spectate the game on SpellTable]({data['spectate_link']})\n\n"
             f"**Users:**"
         )
