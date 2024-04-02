@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v10.3.3](https://github.com/lexicalunit/spellbot/releases/tag/v10.3.3) - 2024-04-01
+
 ### Fixed
 
 - Fixes the jump link for cross-queue games.
