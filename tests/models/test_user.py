@@ -104,6 +104,7 @@ class TestModelUserConfirmed:
             channel=channel,
             started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
             status=GameStatus.STARTED.value,
+            requires_confirmation=True,
         )
         user = factories.user.create(game=game)
         user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)
@@ -117,14 +118,28 @@ class TestModelUserConfirmed:
             channel=channel,
             started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
             status=GameStatus.STARTED.value,
+            requires_confirmation=True,
         )
         user = factories.user.create(game=game)
         DatabaseSession.query(Play).delete(synchronize_session=False)
-
         assert user.confirmed(channel.xid)
 
     def test_no_last_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         user = factories.user.create()
+        assert user.confirmed(channel.xid)
+
+    def test_no_game_requires_confirmation(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            status=GameStatus.STARTED.value,
+            requires_confirmation=False,
+        )
+        user = factories.user.create(game=game)
+        user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)
         assert user.confirmed(channel.xid)
