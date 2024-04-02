@@ -660,11 +660,10 @@ class LookingForGameAction(BaseAction):
         embed.set_thumbnail(url=self.settings.ICO_URL)
         embed.set_author(name="Watched user(s) joined a game")
         embed.color = self.settings.INFO_EMBED_COLOR
-        description = (
-            f"[⇤ Jump to the game post]({data['jump_links'][0]})\n"
-            f"[➤ Spectate the game on SpellTable]({data['spectate_link']})\n\n"
-            f"**Users:**"
-        )
+        description = ""
+        for jump_link in data["jump_links"].values():
+            description += f"[⇤ Jump to the game post]({jump_link})\n"
+        description += f"[➤ Spectate the game on SpellTable]({data['spectate_link']})\n\n**Users:**"
         for user_xid, note in watch_notes.items():
             description += f"\n• <@{user_xid}>: {note}"
         embed.description = description
