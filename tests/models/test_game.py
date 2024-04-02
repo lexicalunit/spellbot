@@ -37,7 +37,7 @@ class TestModelGame:
             "format": game.format,
             "service": game.service,
             "spelltable_link": game.spelltable_link,
-            "jump_link": game.jump_link,
+            "jump_links": game.jump_links,
             "spectate_link": game.spectate_link,
             "confirmed": game.confirmed,
             "requires_confirmation": game.requires_confirmation,

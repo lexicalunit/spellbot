@@ -41,7 +41,7 @@ class GameDict(TypedDict):
     service: int
     spelltable_link: str | None
     spectate_link: str | None
-    jump_link: str | None
+    jump_links: dict[int, str]
     confirmed: bool
     requires_confirmation: bool
 
@@ -246,9 +246,10 @@ class Game(Base):
             else:
                 description += "Please check your Direct Messages for your game details."
             if dm:
+                jump_link = next(iter(self.jump_links.values()))
                 description += (
                     "\n\nYou can also [jump to the original game post]"
-                    f"({self.jump_link}) in <#{self.channel_xid}>."
+                    f"({jump_link}) in <#{self.channel_xid}>."
                 )
             elif self.channel.show_points:
                 description += "\n\nWhen your game is over use the drop down to report your points."
@@ -323,10 +324,8 @@ class Game(Base):
         return f"{self.spelltable_link}?spectate=true" if self.spelltable_link else None
 
     @property
-    def jump_link(self) -> str | None:
-        if not self.posts:
-            return None
-        return self.posts[0].jump_link
+    def jump_links(self) -> dict[int, str]:
+        return {post.guild_xid: post.jump_link for post in self.posts or []}
 
     @property
     def format_name(self) -> str:
@@ -397,7 +396,7 @@ class Game(Base):
             "service": self.service,
             "spelltable_link": self.spelltable_link,
             "spectate_link": self.spectate_link,
-            "jump_link": self.jump_link,
+            "jump_links": self.jump_links,
             "confirmed": self.confirmed,
             "requires_confirmation": self.channel.require_confirmation,
         }

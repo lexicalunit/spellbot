@@ -31,6 +31,7 @@ class RecordAction(BaseAction):
         super().__init__(bot, interaction)
 
     async def _report_embed(self, game: GameDict, plays: ValuesView[PlayDict]) -> discord.Embed:
+        assert self.guild is not None
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name=f"SB{game['id']} Game Report")
@@ -46,7 +47,9 @@ class RecordAction(BaseAction):
             description += (
                 "\nPlease confirm points with `/confirm` when all players have reported.\n"
             )
-        description += f"\n[Jump to game post]({game['jump_link']})"
+        jump_links = game["jump_links"]
+        jump_link = jump_links[self.guild.id]
+        description += f"\n[Jump to game post]({jump_link})"
         embed.description = description
         return embed
 
