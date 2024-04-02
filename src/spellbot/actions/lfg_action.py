@@ -441,7 +441,7 @@ class LookingForGameAction(BaseAction):
         if should_create_invite:
             invite = await save_create_channel_invite(
                 voice_channel,
-                max_age=10 * 60,  # 10 minutes
+                max_age=2 * 60 * 60,  # 2 hours
                 max_uses=0,  # unlimited uses
                 temporary=True,
                 reason=f"Creating temporary voice channel invite for Game-SB{game_id}",
