@@ -40,6 +40,9 @@ class AboutCog(commands.Cog):
             "\n"
             f"[🔗 Add SpellBot to your Discord!]({settings.BOT_INVITE_LINK})\n"
             "\n"
+            "SpellBot's continued operation is made possible"
+            " by [PlayEDH](https://www.playedh.com/) and my Patreon supporters.\n"
+            "\n"
             f"💜 Help keep SpellBot running by [becoming a patron!]({PATREON})"
         )
         embed.url = "http://spellbot.io/"

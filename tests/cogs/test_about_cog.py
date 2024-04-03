@@ -26,6 +26,9 @@ class TestCogAbout(InteractionMixin):
                 "\n"
                 f"[🔗 Add SpellBot to your Discord!]({self.settings.BOT_INVITE_LINK})\n"
                 "\n"
+                "SpellBot's continued operation is made possible"
+                " by [PlayEDH](https://www.playedh.com/) and my Patreon supporters.\n"
+                "\n"
                 "💜 Help keep SpellBot running by [becoming a patron!]"
                 "(https://www.patreon.com/lexicalunit)"
             ),
