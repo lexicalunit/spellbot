@@ -63,7 +63,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
 <table>
     <tr>
         <td align="center"><a href="https://www.playedh.com/"><img width="160" height="160" src="https://user-images.githubusercontent.com/1903876/140843874-78510411-dcc8-4a26-a59a-0d6856698dcc.png" alt="PlayEDH" /><br />PlayEDH</a></td>
-        <td align="center"><a href="https://www.reddit.com/r/CompetitiveEDH/"><img width="160" height="160" src="https://user-images.githubusercontent.com/1903876/140865281-19774420-a49b-4d0e-bf0c-db3ad937022e.png" alt="r/cEDH" /><br />r/cEDH</a></td>
+        <td align="center"><a href="https://discord.com/invite/cedh"><img width="160" height="160" src="https://github.com/lexicalunit/spellbot/assets/1903876/8d5bbdce-a180-4e34-b25f-b95262b0fe63" alt="cEDH" /><br />cEDH</a></td>
         <td align="center"><a href="https://www.patreon.com/tolariancommunitycollege"><img height="160" src="https://user-images.githubusercontent.com/1903876/184271392-39ca23ba-36d9-4aa0-a6e5-26af5e0acfc1.jpg" alt="Tolarian Community College" /><br /><span class="small">Tolarian&nbsp;Community&nbsp;College</span></a></td>
     </tr>
     <tr>
