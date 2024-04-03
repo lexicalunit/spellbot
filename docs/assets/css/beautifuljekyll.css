@@ -174,7 +174,7 @@ img {
 }
 
 .navbar-custom .navbar-nav .nav-item {
-  text-transform: uppercase;
+  /* text-transform: uppercase; */
   font-size: 0.8125rem;
   letter-spacing: 0.0625rem;
 }
@@ -226,8 +226,8 @@ img {
   }
 
   .navbar-expand-xl .navbar-nav .nav-link {
-    padding-left: 0.9375rem;
-    padding-right: 0.9375rem;
+    padding-left: 0.6375rem;
+    padding-right: 0.6375rem;
   }
 
   .navbar-expand-xl .navbar-nav .nav-item:not(.dropdown):last-child .nav-link {
@@ -781,7 +781,7 @@ nav.top-nav-short-permanent ~ header > .intro-header.big-img {
 
 .pagination .page-item .page-link {
   font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  text-transform: uppercase;
+  /* text-transform: uppercase; */
   font-size: 0.875rem;
   font-weight: 800;
   letter-spacing: 1px;
