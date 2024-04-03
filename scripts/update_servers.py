@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator, Iterable, Sequence
 
 SRC_ROOT = Path(realpath(__file__)).parent.parent
-SERVERS_FILE = SRC_ROOT / "servers.yaml"
+SERVERS_FILE = SRC_ROOT / "conf" / "servers.yaml"
 README_FILE = SRC_ROOT / "README.md"
 INDEX_FILE = SRC_ROOT / "docs" / "index.html"
 
