@@ -46,7 +46,7 @@ play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
 
 <p align="center">
     <img
-        src="https://user-images.githubusercontent.com/1903876/137987904-6fcdf273-5b60-4692-9389-a51d65c0a424.png"
+        src="https://github.com/lexicalunit/spellbot/assets/1903876/ca7665de-ac10-4718-a78e-51705a0e3559"
         width="600"
         alt="/lfg"
     />

@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Updates cEDH logo and link.
+- Updated the screenshot in the README.md and docs/index.html files.
+- Updated the list of servers.
 
 ## [v10.3.5](https://github.com/lexicalunit/spellbot/releases/tag/v10.3.5) - 2024-04-02
 
