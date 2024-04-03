@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - A script to automatically update server lists in README.md and docs/index.html.
+- Special call outs for supporting servers.
 
 ### Changed
 

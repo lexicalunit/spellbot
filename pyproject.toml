@@ -23,6 +23,7 @@ exclude = [
   ".svn",
   ".tox",
   ".venv",
+  ".venv",
   "buck-out",
   "build",
   "dist",

@@ -6,11 +6,11 @@ servers:
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/8d5bbdce-a180-4e34-b25f-b95262b0fe63
     url: https://discord.com/invite/cedh
   - name: Tolarian Community College
-    logo: https://user-images.githubusercontent.com/1903876/184271392-39ca23ba-36d9-4aa0-a6e5-26af5e0acfc1.jpg
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/92aa9c59-9f30-4f4e-83ab-fc86e72e8f40
     url: https://www.patreon.com/tolariancommunitycollege
     small: true
   - name: EDH Fight Club
-    logo: https://user-images.githubusercontent.com/1903876/140863859-9ec1997b-9983-498e-9295-fa594d242b4d.jpg
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/393c4168-edeb-4078-9466-ea9a29f28846
     url: https://disboard.org/server/815001383979450368
   - name: EDH Tambayan
     logo: https://user-images.githubusercontent.com/1903876/161825614-64e432d4-85e8-481e-8f41-f66ab8c940cc.png
@@ -19,10 +19,10 @@ servers:
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/9fce8bc7-543f-4c64-8dda-adcd3955557e
     url: https://www.playtowinmtg.com/
   - name: Playing with Power
-    logo: https://user-images.githubusercontent.com/1903876/148892809-60b7d7f0-d773-4667-a863-829338d6aaed.png
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/affe5203-b692-40d7-a395-2a5026beab1f
     url: https://www.patreon.com/PlayingWithPowerMTG
   - name: Commander RC
-    logo: https://user-images.githubusercontent.com/1903876/147596500-3cd08eef-84ad-4c02-a219-2eef0642a973.jpg
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/a4f292c6-65b3-4767-8e82-f39c35a75723
     url: https://discord.gg/commander
   - name: Command the Cause
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/47d68a5b-fe08-497c-a76b-c8dde5f56af3
@@ -34,9 +34,6 @@ servers:
   - name: Combat Step
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/cc420426-7d3c-4829-b963-a63c7d36a253
     url: https://discord.gg/Jkn5FpTASv
-  - name: Asylum Gaming
-    logo: https://user-images.githubusercontent.com/1903876/198731021-a6ea0111-da86-42e3-b74b-79d1225a2849.png
-    url: https://www.patreon.com/asylumgamingmtg
   # - name: Commander en Español
   #   logo: https://user-images.githubusercontent.com/1903876/140863856-00482a5a-7fe5-4cbb-8c4b-2442504925ea.jpg
   #   url: https://disboard.org/server/848414032398516264

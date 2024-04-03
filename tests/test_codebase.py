@@ -27,6 +27,8 @@ class TestCodebase:
             (
                 r"find . -type d \( "  # noqa: S607, S605
                 r"    -path ./env -o "
+                r"    -path ./venv -o "
+                r"    -path ./.venv -o "
                 r"    -path ./src/spellbot/migrations/versions -o "
                 r"    -path ./src/spellbot/cogs "
                 r"\) -prune -o -name '*.py' "
