@@ -35,9 +35,12 @@ servers:
     light_logo: https://github.com/lexicalunit/spellbot/assets/1903876/2f989560-b4c2-42e7-9708-0718913aecec
     dark_logo: https://github.com/lexicalunit/spellbot/assets/1903876/104dc2da-4aad-4998-a778-479b54d1c600
     url: https://www.ka0stournaments.com/
-  - name: Combat Step
-    logo: https://github.com/lexicalunit/spellbot/assets/1903876/cc420426-7d3c-4829-b963-a63c7d36a253
-    url: https://discord.gg/Jkn5FpTASv
+  - name: MTG@Home
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/322d1bdf-6b32-45f5-93b2-8d4963075772
+    url: https://disboard.org/server/689674672240984067
+  # - name: Combat Step
+  #   logo: https://github.com/lexicalunit/spellbot/assets/1903876/cc420426-7d3c-4829-b963-a63c7d36a253
+  #   url: https://discord.gg/Jkn5FpTASv
   # - name: Commander en Español
   #   logo: https://user-images.githubusercontent.com/1903876/140863856-00482a5a-7fe5-4cbb-8c4b-2442504925ea.jpg
   #   url: https://disboard.org/server/848414032398516264
