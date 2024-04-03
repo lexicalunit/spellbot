@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updates cEDH logo and link.
+
 ## [v10.3.5](https://github.com/lexicalunit/spellbot/releases/tag/v10.3.5) - 2024-04-02
 
 ### Fixed
