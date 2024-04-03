@@ -80,7 +80,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
     <tr>
         <td align="center"><a href="https://discord.gg/ZmPsjrxe4h"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/47d68a5b-fe08-497c-a76b-c8dde5f56af3" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
         <td align="center"><a href="https://www.ka0stournaments.com/"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/104dc2da-4aad-4998-a778-479b54d1c600" alt="ka0s Tournaments" /><br />ka0s&nbsp;Tournaments</a></td>
-        <td align="center"><a href="https://discord.gg/Jkn5FpTASv"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/cc420426-7d3c-4829-b963-a63c7d36a253" alt="Combat Step" /><br />Combat&nbsp;Step</a></td>
+        <td align="center"><a href="https://disboard.org/server/689674672240984067"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/322d1bdf-6b32-45f5-93b2-8d4963075772" alt="MTG@Home" /><br />MTG@Home</a></td>
     </tr>
 </table>
 <!-- SERVERS END -->
