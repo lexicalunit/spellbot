@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated servers list.
+
 ## [v10.3.6](https://github.com/lexicalunit/spellbot/releases/tag/v10.3.6) - 2024-04-03
 
 ### Fixed
