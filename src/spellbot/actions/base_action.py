@@ -9,7 +9,13 @@ from asgiref.sync import sync_to_async
 from ddtrace import tracer
 
 from spellbot.database import DatabaseSession, db_session_manager
-from spellbot.errors import SpellBotError, UserBannedError, UserUnverifiedError, UserVerifiedError
+from spellbot.errors import (
+    GuildBannedError,
+    SpellBotError,
+    UserBannedError,
+    UserUnverifiedError,
+    UserVerifiedError,
+)
 from spellbot.metrics import setup_ignored_errors
 from spellbot.services import ServicesRegistry
 from spellbot.utils import user_can_moderate
@@ -18,7 +24,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
     from spellbot import SpellBot
-    from spellbot.models import ChannelDict
+    from spellbot.models import ChannelDict, GuildDict
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +62,12 @@ class BaseAction:
         self.channel = cast(discord.TextChannel, self.interaction.channel)
 
     async def upsert_request_objects(self) -> None:
+        guild_data: GuildDict | None = None
         if self.guild:
-            await self.services.guilds.upsert(self.guild)
+            guild_data = await self.services.guilds.upsert(self.guild)
+
+        if guild_data and guild_data["banned"]:
+            raise GuildBannedError
 
         if self.guild and self.channel:
             self.channel_data = await self.services.channels.upsert(self.channel)

@@ -16,6 +16,7 @@ from discord.ext.commands import Command as ExtCommand
 
 from .errors import (
     AdminOnlyError,
+    GuildBannedError,
     GuildOnlyError,
     UserBannedError,
     UserUnverifiedError,
@@ -281,6 +282,8 @@ async def handle_interaction_errors(interaction: discord.Interaction, error: Exc
         return await safe_send_user(interaction.user, "This command is not supported in DMs.")
     if isinstance(error, UserBannedError):
         return await safe_send_user(interaction.user, "You have been banned from using SpellBot.")
+    if isinstance(error, GuildBannedError):
+        return None
     if isinstance(error, UserUnverifiedError):
         return await safe_send_user(interaction.user, "Only verified users can do that here.")
     if isinstance(error, UserVerifiedError):

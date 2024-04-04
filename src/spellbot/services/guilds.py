@@ -19,7 +19,7 @@ class GuildsService:
     guild: Guild | None = None
 
     @sync_to_async()
-    def upsert(self, guild: discord.Guild) -> None:
+    def upsert(self, guild: discord.Guild) -> GuildDict | None:
         name_max_len = Guild.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(guild, "name", "")
         name = raw_name[:name_max_len]
@@ -46,6 +46,27 @@ class GuildsService:
             )
             .one_or_none()
         )
+        return self.guild.to_dict() if self.guild else None
+
+    @sync_to_async()
+    def set_banned(self, banned: bool, xid: int) -> None:
+        values = {
+            "xid": xid,
+            "name": "Unknown Guild",
+            "updated_at": datetime.now(tz=pytz.utc),
+            "banned": banned,
+        }
+        upsert = insert(Guild).values(**values)
+        upsert = upsert.on_conflict_do_update(
+            index_elements=[Guild.xid],
+            index_where=Guild.xid == values["xid"],
+            set_={
+                "updated_at": upsert.excluded.updated_at,
+                "banned": upsert.excluded.banned,
+            },
+        )
+        DatabaseSession.execute(upsert, values)
+        DatabaseSession.commit()
 
     @sync_to_async()
     def select(self, guild_xid: int) -> bool:

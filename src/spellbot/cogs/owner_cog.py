@@ -9,7 +9,7 @@ from spellbot.actions.base_action import handle_exception
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_context
 from spellbot.operations import bad_users, safe_send_user
-from spellbot.services import MirrorsService, UsersService
+from spellbot.services import GuildsService, MirrorsService, UsersService
 from spellbot.utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,24 @@ async def set_banned(banned: bool, ctx: commands.Context[SpellBot], arg: str | N
     await safe_send_user(
         ctx.message.author,
         f"User <@{user_xid}> has been {'banned' if banned else 'unbanned'}.",
+    )
+    return None
+
+
+async def set_banned_guild(banned: bool, ctx: commands.Context[SpellBot], arg: str | None) -> None:
+    assert ctx.message
+    if arg is None:
+        return await safe_send_user(ctx.message.author, "No target guild.")
+
+    guild_xid: int
+    try:
+        guild_xid = int(arg)
+    except ValueError:
+        return await safe_send_user(ctx.message.author, "Invalid user id.")
+    await GuildsService().set_banned(banned, guild_xid)
+    await safe_send_user(
+        ctx.message.author,
+        f"Guild {guild_xid} has been {'banned' if banned else 'unbanned'}.",
     )
     return None
 
@@ -73,6 +91,28 @@ class OwnerCog(commands.Cog):
         async with db_session_manager():
             try:
                 await set_banned(False, ctx, arg)
+            except Exception as ex:
+                await safe_send_user(ctx.message.author, f"Error: {ex}")
+                await handle_exception(ex)
+
+    @commands.command(name="ban_guild")
+    @tracer.wrap(name="interaction", resource="ban_guild")
+    async def ban_guild(self, ctx: commands.Context[SpellBot], arg: str | None = None) -> None:
+        add_span_context(ctx)
+        async with db_session_manager():
+            try:
+                await set_banned_guild(True, ctx, arg)
+            except Exception as ex:
+                await safe_send_user(ctx.message.author, f"Error: {ex}")
+                await handle_exception(ex)
+
+    @commands.command(name="unban_guild")
+    @tracer.wrap(name="interaction", resource="unban_guild")
+    async def unban_guild(self, ctx: commands.Context[SpellBot], arg: str | None = None) -> None:
+        add_span_context(ctx)
+        async with db_session_manager():
+            try:
+                await set_banned_guild(False, ctx, arg)
             except Exception as ex:
                 await safe_send_user(ctx.message.author, f"Error: {ex}")
                 await handle_exception(ex)
