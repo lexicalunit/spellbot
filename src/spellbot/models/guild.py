@@ -24,6 +24,7 @@ class GuildDict(TypedDict):
     voice_create: bool
     channels: list[ChannelDict]
     awards: list[GuildAwardDict]
+    banned: bool
 
 
 class Guild(Base):
@@ -69,6 +70,13 @@ class Guild(Base):
         server_default=false(),
         doc="Configuration for automatically created voice channels for games",
     )
+    banned = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="If true, this guild is banned from using SpellBot",
+    )
 
     games = relationship(
         "Game",
@@ -107,4 +115,5 @@ class Guild(Base):
                 [award.to_dict() for award in cast("Iterable[GuildAward]", self.awards)],
                 key=lambda c: c["id"],
             ),
+            "banned": self.banned,
         }

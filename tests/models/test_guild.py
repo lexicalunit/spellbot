@@ -30,4 +30,5 @@ class TestModelGuild:
                 [award1.to_dict(), award2.to_dict()],
                 key=lambda c: c["id"],
             ),
+            "banned": guild.banned,
         }

@@ -14,6 +14,7 @@ from . import __version__
 from .environment import running_in_pytest
 from .errors import (
     AdminOnlyError,
+    GuildBannedError,
     GuildOnlyError,
     UserBannedError,
     UserUnverifiedError,
@@ -150,5 +151,6 @@ def setup_ignored_errors(span: Span) -> None:  # pragma: no cover
     span._ignore_exception(AdminOnlyError)  # type: ignore  # noqa: SLF001
     span._ignore_exception(GuildOnlyError)  # type: ignore  # noqa: SLF001
     span._ignore_exception(UserBannedError)  # type: ignore  # noqa: SLF001
+    span._ignore_exception(GuildBannedError)  # type: ignore  # noqa: SLF001
     span._ignore_exception(UserUnverifiedError)  # type: ignore  # noqa: SLF001
     span._ignore_exception(UserVerifiedError)  # type: ignore  # noqa: SLF001
