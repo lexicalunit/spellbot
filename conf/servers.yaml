@@ -10,7 +10,7 @@ servers:
     url: https://www.patreon.com/tolariancommunitycollege
     small: true
   - name: EDH Fight Club
-    logo: https://github.com/lexicalunit/spellbot/assets/1903876/393c4168-edeb-4078-9466-ea9a29f28846
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/26b824c1-fa82-4b18-a47c-37114a0023b7
     url: https://disboard.org/server/815001383979450368
   - name: Oath of the Gaywatch
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/a2117868-cd86-44a9-8e92-91e5b2d639c2
@@ -20,7 +20,7 @@ servers:
     logo: https://user-images.githubusercontent.com/1903876/161825614-64e432d4-85e8-481e-8f41-f66ab8c940cc.png
     url: https://www.facebook.com/EDHTambayan/
   - name: Play to Win
-    logo: https://github.com/lexicalunit/spellbot/assets/1903876/9fce8bc7-543f-4c64-8dda-adcd3955557e
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/e04abae7-394e-4f89-94e9-edbdbfd411fb
     url: https://www.playtowinmtg.com/
   - name: Playing with Power
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/affe5203-b692-40d7-a395-2a5026beab1f
