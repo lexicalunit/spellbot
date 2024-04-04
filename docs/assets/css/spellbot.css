@@ -19,7 +19,7 @@
 }
 
 .add-bot:hover {
-  filter: brightness(150%);
+  filter: brightness(90%);
 }
 
 .screenshot {
@@ -77,7 +77,11 @@ p.note:before {
 }
 
 .avatar-img-border:hover {
-  filter: brightness(150%);
+  /* filter: brightness(150%); */
+  -webkit-transform: scale(1.1);
+  -ms-transform: scale(1.1);
+  transform: scale(1.1);
+  transition: 0.7s ease;
 }
 
 a {
@@ -140,6 +144,12 @@ code {
   width: 230px;
   text-align: center;
   vertical-align: middle;
+}
+.where img:hover {
+  -webkit-transform: scale(1.05);
+  -ms-transform: scale(1.05);
+  transform: scale(1.05);
+  transition: 0.7s ease;
 }
 
 .small {
