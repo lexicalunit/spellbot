@@ -133,6 +133,7 @@ code {
   justify-content: flex-start;
   align-items: flex-start;
   flex-wrap: wrap;
+  justify-content: center;
 }
 .where div {
   padding: 10px;
