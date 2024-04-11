@@ -31,8 +31,8 @@ async def wait_until_ready(bot: Client) -> None:  # pragma: no cover
             #       See: https://github.com/Rapptz/discord.py/issues/9074 for details.
             _, unfinished = await asyncio.wait(
                 [
-                    bot.wait_for("ready", timeout=WAIT_UNTIL_READY_TIMEOUT),
-                    bot.wait_for("resumed", timeout=WAIT_UNTIL_READY_TIMEOUT),
+                    asyncio.create_task(bot.wait_for("ready", timeout=WAIT_UNTIL_READY_TIMEOUT)),
+                    asyncio.create_task(bot.wait_for("resumed", timeout=WAIT_UNTIL_READY_TIMEOUT)),
                 ],
                 return_when=asyncio.FIRST_COMPLETED,
             )

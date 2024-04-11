@@ -21,7 +21,7 @@ class PendingGameView(BaseView):
         emoji="✋",
         label="Join this game!",
         style=discord.ButtonStyle.blurple,
-    )  # type: ignore
+    )
     async def join(
         self,
         interaction: discord.Interaction,
@@ -47,7 +47,7 @@ class PendingGameView(BaseView):
         emoji="🚫",
         label="Leave",
         style=discord.ButtonStyle.gray,
-    )  # type: ignore
+    )
     async def leave(
         self,
         interaction: discord.Interaction,

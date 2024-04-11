@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, NoReturn, TypeVar, cast
+from typing import TYPE_CHECKING, NoReturn, Self, cast
 
 import discord
 from asgiref.sync import sync_to_async
@@ -27,8 +27,6 @@ if TYPE_CHECKING:
     from spellbot.models import ChannelDict, GuildDict
 
 logger = logging.getLogger(__name__)
-
-ActionType = TypeVar("ActionType", bound="BaseAction")
 
 
 @sync_to_async()
@@ -100,10 +98,10 @@ class BaseAction:
     @classmethod
     @asynccontextmanager
     async def create(
-        cls: type[ActionType],
+        cls,
         bot: SpellBot,
         interaction: discord.Interaction,
-    ) -> AsyncGenerator[ActionType, None]:
+    ) -> AsyncGenerator[Self, None]:
         action = cls(bot, interaction)
         with tracer.trace(name=f"spellbot.interactions.{cls.__name__}.create") as span:
             setup_ignored_errors(span)
