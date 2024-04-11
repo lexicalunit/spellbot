@@ -44,7 +44,7 @@ async def retry(func: Callable[[], Awaitable[Any]]) -> Any:
         try:
             times += 1
             return await func()
-        except ClientOSError:  # noqa: PERF203
+        except ClientOSError:
             if times > 3:
                 raise
             await sleep(times / 100)  # 10ms, 20ms, 30ms, etc.

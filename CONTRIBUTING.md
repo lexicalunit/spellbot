@@ -18,21 +18,21 @@ curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-
 The easiest thing to do is to set up a virtual python environment specifically for spellbot.
 
 ```shell
-python3.10 -m venv env
+python -m venv .venv
 ```
 
 Then you can install `poetry` into this environment with:
 
 ```shell
-env/bin/pip install --upgrade pip
-env/bin/pip install poetry
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install poetry
 ```
 
 Now configure `poetry` to use in the virtual environment we already created:
 
 ```shell
-env/bin/poetry config virtualenvs.create false
-env/bin/poetry env use env/bin/python
+.venv/bin/poetry config virtualenvs.create false
+.venv/bin/poetry env use .venv/bin/python
 ```
 
 To make this easier I've also included a [`scripts/setup.sh`](scripts/setup.sh)
@@ -43,7 +43,7 @@ to do this automatically.
 Install in development mode via `poetry`:
 
 ```shell
-source env/bin/activate
+source .venv/bin/activate
 poetry install
 ```
 
@@ -58,7 +58,7 @@ database you want to use must be stored in the environment variable `DATABASE_UR
 You can start a local database via Docker by running:
 
 ```shell
-docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:12.9
+docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:15
 ```
 
 Using this locally will allow you to use the default value for `DATABASE_URL`
@@ -73,14 +73,14 @@ If you wish, you can use a [.env file](https://pypi.org/project/python-dotenv/).
 When your environmental variables are set, run:
 
 ```shell
-source env/bin/activate
+source .venv/bin/activate
 poetry run spellbot --help
 ```
 
 This will list some useful flags you can provide to run SpellBot. To get started developing, run:
 
 ```shell
-source env/bin/activate
+source .venv/bin/activate
 poetry run spellbot --dev
 ```
 
@@ -89,21 +89,17 @@ This will start SpellBot and reload it whenever the source code changes.
 ## Running tests
 
 ```shell
-source env/bin/activate
+source .venv/bin/activate
 poetry run pytest --cov --cov-report=html
 open coverage/index.html
 ```
 
 ## Formatting and linting
 
-Codebase consistency is maintained by the industry standard [black][black]. For
-linting we use [flake8](https://flake8.pycqa.org/en/latest/) with configuration
-to work alongside the formatter. Imports are kept in order by
-[isort](https://timothycrosley.github.io/isort/). The included test suite can
-run these tools against the codebase and report on any errors:
+Codebase consistency is maintained by [ruff][ruff].
 
 ```shell
-source env/bin/activate
+source .venv/bin/activate
 poetry run pytest -k codebase
 ```
 
@@ -120,7 +116,7 @@ directory to help. To use it you will need to have non-interactive
 `poetry publish` enabled by running:
 
 ```shell
-source env/bin/activate
+source .venv/bin/activate
 poetry config pypi-token.pypi "YOUR-PYPI-TOKEN-GOES-HERE"
 ```
 
@@ -151,7 +147,7 @@ make. But basically:
 To release a new version of `spellbot`, use `poetry`:
 
 ```shell
-source env/bin/activate
+source .venv/bin/activate
 poetry version [major|minor|patch]
 poetry run pytest # verify that all tests pass
 # edit the CHANGELOG.md file to promote all unlreased changes to the new version
@@ -261,7 +257,7 @@ docker run --rm \
 ```
 
 [alembic]: https://alembic.sqlalchemy.org/
-[black]: https://github.com/psf/black
+[ruff]: https://docs.astral.sh/ruff/
 [datadog]: https://www.datadoghq.com/
 [dd-agent]: https://github.com/DataDog/dd-agent
 [ddtrace]: https://ddtrace.readthedocs.io/en/stable/index.html
