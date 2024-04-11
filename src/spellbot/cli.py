@@ -106,7 +106,7 @@ def main(
                 connected = True
                 logger.info("waiting for statsd server to finish initialization...")
                 time.sleep(5)
-            except Exception as e:  # noqa: PERF203
+            except Exception as e:
                 logger.info("statsd connection error: %s, retrying...", str(e))
                 time.sleep(1)
             finally:

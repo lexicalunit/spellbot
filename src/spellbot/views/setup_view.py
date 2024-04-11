@@ -25,7 +25,7 @@ class SetupView(BaseView):
         style=discord.ButtonStyle.primary,
         custom_id="toggle_show_links",
         row=1,
-    )  # type: ignore
+    )
     async def toggle_show_links(
         self,
         interaction: discord.Interaction,
@@ -44,7 +44,7 @@ class SetupView(BaseView):
         style=discord.ButtonStyle.primary,
         custom_id="toggle_voice_create",
         row=1,
-    )  # type: ignore
+    )
     async def toggle_voice_create(
         self,
         interaction: discord.Interaction,
@@ -63,7 +63,7 @@ class SetupView(BaseView):
         style=discord.ButtonStyle.secondary,
         custom_id="refresh_setup",
         row=2,
-    )  # type: ignore
+    )
     async def refresh_setup(
         self,
         interaction: discord.Interaction,

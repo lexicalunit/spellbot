@@ -37,7 +37,7 @@ class TestCogLookingForGameConcurrency:
         interactions = [
             build_interaction(guild, build_channel(guild, i), build_author(i)) for i in range(n)
         ]
-        tasks = [run_lfg(cog, interactions[i]) for i in range(n)]
+        tasks = [asyncio.create_task(run_lfg(cog, interactions[i])) for i in range(n)]
 
         done, pending = await asyncio.wait(tasks)
         assert not pending
@@ -93,7 +93,7 @@ class TestCogLookingForGameConcurrency:
         default_seats = 4
         n = default_seats * 25
         interactions = [build_interaction(guild, channel, build_author(i)) for i in range(n)]
-        tasks = [run_lfg(cog, interactions[i]) for i in range(n)]
+        tasks = [asyncio.create_task(run_lfg(cog, interactions[i])) for i in range(n)]
 
         done, pending = await asyncio.wait(tasks)
         assert not pending
