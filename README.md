@@ -1,11 +1,13 @@
 <img
+    alt="SpellBot"
+    src="https://github.com/lexicalunit/spellbot/assets/1903876/f84aa1af-0b2b-48d6-bfe6-f66226d8c0f3"
+/>
+<img
     align="right"
     width="200"
     alt="spellbot"
     src="https://raw.githubusercontent.com/lexicalunit/spellbot/main/spellbot.png"
 />
-
-# SpellBot
 
 [![build][build-badge]][build]
 [![uptime][uptime-badge]][uptime]
