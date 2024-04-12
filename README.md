@@ -147,7 +147,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [metrics]: https://lexicalunit.grafana.net/d/4TSUCbcMz/spellbot?orgId=1
 [mit-badge]: https://img.shields.io/badge/License-MIT-yellow.svg
 [mit]: https://opensource.org/licenses/MIT
-[patreon-button]: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dlexicalunit%26type%3Dpatrons88951826-5e053080-d24b-11ea-9a81-f1b5431a5d4b.png
+[patreon-button]: https://img.shields.io/badge/Patreon-F96854?style=flat&logo=patreon&logoColor=white
 [patreon]: https://www.patreon.com/lexicalunit
 [pypi-badge]: https://img.shields.io/pypi/v/spellbot
 [pypi]: https://pypi.org/project/spellbot/
