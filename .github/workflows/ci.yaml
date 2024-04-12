@@ -22,51 +22,86 @@ jobs:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
-    services:
-      postgres:
-        image: postgres:12.6
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-        - 5432:5432
-
     strategy:
       max-parallel: 4
       matrix:
         python-version: ["3.12"]
+        postgres-version: ["15"]
         database-url: ["postgresql://postgres:postgres@localhost:5432/postgres"]
 
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres-version }}
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --name postgres
+        ports:
+          - 5432:5432
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGDATABASE: postgres
+      PGPASSWORD: postgres
+
     steps:
-    - name: Checkout Source
-      uses: actions/checkout@v3
+      - name: Install postgresql-client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Connect to PostgreSQL with CLI
+        run: psql -c 'SELECT VERSION();'
 
-    - name: Install Dependencies
-      run: |
-        git --version
-        python --version
-        python -m pip install --upgrade pip
-        pip --version
-        pip install poetry
-        poetry --version
-        poetry install
+      - name: Show PostgreSQL config file
+        run: psql -c 'SHOW config_file;'
 
-    - name: Run Tests
-      run: |
-        poetry run pytest -vv --cov --cov-report=html --cov-report=xml
-      env:
-        DATABASE_URL: ${{ matrix.database-url }}
+      - name: Alter max connections
+        run: |
+          docker exec -i postgres bash << EOF
+            sed -i -e 's/max_connections = 100/max_connections = 1000/' /var/lib/postgresql/data/postgresql.conf
+            sed -i -e 's/shared_buffers = 128MB/shared_buffers = 2GB/' /var/lib/postgresql/data/postgresql.conf
+          EOF
+          docker restart --time 0 postgres
+          sleep 5
 
-    - name: Send Reports to Codecov
-      uses: codecov/codecov-action@v3
-      env:
-        PYTHON: ${{ matrix.python-version }}
-        DB_URL: ${{ matrix.database-url }}
-      with:
-        env_vars: PYTHON,DB_URL
+      - name: Show max connections
+        run: psql -c 'SHOW max_connections;'
+
+      - name: Checkout Source
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          git --version
+          python --version
+          python -m pip install --upgrade pip
+          pip --version
+          pip install poetry
+          poetry --version
+          poetry install
+
+      - name: Run Tests
+        run: |
+          poetry run pytest -vv --cov --cov-report=html --cov-report=xml
+        env:
+          DATABASE_URL: ${{ matrix.database-url }}
+
+      - name: Send Reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          PYTHON: ${{ matrix.python-version }}
+          POSTGRES: ${{ matrix.postgres-version }}
+          DB_URL: ${{ matrix.database-url }}
+
+        with:
+          env_vars: PYTHON,POSTGRES,DB_URL
