@@ -1,45 +1,37 @@
+# SpellBot
+
+<div align="center">
+
 <img
-    alt="SpellBot"
-    src="https://github.com/lexicalunit/spellbot/assets/1903876/f84aa1af-0b2b-48d6-bfe6-f66226d8c0f3"
-/>
-<img
-    align="right"
     width="200"
     alt="spellbot"
     src="https://raw.githubusercontent.com/lexicalunit/spellbot/main/spellbot.png"
 />
+<br />
+<br />
+<a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot">
+    <img
+        align="center"
+        alt="Add to Discord"
+        src="https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png"
+    />
+</a>
+<br />
+The Discord bot for <a href="https://spelltable.wizards.com/">SpellTable</a>
+<br />
+<br />
 
-[![build][build-badge]][build]
-[![uptime][uptime-badge]][uptime]
-[![codecov][codecov-badge]][codecov]
-[![heroku][heroku-badge]][heroku]
-[![python][python-badge]][python]
-[![pypi][pypi-badge]][pypi]
-[![discord.py][discord-py-badge]][discord-py]
-[![docker][docker-badge]][docker-hub]
-[![black][black-badge]][black]
-[![mit][mit-badge]][mit]
-[![metrics][metrics-badge]][metrics]
-[![datadog][datadog-badge]][datadog]
-[![patreon][patreon-button]][patreon]
-[![follow][follow-badge]][follow]
+| <!-- --> | <!-- --> |
+| ---: | :---: |
+| **Deployment**    | [![build][build-badge]][build] [![heroku][heroku-badge]][heroku] |
+| **Dependencies**  | [![python][python-badge]][python] [![discord.py][discord-py-badge]][discord-py] |
+| **Distribution**  | [![pypi][pypi-badge]][pypi] [![docker][docker-badge]][docker-hub] [![mit][mit-badge]][mit] |
+| **Quality**       | [![codecov][codecov-badge]][codecov] [![ruff][ruff-badge]][ruff] [![pyright][pyright-badge]][pyright] |
+| **Observability** | [![uptime][uptime-badge]][uptime] [![metrics][metrics-badge]][metrics] [![datadog][datadog-badge]][datadog] |
+| **Socials**       | [![discord][discord-badge]][discord-invite] [![follow][follow-badge]][follow] |
+| **Funding**       | [![patreon][patreon-button]][patreon] |
 
-<br />
-<br />
-<br />
-<br />
-<p align="center">
-    <a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot">
-        <img
-            align="center"
-            alt="Add to Discord"
-            src="https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png"
-        />
-    </a>
-    <br />
-    The Discord bot for <a href="https://spelltable.wizards.com/">SpellTable</a>
-</p>
-<br />
+</div>
 
 ## 🤖 Using SpellBot
 
@@ -62,6 +54,7 @@ available by typing `/` and browsing the commands for SpellBot!
 
 These communities are using SpellBot to play Magic! Maybe one of them is right for you?
 
+<div align="center">
 <!-- SERVERS BEGIN -->
 <table>
     <tr>
@@ -76,7 +69,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
     </tr>
     <tr>
         <td align="center"><a href="https://www.playtowinmtg.com/"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/e04abae7-394e-4f89-94e9-edbdbfd411fb" alt="Play to Win" /><br />Play&nbsp;to&nbsp;Win</a></td>
-        <td align="center"><a href="https://www.patreon.com/PlayingWithPowerMTG"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/affe5203-b692-40d7-a395-2a5026beab1f" alt="Playing with Power" /><br />Playing&nbsp;with&nbsp;Power</a></td>
+        <td align="center"><a href="https://www.patreon.com/PlayingWithPowerMTG"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/60a984e4-8fa1-4d8f-bf0d-2e391776b56d" alt="Playing with Power" /><br />Playing&nbsp;with&nbsp;Power</a></td>
         <td align="center"><a href="https://discord.gg/commander"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/a4f292c6-65b3-4767-8e82-f39c35a75723" alt="Commander RC" /><br />Commander&nbsp;RC</a></td>
     </tr>
     <tr>
@@ -86,6 +79,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
     </tr>
 </table>
 <!-- SERVERS END -->
+</div>
 
 Want your community to be featured here as well? Please contact me at
 [spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com)!
@@ -123,8 +117,6 @@ Any usage of SpellBot implies that you accept the following policies.
 
 [MIT][mit] © [amy@lexicalunit][lexicalunit] et [al][contributors]
 
-[black-badge]: https://img.shields.io/badge/code%20style-black-000000.svg
-[black]: https://github.com/psf/black
 [build-badge]: https://github.com/lexicalunit/spellbot/workflows/build/badge.svg
 [build]: https://github.com/lexicalunit/spellbot/actions
 [codecov-badge]: https://codecov.io/gh/lexicalunit/spellbot/branch/main/graph/badge.svg
@@ -132,6 +124,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [contributors]: https://github.com/lexicalunit/spellbot/graphs/contributors
 [datadog-badge]: https://img.shields.io/badge/monitors-datadog-blueviolet.svg
 [datadog]: https://app.datadoghq.com/apm/home
+[discord-badge]: https://github.com/lexicalunit/spellbot/assets/1903876/871aca88-3636-4c38-bcc1-f4093f89146f
 [discord-invite]: https://discord.gg/HuzTQYpYH4
 [discord-py-badge]: https://img.shields.io/badge/discord.py-2.1.0-blue
 [discord-py]: https://github.com/Rapptz/discord.py
@@ -139,7 +132,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [docker-hub]: https://hub.docker.com/r/lexicalunit/spellbot
 [follow-badge]: https://img.shields.io/twitter/follow/SpellBotIO?style=social
 [follow]: https://twitter.com/intent/follow?screen_name=SpellBotIO
-[heroku-badge]: https://img.shields.io/badge/heroku-deployed-green
+[heroku-badge]: https://img.shields.io/badge/cloud-heroku-green
 [heroku]: https://dashboard.heroku.com/apps/lexicalunit-spellbot
 [issues]: https://github.com/lexicalunit/spellbot/issues
 [lexicalunit]: http://github.com/lexicalunit
@@ -151,8 +144,12 @@ Any usage of SpellBot implies that you accept the following policies.
 [patreon]: https://www.patreon.com/lexicalunit
 [pypi-badge]: https://img.shields.io/pypi/v/spellbot
 [pypi]: https://pypi.org/project/spellbot/
+[pyright-badge]: https://img.shields.io/badge/types-pyright-c3c38f.svg
+[pyright]: https://github.com/microsoft/pyright
 [python-badge]: https://img.shields.io/badge/python-3.12-blue.svg
 [python]: https://www.python.org/
+[ruff-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
+[ruff]: https://github.com/astral-sh/ruff
 [slash]: https://discord.com/blog/slash-commands-are-here
 [spelltable]: https://spelltable.wizards.com/
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
