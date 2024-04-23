@@ -22,9 +22,10 @@ servers:
   - name: Play to Win
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/e04abae7-394e-4f89-94e9-edbdbfd411fb
     url: https://www.playtowinmtg.com/
-  - name: Playing with Power
-    logo: https://github.com/lexicalunit/spellbot/assets/1903876/60a984e4-8fa1-4d8f-bf0d-2e391776b56d
-    url: https://www.patreon.com/PlayingWithPowerMTG
+  # Playing with Power is on indefinite hiatus: https://twitter.com/PWPMtG/status/1782522922701070413
+  # - name: Playing with Power
+  #   logo: https://github.com/lexicalunit/spellbot/assets/1903876/60a984e4-8fa1-4d8f-bf0d-2e391776b56d
+  #   url: https://www.patreon.com/PlayingWithPowerMTG
   - name: Commander RC
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/a4f292c6-65b3-4767-8e82-f39c35a75723
     url: https://discord.gg/commander
