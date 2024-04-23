@@ -49,7 +49,7 @@
         "content": "† Data applies to selected server.<br />\n‡ Data applies across all servers.",
         "mode": "html"
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -108,7 +108,7 @@
         "textMode": "value",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -193,7 +193,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -278,7 +278,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -502,7 +502,7 @@
         "textMode": "value",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -587,7 +587,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -672,7 +672,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -755,7 +755,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -858,7 +858,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -961,7 +961,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -1251,7 +1251,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -1357,7 +1357,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-68838",
+      "pluginVersion": "11.1.0-69622",
       "targets": [
         {
           "datasource": {
@@ -1427,13 +1427,13 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisGridShow": true,
-            "axisLabel": "",
+            "axisLabel": "Games Played",
             "axisPlacement": "left",
-            "barAlignment": 0,
+            "barAlignment": 1,
             "drawStyle": "line",
             "fillOpacity": 100,
             "gradientMode": "none",
@@ -1443,7 +1443,7 @@
               "viz": false
             },
             "insertNulls": false,
-            "lineInterpolation": "linear",
+            "lineInterpolation": "smooth",
             "lineStyle": {
               "fill": "solid"
             },
@@ -1464,7 +1464,6 @@
           },
           "fieldMinMax": false,
           "mappings": [],
-          "max": 100,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1738,7 +1737,7 @@
     ]
   },
   "time": {
-    "from": "now-90d",
+    "from": "now-30d",
     "to": "now"
   },
   "timeRangeUpdatedDuringEditOrView": false,
@@ -1748,6 +1747,6 @@
   "timezone": "",
   "title": "SpellBot",
   "uid": "4TSUCbcMz",
-  "version": 105,
+  "version": 109,
   "weekStart": ""
 }
