@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
 from discord import app_commands
-from discord.ext.commands.bot import AutoShardedBot
+from discord.ext.commands import AutoShardedBot, CommandNotFound, Context, UserInputError
 from spellbot import SpellBot, client
 from spellbot.database import DatabaseSession
 from spellbot.errors import (
     AdminOnlyError,
+    GuildBannedError,
     GuildOnlyError,
     UserBannedError,
     UserUnverifiedError,
@@ -22,7 +24,7 @@ from .mixins import BaseMixin
 
 
 @pytest.mark.asyncio()
-class TestSpellBot:
+class TestSpellBot(BaseMixin):
     async def test_create_spelltable_link_mock(self, bot: SpellBot) -> None:
         link = await bot.create_spelltable_link()
         assert link is not None
@@ -62,6 +64,11 @@ class TestSpellBot:
                 UserBannedError(),
                 "You have been banned from using SpellBot.",
                 id="user-banned",
+            ),
+            pytest.param(
+                GuildBannedError(),
+                "You have been banned from using SpellBot.",
+                id="guild-banned",
             ),
             pytest.param(
                 UserUnverifiedError(),
@@ -144,6 +151,127 @@ class TestSpellBot:
         super_on_message_mock.assert_not_called()
         bot.handle_verification.assert_called_once_with(dpy_message)
         dpy_message.reply.assert_not_called()
+
+    async def test_on_message_delete_happy_path(
+        self,
+        dpy_message: discord.Message,
+        bot: SpellBot,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        mock_handle_message_deleted = AsyncMock()
+        monkeypatch.setattr(bot, "handle_message_deleted", mock_handle_message_deleted)
+        await bot.on_message_delete(dpy_message)
+        bot.handle_message_deleted.assert_called_once_with(dpy_message)
+
+    async def test_on_message_delete_message_without_id(
+        self,
+        dpy_message: discord.Message,
+        bot: SpellBot,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        del dpy_message.id
+        mock_handle_message_deleted = AsyncMock()
+        monkeypatch.setattr(bot, "handle_message_deleted", mock_handle_message_deleted)
+        await bot.on_message_delete(dpy_message)
+        bot.handle_message_deleted.assert_not_called()
+
+    async def test_on_command_error_command_not_found(
+        self,
+        bot: SpellBot,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        context = MagicMock(spec=Context[SpellBot])
+        super_on_message_mock = AsyncMock()
+        monkeypatch.setattr(AutoShardedBot, "on_command_error", super_on_message_mock)
+        await bot.on_command_error(context, CommandNotFound())
+        super_on_message_mock.assert_not_called()
+
+    async def test_on_command_error_user_input_error(
+        self,
+        bot: SpellBot,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        context = MagicMock(spec=Context[SpellBot])
+        exception = UserInputError()
+        super_on_message_mock = AsyncMock()
+        monkeypatch.setattr(AutoShardedBot, "on_command_error", super_on_message_mock)
+        await bot.on_command_error(context, exception)
+        super_on_message_mock.assert_called_once_with(context, exception)
+
+    async def test_handle_message_deleted_when_game_not_started(
+        self,
+        dpy_message: discord.Message,
+        bot: SpellBot,
+    ) -> None:
+        assert dpy_message.guild
+        guild = self.factories.guild.create(xid=dpy_message.guild.id)
+        channel = self.factories.channel.create(guild=guild, xid=dpy_message.channel.id)
+        game = self.factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=None,
+            deleted_at=None,
+        )
+        self.factories.post.create(
+            game=game,
+            guild=guild,
+            channel=channel,
+            message_xid=dpy_message.id,
+        )
+        await bot.handle_message_deleted(dpy_message)
+
+        DatabaseSession.expire_all()
+        assert game.deleted_at is not None
+
+    async def test_handle_message_deleted_when_game_is_started(
+        self,
+        dpy_message: discord.Message,
+        bot: SpellBot,
+    ) -> None:
+        assert dpy_message.guild
+        guild = self.factories.guild.create(xid=dpy_message.guild.id)
+        channel = self.factories.channel.create(guild=guild, xid=dpy_message.channel.id)
+        game = self.factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=datetime.now(tz=UTC),
+            deleted_at=None,
+        )
+        self.factories.post.create(
+            game=game,
+            guild=guild,
+            channel=channel,
+            message_xid=dpy_message.id,
+        )
+        await bot.handle_message_deleted(dpy_message)
+
+        DatabaseSession.expire_all()
+        assert game.deleted_at is None
+
+    async def test_handle_message_deleted_when_message_not_found(
+        self,
+        dpy_message: discord.Message,
+        bot: SpellBot,
+    ) -> None:
+        assert dpy_message.guild
+        guild = self.factories.guild.create(xid=dpy_message.guild.id)
+        channel = self.factories.channel.create(guild=guild, xid=dpy_message.channel.id)
+        game = self.factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=None,
+            deleted_at=None,
+        )
+        self.factories.post.create(
+            game=game,
+            guild=guild,
+            channel=channel,
+            message_xid=dpy_message.id + 1,
+        )
+        await bot.handle_message_deleted(dpy_message)
+
+        DatabaseSession.expire_all()
+        assert game.deleted_at is None
 
 
 @pytest.mark.asyncio()

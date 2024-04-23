@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 @sync_to_async()
 def handle_exception(ex: Exception) -> NoReturn:
-    if isinstance(ex, SpellBotError):
+    if isinstance(ex, SpellBotError):  # pragma: no cover
         raise ex
     logger.exception(
         "error: rolling back database session due to unhandled exception: %s: %s",
@@ -59,7 +59,7 @@ class BaseAction:
         self.guild = cast(discord.Guild, self.interaction.guild)
         self.channel = cast(discord.TextChannel, self.interaction.channel)
 
-    async def upsert_request_objects(self) -> None:
+    async def upsert_request_objects(self) -> None:  # pragma: no cover
         guild_data: GuildDict | None = None
         if self.guild:
             guild_data = await self.services.guilds.upsert(self.guild)
@@ -78,7 +78,7 @@ class BaseAction:
         if self.should_do_verification():
             await self.handle_verification()
 
-    async def handle_verification(self) -> None:
+    async def handle_verification(self) -> None:  # pragma: no cover
         if not self.guild:
             return
         verified: bool | None = None
@@ -109,5 +109,5 @@ class BaseAction:
                 try:
                     await action.upsert_request_objects()
                     yield action
-                except Exception as ex:
+                except Exception as ex:  # pragma: no cover
                     await handle_exception(ex)

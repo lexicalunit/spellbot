@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -52,6 +53,32 @@ class TestServiceGames:
         games = GamesService()
         assert await games.select_by_message_xid(game.posts[0].message_xid)
         assert not await games.select_by_message_xid(404)
+
+    async def test_games_select_last_ranked_game(self, guild: Guild, user: User) -> None:
+        channel = ChannelFactory.create(guild=guild, require_confirmation=True)
+        old_game = GameFactory.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            requires_confirmation=True,
+            started_at=datetime.now(tz=UTC) - timedelta(days=1),
+        )
+        PostFactory.create(guild=old_game.guild, channel=old_game.channel, game=old_game)
+        PlayFactory.create(user_xid=user.xid, game_id=old_game.id)
+        recent_game = GameFactory.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            requires_confirmation=True,
+            started_at=datetime.now(tz=UTC),
+        )
+        PostFactory.create(guild=recent_game.guild, channel=recent_game.channel, game=recent_game)
+        PlayFactory.create(user_xid=user.xid, game_id=recent_game.id)
+
+        games = GamesService()
+        await games.select_last_ranked_game(user.xid)
+        assert games.game is not None
+        assert games.game.id == recent_game.id
 
     async def test_games_add_player(self, game: Game) -> None:
         PostFactory.create(guild=game.guild, channel=game.channel, game=game)

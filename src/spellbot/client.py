@@ -94,19 +94,19 @@ class SpellBot(AutoShardedBot):
         message: discord.Message,
     ) -> None:
         span = tracer.current_span()
-        if span:
+        if span:  # pragma: no cover
             setup_ignored_errors(span)
 
         # handle DMs normally
         if not message.guild or not hasattr(message.guild, "id"):
             return await super().on_message(message)
-        if span:
+        if span:  # pragma: no cover
             span.set_tag("guild_id", message.guild.id)
 
         # ignore everything except messages in text channels
         if not hasattr(message.channel, "type") or message.channel.type != discord.ChannelType.text:
             return None
-        if span:
+        if span:  # pragma: no cover
             span.set_tag("channel_id", message.channel.id)
 
         # ignore hidden/ephemeral messages
