@@ -42,7 +42,7 @@ async def set_banned_guild(banned: bool, ctx: commands.Context[SpellBot], arg: s
     try:
         guild_xid = int(arg)
     except ValueError:
-        return await safe_send_user(ctx.message.author, "Invalid user id.")
+        return await safe_send_user(ctx.message.author, "Invalid guild id.")
     await GuildsService().set_banned(banned, guild_xid)
     await safe_send_user(
         ctx.message.author,

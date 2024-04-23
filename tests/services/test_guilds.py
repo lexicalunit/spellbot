@@ -58,7 +58,6 @@ class TestServiceGuilds:
 
         guild = GuildFactory.create()
 
-        guilds = GuildsService()
         await guilds.select(guild.xid)
         message_of_the_day = "message of the day"
         await guilds.set_motd(message_of_the_day)
@@ -68,13 +67,23 @@ class TestServiceGuilds:
         assert guild
         assert guild.motd == message_of_the_day
 
+    async def test_guilds_set_banned(self) -> None:
+        guilds = GuildsService()
+        guild = GuildFactory.create()
+
+        await guilds.set_banned(True, guild.xid)
+
+        DatabaseSession.expire_all()
+        guild = DatabaseSession.query(Guild).get(guild.xid)
+        assert guild
+        assert guild.banned
+
     async def test_guilds_toggle_show_links(self) -> None:
         guilds = GuildsService()
         assert not await guilds.select(101)
 
         guild = GuildFactory.create(xid=101)
 
-        guilds = GuildsService()
         await guilds.select(101)
         await guilds.toggle_show_links()
 

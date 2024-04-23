@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from spellbot.cogs import OwnerCog
 from spellbot.database import DatabaseSession
-from spellbot.models import User
+from spellbot.models import Guild, User
 
 from tests.mixins import ContextMixin
 
@@ -80,6 +80,59 @@ class TestCogOwner(ContextMixin):
 
         with pytest.raises(RuntimeError):
             await self.run(cog, cog.unban, self.context, str(target_user.id))
+        assert "rolling back database session due to unhandled exception" in caplog.text
+
+    async def test_ban_and_unban_guild(self) -> None:
+        target_guild = 1002
+        cog = OwnerCog(self.bot)
+
+        await self.run(cog, cog.ban_guild, self.context, str(target_guild))
+
+        self.context.author.send.assert_called_once_with(
+            f"Guild {target_guild} has been banned.",
+        )
+        guilds = list(DatabaseSession.query(Guild).all())
+        assert len(guilds) == 1
+        assert guilds[0].xid == target_guild
+        assert guilds[0].banned
+
+        DatabaseSession.expire_all()
+        await self.run(cog, cog.unban_guild, self.context, str(target_guild))
+        guilds = list(DatabaseSession.query(Guild).all())
+        assert len(guilds) == 1
+        assert guilds[0].xid == target_guild
+        assert not guilds[0].banned
+
+    async def test_ban_guild_without_target(self) -> None:
+        cog = OwnerCog(self.bot)
+        await self.run(cog, cog.ban_guild, self.context, None)
+        self.context.author.send.assert_called_once_with("No target guild.")
+
+    async def test_ban_guild_with_invalid_target(self) -> None:
+        cog = OwnerCog(self.bot)
+        await self.run(cog, cog.ban_guild, self.context, "abc")
+        self.context.author.send.assert_called_once_with("Invalid guild id.")
+
+    async def test_ban_and_unban_guild_exceptions(
+        self,
+        mocker: MockerFixture,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        target_guild = 1002
+        cog = OwnerCog(self.bot)
+
+        mocker.patch(
+            "spellbot.cogs.owner_cog.set_banned_guild", AsyncMock(side_effect=RuntimeError())
+        )
+
+        with pytest.raises(RuntimeError):
+            await self.run(cog, cog.ban_guild, self.context, str(target_guild))
+        assert "rolling back database session due to unhandled exception" in caplog.text
+
+        caplog.clear()
+
+        with pytest.raises(RuntimeError):
+            await self.run(cog, cog.unban_guild, self.context, str(target_guild))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
     async def test_stats(self) -> None:

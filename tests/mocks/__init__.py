@@ -16,7 +16,7 @@ CLIENT_USER_ID = 1  # id of the test bot itself
 OWNER_USER_ID = 2  # id of the test guild owner
 
 
-class MockClient:
+class MockClient:  # pragma: no cover
     def __init__(
         self,
         *,
@@ -126,13 +126,13 @@ def mock_operations(
 ###########################################################
 
 
-def build_client_user() -> discord.User:
-    client_user = MagicMock(spec=discord.User)
-    client_user.id = CLIENT_USER_ID
-    client_user.display_name = "SpellBot"
-    client_user.mention = f"<@{client_user.id}>"
-    client_user.top_role = None
-    return client_user
+# def build_client_user() -> discord.User:
+#     client_user = MagicMock(spec=discord.User)
+#     client_user.id = CLIENT_USER_ID
+#     client_user.display_name = "SpellBot"
+#     client_user.mention = f"<@{client_user.id}>"
+#     client_user.top_role = None
+#     return client_user
 
 
 def build_author(offset: int = 1) -> discord.User:
@@ -185,12 +185,12 @@ def build_message(
     return message
 
 
-def build_voice_channel(guild: discord.Guild, offset: int = 1) -> discord.VoiceChannel:
-    channel = MagicMock(spec=discord.VoiceChannel)
-    channel.id = 6000 + offset
-    channel.name = f"voice-channel-{channel.id}"
-    channel.guild = guild
-    return channel
+# def build_voice_channel(guild: discord.Guild, offset: int = 1) -> discord.VoiceChannel:
+#     channel = MagicMock(spec=discord.VoiceChannel)
+#     channel.id = 6000 + offset
+#     channel.name = f"voice-channel-{channel.id}"
+#     channel.guild = guild
+#     return channel
 
 
 def build_interaction(
@@ -224,24 +224,24 @@ def mock_discord_user(user: User) -> discord.User:
     return member
 
 
-def mock_discord_channel(
-    channel: Channel,
-    *,
-    guild: discord.Guild | None = None,
-) -> discord.TextChannel:
-    discord_channel = MagicMock(spec=discord.TextChannel)
-    discord_channel.id = channel.xid
-    discord_channel.type = discord.ChannelType.text
-    discord_channel.name = channel.name
-    if guild:
-        discord_channel.guild = guild
-    else:
-        discord_channel.guild = mock_discord_guild(cast(Guild, channel.guild))
-    discord_channel.fetch_message = AsyncMock()
-    discord_channel.get_partial_message = MagicMock()
-    discord_channel.permissions_for = MagicMock()
-    discord_channel.mention = f"<#{discord_channel.id}>"
-    return discord_channel
+# def mock_discord_channel(
+#     channel: Channel,
+#     *,
+#     guild: discord.Guild | None = None,
+# ) -> discord.TextChannel:
+#     discord_channel = MagicMock(spec=discord.TextChannel)
+#     discord_channel.id = channel.xid
+#     discord_channel.type = discord.ChannelType.text
+#     discord_channel.name = channel.name
+#     if guild:
+#         discord_channel.guild = guild
+#     else:
+#         discord_channel.guild = mock_discord_guild(cast(Guild, channel.guild))
+#     discord_channel.fetch_message = AsyncMock()
+#     discord_channel.get_partial_message = MagicMock()
+#     discord_channel.permissions_for = MagicMock()
+#     discord_channel.mention = f"<#{discord_channel.id}>"
+#     return discord_channel
 
 
 def mock_discord_guild(guild: Guild) -> discord.Guild:
@@ -271,8 +271,8 @@ def mock_discord_object(
 ) -> discord.User | discord.TextChannel | discord.Guild:
     if isinstance(obj, User):
         return mock_discord_user(obj)
-    if isinstance(obj, Channel):
-        return mock_discord_channel(obj)
+    # if isinstance(obj, Channel):
+    #     return mock_discord_channel(obj)
     if isinstance(obj, Guild):
         return mock_discord_guild(obj)
     raise NotImplementedError
