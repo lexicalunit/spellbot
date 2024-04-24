@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Improved test coverage.
+- cEDH UK.
+- Turbo Commander.
+- Comunidad Española de cEDH.
 
 ### Removed
 
