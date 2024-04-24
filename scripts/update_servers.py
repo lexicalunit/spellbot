@@ -4,7 +4,7 @@ from __future__ import annotations
 from itertools import islice
 from os.path import realpath
 from pathlib import Path
-from typing import TYPE_CHECKING, TypedDict, TypeVar
+from typing import TYPE_CHECKING, NotRequired, TypedDict, TypeVar
 
 import yaml
 
@@ -17,13 +17,14 @@ README_FILE = SRC_ROOT / "README.md"
 INDEX_FILE = SRC_ROOT / "docs" / "index.html"
 
 
-class Server(TypedDict, total=False):
-    name: str
-    url: str
-    logo: str
-    dark_logo: str
-    light_logo: str
-    small: bool
+class Server(TypedDict):
+    name: str  # server name
+    url: str  # server url
+    small: NotRequired[bool]  # server name should render with small font
+    # server should have either a logo or both dark/light logos
+    logo: NotRequired[str]  # server logo
+    dark_logo: NotRequired[str]  # server logo for dark mode
+    light_logo: NotRequired[str]  # server logo for light mode
 
 
 T = TypeVar("T")
@@ -50,7 +51,8 @@ def update_readme(servers: list[Server]) -> None:
         for batch in batched(servers, 3):
             f.write("    <tr>\n")
             for server in batch:
-                logo = server.get("logo") or server["dark_logo"]
+                logo = server.get("logo") or server.get("dark_logo")
+                assert logo is not None
                 name = server["name"]
                 nbsp_name = name.replace(" ", "&nbsp;")
                 url = server["url"]
@@ -80,7 +82,8 @@ def update_index(servers: list[Server]) -> None:
         f.write("<!-- SERVERS BEGIN -->\n")
         f.write('    <div class="where">\n')
         for server in servers:
-            logo = server.get("logo") or server["light_logo"]
+            logo = server.get("logo") or server.get("light_logo")
+            assert logo is not None
             name = server["name"]
             nbsp_name = name.replace(" ", "&nbsp;")
             if server.get("small") or False:
