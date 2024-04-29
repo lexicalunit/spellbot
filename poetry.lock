@@ -1502,13 +1502,13 @@ files = [
 
 [[package]]
 name = "pylic"
-version = "3.5.0"
+version = "3.6.1"
 description = "A Python license checker"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = "<4.0.0,>=3.7.2"
 files = [
-    {file = "pylic-3.5.0-py3-none-any.whl", hash = "sha256:f4ca7f9d1fe2c5be7601ba2b8388294aad323161d2c62253ea0d53b9ac9b42f4"},
-    {file = "pylic-3.5.0.tar.gz", hash = "sha256:78a11f86425ec03d1b2a806b5359bf92ff1239e710a1b302f89aa05c0906a535"},
+    {file = "pylic-3.6.1-py3-none-any.whl", hash = "sha256:55cc7ab780a7d80498de519b52d4d8e0a61c24b6eb4113a3a5a02c247effc225"},
+    {file = "pylic-3.6.1.tar.gz", hash = "sha256:f7d65926e04356d3340c777c2a17d7d951ebb04780a2d1f536f4ef6715a8c8bd"},
 ]
 
 [package.dependencies]
