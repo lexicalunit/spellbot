@@ -152,6 +152,16 @@ def bot_can_delete_channel(channel: MessageableChannel) -> bool:
     return True
 
 
+def bot_can_read_messages(guild: discord.Guild) -> bool:
+    if not guild.me:
+        return False
+    perms = guild.me.guild_permissions
+    req = "read_messages"
+    if not hasattr(perms, req) or not getattr(perms, req):
+        return False
+    return True
+
+
 def is_admin(interaction: discord.Interaction) -> bool:
     guild = getattr(interaction, "guild", None)
     channel = getattr(interaction, "channel", None)
