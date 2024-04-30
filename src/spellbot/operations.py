@@ -17,6 +17,7 @@ from .utils import (
     bot_can_delete_message,
     bot_can_manage_channels,
     bot_can_read,
+    bot_can_read_messages,
     bot_can_reply_to,
     bot_can_role,
     log_info,
@@ -133,6 +134,13 @@ async def safe_fetch_text_channel(
         if not isinstance(got, discord.TextChannel):
             return None
         return got
+
+    if not (guild := await safe_fetch_guild(client, guild_xid)):
+        return None
+
+    if not bot_can_read_messages(guild):
+        logger.warning("in guild %s, no permissions to read messages", guild_xid)
+        return None
 
     channel: discord.TextChannel | None = None
     with suppress(

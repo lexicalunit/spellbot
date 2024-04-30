@@ -136,22 +136,56 @@ class TestOperationsFetchTextChannel:
     async def test_uncached(
         self,
         dpy_channel: discord.TextChannel,
+        dpy_guild: discord.Guild,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        client = mock_client(channels=[dpy_channel], guilds=[dpy_guild])
+        monkeypatch.setattr(client, "get_channel", MagicMock(return_value=None))
+        assert await safe_fetch_text_channel(client, ANY, dpy_channel.id) is dpy_channel
+
+    async def test_uncached_no_guild(
+        self,
+        dpy_channel: discord.TextChannel,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         client = mock_client(channels=[dpy_channel])
         monkeypatch.setattr(client, "get_channel", MagicMock(return_value=None))
-        assert await safe_fetch_text_channel(client, ANY, dpy_channel.id) is dpy_channel
+        assert await safe_fetch_text_channel(client, ANY, dpy_channel.id) is None
 
     async def test_non_text(self) -> None:
         channel = MagicMock(spec=discord.DMChannel)
         client = mock_client(channels=[channel])
         assert await safe_fetch_text_channel(client, ANY, channel.id) is None
 
-    async def test_uncached_non_text(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        channel = MagicMock(spec=discord.DMChannel)
-        client = mock_client(channels=[channel])
+    async def test_uncached_non_text(
+        self, dpy_guild: discord.Guild, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        channel = MagicMock(spec=discord.VoiceChannel)
+        client = mock_client(channels=[channel], guilds=[dpy_guild])
         monkeypatch.setattr(client, "get_channel", MagicMock(return_value=None))
         assert await safe_fetch_text_channel(client, ANY, channel.id) is None
+
+    async def test_uncached_with_no_read_permissions(
+        self,
+        dpy_channel: discord.TextChannel,
+        dpy_guild: discord.Guild,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        client = mock_client(channels=[dpy_channel], guilds=[dpy_guild])
+        monkeypatch.setattr(client, "get_channel", MagicMock(return_value=None))
+        del dpy_guild.me.guild_permissions.read_messages
+        assert await safe_fetch_text_channel(client, ANY, dpy_channel.id) is None
+
+    async def test_uncached_with_no_permissions(
+        self,
+        dpy_channel: discord.TextChannel,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        bad_guild = MagicMock(spec=discord.Guild)
+        client = mock_client(channels=[dpy_channel], guilds=[bad_guild])
+        monkeypatch.setattr(client, "get_channel", MagicMock(return_value=None))
+        bad_guild.me = None
+        assert await safe_fetch_text_channel(client, ANY, dpy_channel.id) is None
 
 
 @pytest.mark.asyncio()
