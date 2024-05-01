@@ -13,6 +13,7 @@ from spellbot.client import build_bot
 from spellbot.database import (
     DatabaseSession,
     db_session_maker,
+    delete_test_database,
     initialize_connection,
     rollback_transaction,
 )
@@ -75,9 +76,10 @@ async def factories() -> Factories:
 async def session_context(
     request: pytest.FixtureRequest,
     event_loop: AbstractEventLoop,
+    worker_id: str,
 ) -> contextvars.Context:
     if "nosession" not in request.keywords:
-        await initialize_connection("spellbot-test", use_transaction=True)
+        await initialize_connection("spellbot-test", use_transaction=True, worker_id=worker_id)
 
         test_session = db_session_maker()
         DatabaseSession.set(test_session)
@@ -119,6 +121,12 @@ async def session_context(
     request.addfinalizer(cleanup_context)
 
     return context
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_databases(worker_id: str) -> Generator[None, None, None]:
+    yield
+    delete_test_database(worker_id)
 
 
 @pytest_asyncio.fixture(autouse=True)
