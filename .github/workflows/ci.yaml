@@ -92,7 +92,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          poetry run pytest -vv --cov --cov-report=html --cov-report=xml
+          poetry run pytest -n auto -vv --cov --cov-report=html --cov-report=xml
         env:
           DATABASE_URL: ${{ matrix.database-url }}
 

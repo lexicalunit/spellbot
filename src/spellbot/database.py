@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 from wrapt import CallableObjectProxy
 
-from .models import create_all
+from .models import create_all, reverse_all
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -76,6 +76,7 @@ def initialize_connection(
     *,
     use_transaction: bool = False,
     run_migrations: bool = True,
+    worker_id: str | None = None,
 ) -> None:
     """
     Connect to the database.
@@ -99,10 +100,14 @@ def initialize_connection(
     from .settings import Settings
 
     settings = Settings()
+    db_url = settings.DATABASE_URL
+    if worker_id:
+        db_url += f"-{worker_id}"
+        app += f"-{worker_id}"
     if run_migrations:  # pragma: no cover
-        create_all(settings.DATABASE_URL)
+        create_all(db_url)
     engine_obj = create_engine(
-        settings.DATABASE_URL,
+        db_url,
         echo=settings.DATABASE_ECHO,
         connect_args={"application_name": app},
         isolation_level=None if use_transaction else "AUTOCOMMIT",
@@ -152,3 +157,10 @@ def rollback_transaction() -> None:
         connection.close()
     print(engine.pool.status())  # noqa: T201
     engine.dispose()
+
+
+def delete_test_database(worker_id: str) -> None:
+    from .settings import Settings
+
+    settings = Settings()
+    reverse_all(f"{settings.DATABASE_URL}-{worker_id}")
