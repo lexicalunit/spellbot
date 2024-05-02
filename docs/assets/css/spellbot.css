@@ -23,7 +23,7 @@
 }
 
 .screenshot {
-  border-radius: 1rem;
+  border-radius: 40px;
   background: linear-gradient(45deg, rgb(246, 173, 75), rgb(90, 62, 253));
   padding: 0.5rem;
   box-shadow: 10px 10px rgba(113, 128, 150, 0.2);
