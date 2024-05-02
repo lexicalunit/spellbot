@@ -74,7 +74,7 @@ class TestCogBlock(InteractionMixin):
         self.interaction.response.send_message.assert_called_once_with(embed=ANY, ephemeral=True)
         assert self.last_send_message("embed") == {
             "color": self.settings.INFO_EMBED_COLOR,
-            "description": f"<@{target.xid}>\n",
+            "description": f"<@{target.xid}> ({target.name})\n",
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": "Blocked Users",
             "type": "rich",
@@ -94,18 +94,18 @@ class TestCogBlock(InteractionMixin):
         }
 
     async def test_blocked_pagination(self, cog: BlockCog, user: User) -> None:
-        target1 = self.factories.user.create()
-        target2 = self.factories.user.create()
+        target1 = self.factories.user.create(xid=8001, name="alice")
+        target2 = self.factories.user.create(xid=8002, name="bob")
         self.factories.block.create(user_xid=user.xid, blocked_user_xid=target1.xid)
         self.factories.block.create(user_xid=user.xid, blocked_user_xid=target2.xid)
 
-        with patch("spellbot.actions.block_action.EMBED_DESCRIPTION_SIZE_LIMIT", 10):
+        with patch("spellbot.actions.block_action.EMBED_DESCRIPTION_SIZE_LIMIT", 20):
             await self.run(cog.blocked)
 
         self.interaction.response.send_message.assert_called_once_with(embed=ANY, ephemeral=True)
         assert self.last_send_message("embed") == {
             "color": self.settings.INFO_EMBED_COLOR,
-            "description": f"<@{target1.xid}>\n",
+            "description": f"<@{target1.xid}> ({target1.name})\n",
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": "Blocked Users",
             "type": "rich",
@@ -114,13 +114,13 @@ class TestCogBlock(InteractionMixin):
 
         self.interaction.response.send_message.reset_mock()
 
-        with patch("spellbot.actions.block_action.EMBED_DESCRIPTION_SIZE_LIMIT", 10):
+        with patch("spellbot.actions.block_action.EMBED_DESCRIPTION_SIZE_LIMIT", 20):
             await self.run(cog.blocked, page=2)
 
         self.interaction.response.send_message.assert_called_once_with(embed=ANY, ephemeral=True)
         assert self.last_send_message("embed") == {
             "color": self.settings.INFO_EMBED_COLOR,
-            "description": f"<@{target2.xid}>\n",
+            "description": f"<@{target2.xid}> ({target2.name})\n",
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": "Blocked Users",
             "type": "rich",

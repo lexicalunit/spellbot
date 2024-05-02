@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Interactive developer shell with database access.
+- Adds cached user name to `/blocked` list.
 
 ## [v11.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v11.0.1) - 2024-04-30
 

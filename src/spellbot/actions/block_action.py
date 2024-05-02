@@ -61,8 +61,8 @@ class BlockAction(BaseAction):
         embed.set_thumbnail(url=settings.ICO_URL)
         pages = []
         cur_page = ""
-        for xid in blocklist:
-            next_user = f"<@{xid}>\n"
+        for user in blocklist:
+            next_user = f"<@{user['xid']}> ({user['name']})\n"
             if len(cur_page) + len(next_user) > EMBED_DESCRIPTION_SIZE_LIMIT:
                 pages.append(cur_page)
                 cur_page = ""

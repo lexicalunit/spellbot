@@ -200,10 +200,14 @@ class UsersService:
         DatabaseSession.commit()
 
     @sync_to_async()
-    def blocklist(self, user_xid: int) -> list[int]:
+    def blocklist(self, user_xid: int) -> list[UserDict]:
         return [
-            cast(int, block.blocked_user_xid)
-            for block in DatabaseSession.query(Block).filter(Block.user_xid == user_xid).all()
+            u.to_dict()
+            for u in DatabaseSession.query(User)
+            .join(Block, User.xid == Block.blocked_user_xid)
+            .filter(Block.user_xid == user_xid)
+            .order_by(User.xid)
+            .all()
         ]
 
     @sync_to_async()
