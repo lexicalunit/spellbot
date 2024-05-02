@@ -103,6 +103,23 @@ source .venv/bin/activate
 poetry run pytest -k codebase
 ```
 
+## Interactive Shell
+
+An interactive shell using [IPyhton](https://ipython.readthedocs.io/en/stable/) can be started by running:
+
+```shell
+poetry run python shell
+```
+
+From this shell you will be able to interact with the database using SpellBot models and code. For example:
+
+```shell
+$ poetry run python shell
+
+In [1]: DatabaseSession.query(User).all()
+Out[1]: []
+```
+
 ## Release process
 
 There's two methods for doing a release. You can use a script to handle
