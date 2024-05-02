@@ -88,6 +88,32 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
 Want your community to be featured here as well? Please contact me at
 [spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com)!
 
+## ❓ Help
+
+Two of the most common issues people using SpellBot run into are related to receiving Direct Messages from the bot. SpellBot uses Discord embeds in the DMs that it sends and there are some settings you need to enable for this to work correctly.
+
+In your `Settings ► Chat` make sure that you have enabled **Embeds and link previews**.
+
+<p align="center">
+    <img
+        src="https://github.com/lexicalunit/spellbot/assets/1903876/7e2f166c-af0d-4024-9bce-8afb46817e8c"
+        width="600"
+        alt="Settings - Chat"
+    />
+</p>
+
+And in your `Settings ► Privacy & Safety`, enable both **Allow direct message message for server members** and **Enable message requests from server members you may not know**.
+
+<p align="center">
+    <img
+        src="https://github.com/lexicalunit/spellbot/assets/1903876/29ef2c72-c349-443e-a3b7-efbdcc32314d"
+        width="600"
+        alt="Settings - Privacy & Safety"
+    />
+</p>
+
+If you have more questions, please don't hesitate to join us on the [SpellBot Discord server][discord-invite] to get answers from our generous community.
+
 ## 🎤 Feedback
 
 Thoughts and suggestions? Come join us on the [SpellBot Discord server][discord-invite]! Please
