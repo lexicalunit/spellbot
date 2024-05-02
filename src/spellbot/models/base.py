@@ -8,7 +8,7 @@ import alembic
 import alembic.command
 import alembic.config
 from sqlalchemy import String, create_engine, text
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 from sqlalchemy_utils import create_database, database_exists
 
 from . import import_models
@@ -24,7 +24,7 @@ ALEMBIC_INI = MIGRATIONS_DIR / "alembic.ini"
 logger = logging.getLogger(__name__)
 
 now = text("(now() at time zone 'utc')")
-Base = declarative_base()
+Base: DeclarativeMeta = declarative_base()
 
 
 def create_all(database_url: str) -> None:

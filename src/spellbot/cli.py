@@ -19,7 +19,8 @@ from .metrics import no_metrics
 if not running_in_pytest():  # pragma: no cover
     load_dotenv()
 
-uvloop.install()
+if not getenv("DISABLE_UVLOOP", ""):  # pragma: no cover
+    uvloop.install()
 
 
 @click.command()
