@@ -112,7 +112,7 @@ safe_licenses = [
 
 [tool.pytest.ini_options]
 addopts = """
-    -W ignore::DeprecationWarning --no-header --cov --cov-report=html -vv
+    -W ignore::DeprecationWarning --no-header --cov --cov-append --cov-report xml:coverage.xml --cov-report=html -vv
 """
 
 [tool.poetry]
@@ -210,4 +210,4 @@ virtualenv = "^20"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.8"]
+requires = ["poetry-core>=1.9.0"]
