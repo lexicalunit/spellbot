@@ -368,7 +368,7 @@ class GamesService:
         self.game.status = GameStatus.STARTED.value
         self.game.started_at = datetime.now(tz=pytz.utc)
 
-        if not queues:  # TODO: How would this ever even happen?
+        if not queues:  # Not sure this is possible, but just in case.
             DatabaseSession.commit()
             return cast(int, self.game.id)
 
