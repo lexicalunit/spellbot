@@ -1,7 +1,5 @@
 [run]
 branch = True
-concurrency = multiprocessing
-parallel = true
 source = .
 omit =
     src/spellbot/_version.py
