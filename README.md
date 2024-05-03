@@ -40,7 +40,7 @@ play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
 
 <p align="center">
     <img
-        src="https://github.com/lexicalunit/spellbot/assets/1903876/f3f98d4c-9c10-46ce-a6c2-088c7bcc3796"
+        src="https://github.com/lexicalunit/spellbot/assets/1903876/39381709-8dfd-473e-8072-e7267c50b4ad"
         width="600"
         alt="/lfg"
     />
@@ -96,7 +96,7 @@ In your `Settings ► Chat` make sure that you have enabled **Embeds and link pr
 
 <p align="center">
     <img
-        src="https://github.com/lexicalunit/spellbot/assets/1903876/7e2f166c-af0d-4024-9bce-8afb46817e8c"
+        src="https://github.com/lexicalunit/spellbot/assets/1903876/0d584532-0689-44b5-ba18-882d44b4b808"
         width="700"
         alt="Settings - Chat"
     />
@@ -106,7 +106,7 @@ And in your `Settings ► Privacy & Safety`, enable both **Allow direct message 
 
 <p align="center">
     <img
-        src="https://github.com/lexicalunit/spellbot/assets/1903876/29ef2c72-c349-443e-a3b7-efbdcc32314d"
+        src="https://github.com/lexicalunit/spellbot/assets/1903876/f16c943b-5120-4def-a254-d7fd04af2689"
         width="700"
         alt="Settings - Privacy & Safety"
     />
