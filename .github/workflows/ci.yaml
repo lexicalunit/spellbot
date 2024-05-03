@@ -75,33 +75,31 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v3
 
+      - name: Install Poetry
+        id: install-poetry
+        run: pipx install poetry
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
 
-      - name: Install Dependencies
-        run: |
-          git --version
-          python --version
-          python -m pip install --upgrade pip
-          pip --version
-          pip install poetry
-          poetry --version
-          poetry install
+      - name: Install Packages
+        run: poetry install
 
       - name: Run Tests
-        run: |
-          poetry run pytest -n auto -vv --cov --cov-report=html --cov-report=xml
+        run: poetry run pytest -n auto -vv --cov --cov-report=html --cov-report=xml
         env:
           DATABASE_URL: ${{ matrix.database-url }}
 
       - name: Send Reports to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         env:
           PYTHON: ${{ matrix.python-version }}
           POSTGRES: ${{ matrix.postgres-version }}
           DB_URL: ${{ matrix.database-url }}
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
         with:
           env_vars: PYTHON,POSTGRES,DB_URL

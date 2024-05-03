@@ -47,6 +47,13 @@ class TestModelUser:
         assert player1.points(game2.id) == (play1.points, False)
         assert player2.points(game2.id) == (play2.points, False)
 
+    def test_pending_games(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(guild=guild, channel=channel)
+        user = factories.user.create(game=game)
+        assert user.pending_games() == 1
+
 
 class TestModelUserWaiting:
     def test_happy_path(self, factories: Factories) -> None:
