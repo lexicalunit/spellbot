@@ -8,7 +8,7 @@ to worry about installing anything or managing your environment.
 You can quickly get a PostgreSQL Database running locally with `docker`:
 
 ```shell
-docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:12.9
+docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:15
 ```
 
 You should then be able to connect to this database using `psql`:
@@ -44,5 +44,5 @@ docker run -it --rm -p 8080:80 \
     -e BOT_TOKEN="<Your Discord provided bot token>" \
     -e SPELLTABLE_AUTH_KEY="<Your SpellTable API auth token>" \
     -e DEBUG_GUILD="<optional: Debug guild id to use>" \
-    lexicalunit/spellbot
+    <lexicalunit/spellbot (pulled from registry) or spellbot (built locally)>
 ```
