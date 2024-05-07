@@ -71,7 +71,7 @@ async def safe_defer_interaction(interaction: discord.Interaction) -> None:
     with suppress(
         DiscordException,
         ClientOSError,
-        log="could defer interaction for user %(user_xid)s",
+        log="could not defer interaction for user %(user_xid)s",
         user_xid=interaction.user.id,
     ):
         await retry(interaction.response.defer)
