@@ -14,6 +14,7 @@ from sqlalchemy.orm.session import Session
 from wrapt import CallableObjectProxy
 
 from .models import create_all, reverse_all
+from .settings import settings
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -97,9 +98,6 @@ def initialize_connection(
     `rollback_transaction()`. This is useful for allowing tests to run within their
     own transaction that is always rolled back.
     """
-    from .settings import Settings
-
-    settings = Settings()
     db_url = settings.DATABASE_URL
     if worker_id:
         db_url += f"-{worker_id}"
@@ -160,7 +158,4 @@ def rollback_transaction() -> None:
 
 
 def delete_test_database(worker_id: str) -> None:
-    from .settings import Settings
-
-    settings = Settings()
     reverse_all(f"{settings.DATABASE_URL}-{worker_id}")

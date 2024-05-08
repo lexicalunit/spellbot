@@ -11,6 +11,7 @@ from spellbot.actions import LookingForGameAction
 from spellbot.enums import GameFormat
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_defer_interaction
+from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_admin, is_guild
 
 logger = logging.getLogger(__name__)
@@ -43,4 +44,4 @@ class EventsCog(commands.Cog):
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
-    await bot.add_cog(EventsCog(bot), guild=bot.settings.GUILD_OBJECT)
+    await bot.add_cog(EventsCog(bot), guild=settings.GUILD_OBJECT)

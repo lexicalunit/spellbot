@@ -8,7 +8,7 @@ from discord.embeds import Embed
 
 from spellbot.operations import safe_send_channel
 from spellbot.services import WatchesService
-from spellbot.settings import Settings
+from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
 
 from .base_action import BaseAction
@@ -110,8 +110,6 @@ class WatchAction(BaseAction):
         await self.execute(ActionType.UNWATCH, target=target, id=xid)
 
     async def get_watched_embeds(self) -> list[Embed]:
-        settings = Settings()
-
         def new_embed() -> Embed:
             assert self.interaction.guild
             embed = Embed(title="List of watched players on this server")

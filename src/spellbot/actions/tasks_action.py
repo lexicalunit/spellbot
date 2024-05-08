@@ -22,7 +22,7 @@ from spellbot.operations import (
     safe_update_embed,
 )
 from spellbot.services import GamesService, ServicesRegistry
-from spellbot.settings import Settings
+from spellbot.settings import settings
 
 from .base_action import handle_exception
 
@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from spellbot import SpellBot
     from spellbot.models import GameDict
 
-settings = Settings()
 logger = logging.getLogger(__name__)
 
 

@@ -231,7 +231,7 @@ def cli() -> Generator[MagicMock, None, None]:
         patch("spellbot.cli.configure_logging") as mock_configure_logging,
         patch("spellbot.cli.hupper") as mock_hupper,
         patch("spellbot.client.build_bot") as mock_build_bot,
-        patch("spellbot.settings.Settings") as mock_Settings,
+        patch("spellbot.cli.settings") as mock_settings,
         patch("spellbot.web.launch_web_server") as mock_launch_web_server,
     ):
         mock_loop = MagicMock(name="loop")
@@ -244,10 +244,8 @@ def cli() -> Generator[MagicMock, None, None]:
         mock_bot.run = MagicMock(name="run")
         mock_build_bot.return_value = mock_bot
         mock_hupper.start_reloader = MagicMock(name="start_reloader")
-        mock_settings = MagicMock(name="settings")
         mock_settings.BOT_TOKEN = "facedeadbeef"
         mock_settings.PORT = 404
-        mock_Settings.return_value = mock_settings
 
         obj = MagicMock()
         obj.asyncio = mock_asyncio
@@ -255,7 +253,6 @@ def cli() -> Generator[MagicMock, None, None]:
         obj.configure_logging = mock_configure_logging
         obj.hupper = mock_hupper
         obj.launch_web_server = mock_launch_web_server
-        obj.Settings = mock_Settings
         obj.settings = mock_settings
         obj.bot = mock_bot
         obj.loop = mock_loop

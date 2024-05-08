@@ -11,7 +11,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import false, text
 
 from spellbot.enums import GameFormat, GameService
-from spellbot.settings import Settings
+from spellbot.settings import settings
 
 from . import Base, now
 
@@ -350,9 +350,10 @@ class Game(Base):
         return player_count == confirmed_count
 
     def to_embed(self, dm: bool = False) -> discord.Embed:
-        settings = Settings(self.guild_xid)
         embed = discord.Embed(title=self.embed_title)
-        embed.set_thumbnail(url=settings.THUMB_URL)
+        embed.set_thumbnail(
+            url=settings.QUEER_THUMB_URL if settings.queer(self.guild_xid) else settings.THUMB_URL
+        )
         embed.description = self.embed_description(dm)
         if self.players:
             embed.add_field(name="Players", value=self.embed_players, inline=False)
