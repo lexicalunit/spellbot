@@ -23,7 +23,7 @@ from .errors import (
     UserVerifiedError,
 )
 from .metrics import add_span_error
-from .settings import Settings
+from .settings import settings
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -33,7 +33,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
 
 # Discord API error code indicating that we can not send messages to this user.
 CANT_SEND_CODE = 50007
@@ -175,7 +174,6 @@ def is_admin(interaction: discord.Interaction) -> bool:
     if not hasattr(interaction.user, "roles"):
         raise AdminOnlyError
     author_roles = interaction.user.roles  # type: ignore
-    settings = Settings()
     has_admin_role = any(
         role.name == settings.ADMIN_ROLE for role in cast(list[discord.Role], author_roles)
     )
@@ -215,7 +213,6 @@ def user_can_moderate(
     if (perms := safe_permissions_for(channel, member)) and perms.administrator:
         return True
     author_roles = author.roles  # type: ignore
-    settings = Settings()
     return any(
         role.name == settings.ADMIN_ROLE or role.name.startswith(settings.MOD_PREFIX)
         for role in cast(list[discord.Role], author_roles)
@@ -238,6 +235,8 @@ class suppress(AbstractContextManager[None]):
     use The Single Return Law pattern. This is because static analysis tools will not
     be able to understand that code following the context is reachable.
     """
+
+    __slots__ = ("_exceptions", "_log", "_kwargs")
 
     def __init__(self, *exceptions: type[Exception], log: str, **kwargs: Any) -> None:
         self._exceptions = exceptions
@@ -329,7 +328,6 @@ async def handle_command_errors(
 async def load_extensions(bot: AutoShardedBot, do_sync: bool = False) -> None:  # pragma: no cover
     from .cogs import load_all_cogs
 
-    settings = Settings()
     guild = settings.GUILD_OBJECT
 
     if do_sync:

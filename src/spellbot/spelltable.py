@@ -9,13 +9,12 @@ from aiohttp_retry import ExponentialRetry, RetryClient
 
 from . import __version__
 from .metrics import add_span_error
-from .settings import Settings
+from .settings import settings
 
 logger = logging.getLogger(__name__)
 
 
 async def generate_link() -> str | None:
-    settings = Settings()
     assert settings.SPELLTABLE_AUTH_KEY
 
     headers = {

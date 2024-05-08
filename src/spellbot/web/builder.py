@@ -14,12 +14,11 @@ from babel.dates import format_datetime
 
 from spellbot.database import initialize_connection
 from spellbot.models import import_models
+from spellbot.settings import settings
 from spellbot.web.api import ping, record
 
 if TYPE_CHECKING:
     from asyncio.events import AbstractEventLoop as Loop
-
-    from spellbot.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -51,11 +50,7 @@ def build_web_app() -> web.Application:
     return app
 
 
-def launch_web_server(
-    settings: Settings,
-    loop: Loop,
-    port: int,
-) -> None:  # pragma: no cover
+def launch_web_server(loop: Loop, port: int) -> None:  # pragma: no cover
     app = build_web_app()
     runner = web.AppRunner(app)
     loop.run_until_complete(runner.setup())

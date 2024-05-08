@@ -6,7 +6,7 @@ from enum import Enum
 import discord
 
 from spellbot.operations import safe_send_channel
-from spellbot.settings import Settings
+from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
 
 from .base_action import BaseAction
@@ -55,7 +55,6 @@ class BlockAction(BaseAction):
         await self.execute(target, ActionType.UNBLOCK)
 
     async def blocked(self, page: int) -> None:
-        settings = Settings()
         blocklist = await self.services.users.blocklist(self.interaction.user.id)
         embed = discord.Embed(title="Blocked Users")
         embed.set_thumbnail(url=settings.ICO_URL)

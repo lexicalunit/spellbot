@@ -23,7 +23,7 @@ from spellbot.operations import (
     safe_update_embed_origin,
     save_create_channel_invite,
 )
-from spellbot.settings import Settings
+from spellbot.settings import settings
 from spellbot.views import BaseView, PendingGameView, StartedGameView, StartedGameViewWithConfirm
 
 from .base_action import BaseAction
@@ -39,7 +39,6 @@ logger = logging.getLogger(__name__)
 class LookingForGameAction(BaseAction):
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         super().__init__(bot, interaction)
-        self.settings = Settings()
 
     @tracer.wrap()
     async def get_friends(self, friends: str | None = None) -> str:
@@ -196,7 +195,7 @@ class LookingForGameAction(BaseAction):
             await safe_followup_channel(self.interaction, msg)
             return None
 
-        if await self.services.users.pending_games() + 1 > self.settings.MAX_PENDING_GAMES:
+        if await self.services.users.pending_games() + 1 > settings.MAX_PENDING_GAMES:
             msg = "You're in too many pending games to join another one at this time."
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
@@ -576,14 +575,14 @@ class LookingForGameAction(BaseAction):
     async def _reply_found_embed(self) -> None:
         assert self.guild is not None
         embed = discord.Embed()
-        embed.set_thumbnail(url=self.settings.ICO_URL)
+        embed.set_thumbnail(url=settings.ICO_URL)
         game_data = await self.services.games.to_dict()
         links = game_data["jump_links"]
         link = links[self.guild.id]
         format = game_data["format"]
         embed.set_author(name=f"I found a {GameFormat(format)} game for you!")
         embed.description = f"You can [jump to the game post]({link}) to see it!"
-        embed.color = self.settings.INFO_EMBED_COLOR
+        embed.color = settings.INFO_EMBED_COLOR
         await safe_followup_channel(self.interaction, embed=embed)
 
     @tracer.wrap()
@@ -643,7 +642,7 @@ class LookingForGameAction(BaseAction):
         assert self.interaction.guild
         mod_role: discord.Role | None = None
         for role in self.interaction.guild.roles:
-            if role.name.startswith(self.settings.MOD_PREFIX):
+            if role.name.startswith(settings.MOD_PREFIX):
                 mod_role = role
                 break
 
@@ -657,9 +656,9 @@ class LookingForGameAction(BaseAction):
         data = await self.services.games.to_dict()
 
         embed = discord.Embed()
-        embed.set_thumbnail(url=self.settings.ICO_URL)
+        embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name="Watched user(s) joined a game")
-        embed.color = self.settings.INFO_EMBED_COLOR
+        embed.color = settings.INFO_EMBED_COLOR
         description = ""
         for jump_link in data["jump_links"].values():
             description += f"[⇤ Jump to the game post]({jump_link})\n"
