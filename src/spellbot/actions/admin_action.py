@@ -16,7 +16,7 @@ from spellbot.operations import (
     safe_update_embed_origin,
 )
 from spellbot.services import GamesService
-from spellbot.settings import Settings
+from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
 from spellbot.views import SetupView
 
@@ -50,7 +50,6 @@ def award_line(award: GuildAwardDict) -> str:
 class AdminAction(BaseAction):
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         super().__init__(bot, interaction)
-        self.settings = Settings()
 
     async def _report_failure(self) -> None:
         await safe_send_channel(
@@ -65,8 +64,8 @@ class AdminAction(BaseAction):
 
         def new_embed() -> Embed:
             embed = Embed(title=f"Configuration for channels in {guild['name']}")
-            embed.set_thumbnail(url=self.settings.ICO_URL)
-            embed.color = discord.Color(self.settings.INFO_EMBED_COLOR)
+            embed.set_thumbnail(url=settings.ICO_URL)
+            embed.color = discord.Color(settings.INFO_EMBED_COLOR)
             return embed
 
         def update_channel_settings(
@@ -136,8 +135,8 @@ class AdminAction(BaseAction):
 
         def new_embed() -> Embed:
             embed = Embed(title=f"SpellBot Player Awards for {guild['name']}")
-            embed.set_thumbnail(url=self.settings.ICO_URL)
-            embed.color = discord.Color(self.settings.INFO_EMBED_COLOR)
+            embed.set_thumbnail(url=settings.ICO_URL)
+            embed.color = discord.Color(settings.INFO_EMBED_COLOR)
             return embed
 
         has_at_least_one_award = False
@@ -172,7 +171,7 @@ class AdminAction(BaseAction):
     async def _build_setup_embed(self) -> Embed:
         guild = await self.services.guilds.to_dict()
         embed = Embed(title=f"SpellBot Setup for {guild['name']}")
-        embed.set_thumbnail(url=self.settings.ICO_URL)
+        embed.set_thumbnail(url=settings.ICO_URL)
         description = (
             "These are the current settings for SpellBot on this server."
             " Please use the buttons below, as well as the `/set` commands,"
@@ -195,7 +194,7 @@ class AdminAction(BaseAction):
             name="Create Voice Channels",
             value=humanize_bool(guild["voice_create"]),
         )
-        embed.color = discord.Color(self.settings.INFO_EMBED_COLOR)
+        embed.color = discord.Color(settings.INFO_EMBED_COLOR)
         return embed
 
     async def forget_channel(self, channel_str: str) -> None:
@@ -291,22 +290,22 @@ class AdminAction(BaseAction):
         )
 
         embed = Embed()
-        embed.set_thumbnail(url=self.settings.ICO_URL)
+        embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name="Award added!")
         line = award_line(award)
         description = f"{line}\n\nYou can view all awards with the `/set awards` command."
         embed.description = description
-        embed.color = self.settings.INFO_EMBED_COLOR
+        embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
     async def award_delete(self, guild_award_id: int) -> None:
         await self.services.guilds.award_delete(guild_award_id)
         embed = Embed()
-        embed.set_thumbnail(url=self.settings.ICO_URL)
+        embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name="Award deleted!")
         description = "You can view all awards with the `/set awards` command."
         embed.description = description
-        embed.color = self.settings.INFO_EMBED_COLOR
+        embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
     async def set_motd(self, message: str | None = None) -> None:

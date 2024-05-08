@@ -5,7 +5,7 @@ import logging
 import discord
 
 from spellbot.operations import safe_send_channel
-from spellbot.settings import Settings
+from spellbot.settings import settings
 
 from .base_action import BaseAction
 
@@ -21,7 +21,6 @@ class ScoreAction(BaseAction):
         target_xid = target.id
         count = await self.services.plays.count(target_xid, self.interaction.guild_id)
 
-        settings = Settings()
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name=f"Record of games played on {guild_name}")
@@ -40,7 +39,6 @@ class ScoreAction(BaseAction):
         channel_name = self.interaction.channel.name  # type: ignore
         channel_xid = self.interaction.channel.id
 
-        settings = Settings()
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name=f"Recent games played in {channel_name}")
@@ -62,7 +60,6 @@ class ScoreAction(BaseAction):
         assert guild_xid is not None
         data = await self.services.plays.top_records(guild_xid, channel_xid, monthly, ago)
 
-        settings = Settings()
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         range_s = f"{ago} months ago" if ago else "this month" if monthly else "all time"

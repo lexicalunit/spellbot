@@ -12,7 +12,7 @@ from spellbot.operations import (
     safe_send_channel,
     safe_update_embed,
 )
-from spellbot.settings import Settings
+from spellbot.settings import settings
 
 from .base_action import BaseAction
 
@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from spellbot.models import GameDict, PlayDict
 
 logger = logging.getLogger(__name__)
-settings = Settings()
 
 
 class RecordAction(BaseAction):

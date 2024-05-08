@@ -14,6 +14,7 @@ from . import __version__
 from .environment import running_in_pytest
 from .logs import configure_logging
 from .metrics import no_metrics
+from .settings import settings
 
 # load .env environment variables as early as possible
 if not running_in_pytest():  # pragma: no cover
@@ -78,10 +79,7 @@ def main(
     if dev:
         hupper.start_reloader("spellbot.main")
 
-    from .settings import Settings
-
     # Ensure that configure_logging() is called as early as possible
-    settings = Settings()
     level = log_level if log_level is not None else (getenv("LOG_LEVEL") or "INFO")
     configure_logging(level)
 
@@ -119,7 +117,7 @@ def main(
 
         loop = asyncio.new_event_loop()
         loop.set_debug(debug)
-        launch_web_server(settings, loop, port or settings.PORT)
+        launch_web_server(loop, port or settings.PORT)
         loop.run_forever()
     else:
         from .client import build_bot

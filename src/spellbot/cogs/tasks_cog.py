@@ -8,10 +8,9 @@ from discord.ext import commands, tasks
 from spellbot import SpellBot
 from spellbot.actions import TasksAction
 from spellbot.environment import running_in_pytest
-from spellbot.settings import Settings
+from spellbot.settings import settings
 
 logger = logging.getLogger(__name__)
-settings = Settings()
 
 WAIT_UNTIL_READY_TIMEOUT = 900.0  # 15 minutes
 
@@ -82,4 +81,4 @@ class TasksCog(commands.Cog):  # pragma: no cover
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
-    await bot.add_cog(TasksCog(bot), guild=bot.settings.GUILD_OBJECT)
+    await bot.add_cog(TasksCog(bot), guild=settings.GUILD_OBJECT)

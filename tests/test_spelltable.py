@@ -21,7 +21,7 @@ class TestSpellTable:
         settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
-        monkeypatch.setattr(spelltable, "Settings", lambda: settings)
+        monkeypatch.setattr(spelltable, "settings", settings)
 
         mock_response = MagicMock()
         game_url = "https://game"
@@ -48,7 +48,7 @@ class TestSpellTable:
         settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
-        monkeypatch.setattr(spelltable, "Settings", lambda: settings)
+        monkeypatch.setattr(spelltable, "settings", settings)
 
         mock_response = MagicMock()
         mock_response.read = AsyncMock(return_value=b"upstream request timeout")
@@ -72,7 +72,7 @@ class TestSpellTable:
         settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
-        monkeypatch.setattr(spelltable, "Settings", lambda: settings)
+        monkeypatch.setattr(spelltable, "settings", settings)
 
         mock_response = MagicMock()
         mock_response.read = AsyncMock(return_value=b'{"error": 123}')
@@ -96,7 +96,7 @@ class TestSpellTable:
         settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
-        monkeypatch.setattr(spelltable, "Settings", lambda: settings)
+        monkeypatch.setattr(spelltable, "settings", settings)
 
         mock_response = MagicMock()
         mock_response.read = AsyncMock(return_value=b"foobar")
@@ -123,7 +123,7 @@ class TestSpellTable:
         settings = MagicMock(spec=Settings)
         settings.SPELLTABLE_AUTH_KEY = "auth-key"
         settings.SPELLTABLE_CREATE = "https://create"
-        monkeypatch.setattr(spelltable, "Settings", lambda: settings)
+        monkeypatch.setattr(spelltable, "settings", settings)
 
         class MockClient:  # pragma: no cover
             @asynccontextmanager

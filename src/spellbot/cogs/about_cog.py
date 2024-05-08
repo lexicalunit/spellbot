@@ -8,7 +8,7 @@ from discord.ext import commands
 from spellbot import SpellBot, __version__
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_send_channel
-from spellbot.settings import Settings
+from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_guild
 
 logger = logging.getLogger(__name__)
@@ -26,9 +26,12 @@ class AboutCog(commands.Cog):
     @tracer.wrap(name="interaction", resource="about")
     async def about(self, interaction: discord.Interaction) -> None:
         add_span_context(interaction)
-        settings = Settings(interaction.guild_id)
         embed = Embed(title="SpellBot")
-        embed.set_thumbnail(url=settings.THUMB_URL)
+        embed.set_thumbnail(
+            url=settings.QUEER_THUMB_URL
+            if settings.queer(interaction.guild_id)
+            else settings.THUMB_URL
+        )
         version = f"[{__version__}](https://pypi.org/project/spellbot/{__version__}/)"
         embed.add_field(name="Version", value=version)
         author = "[@lexicalunit](https://github.com/lexicalunit)"
@@ -51,4 +54,4 @@ class AboutCog(commands.Cog):
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
-    await bot.add_cog(AboutCog(bot), guild=bot.settings.GUILD_OBJECT)
+    await bot.add_cog(AboutCog(bot), guild=settings.GUILD_OBJECT)

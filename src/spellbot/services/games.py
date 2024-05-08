@@ -33,7 +33,7 @@ from spellbot.models import (
     UserAward,
     Watch,
 )
-from spellbot.settings import Settings
+from spellbot.settings import settings
 
 if TYPE_CHECKING:
     import discord
@@ -466,8 +466,6 @@ class GamesService:
     @sync_to_async()
     @tracer.wrap()
     def filter_pending_games(self, user_xids: list[int]) -> list[int]:
-        settings = Settings()
-
         rows = DatabaseSession.query(
             Queue.user_xid,
             func.count(Queue.user_xid).label("pending"),
@@ -645,7 +643,6 @@ class GamesService:
     @sync_to_async()
     @tracer.wrap()
     def inactive_games(self) -> list[GameDict]:
-        settings = Settings()
         limit = datetime.now(tz=pytz.utc) - timedelta(minutes=settings.EXPIRE_TIME_M)
         records = (
             DatabaseSession.query(Game)

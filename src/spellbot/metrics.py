@@ -20,7 +20,7 @@ from .errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
-from .settings import Settings
+from .settings import settings
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -28,7 +28,6 @@ if TYPE_CHECKING:
     from ddtrace._trace.span import Span
     from discord.http import Route
 
-settings = Settings()
 IS_RUNNING_IN_PYTEST = running_in_pytest()
 
 

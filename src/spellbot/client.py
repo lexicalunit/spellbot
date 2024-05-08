@@ -14,7 +14,7 @@ from .database import db_session_manager, initialize_connection
 from .metrics import setup_ignored_errors, setup_metrics
 from .operations import safe_delete_message
 from .services import ChannelsService, GamesService, GuildsService, VerifiesService
-from .settings import Settings
+from .settings import settings
 from .spelltable import generate_link
 from .utils import user_can_moderate
 
@@ -30,7 +30,6 @@ class SpellBot(AutoShardedBot):
         mock_games: bool = False,
         create_connection: bool = True,
     ) -> None:
-        self.settings = Settings()
         intents = discord.Intents().default()
         intents.members = True
         intents.message_content = True
@@ -40,7 +39,7 @@ class SpellBot(AutoShardedBot):
             command_prefix="!",
             help_command=None,
             intents=intents,
-            application_id=self.settings.BOT_APPLICATION_ID,
+            application_id=settings.BOT_APPLICATION_ID,
         )
         self.mock_games = mock_games
         self.create_connection = create_connection

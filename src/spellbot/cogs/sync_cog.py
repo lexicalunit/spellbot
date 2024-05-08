@@ -7,6 +7,7 @@ from spellbot import SpellBot
 from spellbot.actions.base_action import handle_exception
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_send_user
+from spellbot.settings import settings
 from spellbot.utils import load_extensions
 
 logger = logging.getLogger(__name__)
@@ -33,4 +34,4 @@ class SyncCog(commands.Cog):
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
-    await bot.add_cog(SyncCog(bot), guild=bot.settings.GUILD_OBJECT)
+    await bot.add_cog(SyncCog(bot), guild=settings.GUILD_OBJECT)

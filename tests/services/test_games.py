@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from spellbot.database import DatabaseSession
@@ -261,8 +261,7 @@ class TestServiceGamesFilterPendingGames:
         user2 = UserFactory.create()
         QueueFactory.create(game_id=game1.id, user_xid=user2.xid)
 
-        with patch("spellbot.services.games.Settings", new=MagicMock) as settings:
-            settings.MAX_PENDING_GAMES = 3
+        with patch("spellbot.services.games.settings.MAX_PENDING_GAMES", 3):
             games = GamesService()
             assert await games.filter_pending_games([user1.xid, user2.xid]) == [user2.xid]
 

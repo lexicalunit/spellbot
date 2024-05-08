@@ -8,6 +8,7 @@ from discord.ext import commands
 from spellbot import SpellBot
 from spellbot.actions import BlockAction
 from spellbot.metrics import add_span_context
+from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_guild
 
 logger = logging.getLogger(__name__)
@@ -62,4 +63,4 @@ class BlockCog(commands.Cog):
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
-    await bot.add_cog(BlockCog(bot), guild=bot.settings.GUILD_OBJECT)
+    await bot.add_cog(BlockCog(bot), guild=settings.GUILD_OBJECT)

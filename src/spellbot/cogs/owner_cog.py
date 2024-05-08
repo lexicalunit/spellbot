@@ -10,6 +10,7 @@ from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_context
 from spellbot.operations import bad_users, safe_send_user
 from spellbot.services import GuildsService, MirrorsService, UsersService
+from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks
 
 logger = logging.getLogger(__name__)
@@ -170,4 +171,4 @@ class OwnerCog(commands.Cog):
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
-    await bot.add_cog(OwnerCog(bot), guild=bot.settings.GUILD_OBJECT)
+    await bot.add_cog(OwnerCog(bot), guild=settings.GUILD_OBJECT)

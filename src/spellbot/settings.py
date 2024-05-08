@@ -14,6 +14,39 @@ if TYPE_CHECKING:
 
 
 class Settings:
+    __slots__ = (
+        "guild_xid",
+        "CONTENT_ROOT",
+        "BOT_TOKEN",
+        "BOT_APPLICATION_ID",
+        "PORT",
+        "HOST",
+        "DEBUG_GUILD",
+        "API_BASE_URL",
+        "DD_API_KEY",
+        "DD_APP_KEY",
+        "DD_TRACE_ENABLED",
+        "DATABASE_URL",
+        "SPELLTABLE_ROOT",
+        "SPELLTABLE_CREATE",
+        "SPELLTABLE_AUTH_KEY",
+        "BOT_INVITE_LINK",
+        "INFO_EMBED_COLOR",
+        "STARTED_EMBED_COLOR",
+        "PENDING_EMBED_COLOR",
+        "EMPTY_EMBED_COLOR",
+        "DATABASE_ECHO",
+        "ADMIN_ROLE",
+        "MOD_PREFIX",
+        "MAX_PENDING_GAMES",
+        "VOICE_GRACE_PERIOD_M",
+        "VOICE_AGE_LIMIT_H",
+        "VOICE_CLEANUP_LOOP_M",
+        "VOICE_CLEANUP_BATCH",
+        "EXPIRE_GAMES_LOOP_M",
+        "EXPIRE_TIME_M",
+    )
+
     def __init__(self, guild_xid: int | None = None) -> None:
         self.guild_xid = guild_xid
 
@@ -75,31 +108,45 @@ class Settings:
     def workaround_over_eager_caching(self, url: str) -> str:
         return f"{url}?{datetime.now(tz=pytz.utc).date().strftime('%Y-%m-%d')}"
 
-    def queer(self) -> bool:
-        return self.guild_xid == 757455940009328670 or datetime.now(tz=pytz.utc).month == 6
+    def queer(self, guild_xid: int | None) -> bool:
+        return (
+            guild_xid
+            in [
+                757455940009328670,  # Oath of the Gaywatch
+                699775410082414733,  # Development
+            ]
+            or datetime.now(tz=pytz.utc).month == 6
+        )
 
     @property
     def THUMB_URL(self) -> str:
-        if self.queer():  # pragma: no cover
-            return self.workaround_over_eager_caching(
-                "https://user-images.githubusercontent.com/1903876/"
-                "149257079-e3efe74f-482b-4410-a0ea-dd988a4d3c63.png",
-            )
         return self.workaround_over_eager_caching(
             f"{self.CONTENT_ROOT}/spellbot/main/spellbot.png",
         )
 
     @property
+    def QUEER_THUMB_URL(self) -> str:  # pragma: no cover
+        return self.workaround_over_eager_caching(
+            "https://user-images.githubusercontent.com/1903876/"
+            "149257079-e3efe74f-482b-4410-a0ea-dd988a4d3c63.png",
+        )
+
+    @property
     def ICO_URL(self) -> str:
-        if self.queer():  # pragma: no cover
-            return self.workaround_over_eager_caching(
-                "https://user-images.githubusercontent.com/1903876/"
-                "149257564-86595c81-82a5-4558-ae40-c03d29a95d1f.png",
-            )
         return self.workaround_over_eager_caching(
             f"{self.CONTENT_ROOT}/spellbot/main/spellbot-sm.png",
         )
 
     @property
+    def QUEER_ICO_URL(self) -> str:  # pragma: no cover
+        return self.workaround_over_eager_caching(
+            "https://user-images.githubusercontent.com/1903876/"
+            "149257564-86595c81-82a5-4558-ae40-c03d29a95d1f.png",
+        )
+
+    @property
     def GUILD_OBJECT(self) -> Snowflake | None:
         return Object(id=self.DEBUG_GUILD) if self.DEBUG_GUILD else None
+
+
+settings = Settings()
