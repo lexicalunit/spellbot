@@ -137,7 +137,7 @@ packages = [
 ]
 readme = 'README.md'
 repository = 'https://github.com/lexicalunit/spellbot'
-version = "11.0.3"
+version = "11.0.4"
 
 [tool.poetry.dependencies]
 aiohttp = "^3.9.4"
