@@ -1,15 +1,22 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 from spellbot import __version__
 from spellbot.cogs import AboutCog
 
 from tests.mixins import InteractionMixin
 
+if TYPE_CHECKING:
+    from freezegun.api import FrozenDateTimeFactory
+
 
 @pytest.mark.asyncio()
 class TestCogAbout(InteractionMixin):
-    async def test_about(self) -> None:
+    async def test_about(self, freezer: FrozenDateTimeFactory) -> None:
+        freezer.move_to("2021-03-01")
+
         cog = AboutCog(self.bot)
         await self.run(cog.about)
 
