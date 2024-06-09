@@ -31,4 +31,5 @@ class TestModelGuild:
                 key=lambda c: c["id"],
             ),
             "banned": guild.banned,
+            "notice": guild.notice,
         }

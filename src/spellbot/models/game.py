@@ -219,6 +219,8 @@ class Game(Base):
 
     def embed_description(self, dm: bool = False) -> str:  # noqa: C901,PLR0912
         description = ""
+        if self.guild.notice:
+            description += f"{self.guild.notice}\n\n"
         if self.status == GameStatus.PENDING.value:
             description += "_A SpellTable link will be created when all players have joined._"
         else:
