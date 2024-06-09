@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, TypedDict, cast
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false, null
 from sqlalchemy.orm import relationship
 
 from . import Base, now
@@ -25,6 +25,7 @@ class GuildDict(TypedDict):
     channels: list[ChannelDict]
     awards: list[GuildAwardDict]
     banned: bool
+    notice: str
 
 
 class Guild(Base):
@@ -77,6 +78,13 @@ class Guild(Base):
         server_default=false(),
         doc="If true, this guild is banned from using SpellBot",
     )
+    notice = Column(
+        String(255),
+        doc="Notice to display to users in this guild",
+        nullable=True,
+        default=None,
+        server_default=null(),
+    )
 
     games = relationship(
         "Game",
@@ -116,4 +124,5 @@ class Guild(Base):
                 key=lambda c: c["id"],
             ),
             "banned": self.banned,
+            "notice": self.notice,
         }

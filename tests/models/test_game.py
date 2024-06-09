@@ -341,6 +341,24 @@ class TestModelGame:
             "type": "rich",
         }
 
+    def test_game_with_guild_notice(self, settings: Settings, factories: Factories) -> None:
+        guild = factories.guild.create(motd=None, notice="this is a notice")
+        channel = factories.channel.create(guild=guild, show_points=True, motd=None)
+        game = factories.game.create(
+            seats=2,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            guild=guild,
+            channel=channel,
+        )
+        factories.user.create(game=game)
+        factories.user.create(game=game)
+        assert game.to_embed().to_dict()["description"] == (
+            "this is a notice\n\n"
+            "Please check your Direct Messages for your game details.\n\n"
+            "When your game is over use the drop down to report your points."
+        )
+
     def test_game_embed_started_with_points(
         self,
         settings: Settings,
