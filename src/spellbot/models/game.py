@@ -378,6 +378,14 @@ class Game(Base):
             )
         else:
             embed.color = discord.Color(settings.EMPTY_EMBED_COLOR)
+        embed.add_field(
+            name="Support SpellBot",
+            value=(
+                f"Become [a monthly patron]({settings.SUBSCRIBE_LINK}) or "
+                f"give a [one-off tip]({settings.DONATE_LINK})."
+            ),
+            inline=False,
+        )
         embed.set_footer(text=self.embed_footer)
         return embed
 

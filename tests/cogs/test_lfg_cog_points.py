@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import ANY, MagicMock, PropertyMock, patch
 
 import discord
 import pytest
@@ -99,6 +99,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                             "name": "Started at",
                             "value": f"<t:{game.started_at_timestamp}>",
                         },
+                        {"inline": False, "name": "Support SpellBot", "value": ANY},
                     ],
                     "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
                     "thumbnail": {"url": self.settings.THUMB_URL},
@@ -134,6 +135,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                             "name": "Started at",
                             "value": f"<t:{game.started_at_timestamp}>",
                         },
+                        {"inline": False, "name": "Support SpellBot", "value": ANY},
                     ],
                     "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
                     "thumbnail": {"url": settings.THUMB_URL},
@@ -204,6 +206,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                             "name": "Started at",
                             "value": f"<t:{game.started_at_timestamp}>",
                         },
+                        {"inline": False, "name": "Support SpellBot", "value": ANY},
                     ],
                     "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
                     "thumbnail": {"url": self.settings.THUMB_URL},
