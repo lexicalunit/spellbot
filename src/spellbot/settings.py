@@ -45,6 +45,8 @@ class Settings:
         "VOICE_CLEANUP_BATCH",
         "EXPIRE_GAMES_LOOP_M",
         "EXPIRE_TIME_M",
+        "SUBSCRIBE_LINK",
+        "DONATE_LINK",
     )
 
     def __init__(self, guild_xid: int | None = None) -> None:
@@ -52,6 +54,8 @@ class Settings:
 
         # content
         self.CONTENT_ROOT = "https://raw.githubusercontent.com/lexicalunit"
+        self.SUBSCRIBE_LINK = "https://www.patreon.com/lexicalunit"
+        self.DONATE_LINK = "https://ko-fi.com/lexicalunit"
 
         # application
         self.BOT_TOKEN = getenv("BOT_TOKEN")

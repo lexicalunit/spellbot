@@ -56,6 +56,7 @@ class TestCogLeaveGame(InteractionMixin):
                 "fields": [
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{self.game.id}"},
                 "thumbnail": {"url": self.settings.THUMB_URL},
@@ -92,6 +93,7 @@ class TestCogLeaveGame(InteractionMixin):
                 "fields": [
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{self.game.id}"},
                 "thumbnail": {"url": self.settings.THUMB_URL},
@@ -241,6 +243,7 @@ class TestCogLeaveGame(InteractionMixin):
                 "fields": [
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{self.game.id}"},
                 "thumbnail": {"url": self.settings.THUMB_URL},
@@ -289,6 +292,7 @@ class TestCogLeaveGame(InteractionMixin):
                 "fields": [
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{self.game.id}"},
                 "thumbnail": {"url": self.settings.THUMB_URL},
