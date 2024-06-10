@@ -29,7 +29,7 @@ The Discord bot for <a href="https://spelltable.wizards.com/">SpellTable</a>
 | **Quality**       | [![codecov][codecov-badge]][codecov] [![ruff][ruff-badge]][ruff] [![pyright][pyright-badge]][pyright] |
 | **Observability** | [![uptime][uptime-badge]][uptime] [![metrics][metrics-badge]][metrics] [![datadog][datadog-badge]][datadog] |
 | **Socials**       | [![discord][discord-badge]][discord-invite] [![follow][follow-badge]][follow] |
-| **Funding**       | [![patreon][patreon-button]][patreon] |
+| **Funding**       | [![patreon][patreon-button]][patreon] [![kofi][kofi-button]][kofi] |
 
 </div>
 
@@ -122,7 +122,7 @@ Twitter at [@SpellBotIO][follow].
 
 ## 🙌 Supported By
 
-The continued operation of SpellBot is supported by <a href="https://www.playedh.com/">PlayEDH</a> as well as generous donations from [my patrons on Patreon][patreon]. If you would like to help support SpellBot, please consider [signing up][patreon] for as little a _one dollar a month_.
+The continued operation of SpellBot is supported by <a href="https://www.playedh.com/">PlayEDH</a> as well as generous donations from [my patrons on Patreon][patreon] and [Ko-fi][kofi]. If you would like to help support SpellBot, please consider [signing up][patreon] for as little a _one dollar a month_ or [giving me a one-off tip][kofi] for whatever you feel is appropriate.
 
 ## ❤️ Contributing
 
@@ -165,11 +165,13 @@ Any usage of SpellBot implies that you accept the following policies.
 [heroku-badge]: https://img.shields.io/badge/cloud-heroku-green
 [heroku]: https://dashboard.heroku.com/apps/lexicalunit-spellbot
 [issues]: https://github.com/lexicalunit/spellbot/issues
+[kofi-button]: https://img.shields.io/badge/Ko--fi-F16061?style=flat&logo=ko-fi&logoColor=white
+[kofi]: https://ko-fi.com/lexicalunit
 [lexicalunit]: http://github.com/lexicalunit
 [metrics-badge]: https://img.shields.io/badge/metrics-grafana-orange.svg
 [metrics]: https://lexicalunit.grafana.net/d/4TSUCbcMz/spellbot?orgId=1
 [mit-badge]: https://img.shields.io/badge/License-MIT-yellow.svg
-[mit]: https://opensource.org/licenses/MIT
+[mit]: https://opensource.org/license/mit
 [patreon-button]: https://img.shields.io/badge/Patreon-F96854?style=flat&logo=patreon&logoColor=white
 [patreon]: https://www.patreon.com/lexicalunit
 [pypi-badge]: https://img.shields.io/pypi/v/spellbot
