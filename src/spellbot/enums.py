@@ -33,6 +33,7 @@ class GameService(Enum):
     MTG_ONLINE = "MTG Online"
     TTS = "TabletopSim"
 
+
 class GameFormat(Enum):
     """A Magic: The Gathering game format."""
 
