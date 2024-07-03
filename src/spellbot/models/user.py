@@ -126,12 +126,10 @@ class User(Base):
             return False
         if game.status != GameStatus.PENDING.value:
             return False
-        if game.deleted_at is not None:
-            return False
         # Not required because self.game() already filters by posts + channel.
         # if not any(post.channel_xid == channel_xid for post in game.posts):
         #     return False
-        return True
+        return game.deleted_at is None
 
     def confirmed(self, channel_xid: int) -> bool:
         from spellbot.database import DatabaseSession

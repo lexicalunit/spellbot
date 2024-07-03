@@ -23,9 +23,9 @@ class TestCodebase:
     def test_annotations(self) -> None:
         """Checks that all python modules import annotations from future."""
         chdir(REPO_ROOT)
-        output = getoutput(
+        output = getoutput(  # noqa: S605
             (
-                r"find . -type d \( "  # noqa: S607, S605
+                r"/usr/bin/find . -type d \( "
                 r"    -path ./env -o "
                 r"    -path ./venv -o "
                 r"    -path ./.venv -o "
