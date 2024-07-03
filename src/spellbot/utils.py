@@ -85,9 +85,7 @@ def bot_can_role(guild: discord.Guild, role: discord.Role | None = None) -> bool
     req = "manage_roles"
     if not hasattr(perms, req) or not getattr(perms, req):
         return False
-    if role is not None and role > guild.me.top_role:
-        return False
-    return True
+    return not (role is not None and role > guild.me.top_role)
 
 
 def bot_can_read(channel: MessageableChannel) -> bool:
@@ -112,9 +110,7 @@ def bot_can_manage_channels(guild: discord.Guild) -> bool:
         return False
     perms = guild.me.guild_permissions
     req = "manage_channels"
-    if not hasattr(perms, req) or not getattr(perms, req):
-        return False
-    return True
+    return hasattr(perms, req) and getattr(perms, req)
 
 
 def bot_can_delete_message(message: discord.Message | discord.PartialMessage) -> bool:
@@ -125,9 +121,7 @@ def bot_can_delete_message(message: discord.Message | discord.PartialMessage) ->
         return False
     perms = guild.me.guild_permissions
     req = "manage_messages"
-    if hasattr(perms, req) and getattr(perms, req):
-        return True
-    return False
+    return hasattr(perms, req) and getattr(perms, req)
 
 
 def bot_can_delete_channel(channel: MessageableChannel) -> bool:
@@ -156,9 +150,7 @@ def bot_can_read_messages(guild: discord.Guild) -> bool:
         return False
     perms = guild.me.guild_permissions
     req = "read_messages"
-    if not hasattr(perms, req) or not getattr(perms, req):
-        return False
-    return True
+    return hasattr(perms, req) and getattr(perms, req)
 
 
 def is_admin(interaction: discord.Interaction) -> bool:

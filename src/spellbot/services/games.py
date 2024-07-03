@@ -495,9 +495,7 @@ class GamesService:
         player_xids = self.game.player_xids
         if any(xid in player_xids for xid in users_author_has_blocked):
             return True
-        if any(xid in player_xids for xid in users_who_blocked_author):
-            return True
-        return False
+        return any(xid in player_xids for xid in users_who_blocked_author)
 
     @sync_to_async()
     @tracer.wrap()
