@@ -1,9 +1,13 @@
-# Welcome to Beautiful Jekyll!
-# This config file is meant for settings that affect your entire website. When you first
-# set up your website you should go through all these settings and edit them, but after
-# the initial set up you won't need to come back to this file often.
+###########################################################
+### Welcome to Beautiful Jekyll!
+### This config file is meant for settings that affect your entire website. When you first
+### set up your website you should go through all these settings and edit them, but after
+### the initial set up you won't need to come back to this file often.
+###########################################################
 
+############################
 # --- Required options --- #
+############################
 
 # Name of website
 title: SpellBot
@@ -11,7 +15,9 @@ title: SpellBot
 # Your name to show in the footer
 author: "Amy Troschinetz"
 
+###############################################
 # --- List of links in the navigation bar --- #
+###############################################
 
 navbar-links:
   SpellTable: "https://spelltable.wizards.com/"
@@ -19,7 +25,9 @@ navbar-links:
   Development: "https://github.com/lexicalunit/spellbot"
   "#TransRights": "https://translegislation.com/"
 
+################
 # --- Logo --- #
+################
 
 # Image to show in the navigation bar - works best with a square image
 # Remove this parameter if you don't want an image in the navbar
@@ -33,9 +41,12 @@ avatar: "/assets/img/avatar-icon.png"
 #title-img: /path/to/image
 
 
+#####################################
 # --- Footer social media links --- #
+#####################################
 
 # Select the social network links that you want to show in the footer.
+# You can change the order that they show up on the page by changing the order here.
 # Uncomment the links you want to show and add your information to each one.
 social-network-links:
   email: "spellbot@lexicalunit.com"
@@ -78,6 +89,9 @@ share-links-active:
 # Remove this if you don't want a link in the footer
 url-pretty: "SpellBot.io"
 
+# Add the website title to the title of every page
+title-on-all-pages: true
+
 # Excerpt word length - Truncate the excerpt of each post on the feed page to the specified number of words
 excerpt_length: 50
 
@@ -87,10 +101,23 @@ feed_show_excerpt: true
 # Whether or not to show a list of tags below each post preview in the feed page
 feed_show_tags: true
 
+# Add a search button to the navbar
+post_search: false
+
+# Add a button in the footer to edit the current page. Only works if your website is hosted on GitHub
+edit_page_button: false
+
+# Allow sub-menu items (second-level navigation menu items) to be longer than the top-level menu
+# If this setting is off, then long sub-menu words might get cut off
+# See https://github.com/daattali/beautiful-jekyll/issues/765 to understand the issue this setting can solve
+navbar-var-length: false
+
 # The keywords to associate with your website, for SEO purposes
 keywords: "magic: the gathering, magic, mtg, edh, commander, spelltable, discord bot, discord, bot"
 
+######################################
 # --- Colours / background image --- #
+######################################
 
 # Personalize the colours in your website. Colour values can be any valid CSS colour
 
@@ -124,13 +151,15 @@ site-css:
 site-js:
  - "/assets/js/spellbot.js"
 
+#################################
 # --- Web Analytics Section --- #
+#################################
 
-# Fill in your Google Analytics gtag.js ID to track your website using gtag
-#gtag: ""
+# Fill in your Google Analytics tag ID (or "Measurement ID") to track your website usage
+#gtag: "G-XXXXXXXXXX"
 
-# Fill in your Google Analytics ID to track your website using Google Analytics
-google_analytics: "UA-174106299-1"
+# Fill in your Cloudflare Analytics beacon token to track your website using Cloudflare Analytics
+#cloudflare_analytics: ""
 
 # Google Tag Manager ID
 #gtm: ""
@@ -143,13 +172,23 @@ google_analytics: "UA-174106299-1"
 #  uri: "demo.wiki.pro"
 #  opt-out: true
 
+# Google Universal Analytics ID -- deprecated
+# As of July 2023 this is no longer supported by Google! If you are still using `google_analytics`,
+# you should switch to using the `gtag` field above instead.
+#google_analytics: "UA-174106299-1"
+
+####################
 # --- Comments --- #
+####################
 
 # To use Disqus comments, sign up to https://disqus.com and fill in your Disqus shortname (NOT the userid)
 #disqus: ""
 
 # To use Facebook Comments, create a Facebook app and fill in the Facebook App ID
 #fb_comment_id: ""
+
+# To use CommentBox, sign up for a Project ID on https://commentbox.io
+#commentbox: "" # Project ID, e.g. "5694267682979840-proj"
 
 # To use Utterances comments: (0) uncomment the following section, (1) fill in
 # "repository" (make sure the repository is public), (2) Enable Issues in your repository,
@@ -161,21 +200,39 @@ google_analytics: "UA-174106299-1"
 #  theme: github-light # Utterances theme
 #  label: blog-comments # Label that will be assigned to GitHub Issues created by Utterances
 
-# To use Staticman comments, first invite `staticmanlab` as a collaborator to your repository and
-# accept the invitation by going to `https://staticman3.herokuapp.com/v3/connect/github/<username>/<repo-name>`.
-# Then uncomment the following section and fill in "repository" and "branch".
-# If you want to use reCaptcha for staticman (optional for spam protection), then fill
-# in the "siteKey" and "secret" parameters below and also in `staticman.yml`.
-# See more details at https://staticman.net/
+# To use Staticman comments, uncomment the following section. You may leave the reCaptcha
+# section commented if you aren't using reCaptcha for spam protection.
+# Using Staticman requires advanced knowledge, please consult
+# https://github.com/eduardoboucas/staticman/ and https://staticman.net/ for further
+# instructions. For any support with staticman please direct questions to staticman and
+# not to BeautifulJekyll.
 #staticman:
 #  repository : # GitHub username/repository eg. "daattali/beautiful-jekyll"
 #  branch     : master # If you're not using `master` branch, then you also need to update the `branch` parameter in `staticman.yml`
-#  endpoint   : # (optional) URL of your own deployment, with a trailing slash eg. https://<your-api>/v3/entry/github/ (will fallback to a public GitLab instance)
-#  reCaptcha:
-#    siteKey  : # Use your own site key, you need to apply for one on Google
-#    secret   : # ENCRYPT your password by going to https://staticman3.herokuapp.com/v3/encrypt/<your-site-secret>
+#  endpoint   : # URL of your deployment, with a trailing slash eg. "https://<your-api>/v3/entry/github/"
+#  reCaptcha:   # (optional, set these parameters in `staticman.yml` as well)
+#    siteKey  : # You need to apply for a site key on Google
+#    secret   : # Encrypt your password by going to https://<your-own-api>/v3/encrypt/<your-site-secret>
 
+# To use giscus comments:
+# (0) Uncomment the following giscus section, (1) Enable Discussions in your GitHub repository,
+# (2) Install the giscus app in your repository (details at https://giscus.app),
+# (3) Fill in *all* the parameters below
+# See more details about giscus and each of the following parameters at https://giscus.app
+#giscus:
+#  hostname: giscus.app # Replace with your giscus instance's hostname if self-hosting
+#  repository: # GitHub username/repository eg. "daattali/beautiful-jekyll"
+#  repository-id: # ID of your repository, retrieve this info from https://giscus.app
+#  category: Announcements # Category name of your GitHub Discussion posts
+#  category-id: # ID of your category, retrieve this info from https://giscus.app
+#  mapping: pathname
+#  reactions-enabled: 1
+#  emit-metadata: 0
+#  theme: light
+
+################
 # --- Misc --- #
+################
 
 # Ruby Date Format to show dates of posts
 date_format: "%B %-d, %Y"
@@ -183,7 +240,9 @@ date_format: "%B %-d, %Y"
 # Facebook App ID
 #fb_app_id: ""
 
+#################################################################################
 # --- You don't need to touch anything below here (but you can if you want) --- #
+#################################################################################
 
 # Output options (more information on Jekyll's site)
 timezone: "America/Toronto"

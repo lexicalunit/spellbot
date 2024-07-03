@@ -154,6 +154,7 @@ code {
 
 .small {
   font-size: smaller;
+  text-wrap: nowrap;
 }
 
 .support {
