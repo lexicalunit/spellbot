@@ -9,7 +9,7 @@ The site's theme is built using [beautiful-jekyll][beautifuljekyll].
 To install dependencies and serve the site locally use the following commands.
 
 ```shell
-bundle install
+bundle install --path vendor/bundle
 bundle exec jekyll serve
 ```
 
