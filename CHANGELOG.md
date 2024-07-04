@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v11.2.2](https://github.com/lexicalunit/spellbot/releases/tag/v11.2.2) - 2024-07-04
+
 ### Fixed
 
 - Fixes an issue with improper permissions when creating a game embed.
