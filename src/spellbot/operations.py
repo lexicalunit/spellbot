@@ -20,6 +20,7 @@ from .utils import (
     bot_can_read_messages,
     bot_can_reply_to,
     bot_can_role,
+    bot_can_send_messages,
     log_info,
     log_warning,
     suppress,
@@ -477,7 +478,12 @@ async def safe_channel_reply(
     channel_xid = channel.id
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid), "channel_xid": str(channel_xid)})
-
+    if not bot_can_send_messages(channel):
+        return log_info(
+            "in guild %(guild_xid)s, could not reply to channel %(channel_xid)s",
+            guild_xid=guild_xid,
+            channel_xid=channel_xid,
+        )
     message: discord.Message | None = None
     with suppress(
         DiscordException,

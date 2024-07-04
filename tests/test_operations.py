@@ -488,6 +488,13 @@ class TestOperationsChannelReply:
         await safe_channel_reply(channel, "content", embed=embed)
         channel.send.assert_called_once_with("content", embed=embed)
 
+    async def test_can_not_send(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.operations.bot_can_send_messages", MagicMock(return_value=False))
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.send = AsyncMock()
+        embed = discord.Embed()
+        assert not await safe_channel_reply(channel, "content", embed=embed)
+
 
 @pytest.mark.asyncio()
 class TestOperationsSendUser:
