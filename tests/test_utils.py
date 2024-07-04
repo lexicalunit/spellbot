@@ -13,6 +13,7 @@ from spellbot.utils import (
     bot_can_read,
     bot_can_reply_to,
     bot_can_role,
+    bot_can_send_messages,
     is_admin,
     is_guild,
     is_mod,
@@ -190,6 +191,43 @@ class TestUtilsBotCanDeleteMessage:
             discord.Permissions.read_messages.flag
         )
         assert not bot_can_delete_message(message)
+
+
+class TestUtilsBotCanSendMessages:
+    def test_happy_path(self, mocker: MockerFixture) -> None:
+        can_send = discord.Permissions(discord.Permissions.send_messages.flag)
+        mocker.patch("spellbot.utils.safe_permissions_for", return_value=can_send)
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.guild = MagicMock(spec=discord.Guild)
+        assert bot_can_send_messages(channel)
+
+    def test_missing_type(self) -> None:
+        channel = MagicMock(spec=discord.TextChannel)
+        del channel.type
+        assert not bot_can_send_messages(channel)
+
+    def test_private_channel_type(self) -> None:
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.type = discord.ChannelType.private
+        assert not bot_can_send_messages(channel)
+
+    def test_no_guild(self) -> None:
+        channel = MagicMock(spec=discord.TextChannel)
+        del channel.guild
+        assert not bot_can_send_messages(channel)
+
+    def test_no_permissions(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.utils.safe_permissions_for", return_value=None)
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.guild = MagicMock(spec=discord.Guild)
+        channel.guild.me = MagicMock()
+        assert not bot_can_send_messages(channel)
+
+    def test_bad_permissions(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.utils.safe_permissions_for", return_value=discord.Permissions())
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.guild = MagicMock(spec=discord.Guild)
+        assert not bot_can_send_messages(channel)
 
 
 class TestUtilsBotCanRead:
