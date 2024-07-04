@@ -153,6 +153,27 @@ def bot_can_read_messages(guild: discord.Guild) -> bool:
     return hasattr(perms, req) and getattr(perms, req)
 
 
+def bot_can_send_messages(channel: MessageableChannel) -> bool:
+    if not hasattr(channel, "type"):
+        return False
+    channel_type = channel.type
+    if channel_type == discord.ChannelType.private:
+        return False
+    guild_channel = cast(discord.abc.GuildChannel, channel)
+    if not hasattr(guild_channel, "guild"):
+        return False
+    guild: discord.Guild = guild_channel.guild
+    perms = safe_permissions_for(guild_channel, guild.me)
+    if perms is None:
+        return False
+    channel_id = getattr(channel, "id", None)
+    logger.info("bot permissions (%s): %s", channel_id, str(perms.value))
+    for req in ("send_messages",):
+        if not hasattr(perms, req) or not getattr(perms, req):
+            return False
+    return True
+
+
 def is_admin(interaction: discord.Interaction) -> bool:
     guild = getattr(interaction, "guild", None)
     channel = getattr(interaction, "channel", None)
