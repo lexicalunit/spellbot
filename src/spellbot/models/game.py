@@ -222,7 +222,12 @@ class Game(Base):
         if self.guild.notice:
             description += f"{self.guild.notice}\n\n"
         if self.status == GameStatus.PENDING.value:
-            description += "_A SpellTable link will be created when all players have joined._"
+            if self.service == GameService.SPELLTABLE.value:
+                description += "_A SpellTable link will be created when all players have joined._"
+            elif self.service == GameService.NOT_ANY.value:
+                description += "_Please contact the players in your game to organize this game._"
+            else:
+                description += f"_Please use {GameService(self.service)} for this game._"
         else:
             if self.show_links(dm):
                 if self.spelltable_link:
