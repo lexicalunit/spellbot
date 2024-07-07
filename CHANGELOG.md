@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes the embed description for non-spelltable games to not mention spelltable.
+
 ## [v11.2.2](https://github.com/lexicalunit/spellbot/releases/tag/v11.2.2) - 2024-07-04
 
 ### Fixed

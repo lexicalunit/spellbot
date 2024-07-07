@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from unittest.mock import ANY
 
+import pytest
 import pytest_asyncio
 import pytz
 from spellbot.database import DatabaseSession
@@ -63,23 +64,57 @@ class TestModelGame:
         assert game2.show_links()
         assert game2.show_links(True)
 
-    def test_game_embed_empty(self, settings: Settings, factories: Factories) -> None:
+    @pytest.mark.parametrize(
+        ("service", "description"),
+        [
+            pytest.param(
+                GameService.SPELLTABLE,
+                "_A SpellTable link will be created when all players have joined._",
+                id="spelltable",
+            ),
+            pytest.param(
+                GameService.COCKATRICE,
+                "_Please use Cockatrice for this game._",
+                id="cockatrice",
+            ),
+            pytest.param(
+                GameService.NOT_ANY,
+                "_Please contact the players in your game to organize this game._",
+                id="not_any",
+            ),
+        ],
+    )
+    def test_game_embed_empty(
+        self,
+        settings: Settings,
+        factories: Factories,
+        service: GameService,
+        description: str,
+    ) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             guild=guild,
             channel=channel,
             updated_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            service=service.value,
         )
 
+        expected_fields = [
+            {"inline": True, "name": "Format", "value": "Commander"},
+            {"inline": True, "name": "Updated at", "value": "<t:1635638400>"},
+        ]
+        if service != GameService.SPELLTABLE:
+            expected_fields.append(
+                {"inline": False, "name": "Service", "value": str(service)},
+            )
+        expected_fields.append(
+            {"inline": False, "name": "Support SpellBot", "value": ANY},
+        )
         assert game.to_embed().to_dict() == {
             "color": settings.EMPTY_EMBED_COLOR,
-            "description": ("_A SpellTable link will be created when all players have joined._"),
-            "fields": [
-                {"inline": True, "name": "Format", "value": "Commander"},
-                {"inline": True, "name": "Updated at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "Support SpellBot", "value": ANY},
-            ],
+            "description": description,
+            "fields": expected_fields,
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
             "thumbnail": {
                 "url": settings.THUMB_URL,
