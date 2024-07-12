@@ -1,13 +1,14 @@
 #!/usr/bin/env python
+from __future__ import annotations
 
 from os import environ
 
 environ["DISABLE_UVLOOP"] = "1"
 
-import nest_asyncio  # noqa: E402
-from asgiref.sync import async_to_sync  # noqa: E402
-from IPython import embed  # noqa: E402
-from spellbot.database import db_session_manager, initialize_connection  # noqa: E402
+import nest_asyncio
+from asgiref.sync import async_to_sync
+from IPython import embed
+from spellbot.database import db_session_manager, initialize_connection
 
 
 @async_to_sync()

@@ -114,7 +114,7 @@ poetry run python shell
 From this shell you will be able to interact with the database using SpellBot models and code. For example:
 
 ```shell
-$ poetry run python shell
+$ poetry run python shell.py
 
 In [1]: DatabaseSession.query(User).all()
 Out[1]: []

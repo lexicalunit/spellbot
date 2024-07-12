@@ -5,6 +5,7 @@ omit =
     src/spellbot/_version.py
     src/spellbot/migrations/env.py
     src/spellbot/web/server.py
+    shell.py
 
 [report]
 ignore_errors = True
