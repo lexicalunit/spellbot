@@ -29,11 +29,12 @@ class TestCodebase:
                 r"    -path ./env -o "
                 r"    -path ./venv -o "
                 r"    -path ./.venv -o "
+                r"    -path ./.git -o "
                 r"    -path ./src/spellbot/migrations/versions -o "
                 r"    -path ./src/spellbot/cogs "
                 r"\) -prune -o -name '*.py' "
                 r" -exec grep -HEoc 'from __future__ import annotations' {} \; "
-                r" | grep 0"
+                r" | grep ':0'"
             ),
         )
         assert output == "", "ensure that these files import annotations from __future__"

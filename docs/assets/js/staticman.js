@@ -1,7 +1,3 @@
----
-layout: null
----
-
 (function ($) {
   $('#new_comment').submit(function () {
     const form = this;
