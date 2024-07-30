@@ -51,7 +51,7 @@ class TestServiceGames:
         PostFactory.create(guild=guild, channel=channel, game=game)
 
         games = GamesService()
-        assert await games.select_by_message_xid(game.posts[0].message_xid)
+        assert await games.select_by_message_xid(game.posts[0].message_xid)  # type: ignore
         assert not await games.select_by_message_xid(404)
 
     async def test_games_select_last_ranked_game(self, guild: Guild, user: User) -> None:
@@ -187,7 +187,7 @@ class TestServiceGames:
         games = GamesService()
         await games.select(game.id)
         PostFactory.create(guild=game.guild, channel=game.channel, game=game)
-        assert await games.message_xids([game.id]) == [game.posts[0].message_xid]
+        assert await games.message_xids([game.id]) == [game.posts[0].message_xid]  # type: ignore
 
     async def test_dequeue_players(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
@@ -375,7 +375,7 @@ class TestServiceGamesUpsert:
 
         DatabaseSession.expire_all()
         rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == game.id).all()
-        assert {row[0] for row in rows} == {101, 102}
+        assert {row[0] for row in rows} == {101, 102}  # type: ignore
 
     async def test_lfg_alone_when_no_game(self, guild: Guild, channel: Channel, user: User) -> None:
         games = GamesService()
@@ -420,7 +420,7 @@ class TestServiceGamesUpsert:
         assert game.guild_xid == guild.xid
         assert game.channel_xid == channel.xid
         rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == game.id).all()
-        assert {row[0] for row in rows} == {101, 102}
+        assert {row[0] for row in rows} == {101, 102}  # type: ignore
 
     async def test_lfg_with_friend_when_full_game(self, guild: Guild, channel: Channel) -> None:
         user1 = UserFactory.create(xid=101)
@@ -445,7 +445,7 @@ class TestServiceGamesUpsert:
         assert game.guild_xid == guild.xid
         assert game.channel_xid == channel.xid
         rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == game.id).all()
-        assert {row[0] for row in rows} == {101, 102, 103}
+        assert {row[0] for row in rows} == {101, 102, 103}  # type: ignore
 
     async def test_lfg_with_friend_when_game_wrong_format(
         self,
@@ -479,7 +479,7 @@ class TestServiceGamesUpsert:
         assert game.guild_xid == guild.xid
         assert game.channel_xid == channel.xid
         rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == game.id).all()
-        assert {row[0] for row in rows} == {101, 102, 103}
+        assert {row[0] for row in rows} == {101, 102, 103}  # type: ignore
 
     async def test_lfg_when_existing_game_and_blocked(self, game: Game) -> None:
         games = GamesService()

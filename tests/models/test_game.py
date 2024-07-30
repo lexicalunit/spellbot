@@ -213,35 +213,38 @@ class TestModelGame:
             "title": "**Your game is ready!**",
             "type": "rich",
         }
-        assert game.to_embed(dm=True).to_dict() == {
-            "color": settings.STARTED_EMBED_COLOR,
-            "description": (
-                "[Join your SpellTable game now!]"
-                f"({game.spelltable_link}) (or [spectate this game]"
-                f"({game.spectate_link}))\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
-            ),
-            "fields": [
-                {
-                    "inline": False,
-                    "name": "Players",
-                    "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
-                    ),
-                },
-                {"inline": True, "name": "Format", "value": "Commander"},
-                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "Support SpellBot", "value": ANY},
-            ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-            "thumbnail": {"url": settings.THUMB_URL},
-            "title": "**Your game is ready!**",
-            "type": "rich",
-        }
+        assert (
+            game.to_embed(dm=True).to_dict()
+            == {
+                "color": settings.STARTED_EMBED_COLOR,
+                "description": (
+                    "[Join your SpellTable game now!]"
+                    f"({game.spelltable_link}) (or [spectate this game]"
+                    f"({game.spectate_link}))\n"
+                    "\n"
+                    "You can also [jump to the original game post]"
+                    "(https://discordapp.com/channels/"
+                    f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."  # type: ignore
+                ),
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": (
+                            f"• <@{player1.xid}> ({player1.name})\n"
+                            f"• <@{player2.xid}> ({player2.name})"
+                        ),
+                    },
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "thumbnail": {"url": settings.THUMB_URL},
+                "title": "**Your game is ready!**",
+                "type": "rich",
+            }
+        )
 
     def test_game_embed_started_with_no_service(
         self,
@@ -285,34 +288,37 @@ class TestModelGame:
             "title": "**Your game is ready!**",
             "type": "rich",
         }
-        assert game.to_embed(dm=True).to_dict() == {
-            "color": settings.STARTED_EMBED_COLOR,
-            "description": (
-                "Contact the other players in your game to organize this match.\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
-            ),
-            "fields": [
-                {
-                    "inline": False,
-                    "name": "Players",
-                    "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
-                    ),
-                },
-                {"inline": True, "name": "Format", "value": "Commander"},
-                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "Service", "value": "Not any"},
-                {"inline": False, "name": "Support SpellBot", "value": ANY},
-            ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-            "thumbnail": {"url": settings.THUMB_URL},
-            "title": "**Your game is ready!**",
-            "type": "rich",
-        }
+        assert (
+            game.to_embed(dm=True).to_dict()
+            == {
+                "color": settings.STARTED_EMBED_COLOR,
+                "description": (
+                    "Contact the other players in your game to organize this match.\n"
+                    "\n"
+                    "You can also [jump to the original game post]"
+                    "(https://discordapp.com/channels/"
+                    f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."  # type: ignore
+                ),
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": (
+                            f"• <@{player1.xid}> ({player1.name})\n"
+                            f"• <@{player2.xid}> ({player2.name})"
+                        ),
+                    },
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                    {"inline": False, "name": "Service", "value": "Not any"},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "thumbnail": {"url": settings.THUMB_URL},
+                "title": "**Your game is ready!**",
+                "type": "rich",
+            }
+        )
 
     def test_game_embed_started_with_arena(
         self,
@@ -356,34 +362,37 @@ class TestModelGame:
             "title": "**Your game is ready!**",
             "type": "rich",
         }
-        assert game.to_embed(dm=True).to_dict() == {
-            "color": settings.STARTED_EMBED_COLOR,
-            "description": (
-                "Please use MTG Arena to play this game.\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
-            ),
-            "fields": [
-                {
-                    "inline": False,
-                    "name": "Players",
-                    "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
-                    ),
-                },
-                {"inline": True, "name": "Format", "value": "Commander"},
-                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "Service", "value": "MTG Arena"},
-                {"inline": False, "name": "Support SpellBot", "value": ANY},
-            ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-            "thumbnail": {"url": settings.THUMB_URL},
-            "title": "**Your game is ready!**",
-            "type": "rich",
-        }
+        assert (
+            game.to_embed(dm=True).to_dict()
+            == {
+                "color": settings.STARTED_EMBED_COLOR,
+                "description": (
+                    "Please use MTG Arena to play this game.\n"
+                    "\n"
+                    "You can also [jump to the original game post]"
+                    "(https://discordapp.com/channels/"
+                    f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."  # type: ignore
+                ),
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": (
+                            f"• <@{player1.xid}> ({player1.name})\n"
+                            f"• <@{player2.xid}> ({player2.name})"
+                        ),
+                    },
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                    {"inline": False, "name": "Service", "value": "MTG Arena"},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "thumbnail": {"url": settings.THUMB_URL},
+                "title": "**Your game is ready!**",
+                "type": "rich",
+            }
+        )
 
     def test_game_with_guild_notice(self, settings: Settings, factories: Factories) -> None:
         guild = factories.guild.create(motd=None, notice="this is a notice")
@@ -397,10 +406,13 @@ class TestModelGame:
         )
         factories.user.create(game=game)
         factories.user.create(game=game)
-        assert game.to_embed().to_dict()["description"] == (
-            "this is a notice\n\n"
-            "Please check your Direct Messages for your game details.\n\n"
-            "When your game is over use the drop down to report your points."
+        assert (
+            game.to_embed().to_dict()["description"]  # type: ignore
+            == (
+                "this is a notice\n\n"
+                "Please check your Direct Messages for your game details.\n\n"
+                "When your game is over use the drop down to report your points."
+            )
         )
 
     def test_game_embed_started_with_points(
@@ -501,35 +513,38 @@ class TestModelGame:
             "title": "**Your game is ready!**",
             "type": "rich",
         }
-        assert game.to_embed(dm=True).to_dict() == {
-            "color": settings.STARTED_EMBED_COLOR,
-            "description": (
-                "Sorry but SpellBot was unable to create a SpellTable link for "
-                "this game. Please go to [SpellTable]"
-                "(https://spelltable.wizards.com/) to create one.\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
-            ),
-            "fields": [
-                {
-                    "inline": False,
-                    "name": "Players",
-                    "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
-                    ),
-                },
-                {"inline": True, "name": "Format", "value": "Commander"},
-                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "Support SpellBot", "value": ANY},
-            ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-            "thumbnail": {"url": settings.THUMB_URL},
-            "title": "**Your game is ready!**",
-            "type": "rich",
-        }
+        assert (
+            game.to_embed(dm=True).to_dict()
+            == {
+                "color": settings.STARTED_EMBED_COLOR,
+                "description": (
+                    "Sorry but SpellBot was unable to create a SpellTable link for "
+                    "this game. Please go to [SpellTable]"
+                    "(https://spelltable.wizards.com/) to create one.\n"
+                    "\n"
+                    "You can also [jump to the original game post]"
+                    "(https://discordapp.com/channels/"
+                    f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."  # type: ignore
+                ),
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": (
+                            f"• <@{player1.xid}> ({player1.name})\n"
+                            f"• <@{player2.xid}> ({player2.name})"
+                        ),
+                    },
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "thumbnail": {"url": settings.THUMB_URL},
+                "title": "**Your game is ready!**",
+                "type": "rich",
+            }
+        )
 
     def test_game_embed_started_with_voice_channel(
         self,
@@ -572,37 +587,40 @@ class TestModelGame:
             "title": "**Your game is ready!**",
             "type": "rich",
         }
-        assert game.to_embed(dm=True).to_dict() == {
-            "color": settings.STARTED_EMBED_COLOR,
-            "description": (
-                "[Join your SpellTable game now!]"
-                f"({game.spelltable_link}) (or [spectate this game]"
-                f"({game.spectate_link}))\n"
-                "\n"
-                f"Join your voice chat now: <#{game.voice_xid}>\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
-            ),
-            "fields": [
-                {
-                    "inline": False,
-                    "name": "Players",
-                    "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
-                    ),
-                },
-                {"inline": True, "name": "Format", "value": "Commander"},
-                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "Support SpellBot", "value": ANY},
-            ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-            "thumbnail": {"url": settings.THUMB_URL},
-            "title": "**Your game is ready!**",
-            "type": "rich",
-        }
+        assert (
+            game.to_embed(dm=True).to_dict()
+            == {
+                "color": settings.STARTED_EMBED_COLOR,
+                "description": (
+                    "[Join your SpellTable game now!]"
+                    f"({game.spelltable_link}) (or [spectate this game]"
+                    f"({game.spectate_link}))\n"
+                    "\n"
+                    f"Join your voice chat now: <#{game.voice_xid}>\n"
+                    "\n"
+                    "You can also [jump to the original game post]"
+                    "(https://discordapp.com/channels/"
+                    f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."  # type: ignore
+                ),
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": (
+                            f"• <@{player1.xid}> ({player1.name})\n"
+                            f"• <@{player2.xid}> ({player2.name})"
+                        ),
+                    },
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "thumbnail": {"url": settings.THUMB_URL},
+                "title": "**Your game is ready!**",
+                "type": "rich",
+            }
+        )
 
     def test_game_embed_started_with_voice_channel_and_link(
         self,
@@ -646,38 +664,41 @@ class TestModelGame:
             "title": "**Your game is ready!**",
             "type": "rich",
         }
-        assert game.to_embed(dm=True).to_dict() == {
-            "color": settings.STARTED_EMBED_COLOR,
-            "description": (
-                "[Join your SpellTable game now!]"
-                f"({game.spelltable_link}) (or [spectate this game]"
-                f"({game.spectate_link}))\n"
-                "\n"
-                f"Join your voice chat now: <#{game.voice_xid}>\n"
-                f"Or use this voice channel invite: {game.voice_invite_link}\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
-            ),
-            "fields": [
-                {
-                    "inline": False,
-                    "name": "Players",
-                    "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
-                    ),
-                },
-                {"inline": True, "name": "Format", "value": "Commander"},
-                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "Support SpellBot", "value": ANY},
-            ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-            "thumbnail": {"url": settings.THUMB_URL},
-            "title": "**Your game is ready!**",
-            "type": "rich",
-        }
+        assert (
+            game.to_embed(dm=True).to_dict()
+            == {
+                "color": settings.STARTED_EMBED_COLOR,
+                "description": (
+                    "[Join your SpellTable game now!]"
+                    f"({game.spelltable_link}) (or [spectate this game]"
+                    f"({game.spectate_link}))\n"
+                    "\n"
+                    f"Join your voice chat now: <#{game.voice_xid}>\n"
+                    f"Or use this voice channel invite: {game.voice_invite_link}\n"
+                    "\n"
+                    "You can also [jump to the original game post]"
+                    "(https://discordapp.com/channels/"
+                    f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."  # type: ignore
+                ),
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": (
+                            f"• <@{player1.xid}> ({player1.name})\n"
+                            f"• <@{player2.xid}> ({player2.name})"
+                        ),
+                    },
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "thumbnail": {"url": settings.THUMB_URL},
+                "title": "**Your game is ready!**",
+                "type": "rich",
+            }
+        )
 
     def test_game_embed_started_with_motd(self, settings: Settings, factories: Factories) -> None:
         guild = factories.guild.create(motd="this is a message of the day")
@@ -719,37 +740,40 @@ class TestModelGame:
             "title": "**Your game is ready!**",
             "type": "rich",
         }
-        assert game.to_embed(dm=True).to_dict() == {
-            "color": settings.STARTED_EMBED_COLOR,
-            "description": (
-                "[Join your SpellTable game now!]"
-                f"({game.spelltable_link}) (or [spectate this game]"
-                f"({game.spectate_link}))\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>.\n"
-                "\n"
-                "this is a message of the day"
-            ),
-            "fields": [
-                {
-                    "inline": False,
-                    "name": "Players",
-                    "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
-                    ),
-                },
-                {"inline": True, "name": "Format", "value": "Commander"},
-                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "Support SpellBot", "value": ANY},
-            ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-            "thumbnail": {"url": settings.THUMB_URL},
-            "title": "**Your game is ready!**",
-            "type": "rich",
-        }
+        assert (
+            game.to_embed(dm=True).to_dict()
+            == {
+                "color": settings.STARTED_EMBED_COLOR,
+                "description": (
+                    "[Join your SpellTable game now!]"
+                    f"({game.spelltable_link}) (or [spectate this game]"
+                    f"({game.spectate_link}))\n"
+                    "\n"
+                    "You can also [jump to the original game post]"
+                    "(https://discordapp.com/channels/"
+                    f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>.\n"  # type: ignore
+                    "\n"
+                    "this is a message of the day"
+                ),
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": (
+                            f"• <@{player1.xid}> ({player1.name})\n"
+                            f"• <@{player2.xid}> ({player2.name})"
+                        ),
+                    },
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+                "thumbnail": {"url": settings.THUMB_URL},
+                "title": "**Your game is ready!**",
+                "type": "rich",
+            }
+        )
 
     def test_game_embed_started_with_win_loss(
         self,

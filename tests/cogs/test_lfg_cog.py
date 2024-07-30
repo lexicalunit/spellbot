@@ -74,7 +74,7 @@ class TestCogLookingForGame(InteractionMixin):
 
         with mock_operations(lfg_action, users=[other_player]):
             message = MagicMock(spec=discord.Message)
-            message.id = game.posts[0].message_xid
+            message.id = game.posts[0].message_xid  # type: ignore
             lfg_action.safe_get_partial_message.return_value = message
 
             await self.run(cog.lfg)
