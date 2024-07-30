@@ -52,11 +52,11 @@ class TestCogLookingForGameConcurrency:
         messages_out_of_order = False
         message_xid: int | None = None
         for game in games:  # pragma: no cover
-            if message_xid and game.posts[0].message_xid != message_xid + 1:  # type: ignore
+            if message_xid and game.posts[0].message_xid != message_xid + 1:
                 # At least one game is out of order, this is good!
                 messages_out_of_order = True
                 break
-            message_xid = game.posts[0].message_xid  # type: ignore
+            message_xid = game.posts[0].message_xid
         assert messages_out_of_order
 
     async def test_concurrent_lfg_requests_same_channel(
@@ -108,9 +108,9 @@ class TestCogLookingForGameConcurrency:
         messages_out_of_order = False
         message_xid: int | None = None
         for game in games:  # pragma: no cover
-            if message_xid is not None and game.posts[0].message_xid != message_xid + 1:  # type: ignore
+            if message_xid is not None and game.posts[0].message_xid != message_xid + 1:
                 # At least one game is out of order, this is good!
                 messages_out_of_order = True
                 break
-            message_xid = game.posts[0].message_xid  # type: ignore
+            message_xid = game.posts[0].message_xid
         assert messages_out_of_order
