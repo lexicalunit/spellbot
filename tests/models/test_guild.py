@@ -24,11 +24,11 @@ class TestModelGuild:
             "voice_create": guild.voice_create,
             "channels": sorted(
                 [channel1.to_dict(), channel2.to_dict()],
-                key=lambda c: c["xid"],
+                key=lambda c: c["xid"],  # type: ignore
             ),
             "awards": sorted(
                 [award1.to_dict(), award2.to_dict()],
-                key=lambda c: c["id"],
+                key=lambda c: c["id"],  # type: ignore
             ),
             "banned": guild.banned,
             "notice": guild.notice,

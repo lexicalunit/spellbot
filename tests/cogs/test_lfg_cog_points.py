@@ -58,7 +58,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
         user = self.factories.user.create(xid=self.interaction.user.id)
         other_user = self.factories.user.create(xid=self.interaction.user.id + 1, game=game)
         other_player = mock_discord_object(other_user)
-        message = MagicMock(spec=discord.Message, id=game.posts[0].message_xid)
+        message = MagicMock(spec=discord.Message, id=game.posts[0].message_xid)  # type: ignore
         self.interaction.original_response.return_value = message
 
         with patch.object(
@@ -165,7 +165,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
         user = self.factories.user.create(xid=self.interaction.user.id)
         other_user = self.factories.user.create(xid=self.interaction.user.id + 1, game=game)
         other_player = mock_discord_object(other_user)
-        message = MagicMock(spec=discord.Message, id=game.posts[0].message_xid)
+        message = MagicMock(spec=discord.Message, id=game.posts[0].message_xid)  # type: ignore
         self.interaction.original_response.return_value = message
 
         with patch.object(
@@ -247,7 +247,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
         self.factories.user.create(xid=self.interaction.user.id)
         other_user = self.factories.user.create(xid=self.interaction.user.id + 1, game=game)
         other_player = mock_discord_object(other_user)
-        message = MagicMock(spec=discord.Message, id=game.posts[0].message_xid)
+        message = MagicMock(spec=discord.Message, id=game.posts[0].message_xid)  # type: ignore
         self.interaction.original_response.return_value = message
 
         outside_user = self.factories.user.create(xid=self.interaction.user.id + 2)

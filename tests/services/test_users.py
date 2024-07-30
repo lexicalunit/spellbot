@@ -95,7 +95,7 @@ class TestServiceUsers:
             started_at=datetime.now(tz=pytz.utc),
         )
         user = UserFactory.create(game=game)
-        user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)
+        user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)  # type: ignore
 
         users = UsersService()
         await users.select(user.xid)

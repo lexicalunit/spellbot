@@ -114,7 +114,7 @@ class TestModelUserConfirmed:
             requires_confirmation=True,
         )
         user = factories.user.create(game=game)
-        user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)
+        user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)  # type: ignore
         assert user.confirmed(channel.xid)
 
     def test_no_last_play(self, factories: Factories) -> None:
@@ -148,5 +148,5 @@ class TestModelUserConfirmed:
             requires_confirmation=False,
         )
         user = factories.user.create(game=game)
-        user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)
+        user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)  # type: ignore
         assert user.confirmed(channel.xid)
