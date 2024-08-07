@@ -107,6 +107,7 @@ safe_licenses = [
   "MIT",
   "Mozilla Public License 2.0 (MPL 2.0)",
   "Python Software Foundation License",
+  "Python-2.0",
   "The Unlicense (Unlicense)",
 ]
 

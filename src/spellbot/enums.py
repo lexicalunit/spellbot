@@ -69,3 +69,4 @@ class GameFormat(Enum):
     EDH_BATTLECRUISER = FormatDetails(players=4)  # type: ignore
     PLANECHASE = FormatDetails(players=4)  # type: ignore
     PRE_CONS = FormatDetails(players=4)  # type: ignore
+    OATHBREAKER = FormatDetails(players=4)  # type: ignore
