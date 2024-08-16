@@ -5,17 +5,18 @@ from unittest.mock import ANY
 
 import pytest
 import pytest_asyncio
+
 from spellbot.actions import leave_action
 from spellbot.cogs import LeaveGameCog
 from spellbot.database import DatabaseSession
 from spellbot.views.lfg_view import PendingGameView
-
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_operations
 
 if TYPE_CHECKING:
     import discord
     from freezegun.api import FrozenDateTimeFactory
+
     from spellbot.client import SpellBot
     from spellbot.models import User
 
@@ -30,7 +31,7 @@ async def use_consistent_date(freezer: FrozenDateTimeFactory) -> None:
     freezer.move_to("2021-03-01")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogLeaveGame(InteractionMixin):
     async def test_leave(self, cog: LeaveGameCog, message: discord.Message, player: User) -> None:
         with mock_operations(leave_action):

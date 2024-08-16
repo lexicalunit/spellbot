@@ -6,6 +6,7 @@ from unittest.mock import ANY, MagicMock
 import discord
 import pytest
 import pytest_asyncio
+
 from spellbot.actions import admin_action
 from spellbot.cogs import AdminCog
 from spellbot.database import DatabaseSession
@@ -13,7 +14,6 @@ from spellbot.enums import GameFormat, GameService
 from spellbot.errors import AdminOnlyError
 from spellbot.models import Channel, Game, Guild, GuildAward
 from spellbot.views import SetupView
-
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_user, mock_operations
 
@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 
     from freezegun.api import FrozenDateTimeFactory
     from pytest_mock import MockerFixture
-    from spellbot.client import SpellBot
 
+    from spellbot.client import SpellBot
     from tests.fixtures import Factories
 
 
@@ -42,7 +42,7 @@ async def use_consistent_date(freezer: FrozenDateTimeFactory) -> None:
     freezer.move_to("2021-03-01")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogAdminSetup(InteractionMixin):
     async def test_setup(self, cog: AdminCog) -> None:
         await self.run(cog.setup)
@@ -100,7 +100,7 @@ class TestCogAdminSetup(InteractionMixin):
         }
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestSetupView(InteractionMixin):
     @pytest_asyncio.fixture
     async def admin(self, factories: Factories, mocker: MockerFixture) -> discord.User:
@@ -121,7 +121,7 @@ class TestSetupView(InteractionMixin):
             await view.interaction_check(self.interaction)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogAdminMotd(InteractionMixin):
     async def test_set_motd(self, cog: AdminCog) -> None:
         await self.run(cog.motd, message="this is a test")
@@ -138,7 +138,7 @@ class TestCogAdminMotd(InteractionMixin):
         assert guild.motd == ""
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogAdminSetupView(InteractionMixin):
     async def test_refresh_setup(self, view: SetupView) -> None:
         await view.refresh_setup.callback(self.interaction)
@@ -210,7 +210,7 @@ class TestCogAdminSetupView(InteractionMixin):
         assert guild.voice_create != Guild.voice_create.default.arg  # type: ignore
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogAdminInfo(InteractionMixin):
     async def test_happy_path(
         self,
@@ -250,7 +250,7 @@ class TestCogAdminInfo(InteractionMixin):
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogAdminChannels(InteractionMixin):
     async def test_default_seats(self, cog: AdminCog) -> None:
         seats = Channel.default_seats.default.arg - 1  # type: ignore
@@ -492,7 +492,7 @@ class TestCogAdminChannels(InteractionMixin):
             )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogAdminAwards(InteractionMixin):
     async def test_awards(self, cog: AdminCog) -> None:
         award1 = self.factories.guild_award.create(
@@ -629,7 +629,7 @@ class TestCogAdminAwards(InteractionMixin):
         assert DatabaseSession.query(GuildAward).count() == 0
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogAdminDeleteExpired(InteractionMixin):
     @pytest.mark.parametrize("setting", [True, False])
     async def test_set_delete_expired(self, cog: AdminCog, setting: bool) -> None:
@@ -642,7 +642,7 @@ class TestCogAdminDeleteExpired(InteractionMixin):
         assert channel.delete_expired is setting
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogAdminShowPoints(InteractionMixin):
     @pytest.mark.parametrize("setting", [True, False])
     async def test_set_show_points(self, cog: AdminCog, setting: bool) -> None:
@@ -655,7 +655,7 @@ class TestCogAdminShowPoints(InteractionMixin):
         assert channel.show_points is setting
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogAdminRequireConfirmation(InteractionMixin):
     @pytest.mark.parametrize("setting", [True, False])
     async def test_set_require_confirmation(self, cog: AdminCog, setting: bool) -> None:
@@ -668,7 +668,7 @@ class TestCogAdminRequireConfirmation(InteractionMixin):
         assert channel.require_confirmation is setting
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogAdminVoiceInvite(InteractionMixin):
     @pytest.mark.parametrize("setting", [True, False])
     async def test_set_voice_invite(self, cog: AdminCog, setting: bool) -> None:

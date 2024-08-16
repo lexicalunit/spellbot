@@ -3,15 +3,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+
 from spellbot.services import VerifiesService
 
 if TYPE_CHECKING:
     from spellbot.models import Guild
-
     from tests.fixtures import Factories
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestServiceVerifies:
     async def test_verifies_upsert(self, guild: Guild, factories: Factories) -> None:
         user = factories.user.create()

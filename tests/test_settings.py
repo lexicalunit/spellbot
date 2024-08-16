@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import pytest
+
 from spellbot.settings import Settings
 
 
 class TestSettings:
-    @pytest.fixture()
+    @pytest.fixture
     def settings(self) -> Settings:
         return Settings()
 

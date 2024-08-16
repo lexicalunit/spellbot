@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 import pytz
+
 from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
 
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from tests.fixtures import Factories
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestWebRecord:
     async def test_user_record(
         self,

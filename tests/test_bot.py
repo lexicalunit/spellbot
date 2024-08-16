@@ -7,6 +7,7 @@ import discord
 import pytest
 from discord import app_commands
 from discord.ext.commands import AutoShardedBot, CommandNotFound, Context, UserInputError
+
 from spellbot import SpellBot, client
 from spellbot.database import DatabaseSession
 from spellbot.errors import (
@@ -23,7 +24,7 @@ from spellbot.utils import handle_interaction_errors
 from .mixins import BaseMixin
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestSpellBot(BaseMixin):
     async def test_create_spelltable_link_mock(self, bot: SpellBot) -> None:
         link = await bot.create_spelltable_link()
@@ -274,7 +275,7 @@ class TestSpellBot(BaseMixin):
         assert game.deleted_at is None
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestSpellBotHandleVerification(BaseMixin):
     async def test_missing_author_id(self, monkeypatch: pytest.MonkeyPatch) -> None:
         message = MagicMock()
