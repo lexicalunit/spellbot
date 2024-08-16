@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
 from spellbot.cogs import OwnerCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Guild, User
-
 from tests.mixins import ContextMixin
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogOwner(ContextMixin):
     async def run(
         self,

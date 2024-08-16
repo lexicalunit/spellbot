@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 import discord
 import pytest
+
 from spellbot.errors import AdminOnlyError, GuildOnlyError
 from spellbot.utils import (
     bot_can_delete_channel,
@@ -24,6 +25,7 @@ from spellbot.utils import (
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
+
     from spellbot.settings import Settings
 
 
@@ -34,7 +36,7 @@ class TestUtilsLogging:
         assert "warning:" in caplog.text
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestUtilsPermissionsFor:
     async def test_happy_path(self) -> None:
         permissions = MagicMock(spec=discord.Permissions)

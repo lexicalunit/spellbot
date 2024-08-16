@@ -3,15 +3,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+
 from spellbot.services import AwardsService, NewAward
 
 if TYPE_CHECKING:
     from spellbot.models import Channel, Guild
-
     from tests.fixtures import Factories
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestServiceAwards:
     async def test_give_awards_first_award(
         self,

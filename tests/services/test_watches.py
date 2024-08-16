@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import pytest
+
 from spellbot.database import DatabaseSession
 from spellbot.services import WatchesService
-
 from tests.factories import GuildFactory, UserFactory, WatchFactory
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestServiceWatches:
     async def test_fetch(self) -> None:
         guild1 = GuildFactory.create()

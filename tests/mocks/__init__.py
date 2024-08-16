@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, cast, overload
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
+
 from spellbot.models import Channel, Guild, User
 
 if TYPE_CHECKING:
@@ -96,6 +97,7 @@ def mock_operations(
 
     """
     from _pytest.monkeypatch import MonkeyPatch
+
     from spellbot import operations
 
     _users: list[discord.User] = users or []

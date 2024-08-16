@@ -5,15 +5,15 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
 
 import pytest
-from spellbot.cogs import SyncCog
 
+from spellbot.cogs import SyncCog
 from tests.mixins import ContextMixin
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogSync(ContextMixin):
     async def test_sync(self, mocker: MockerFixture) -> None:
         mocker.patch("spellbot.cogs.sync_cog.load_extensions", AsyncMock())

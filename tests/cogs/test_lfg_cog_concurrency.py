@@ -8,11 +8,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
+
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Game
-
 from tests.mocks import build_author, build_channel, build_guild, build_interaction
 
 if TYPE_CHECKING:
@@ -28,7 +28,7 @@ async def run_lfg(cog: LookingForGameCog, interaction: discord.Interaction) -> N
     return await callback(interaction=interaction)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogLookingForGameConcurrency:
     async def test_concurrent_lfg_requests_different_channels(self, bot: SpellBot) -> None:
         cog = LookingForGameCog(bot)

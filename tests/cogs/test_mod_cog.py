@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 import pytest
 import pytest_asyncio
 import pytz
+
 from spellbot.actions import admin_action
 from spellbot.cogs import ModCog
 from spellbot.database import DatabaseSession
 from spellbot.models import GameStatus, Play
-
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
 
@@ -23,7 +23,7 @@ async def cog(bot: SpellBot) -> ModCog:
     return ModCog(bot)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogModSetPoints(InteractionMixin):
     async def test_happy_path(self, cog: ModCog) -> None:
         guild = self.factories.guild.create()

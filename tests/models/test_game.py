@@ -7,14 +7,15 @@ from unittest.mock import ANY
 import pytest
 import pytest_asyncio
 import pytz
+
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameService
 from spellbot.models import Game, GameStatus, Play
 
 if TYPE_CHECKING:
     from freezegun.api import FrozenDateTimeFactory
-    from spellbot.settings import Settings
 
+    from spellbot.settings import Settings
     from tests.fixtures import Factories
 
 

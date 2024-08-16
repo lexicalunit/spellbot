@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from aiohttp.client_exceptions import ClientError
 from aiohttp_retry.client import RetryClient
+
 from spellbot import spelltable
 from spellbot.settings import Settings
 from spellbot.spelltable import generate_link
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestSpellTable:
     async def test_generate_link(self, monkeypatch: pytest.MonkeyPatch) -> None:
         settings = MagicMock(spec=Settings)

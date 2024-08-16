@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, cast
 
 import discord
 import pytest
+
 from spellbot.cogs import WatchCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Guild, User, Watch
-
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object
 
@@ -17,12 +17,12 @@ if TYPE_CHECKING:
     from spellbot import SpellBot
 
 
-@pytest.fixture()
+@pytest.fixture
 def cog(bot: SpellBot) -> WatchCog:
     return WatchCog(bot)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogWatch(InteractionMixin):
     async def test_watch_and_unwatch(self, cog: WatchCog, add_user: Callable[..., User]) -> None:
         target_user = add_user()
