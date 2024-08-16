@@ -5,14 +5,15 @@ from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
+
 from spellbot.actions import LookingForGameAction
 from spellbot.enums import GameFormat, GameService
-
 from tests.mocks import mock_discord_object
 
 if TYPE_CHECKING:
     import discord
     from pytest_mock import MockerFixture
+
     from spellbot import SpellBot
     from spellbot.models import User
 
@@ -23,7 +24,7 @@ async def action(bot: SpellBot, interaction: discord.Interaction) -> LookingForG
         return action
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestLookingForGameAction:
     async def test_get_service(self, action: LookingForGameAction) -> None:
         assert await action.get_service(GameService.X_MAGE.value) == GameService.X_MAGE.value

@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 import pytest
+from sqlalchemy.sql.expression import and_
+
 from spellbot.actions import lfg_action
 from spellbot.cogs import EventsCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat
 from spellbot.models import Game, GameStatus, Play, User
-from sqlalchemy.sql.expression import and_
-
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
 
@@ -17,15 +17,16 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     import discord
+
     from spellbot.client import SpellBot
 
 
-@pytest.fixture()
+@pytest.fixture
 def cog(bot: SpellBot) -> EventsCog:
     return EventsCog(bot)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogEvents(InteractionMixin):
     async def test_game(
         self,

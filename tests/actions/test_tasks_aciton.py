@@ -9,20 +9,20 @@ import discord
 import pytest
 import pytest_asyncio
 import pytz
+
 from spellbot.actions import TasksAction
 from spellbot.client import build_bot
 from spellbot.database import DatabaseSession
 from spellbot.services import ChannelsService, GamesService, GuildsService, ServicesRegistry
-
 from tests.mocks import mock_discord_object
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from pytest_mock import MockerFixture
+
     from spellbot import SpellBot
     from spellbot.models import Channel, Game, Guild
-
     from tests.fixtures import Factories
 
 
@@ -130,7 +130,7 @@ async def bot(mocker: MockerFixture, discord_guild: discord.Guild) -> SpellBot:
     return build_bot(mock_games=True, create_connection=False)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestTaskExpireInactiveChannels:
     async def test_when_nothing_to_expire(
         self,
@@ -286,7 +286,7 @@ class TestTaskExpireInactiveChannels:
                         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestTaskCleanupOldVoiceChannels:
     async def test_when_nothing_exists(
         self,

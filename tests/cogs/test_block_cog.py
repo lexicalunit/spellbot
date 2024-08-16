@@ -5,10 +5,10 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 import pytest_asyncio
+
 from spellbot.cogs import BlockCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, User
-
 from tests.mixins import InteractionMixin
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ async def cog(bot: SpellBot) -> BlockCog:
     return BlockCog(bot)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogBlock(InteractionMixin):
     async def test_block_and_unblock(self, cog: BlockCog) -> None:
         target = MagicMock()

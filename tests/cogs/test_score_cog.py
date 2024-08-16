@@ -7,8 +7,8 @@ import discord
 import pytest
 import pytest_asyncio
 import pytz
-from spellbot.cogs import ScoreCog
 
+from spellbot.cogs import ScoreCog
 from tests.mixins import InteractionMixin
 from tests.mocks import build_channel, build_guild, build_interaction, mock_discord_object
 
@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from freezegun.api import FrozenDateTimeFactory
+
     from spellbot import SpellBot
     from spellbot.models import Channel, User
 
@@ -25,7 +26,7 @@ async def cog(bot: SpellBot) -> ScoreCog:
     return ScoreCog(bot)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogScore(InteractionMixin):
     async def test_score(self, cog: ScoreCog, user: User, channel: Channel) -> None:
         await self.run(cog.score)

@@ -7,16 +7,16 @@ from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar, cast, overlo
 import discord
 import pytest
 from discord.ext import commands
+
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Game, Guild, Queue, User
-
 from tests.mocks import build_message
 
 if TYPE_CHECKING:
     from discord.app_commands import Command
+
     from spellbot import SpellBot
     from spellbot.settings import Settings
-
     from tests.fixtures import Factories
 
 
@@ -46,7 +46,7 @@ class InteractionMixin(BaseMixin):
         self.interaction = interaction
         return self.interaction
 
-    @pytest.fixture()
+    @pytest.fixture
     def add_guild(self, factories: Factories) -> Callable[..., Guild]:
         return factories.guild.create
 
@@ -60,7 +60,7 @@ class InteractionMixin(BaseMixin):
         self.guild = add_guild(xid=interaction.guild_id, name=interaction.guild.name)
         return self.guild
 
-    @pytest.fixture()
+    @pytest.fixture
     def add_channel(self, factories: Factories, guild: Guild) -> Callable[..., Channel]:
         return partial(factories.channel.create, guild=guild)
 
@@ -76,7 +76,7 @@ class InteractionMixin(BaseMixin):
         self.channel = add_channel(xid=interaction.channel_id, name=channel_name)
         return self.channel
 
-    @pytest.fixture()
+    @pytest.fixture
     def add_user(self, factories: Factories) -> Callable[..., User]:
         return factories.user.create
 
@@ -105,7 +105,7 @@ class InteractionMixin(BaseMixin):
         factories.post.create(guild=guild, channel=channel, game=self.game, message_xid=message.id)
         return self.game
 
-    @pytest.fixture()
+    @pytest.fixture
     def player(self, user: User, game: Game) -> User:
         """Put self.user into a game."""
         DatabaseSession.add(Queue(user_xid=user.xid, game_id=game.id, og_guild_xid=game.guild_xid))

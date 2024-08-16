@@ -5,14 +5,14 @@ from unittest.mock import ANY, MagicMock
 
 import pytest
 import pytz
+
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, Channel, Game, Guild, Queue, User, Watch
 from spellbot.services import UsersService
-
 from tests.factories import GameFactory, UserFactory
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestServiceUsers:
     async def test_users_upsert(self) -> None:
         user = UserFactory.create(xid=201)

@@ -6,13 +6,13 @@ from unittest.mock import ANY, MagicMock, PropertyMock, patch
 import discord
 import pytest
 import pytest_asyncio
+
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat
 from spellbot.models import Channel, Game, Play
 from spellbot.views import StartedGameSelect, StartedGameView
-
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
 
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from freezegun.api import FrozenDateTimeFactory
+
     from spellbot import SpellBot
     from spellbot.settings import Settings
 
@@ -29,12 +30,12 @@ async def use_consistent_date(freezer: FrozenDateTimeFactory) -> None:
     freezer.move_to("2021-03-01")
 
 
-@pytest.fixture()
+@pytest.fixture
 def cog(bot: SpellBot) -> LookingForGameCog:
     return LookingForGameCog(bot)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogLookingForGamePoints(InteractionMixin):
     async def test_points(
         self,

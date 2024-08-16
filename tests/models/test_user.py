@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import pytz
+
 from spellbot.database import DatabaseSession
 from spellbot.models import GameStatus, Play, Post
 

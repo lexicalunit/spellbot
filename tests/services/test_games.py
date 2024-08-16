@@ -4,6 +4,8 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
+from sqlalchemy.sql.expression import and_
+
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat, GameService
 from spellbot.models import (
@@ -17,8 +19,6 @@ from spellbot.models import (
     User,
 )
 from spellbot.services import GamesService
-from sqlalchemy.sql.expression import and_
-
 from tests.factories import (
     BlockFactory,
     ChannelFactory,
@@ -32,7 +32,7 @@ from tests.factories import (
 )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestServiceGames:
     async def test_games_select(self, game: Game) -> None:
         games = GamesService()
@@ -202,7 +202,7 @@ class TestServiceGames:
         assert user2.game(game.channel_xid) is None
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestServiceGamesPlays:
     async def test_games_players_included(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
@@ -231,7 +231,7 @@ class TestServiceGamesPlays:
         assert found.points is None
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestServiceGamesConfirmPoints:
     async def test_games_confirm_points(self, game: Game) -> None:
         user = UserFactory.create(game=game)
@@ -247,7 +247,7 @@ class TestServiceGamesConfirmPoints:
         assert play.confirmed_at is not None
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestServiceGamesFilterPendingGames:
     async def test_happy_path(self) -> None:
         guild = GuildFactory.create()
@@ -266,7 +266,7 @@ class TestServiceGamesFilterPendingGames:
             assert await games.filter_pending_games([user1.xid, user2.xid]) == [user2.xid]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestServiceGamesBlocked:
     async def test_when_blocker_in_game(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
@@ -297,7 +297,7 @@ class TestServiceGamesBlocked:
         assert not await games.blocked(user3.xid)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestServiceGamesFilterBlocked:
     async def test_when_blocker_in_game(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
@@ -328,7 +328,7 @@ class TestServiceGamesFilterBlocked:
         assert await games.filter_blocked_list(user3.xid, [1, 2, 3]) == [1, 2, 3]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestServiceGamesUpsert:
     async def test_lfg_alone_when_existing_game(self, game: Game, user: User) -> None:
         games = GamesService()

@@ -4,6 +4,7 @@ from random import randint
 from typing import Any
 
 import factory
+
 from spellbot.models import Game, Play, Post, Queue, User
 
 

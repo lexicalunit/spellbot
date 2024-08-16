@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from alembic import context
-from spellbot.models import Base, import_models
 from sqlalchemy import engine_from_config, pool
+
+from spellbot.models import Base, import_models
 
 import_models()
 config = context.config

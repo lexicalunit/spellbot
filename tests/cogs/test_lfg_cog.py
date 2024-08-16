@@ -8,13 +8,13 @@ import discord
 import pytest
 import pytest_asyncio
 import pytz
+
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat, GameService
 from spellbot.models import Channel, Game, GameStatus, Queue, User
 from spellbot.views import PendingGameView
-
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
 
@@ -22,8 +22,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from freezegun.api import FrozenDateTimeFactory
-    from spellbot.client import SpellBot
     from syrupy.assertion import SnapshotAssertion
+
+    from spellbot.client import SpellBot
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -31,12 +32,12 @@ async def use_consistent_date(freezer: FrozenDateTimeFactory) -> None:
     freezer.move_to("2021-03-01")
 
 
-@pytest.fixture()
+@pytest.fixture
 def cog(bot: SpellBot) -> LookingForGameCog:
     return LookingForGameCog(bot)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogLookingForGame(InteractionMixin):
     async def test_lfg(self, cog: LookingForGameCog, channel: Channel) -> None:
         await self.run(cog.lfg)
@@ -223,7 +224,7 @@ class TestCogLookingForGame(InteractionMixin):
         assert DatabaseSession.query(Game).count() == 1
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestCogLookingForGameJoinButton(InteractionMixin):
     async def test_join(self, game: Game, user: User, message: discord.Message) -> None:
         with (

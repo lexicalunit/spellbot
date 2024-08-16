@@ -10,6 +10,7 @@ import pytest_asyncio
 from aiohttp.client_exceptions import ClientOSError
 from discord.errors import DiscordException
 from discord.utils import MISSING
+
 from spellbot import operations
 from spellbot.operations import (
     retry,
@@ -35,7 +36,6 @@ from spellbot.operations import (
     save_create_channel_invite,
 )
 from spellbot.utils import CANT_SEND_CODE
-
 from tests.mixins import InteractionMixin
 from tests.mocks import build_message, mock_client
 
@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsRetry:
     @pytest_asyncio.fixture(autouse=True)
     def mock_sleep(self, mocker: MockerFixture) -> AsyncMock:
@@ -76,7 +76,7 @@ class TestOperationsRetry:
         assert tried_once
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsDeferInteraction:
     async def test_happy_path(self) -> None:
         interaction = AsyncMock()
@@ -84,7 +84,7 @@ class TestOperationsDeferInteraction:
         interaction.response.defer.assert_called_once_with()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsOriginalResponse:
     async def test_happy_path(self) -> None:
         interaction = AsyncMock()
@@ -95,7 +95,7 @@ class TestOperationsOriginalResponse:
         assert response == original_response
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsFetchUser:
     async def test_cached(self, dpy_author: discord.User) -> None:
         client = mock_client(users=[dpy_author])
@@ -111,7 +111,7 @@ class TestOperationsFetchUser:
         assert await safe_fetch_user(client, dpy_author.id) is dpy_author
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsFetchGuild:
     async def test_cached(self, dpy_guild: discord.Guild) -> None:
         client = mock_client(guilds=[dpy_guild])
@@ -127,7 +127,7 @@ class TestOperationsFetchGuild:
         assert await safe_fetch_guild(client, dpy_guild.id) is dpy_guild
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsFetchTextChannel:
     async def test_cached(self, dpy_channel: discord.TextChannel) -> None:
         client = mock_client(channels=[dpy_channel])
@@ -188,7 +188,7 @@ class TestOperationsFetchTextChannel:
         assert await safe_fetch_text_channel(client, ANY, dpy_channel.id) is None
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsGetPartialMessage:
     read_perms = discord.Permissions(
         discord.Permissions.read_messages.flag | discord.Permissions.read_message_history.flag
@@ -224,7 +224,7 @@ class TestOperationsGetPartialMessage:
         assert not safe_get_partial_message(self.channel, self.guild.id, self.message.id)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsUpdateEmbed:
     async def test_happy_path(self) -> None:
         message = MagicMock(spec=discord.Message)
@@ -252,7 +252,7 @@ class TestOperationsUpdateEmbed:
         assert not success
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsUpdateEmbedOrigin(InteractionMixin):
     async def test_happy_path(self) -> None:
         success = await safe_update_embed_origin(self.interaction, "content", flags=1)
@@ -266,7 +266,7 @@ class TestOperationsUpdateEmbedOrigin(InteractionMixin):
         assert not success
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsCreateCategoryChannel:
     async def test_happy_path(self, dpy_guild: discord.Guild) -> None:
         client = mock_client(guilds=[dpy_guild])
@@ -296,7 +296,7 @@ class TestOperationsCreateCategoryChannel:
         dpy_guild.create_category_channel.assert_not_called()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsCreateChannelInvite:
     async def test_happy_path(self, dpy_channel: discord.TextChannel) -> None:
         await save_create_channel_invite(dpy_channel)
@@ -308,7 +308,7 @@ class TestOperationsCreateChannelInvite:
         assert invite is None
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsCreateVoiceChannel:
     async def test_happy_path(self, dpy_guild: discord.Guild) -> None:
         category = MagicMock(spec=discord.CategoryChannel)
@@ -334,7 +334,7 @@ class TestOperationsCreateVoiceChannel:
         dpy_guild.create_voice_channel.assert_not_called()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsSendChannel:
     async def test_happy_path(self) -> None:
         guild = MagicMock(spec=discord.Guild)
@@ -357,7 +357,7 @@ class TestOperationsSendChannel:
         interaction.original_response.assert_called_once_with()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsFollowupChannel:
     async def test_happy_path(self) -> None:
         guild = MagicMock(spec=discord.Guild)
@@ -400,7 +400,7 @@ class TestOperationsFollowupChannel:
         interaction.original_response.assert_called_once_with()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsDeleteChannel:
     delete_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
 
@@ -479,7 +479,7 @@ class TestOperationsDeleteChannel:
         channel.delete.assert_not_called()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsChannelReply:
     async def test_happy_path(self) -> None:
         channel = MagicMock(spec=discord.TextChannel)
@@ -496,7 +496,7 @@ class TestOperationsChannelReply:
         assert not await safe_channel_reply(channel, "content", embed=embed)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsSendUser:
     @pytest_asyncio.fixture(autouse=True)
     def mock_bad_users(self, mocker: MockerFixture) -> set[int]:
@@ -575,7 +575,7 @@ class TestOperationsSendUser:
         assert "client error sending to user user#1234 1234" in caplog.text
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsAddRole:
     role_perms = discord.Permissions(discord.Permissions.manage_roles.flag)
 
@@ -762,7 +762,7 @@ class TestOperationsAddRole:
         ) in caplog.text
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsMessageReply:
     async def test_happy_path(self) -> None:
         send_permisions = discord.Permissions(discord.Permissions.send_messages.flag)
@@ -816,7 +816,7 @@ class TestOperationsMessageReply:
         assert "something-failed" in caplog.text
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestOperationsDeleteMessage:
     async def test_happy_path(self) -> None:
         permissions = discord.Permissions(discord.Permissions.manage_messages.flag)
@@ -842,7 +842,7 @@ class TestOperationsDeleteMessage:
         message.delete.assert_not_called()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestEnsureVoiceCategory:
     async def test_available_exists(self) -> None:
         channel = MagicMock(spec=discord.VoiceChannel)

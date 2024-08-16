@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 class TestMigrations:
-    @pytest.mark.nosession()
+    @pytest.mark.nosession
     def test_alembic(self, settings: Settings) -> None:
         from spellbot.models import create_all, reverse_all
 
