@@ -268,7 +268,7 @@ class suppress(AbstractContextManager[None]):
         if captured := exctype is not None and issubclass(exctype, self._exceptions):
             log_warning(self._log, exec_info=True, **self._kwargs)
             if span := tracer.current_span():  # pragma: no cover
-                span.set_exc_info(exctype, excinst, exctb)
+                span.set_exc_info(exctype, excinst, exctb)  # type: ignore
             if root := tracer.current_root_span():  # pragma: no cover
                 root.set_tags(
                     {
