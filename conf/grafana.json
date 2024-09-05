@@ -26,12 +26,11 @@
   "graphTooltip": 0,
   "id": 1,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
-      "datasource": {
-        "type": "datasource",
-        "uid": "grafana"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 2,
@@ -49,16 +48,8 @@
         "content": "† Data applies to selected server.<br />\n‡ Data applies across all servers.",
         "mode": "html"
       },
-      "pluginVersion": "11.1.0-69622",
-      "targets": [
-        {
-          "datasource": {
-            "type": "datasource",
-            "uid": "grafana"
-          },
-          "refId": "A"
-        }
-      ],
+      "pluginVersion": "11.3.0-75420",
+      "title": "",
       "transparent": true,
       "type": "text"
     },
@@ -96,6 +87,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -108,7 +100,7 @@
         "textMode": "value",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69622",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -181,6 +173,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -193,7 +186,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69622",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -266,6 +259,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -278,7 +272,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69622",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -334,6 +328,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -397,7 +392,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.0.7",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -490,6 +485,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -502,7 +498,7 @@
         "textMode": "value",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69622",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -575,6 +571,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -587,7 +584,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69622",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -660,6 +657,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -672,7 +670,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69622",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -743,6 +741,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -755,7 +754,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69622",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -846,6 +845,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -858,7 +858,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69622",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -949,6 +949,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -961,7 +962,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69622",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -1037,6 +1038,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1105,7 +1107,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.0.7",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -1239,6 +1241,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -1251,7 +1254,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69622",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -1345,6 +1348,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "mean"
@@ -1357,7 +1361,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69622",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -1434,6 +1438,7 @@
             "axisLabel": "Games Played",
             "axisPlacement": "left",
             "barAlignment": 1,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 100,
             "gradientMode": "none",
@@ -1542,13 +1547,14 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "9.0.7",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "K5gha0AGz"
           },
+          "editorMode": "code",
           "format": "time_series",
           "group": [
             {
@@ -1585,6 +1591,23 @@
               }
             ]
           ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
           "table": "games",
           "timeColumn": "created_at",
           "timeColumnType": "timestamp",
@@ -1602,6 +1625,7 @@
       "type": "timeseries"
     }
   ],
+  "preload": false,
   "refresh": "",
   "schemaVersion": 39,
   "tags": [],
@@ -1609,17 +1633,14 @@
     "list": [
       {
         "current": {
-          "selected": false,
-          "text": "All",
-          "value": "true"
+          "text": "",
+          "value": ""
         },
-        "hide": 0,
         "includeAll": false,
-        "multi": false,
         "name": "server",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "All",
             "value": "true"
           },
@@ -1637,6 +1658,11 @@
             "selected": false,
             "text": "CompetitiveEDH",
             "value": "games.guild_xid = 113555415446413312"
+          },
+          {
+            "selected": false,
+            "text": "r/cEDH Discord",
+            "value": "games.guild_xid = 1225118416298315857"
           },
           {
             "selected": false,
@@ -1729,9 +1755,7 @@
             "value": "games.guild_xid = 799686008811290626"
           }
         ],
-        "query": "All : true,PlayEDH : games.guild_xid = 304276578005942272,Not PlayEDH : games.guild_xid != 304276578005942272,CompetitiveEDH : games.guild_xid = 113555415446413312,Tolarian Community College : games.guild_xid = 574711449566445603,The Nitpicking Nerds Discord Server : games.guild_xid = 531209216443154443,i_hate_your_deck's server : games.guild_xid = 793590120049672242,Command the Cause - Gaming Club : games.guild_xid = 817867020837584906,Commander SpellTable (DE) : games.guild_xid = 752261529390284870,Asylum Gaming : games.guild_xid = 840959507747569715,EDH Tambayan : games.guild_xid = 750696719905456189,EDH Fight Club : games.guild_xid = 815001383979450368,Dungeons & Cardboard : games.guild_xid = 852684404328497172,Playing With Power MTG : games.guild_xid = 530219227924267008,MTG@Home : games.guild_xid = 689674672240984067,The Mages Guild | EDH Community : games.guild_xid = 806995731268632596,SpellTable : games.guild_xid = 699186736424681533,Oath of the Gaywatch : games.guild_xid = 757455940009328670,ChannelFireball : games.guild_xid = 508059359683543050,DOYOU EDH : games.guild_xid = 757933229931233280,Landfall: Commander en Español : games.guild_xid = 574726557675946000,cEDH Portuguese League : games.guild_xid = 799686008811290626",
-        "queryValue": "",
-        "skipUrlSync": false,
+        "query": "All : true,PlayEDH : games.guild_xid = 304276578005942272,Not PlayEDH : games.guild_xid != 304276578005942272,CompetitiveEDH : games.guild_xid = 113555415446413312,r/cEDH Discord : games.guild_xid = 1225118416298315857,Tolarian Community College : games.guild_xid = 574711449566445603,The Nitpicking Nerds Discord Server : games.guild_xid = 531209216443154443,i_hate_your_deck's server : games.guild_xid = 793590120049672242,Command the Cause - Gaming Club : games.guild_xid = 817867020837584906,Commander SpellTable (DE) : games.guild_xid = 752261529390284870,Asylum Gaming : games.guild_xid = 840959507747569715,EDH Tambayan : games.guild_xid = 750696719905456189,EDH Fight Club : games.guild_xid = 815001383979450368,Dungeons & Cardboard : games.guild_xid = 852684404328497172,Playing With Power MTG : games.guild_xid = 530219227924267008,MTG@Home : games.guild_xid = 689674672240984067,The Mages Guild | EDH Community : games.guild_xid = 806995731268632596,SpellTable : games.guild_xid = 699186736424681533,Oath of the Gaywatch : games.guild_xid = 757455940009328670,ChannelFireball : games.guild_xid = 508059359683543050,DOYOU EDH : games.guild_xid = 757933229931233280,Landfall: Commander en Español : games.guild_xid = 574726557675946000,cEDH Portuguese League : games.guild_xid = 799686008811290626",
         "type": "custom"
       }
     ]
@@ -1740,13 +1764,10 @@
     "from": "now-30d",
     "to": "now"
   },
-  "timeRangeUpdatedDuringEditOrView": false,
-  "timepicker": {
-    "hidden": false
-  },
+  "timepicker": {},
   "timezone": "",
   "title": "SpellBot",
   "uid": "4TSUCbcMz",
-  "version": 109,
+  "version": 112,
   "weekStart": ""
 }
