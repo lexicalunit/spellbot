@@ -52,6 +52,16 @@ class TestServiceGuilds:
         await guilds.select(guild2.xid)
         assert await guilds.should_voice_create()
 
+    async def test_guilds_get_use_max_bitrate(self) -> None:
+        guild1 = GuildFactory.create()
+        guild2 = GuildFactory.create(use_max_bitrate=True)
+
+        guilds = GuildsService()
+        await guilds.select(guild1.xid)
+        assert not await guilds.get_use_max_bitrate()
+        await guilds.select(guild2.xid)
+        assert await guilds.get_use_max_bitrate()
+
     async def test_guilds_set_motd(self) -> None:
         guilds = GuildsService()
         assert not await guilds.select(101)

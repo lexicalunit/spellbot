@@ -314,7 +314,11 @@ class TestOperationsCreateVoiceChannel:
         category = MagicMock(spec=discord.CategoryChannel)
         client = mock_client(guilds=[dpy_guild])
         await safe_create_voice_channel(client, dpy_guild.id, "name", category=category)
-        dpy_guild.create_voice_channel.assert_called_once_with("name", category=category)
+        dpy_guild.create_voice_channel.assert_called_once_with(
+            "name",
+            category=category,
+            bitrate=ANY,
+        )
 
     async def test_uncached(
         self,
@@ -324,13 +328,29 @@ class TestOperationsCreateVoiceChannel:
         category = MagicMock(spec=discord.CategoryChannel)
         client = mock_client(guilds=[dpy_guild])
         monkeypatch.setattr(client, "get_guild", MagicMock(return_value=None))
-        await safe_create_voice_channel(client, dpy_guild.id, "name", category=category)
-        dpy_guild.create_voice_channel.assert_called_once_with("name", category=category)
+        await safe_create_voice_channel(
+            client,
+            dpy_guild.id,
+            "name",
+            category=category,
+            use_max_bitrate=True,
+        )
+        dpy_guild.create_voice_channel.assert_called_once_with(
+            "name",
+            category=category,
+            bitrate=int(dpy_guild.bitrate_limit),
+        )
 
     async def test_not_found(self, dpy_guild: discord.Guild) -> None:
         category = MagicMock(spec=discord.CategoryChannel)
         client = mock_client()
-        await safe_create_voice_channel(client, dpy_guild.id, "name", category=category)
+        await safe_create_voice_channel(
+            client,
+            dpy_guild.id,
+            "name",
+            category=category,
+            use_max_bitrate=False,
+        )
         dpy_guild.create_voice_channel.assert_not_called()
 
 

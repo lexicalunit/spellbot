@@ -297,7 +297,9 @@ async def safe_create_voice_channel(
     client: discord.Client,
     guild_xid: int,
     name: str,
+    *,
     category: discord.CategoryChannel | None = None,
+    use_max_bitrate: bool = False,
 ) -> discord.VoiceChannel | None:
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid), "name": name})
@@ -313,7 +315,13 @@ async def safe_create_voice_channel(
         log="in guild %(guild_xid)s, could not create voice channel",
         guild_xid=guild_xid,
     ):
-        channel = await retry(lambda: guild.create_voice_channel(name, category=category))
+        channel = await retry(
+            lambda: guild.create_voice_channel(
+                name,
+                category=category,
+                bitrate=int(guild.bitrate_limit) if use_max_bitrate else MISSING,
+            )
+        )
     return channel
 
 
