@@ -154,6 +154,7 @@ def build_guild(offset: int = 1) -> discord.Guild:
     guild.name = f"guild-{guild.id}"
     guild.owner_id = OWNER_USER_ID
     guild.create_category_channel = AsyncMock()
+    guild.bitrate_limit = 64000.0
     return guild
 
 
@@ -250,6 +251,7 @@ def mock_discord_guild(guild: Guild) -> discord.Guild:
     discord_guild = MagicMock(spec=discord.Guild)
     discord_guild.id = guild.xid
     discord_guild.name = guild.name
+    discord_guild.bitrate_limit = 64000.0
     return discord_guild
 
 
