@@ -59,6 +59,25 @@ class SetupView(BaseView):
                 await action.toggle_voice_create()
 
     @discord.ui.button(
+        label="Toggle Use Max Bitrate",
+        style=discord.ButtonStyle.primary,
+        custom_id="toggle_use_max_bitrate",
+        row=1,
+    )
+    async def toggle_use_max_bitrate(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button[SetupView],
+    ) -> None:
+        from spellbot.actions.admin_action import AdminAction
+
+        with tracer.trace(name="interaction", resource="toggle_use_max_bitrate"):
+            await safe_defer_interaction(interaction)
+            add_span_context(interaction)
+            async with AdminAction.create(self.bot, interaction) as action:
+                await action.toggle_use_max_bitrate()
+
+    @discord.ui.button(
         label="Refresh",
         style=discord.ButtonStyle.secondary,
         custom_id="refresh_setup",

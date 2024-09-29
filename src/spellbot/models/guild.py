@@ -22,6 +22,7 @@ class GuildDict(TypedDict):
     motd: str
     show_links: bool
     voice_create: bool
+    use_max_bitrate: bool
     channels: list[ChannelDict]
     awards: list[GuildAwardDict]
     banned: bool
@@ -71,6 +72,13 @@ class Guild(Base):
         server_default=false(),
         doc="Configuration for automatically created voice channels for games",
     )
+    use_max_bitrate = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="Configuration for using maximum bitrate for created voice channels",
+    )
     banned = Column(
         Boolean,
         nullable=False,
@@ -115,6 +123,7 @@ class Guild(Base):
             "motd": self.motd,
             "show_links": self.show_links,
             "voice_create": self.voice_create,
+            "use_max_bitrate": self.use_max_bitrate,
             "channels": sorted(
                 [channel.to_dict() for channel in cast("Iterable[Channel]", self.channels)],
                 key=lambda c: c["xid"],

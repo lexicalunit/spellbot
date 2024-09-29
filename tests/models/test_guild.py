@@ -22,6 +22,7 @@ class TestModelGuild:
             "motd": guild.motd,
             "show_links": guild.show_links,
             "voice_create": guild.voice_create,
+            "use_max_bitrate": guild.use_max_bitrate,
             "channels": sorted(
                 [channel1.to_dict(), channel2.to_dict()],
                 key=lambda c: c["xid"],

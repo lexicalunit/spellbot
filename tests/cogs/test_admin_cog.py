@@ -64,6 +64,13 @@ class TestCogAdminSetup(InteractionMixin):
                         "type": discord.ComponentType.button.value,
                         "disabled": False,
                     },
+                    {
+                        "custom_id": "toggle_use_max_bitrate",
+                        "label": "Toggle Use Max Bitrate",
+                        "style": discord.ButtonStyle.primary.value,
+                        "type": discord.ComponentType.button.value,
+                        "disabled": False,
+                    },
                 ],
                 "type": discord.ComponentType.action_row.value,
             },
@@ -93,6 +100,7 @@ class TestCogAdminSetup(InteractionMixin):
                 {"inline": False, "name": "MOTD", "value": self.guild.motd},
                 {"inline": True, "name": "Public Links", "value": "❌ Off"},
                 {"inline": True, "name": "Create Voice Channels", "value": "❌ Off"},
+                {"inline": True, "name": "Use Max Bitrate", "value": "❌ Off"},
             ],
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": f"SpellBot Setup for {self.guild.name}",
@@ -160,6 +168,13 @@ class TestCogAdminSetupView(InteractionMixin):
                         "type": discord.ComponentType.button.value,
                         "disabled": False,
                     },
+                    {
+                        "custom_id": "toggle_use_max_bitrate",
+                        "label": "Toggle Use Max Bitrate",
+                        "style": discord.ButtonStyle.primary.value,
+                        "type": discord.ComponentType.button.value,
+                        "disabled": False,
+                    },
                 ],
                 "type": discord.ComponentType.action_row.value,
             },
@@ -189,6 +204,7 @@ class TestCogAdminSetupView(InteractionMixin):
                 {"inline": False, "name": "MOTD", "value": self.guild.motd},
                 {"inline": True, "name": "Public Links", "value": "❌ Off"},
                 {"inline": True, "name": "Create Voice Channels", "value": "❌ Off"},
+                {"inline": True, "name": "Use Max Bitrate", "value": "❌ Off"},
             ],
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": f"SpellBot Setup for {self.guild.name}",
@@ -208,6 +224,13 @@ class TestCogAdminSetupView(InteractionMixin):
         self.interaction.edit_original_response.assert_called_once()
         guild = DatabaseSession.query(Guild).one()
         assert guild.voice_create != Guild.voice_create.default.arg  # type: ignore
+
+    async def test_toggle_use_max_bitrate(self, view: SetupView) -> None:
+        await view.toggle_use_max_bitrate.callback(self.interaction)
+
+        self.interaction.edit_original_response.assert_called_once()
+        guild = DatabaseSession.query(Guild).one()
+        assert guild.use_max_bitrate != Guild.voice_create.default.arg  # type: ignore
 
 
 @pytest.mark.asyncio

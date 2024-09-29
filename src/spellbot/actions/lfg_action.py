@@ -414,6 +414,7 @@ class LookingForGameAction(BaseAction):
     async def _handle_voice_creation(self, guild_xid: int) -> None:
         if not await self.services.guilds.should_voice_create():
             return
+        use_max_bitrate = await self.services.guilds.get_use_max_bitrate()
 
         category_prefix = self.channel_data["voice_category"]
         category = await safe_ensure_voice_category(
@@ -430,7 +431,8 @@ class LookingForGameAction(BaseAction):
             self.bot,
             guild_xid,
             f"Game-SB{game_id}",
-            category,
+            category=category,
+            use_max_bitrate=use_max_bitrate,
         )
         if not voice_channel:
             return

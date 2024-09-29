@@ -194,6 +194,10 @@ class AdminAction(BaseAction):
             name="Create Voice Channels",
             value=humanize_bool(guild["voice_create"]),
         )
+        embed.add_field(
+            name="Use Max Bitrate",
+            value=humanize_bool(guild["use_max_bitrate"]),
+        )
         embed.color = discord.Color(settings.INFO_EMBED_COLOR)
         return embed
 
@@ -325,6 +329,12 @@ class AdminAction(BaseAction):
 
     async def toggle_voice_create(self) -> None:
         await self.services.guilds.toggle_voice_create()
+        embed = await self._build_setup_embed()
+        view = SetupView(self.bot)
+        await safe_update_embed_origin(self.interaction, embed=embed, view=view)
+
+    async def toggle_use_max_bitrate(self) -> None:
+        await self.services.guilds.toggle_use_max_bitrate()
         embed = await self._build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
