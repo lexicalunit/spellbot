@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added the Duel Commander format.
+
 ## [v11.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v11.4.0) - 2024-09-29
+
+### Added
+
+- Added support for higher quality audio voice channels.
 
 ## [v11.3.0](https://github.com/lexicalunit/spellbot/releases/tag/v11.3.0) - 2024-08-07
 
