@@ -70,3 +70,4 @@ class GameFormat(Enum):
     PLANECHASE = FormatDetails(players=4)  # type: ignore
     PRE_CONS = FormatDetails(players=4)  # type: ignore
     OATHBREAKER = FormatDetails(players=4)  # type: ignore
+    DUEL_COMMANDER = FormatDetails(players=2)  # type: ignore
