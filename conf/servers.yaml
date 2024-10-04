@@ -85,3 +85,6 @@ servers:
   # - name: Your Virtual LGS
   #   logo: https://user-images.githubusercontent.com/1903876/156637022-c8847db5-9cf5-4d00-a5b0-ecbaaec27802.jpg
   #   url: https://discord.gg/xcnRz86vkb
+  - name: Duel Commander
+    logo: https://github.com/user-attachments/assets/d7dfa16c-8b65-40e4-b449-4758fd3c3807
+    url: https://www.mtgdc.info/
