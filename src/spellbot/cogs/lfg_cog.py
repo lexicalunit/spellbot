@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from spellbot import SpellBot
 from spellbot.actions.lfg_action import LookingForGameAction
-from spellbot.enums import GameFormat, GameService
+from spellbot.enums import GAME_FORMAT_ORDER, GameService
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_defer_interaction
 from spellbot.settings import settings
@@ -34,7 +34,7 @@ class LookingForGameCog(commands.Cog):
     )
     @app_commands.describe(format="What game format do you want to play?")
     @app_commands.choices(
-        format=[Choice(name=str(format), value=format.value) for format in GameFormat],
+        format=[Choice(name=str(format), value=format.value) for format in GAME_FORMAT_ORDER],
     )
     @app_commands.choices(
         service=[Choice(name=str(service), value=service.value) for service in GameService],

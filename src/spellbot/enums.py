@@ -44,30 +44,59 @@ class GameFormat(Enum):
         obj._value_ = value
         return obj
 
-    def __init__(self, players: int) -> None:
+    def __init__(self, players: int, title: str | None = None) -> None:
         """Each enum has certain additional properties taken from FormatDetails."""
         self.players = players
+        self.title = title
 
     def __str__(self) -> str:
-        return self.name.replace("_", " ").title()
+        return self.title if self.title is not None else self.name.replace("_", " ").title()
 
-    COMMANDER = FormatDetails(players=4)  # type: ignore
-    STANDARD = FormatDetails(players=2)  # type: ignore
-    SEALED = FormatDetails(players=2)  # type: ignore
-    MODERN = FormatDetails(players=2)  # type: ignore
-    VINTAGE = FormatDetails(players=2)  # type: ignore
-    LEGACY = FormatDetails(players=2)  # type: ignore
-    BRAWL_TWO_PLAYER = FormatDetails(players=2)  # type: ignore
-    BRAWL_MULTIPLAYER = FormatDetails(players=4)  # type: ignore
-    TWO_HEADED_GIANT = FormatDetails(players=4)  # type: ignore
-    PAUPER = FormatDetails(players=2)  # type: ignore
-    PIONEER = FormatDetails(players=2)  # type: ignore
-    EDH_MAX = FormatDetails(players=4)  # type: ignore
-    EDH_HIGH = FormatDetails(players=4)  # type: ignore
-    EDH_MID = FormatDetails(players=4)  # type: ignore
-    EDH_LOW = FormatDetails(players=4)  # type: ignore
-    EDH_BATTLECRUISER = FormatDetails(players=4)  # type: ignore
-    PLANECHASE = FormatDetails(players=4)  # type: ignore
-    PRE_CONS = FormatDetails(players=4)  # type: ignore
-    OATHBREAKER = FormatDetails(players=4)  # type: ignore
-    DUEL_COMMANDER = FormatDetails(players=2)  # type: ignore
+    # DO NOT REORDER -- IT WOULD INVALIDATE EXISTING DATABASE ENTRIES!
+    COMMANDER = 4
+    STANDARD = 2
+    SEALED = 2
+    MODERN = 2
+    VINTAGE = 2
+    LEGACY = 2
+    BRAWL_TWO_PLAYER = 2, "Brawl (Two Players)"
+    BRAWL_MULTIPLAYER = 4, "Brawl (Multiplayer)"
+    TWO_HEADED_GIANT = 4
+    PAUPER = 2
+    PIONEER = 2
+    EDH_MAX = 4, "EDH Max"
+    EDH_HIGH = 4, "EDH High"
+    EDH_MID = 4, "EDH Mid"
+    EDH_LOW = 4, "EDH Low"
+    EDH_BATTLECRUISER = 4, "EDH Battlecruiser"
+    PLANECHASE = 4
+    PRE_CONS = 4, "Commander Precons"
+    OATHBREAKER = 4
+    DUEL_COMMANDER = 2
+    CEDH = 4, "cEDH"
+
+
+# Determines the order the formats appear in the /lfg command:
+GAME_FORMAT_ORDER = [
+    GameFormat.COMMANDER,
+    GameFormat.PRE_CONS,
+    GameFormat.EDH_LOW,
+    GameFormat.EDH_MID,
+    GameFormat.EDH_HIGH,
+    GameFormat.EDH_MAX,
+    GameFormat.EDH_BATTLECRUISER,
+    GameFormat.PLANECHASE,
+    GameFormat.TWO_HEADED_GIANT,
+    GameFormat.BRAWL_MULTIPLAYER,
+    GameFormat.CEDH,
+    GameFormat.OATHBREAKER,
+    GameFormat.DUEL_COMMANDER,
+    GameFormat.STANDARD,
+    GameFormat.MODERN,
+    GameFormat.PIONEER,
+    GameFormat.PAUPER,
+    GameFormat.LEGACY,
+    GameFormat.VINTAGE,
+    GameFormat.SEALED,
+    GameFormat.BRAWL_TWO_PLAYER,
+]

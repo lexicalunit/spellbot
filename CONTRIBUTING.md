@@ -108,7 +108,7 @@ poetry run pytest -k codebase
 An interactive shell using [IPyhton](https://ipython.readthedocs.io/en/stable/) can be started by running:
 
 ```shell
-poetry run python shell
+poetry run python shell.py
 ```
 
 From this shell you will be able to interact with the database using SpellBot models and code. For example:

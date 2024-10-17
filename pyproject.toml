@@ -114,6 +114,7 @@ safe_licenses = [
 addopts = """
     -W ignore::DeprecationWarning --no-header --cov --cov-append --cov-report xml:coverage.xml --cov-report=html -vv
 """
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.poetry]
 authors = [
