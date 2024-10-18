@@ -1834,17 +1834,16 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pylic"
-version = "3.6.1"
+version = "4.0.0"
 description = "A Python license checker"
 optional = false
-python-versions = "<4.0.0,>=3.7.2"
+python-versions = "<4.0,>=3.8"
 files = [
-    {file = "pylic-3.6.1-py3-none-any.whl", hash = "sha256:55cc7ab780a7d80498de519b52d4d8e0a61c24b6eb4113a3a5a02c247effc225"},
-    {file = "pylic-3.6.1.tar.gz", hash = "sha256:f7d65926e04356d3340c777c2a17d7d951ebb04780a2d1f536f4ef6715a8c8bd"},
+    {file = "pylic-4.0.0-py3-none-any.whl", hash = "sha256:06b7aae012bbb4376e405c491b26582c0de597c4497c57abaffef092c9226579"},
+    {file = "pylic-4.0.0.tar.gz", hash = "sha256:8463aae6f0cf63b482978ddf41e74297a69f789e6bfab68e172e2beb9967f6c7"},
 ]
 
 [package.dependencies]
-importlib-metadata = ">=6.0.0,<7.0.0"
 toml = ">=0.10.2,<0.11.0"
 
 [[package]]
@@ -2819,4 +2818,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12,<4"
-content-hash = "9369a593eb6b5df15021f77b656c3b696b786d7cc72f8263b2ff7072ffe76bf6"
+content-hash = "087faf8fe9ebf62a4b82bebb309105b382f651c7db659afd09c433cd2cc7753a"
