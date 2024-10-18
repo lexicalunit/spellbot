@@ -336,8 +336,7 @@ class Game(Base):
 
     @property
     def format_name(self) -> str:
-        format = GameFormat(self.format)
-        return format.name.replace("_", " ").title()
+        return str(GameFormat(self.format))
 
     @property
     def confirmed(self) -> bool:
