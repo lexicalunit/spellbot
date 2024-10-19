@@ -25,6 +25,7 @@ class GameService(Enum):
     def __str__(self) -> str:
         return self.title
 
+    # DO NOT REORDER -- IT WOULD INVALIDATE EXISTING DATABASE ENTRIES!
     NOT_ANY = "Not any"
     SPELLTABLE = "SpellTable"
     COCKATRICE = "Cockatrice"
@@ -32,6 +33,19 @@ class GameService(Enum):
     MTG_ARENA = "MTG Arena"
     MTG_ONLINE = "MTG Online"
     TTS = "TabletopSim"
+    # TABLE_STREAM = "Table Stream" # Coming soon!
+
+
+GAME_SERVICE_ORDER = [
+    GameService.NOT_ANY,
+    GameService.SPELLTABLE,
+    # GameService.TABLE_STREAM,
+    GameService.COCKATRICE,
+    GameService.X_MAGE,
+    GameService.MTG_ARENA,
+    GameService.MTG_ONLINE,
+    GameService.TTS,
+]
 
 
 class GameFormat(Enum):
@@ -74,9 +88,9 @@ class GameFormat(Enum):
     OATHBREAKER = 4
     DUEL_COMMANDER = 2
     CEDH = 4, "cEDH"
+    ARCHENEMY = 4
 
 
-# Determines the order the formats appear in the /lfg command:
 GAME_FORMAT_ORDER = [
     GameFormat.COMMANDER,
     GameFormat.PRE_CONS,
@@ -90,6 +104,7 @@ GAME_FORMAT_ORDER = [
     GameFormat.BRAWL_MULTIPLAYER,
     GameFormat.CEDH,
     GameFormat.OATHBREAKER,
+    GameFormat.ARCHENEMY,
     GameFormat.DUEL_COMMANDER,
     GameFormat.STANDARD,
     GameFormat.MODERN,
