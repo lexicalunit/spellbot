@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v11.5.1](https://github.com/lexicalunit/spellbot/releases/tag/v11.5.1) - 2024-10-17
 
+### Added
+
+- Adds the Archenemy format.
+- Adds ordering config for game services.
+
 ### Changed
 
 - Use the GameFormat repr for game format name in embeds.
