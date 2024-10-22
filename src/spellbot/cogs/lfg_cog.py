@@ -36,6 +36,7 @@ class LookingForGameCog(commands.Cog):
     @app_commands.choices(
         format=[Choice(name=str(format), value=format.value) for format in GAME_FORMAT_ORDER]
     )
+    @app_commands.describe(service="What service do you want to use to play this game?")
     @app_commands.choices(
         service=[Choice(name=str(service), value=service.value) for service in GAME_SERVICE_ORDER]
     )

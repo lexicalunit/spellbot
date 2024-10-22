@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added a documentation description for the game service option in `/lfg`.
+
 ## [v11.5.2](https://github.com/lexicalunit/spellbot/releases/tag/v11.5.2) - 2024-10-21
 
 ### Added
