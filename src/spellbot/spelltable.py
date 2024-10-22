@@ -2,19 +2,22 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from aiohttp.client_exceptions import ClientError
 from aiohttp_retry import ExponentialRetry, RetryClient
 
-from . import __version__
-from .metrics import add_span_error
-from .settings import settings
+from spellbot import __version__
+from spellbot.metrics import add_span_error
+from spellbot.settings import settings
+
+if TYPE_CHECKING:
+    from spellbot.models import GameDict
 
 logger = logging.getLogger(__name__)
 
 
-async def generate_link() -> str | None:
+async def generate_spelltable_link(game: GameDict) -> str | None:
     assert settings.SPELLTABLE_AUTH_KEY
 
     headers = {
@@ -32,7 +35,7 @@ async def generate_link() -> str | None:
             ) as client,
             client.post(settings.SPELLTABLE_CREATE, headers=headers) as resp,
         ):
-            # Rather than use `resp.json()`, which respects minetype, let's just
+            # Rather than use `resp.json()`, which respects mimetype, let's just
             # grab the data and try to decode it ourselves.
             # https://github.com/inyutin/aiohttp_retry/issues/55
             raw_data = await resp.read()

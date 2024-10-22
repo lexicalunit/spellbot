@@ -30,6 +30,9 @@ class Settings:
         "SPELLTABLE_ROOT",
         "SPELLTABLE_CREATE",
         "SPELLTABLE_AUTH_KEY",
+        "TABLESTREAM_ROOT",
+        "TABLESTREAM_CREATE",
+        "TABLESTREAM_AUTH_KEY",
         "BOT_INVITE_LINK",
         "INFO_EMBED_COLOR",
         "STARTED_EMBED_COLOR",
@@ -84,6 +87,11 @@ class Settings:
         self.SPELLTABLE_ROOT = "https://us-central1-magic-night-30324.cloudfunctions.net"
         self.SPELLTABLE_CREATE = f"{self.SPELLTABLE_ROOT}/createGame"
         self.SPELLTABLE_AUTH_KEY = getenv("SPELLTABLE_AUTH_KEY")
+
+        # tablestream
+        self.TABLESTREAM_ROOT = "https://api.table-stream.com"
+        self.TABLESTREAM_CREATE = f"{self.TABLESTREAM_ROOT}/create-room"
+        self.TABLESTREAM_AUTH_KEY = getenv("TABLESTREAM_AUTH_KEY")
 
         # configuration
         self.BOT_INVITE_LINK = (

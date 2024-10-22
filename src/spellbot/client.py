@@ -11,15 +11,20 @@ from ddtrace import tracer
 from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, Context
 
 from .database import db_session_manager, initialize_connection
+from .enums import GameService
 from .metrics import setup_ignored_errors, setup_metrics
 from .operations import safe_delete_message
 from .services import ChannelsService, GamesService, GuildsService, VerifiesService
 from .settings import settings
-from .spelltable import generate_link
+from .spelltable import generate_spelltable_link
+from .tablestream import generate_tablestream_link
 from .utils import user_can_moderate
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
+
+    from .models import GameDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -82,10 +87,15 @@ class SpellBot(AutoShardedBot):
             yield
 
     @tracer.wrap()
-    async def create_spelltable_link(self) -> str | None:
+    async def create_game_link(self, game: GameDict) -> str | None:
         if self.mock_games:
             return f"http://exmaple.com/game/{uuid4()}"
-        return await generate_link()
+        service = game.get("service")
+        if service == GameService.SPELLTABLE.value:
+            return await generate_spelltable_link(game)
+        if service == GameService.TABLE_STREAM.value:
+            return await generate_tablestream_link(game)
+        return None
 
     @tracer.wrap(name="interaction", resource="on_message")
     async def on_message(

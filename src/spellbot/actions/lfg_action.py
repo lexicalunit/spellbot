@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from discord.message import Message
 
     from spellbot import SpellBot
+    from spellbot.models import GameDict
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +229,8 @@ class LookingForGameAction(BaseAction):
         other_game_ids: list[int] = []
         if fully_seated:
             other_game_ids = await self.services.games.other_game_ids()
-            started_game_id = await self.make_game_ready(GameService(actual_service))
+            game_data = await self.services.games.to_dict()
+            started_game_id = await self.make_game_ready(game_data)
             await self._handle_voice_creation(self.guild.id)
 
         await self._handle_embed_creation(
@@ -398,17 +400,16 @@ class LookingForGameAction(BaseAction):
             service=game_service.value,
             create_new=True,
         )
-        await self.make_game_ready(game_service)
+        game_data = await self.services.games.to_dict()
+        await self.make_game_ready(game_data)
         await self._handle_voice_creation(self.interaction.guild_id)
         await self._handle_embed_creation(new=True, origin=False, fully_seated=True)
         await self._handle_direct_messages()
 
     @tracer.wrap()
-    async def make_game_ready(self, service: GameService) -> int:
-        spelltable_link = (
-            await self.bot.create_spelltable_link() if service == GameService.SPELLTABLE else None
-        )
-        return await self.services.games.make_ready(spelltable_link)
+    async def make_game_ready(self, game: GameDict) -> int:
+        game_link = await self.bot.create_game_link(game)
+        return await self.services.games.make_ready(game_link)
 
     @tracer.wrap()
     async def _handle_voice_creation(self, guild_xid: int) -> None:

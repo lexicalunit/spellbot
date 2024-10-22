@@ -10,7 +10,7 @@ from aiohttp_retry.client import RetryClient
 
 from spellbot import spelltable
 from spellbot.settings import Settings
-from spellbot.spelltable import generate_link
+from spellbot.spelltable import generate_spelltable_link as generate_link
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -43,7 +43,7 @@ class TestSpellTable:
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
 
-        assert await generate_link() == game_url
+        assert await generate_link(MagicMock()) == game_url
 
     async def test_generate_link_upstream_timeout(self, monkeypatch: pytest.MonkeyPatch) -> None:
         settings = MagicMock(spec=Settings)
@@ -67,7 +67,7 @@ class TestSpellTable:
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
 
-        assert await generate_link() is None
+        assert await generate_link(MagicMock()) is None
 
     async def test_generate_link_missing_game_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
         settings = MagicMock(spec=Settings)
@@ -91,7 +91,7 @@ class TestSpellTable:
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
 
-        assert await generate_link() is None
+        assert await generate_link(MagicMock()) is None
 
     async def test_generate_link_non_json(self, monkeypatch: pytest.MonkeyPatch) -> None:
         settings = MagicMock(spec=Settings)
@@ -118,7 +118,7 @@ class TestSpellTable:
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
 
-        assert await generate_link() is None
+        assert await generate_link(MagicMock()) is None
 
     async def test_generate_link_raises_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
         settings = MagicMock(spec=Settings)
@@ -142,4 +142,4 @@ class TestSpellTable:
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
 
-        assert await generate_link() is None
+        assert await generate_link(MagicMock()) is None

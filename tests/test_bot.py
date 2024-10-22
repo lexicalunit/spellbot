@@ -8,7 +8,7 @@ import pytest
 from discord import app_commands
 from discord.ext.commands import AutoShardedBot, CommandNotFound, Context, UserInputError
 
-from spellbot import SpellBot, client
+from spellbot import SpellBot
 from spellbot.database import DatabaseSession
 from spellbot.errors import (
     AdminOnlyError,
@@ -26,22 +26,10 @@ from .mixins import BaseMixin
 
 @pytest.mark.asyncio
 class TestSpellBot(BaseMixin):
-    async def test_create_spelltable_link_mock(self, bot: SpellBot) -> None:
-        link = await bot.create_spelltable_link()
+    async def test_create_create_game_link(self, bot: SpellBot) -> None:
+        link = await bot.create_game_link(MagicMock())
         assert link is not None
         assert link.startswith("http://exmaple.com/game/")
-
-    async def test_create_spelltable_link(
-        self,
-        bot: SpellBot,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        bot.mock_games = False
-        generate_link_mock = AsyncMock(return_value="http://mock")
-        monkeypatch.setattr(client, "generate_link", generate_link_mock)
-        link = await bot.create_spelltable_link()
-        assert link == "http://mock"
-        generate_link_mock.assert_called_once_with()
 
     @pytest.mark.parametrize(
         ("error", "response"),
