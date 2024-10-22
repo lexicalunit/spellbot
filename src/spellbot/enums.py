@@ -33,13 +33,13 @@ class GameService(Enum):
     MTG_ARENA = "MTG Arena"
     MTG_ONLINE = "MTG Online"
     TTS = "TabletopSim"
-    # TABLE_STREAM = "Table Stream" # Coming soon!
+    TABLE_STREAM = "Table Stream"
 
 
 GAME_SERVICE_ORDER = [
     GameService.NOT_ANY,
     GameService.SPELLTABLE,
-    # GameService.TABLE_STREAM,
+    # GameService.TABLE_STREAM, # Not currently supported, coming soon!
     GameService.COCKATRICE,
     GameService.X_MAGE,
     GameService.MTG_ARENA,
