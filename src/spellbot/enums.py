@@ -88,7 +88,7 @@ class GameFormat(Enum):
     OATHBREAKER = 4
     DUEL_COMMANDER = 2
     CEDH = 4, "cEDH"
-    ARCHENEMY = 4,
+    ARCHENEMY = 4
     PAUPER_EDH = 4, "Pauper EDH"
 
 
@@ -104,6 +104,7 @@ GAME_FORMAT_ORDER = [
     GameFormat.TWO_HEADED_GIANT,
     GameFormat.BRAWL_MULTIPLAYER,
     GameFormat.CEDH,
+    GameFormat.PAUPER_EDH,
     GameFormat.OATHBREAKER,
     GameFormat.ARCHENEMY,
     GameFormat.DUEL_COMMANDER,
@@ -115,5 +116,4 @@ GAME_FORMAT_ORDER = [
     GameFormat.VINTAGE,
     GameFormat.SEALED,
     GameFormat.BRAWL_TWO_PLAYER,
-    GameFormat.PAUPER_EDH,
 ]
