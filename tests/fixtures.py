@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Generator
 
     import discord
+    from aiohttp import web
     from aiohttp.test_utils import TestClient
 
     from spellbot import SpellBot
@@ -145,8 +146,8 @@ async def bot() -> SpellBot:
 @pytest.fixture
 def client(
     loop: AbstractEventLoop,
-    aiohttp_client: Callable[..., Awaitable[TestClient]],
-) -> TestClient:
+    aiohttp_client: Callable[..., Awaitable[TestClient[web.Request, web.Application]]],
+) -> TestClient[web.Request, web.Application]:
     app = build_web_app()
     return loop.run_until_complete(aiohttp_client(app))
 
