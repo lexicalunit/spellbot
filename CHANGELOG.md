@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds some defensive code to the "I found a game for you" code for when Discord is having issues.
+
 ## [v11.6.0](https://github.com/lexicalunit/spellbot/releases/tag/v11.6.0) - 2024-10-28
 
 ### Added
