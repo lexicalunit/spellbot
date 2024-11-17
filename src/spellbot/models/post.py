@@ -68,6 +68,7 @@ class Post(Base):
         BigInteger,
         primary_key=True,
         nullable=False,
+        index=True,
         doc="The external Discord ID of the message where this post's embed is found",
     )
 
