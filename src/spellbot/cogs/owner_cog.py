@@ -9,7 +9,7 @@ from spellbot.actions.base_action import handle_exception
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_context
 from spellbot.operations import bad_users, safe_send_user
-from spellbot.services import GuildsService, MirrorsService, UsersService
+from spellbot.services import GuildsService, UsersService
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks
 
@@ -50,23 +50,6 @@ async def set_banned_guild(banned: bool, ctx: commands.Context[SpellBot], arg: s
         f"Guild {guild_xid} has been {'banned' if banned else 'unbanned'}.",
     )
     return None
-
-
-async def add_mirror(
-    ctx: commands.Context[SpellBot],
-    from_guild_xid: int,
-    from_channel_xid: int,
-    to_guild_xid: int,
-    to_channel_xid: int,
-) -> None:
-    assert ctx.message
-    await MirrorsService().add_mirror(
-        from_guild_xid, from_channel_xid, to_guild_xid, to_channel_xid
-    )
-    await safe_send_user(
-        ctx.message.author,
-        f"Mirroring from {from_guild_xid}/{from_channel_xid} to {to_guild_xid}/{to_channel_xid}",
-    )
 
 
 @for_all_callbacks(commands.is_owner())
@@ -114,30 +97,6 @@ class OwnerCog(commands.Cog):
         async with db_session_manager():
             try:
                 await set_banned_guild(False, ctx, arg)
-            except Exception as ex:
-                await safe_send_user(ctx.message.author, f"Error: {ex}")
-                await handle_exception(ex)
-
-    @commands.command(name="mirror")
-    @tracer.wrap(name="interaction", resource="mirror")
-    async def mirror(
-        self,
-        ctx: commands.Context[SpellBot],
-        from_guild_xid: int,
-        from_channel_xid: int,
-        to_guild_xid: int,
-        to_channel_xid: int,
-    ) -> None:
-        add_span_context(ctx)
-        async with db_session_manager():
-            try:
-                await add_mirror(
-                    ctx,
-                    from_guild_xid,
-                    from_channel_xid,
-                    to_guild_xid,
-                    to_channel_xid,
-                )
             except Exception as ex:
                 await safe_send_user(ctx.message.author, f"Error: {ex}")
                 await handle_exception(ex)

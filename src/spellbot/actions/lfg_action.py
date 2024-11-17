@@ -105,7 +105,6 @@ class LookingForGameAction(BaseAction):
 
         if not origin:
             assert self.interaction.guild_id is not None
-            mirrors = await self.services.mirrors.get(self.guild.id, self.channel.id)
             return await self.services.games.upsert(
                 guild_xid=self.interaction.guild_id,
                 channel_xid=self.channel.id,
@@ -114,7 +113,6 @@ class LookingForGameAction(BaseAction):
                 seats=seats,
                 format=format,
                 service=service,
-                mirrors=mirrors,
             )
 
         assert message_xid
@@ -478,28 +476,6 @@ class LookingForGameAction(BaseAction):
             )
         ):
             await self.services.games.add_post(self.guild.id, self.channel.id, message.id)
-
-        # also send the game post to all configured mirrors
-        mirrors = await self.services.mirrors.get(self.guild.id, self.channel.id)
-        for mirror in mirrors:
-            to_guild_xid = mirror["to_guild_xid"]
-            to_channel_xid = mirror["to_channel_xid"]
-            logger.info("Mirroring game post to %s/%s ...", to_guild_xid, to_channel_xid)
-
-            to_channel = await safe_fetch_text_channel(self.bot, to_guild_xid, to_channel_xid)
-            if to_channel is None:
-                logger.error("Failed to fetch channel %s", to_channel_xid)
-                continue
-            logger.info("Mirroring game post to %s ...", to_channel)
-
-            to_message = await safe_channel_reply(
-                to_channel, content=content, embed=embed, view=view
-            )
-            if to_message is None:
-                logger.error("Failed to create post in channel %s", to_channel)
-                continue
-            logger.info("Mirrored game post to %s", to_message)
-            await self.services.games.add_post(to_guild_xid, to_channel_xid, to_message.id)
 
     @tracer.wrap()
     async def _handle_embed_creation(  # noqa: C901,PLR0912
