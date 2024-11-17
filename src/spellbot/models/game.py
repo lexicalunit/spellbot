@@ -71,6 +71,7 @@ class Game(Base):
         default=datetime.utcnow,
         server_default=now,
         onupdate=datetime.utcnow,
+        index=True,
         doc="UTC timestamp when this games was last updated",
     )
     started_at = Column(
