@@ -581,11 +581,14 @@ class LookingForGameAction(BaseAction):
         embed.set_thumbnail(url=settings.ICO_URL)
         game_data = await self.services.games.to_dict()
         links = game_data["jump_links"]
-        link = links[self.guild.id]
         format = game_data["format"]
         embed.set_author(name=f"I found a {GameFormat(format)} game for you!")
-        embed.description = f"You can [jump to the game post]({link}) to see it!"
         embed.color = settings.INFO_EMBED_COLOR
+        if link := links.get(self.guild.id):
+            embed.description = f"You can [jump to the game post]({link}) to see it!"
+        else:
+            game_id = game_data["id"]
+            embed.description = f"You have joined the game SB{game_id}!"
         await safe_followup_channel(self.interaction, embed=embed)
 
     @tracer.wrap()
