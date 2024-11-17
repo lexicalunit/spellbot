@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Removes mirrors.
+- Disables ELO system until I can go back and rework it. Right now it is not ready to be used.
+
 ## [v11.6.2](https://github.com/lexicalunit/spellbot/releases/tag/v11.6.2) - 2024-11-17
 
 ### Added

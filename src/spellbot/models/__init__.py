@@ -22,7 +22,6 @@ from .block import Block, BlockDict  # noqa: E402
 from .channel import Channel, ChannelDict  # noqa: E402
 from .game import Game, GameStatus, GameDict  # noqa: E402
 from .guild import Guild, GuildDict  # noqa: E402
-from .mirror import Mirror, MirrorDict  # noqa: E402
 from .play import Play, PlayDict  # noqa: E402
 from .post import Post, PostDict  # noqa: E402
 from .queue import Queue, QueueDict  # noqa: E402
@@ -48,8 +47,6 @@ __all__ = [
     "GuildDict",
     "import_models",
     "literalquery",
-    "Mirror",
-    "MirrorDict",
     "now",
     "Play",
     "PlayDict",
