@@ -264,16 +264,17 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_show_points(setting)
 
-    @set_group.command(
-        name="require_confirmation",
-        description="Set the option for requiring points confirmation on games in this channel.",
-    )
-    @app_commands.describe(setting="Setting")
-    @tracer.wrap(name="interaction", resource="set_require_confirmation")
-    async def require_confirmation(self, interaction: discord.Interaction, setting: bool) -> None:
-        add_span_context(interaction)
-        async with AdminAction.create(self.bot, interaction) as action:
-            await action.set_require_confirmation(setting)
+    # TODO: I need to completely rework how the ELO system works.
+    # @set_group.command(
+    #     name="require_confirmation",
+    #     description="Set the option for requiring points confirmation on games in this channel.",
+    # )
+    # @app_commands.describe(setting="Setting")
+    # @tracer.wrap(name="interaction", resource="set_require_confirmation")
+    # async def require_confirmation(self, interaction: discord.Interaction, setting: bool) -> None:
+    #     add_span_context(interaction)
+    #     async with AdminAction.create(self.bot, interaction) as action:
+    #         await action.set_require_confirmation(setting)
 
     @set_group.command(
         name="voice_invite",
