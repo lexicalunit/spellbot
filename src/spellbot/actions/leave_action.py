@@ -5,6 +5,7 @@ import logging
 from ddtrace import tracer
 
 from spellbot.operations import (
+    safe_delete_message,
     safe_fetch_text_channel,
     safe_get_partial_message,
     safe_original_response,
@@ -34,6 +35,10 @@ class LeaveAction(BaseAction):
 
         game_data = await self.services.games.to_dict()
         posts = game_data.get("posts")
+
+        player_count = len(await self.services.games.player_xids())
+        do_delete_game = player_count == 0
+
         for post in posts:
             guild_xid = post["guild_xid"]
             channel_xid = post["channel_xid"]
@@ -41,8 +46,12 @@ class LeaveAction(BaseAction):
 
             original_response = await safe_original_response(self.interaction)
             if original_response and message_xid and original_response.id == message_xid:
-                embed = await self.services.games.to_embed()
-                await safe_update_embed_origin(self.interaction, embed=embed)
+                if do_delete_game:
+                    assert self.interaction.message is not None
+                    await safe_delete_message(self.interaction.message)
+                else:
+                    embed = await self.services.games.to_embed()
+                    await safe_update_embed_origin(self.interaction, embed=embed)
                 continue
 
             channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
@@ -53,8 +62,14 @@ class LeaveAction(BaseAction):
             if message is None:
                 continue
 
-            embed = await self.services.games.to_embed()
-            await safe_update_embed(message, embed=embed)
+            if do_delete_game:
+                await safe_delete_message(message)
+            else:
+                embed = await self.services.games.to_embed()
+                await safe_update_embed(message, embed=embed)
+
+        if do_delete_game:
+            await self.services.games.delete_games([game_data["id"]])
 
     @tracer.wrap()
     async def _handle_command(self) -> None:
@@ -74,6 +89,8 @@ class LeaveAction(BaseAction):
         await self.services.users.leave_game(channel_xid)
 
         game_data = await self.services.games.to_dict()
+        player_count = len(await self.services.games.player_xids())
+        do_delete_game = player_count == 0
         for post in game_data.get("posts", []):
             chan_xid = post["channel_xid"]
             guild_xid = post["guild_xid"]
@@ -84,8 +101,14 @@ class LeaveAction(BaseAction):
             if not (message := safe_get_partial_message(channel, guild_xid, message_xid)):
                 continue
 
-            embed = await self.services.games.to_embed()
-            await safe_update_embed(message, embed=embed)
+            if do_delete_game:
+                await safe_delete_message(message)
+            else:
+                embed = await self.services.games.to_embed()
+                await safe_update_embed(message, embed=embed)
+
+        if do_delete_game:
+            await self.services.games.delete_games([game_data["id"]])
 
         await safe_send_channel(
             self.interaction,
@@ -105,9 +128,12 @@ class LeaveAction(BaseAction):
         """Leave ALL games in ALL channels for this user."""
         game_ids = await self.services.games.dequeue_players([self.interaction.user.id])
         message_xids = await self.services.games.message_xids(game_ids)
+
         for message_xid in message_xids:
             data = await self.services.games.select_by_message_xid(message_xid)
             assert data is not None  # This should never happen
+            player_count = len(await self.services.games.player_xids())
+            do_delete_game = player_count == 0
 
             for post in data.get("posts", []):
                 guild_xid = post["guild_xid"]
@@ -116,12 +142,19 @@ class LeaveAction(BaseAction):
                 if channel:
                     message = safe_get_partial_message(channel, guild_xid, message_xid)
                     if message:
-                        embed = await self.services.games.to_embed()
-                        await safe_update_embed(
-                            message,
-                            embed=embed,
-                            view=PendingGameView(bot=self.bot),
-                        )
+                        if do_delete_game:
+                            await safe_delete_message(message)
+                        else:
+                            embed = await self.services.games.to_embed()
+                            await safe_update_embed(
+                                message,
+                                embed=embed,
+                                view=PendingGameView(bot=self.bot),
+                            )
+
+            if do_delete_game:
+                await self.services.games.delete_games([data["id"]])
+
         await safe_send_channel(
             self.interaction,
             "You were removed from all pending games.",
