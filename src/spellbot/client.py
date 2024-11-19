@@ -89,7 +89,7 @@ class SpellBot(AutoShardedBot):
     @tracer.wrap()
     async def create_game_link(self, game: GameDict) -> str | None:
         if self.mock_games:
-            return f"http://exmaple.com/game/{uuid4()}"
+            return f"http://example.com/game/{uuid4()}"
         service = game.get("service")
         if service == GameService.SPELLTABLE.value:
             return await generate_spelltable_link(game)

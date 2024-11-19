@@ -9,6 +9,7 @@ import pytest_asyncio
 from spellbot.actions import leave_action
 from spellbot.cogs import LeaveGameCog
 from spellbot.database import DatabaseSession
+from spellbot.models import Queue
 from spellbot.views.lfg_view import PendingGameView
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_operations
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     from freezegun.api import FrozenDateTimeFactory
 
     from spellbot.client import SpellBot
-    from spellbot.models import User
+    from spellbot.models import Game, User
 
 
 @pytest_asyncio.fixture
@@ -252,6 +253,53 @@ class TestCogLeaveGame(InteractionMixin):
                 "type": "rich",
             }
 
+    async def test_leave_button_when_other_players_remain(
+        self,
+        cog: LeaveGameCog,
+        message: discord.Message,
+        player: User,
+        game: Game,
+    ) -> None:
+        other_player = self.factories.user.create()
+        DatabaseSession.add(
+            Queue(user_xid=other_player.xid, game_id=game.id, og_guild_xid=game.guild_xid)
+        )
+        DatabaseSession.commit()
+
+        with mock_operations(leave_action):
+            leave_action.safe_original_response.return_value = None
+            leave_action.safe_fetch_text_channel.return_value = self.interaction.channel
+            leave_action.safe_get_partial_message.return_value = message
+            view = PendingGameView(self.bot)
+
+            await view.leave.callback(self.interaction)
+
+            leave_action.safe_update_embed_origin.assert_not_called()
+            leave_action.safe_update_embed.assert_called_once()
+            safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
+            assert safe_update_embed_call.kwargs["embed"].to_dict() == {
+                "color": self.settings.PENDING_EMBED_COLOR,
+                "description": (
+                    "_A SpellTable link will be created when all players have joined._\n"
+                    "\n"
+                    f"{self.guild.motd}\n\n{self.channel.motd}"
+                ),
+                "fields": [
+                    {
+                        "inline": False,
+                        "name": "Players",
+                        "value": f"• <@{other_player.xid}> ({other_player.name})",
+                    },
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Updated at", "value": ANY},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{self.game.id}"},
+                "thumbnail": {"url": self.settings.THUMB_URL},
+                "title": "**Waiting for 3 more players to join...**",
+                "type": "rich",
+            }
+
     async def test_leave_button_when_no_game(
         self,
         cog: LeaveGameCog,
@@ -281,25 +329,7 @@ class TestCogLeaveGame(InteractionMixin):
             await view.leave.callback(self.interaction)
 
             leave_action.safe_update_embed_origin.assert_not_called()
-            leave_action.safe_update_embed.assert_called_once()
-            safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
-            assert safe_update_embed_call.kwargs["embed"].to_dict() == {
-                "color": self.settings.EMPTY_EMBED_COLOR,
-                "description": (
-                    "_A SpellTable link will be created when all players have joined._\n"
-                    "\n"
-                    f"{self.guild.motd}\n\n{self.channel.motd}"
-                ),
-                "fields": [
-                    {"inline": True, "name": "Format", "value": "Commander"},
-                    {"inline": True, "name": "Updated at", "value": ANY},
-                    {"inline": False, "name": "Support SpellBot", "value": ANY},
-                ],
-                "footer": {"text": f"SpellBot Game ID: #SB{self.game.id}"},
-                "thumbnail": {"url": self.settings.THUMB_URL},
-                "title": "**Waiting for 4 more players to join...**",
-                "type": "rich",
-            }
+            leave_action.safe_delete_message.assert_called_once_with(message)
 
     async def test_leave_button_when_message_missing_and_fetch_channel_fails(
         self,
