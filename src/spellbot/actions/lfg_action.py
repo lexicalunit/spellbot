@@ -24,7 +24,7 @@ from spellbot.operations import (
     safe_update_embed_origin,
 )
 from spellbot.settings import settings
-from spellbot.views import BaseView, PendingGameView, StartedGameView, StartedGameViewWithConfirm
+from spellbot.views import BaseView, PendingGameView, StartedGameView
 
 from .base_action import BaseAction
 
@@ -141,11 +141,8 @@ class LookingForGameAction(BaseAction):
             ):
                 embed = await self.services.games.to_embed()
                 view: BaseView | None = None
-                if self.channel_data.get("show_points", False) and not found["confirmed"]:
-                    if self.channel_data.get("require_confirmation", False):
-                        view = StartedGameViewWithConfirm(bot=self.bot)
-                    else:
-                        view = StartedGameView(bot=self.bot)
+                if self.channel_data.get("show_points", False):
+                    view = StartedGameView(bot=self.bot)
                 await safe_update_embed(message, embed=embed, view=view)
 
             return None
@@ -154,7 +151,7 @@ class LookingForGameAction(BaseAction):
         return False
 
     @tracer.wrap()
-    async def execute(  # noqa: C901
+    async def execute(
         self,
         friends: str | None = None,
         seats: int | None = None,
@@ -181,14 +178,6 @@ class LookingForGameAction(BaseAction):
 
         if await self.services.users.is_waiting(self.channel.id):
             msg = "You're already in a game in this channel."
-            if origin:
-                return await safe_send_user(self.interaction.user, msg)
-            await safe_followup_channel(self.interaction, msg)
-            return None
-
-        req_confirm = self.channel_data["require_confirmation"]
-        if req_confirm and not await self.services.users.is_confirmed(self.channel.id):
-            msg = "You need to confirm your points before joining another game."
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
             await safe_followup_channel(self.interaction, msg)
@@ -287,70 +276,9 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        plays = await self.services.games.get_plays()
-        if plays.get(self.interaction.user.id, {}).get("confirmed_at", None):
-            await safe_send_user(
-                self.interaction.user,
-                f"You've already confirmed your points for game SB{found.get('id')}.",
-            )
-            return
-
-        # if at least one player has confirmed their points, then changing points not allowed
-        if any(play.get("confirmed_at") is not None for play in plays.values()):
-            await safe_send_user(
-                self.interaction.user,
-                (
-                    f"Points for game SB{found.get('id')} are locked in,"
-                    " please confirm them or contact a mod."
-                ),
-            )
-            return
-
         await self.services.games.add_points(self.interaction.user.id, points)
         embed = await self.services.games.to_embed()
         await safe_update_embed(message, embed=embed)
-
-    @tracer.wrap()
-    async def confirm_points(self, message: Message) -> None:
-        found = await self.services.games.select_by_message_xid(message.id)
-        if not found:
-            return
-
-        if not await self.services.games.players_included(self.interaction.user.id):
-            await safe_send_user(
-                self.interaction.user,
-                f"You are not one of the players in game SB{found.get('id')}.",
-            )
-            return
-
-        plays = await self.services.games.get_plays()
-        if plays.get(self.interaction.user.id, {}).get("confirmed_at", None):
-            await safe_send_user(
-                self.interaction.user,
-                f"You've already confirmed your points for game SB{found.get('id')}",
-            )
-            return
-
-        if any(play.get("points") is None for play in plays.values()):
-            await safe_send_user(
-                self.interaction.user,
-                (
-                    "Please wait until all players have reported"
-                    f" before confirming points for game SB{found.get('id')}"
-                ),
-            )
-            return
-
-        confirmed_at = await self.services.games.confirm_points(player_xid=self.interaction.user.id)
-        embed = await self.services.games.to_embed()
-        data = await self.services.games.to_dict()
-        if data["confirmed"]:
-            await safe_update_embed(message, embed=embed, view=None)
-        else:
-            await safe_update_embed(message, embed=embed)
-        plays[self.interaction.user.id]["confirmed_at"] = confirmed_at
-        if all(play["confirmed_at"] is not None for play in plays.values()):
-            await self.services.games.update_records(plays)
 
     @tracer.wrap()
     async def create_game(
@@ -493,11 +421,8 @@ class LookingForGameAction(BaseAction):
 
         view: BaseView | None = None
         if fully_seated:
-            if self.channel_data.get("show_points", False) and not game_data["confirmed"]:
-                if self.channel_data.get("require_confirmation", False):
-                    view = StartedGameViewWithConfirm(bot=self.bot)
-                else:
-                    view = StartedGameView(bot=self.bot)
+            if self.channel_data.get("show_points", False):
+                view = StartedGameView(bot=self.bot)
         else:
             view = PendingGameView(bot=self.bot)
 

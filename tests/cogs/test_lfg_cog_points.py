@@ -215,9 +215,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                     "type": "rich",
                 }
 
-                message.id += 1  # make it so the message isn't findable in our DB
-                lfg_action.safe_get_partial_message.return_value = message
-                self.interaction.original_response.return_value = message
+                self.interaction.original_response.return_value = None
                 lfg_action.safe_update_embed.reset_mock()
 
                 await select.callback(self.interaction)

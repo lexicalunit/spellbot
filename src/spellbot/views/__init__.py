@@ -5,7 +5,6 @@ from .lfg_view import (
     PendingGameView,
     StartedGameSelect,
     StartedGameView,
-    StartedGameViewWithConfirm,
 )
 from .setup_view import SetupView
 
@@ -15,5 +14,4 @@ __all__ = [
     "SetupView",
     "StartedGameSelect",
     "StartedGameView",
-    "StartedGameViewWithConfirm",
 ]

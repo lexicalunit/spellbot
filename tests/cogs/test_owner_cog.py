@@ -164,3 +164,25 @@ class TestCogOwner(ContextMixin):
         self.context.author.send.assert_called_once_with(
             "Naughty users: <@1> (1)\n<@2> (2)\n<@3> (3)",
         )
+
+    async def test_sync(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.cogs.owner_cog.load_extensions", AsyncMock())
+        cog = OwnerCog(self.bot)
+        callback = partial(cog.sync.callback, cog)
+
+        await callback(self.context)
+
+        self.context.author.send.assert_called_once_with("Commands synced!")
+
+    async def test_sync_exception(self, mocker: MockerFixture) -> None:
+        mocker.patch(
+            "spellbot.cogs.owner_cog.load_extensions",
+            AsyncMock(side_effect=RuntimeError("oops")),
+        )
+        cog = OwnerCog(self.bot)
+        callback = partial(cog.sync.callback, cog)
+
+        with pytest.raises(RuntimeError):
+            await callback(self.context)
+
+        self.context.author.send.assert_called_once_with("Error: oops")

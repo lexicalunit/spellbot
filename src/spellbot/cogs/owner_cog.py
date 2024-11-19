@@ -11,7 +11,7 @@ from spellbot.metrics import add_span_context
 from spellbot.operations import bad_users, safe_send_user
 from spellbot.services import GuildsService, UsersService
 from spellbot.settings import settings
-from spellbot.utils import for_all_callbacks
+from spellbot.utils import for_all_callbacks, load_extensions
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,21 @@ async def set_banned_guild(banned: bool, ctx: commands.Context[SpellBot], arg: s
 class OwnerCog(commands.Cog):
     def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
+
+    @commands.command(name="sync")
+    @commands.is_owner()
+    @tracer.wrap(name="interaction", resource="sync")
+    async def sync(self, ctx: commands.Context[SpellBot]) -> None:
+        add_span_context(self.bot)
+        try:
+            await load_extensions(self.bot, do_sync=True)
+            await safe_send_user(ctx.message.author, "Commands synced!")
+        except Exception as ex:
+            try:
+                await safe_send_user(ctx.message.author, f"Error: {ex}")
+            except Exception:  # pragma: no cover
+                logger.exception("Failed to send error message to user.")
+            await handle_exception(ex)
 
     @commands.command(name="ban")
     @tracer.wrap(name="interaction", resource="ban")

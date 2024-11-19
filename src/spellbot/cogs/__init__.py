@@ -13,11 +13,8 @@ from .block_cog import BlockCog
 from .events_cog import EventsCog
 from .leave_cog import LeaveGameCog
 from .lfg_cog import LookingForGameCog
-from .mod_cog import ModCog
 from .owner_cog import OwnerCog
-from .record_cog import RecordCog
 from .score_cog import ScoreCog
-from .sync_cog import SyncCog
 from .tasks_cog import TasksCog
 from .verify_cog import VerifyCog
 from .watch_cog import WatchCog
@@ -32,11 +29,8 @@ __all__ = [
     "EventsCog",
     "LeaveGameCog",
     "LookingForGameCog",
-    "ModCog",
     "OwnerCog",
-    "RecordCog",
     "ScoreCog",
-    "SyncCog",
     "TasksCog",
     "VerifyCog",
     "WatchCog",

@@ -265,6 +265,27 @@ class TestCogLookingForGameJoinButton(InteractionMixin):
                 "type": "rich",
             }
 
+    async def test_join_when_no_original_response(
+        self,
+        game: Game,
+        user: User,
+        message: discord.Message,
+    ) -> None:
+        with (
+            mock_operations(lfg_action, users=[mock_discord_object(user)]),
+            patch(
+                "spellbot.views.lfg_view.safe_original_response",
+                return_value=None,
+            ),
+        ):
+            lfg_action.safe_update_embed_origin.return_value = message
+            self.interaction.message = message
+            view = PendingGameView(bot=self.bot)
+
+            await view.join.callback(self.interaction)
+
+            lfg_action.safe_update_embed_origin.assert_not_called()
+
     async def test_join_with_show_points(
         self,
         game: Game,
