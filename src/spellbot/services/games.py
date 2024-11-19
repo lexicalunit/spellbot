@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import logging
-from collections import defaultdict
 from datetime import datetime, timedelta
-from itertools import permutations
 from typing import TYPE_CHECKING, cast
 
 import pytz
@@ -23,12 +21,9 @@ from spellbot.models import (
     GameDict,
     GameStatus,
     Play,
-    PlayDict,
     Post,
     Queue,
     QueueDict,
-    Record,
-    RecordDict,
     UserAward,
     Watch,
 )
@@ -86,36 +81,6 @@ class GamesService:
             .first()
         )
         return self.game.to_dict() if self.game else None
-
-    @sync_to_async()
-    @tracer.wrap()
-    def get_plays(self) -> dict[int, PlayDict]:
-        assert self.game
-        plays = DatabaseSession.query(Play).filter(Play.game_id == self.game.id).all()
-        return {play.user_xid: play.to_dict() for play in plays}
-
-    @sync_to_async()
-    @tracer.wrap()
-    def get_record(self, guild_xid: int, channel_xid: int, user_xid: int) -> RecordDict:
-        record = (
-            DatabaseSession.query(Record)
-            .filter(
-                Record.guild_xid == guild_xid,
-                Record.channel_xid == channel_xid,
-                Record.user_xid == user_xid,
-            )
-            .one_or_none()
-        )
-        if not record:
-            record = Record(
-                guild_xid=guild_xid,
-                channel_xid=channel_xid,
-                user_xid=user_xid,
-                elo=1500,
-            )
-            DatabaseSession.add(record)
-            DatabaseSession.commit()
-        return record.to_dict()
 
     @sync_to_async()
     @tracer.wrap()
@@ -544,76 +509,6 @@ class GamesService:
         DatabaseSession.execute(query)
         DatabaseSession.commit()
         return confirmed_at
-
-    @sync_to_async()
-    @tracer.wrap()
-    def update_records(self, plays: dict[int, PlayDict]) -> None:  # noqa: C901
-        assert self.game
-        guild_xid = self.game.guild_xid
-        channel_xid = self.game.channel_xid
-        records: dict[int, Record] = {
-            r.user_xid: r
-            for r in DatabaseSession.query(Record).filter(
-                Record.guild_xid == guild_xid,
-                Record.channel_xid == channel_xid,
-            )
-        }
-        if len(records) != len(plays):
-            # some players may not have Record objects for this guild/channel yet, so
-            # we must create them now (giving each player their default ELO scores).
-            for user_xid in plays:
-                if user_xid not in records:
-                    record = Record(
-                        guild_xid=guild_xid,
-                        channel_xid=channel_xid,
-                        user_xid=user_xid,
-                        elo=1500,
-                    )
-                    DatabaseSession.add(record)
-                    records[user_xid] = record
-
-        assert len(records) == len(plays)
-
-        def place(play: PlayDict) -> int:
-            points = play["points"] or 0
-            if points >= 3:  # first place
-                return 1
-            if points > 0:  # second place
-                return 2
-            return 3  # last place
-
-        def calc_s(play1: PlayDict, play2: PlayDict):
-            if place(play1) < place(play2):
-                return 1.0
-            if place(play1) == place(play2):
-                return 0.5
-            return 0.0
-
-        def calc_ea(rec1: Record, rec2: Record):
-            return 1 / (1.0 + pow(10.0, (rec2.elo - rec1.elo) / 400.0))
-
-        def calc_elo_change(play1: PlayDict, rec1: Record, play2: PlayDict, rec2: Record, k: int):
-            s = calc_s(play1, play2)
-            ea = calc_ea(rec1, rec2)
-            return round(k * (s - ea))
-
-        n = len(records)
-        k = 32  # growth rate
-        player_to_player = list(permutations(range(n), 2))
-
-        elo_changes = defaultdict(int)
-        plays_list = sorted(plays.values(), key=lambda p: p["user_xid"])
-        records_list = sorted(records.values(), key=lambda r: r.user_xid)
-        for i, j in player_to_player:
-            elo_changes[i] += calc_elo_change(
-                plays_list[i], records_list[i], plays_list[j], records_list[j], k
-            )
-        for i in range(n):
-            before = records_list[i].elo
-            after = before + elo_changes[i]
-            print(f"ELO {records_list[i].user_xid}, {before} -> {after} ...")  # noqa: T201
-            records_list[i].elo = after  # type: ignore
-        DatabaseSession.commit()
 
     @sync_to_async()
     @tracer.wrap()

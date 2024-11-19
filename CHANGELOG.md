@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Updated dependencies.
+- Delete the pending game when the last player leaves it.
+- Cleaned up some code by reducing the number of cogs.
+
+### Removed
+
+- Removes the unfinished ELO and points confirmation code. This can be reintroduced in the future
+  but it needs to be fully overhauled from its current state.
 
 ## [v13.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v13.0.1) - 2024-12-15
 
