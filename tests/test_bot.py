@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
@@ -10,6 +11,7 @@ from discord.ext.commands import AutoShardedBot, CommandNotFound, Context, UserI
 
 from spellbot import SpellBot
 from spellbot.database import DatabaseSession
+from spellbot.enums import GameService
 from spellbot.errors import (
     AdminOnlyError,
     GuildBannedError,
@@ -18,18 +20,63 @@ from spellbot.errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
-from spellbot.models import Channel, Guild, Verify
+from spellbot.models import Channel, GameDict, Guild, Verify
 from spellbot.utils import handle_interaction_errors
 
 from .mixins import BaseMixin
 
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
+
 
 @pytest.mark.asyncio
 class TestSpellBot(BaseMixin):
-    async def test_create_create_game_link(self, bot: SpellBot) -> None:
-        link = await bot.create_game_link(MagicMock())
-        assert link is not None
-        assert link.startswith("http://exmaple.com/game/")
+    @pytest.fixture
+    def mock_generate_spelltable_link(self, mocker: MockerFixture) -> MagicMock:
+        return mocker.patch(
+            "spellbot.client.generate_spelltable_link",
+            return_value="http://spelltable",
+        )
+
+    @pytest.fixture
+    def mock_generate_tablestream_link(self, mocker: MockerFixture) -> MagicMock:
+        return mocker.patch(
+            "spellbot.client.generate_tablestream_link",
+            return_value="http://table-stream",
+        )
+
+    @pytest.mark.parametrize(
+        ("mock_games", "game"),
+        [
+            (True, {}),
+            (False, {"service": GameService.SPELLTABLE.value}),
+            (False, {"service": GameService.TABLE_STREAM.value}),
+            (False, {"service": "bogus"}),
+        ],
+    )
+    async def test_create_game(
+        self,
+        bot: SpellBot,
+        mock_games: bool,
+        game: GameDict,
+        mock_generate_spelltable_link: MagicMock,
+        mock_generate_tablestream_link: MagicMock,
+    ) -> None:
+        bot.mock_games = mock_games
+        link = await bot.create_game_link(game)
+        if mock_games:
+            assert link is not None
+            assert link.startswith("http://example.com/game/")
+        elif game.get("service") == GameService.SPELLTABLE.value:
+            assert link is not None
+            assert link.startswith("http://spelltable")
+            mock_generate_spelltable_link.assert_called_once_with(game)
+        elif game.get("service") == GameService.TABLE_STREAM.value:
+            assert link is not None
+            assert link.startswith("http://table-stream")
+            mock_generate_tablestream_link.assert_called_once_with(game)
+        else:
+            assert link is None
 
     @pytest.mark.parametrize(
         ("error", "response"),
