@@ -190,7 +190,7 @@ class TasksAction:
                 continue
 
             channel_data = await self.services.channels.select(channel_xid)
-            if not dequeued or channel_data and channel_data["delete_expired"]:
+            if not dequeued or (channel_data and channel_data["delete_expired"]):
                 await safe_delete_message(post)
             else:
                 await safe_update_embed(

@@ -5,7 +5,7 @@ from .cli import main
 from .client import SpellBot
 
 __all__ = [
+    "SpellBot",
     "__version__",
     "main",
-    "SpellBot",
 ]

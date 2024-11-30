@@ -249,7 +249,7 @@ class suppress(AbstractContextManager[None]):
     be able to understand that code following the context is reachable.
     """
 
-    __slots__ = ("_exceptions", "_log", "_kwargs")
+    __slots__ = ("_exceptions", "_kwargs", "_log")
 
     def __init__(self, *exceptions: type[Exception], log: str, **kwargs: Any) -> None:
         self._exceptions = exceptions
