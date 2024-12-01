@@ -1,5 +1,6 @@
 [tool.pyright]
 enableTypeIgnoreComments = true
+reportMatchNotExhaustive = true
 reportMissingParameterType = true
 reportMissingTypeArgument = true
 reportUnnecessaryTypeIgnoreComment = "error"

@@ -128,12 +128,13 @@ class TestServiceGames:
     async def test_games_make_ready(self, game: Game) -> None:
         games = GamesService()
         await games.select(game.id)
-        await games.make_ready("http://link")
+        await games.make_ready("http://link", "whatever")
 
         DatabaseSession.expire_all()
         found = DatabaseSession.query(Game).get(game.id)
         assert found
         assert found.spelltable_link == "http://link"
+        assert found.password == "whatever"
         assert found.status == GameStatus.STARTED.value
 
     async def test_games_player_xids(self, game: Game) -> None:

@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-MAX_SPELLTABLE_LINK_LEN = Game.spelltable_link.property.columns[0].type.length  # type: ignore
+MAX_GAME_LINK_LEN = Game.spelltable_link.property.columns[0].type.length  # type: ignore
 
 
 class GamesService:
@@ -337,16 +337,17 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def make_ready(self, spelltable_link: str | None) -> int:
+    def make_ready(self, game_link: str | None, password: str | None) -> int:
         assert self.game
-        assert len(spelltable_link or "") <= MAX_SPELLTABLE_LINK_LEN
+        assert len(game_link or "") <= MAX_GAME_LINK_LEN
         queues: list[QueueDict] = [
             queue.to_dict()
             for queue in DatabaseSession.query(Queue).filter(Queue.game_id == self.game.id).all()
         ]
 
         # update game's state
-        self.game.spelltable_link = spelltable_link
+        self.game.spelltable_link = game_link  # column is "spelltable_link" for legacy reasons
+        self.game.password = password
         self.game.status = GameStatus.STARTED.value
         self.game.started_at = datetime.now(tz=pytz.utc)
 

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any
+from enum import Enum
+from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 
 from aiohttp.client_exceptions import ClientError
 from aiohttp_retry import ExponentialRetry, RetryClient
 
 from spellbot import __version__
+from spellbot.enums import GameFormat
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
@@ -17,7 +19,67 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-async def generate_tablestream_link(game: GameDict) -> str | None:
+class TableSteamGameTypes(Enum):
+    MTGCommander = "MTGCommander"
+    MTGLegacy = "MTGLegacy"
+    MTGModern = "MTGModern"
+    MTGStandard = "MTGStandard"
+    MTGVintage = "MTGVintage"
+
+
+def table_stream_game_type(format: GameFormat) -> TableSteamGameTypes:
+    match format:
+        case (
+            GameFormat.COMMANDER
+            | GameFormat.OATHBREAKER
+            | GameFormat.BRAWL_MULTIPLAYER
+            | GameFormat.EDH_MAX
+            | GameFormat.EDH_HIGH
+            | GameFormat.EDH_MID
+            | GameFormat.EDH_LOW
+            | GameFormat.EDH_BATTLECRUISER
+            | GameFormat.PLANECHASE
+            | GameFormat.TWO_HEADED_GIANT
+            | GameFormat.PRE_CONS
+            | GameFormat.CEDH
+            | GameFormat.PAUPER_EDH
+            | GameFormat.ARCHENEMY
+        ):
+            return TableSteamGameTypes.MTGCommander
+        case (
+            GameFormat.LEGACY
+            | GameFormat.PAUPER
+            | GameFormat.DUEL_COMMANDER
+            | GameFormat.BRAWL_TWO_PLAYER
+        ):
+            return TableSteamGameTypes.MTGLegacy
+        case GameFormat.MODERN | GameFormat.PIONEER:
+            return TableSteamGameTypes.MTGModern
+        case GameFormat.STANDARD | GameFormat.SEALED:
+            return TableSteamGameTypes.MTGStandard
+        case GameFormat.VINTAGE:
+            return TableSteamGameTypes.MTGVintage
+
+
+class TableStreamArgs(TypedDict):
+    roomName: str
+    gameType: str
+    maxPlayers: int
+
+    # If true and no password passed in the system
+    # will auto generate and return a password
+    private: NotRequired[bool]
+
+    # password for the room, leave blank for auto
+    # generated password if 'private' is true
+    password: NotRequired[bool]
+
+    # amount of time the room is joinable after
+    # which it is auto deleted. Default: 1 hour
+    initialScheduleTTLInSeconds: NotRequired[int]
+
+
+async def generate_tablestream_link(game: GameDict) -> tuple[str | None, str | None]:
     assert settings.TABLESTREAM_AUTH_KEY
 
     headers = {
@@ -28,25 +90,16 @@ async def generate_tablestream_link(game: GameDict) -> str | None:
     data: dict[str, Any] | None = None
     raw_data: bytes | None = None
 
-    # Game Types:
-    # "MTGCommander"
-    # "MTGStandard"
-    # "MTGModern"
-    # "MTGVintage"
-    # "MTGLegacy"
-
-    request_data = {
-        "roomName": "amy-testing",
-        "gameType": "MTGCommander",
-        "maxPlayers": 4,
-        "private": True,
-        # private?:boolean; optional: If true and no password passed in the system
-        #                             will auto generate and return a password
-        # password?:string; optional: password for the room, leave blank for auto
-        #                             generated password if 'private' is true
-        # initialScheduleTTLInSeconds?:number; optional: amount of time the room is joinable after
-        #                                                which it is auto deleted. Default: 1 hour
-    }
+    room_name = f"SB{game['id']}"
+    sb_game_format = GameFormat(game["format"])
+    ts_game_type = table_stream_game_type(sb_game_format).value
+    ts_args = TableStreamArgs(
+        roomName=room_name,
+        gameType=ts_game_type,
+        maxPlayers=sb_game_format.players,
+        private=True,
+        initialScheduleTTLInSeconds=1 * 60 * 60,  # 1 hour
+    )
 
     try:
         async with (
@@ -57,27 +110,30 @@ async def generate_tablestream_link(game: GameDict) -> str | None:
             client.post(
                 settings.TABLESTREAM_CREATE,
                 headers=headers,
-                json=request_data,
+                json={**ts_args},
             ) as resp,
         ):
             # Rather than use `resp.json()`, which respects mimetype, let's just
             # grab the data and try to decode it ourselves.
             # https://github.com/inyutin/aiohttp_retry/issues/55
             raw_data = await resp.read()
-            data = json.loads(raw_data)
 
-            # data = {
-            #     "room": {
-            #         "roomName": "amy-testing",
-            #         "roomId": "cc56f322-3338-4643-8cd3-251055aa515d",
-            #         "roomUrl": "https://table-stream.com/game?id=cc56f322-3338-4643-8cd3-251055aa515d",
-            #         "gameType": "MTGCommander",
-            #         "maxPlayers": 4,
-            #         "password": "J^vT!wL1kQ",
-            #     }
+            if not (data := json.loads(raw_data)):
+                return None, None
+
+            # Example response:
+            # {
+            #   "room": {
+            #     "roomName": "SB12345",
+            #     "roomId": "UUID",
+            #     "roomUrl": "https://table-stream.com/game?id=UUID",
+            #     "gameType": "MTGCommander",
+            #     "maxPlayers": 4,
+            #     "password": "OMIT",
+            #   }
             # }
-
-            return None
+            room = data.get("room", {})
+            return room.get("roomUrl"), room.get("password")
     except ClientError as ex:
         add_span_error(ex)
         logger.warning(
@@ -87,11 +143,11 @@ async def generate_tablestream_link(game: GameDict) -> str | None:
             raw_data,
             exc_info=True,
         )
-        return None
+        return None, None
     except Exception as ex:
         if raw_data == b"upstream request timeout":
-            return None
+            return None, None
 
         add_span_error(ex)
         logger.exception("error: unexpected exception: data: %s, raw: %s", data, raw_data)
-        return None
+        return None, None
