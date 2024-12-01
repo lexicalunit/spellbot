@@ -39,7 +39,7 @@ class GameService(Enum):
 GAME_SERVICE_ORDER = [
     GameService.NOT_ANY,
     GameService.SPELLTABLE,
-    # GameService.TABLE_STREAM, # Not currently supported, coming soon!
+    GameService.TABLE_STREAM,
     GameService.COCKATRICE,
     GameService.X_MAGE,
     GameService.MTG_ARENA,

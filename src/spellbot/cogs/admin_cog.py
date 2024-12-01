@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from spellbot import SpellBot
 from spellbot.actions import AdminAction
-from spellbot.enums import GameFormat, GameService
+from spellbot.enums import GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
 from spellbot.metrics import add_span_context
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_admin, is_guild
@@ -168,7 +168,7 @@ class AdminCog(commands.Cog):
     )
     @app_commands.describe(format="Default game format")
     @app_commands.choices(
-        format=[Choice(name=str(format), value=format.value) for format in GameFormat],
+        format=[Choice(name=str(format), value=format.value) for format in GAME_FORMAT_ORDER],
     )
     @tracer.wrap(name="interaction", resource="set_default_format")
     async def default_format(self, interaction: discord.Interaction, format: int) -> None:
@@ -182,7 +182,7 @@ class AdminCog(commands.Cog):
     )
     @app_commands.describe(service="Default service")
     @app_commands.choices(
-        service=[Choice(name=str(service), value=service.value) for service in GameService],
+        service=[Choice(name=str(service), value=service.value) for service in GAME_SERVICE_ORDER],
     )
     @tracer.wrap(name="interaction", resource="set_default_service")
     async def default_service(self, interaction: discord.Interaction, service: int) -> None:
