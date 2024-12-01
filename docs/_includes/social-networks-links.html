@@ -99,6 +99,18 @@
   </li>
   {%- endif -%}
 
+  {%- if network[0] == "bluesky" -%}
+  <li class="list-inline-item">
+    <a href="https://bsky.app/profile/{{ network[1] }}" title="BlueSky">
+      <span class="fa-stack fa-lg" aria-hidden="true">
+        <i class="fas fa-circle fa-stack-2x"></i>
+        <i class="fab fa-bluesky fa-stack-1x fa-inverse"></i>
+      </span>
+      <span class="sr-only">BlueSky</span>
+   </a>
+  </li>
+  {%- endif -%}
+
   {%- if network[0] == "twitter" -%}
   <li class="list-inline-item">
     <a href="https://twitter.com/{{ network[1] }}" title="X (Twitter)">
@@ -263,18 +275,6 @@
         <i class="fab fa-mastodon fa-stack-1x fa-inverse"></i>
       </span>
       <span class="sr-only">Mastodon</span>
-    </a>
-  </li>
-  {%- endif -%}
-
-  {%- if network[0] == "bluesky" -%}
-  <li class="list-inline-item">
-    <a rel="me" href="https://bsky.app/profile/{{ network[1] }}" title="Bluesky">
-      <span class="fa-stack fa-lg" aria-hidden="true">
-        <i class="fas fa-circle fa-stack-2x"></i>
-        <i class="fas fa-square fa-stack-1x fa-inverse"></i>
-      </span>
-      <span class="sr-only">Bluesky</span>
     </a>
   </li>
   {%- endif -%}

@@ -50,8 +50,9 @@ avatar: "/assets/img/avatar-icon.png"
 # Uncomment the links you want to show and add your information to each one.
 social-network-links:
   email: "spellbot@lexicalunit.com"
-  github: lexicalunit
-  twitter: SpellBotIO
+  github: "lexicalunit"
+  bluesky: "spellbotio.bsky.social"
+  twitter: "SpellBotIO"
 #  mastodon: mstdn.ca/@lexicalunit
 #  facebook: deanattali
 #  patreon: DeanAttali
@@ -287,4 +288,3 @@ plugins:
 
 # Beautiful Jekyll / Dean Attali
 # 2fc73a3a967e97599c9763d05e564189
-
