@@ -406,8 +406,8 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def make_game_ready(self, game: GameDict) -> int:
-        game_link = await self.bot.create_game_link(game)
-        return await self.services.games.make_ready(game_link)
+        game_link, password = await self.bot.create_game_link(game)
+        return await self.services.games.make_ready(game_link, password)
 
     @tracer.wrap()
     async def _handle_voice_creation(self, guild_xid: int) -> None:

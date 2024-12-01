@@ -44,6 +44,7 @@ class GameDict(TypedDict):
     jump_links: dict[int, str]
     confirmed: bool
     requires_confirmation: bool
+    password: str | None
 
 
 class Game(Base):
@@ -151,6 +152,7 @@ class Game(Base):
         ),
     )
     spelltable_link = Column(String(255), doc="The generated SpellTable link for this game")
+    password = Column(String(255), nullable=True, doc="The password for this game")
     voice_invite_link = Column(String(255), doc="The voice channel invite link for this game")
     requires_confirmation = Column(
         Boolean,
@@ -225,6 +227,8 @@ class Game(Base):
         if self.status == GameStatus.PENDING.value:
             if self.service == GameService.SPELLTABLE.value:
                 description += "_A SpellTable link will be created when all players have joined._"
+            elif self.service == GameService.TABLE_STREAM.value:
+                description += "_A Table Stream link will be created when all players have joined._"
             elif self.service == GameService.NOT_ANY.value:
                 description += "_Please contact the players in your game to organize this game._"
             else:
@@ -233,20 +237,28 @@ class Game(Base):
             if self.show_links(dm):
                 if self.spelltable_link:
                     description += (
-                        f"[Join your SpellTable game now!]({self.spelltable_link})"
-                        f" (or [spectate this game]({self.spectate_link}))"
+                        f"[Join your {GameService(self.service)} game now!]({self.spelltable_link})"
                     )
+                    if self.service == GameService.SPELLTABLE.value:
+                        description += f" (or [spectate this game]({self.spectate_link}))"
                 elif self.service == GameService.SPELLTABLE.value:
                     description += (
                         "Sorry but SpellBot was unable to create a SpellTable link"
                         " for this game. Please go to [SpellTable]"
                         "(https://spelltable.wizards.com/) to create one."
                     )
+                elif self.service == GameService.TABLE_STREAM.value:
+                    description += (
+                        "Sorry but SpellBot was unable to create a Table Stream link"
+                        " for this game. Please go to [Table Stream]"
+                        "(https://table-stream.com/) to create one."
+                    )
                 elif self.service != GameService.NOT_ANY.value:
                     description += f"Please use {GameService(self.service)} to play this game."
                 else:
                     description += "Contact the other players in your game to organize this match."
-
+                if self.password:
+                    description += f"\n\nPassword: `{self.password}`"
                 if self.voice_xid:
                     description += f"\n\nJoin your voice chat now: <#{self.voice_xid}>"
                 if self.voice_invite_link:
@@ -415,4 +427,5 @@ class Game(Base):
             "jump_links": self.jump_links,
             "confirmed": self.confirmed,
             "requires_confirmation": self.channel.require_confirmation,
+            "password": self.password,
         }

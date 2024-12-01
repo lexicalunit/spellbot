@@ -35,7 +35,7 @@ The Discord bot for <a href="https://spelltable.wizards.com/">SpellTable</a>
 
 ## 🤖 Using SpellBot
 
-SpellBot helps you find _Magic: The Gathering_ games on [SpellTable][spelltable]. Just looking to
+SpellBot helps you find _Magic: The Gathering_ games on [SpellTable][spelltable] or [Table Stream][tablestream]. Just looking to
 play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
 
 <p align="center">
@@ -185,5 +185,6 @@ Any usage of SpellBot implies that you accept the following policies.
 [ruff]: https://github.com/astral-sh/ruff
 [slash]: https://discord.com/blog/slash-commands-are-here
 [spelltable]: https://spelltable.wizards.com/
+[tablestream]: https://table-stream.com/
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]: https://uptimerobot.com/dashboard#785764282

@@ -87,15 +87,15 @@ class SpellBot(AutoShardedBot):
             yield
 
     @tracer.wrap()
-    async def create_game_link(self, game: GameDict) -> str | None:
+    async def create_game_link(self, game: GameDict) -> tuple[str | None, str | None]:
         if self.mock_games:
-            return f"http://exmaple.com/game/{uuid4()}"
+            return f"http://exmaple.com/game/{uuid4()}", None
         service = game.get("service")
         if service == GameService.SPELLTABLE.value:
-            return await generate_spelltable_link(game)
+            return await generate_spelltable_link(game), None
         if service == GameService.TABLE_STREAM.value:
             return await generate_tablestream_link(game)
-        return None
+        return None, None
 
     @tracer.wrap(name="interaction", resource="on_message")
     async def on_message(

@@ -27,8 +27,9 @@ from .mixins import BaseMixin
 @pytest.mark.asyncio
 class TestSpellBot(BaseMixin):
     async def test_create_create_game_link(self, bot: SpellBot) -> None:
-        link = await bot.create_game_link(MagicMock())
+        link, password = await bot.create_game_link(MagicMock())
         assert link is not None
+        assert password is None
         assert link.startswith("http://exmaple.com/game/")
 
     @pytest.mark.parametrize(

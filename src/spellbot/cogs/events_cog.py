@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from spellbot import SpellBot
 from spellbot.actions import LookingForGameAction
-from spellbot.enums import GameFormat
+from spellbot.enums import GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_defer_interaction
 from spellbot.settings import settings
@@ -24,10 +24,14 @@ class EventsCog(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="game", description="Immediately create and start an ad-hoc game.")
-    @app_commands.describe(players="Mention all players for this game.")
-    @app_commands.describe(format="What game format? Default if unspecified is Commander.")
+    @app_commands.describe(players="You must mention ALL players for this game.")
+    @app_commands.describe(format="What game format do you want to play?")
     @app_commands.choices(
-        format=[Choice(name=str(format), value=format.value) for format in GameFormat],
+        format=[Choice(name=str(format), value=format.value) for format in GAME_FORMAT_ORDER],
+    )
+    @app_commands.describe(service="What service do you want to use to play this game?")
+    @app_commands.choices(
+        service=[Choice(name=str(service), value=service.value) for service in GAME_SERVICE_ORDER],
     )
     @tracer.wrap(name="interaction", resource="game")
     async def game(
@@ -35,12 +39,13 @@ class EventsCog(commands.Cog):
         interaction: discord.Interaction,
         players: str,
         format: int | None = None,
+        service: int | None = None,
     ) -> None:
         assert interaction.channel_id is not None
         add_span_context(interaction)
         await safe_defer_interaction(interaction)
         async with LookingForGameAction.create(self.bot, interaction) as action:
-            await action.create_game(players, format)
+            await action.create_game(players, format, service)
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
