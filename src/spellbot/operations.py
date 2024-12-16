@@ -505,7 +505,7 @@ async def safe_channel_reply(
 
 
 @tracer.wrap()
-async def save_create_channel_invite(
+async def safe_create_channel_invite(
     channel: discord.abc.GuildChannel,
     *args: Any,
     **kwargs: Any,

@@ -80,6 +80,11 @@ class TestModelGame:
                 id="cockatrice",
             ),
             pytest.param(
+                GameService.TABLE_STREAM,
+                "_A Table Stream link will be created when all players have joined._",
+                id="table-stream",
+            ),
+            pytest.param(
                 GameService.NOT_ANY,
                 "_Please contact the players in your game to organize this game._",
                 id="not_any",
@@ -525,6 +530,81 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {"inline": False, "name": "Support SpellBot", "value": ANY},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+
+    def test_game_embed_started_without_tablestream_link(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            seats=2,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            guild=guild,
+            channel=channel,
+            service=GameService.TABLE_STREAM.value,
+            password="fake",  # noqa: S106
+        )
+        factories.post.create(guild=guild, channel=channel, game=game)
+        player1 = factories.user.create(game=game)
+        player2 = factories.user.create(game=game)
+
+        assert game.to_embed().to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": "Please check your Direct Messages for your game details.",
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n"
+                        f"• <@{player2.xid}> ({player2.name})"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {"inline": False, "name": "Service", "value": "Table Stream"},
+                {"inline": False, "name": "Support SpellBot", "value": ANY},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+        assert game.to_embed(dm=True).to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": (
+                "Sorry but SpellBot was unable to create a Table Stream link for "
+                "this game. Please go to [Table Stream]"
+                "(https://table-stream.com/) to create one.\n"
+                "\n"
+                "Password: `fake`\n"
+                "\n"
+                "You can also [jump to the original game post]"
+                "(https://discordapp.com/channels/"
+                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
+            ),
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n"
+                        f"• <@{player2.xid}> ({player2.name})"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {"inline": False, "name": "Service", "value": "Table Stream"},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},

@@ -9,10 +9,12 @@ import discord
 import pytest
 import pytest_asyncio
 import pytz
+from sqlalchemy import update
 
 from spellbot.actions import TasksAction
 from spellbot.client import build_bot
 from spellbot.database import DatabaseSession
+from spellbot.models import Channel, Game, Guild
 from spellbot.services import ChannelsService, GamesService, GuildsService, ServicesRegistry
 from tests.mocks import mock_discord_object
 
@@ -22,7 +24,7 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
     from spellbot import SpellBot
-    from spellbot.models import Channel, Game, Guild
+    from spellbot.models import Channel, Guild
     from tests.fixtures import Factories
 
 
@@ -465,16 +467,15 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,
-        )
+        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
         voice_channel = make_voice_channel(
             id=4001,
             name=f"XXX-Game-SB{game.id}",
             perms=manage_perms,
             created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
         )
-        game.voice_xid = voice_channel.id  # type: ignore
+        stmt = update(Game).where(Game.id == game.id).values(voice_xid=voice_channel.id)
+        DatabaseSession.execute(stmt)
         DatabaseSession.commit()
         voice_channel.voice_states.keys = lambda: False  # type: ignore
         make_category_channel(

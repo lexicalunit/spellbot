@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
@@ -10,6 +11,7 @@ from discord.ext.commands import AutoShardedBot, CommandNotFound, Context, UserI
 
 from spellbot import SpellBot
 from spellbot.database import DatabaseSession
+from spellbot.enums import GameService
 from spellbot.errors import (
     AdminOnlyError,
     GuildBannedError,
@@ -18,19 +20,65 @@ from spellbot.errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
-from spellbot.models import Channel, Guild, Verify
+from spellbot.models import Channel, GameDict, Guild, Verify
 from spellbot.utils import handle_interaction_errors
 
 from .mixins import BaseMixin
 
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
+
 
 @pytest.mark.asyncio
 class TestSpellBot(BaseMixin):
-    async def test_create_create_game_link(self, bot: SpellBot) -> None:
-        link, password = await bot.create_game_link(MagicMock())
-        assert link is not None
-        assert password is None
-        assert link.startswith("http://exmaple.com/game/")
+    @pytest.mark.parametrize(
+        ("mock_games", "game", "factory"),
+        [
+            pytest.param(
+                True,
+                {},
+                None,
+                id="mock-games",
+            ),
+            pytest.param(
+                False,
+                {"service": GameService.SPELLTABLE.value},
+                "generate_spelltable_link",
+                id="spellbot",
+            ),
+            pytest.param(
+                False,
+                {"service": GameService.TABLE_STREAM.value},
+                "generate_tablestream_link",
+                id="tablestream",
+            ),
+            pytest.param(
+                False,
+                {"service": GameService.NOT_ANY.value},
+                None,
+                id="no-service",
+            ),
+        ],
+    )
+    async def test_create_create_game_link(
+        self,
+        bot: SpellBot,
+        mock_games: bool,
+        game: GameDict,
+        factory: str | None,
+        mocker: MockerFixture,
+    ) -> None:
+        bot.mock_games = mock_games
+        if factory:
+            mock = mocker.patch(f"spellbot.client.{factory}", AsyncMock())
+        response = await bot.create_game_link(game)
+        if factory:
+            mock.assert_called_once_with(game)
+        if mock_games:
+            assert response[0] is not None
+            assert response[0].startswith("http://exmaple.com/game/")
+        if game.get("service") == GameService.NOT_ANY.value:
+            assert response == (None, None)
 
     @pytest.mark.parametrize(
         ("error", "response"),

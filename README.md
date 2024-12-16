@@ -119,7 +119,7 @@ If you have more questions, please don't hesitate to join us on the [SpellBot Di
 
 Thoughts and suggestions? Come join us on the [SpellBot Discord server][discord-invite]! Please
 also feel free to [directly report any bugs][issues] that you encounter. Or reach out to me on
-Twitter at [@SpellBotIO][follow].
+BlueSky at [@spellbot.io][follow].
 
 ## 🙌 Supported By
 
@@ -161,8 +161,8 @@ Any usage of SpellBot implies that you accept the following policies.
 [discord-py]: https://github.com/Rapptz/discord.py
 [docker-badge]: https://img.shields.io/docker/pulls/lexicalunit/spellbot.svg
 [docker-hub]: https://hub.docker.com/r/lexicalunit/spellbot
-[follow-badge]: https://img.shields.io/twitter/follow/SpellBotIO?style=social
-[follow]: https://twitter.com/intent/follow?screen_name=SpellBotIO
+[follow-badge]: https://img.shields.io/badge/Bluesky-1185FE?style=flat&logo=bluesky&logoColor=white
+[follow]: https://bsky.app/profile/spellbot.io
 [heroku-badge]: https://img.shields.io/badge/cloud-heroku-green
 [heroku]: https://dashboard.heroku.com/apps/lexicalunit-spellbot
 [issues]: https://github.com/lexicalunit/spellbot/issues
