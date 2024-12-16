@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Changed twitter links to bluesky in readme.
+- Updated dependencies.
+- Comment out unreachable code for now, pending refactor of points/ELO
+
+### Added
+
+- Adds pytest-socket
+- Adds coverage for `create_game_link`
+- Adds coverage for voice channel creation helper function
+- Adds coverage for table stream game objects
+
+### Fixed
+
+- Fixes typo in name of operation `safe_create_channel_invite`
+- Fixes typo in the name of file `test_lfg_action.py`
+
 ## [v13.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v13.0.0) - 2024-11-30
 
 ### Added

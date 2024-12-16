@@ -17,6 +17,7 @@ from spellbot.operations import (
     safe_add_role,
     safe_channel_reply,
     safe_create_category_channel,
+    safe_create_channel_invite,
     safe_create_voice_channel,
     safe_defer_interaction,
     safe_delete_channel,
@@ -33,7 +34,6 @@ from spellbot.operations import (
     safe_send_user,
     safe_update_embed,
     safe_update_embed_origin,
-    save_create_channel_invite,
 )
 from spellbot.utils import CANT_SEND_CODE
 from tests.mixins import InteractionMixin
@@ -299,12 +299,12 @@ class TestOperationsCreateCategoryChannel:
 @pytest.mark.asyncio
 class TestOperationsCreateChannelInvite:
     async def test_happy_path(self, dpy_channel: discord.TextChannel) -> None:
-        await save_create_channel_invite(dpy_channel)
+        await safe_create_channel_invite(dpy_channel)
         dpy_channel.create_invite.assert_called_once()
 
     async def test_exception(self, dpy_channel: discord.TextChannel) -> None:
         dpy_channel.create_invite.side_effect = DiscordException
-        invite = await save_create_channel_invite(dpy_channel)
+        invite = await safe_create_channel_invite(dpy_channel)
         assert invite is None
 
 

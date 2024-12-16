@@ -12,6 +12,7 @@ from spellbot.models import GameStatus
 from spellbot.operations import (
     safe_add_role,
     safe_channel_reply,
+    safe_create_channel_invite,
     safe_create_voice_channel,
     safe_ensure_voice_category,
     safe_fetch_text_channel,
@@ -21,7 +22,6 @@ from spellbot.operations import (
     safe_send_user,
     safe_update_embed,
     safe_update_embed_origin,
-    save_create_channel_invite,
 )
 from spellbot.settings import settings
 from spellbot.views import BaseView, PendingGameView, StartedGameView, StartedGameViewWithConfirm
@@ -439,7 +439,7 @@ class LookingForGameAction(BaseAction):
         should_create_invite = self.channel_data.get("voice_invite", False)
         invite: discord.Invite | None = None
         if should_create_invite:
-            invite = await save_create_channel_invite(
+            invite = await safe_create_channel_invite(
                 voice_channel,
                 max_age=2 * 60 * 60,  # 2 hours
                 max_uses=0,  # unlimited uses
@@ -461,7 +461,6 @@ class LookingForGameAction(BaseAction):
     ) -> None:
         assert self.guild
         assert self.channel
-
         if message := await safe_followup_channel(
             self.interaction,
             content=content,

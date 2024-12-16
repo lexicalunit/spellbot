@@ -111,7 +111,7 @@ safe_licenses = [
 
 [tool.pytest.ini_options]
 addopts = """
-    -W ignore::DeprecationWarning --no-header --cov --cov-append --cov-report xml:coverage.xml --cov-report=html -vv
+    -W ignore::DeprecationWarning --no-header --disable-socket --allow-unix-socket --allow-hosts=127.0.0.1,::1 --cov --cov-append --cov-report xml:coverage.xml --cov-report=html -vv
 """
 asyncio_default_fixture_loop_scope = "function"
 
@@ -194,6 +194,7 @@ pytest-asyncio = "^0"
 pytest-cov = ">=4,<7"
 pytest-freezegun = "^0"
 pytest-mock = "^3"
+pytest-socket = "^0"
 pytest-xdist = "^3"
 ruff = "^0"
 shellingham = "^1"
