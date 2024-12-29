@@ -20,7 +20,7 @@ from spellbot.errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
-from spellbot.models import Channel, GameDict, Guild, Verify
+from spellbot.models import Channel, GameDict, GameLinkDetails, Guild, Verify
 from spellbot.utils import handle_interaction_errors
 
 from .mixins import BaseMixin
@@ -75,10 +75,10 @@ class TestSpellBot(BaseMixin):
         if factory:
             mock.assert_called_once_with(game)
         if mock_games:
-            assert response[0] is not None
-            assert response[0].startswith("http://exmaple.com/game/")
+            assert response.link is not None
+            assert response.link.startswith("http://exmaple.com/game/")
         if game.get("service") == GameService.NOT_ANY.value:
-            assert response == (None, None)
+            assert response == GameLinkDetails()
 
     @pytest.mark.parametrize(
         ("error", "response"),
