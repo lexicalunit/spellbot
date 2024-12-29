@@ -20,7 +20,7 @@ from .base import Base, create_all, literalquery, now, reverse_all  # noqa: I001
 from .award import GuildAward, UserAward, GuildAwardDict, UserAwardDict  # noqa: E402
 from .block import Block, BlockDict  # noqa: E402
 from .channel import Channel, ChannelDict  # noqa: E402
-from .game import Game, GameStatus, GameDict  # noqa: E402
+from .game import Game, GameStatus, GameDict, GameLinkDetails  # noqa: E402
 from .guild import Guild, GuildDict  # noqa: E402
 from .play import Play, PlayDict  # noqa: E402
 from .post import Post, PostDict  # noqa: E402
@@ -39,6 +39,7 @@ __all__ = [
     "Game",
     "GameDict",
     "GameDict",
+    "GameLinkDetails",
     "GameStatus",
     "Guild",
     "GuildAward",

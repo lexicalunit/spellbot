@@ -7,12 +7,14 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import discord
+from cachetools import TTLCache
 from ddtrace import tracer
 from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, Context
 
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
 from .metrics import setup_ignored_errors, setup_metrics
+from .models import GameLinkDetails
 from .operations import safe_delete_message
 from .services import ChannelsService, GamesService, GuildsService, VerifiesService
 from .settings import settings
@@ -48,7 +50,7 @@ class SpellBot(AutoShardedBot):
         )
         self.mock_games = mock_games
         self.create_connection = create_connection
-        self.critical_lock = asyncio.Lock()
+        self.guild_locks = TTLCache[int, asyncio.Lock](maxsize=100, ttl=3600)  # 1 hr
 
     async def on_ready(self) -> None:  # pragma: no cover
         logger.info("client ready")
@@ -76,25 +78,23 @@ class SpellBot(AutoShardedBot):
 
     @asynccontextmanager
     async def guild_lock(self, guild_xid: int) -> AsyncGenerator[None, None]:
-        # We used to have a lock per guild, but now that users can join games in
-        # multiple guilds at the same time, we need to have a global lock for the
-        # critical paths related to joining and leaving games. That is why we're
-        # ignoring the passed in guild_xid parameter. In the future this could be
-        # refactored to use a more fine-grained locking mechanism, or else remove
-        # the unused parameter.
-        async with self.critical_lock:
+        if not self.guild_locks.get(guild_xid):
+            self.guild_locks[guild_xid] = asyncio.Lock()
+        async with self.guild_locks[guild_xid]:
             yield
 
     @tracer.wrap()
-    async def create_game_link(self, game: GameDict) -> tuple[str | None, str | None]:
+    async def create_game_link(self, game: GameDict) -> GameLinkDetails:
         if self.mock_games:
-            return f"http://exmaple.com/game/{uuid4()}", None
+            return GameLinkDetails(f"http://exmaple.com/game/{uuid4()}")
         service = game.get("service")
         if service == GameService.SPELLTABLE.value:
-            return await generate_spelltable_link(game), None
+            link = await generate_spelltable_link(game)
+            return GameLinkDetails(link)
         if service == GameService.TABLE_STREAM.value:
-            return await generate_tablestream_link(game)
-        return None, None
+            details = await generate_tablestream_link(game)
+            return GameLinkDetails(*details)
+        return GameLinkDetails()
 
     @tracer.wrap(name="interaction", resource="on_message")
     async def on_message(

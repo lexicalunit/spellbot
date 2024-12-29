@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from typing import TYPE_CHECKING, TypedDict, cast
@@ -45,6 +46,12 @@ class GameDict(TypedDict):
     confirmed: bool
     requires_confirmation: bool
     password: str | None
+
+
+@dataclass
+class GameLinkDetails:
+    link: str | None = None
+    password: str | None = None
 
 
 class Game(Base):
