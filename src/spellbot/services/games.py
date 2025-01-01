@@ -257,9 +257,9 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def to_embed(self, dm: bool = False) -> discord.Embed:
+    def to_embed(self, guild: discord.Guild | None, dm: bool = False) -> discord.Embed:
         assert self.game
-        return self.game.to_embed(dm)
+        return self.game.to_embed(guild, dm)
 
     @sync_to_async()
     @tracer.wrap()

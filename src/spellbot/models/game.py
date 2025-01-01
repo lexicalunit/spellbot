@@ -19,6 +19,8 @@ from . import Base, now
 if TYPE_CHECKING:
     from . import Channel, Guild, Post, PostDict, User  # noqa: F401
 
+HR = "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
+
 
 class GameStatus(Enum):
     PENDING = auto()
@@ -227,7 +229,11 @@ class Game(Base):
         plural = "s" if remaining > 1 else ""
         return f"**Waiting for {remaining} more player{plural} to join...**"
 
-    def embed_description(self, dm: bool = False) -> str:  # noqa: C901,PLR0912
+    def embed_description(  # noqa: C901,PLR0912
+        self,
+        guild: discord.Guild | None,
+        dm: bool = False,
+    ) -> str:
         description = ""
         if self.guild.notice:
             description += f"{self.guild.notice}\n\n"
@@ -244,10 +250,12 @@ class Game(Base):
             if self.show_links(dm):
                 if self.spelltable_link:
                     description += (
-                        f"[Join your {GameService(self.service)} game now!]({self.spelltable_link})"
+                        f"# [Join your {GameService(self.service)} game now!]"
+                        f"({self.spelltable_link})"
                     )
-                    if self.service == GameService.SPELLTABLE.value:
-                        description += f" (or [spectate this game]({self.spectate_link}))"
+                    # Spectate links do not seem to work anymore on SpellTable.
+                    # if self.service == GameService.SPELLTABLE.value:
+                    #     description += f" (or [spectate this game]({self.spectate_link}))"
                 elif self.service == GameService.SPELLTABLE.value:
                     description += (
                         "Sorry but SpellBot was unable to create a SpellTable link"
@@ -267,9 +275,15 @@ class Game(Base):
                 if self.password:
                     description += f"\n\nPassword: `{self.password}`"
                 if self.voice_xid:
-                    description += f"\n\nJoin your voice chat now: <#{self.voice_xid}>"
+                    description += f"\n\n## Join your voice chat now: <#{self.voice_xid}>"
                 if self.voice_invite_link:
                     description += f"\nOr use this voice channel invite: {self.voice_invite_link}"
+                elif (
+                    self.guild.suggest_voice_channel
+                    and guild is not None
+                    and (suggestion := self.voice_channel_suggestion(guild))
+                ):
+                    description += f"\n{suggestion}\n{HR}"
             else:
                 description += "Please check your Direct Messages for your game details."
             if dm:
@@ -286,6 +300,22 @@ class Game(Base):
         if self.channel.motd:
             description += f"\n\n{self.apply_placeholders(placeholders, self.channel.motd)}"
         return description
+
+    def voice_channel_suggestion(self, guild: discord.Guild) -> str | None:
+        from spellbot.operations import safe_suggest_voice_channel
+
+        resp = safe_suggest_voice_channel(guild, [p.xid for p in self.players])
+        if resp.already_picked:
+            return (
+                "\n## Your pod is already using a voice channel, "
+                f"join them now: <#{resp.already_picked}>!"
+            )
+        if resp.random_empty:
+            return (
+                "\n## Please consider using this available voice channel: "
+                f"<#{resp.random_empty}>."
+            )
+        return None
 
     @property
     def placeholders(self) -> dict[str, str]:
@@ -375,12 +405,12 @@ class Game(Base):
         )
         return player_count == confirmed_count
 
-    def to_embed(self, dm: bool = False) -> discord.Embed:
+    def to_embed(self, guild: discord.Guild | None = None, dm: bool = False) -> discord.Embed:
         embed = discord.Embed(title=self.embed_title)
         embed.set_thumbnail(
             url=settings.QUEER_THUMB_URL if settings.queer(self.guild_xid) else settings.THUMB_URL
         )
-        embed.description = self.embed_description(dm)
+        embed.description = self.embed_description(guild, dm)
         if self.players:
             embed.add_field(name="Players", value=self.embed_players, inline=False)
         embed.add_field(name="Format", value=self.format_name)
