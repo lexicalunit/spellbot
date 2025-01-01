@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a feature to suggest voice channels (not configurable, beta only).
+
 ## [v14.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v14.1.0) - 2024-12-29
 
 ### Changed

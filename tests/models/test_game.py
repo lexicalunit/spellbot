@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING
-from unittest.mock import ANY
+from unittest.mock import ANY, MagicMock
 
+import discord
 import pytest
 import pytest_asyncio
 import pytz
@@ -223,9 +224,8 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "[Join your SpellTable game now!]"
-                f"({game.spelltable_link}) (or [spectate this game]"
-                f"({game.spectate_link}))\n"
+                "# [Join your SpellTable game now!]"
+                f"({game.spelltable_link})\n"
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
@@ -657,11 +657,10 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "[Join your SpellTable game now!]"
-                f"({game.spelltable_link}) (or [spectate this game]"
-                f"({game.spectate_link}))\n"
+                "# [Join your SpellTable game now!]"
+                f"({game.spelltable_link})\n"
                 "\n"
-                f"Join your voice chat now: <#{game.voice_xid}>\n"
+                f"## Join your voice chat now: <#{game.voice_xid}>\n"
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
@@ -731,11 +730,10 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "[Join your SpellTable game now!]"
-                f"({game.spelltable_link}) (or [spectate this game]"
-                f"({game.spectate_link}))\n"
+                "# [Join your SpellTable game now!]"
+                f"({game.spelltable_link})\n"
                 "\n"
-                f"Join your voice chat now: <#{game.voice_xid}>\n"
+                f"## Join your voice chat now: <#{game.voice_xid}>\n"
                 f"Or use this voice channel invite: {game.voice_invite_link}\n"
                 "\n"
                 "You can also [jump to the original game post]"
@@ -804,9 +802,8 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "[Join your SpellTable game now!]"
-                f"({game.spelltable_link}) (or [spectate this game]"
-                f"({game.spectate_link}))\n"
+                "# [Join your SpellTable game now!]"
+                f"({game.spelltable_link})\n"
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
@@ -884,6 +881,84 @@ class TestModelGame:
                         f"• <@{player1.xid}> ({player1.name})\n**ﾠ⮑ ❌ WIN**\n"
                         f"• <@{player2.xid}> ({player2.name})\n**ﾠ⮑ ❌ TIE**\n"
                         f"• <@{player3.xid}> ({player3.name})\n**ﾠ⮑ ❌ LOSS**"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {"inline": False, "name": "Support SpellBot", "value": ANY},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+
+    def test_game_embed_started_with_suggested_voice_channel(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(motd=None, suggest_voice_channel=True)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            seats=2,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            spelltable_link="https://spelltable/link",
+            guild=guild,
+            channel=channel,
+        )
+        factories.post.create(guild=guild, channel=channel, game=game)
+        player1 = factories.user.create(game=game)
+        player2 = factories.user.create(game=game)
+
+        dg = MagicMock(spec=discord.Guild)
+        dt = MagicMock(spec=discord.CategoryChannel, guild=dg, name="voice-channels")
+        dc = MagicMock(spec=discord.VoiceChannel, guild=dg, category=dt, members=[])
+        dg.categories = [dt]
+        dg.voice_channels = [dc]
+
+        assert game.to_embed(dg).to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": "Please check your Direct Messages for your game details.",
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n"
+                        f"• <@{player2.xid}> ({player2.name})"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {"inline": False, "name": "Support SpellBot", "value": ANY},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+        }
+        assert game.to_embed(dg, dm=True).to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": (
+                "# [Join your SpellTable game now!]"
+                f"({game.spelltable_link})\n"
+                "\n"
+                f"## Please consider using this available voice channel: <#{dc.id}>.\n"
+                "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**\n"
+                "\n"
+                "You can also [jump to the original game post]"
+                "(https://discordapp.com/channels/"
+                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
+            ),
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n"
+                        f"• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},

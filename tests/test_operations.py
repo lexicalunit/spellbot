@@ -13,6 +13,7 @@ from discord.utils import MISSING
 
 from spellbot import operations
 from spellbot.operations import (
+    VoiceChannelSuggestion,
     retry,
     safe_add_role,
     safe_channel_reply,
@@ -32,6 +33,7 @@ from spellbot.operations import (
     safe_original_response,
     safe_send_channel,
     safe_send_user,
+    safe_suggest_voice_channel,
     safe_update_embed,
     safe_update_embed_origin,
 )
@@ -954,3 +956,45 @@ class TestEnsureVoiceCategory:
         client = mock_client()
         result = await safe_ensure_voice_category(client, 404, "voice-channels")
         assert result is None
+
+
+def test_safe_suggest_voice_channel_when_empty() -> None:
+    guild = MagicMock(spec=discord.Guild)
+    category = MagicMock(spec=discord.CategoryChannel, guild=guild)
+    channel = MagicMock(spec=discord.VoiceChannel, guild=guild, category=category)
+    guild.categories = [category]
+    guild.voice_channels = [channel]
+    result = safe_suggest_voice_channel(guild, [])
+    assert result == VoiceChannelSuggestion(None, channel.id)
+
+
+def test_safe_suggest_voice_channel_when_picked() -> None:
+    guild = MagicMock(spec=discord.Guild)
+    category = MagicMock(spec=discord.CategoryChannel, guild=guild)
+    player = MagicMock(spec=discord.Member)
+    channel = MagicMock(spec=discord.VoiceChannel, guild=guild, category=category, members=[player])
+    guild.categories = [category]
+    guild.voice_channels = [channel]
+    result = safe_suggest_voice_channel(guild, [player.id])
+    assert result == VoiceChannelSuggestion(channel.id, None)
+
+
+def test_safe_suggest_voice_channel_when_occupied() -> None:
+    guild = MagicMock(spec=discord.Guild)
+    category = MagicMock(spec=discord.CategoryChannel, guild=guild)
+    player = MagicMock(spec=discord.Member, id=1)
+    other = MagicMock(spec=discord.Member, id=2)
+    channel = MagicMock(spec=discord.VoiceChannel, guild=guild, category=category, members=[other])
+    guild.categories = [category]
+    guild.voice_channels = [channel]
+    result = safe_suggest_voice_channel(guild, [player.id])
+    assert result == VoiceChannelSuggestion(None, None)
+
+
+def test_safe_suggest_voice_channel_when_no_channels() -> None:
+    guild = MagicMock(spec=discord.Guild)
+    category = MagicMock(spec=discord.CategoryChannel, guild=guild)
+    guild.categories = [category]
+    guild.voice_channels = []
+    result = safe_suggest_voice_channel(guild, [])
+    assert result == VoiceChannelSuggestion(None, None)
