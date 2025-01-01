@@ -27,6 +27,7 @@ class GuildDict(TypedDict):
     awards: list[GuildAwardDict]
     banned: bool
     notice: str
+    suggest_voice_channel: bool
 
 
 class Guild(Base):
@@ -93,6 +94,13 @@ class Guild(Base):
         default=None,
         server_default=null(),
     )
+    suggest_voice_channel = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="If true, suggest a voice channel to use",
+    )
 
     games = relationship(
         "Game",
@@ -134,4 +142,5 @@ class Guild(Base):
             ),
             "banned": self.banned,
             "notice": self.notice,
+            "suggest_voice_channel": self.suggest_voice_channel,
         }

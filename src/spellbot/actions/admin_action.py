@@ -223,7 +223,7 @@ class AdminAction(BaseAction):
         if not found:
             return await self._report_failure()
 
-        embed = await games.to_embed(dm=True)
+        embed = await games.to_embed(self.guild, dm=True)
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
         return None
 
@@ -504,7 +504,7 @@ class AdminAction(BaseAction):
                 message_xid = post["message_xid"]
                 message = safe_get_partial_message(channel, guild_xid, message_xid)
                 if message:
-                    embed = await self.services.games.to_embed()
+                    embed = await self.services.games.to_embed(self.guild)
                     await safe_update_embed(message, embed=embed)
 
         await safe_send_channel(

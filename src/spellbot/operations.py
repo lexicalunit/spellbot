@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import random
 from asyncio import sleep
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
 import discord
@@ -672,3 +674,32 @@ async def safe_add_role(
             guild.id,
             str(user_or_member),
         )
+
+
+@dataclass
+class VoiceChannelSuggestion:
+    already_picked: int | None = None
+    random_empty: int | None = None
+
+
+def safe_suggest_voice_channel(
+    guild: discord.Guild,
+    player_xids: list[int],
+) -> VoiceChannelSuggestion:
+    empty_channels = []
+    random_empty = None
+    already_picked = None
+    for vc in guild.voice_channels:
+        if not vc.category or not vc.category.name.lower().startswith("lfg voice"):
+            # TCC uses voice channels with the category name "LFG VOICE A-B", this
+            # feature is only for TCC, so let's just skip non-LFG voice channels.
+            # This could be made configurable in the future if other guilds want it.
+            continue
+        member_xids = {m.id for m in vc.members}
+        if any(player_xid in member_xids for player_xid in player_xids):
+            already_picked = vc.id
+            break
+        if not member_xids:
+            empty_channels.append(vc.id)
+    random_empty = random.choice(empty_channels) if empty_channels else None  # noqa: S311
+    return VoiceChannelSuggestion(already_picked, random_empty)

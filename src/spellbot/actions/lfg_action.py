@@ -139,7 +139,7 @@ class LookingForGameAction(BaseAction):
                 self.guild.id,
                 message_xid,
             ):
-                embed = await self.services.games.to_embed()
+                embed = await self.services.games.to_embed(self.guild)
                 view: BaseView | None = None
                 if self.channel_data.get("show_points", False):
                     view = StartedGameView(bot=self.bot)
@@ -256,7 +256,7 @@ class LookingForGameAction(BaseAction):
                     message_xid,
                 )
             ):
-                embed = await self.services.games.to_embed()
+                embed = await self.services.games.to_embed(self.guild)
                 await safe_update_embed(
                     message,
                     embed=embed,
@@ -277,7 +277,7 @@ class LookingForGameAction(BaseAction):
             return
 
         await self.services.games.add_points(self.interaction.user.id, points)
-        embed = await self.services.games.to_embed()
+        embed = await self.services.games.to_embed(self.guild)
         await safe_update_embed(message, embed=embed)
 
     @tracer.wrap()
@@ -415,7 +415,7 @@ class LookingForGameAction(BaseAction):
         assert self.channel
 
         # build the game post's embed and view:
-        embed: discord.Embed = await self.services.games.to_embed()
+        embed: discord.Embed = await self.services.games.to_embed(self.guild)
         content = self.channel_data.get("extra", None)
         game_data = await self.services.games.to_dict()
 
@@ -494,7 +494,7 @@ class LookingForGameAction(BaseAction):
     @tracer.wrap()
     async def _handle_direct_messages(self) -> None:
         player_xids = await self.services.games.player_xids()
-        embed = await self.services.games.to_embed(dm=True)
+        embed = await self.services.games.to_embed(self.guild, dm=True)
         failed_xids: list[int] = []
 
         # notify players
