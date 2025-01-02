@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from typing import TYPE_CHECKING
@@ -495,17 +496,20 @@ class LookingForGameAction(BaseAction):
     async def _handle_direct_messages(self) -> None:
         player_xids = await self.services.games.player_xids()
         embed = await self.services.games.to_embed(self.guild, dm=True)
-        failed_xids: list[int] = []
 
         # notify players
         fetched_players: dict[int, discord.User] = {}
-        for player_xid in player_xids:
-            player = await safe_fetch_user(self.bot, player_xid)
-            if player:
+        failed_xids: list[int] = []
+
+        async def notify_player(player_xid: int) -> None:
+            if player := await safe_fetch_user(self.bot, player_xid):
                 fetched_players[player_xid] = player
                 await safe_send_user(player, embed=embed)
             else:
                 failed_xids.append(player_xid)
+
+        notify_player_tasks = [notify_player(player_xid) for player_xid in player_xids]
+        await asyncio.gather(*notify_player_tasks)
 
         # give out awards
         assert self.interaction.guild_id is not None
