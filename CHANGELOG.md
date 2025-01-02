@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Only suggest a vc if the game has started.
+
 ## [v14.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v14.4.0) - 2025-01-01
 
 ### Added

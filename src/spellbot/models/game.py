@@ -408,6 +408,7 @@ class Game(Base):
             and not self.voice_invite_link
             and self.guild.suggest_voice_channel
             and guild is not None
+            and self.started_at is not None
         ):
             suggest_vc = safe_suggest_voice_channel(guild, [p.xid for p in self.players])
 
