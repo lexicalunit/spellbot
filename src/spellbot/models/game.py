@@ -12,6 +12,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import false, text
 
 from spellbot.enums import GameFormat, GameService
+from spellbot.operations import VoiceChannelSuggestion, safe_suggest_voice_channel
 from spellbot.settings import settings
 
 from . import Base, now
@@ -233,6 +234,7 @@ class Game(Base):
         self,
         guild: discord.Guild | None,
         dm: bool = False,
+        suggest_vc: VoiceChannelSuggestion | None = None,
     ) -> str:
         description = ""
         if self.guild.notice:
@@ -278,12 +280,17 @@ class Game(Base):
                     description += f"\n\n## Join your voice chat now: <#{self.voice_xid}>"
                 if self.voice_invite_link:
                     description += f"\nOr use this voice channel invite: {self.voice_invite_link}"
-                elif (
-                    self.guild.suggest_voice_channel
-                    and guild is not None
-                    and (suggestion := self.voice_channel_suggestion(guild))
-                ):
-                    description += f"\n{suggestion}\n{HR}"
+                if suggest_vc:
+                    if suggest_vc.already_picked is not None:
+                        description += (
+                            "\n\n## Your pod is already using a voice channel, "
+                            f"join them now: <#{suggest_vc.already_picked}>!\n{HR}"
+                        )
+                    elif suggest_vc.random_empty is not None:
+                        description += (
+                            "\n\n## Please consider using this available voice channel: "
+                            f"<#{suggest_vc.random_empty}>.\n{HR}"
+                        )
             else:
                 description += "Please check your Direct Messages for your game details."
             if dm:
@@ -300,22 +307,6 @@ class Game(Base):
         if self.channel.motd:
             description += f"\n\n{self.apply_placeholders(placeholders, self.channel.motd)}"
         return description
-
-    def voice_channel_suggestion(self, guild: discord.Guild) -> str | None:
-        from spellbot.operations import safe_suggest_voice_channel
-
-        resp = safe_suggest_voice_channel(guild, [p.xid for p in self.players])
-        if resp.already_picked:
-            return (
-                "\n## Your pod is already using a voice channel, "
-                f"join them now: <#{resp.already_picked}>!"
-            )
-        if resp.random_empty:
-            return (
-                "\n## Please consider using this available voice channel: "
-                f"<#{resp.random_empty}>."
-            )
-        return None
 
     @property
     def placeholders(self) -> dict[str, str]:
@@ -410,7 +401,17 @@ class Game(Base):
         embed.set_thumbnail(
             url=settings.QUEER_THUMB_URL if settings.queer(self.guild_xid) else settings.THUMB_URL
         )
-        embed.description = self.embed_description(guild, dm)
+
+        suggest_vc: VoiceChannelSuggestion | None = None
+        if (
+            not self.voice_xid
+            and not self.voice_invite_link
+            and self.guild.suggest_voice_channel
+            and guild is not None
+        ):
+            suggest_vc = safe_suggest_voice_channel(guild, [p.xid for p in self.players])
+
+        embed.description = self.embed_description(guild, dm, suggest_vc)
         if self.players:
             embed.add_field(name="Players", value=self.embed_players, inline=False)
         embed.add_field(name="Format", value=self.format_name)
@@ -432,6 +433,12 @@ class Game(Base):
             )
         else:
             embed.color = discord.Color(settings.EMPTY_EMBED_COLOR)
+        if suggest_vc and (suggest_vc_xid := suggest_vc.get()):
+            embed.add_field(
+                name="🔊 Suggested Voice Channel",
+                value=f"<#{suggest_vc_xid}>",
+                inline=False,
+            )
         embed.add_field(
             name="Support SpellBot",
             value=(

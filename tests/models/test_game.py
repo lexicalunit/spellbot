@@ -932,6 +932,11 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {
+                    "inline": False,
+                    "name": "🔊 Suggested Voice Channel",
+                    "value": f"<#{dc.id}>",
+                },
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
@@ -963,6 +968,11 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {
+                    "inline": False,
+                    "name": "🔊 Suggested Voice Channel",
+                    "value": f"<#{dc.id}>",
+                },
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},

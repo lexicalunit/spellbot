@@ -681,11 +681,17 @@ class VoiceChannelSuggestion:
     already_picked: int | None = None
     random_empty: int | None = None
 
+    def get(self) -> int | None:
+        return self.already_picked or self.random_empty
+
 
 def safe_suggest_voice_channel(
-    guild: discord.Guild,
+    guild: discord.Guild | None,
     player_xids: list[int],
 ) -> VoiceChannelSuggestion:
+    if guild is None:
+        return VoiceChannelSuggestion()
+
     empty_channels = []
     random_empty = None
     already_picked = None
