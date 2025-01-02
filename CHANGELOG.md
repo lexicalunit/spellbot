@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Send user DMs in parallel to speed up things when a pod fires.
+
 ## [v14.2.0](https://github.com/lexicalunit/spellbot/releases/tag/v14.2.0) - 2025-01-01
 
 ### Added
