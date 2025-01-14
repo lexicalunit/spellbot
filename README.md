@@ -82,6 +82,9 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
         <td align="center"><a href="https://disboard.org/server/689674672240984067"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/322d1bdf-6b32-45f5-93b2-8d4963075772" alt="MTG@Home" /><br />MTG@Home</a></td>
         <td align="center"><a href="https://www.mtgdc.info/"><img width="200" height="200" src="https://github.com/user-attachments/assets/d7dfa16c-8b65-40e4-b449-4758fd3c3807" alt="Duel Commander" /><br />Duel&nbsp;Commander</a></td>
     </tr>
+    <tr>
+        <td align="center"><a href="https://discord.gg/bA5tf3Xc8M"><img width="200" height="200" src="https://github.com/user-attachments/assets/5a3dbc81-0867-4e86-8c9c-f3801f681f54" alt="Proxy Pirates" /><br />Proxy&nbsp;Pirates</a></td>
+    </tr>
 </table>
 <!-- SERVERS END -->
 </div>
