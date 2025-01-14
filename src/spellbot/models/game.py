@@ -239,39 +239,42 @@ class Game(Base):
         description = ""
         if self.guild.notice:
             description += f"{self.guild.notice}\n\n"
+        effective_service = int(self.service)
+        if effective_service == GameService.SPELLTABLE.value and not settings.ENABLE_SPELLTABLE:
+            effective_service = GameService.TABLE_STREAM.value
         if self.status == GameStatus.PENDING.value:
-            if self.service == GameService.SPELLTABLE.value:
+            if effective_service == GameService.SPELLTABLE.value:
                 description += "_A SpellTable link will be created when all players have joined._"
-            elif self.service == GameService.TABLE_STREAM.value:
+            elif effective_service == GameService.TABLE_STREAM.value:
                 description += "_A Table Stream link will be created when all players have joined._"
-            elif self.service == GameService.NOT_ANY.value:
+            elif effective_service == GameService.NOT_ANY.value:
                 description += "_Please contact the players in your game to organize this game._"
             else:
-                description += f"_Please use {GameService(self.service)} for this game._"
+                description += f"_Please use {GameService(effective_service)} for this game._"
         else:
             if self.show_links(dm):
                 if self.spelltable_link:
                     description += (
-                        f"# [Join your {GameService(self.service)} game now!]"
+                        f"# [Join your {GameService(effective_service)} game now!]"
                         f"({self.spelltable_link})"
                     )
                     # Spectate links do not seem to work anymore on SpellTable.
-                    # if self.service == GameService.SPELLTABLE.value:
+                    # if effective_service == GameService.SPELLTABLE.value:
                     #     description += f" (or [spectate this game]({self.spectate_link}))"
-                elif self.service == GameService.SPELLTABLE.value:
+                elif effective_service == GameService.SPELLTABLE.value:
                     description += (
                         "Sorry but SpellBot was unable to create a SpellTable link"
                         " for this game. Please go to [SpellTable]"
                         "(https://spelltable.wizards.com/) to create one."
                     )
-                elif self.service == GameService.TABLE_STREAM.value:
+                elif effective_service == GameService.TABLE_STREAM.value:
                     description += (
                         "Sorry but SpellBot was unable to create a Table Stream link"
                         " for this game. Please go to [Table Stream]"
                         "(https://table-stream.com/) to create one."
                     )
-                elif self.service != GameService.NOT_ANY.value:
-                    description += f"Please use {GameService(self.service)} to play this game."
+                elif effective_service != GameService.NOT_ANY.value:
+                    description += f"Please use {GameService(effective_service)} to play this game."
                 else:
                     description += "Contact the other players in your game to organize this match."
                 if self.password:

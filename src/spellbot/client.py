@@ -89,8 +89,11 @@ class SpellBot(AutoShardedBot):
             return GameLinkDetails(f"http://exmaple.com/game/{uuid4()}")
         service = game.get("service")
         if service == GameService.SPELLTABLE.value:
-            link = await generate_spelltable_link(game)
-            return GameLinkDetails(link)
+            if settings.ENABLE_SPELLTABLE:
+                link = await generate_spelltable_link(game)
+                return GameLinkDetails(link)
+            # fallback to tablestream if spelltable is disabled
+            service = GameService.TABLE_STREAM.value
         if service == GameService.TABLE_STREAM.value:
             details = await generate_tablestream_link(game)
             return GameLinkDetails(*details)

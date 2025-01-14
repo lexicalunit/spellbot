@@ -29,6 +29,7 @@ class Settings:
         "DEBUG_GUILD",
         "DONATE_LINK",
         "EMPTY_EMBED_COLOR",
+        "ENABLE_SPELLTABLE",
         "EXPIRE_GAMES_LOOP_M",
         "EXPIRE_TIME_M",
         "HOST",
@@ -84,6 +85,7 @@ class Settings:
         self.DATABASE_URL = database_url
 
         # spelltable
+        self.ENABLE_SPELLTABLE = getenv("ENABLE_SPELLTABLE", "true").lower() == "true"
         self.SPELLTABLE_ROOT = "https://us-central1-magic-night-30324.cloudfunctions.net"
         self.SPELLTABLE_CREATE = f"{self.SPELLTABLE_ROOT}/createGame"
         self.SPELLTABLE_AUTH_KEY = getenv("SPELLTABLE_AUTH_KEY")
