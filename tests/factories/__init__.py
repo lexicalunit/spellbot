@@ -9,6 +9,7 @@ from .play import PlayFactory
 from .post import PostFactory
 from .queue import QueueFactory
 from .record import RecordFactory
+from .token import TokenFactory
 from .user import UserFactory
 from .verify import VerifyFactory
 from .watch import WatchFactory
@@ -23,6 +24,7 @@ __all__ = [
     "PostFactory",
     "QueueFactory",
     "RecordFactory",
+    "TokenFactory",
     "UserAwardFactory",
     "UserFactory",
     "VerifyFactory",
