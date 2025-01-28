@@ -145,6 +145,21 @@ def decomposed(combined_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 class PlaysService:
     @sync_to_async()
+    def verify_game_pin(self, *, game_id: int, user_xid: int, guild_xid: int, pin: str) -> bool:
+        return bool(
+            DatabaseSession.query(Play)
+            .filter(
+                and_(
+                    Play.game_id == game_id,
+                    Play.user_xid == user_xid,
+                    Play.og_guild_xid == guild_xid,
+                    Play.pin == pin,
+                ),
+            )
+            .count()
+        )
+
+    @sync_to_async()
     def count(self, user_xid: int, guild_xid: int) -> int:
         return int(
             DatabaseSession.query(Play)

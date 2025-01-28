@@ -10,9 +10,7 @@ from spellbot.enums import GameFormat, GameService
 from spellbot.models import Channel, ChannelDict, GuildAward, GuildAwardDict
 from spellbot.operations import (
     safe_fetch_text_channel,
-    safe_get_partial_message,
     safe_send_channel,
-    safe_update_embed,
     safe_update_embed_origin,
 )
 from spellbot.services import GamesService
@@ -475,40 +473,41 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def set_points(self, game_id: int, player_xid: int, points: int) -> None:
-        found = await self.services.games.select(game_id)
-        if not found:
-            await safe_send_channel(
-                self.interaction,
-                "There is no game with that ID.",
-                ephemeral=True,
-            )
-            return
-
-        if not await self.services.games.players_included(player_xid):
-            await safe_send_channel(
-                self.interaction,
-                f"User <@{player_xid}> did not play in game SB{found.get('id')}.",
-                ephemeral=True,
-            )
-            return
-
-        await self.services.games.add_points(player_xid, points)
-        await self.services.games.confirm_points(player_xid)
-
-        for post in found.get("posts", []):
-            guild_xid = post["guild_xid"]
-            channel_xid = post["channel_xid"]
-            channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
-            if channel:
-                message_xid = post["message_xid"]
-                message = safe_get_partial_message(channel, guild_xid, message_xid)
-                if message:
-                    embed = await self.services.games.to_embed(self.guild)
-                    await safe_update_embed(message, embed=embed)
-
-        await safe_send_channel(
-            self.interaction,
-            f"Points for <@{player_xid}> for game SB{game_id} set to {points}.",
-            ephemeral=True,
-        )
+    # TODO: Refactor how confirmation/points/ELO works.
+    # async def set_points(self, game_id: int, player_xid: int, points: int) -> None:
+    #     found = await self.services.games.select(game_id)
+    #     if not found:
+    #         await safe_send_channel(
+    #             self.interaction,
+    #             "There is no game with that ID.",
+    #             ephemeral=True,
+    #         )
+    #         return
+    #
+    #     if not await self.services.games.players_included(player_xid):
+    #         await safe_send_channel(
+    #             self.interaction,
+    #             f"User <@{player_xid}> did not play in game SB{found.get('id')}.",
+    #             ephemeral=True,
+    #         )
+    #         return
+    #
+    #     await self.services.games.add_points(player_xid, points)
+    #     await self.services.games.confirm_points(player_xid)
+    #
+    #     for post in found.get("posts", []):
+    #         guild_xid = post["guild_xid"]
+    #         channel_xid = post["channel_xid"]
+    #         channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
+    #         if channel:
+    #             message_xid = post["message_xid"]
+    #             message = safe_get_partial_message(channel, guild_xid, message_xid)
+    #             if message:
+    #                 embed = await self.services.games.to_embed(self.guild)
+    #                 await safe_update_embed(message, embed=embed)
+    #
+    #     await safe_send_channel(
+    #         self.interaction,
+    #         f"Points for <@{player_xid}> for game SB{game_id} set to {points}.",
+    #         ephemeral=True,
+    #     )
