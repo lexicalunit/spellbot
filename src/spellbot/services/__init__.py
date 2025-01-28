@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .apps import AppsService
 from .awards import AwardsService, NewAward
 from .channels import ChannelsService
 from .games import GamesService
@@ -20,9 +21,11 @@ class ServicesRegistry:
         self.users = UsersService()
         self.verifies = VerifiesService()
         self.watches = WatchesService()
+        self.apps = AppsService()
 
 
 __all__ = [
+    "AppsService",
     "AwardsService",
     "ChannelsService",
     "GamesService",

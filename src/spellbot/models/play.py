@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import secrets
 from datetime import datetime
 from typing import TYPE_CHECKING, TypedDict, cast
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
 
 from . import Base, now
 
 if TYPE_CHECKING:
     from . import Game, User  # noqa: F401
+
+
+def generate_pin() -> str:
+    return "".join(secrets.choice("0123456789") for i in range(6))
 
 
 class PlayDict(TypedDict):
@@ -19,6 +24,7 @@ class PlayDict(TypedDict):
     og_guild_xid: int
     points: int | None
     confirmed_at: datetime
+    pin: str
 
 
 class Play(Base):
@@ -75,6 +81,12 @@ class Play(Base):
         default=None,
         doc="UTC timestamp when this play was confirmed",
     )
+    pin = Column(
+        String(6),
+        nullable=True,
+        default=generate_pin,
+        doc="A generated PIN for users to identify this game",
+    )
 
     def to_dict(self) -> PlayDict:
         return {
@@ -85,4 +97,5 @@ class Play(Base):
             "og_guild_xid": self.og_guild_xid,
             "points": self.points,
             "confirmed_at": self.confirmed_at,
+            "pin": self.pin,
         }

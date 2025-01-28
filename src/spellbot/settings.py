@@ -38,6 +38,7 @@ class Settings:
         "MOD_PREFIX",
         "PENDING_EMBED_COLOR",
         "PORT",
+        "REDISCLOUD_URL",
         "SPELLTABLE_AUTH_KEY",
         "SPELLTABLE_CREATE",
         "SPELLTABLE_ROOT",
@@ -83,6 +84,9 @@ class Settings:
             # SQLAlchemy 1.4.x removed support for the postgres:// URI scheme
             database_url = database_url.replace("postgres://", "postgresql://", 1)
         self.DATABASE_URL = database_url
+
+        # cache
+        self.REDISCLOUD_URL = getenv("REDISCLOUD_URL")
 
         # spelltable
         self.ENABLE_SPELLTABLE = getenv("ENABLE_SPELLTABLE", "true").lower() == "true"

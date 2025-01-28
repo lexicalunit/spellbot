@@ -30,6 +30,7 @@ from tests.factories import (
     PostFactory,
     QueueFactory,
     RecordFactory,
+    TokenFactory,
     UserAwardFactory,
     UserFactory,
     VerifyFactory,
@@ -65,6 +66,7 @@ class Factories:
     user_award = UserAwardFactory
     verify = VerifyFactory
     watch = WatchFactory
+    token = TokenFactory
 
 
 @pytest_asyncio.fixture()
@@ -93,6 +95,7 @@ async def session_context(
         PostFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         QueueFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         RecordFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        TokenFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         UserAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         UserFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         VerifyFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
