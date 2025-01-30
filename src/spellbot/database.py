@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Any, Generic, NoReturn, TypeVar
+from typing import TYPE_CHECKING, Any, NoReturn
 from uuid import uuid4
 
 from asgiref.sync import sync_to_async
@@ -20,17 +20,16 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
 logger = logging.getLogger(__name__)
-ProxiedObject = TypeVar("ProxiedObject")
-context_vars: dict[ContextLocal, ContextVar] = {}  # type: ignore
+context_vars: dict[ContextLocal, ContextVar] = {}  # type: ignore[reportMissingTypeArgument]
 
 
-class ContextLocal(Generic[ProxiedObject]):
+class ContextLocal[ProxiedObject]:
     def __init__(self) -> None:
         context_vars[self] = ContextVar(str(uuid4()))
 
     @classmethod
-    def of_type(cls, _: type[ProxiedObject]) -> ProxiedObject:
-        return cls()  # type: ignore
+    def of_type(cls, _: type[ProxiedObject]) -> ContextLocal[ProxiedObject]:
+        return cls()
 
     def set(self, obj: ProxiedObject) -> None:
         context_vars[self].set(obj)
@@ -46,16 +45,16 @@ class ContextLocal(Generic[ProxiedObject]):
         raise NotImplementedError
 
 
-class TypedProxy(Generic[ProxiedObject], CallableObjectProxy):
+class TypedProxy[ProxiedObject](CallableObjectProxy):
     def __init__(self) -> None:
-        super().__init__(None)  # type: ignore
+        super().__init__(None)
 
     @classmethod
-    def of_type(cls, _: type[ProxiedObject]) -> ProxiedObject:
-        return cls()  # type: ignore
+    def of_type(cls, _: type[ProxiedObject]) -> TypedProxy[ProxiedObject]:
+        return cls()
 
     def set(self, obj: ProxiedObject) -> None:
-        super().__init__(obj)  # type: ignore
+        super().__init__(obj)
 
     def __copy__(self) -> NoReturn:
         raise NotImplementedError
