@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-MYTHIC_TRACK = "[MythicTrack](https://www.mythictrack.com/)"
+MYTHIC_TRACK = "[Mythic Track](https://www.mythictrack.com/)"
 
 
 class LookingForGameAction(BaseAction):
