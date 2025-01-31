@@ -34,4 +34,5 @@ class TestModelGuild:
             "banned": guild.banned,
             "notice": guild.notice,
             "suggest_voice_channel": guild.suggest_voice_channel,
+            "enable_mythic_track": guild.enable_mythic_track,
         }

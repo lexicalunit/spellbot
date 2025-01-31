@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Adds support for PIN code on game plays.
 - Adds support for external app integrations.
 - Adds REST API for verifying PIN codes.
+- Adds support MythicTrack link and surfacing PIN to players.
 
 ## [v14.4.1](https://github.com/lexicalunit/spellbot/releases/tag/v14.4.1) - 2025-01-01
 

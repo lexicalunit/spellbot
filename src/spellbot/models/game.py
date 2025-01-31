@@ -210,6 +210,17 @@ class Game(Base):
         return [int(row[0]) for row in rows]
 
     @property
+    def player_pins(self) -> dict[int, str | None]:
+        from spellbot.database import DatabaseSession
+
+        from . import Play
+
+        plays = DatabaseSession.query(Play).filter(Play.game_id == self.id)
+        return {
+            play.user_xid: play.pin if self.guild.enable_mythic_track else None for play in plays
+        }
+
+    @property
     def started_at_timestamp(self) -> int:
         assert self.started_at is not None
         return int(cast(datetime, self.started_at).replace(tzinfo=tz.UTC).timestamp())

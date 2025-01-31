@@ -28,6 +28,7 @@ class GuildDict(TypedDict):
     banned: bool
     notice: str
     suggest_voice_channel: bool
+    enable_mythic_track: bool
 
 
 class Guild(Base):
@@ -101,6 +102,13 @@ class Guild(Base):
         server_default=false(),
         doc="If true, suggest a voice channel to use",
     )
+    enable_mythic_track = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="If true, enable mythic track for this guild",
+    )
 
     games = relationship(
         "Game",
@@ -143,4 +151,5 @@ class Guild(Base):
             "banned": self.banned,
             "notice": self.notice,
             "suggest_voice_channel": self.suggest_voice_channel,
+            "enable_mythic_track": self.enable_mythic_track,
         }
