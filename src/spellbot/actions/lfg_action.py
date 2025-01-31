@@ -37,6 +37,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+MYTHIC_TRACK = "[MythicTrack](https://www.mythictrack.com/)"
+
 
 class LookingForGameAction(BaseAction):
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
@@ -494,14 +496,21 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def _handle_direct_messages(self) -> None:
-        player_xids = await self.services.games.player_xids()
-        embed = await self.services.games.to_embed(self.guild, dm=True)
+        player_pins = await self.services.games.player_pins()
+        player_xids = list(player_pins.keys())
+        base_embed = await self.services.games.to_embed(self.guild, dm=True)
 
         # notify players
         fetched_players: dict[int, discord.User] = {}
         failed_xids: list[int] = []
 
         async def notify_player(player_xid: int) -> None:
+            embed = base_embed.copy()
+            if pin := player_pins[player_xid]:
+                embed.description = (
+                    f"{embed.description}\n\n"
+                    f"Track your game on {MYTHIC_TRACK} with PIN code: `{pin}`"
+                )
             if player := await safe_fetch_user(self.bot, player_xid):
                 fetched_players[player_xid] = player
                 await safe_send_user(player, embed=embed)

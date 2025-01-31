@@ -368,6 +368,12 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
+    def player_pins(self) -> dict[int, str | None]:
+        assert self.game
+        return self.game.player_pins
+
+    @sync_to_async()
+    @tracer.wrap()
     def watch_notes(self, player_xids: list[int]) -> dict[int, str | None]:
         assert self.game
         watched = (
