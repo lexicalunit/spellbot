@@ -24,7 +24,8 @@ COPY conf/supervisord.conf /usr/local/etc/
 COPY src /spellbot/src
 COPY LICENSE.md README.md pyproject.toml poetry.lock /spellbot/
 RUN chmod +x /start-spellbot.sh /start-spellapi.sh /start.sh \
-    && pip install --no-cache-dir ./spellbot
+    && pip install --no-cache-dir ./spellbot \
+    && playwright install --with-deps
 EXPOSE 80
 
 CMD ["supervisord"]

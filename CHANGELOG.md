@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed SpellTable link generation by using an approach developed by @nathvnt (https://github.com/nathvnt). Thanks Nathan, you rock!
+
 ### Added
 
 - Adds support for PIN code on game plays.

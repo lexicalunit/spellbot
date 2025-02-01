@@ -10,7 +10,7 @@ from aiohttp_retry.client import RetryClient
 
 from spellbot import spelltable
 from spellbot.settings import Settings
-from spellbot.spelltable import generate_spelltable_link as generate_link
+from spellbot.spelltable import generate_spelltable_link_api as generate_link
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
