@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from random import randint
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
@@ -24,7 +25,7 @@ LOGIN = (
 )
 TIMEOUT_S = 5  # seconds
 TIMEOUT_MS = TIMEOUT_S * 1000  # milliseconds
-ROUND_ROBIN = 0
+ROUND_ROBIN = None
 
 
 def route_intercept(route: Route) -> Any:
@@ -59,6 +60,8 @@ async def generate_spelltable_link_headless(game: GameDict) -> str | None:  # pr
             strict=True,
         )
     )
+    if ROUND_ROBIN is None:
+        ROUND_ROBIN = randint(0, len(accounts) - 1)  # noqa: S311
     username, password = accounts[ROUND_ROBIN % len(accounts)]
     ROUND_ROBIN += 1
 
