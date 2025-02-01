@@ -84,7 +84,7 @@ async def generate_spelltable_link_headless(game: GameDict) -> str | None:  # pr
             return link
     except Exception as ex:
         add_span_error(ex)
-        logger.exception("error: unexpected exception")
+        logger.exception("error: unexpected exception: (user: %s)", username)
         return None
 
 
