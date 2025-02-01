@@ -41,7 +41,9 @@ class Settings:
         "REDISCLOUD_URL",
         "SPELLTABLE_AUTH_KEY",
         "SPELLTABLE_CREATE",
+        "SPELLTABLE_PASS",
         "SPELLTABLE_ROOT",
+        "SPELLTABLE_USER",
         "STARTED_EMBED_COLOR",
         "SUBSCRIBE_LINK",
         "TABLESTREAM_AUTH_KEY",
@@ -93,6 +95,10 @@ class Settings:
         self.SPELLTABLE_ROOT = "https://us-central1-magic-night-30324.cloudfunctions.net"
         self.SPELLTABLE_CREATE = f"{self.SPELLTABLE_ROOT}/createGame"
         self.SPELLTABLE_AUTH_KEY = getenv("SPELLTABLE_AUTH_KEY")
+
+        # spelltable headless
+        self.SPELLTABLE_USER = getenv("SPELLTABLE_USER")
+        self.SPELLTABLE_PASS = getenv("SPELLTABLE_PASS")
 
         # tablestream
         self.TABLESTREAM_ROOT = "https://api.table-stream.com"
