@@ -23,6 +23,7 @@ LOGIN = (
     "redirectTo=https://spelltable.wizards.com/lobby?login=true"
 )
 TIMEOUT_S = 5  # seconds
+TIMEOUT_MS = TIMEOUT_S * 1000  # milliseconds
 
 
 def route_intercept(route: Route) -> Any:
@@ -49,21 +50,21 @@ async def generate_spelltable_link_headless(game: GameDict) -> str | None:  # pr
     assert settings.SPELLTABLE_PASS is not None
     try:
         async with async_playwright() as p:
-            browser = await p.chromium.launch(timeout=TIMEOUT_S * 1000)
+            browser = await p.chromium.launch(timeout=TIMEOUT_MS)
             page = await browser.new_page()
             await page.route("**/*", route_intercept)
-            await page.goto(LOGIN)
-            await page.wait_for_selector("button[type='submit']")
-            await page.locator("button").get_by_text("Accept All").click()
-            await page.fill("input[name='email']", settings.SPELLTABLE_USER)
-            await page.fill("input[name='password']", settings.SPELLTABLE_PASS)
-            await page.click("button[type='submit']")
-            await page.wait_for_selector("text=Create Game")
-            await page.click("text=Create Game")
-            await page.wait_for_selector("input[placeholder='Name']")
-            await page.fill("input[placeholder='Name']", f"SB{game["id"]}")
-            await page.locator("button").get_by_text("Create", exact=True).click()
-            await page.wait_for_selector("text=Join Now")
+            await page.goto(LOGIN, timeout=TIMEOUT_MS)
+            await page.wait_for_selector("button[type='submit']", timeout=TIMEOUT_MS)
+            await page.locator("button").get_by_text("Accept All").click(timeout=TIMEOUT_MS)
+            await page.fill("input[name='email']", settings.SPELLTABLE_USER, timeout=TIMEOUT_MS)
+            await page.fill("input[name='password']", settings.SPELLTABLE_PASS, timeout=TIMEOUT_MS)
+            await page.click("button[type='submit']", timeout=TIMEOUT_MS)
+            await page.wait_for_selector("text=Create Game", timeout=TIMEOUT_MS)
+            await page.click("text=Create Game", timeout=TIMEOUT_MS)
+            await page.wait_for_selector("input[placeholder='Name']", timeout=TIMEOUT_MS)
+            await page.fill("input[placeholder='Name']", f"SB{game["id"]}", timeout=TIMEOUT_MS)
+            await page.locator("button").get_by_text("Create", exact=True).click(timeout=TIMEOUT_MS)
+            await page.wait_for_selector("text=Join Now", timeout=TIMEOUT_MS)
             link = page.url
             await browser.close()
             return link
