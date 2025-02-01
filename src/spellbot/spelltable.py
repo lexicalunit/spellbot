@@ -24,6 +24,7 @@ LOGIN = (
 )
 TIMEOUT_S = 5  # seconds
 TIMEOUT_MS = TIMEOUT_S * 1000  # milliseconds
+ROUND_ROBIN = 0
 
 
 def route_intercept(route: Route) -> Any:
@@ -46,8 +47,21 @@ async def generate_spelltable_link_headless(game: GameDict) -> str | None:  # pr
     in node using Puppeteer by @nathvnt (https://github.com/nathvnt). Using this idea
     I then implemented it in Python using Playwright.
     """
-    assert settings.SPELLTABLE_USER is not None
-    assert settings.SPELLTABLE_PASS is not None
+    global ROUND_ROBIN  # noqa: PLW0603
+
+    assert settings.SPELLTABLE_USERS is not None
+    assert settings.SPELLTABLE_PASSES is not None
+
+    accounts = list(
+        zip(
+            settings.SPELLTABLE_USERS.split(","),
+            settings.SPELLTABLE_PASSES.split(","),
+            strict=True,
+        )
+    )
+    username, password = accounts[ROUND_ROBIN % len(accounts)]
+    ROUND_ROBIN += 1
+
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(timeout=TIMEOUT_MS)
@@ -56,8 +70,8 @@ async def generate_spelltable_link_headless(game: GameDict) -> str | None:  # pr
             await page.goto(LOGIN, timeout=TIMEOUT_MS)
             await page.wait_for_selector("button[type='submit']", timeout=TIMEOUT_MS)
             await page.locator("button").get_by_text("Accept All").click(timeout=TIMEOUT_MS)
-            await page.fill("input[name='email']", settings.SPELLTABLE_USER, timeout=TIMEOUT_MS)
-            await page.fill("input[name='password']", settings.SPELLTABLE_PASS, timeout=TIMEOUT_MS)
+            await page.fill("input[name='email']", username, timeout=TIMEOUT_MS)
+            await page.fill("input[name='password']", password, timeout=TIMEOUT_MS)
             await page.click("button[type='submit']", timeout=TIMEOUT_MS)
             await page.wait_for_selector("text=Create Game", timeout=TIMEOUT_MS)
             await page.click("text=Create Game", timeout=TIMEOUT_MS)
