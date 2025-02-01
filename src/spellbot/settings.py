@@ -41,9 +41,9 @@ class Settings:
         "REDISCLOUD_URL",
         "SPELLTABLE_AUTH_KEY",
         "SPELLTABLE_CREATE",
-        "SPELLTABLE_PASS",
+        "SPELLTABLE_PASSES",
         "SPELLTABLE_ROOT",
-        "SPELLTABLE_USER",
+        "SPELLTABLE_USERS",
         "STARTED_EMBED_COLOR",
         "SUBSCRIBE_LINK",
         "TABLESTREAM_AUTH_KEY",
@@ -97,8 +97,8 @@ class Settings:
         self.SPELLTABLE_AUTH_KEY = getenv("SPELLTABLE_AUTH_KEY")
 
         # spelltable headless
-        self.SPELLTABLE_USER = getenv("SPELLTABLE_USER")
-        self.SPELLTABLE_PASS = getenv("SPELLTABLE_PASS")
+        self.SPELLTABLE_USERS = getenv("SPELLTABLE_USERS")
+        self.SPELLTABLE_PASSES = getenv("SPELLTABLE_PASSES")
 
         # tablestream
         self.TABLESTREAM_ROOT = "https://api.table-stream.com"
