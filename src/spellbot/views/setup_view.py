@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 
 import discord
-from ddtrace import tracer
+from ddtrace.trace import tracer
 
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_defer_interaction

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 
 import pytz
 from asgiref.sync import sync_to_async
-from ddtrace import tracer
+from ddtrace.trace import tracer
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import aliased
@@ -31,6 +31,9 @@ from spellbot.settings import settings
 
 if TYPE_CHECKING:
     import discord
+
+    from spellbot.operations import VoiceChannelSuggestion
+
 
 logger = logging.getLogger(__name__)
 
@@ -257,9 +260,15 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def to_embed(self, guild: discord.Guild | None, dm: bool = False) -> discord.Embed:
+    def to_embed(
+        self,
+        *,
+        guild: discord.Guild | None,
+        dm: bool = False,
+        suggested_vc: VoiceChannelSuggestion | None = None,
+    ) -> discord.Embed:
         assert self.game
-        return self.game.to_embed(guild, dm)
+        return self.game.to_embed(guild=guild, dm=dm, suggested_vc=suggested_vc)
 
     @sync_to_async()
     @tracer.wrap()

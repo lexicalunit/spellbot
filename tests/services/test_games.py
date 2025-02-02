@@ -97,12 +97,12 @@ class TestServiceGames:
 
     async def test_games_to_embed(self, game: Game) -> None:
         public_embed = game.to_embed().to_dict()
-        private_embed = game.to_embed(None, True).to_dict()
+        private_embed = game.to_embed(guild=None, dm=True).to_dict()
 
         games = GamesService()
         await games.select(game.id)
-        assert (await games.to_embed(None)).to_dict() == public_embed
-        assert (await games.to_embed(None)).to_dict() == private_embed
+        assert (await games.to_embed(guild=None)).to_dict() == public_embed
+        assert (await games.to_embed(guild=None)).to_dict() == private_embed
 
     async def test_games_add_post(self, game: Game) -> None:
         games = GamesService()

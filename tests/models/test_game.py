@@ -12,6 +12,7 @@ import pytz
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameService
 from spellbot.models import Game, GameStatus, Play
+from spellbot.operations import VoiceChannelSuggestion
 
 if TYPE_CHECKING:
     from freezegun.api import FrozenDateTimeFactory
@@ -208,8 +209,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -236,8 +236,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -278,8 +277,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -306,8 +304,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -349,8 +346,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -377,8 +373,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -495,8 +490,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -524,8 +518,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -566,8 +559,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -598,8 +590,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -641,8 +632,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -671,8 +661,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -714,8 +703,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -745,8 +733,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -786,8 +773,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -816,8 +802,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -915,10 +900,12 @@ class TestModelGame:
         dg = MagicMock(spec=discord.Guild)
         dt = MagicMock(spec=discord.CategoryChannel, guild=dg, name="voice-channels")
         dc = MagicMock(spec=discord.VoiceChannel, guild=dg, category=dt, members=[])
+        dc.id = 501
         dg.categories = [dt]
         dg.voice_channels = [dc]
+        suggested_vc = VoiceChannelSuggestion(random_empty=dc.id)
 
-        assert game.to_embed(dg).to_dict() == {
+        assert game.to_embed(guild=dg, suggested_vc=suggested_vc).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your game details.",
             "fields": [
@@ -926,8 +913,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -944,7 +930,7 @@ class TestModelGame:
             "title": "**Your game is ready!**",
             "type": "rich",
         }
-        assert game.to_embed(dg, dm=True).to_dict() == {
+        assert game.to_embed(guild=dg, dm=True, suggested_vc=suggested_vc).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "# [Join your SpellTable game now!]"
@@ -962,8 +948,7 @@ class TestModelGame:
                     "inline": False,
                     "name": "Players",
                     "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n"
-                        f"• <@{player2.xid}> ({player2.name})"
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},

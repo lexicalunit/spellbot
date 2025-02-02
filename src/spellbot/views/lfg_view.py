@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypeVar
 
 import discord
-from ddtrace import tracer
+from ddtrace.trace import tracer
 from discord import ui
 
 from spellbot.metrics import add_span_context

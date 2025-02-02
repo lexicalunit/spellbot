@@ -145,11 +145,11 @@ async def bot() -> SpellBot:
 
 @pytest.fixture
 def client(
-    loop: AbstractEventLoop,
+    event_loop: AbstractEventLoop,
     aiohttp_client: Callable[..., Awaitable[TestClient[web.Request, web.Application]]],
 ) -> TestClient[web.Request, web.Application]:
     app = build_web_app()
-    return loop.run_until_complete(aiohttp_client(app))
+    return event_loop.run_until_complete(aiohttp_client(app))
 
 
 @pytest.fixture

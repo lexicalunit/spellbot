@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import pytz
 from dateutil import tz
-from ddtrace import tracer
+from ddtrace.trace import tracer
 
 from spellbot.database import db_session_manager, rollback_session
 from spellbot.metrics import add_span_error, setup_ignored_errors
