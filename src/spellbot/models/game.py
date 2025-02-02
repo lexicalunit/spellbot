@@ -12,12 +12,13 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import false, text
 
 from spellbot.enums import GameFormat, GameService
-from spellbot.operations import VoiceChannelSuggestion, safe_suggest_voice_channel
 from spellbot.settings import settings
 
 from . import Base, now
 
 if TYPE_CHECKING:
+    from spellbot.operations import VoiceChannelSuggestion
+
     from . import Channel, Guild, Post, PostDict, User  # noqa: F401
 
 HR = "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
@@ -243,9 +244,10 @@ class Game(Base):
 
     def embed_description(  # noqa: C901,PLR0912
         self,
+        *,
         guild: discord.Guild | None,
         dm: bool = False,
-        suggest_vc: VoiceChannelSuggestion | None = None,
+        suggested_vc: VoiceChannelSuggestion | None = None,
     ) -> str:
         description = ""
         if self.guild.notice:
@@ -294,16 +296,16 @@ class Game(Base):
                     description += f"\n\n## Join your voice chat now: <#{self.voice_xid}>"
                 if self.voice_invite_link:
                     description += f"\nOr use this voice channel invite: {self.voice_invite_link}"
-                if suggest_vc:
-                    if suggest_vc.already_picked is not None:
+                if suggested_vc:
+                    if suggested_vc.already_picked is not None:
                         description += (
                             "\n\n## Your pod is already using a voice channel, "
-                            f"join them now: <#{suggest_vc.already_picked}>!\n{HR}"
+                            f"join them now: <#{suggested_vc.already_picked}>!\n{HR}"
                         )
-                    elif suggest_vc.random_empty is not None:
+                    elif suggested_vc.random_empty is not None:
                         description += (
                             "\n\n## Please consider using this available voice channel: "
-                            f"<#{suggest_vc.random_empty}>.\n{HR}"
+                            f"<#{suggested_vc.random_empty}>.\n{HR}"
                         )
             else:
                 description += "Please check your Direct Messages for your game details."
@@ -331,7 +333,7 @@ class Game(Base):
             "game_start": game_start,
         }
         for i, player in enumerate(self.players):
-            placeholders[f"player_name_{i+1}"] = cast(str, player.name)
+            placeholders[f"player_name_{i + 1}"] = cast(str, player.name)
         return placeholders
 
     def apply_placeholders(self, placeholders: dict[str, str], text: str) -> str:
@@ -410,23 +412,19 @@ class Game(Base):
         )
         return player_count == confirmed_count
 
-    def to_embed(self, guild: discord.Guild | None = None, dm: bool = False) -> discord.Embed:
+    def to_embed(
+        self,
+        *,
+        guild: discord.Guild | None = None,
+        dm: bool = False,
+        suggested_vc: VoiceChannelSuggestion | None = None,
+    ) -> discord.Embed:
         embed = discord.Embed(title=self.embed_title)
         embed.set_thumbnail(
             url=settings.QUEER_THUMB_URL if settings.queer(self.guild_xid) else settings.THUMB_URL
         )
 
-        suggest_vc: VoiceChannelSuggestion | None = None
-        if (
-            not self.voice_xid
-            and not self.voice_invite_link
-            and self.guild.suggest_voice_channel
-            and guild is not None
-            and self.started_at is not None
-        ):
-            suggest_vc = safe_suggest_voice_channel(guild, [p.xid for p in self.players])
-
-        embed.description = self.embed_description(guild, dm, suggest_vc)
+        embed.description = self.embed_description(guild=guild, dm=dm, suggested_vc=suggested_vc)
         if self.players:
             embed.add_field(name="Players", value=self.embed_players, inline=False)
         embed.add_field(name="Format", value=self.format_name)
@@ -448,10 +446,10 @@ class Game(Base):
             )
         else:
             embed.color = discord.Color(settings.EMPTY_EMBED_COLOR)
-        if suggest_vc and (suggest_vc_xid := suggest_vc.get()):
+        if suggested_vc and (suggested_vc_xid := suggested_vc.get()):
             embed.add_field(
                 name="🔊 Suggested Voice Channel",
-                value=f"<#{suggest_vc_xid}>",
+                value=f"<#{suggested_vc_xid}>",
                 inline=False,
             )
         embed.add_field(

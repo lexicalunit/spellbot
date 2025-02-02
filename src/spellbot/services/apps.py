@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from asgiref.sync import sync_to_async
-from ddtrace import tracer
+from ddtrace.trace import tracer
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Token

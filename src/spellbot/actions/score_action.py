@@ -68,7 +68,7 @@ class ScoreAction(BaseAction):
         description += "Rank \xa0\xa0\xa0 Games \xa0\xa0\xa0 Player\n"
         for rank, datum in enumerate(data):
             user_xid, count = datum
-            description += f"{rank+1:\xa0>6}\xa0{count:\xa0>20}\xa0\xa0\xa0<@{user_xid}>\n"
+            description += f"{rank + 1:\xa0>6}\xa0{count:\xa0>20}\xa0\xa0\xa0<@{user_xid}>\n"
         embed.description = description
         embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import discord
 from aiohttp.client_exceptions import ClientOSError
-from ddtrace import tracer
+from ddtrace.trace import tracer
 from discord.errors import DiscordException
 from discord.utils import MISSING
 

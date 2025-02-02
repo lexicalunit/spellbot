@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any
 
 from datadog import initialize
 from datadog.api.events import Event
-from ddtrace import tracer
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
+from ddtrace.trace import tracer
 from wrapt import wrap_function_wrapper
 
 from . import __version__

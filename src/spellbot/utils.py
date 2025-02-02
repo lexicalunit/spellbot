@@ -7,8 +7,8 @@ from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, cast
 
 import discord
-from ddtrace import tracer
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
+from ddtrace.trace import tracer
 from discord.app_commands import AppCommandError, ContextMenu, NoPrivateMessage
 from discord.app_commands import Command as AppCommand
 from discord.ext.commands import AutoShardedBot

@@ -779,8 +779,7 @@ class TestOperationsAddRole:
         guild.roles = [role]
         await safe_add_role(member, guild, "role")
         assert (
-            f"warning: in guild {guild.name} ({guild.id}),"
-            f" could not add role to member user#1234"
+            f"warning: in guild {guild.name} ({guild.id}), could not add role to member user#1234"
         ) in caplog.text
 
 

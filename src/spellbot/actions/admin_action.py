@@ -221,7 +221,7 @@ class AdminAction(BaseAction):
         if not found:
             return await self._report_failure()
 
-        embed = await games.to_embed(self.guild, dm=True)
+        embed = await games.to_embed(guild=self.guild, dm=True)
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
         return None
 

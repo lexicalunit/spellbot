@@ -6,11 +6,12 @@ import re
 from typing import TYPE_CHECKING
 
 import discord
-from ddtrace import tracer
+from ddtrace.trace import tracer
 
 from spellbot.enums import GameFormat, GameService
 from spellbot.models import GameStatus
 from spellbot.operations import (
+    VoiceChannelSuggestion,
     safe_add_role,
     safe_channel_reply,
     safe_create_channel_invite,
@@ -21,6 +22,7 @@ from spellbot.operations import (
     safe_followup_channel,
     safe_get_partial_message,
     safe_send_user,
+    safe_suggest_voice_channel,
     safe_update_embed,
     safe_update_embed_origin,
 )
@@ -142,7 +144,7 @@ class LookingForGameAction(BaseAction):
                 self.guild.id,
                 message_xid,
             ):
-                embed = await self.services.games.to_embed(self.guild)
+                embed = await self.services.games.to_embed(guild=self.guild)
                 view: BaseView | None = None
                 if self.channel_data.get("show_points", False):
                     view = StartedGameView(bot=self.bot)
@@ -217,21 +219,24 @@ class LookingForGameAction(BaseAction):
         fully_seated = await self.services.games.fully_seated()
         started_game_id: int | None = None
         other_game_ids: list[int] = []
+        suggested_vc = None
         if fully_seated:
             other_game_ids = await self.services.games.other_game_ids()
             game_data = await self.services.games.to_dict()
-            started_game_id = await self.make_game_ready(game_data)
+            player_xids = await self.services.games.player_xids()
+            started_game_id, suggested_vc = await self.make_game_ready(game_data, player_xids)
             await self._handle_voice_creation(self.guild.id)
 
         await self._handle_embed_creation(
             new=new,
             origin=origin,
             fully_seated=fully_seated,
+            suggested_vc=suggested_vc,
         )
 
         if fully_seated:
             assert started_game_id is not None
-            await self._handle_direct_messages()
+            await self._handle_direct_messages(suggested_vc=suggested_vc)
             await self._update_other_game_posts(other_game_ids)
             return None
         return None
@@ -259,7 +264,7 @@ class LookingForGameAction(BaseAction):
                     message_xid,
                 )
             ):
-                embed = await self.services.games.to_embed(self.guild)
+                embed = await self.services.games.to_embed(guild=self.guild)
                 await safe_update_embed(
                     message,
                     embed=embed,
@@ -280,7 +285,7 @@ class LookingForGameAction(BaseAction):
             return
 
         await self.services.games.add_points(self.interaction.user.id, points)
-        embed = await self.services.games.to_embed(self.guild)
+        embed = await self.services.games.to_embed(guild=self.guild)
         await safe_update_embed(message, embed=embed)
 
     @tracer.wrap()
@@ -330,15 +335,35 @@ class LookingForGameAction(BaseAction):
             create_new=True,
         )
         game_data = await self.services.games.to_dict()
-        await self.make_game_ready(game_data)
+        _, suggested_vc = await self.make_game_ready(game_data, player_xids)
         await self._handle_voice_creation(self.interaction.guild_id)
-        await self._handle_embed_creation(new=True, origin=False, fully_seated=True)
-        await self._handle_direct_messages()
+        await self._handle_embed_creation(
+            new=True,
+            origin=False,
+            fully_seated=True,
+            suggested_vc=suggested_vc,
+        )
+        await self._handle_direct_messages(suggested_vc=suggested_vc)
 
     @tracer.wrap()
-    async def make_game_ready(self, game: GameDict) -> int:
+    async def make_game_ready(
+        self,
+        game: GameDict,
+        player_xids: list[int],
+    ) -> tuple[int, VoiceChannelSuggestion | None]:
         details = await self.bot.create_game_link(game)
-        return await self.services.games.make_ready(details.link, details.password)
+
+        suggested_vc = None
+        if (
+            not game["voice_xid"]
+            and not game["voice_invite_link"]
+            and self.guild_data
+            and self.guild_data["suggest_voice_channel"]
+            and self.guild is not None
+        ):
+            suggested_vc = safe_suggest_voice_channel(self.guild, player_xids)
+
+        return await self.services.games.make_ready(details.link, details.password), suggested_vc
 
     @tracer.wrap()
     async def _handle_voice_creation(self, guild_xid: int) -> None:
@@ -410,15 +435,20 @@ class LookingForGameAction(BaseAction):
     @tracer.wrap()
     async def _handle_embed_creation(  # noqa: C901,PLR0912
         self,
+        *,
         new: bool,
         origin: bool,
         fully_seated: bool,
+        suggested_vc: VoiceChannelSuggestion | None = None,
     ) -> None:
         assert self.guild
         assert self.channel
 
         # build the game post's embed and view:
-        embed: discord.Embed = await self.services.games.to_embed(self.guild)
+        embed: discord.Embed = await self.services.games.to_embed(
+            guild=self.guild,
+            suggested_vc=suggested_vc,
+        )
         content = self.channel_data.get("extra", None)
         game_data = await self.services.games.to_dict()
 
@@ -495,10 +525,17 @@ class LookingForGameAction(BaseAction):
         await safe_followup_channel(self.interaction, embed=embed)
 
     @tracer.wrap()
-    async def _handle_direct_messages(self) -> None:
+    async def _handle_direct_messages(
+        self,
+        suggested_vc: VoiceChannelSuggestion | None = None,
+    ) -> None:
         player_pins = await self.services.games.player_pins()
         player_xids = list(player_pins.keys())
-        base_embed = await self.services.games.to_embed(self.guild, dm=True)
+        base_embed = await self.services.games.to_embed(
+            guild=self.guild,
+            dm=True,
+            suggested_vc=suggested_vc,
+        )
 
         # notify players
         fetched_players: dict[int, discord.User] = {}
