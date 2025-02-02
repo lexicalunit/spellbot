@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v14.5.1](https://github.com/lexicalunit/spellbot/releases/tag/v14.5.1) - 2025-02-02
+
 ### Fixed
 
 - Fixed an issue with suggested voice channels not being the same per player.
