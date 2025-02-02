@@ -55,9 +55,9 @@ class TestCodebase:
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True, check=False)  # noqa: S603
         exitcode: int = cast(int, proc.returncode)
-        assert (
-            exitcode == 0
-        ), f"ruff issues:\n{proc.stderr.decode('utf-8')}\n{proc.stdout.decode('utf-8')}"
+        assert exitcode == 0, (
+            f"ruff issues:\n{proc.stderr.decode('utf-8')}\n{proc.stdout.decode('utf-8')}"
+        )
 
     def test_ruff_format(self) -> None:
         """Checks that the Python codebase passes configured ruff format checks."""
@@ -124,7 +124,8 @@ class TestCodebase:
         for path in paths(repo.tree(), REPO_ROOT):
             check(path)
         for change in repo.index.diff(None):
-            check(REPO_ROOT / change.a_path)
+            if change.a_path is not None:
+                check(REPO_ROOT / change.a_path)
 
         if errors:
             print("Files with trailing whitespace:", file=sys.stderr)  # noqa: T201

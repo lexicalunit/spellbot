@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import discord
 from cachetools import TTLCache
-from ddtrace import tracer
+from ddtrace.trace import tracer
 from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, Context
 
 from .database import db_session_manager, initialize_connection

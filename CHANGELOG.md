@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Fixed SpellTable link generation by using an approach developed by @nathvnt (https://github.com/nathvnt). Thanks Nathan, you rock!
+- Fixed an issue with suggested voice channels not being the same per player.
+
+### Changed
+
+- Updated dependencies.
 
 ### Added
 

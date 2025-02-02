@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from ddtrace import tracer
+from ddtrace.trace import tracer
 
 from spellbot.operations import (
     safe_delete_message,
@@ -50,7 +50,7 @@ class LeaveAction(BaseAction):
                     assert self.interaction.message is not None
                     await safe_delete_message(self.interaction.message)
                 else:
-                    embed = await self.services.games.to_embed(self.guild)
+                    embed = await self.services.games.to_embed(guild=self.guild)
                     await safe_update_embed_origin(self.interaction, embed=embed)
                 continue
 
@@ -65,7 +65,7 @@ class LeaveAction(BaseAction):
             if do_delete_game:
                 await safe_delete_message(message)
             else:
-                embed = await self.services.games.to_embed(self.guild)
+                embed = await self.services.games.to_embed(guild=self.guild)
                 await safe_update_embed(message, embed=embed)
 
         if do_delete_game:
@@ -104,7 +104,7 @@ class LeaveAction(BaseAction):
             if do_delete_game:
                 await safe_delete_message(message)
             else:
-                embed = await self.services.games.to_embed(self.guild)
+                embed = await self.services.games.to_embed(guild=self.guild)
                 await safe_update_embed(message, embed=embed)
 
         if do_delete_game:
@@ -145,7 +145,7 @@ class LeaveAction(BaseAction):
                         if do_delete_game:
                             await safe_delete_message(message)
                         else:
-                            embed = await self.services.games.to_embed(self.guild)
+                            embed = await self.services.games.to_embed(guild=self.guild)
                             await safe_update_embed(
                                 message,
                                 embed=embed,

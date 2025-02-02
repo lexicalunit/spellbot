@@ -1,7 +1,7 @@
 import logging
 from inspect import cleandoc
 
-from ddtrace import tracer
+from ddtrace.trace import tracer
 from discord.ext import commands
 
 from spellbot import SpellBot

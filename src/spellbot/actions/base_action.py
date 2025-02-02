@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, NoReturn, Self, cast
 
 import discord
 from asgiref.sync import sync_to_async
-from ddtrace import tracer
+from ddtrace.trace import tracer
 
 from spellbot.database import DatabaseSession, db_session_manager
 from spellbot.errors import (
@@ -50,6 +50,7 @@ class BaseAction:
     guild: discord.Guild | None
     channel: discord.TextChannel | None
     channel_data: ChannelDict
+    guild_data: GuildDict | None
 
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         self.bot = bot
@@ -60,11 +61,11 @@ class BaseAction:
         self.channel = cast(discord.TextChannel, self.interaction.channel)
 
     async def upsert_request_objects(self) -> None:  # pragma: no cover
-        guild_data: GuildDict | None = None
+        self.guild_data: GuildDict | None = None
         if self.guild:
-            guild_data = await self.services.guilds.upsert(self.guild)
+            self.guild_data = await self.services.guilds.upsert(self.guild)
 
-        if guild_data and guild_data["banned"]:
+        if self.guild_data and self.guild_data["banned"]:
             raise GuildBannedError
 
         if self.guild and self.channel:
