@@ -7,16 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [v14.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v14.5.0) - 2025-02-01
-
 ### Fixed
 
-- Fixed SpellTable link generation by using an approach developed by @nathvnt (https://github.com/nathvnt). Thanks Nathan, you rock!
 - Fixed an issue with suggested voice channels not being the same per player.
 
 ### Changed
 
 - Updated dependencies.
+
+## [v14.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v14.5.0) - 2025-02-01
+
+### Fixed
+
+- Fixed SpellTable link generation by using an approach developed by @nathvnt (https://github.com/nathvnt). Thanks Nathan, you rock!
 
 ### Added
 
