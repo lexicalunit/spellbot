@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, TypedDict, cast
 
 import discord
 from dateutil import tz
+from ddtrace.trace import tracer
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import false, text
@@ -242,13 +243,24 @@ class Game(Base):
         plural = "s" if remaining > 1 else ""
         return f"**Waiting for {remaining} more player{plural} to join...**"
 
-    def embed_description(  # noqa: C901,PLR0912
+    @tracer.wrap()
+    def embed_description(  # noqa: C901,PLR0912,PLR0915
         self,
         *,
         guild: discord.Guild | None,
         dm: bool = False,
         suggested_vc: VoiceChannelSuggestion | None = None,
     ) -> str:
+        if span := tracer.current_span():  # pragma: no cover
+            span.set_tags(
+                {
+                    "game_id": str(self.id),
+                    "dm": str(dm),
+                    "already_picked": str(suggested_vc.already_picked if suggested_vc else None),
+                    "random_empty": str(suggested_vc.random_empty if suggested_vc else None),
+                }
+            )
+
         description = ""
         if self.guild.notice:
             description += f"{self.guild.notice}\n\n"

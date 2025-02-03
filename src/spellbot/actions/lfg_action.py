@@ -99,6 +99,7 @@ class LookingForGameAction(BaseAction):
         service: int,
         message_xid: int | None,
     ) -> bool | None:
+        """Return True if the game is new, False if existing, or None of user can not join."""
         assert self.guild
         assert self.channel
 
@@ -126,30 +127,13 @@ class LookingForGameAction(BaseAction):
             await safe_send_user(self.interaction.user, "You can not join this game.")
             return None
 
-        # Sometimes game posts have Join/Leave buttons on them even though
-        # the game has started. This can happen if an interaction fails on
-        # Discord's side of things. This makes it appear like a user can still
-        # join a game, even though it's already started. We need to handle this
-        # by informing the user and updating the game post they tried to join.
         if found["status"] == GameStatus.STARTED.value:
+            logger.warning("User tried to join a game that has already started.")
             # inform the player that their interaction failed
             await safe_send_user(
                 self.interaction.user,
                 "Sorry, that game has already started.",
             )
-
-            # attempt to update the problematic game post
-            if message := safe_get_partial_message(
-                self.channel,
-                self.guild.id,
-                message_xid,
-            ):
-                embed = await self.services.games.to_embed(guild=self.guild)
-                view: BaseView | None = None
-                if self.channel_data.get("show_points", False):
-                    view = StartedGameView(bot=self.bot)
-                await safe_update_embed(message, embed=embed, view=view)
-
             return None
 
         await self.services.games.add_player(self.interaction.user.id)
@@ -362,6 +346,18 @@ class LookingForGameAction(BaseAction):
             and self.guild is not None
         ):
             suggested_vc = safe_suggest_voice_channel(self.guild, player_xids)
+
+        if span := tracer.current_span():  # pragma: no cover
+            span.set_tags(
+                {
+                    "game_id": str(game["id"]),
+                    "voice_xid": str(game["voice_xid"]),
+                    "voice_invite_link": str(game["voice_invite_link"]),
+                    "guild_data__isnull": str(bool(self.guild_data is None)),
+                    "already_picked": str(suggested_vc.already_picked if suggested_vc else None),
+                    "random_empty": str(suggested_vc.random_empty if suggested_vc else None),
+                }
+            )
 
         return await self.services.games.make_ready(details.link, details.password), suggested_vc
 
