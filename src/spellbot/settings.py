@@ -132,20 +132,26 @@ class Settings:
     def workaround_over_eager_caching(self, url: str) -> str:
         return f"{url}?{datetime.now(tz=pytz.utc).date().strftime('%Y-%m-%d')}"
 
-    def queer(self, guild_xid: int | None) -> bool:
-        return (
-            guild_xid
-            in [
-                757455940009328670,  # Oath of the Gaywatch
-                699775410082414733,  # Development
-            ]
-            or datetime.now(tz=pytz.utc).month == 6
+    @property
+    def ICO_URL(self) -> str:
+        return self.workaround_over_eager_caching(
+            f"{self.CONTENT_ROOT}/spellbot/main/spellbot-sm.png",
         )
 
     @property
     def THUMB_URL(self) -> str:
         return self.workaround_over_eager_caching(
             f"{self.CONTENT_ROOT}/spellbot/main/spellbot.png",
+        )
+
+    def queer(self, guild_xid: int | None) -> bool:
+        return (
+            guild_xid
+            in [
+                757455940009328670,  # Oath of the Gaywatch
+                # 699775410082414733,  # Development
+            ]
+            or datetime.now(tz=pytz.utc).month == 6
         )
 
     @property
@@ -155,18 +161,21 @@ class Settings:
             "149257079-e3efe74f-482b-4410-a0ea-dd988a4d3c63.png",
         )
 
-    @property
-    def ICO_URL(self) -> str:
-        return self.workaround_over_eager_caching(
-            f"{self.CONTENT_ROOT}/spellbot/main/spellbot-sm.png",
-        )
+    def black(self, guild_xid: int | None) -> bool:
+        return datetime.now(tz=pytz.utc).month == 2
 
     @property
-    def QUEER_ICO_URL(self) -> str:  # pragma: no cover
+    def BLACK_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://user-images.githubusercontent.com/1903876/"
-            "149257564-86595c81-82a5-4558-ae40-c03d29a95d1f.png",
+            "https://github.com/user-attachments/assets/146f40fd-1d8a-4027-937a-b00799ce89bc",
         )
+
+    def thumb(self, guild_xid: int | None) -> str:
+        if settings.queer(guild_xid):
+            return settings.QUEER_THUMB_URL
+        if settings.black(guild_xid):
+            return settings.BLACK_THUMB_URL
+        return settings.THUMB_URL
 
     @property
     def GUILD_OBJECT(self) -> Snowflake | None:

@@ -27,11 +27,7 @@ class AboutCog(commands.Cog):
     async def about(self, interaction: discord.Interaction) -> None:
         add_span_context(interaction)
         embed = Embed(title="SpellBot")
-        embed.set_thumbnail(
-            url=settings.QUEER_THUMB_URL
-            if settings.queer(interaction.guild_id)
-            else settings.THUMB_URL
-        )
+        embed.set_thumbnail(url=settings.thumb(interaction.guild_id))
         version = f"[{__version__}](https://pypi.org/project/spellbot/{__version__}/)"
         embed.add_field(name="Version", value=version)
         author = "[@lexicalunit](https://github.com/lexicalunit)"
