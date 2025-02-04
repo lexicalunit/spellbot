@@ -432,10 +432,7 @@ class Game(Base):
         suggested_vc: VoiceChannelSuggestion | None = None,
     ) -> discord.Embed:
         embed = discord.Embed(title=self.embed_title)
-        embed.set_thumbnail(
-            url=settings.QUEER_THUMB_URL if settings.queer(self.guild_xid) else settings.THUMB_URL
-        )
-
+        embed.set_thumbnail(url=settings.thumb(self.guild_xid))
         embed.description = self.embed_description(guild=guild, dm=dm, suggested_vc=suggested_vc)
         if self.players:
             embed.add_field(name="Players", value=self.embed_players, inline=False)
