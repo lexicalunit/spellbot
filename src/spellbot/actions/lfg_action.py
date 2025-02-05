@@ -551,7 +551,10 @@ class LookingForGameAction(BaseAction):
                         for pid, pn in player_names.items()
                     ],
                     separators=(",", ":"),
-                )
+                ),
+                safe="",
+                encoding=None,
+                errors=None,
             )
             return (
                 "https://www.mythictrack.com/gamelobby"
