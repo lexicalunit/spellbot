@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import re
+import urllib.parse
 from typing import TYPE_CHECKING
 
 import discord
@@ -38,8 +40,6 @@ if TYPE_CHECKING:
     from spellbot.models import GameDict
 
 logger = logging.getLogger(__name__)
-
-MYTHIC_TRACK = "[Mythic Track](https://www.mythictrack.com/)"
 
 
 class LookingForGameAction(BaseAction):
@@ -526,7 +526,9 @@ class LookingForGameAction(BaseAction):
         suggested_vc: VoiceChannelSuggestion | None = None,
     ) -> None:
         player_pins = await self.services.games.player_pins()
+        player_names = await self.services.games.player_names()
         player_xids = list(player_pins.keys())
+        game_data = await self.services.games.to_dict()
         base_embed = await self.services.games.to_embed(
             guild=self.guild,
             dm=True,
@@ -537,12 +539,37 @@ class LookingForGameAction(BaseAction):
         fetched_players: dict[int, discord.User] = {}
         failed_xids: list[int] = []
 
+        def mythic_track_link(player_xid: int) -> str:
+            assert self.guild
+            players_data = urllib.parse.quote(
+                json.dumps(
+                    [
+                        {
+                            "user_xid": f"{pid}",
+                            "username": pn,
+                        }
+                        for pid, pn in player_names.items()
+                    ],
+                    separators=(",", ":"),
+                )
+            )
+            return (
+                "https://www.mythictrack.com/gamelobby"
+                f"/{self.guild.id}"
+                f"/{game_data['id']}"
+                f"/{game_data['format']}"
+                f"/{game_data['service']}"
+                f"/{player_xid}"
+                f"/{players_data}"
+            )
+
         async def notify_player(player_xid: int) -> None:
             embed = base_embed.copy()
             if pin := player_pins[player_xid]:
                 embed.description = (
                     f"{embed.description}\n\n"
-                    f"Track your game on {MYTHIC_TRACK} with PIN code: `{pin}`"
+                    f"Track your game on [Mythic Track]({mythic_track_link(player_xid)}) "
+                    f"with PIN code: `{pin}`"
                 )
             if player := await safe_fetch_user(self.bot, player_xid):
                 fetched_players[player_xid] = player

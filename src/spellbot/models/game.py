@@ -223,6 +223,19 @@ class Game(Base):
         }
 
     @property
+    def player_names(self) -> dict[int, str | None]:
+        from spellbot.database import DatabaseSession
+
+        from . import Play, User
+
+        rows = (
+            DatabaseSession.query(Play.user_xid, User.name)
+            .join(User, User.xid == Play.user_xid)
+            .filter(Play.game_id == self.id)
+        )
+        return {row[0]: row[1] for row in rows}
+
+    @property
     def started_at_timestamp(self) -> int:
         assert self.started_at is not None
         return int(cast(datetime, self.started_at).replace(tzinfo=tz.UTC).timestamp())
