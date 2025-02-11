@@ -10,7 +10,7 @@ import pytest_asyncio
 import pytz
 
 from spellbot.database import DatabaseSession
-from spellbot.enums import GameService
+from spellbot.enums import GameBracket, GameService
 from spellbot.models import Game, GameStatus, Play
 from spellbot.operations import VoiceChannelSuggestion
 
@@ -46,6 +46,7 @@ class TestModelGame:
             "seats": game.seats,
             "status": game.status,
             "format": game.format,
+            "bracket": game.bracket,
             "service": game.service,
             "spelltable_link": game.spelltable_link,
             "jump_links": game.jump_links,
@@ -107,10 +108,12 @@ class TestModelGame:
             channel=channel,
             updated_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
             service=service.value,
+            bracket=GameBracket.BRACKET_2.value,
         )
 
         expected_fields = [
             {"inline": True, "name": "Format", "value": "Commander"},
+            {"inline": True, "name": "Bracket", "value": GameBracket.BRACKET_2.title},
             {"inline": True, "name": "Updated at", "value": "<t:1635638400>"},
         ]
         if service != GameService.SPELLTABLE:

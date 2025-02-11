@@ -75,6 +75,17 @@ class ChannelsService:
         DatabaseSession.commit()
 
     @sync_to_async()
+    def set_default_bracket(self, xid: int, bracket: int) -> None:
+        query = (
+            update(Channel)
+            .where(Channel.xid == xid)
+            .values(default_bracket=bracket)
+            .execution_options(synchronize_session=False)
+        )
+        DatabaseSession.execute(query)
+        DatabaseSession.commit()
+
+    @sync_to_async()
     def set_default_service(self, xid: int, service: int) -> None:
         query = (
             update(Channel)

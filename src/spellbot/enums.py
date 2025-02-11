@@ -117,3 +117,38 @@ GAME_FORMAT_ORDER = [
     GameFormat.SEALED,
     GameFormat.BRAWL_TWO_PLAYER,
 ]
+
+
+class GameBracket(Enum):
+    """The bracket for this game."""
+
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+        """Give each enum value an increasing numerical value starting at 1."""
+        value = len(cls.__members__) + 1
+        obj = object.__new__(cls)
+        obj._value_ = value
+        return obj
+
+    def __init__(self, title: str) -> None:
+        self.title = title
+
+    def __str__(self) -> str:
+        return self.title
+
+    # DO NOT REORDER -- IT WOULD INVALIDATE EXISTING DATABASE ENTRIES!
+    NONE = "None"
+    BRACKET_1 = "Bracket 1: Exhibition"
+    BRACKET_2 = "Bracket 2: Core"
+    BRACKET_3 = "Bracket 3: Upgraded"
+    BRACKET_4 = "Bracket 4: Optimized"
+    BRACKET_5 = "Bracket 5: Competitive"
+
+
+GAME_BRACKET_ORDER = [
+    GameBracket.NONE,
+    GameBracket.BRACKET_1,
+    GameBracket.BRACKET_2,
+    GameBracket.BRACKET_3,
+    GameBracket.BRACKET_4,
+    GameBracket.BRACKET_5,
+]

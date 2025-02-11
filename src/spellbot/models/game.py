@@ -12,7 +12,7 @@ from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Intege
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import false, text
 
-from spellbot.enums import GameFormat, GameService
+from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.settings import settings
 
 from . import Base, now
@@ -44,6 +44,7 @@ class GameDict(TypedDict):
     seats: int
     status: int
     format: int
+    bracket: int
     service: int
     spelltable_link: str | None
     spectate_link: str | None
@@ -150,6 +151,17 @@ class Game(Base):
             index=True,
             nullable=False,
             doc="The Magic: The Gathering format for this game",
+        ),
+    )
+    bracket: int = cast(
+        int,
+        Column(
+            Integer(),
+            default=GameBracket.NONE.value,
+            server_default=text(str(GameBracket.NONE.value)),
+            index=True,
+            nullable=False,
+            doc="The commander bracket for this game",
         ),
     )
     service: int = cast(
@@ -355,6 +367,7 @@ class Game(Base):
         placeholders = {
             "game_id": str(self.id),
             "game_format": self.format_name,
+            "game_bracket": self.bracket_name,
             "game_start": game_start,
         }
         for i, player in enumerate(self.players):
@@ -421,6 +434,10 @@ class Game(Base):
         return str(GameFormat(self.format))
 
     @property
+    def bracket_name(self) -> str:
+        return str(GameBracket(self.bracket))
+
+    @property
     def confirmed(self) -> bool:
         from spellbot.database import DatabaseSession
 
@@ -450,6 +467,8 @@ class Game(Base):
         if self.players:
             embed.add_field(name="Players", value=self.embed_players, inline=False)
         embed.add_field(name="Format", value=self.format_name)
+        if self.bracket != GameBracket.NONE.value:
+            embed.add_field(name="Bracket", value=self.bracket_name)
         if self.started_at:
             embed.add_field(name="Started at", value=f"<t:{self.started_at_timestamp}>")
         else:
@@ -500,6 +519,7 @@ class Game(Base):
             "seats": self.seats,
             "status": self.status,
             "format": self.format,
+            "bracket": self.bracket,
             "service": self.service,
             "spelltable_link": self.spelltable_link,
             "spectate_link": self.spectate_link,

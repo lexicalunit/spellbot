@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import false, text
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import Boolean, Integer
 
-from spellbot.enums import GameFormat, GameService
+from spellbot.enums import GameBracket, GameFormat, GameService
 
 from . import Base, now
 
@@ -25,6 +25,7 @@ class ChannelDict(TypedDict):
     name: str
     default_seats: int
     default_format: GameFormat
+    default_bracket: GameBracket
     default_service: GameService
     auto_verify: bool
     unverified_only: bool
@@ -92,6 +93,14 @@ class Channel(Base):
         index=True,
         nullable=False,
         doc="The default Magic: The Gathering format for this channel",
+    )
+    default_bracket = Column(
+        Integer(),
+        default=GameBracket.NONE.value,
+        server_default=text(str(GameBracket.NONE.value)),
+        index=True,
+        nullable=False,
+        doc="The default commander bracket for this channel",
     )
     default_service = Column(
         Integer(),
@@ -187,6 +196,7 @@ class Channel(Base):
             "name": self.name,
             "default_seats": self.default_seats,
             "default_format": GameFormat(cast(int, self.default_format)),
+            "default_bracket": GameBracket(cast(int, self.default_bracket)),
             "default_service": GameService(cast(int, self.default_service)),
             "auto_verify": self.auto_verify,
             "unverified_only": self.unverified_only,

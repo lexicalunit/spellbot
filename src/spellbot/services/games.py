@@ -130,6 +130,7 @@ class GamesService:
         friends: list[int],
         seats: int,
         format: int,
+        bracket: int,
         service: int,
         create_new: bool = False,
     ) -> bool:
@@ -142,6 +143,7 @@ class GamesService:
                 friends=friends,
                 seats=seats,
                 format=format,
+                bracket=bracket,
                 service=service,
             )
 
@@ -157,6 +159,7 @@ class GamesService:
                 channel_xid=channel_xid,
                 seats=seats,
                 format=format,
+                bracket=bracket,
                 service=service,
                 requires_confirmation=channel.require_confirmation,
             )
@@ -195,6 +198,7 @@ class GamesService:
         friends: list[int],
         seats: int,
         format: int,
+        bracket: int,
         service: int,
     ) -> Game | None:
         required_seats = 1 + len(friends)
@@ -213,6 +217,7 @@ class GamesService:
                     Game.channel_xid == channel_xid,
                     Game.seats == seats,
                     Game.format == format,
+                    Game.bracket == bracket,
                     Game.service == service,
                     Game.status == GameStatus.PENDING.value,
                     Game.deleted_at.is_(None),

@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from spellbot import SpellBot
 from spellbot.actions.lfg_action import LookingForGameAction
-from spellbot.enums import GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
+from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_defer_interaction
 from spellbot.settings import settings
@@ -36,6 +36,10 @@ class LookingForGameCog(commands.Cog):
     @app_commands.choices(
         format=[Choice(name=str(format), value=format.value) for format in GAME_FORMAT_ORDER]
     )
+    @app_commands.describe(format="What commander bracket do you want to play?")
+    @app_commands.choices(
+        bracket=[Choice(name=str(bracket), value=bracket.value) for bracket in GAME_BRACKET_ORDER]
+    )
     @app_commands.describe(service="What service do you want to use to play this game?")
     @app_commands.choices(
         service=[Choice(name=str(service), value=service.value) for service in GAME_SERVICE_ORDER]
@@ -47,6 +51,7 @@ class LookingForGameCog(commands.Cog):
         friends: str | None = None,
         seats: int | None = None,
         format: int | None = None,
+        bracket: int | None = None,
         service: int | None = None,
     ) -> None:
         assert interaction.guild is not None
@@ -56,7 +61,13 @@ class LookingForGameCog(commands.Cog):
             self.bot.guild_lock(interaction.guild.id),
             LookingForGameAction.create(self.bot, interaction) as action,
         ):
-            await action.execute(friends=friends, seats=seats, format=format, service=service)
+            await action.execute(
+                friends=friends,
+                seats=seats,
+                format=format,
+                bracket=bracket,
+                service=service,
+            )
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover

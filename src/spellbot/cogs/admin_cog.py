@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from spellbot import SpellBot
 from spellbot.actions import AdminAction
-from spellbot.enums import GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
+from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
 from spellbot.metrics import add_span_context
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_admin, is_guild
@@ -175,6 +175,20 @@ class AdminCog(commands.Cog):
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_default_format(format)
+
+    @set_group.command(
+        name="default_bracket",
+        description="Set the default commander bracket for new games in this channel.",
+    )
+    @app_commands.describe(bracket="Default commander bracket")
+    @app_commands.choices(
+        bracket=[Choice(name=str(bracket), value=bracket.value) for bracket in GAME_BRACKET_ORDER],
+    )
+    @tracer.wrap(name="interaction", resource="set_default_format")
+    async def default_bracket(self, interaction: discord.Interaction, bracket: int) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_default_bracket(bracket)
 
     @set_group.command(
         name="default_service",
