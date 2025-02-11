@@ -10,7 +10,7 @@ import pytest_asyncio
 from spellbot.actions import admin_action
 from spellbot.cogs import AdminCog
 from spellbot.database import DatabaseSession
-from spellbot.enums import GameFormat, GameService
+from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.errors import AdminOnlyError
 from spellbot.models import Channel, Game, Guild, GuildAward
 from spellbot.views import SetupView
@@ -294,6 +294,16 @@ class TestCogAdminChannels(InteractionMixin):
         )
         channel = DatabaseSession.query(Channel).one()
         assert channel.default_format == format
+
+    async def test_default_bracket(self, cog: AdminCog) -> None:
+        bracket = Channel.default_bracket.default.arg + 1  # type: ignore
+        await self.run(cog.default_bracket, bracket=bracket)
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Default bracket set to {GameBracket(bracket)} for this channel.",
+            ephemeral=True,
+        )
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.default_bracket == bracket
 
     async def test_default_service(self, cog: AdminCog) -> None:
         service = Channel.default_service.default.arg + 1  # type: ignore

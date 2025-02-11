@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 import discord
 from discord.embeds import Embed
 
-from spellbot.enums import GameFormat, GameService
+from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Channel, ChannelDict, GuildAward, GuildAwardDict
 from spellbot.operations import (
     safe_fetch_text_channel,
@@ -352,6 +352,15 @@ class AdminAction(BaseAction):
         await safe_send_channel(
             self.interaction,
             f"Default format set to {GameFormat(format)} for this channel.",
+            ephemeral=True,
+        )
+
+    async def set_default_bracket(self, bracket: int) -> None:
+        assert self.interaction.channel_id is not None
+        await self.services.channels.set_default_bracket(self.interaction.channel_id, bracket)
+        await safe_send_channel(
+            self.interaction,
+            f"Default bracket set to {GameBracket(bracket)} for this channel.",
             ephemeral=True,
         )
 

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import discord
 from ddtrace.trace import tracer
 
-from spellbot.enums import GameFormat, GameService
+from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import GameStatus
 from spellbot.operations import (
     VoiceChannelSuggestion,
@@ -77,6 +77,16 @@ class LookingForGameAction(BaseAction):
         return GameFormat.COMMANDER.value
 
     @tracer.wrap()
+    async def get_bracket(self, format: int | None, bracket: int | None = None) -> int:
+        if format == GameFormat.CEDH.value:
+            return GameBracket.BRACKET_5.value
+        if bracket is not None:
+            return bracket
+        if self.channel_data["default_bracket"] is not None:
+            return self.channel_data["default_bracket"].value
+        return GameBracket.NONE.value
+
+    @tracer.wrap()
     async def filter_friend_xids(self, friend_xids: list[int]) -> list[int]:
         assert self.guild
         if friend_xids:
@@ -96,6 +106,7 @@ class LookingForGameAction(BaseAction):
         friend_xids: list[int],
         seats: int,
         format: int,
+        bracket: int,
         service: int,
         message_xid: int | None,
     ) -> bool | None:
@@ -118,6 +129,7 @@ class LookingForGameAction(BaseAction):
                 friends=friend_xids,
                 seats=seats,
                 format=format,
+                bracket=bracket,
                 service=service,
             )
 
@@ -145,8 +157,9 @@ class LookingForGameAction(BaseAction):
         friends: str | None = None,
         seats: int | None = None,
         format: int | None = None,
-        message_xid: int | None = None,
+        bracket: int | None = None,
         service: int | None = None,
+        message_xid: int | None = None,
     ) -> None:
         if not self.guild or not self.channel:
             # Someone tried to lfg in a Discord thread rather than in the channel itself.
@@ -162,6 +175,7 @@ class LookingForGameAction(BaseAction):
 
         actual_friends: str = await self.get_friends(friends)
         actual_format: int = await self.get_format(format)
+        actual_bracket: int = await self.get_bracket(actual_format, bracket)
         actual_seats: int = await self.get_seats(actual_format, seats)
         actual_service: int = await self.get_service(service)
 
@@ -194,6 +208,7 @@ class LookingForGameAction(BaseAction):
             friend_xids,
             actual_seats,
             actual_format,
+            actual_bracket,
             actual_service,
             message_xid,
         )
@@ -277,11 +292,13 @@ class LookingForGameAction(BaseAction):
         self,
         players: str,
         format: int | None = None,
+        bracket: int | None = None,
         service: int | None = None,
     ) -> None:
         assert self.channel
 
         game_format = GameFormat(format or GameFormat.COMMANDER.value)
+        game_bracket = GameBracket(bracket or GameBracket.NONE.value)
         game_service = GameService(service or GameService.SPELLTABLE.value)
         player_xids = list(map(int, re.findall(r"<@!?(\d+)>", players)))
         requested_seats = len(player_xids)
@@ -315,6 +332,7 @@ class LookingForGameAction(BaseAction):
             friends=found_players[1:],
             seats=requested_seats,
             format=game_format.value,
+            bracket=game_bracket.value,
             service=game_service.value,
             create_new=True,
         )
