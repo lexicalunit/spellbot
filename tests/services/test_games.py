@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
-from spellbot.enums import GameFormat, GameService
+from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import (
     Channel,
     Game,
@@ -340,6 +340,7 @@ class TestServiceGamesUpsert:
             friends=[],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
         )
         assert not new
@@ -370,6 +371,7 @@ class TestServiceGamesUpsert:
             friends=[user2.xid],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
         )
         assert not new
@@ -387,6 +389,7 @@ class TestServiceGamesUpsert:
             friends=[],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
         )
         assert new
@@ -412,6 +415,7 @@ class TestServiceGamesUpsert:
             friends=[user2.xid],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
         )
         assert new
@@ -437,6 +441,7 @@ class TestServiceGamesUpsert:
             friends=[user2.xid, user3.xid],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
         )
         assert new
@@ -471,6 +476,7 @@ class TestServiceGamesUpsert:
             friends=[user2.xid, user3.xid],
             seats=4,
             format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
         )
         assert new
@@ -495,6 +501,7 @@ class TestServiceGamesUpsert:
             friends=[],
             seats=game.seats,
             format=game.format,
+            bracket=game.bracket,
             service=GameService.SPELLTABLE.value,
         )
 
@@ -517,6 +524,7 @@ class TestServiceGamesUpsert:
             friends=[],
             seats=game.seats,
             format=game.format,
+            bracket=game.bracket,
             service=GameService.SPELLTABLE.value,
         )
 

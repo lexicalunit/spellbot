@@ -7,7 +7,7 @@ import pytest
 import pytest_asyncio
 
 from spellbot.actions import LookingForGameAction
-from spellbot.enums import GameFormat, GameService
+from spellbot.enums import GameBracket, GameFormat, GameService
 from tests.mocks import mock_discord_object
 
 if TYPE_CHECKING:
@@ -47,6 +47,41 @@ class TestLookingForGameAction:
     async def test_get_format_fallback_default(self, action: LookingForGameAction) -> None:
         action.channel_data["default_format"] = None  # type: ignore
         assert await action.get_format(None) == GameFormat.COMMANDER.value
+
+    @pytest.mark.parametrize(
+        ("format", "bracket", "actual"),
+        [
+            pytest.param(None, None, GameBracket.NONE.value, id="none"),
+            pytest.param(GameFormat.CEDH.value, None, GameBracket.BRACKET_5.value, id="cedh"),
+            pytest.param(
+                GameFormat.CEDH.value,
+                GameBracket.BRACKET_1.value,
+                GameBracket.BRACKET_5.value,
+                id="cedh-override",
+            ),
+            pytest.param(
+                GameFormat.COMMANDER.value,
+                GameBracket.BRACKET_1.value,
+                GameBracket.BRACKET_1.value,
+                id="commander",
+            ),
+        ],
+    )
+    async def test_get_bracket(
+        self,
+        action: LookingForGameAction,
+        format: int,
+        bracket: int,
+        actual: int,
+    ) -> None:
+        assert await action.get_bracket(format, bracket) == actual
+
+    async def test_get_bracket_with_channel_default(
+        self,
+        action: LookingForGameAction,
+    ) -> None:
+        action.channel_data["default_bracket"] = GameBracket.BRACKET_1
+        assert await action.get_bracket(None, None) == GameBracket.BRACKET_1.value
 
     async def test_execute_in_non_guild_channel(
         self,
