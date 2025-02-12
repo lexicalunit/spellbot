@@ -713,3 +713,17 @@ class TestCogAdminVoiceInvite(InteractionMixin):
         )
         channel = DatabaseSession.query(Channel).one()
         assert channel.voice_invite is setting
+
+
+@pytest.mark.asyncio
+class TestCogAdminMythicTrack(InteractionMixin):
+    @pytest.mark.parametrize("initial_setting", [True, False])
+    async def test_setup_mythic_track(self, cog: AdminCog, initial_setting: bool) -> None:
+        self.guild.enable_mythic_track = initial_setting  # type: ignore
+        DatabaseSession.commit()
+
+        await self.run(cog.setup_mythic_track)
+
+        self.interaction.response.send_message.assert_called_once()
+        guild = DatabaseSession.query(Guild).one()
+        assert guild.enable_mythic_track != initial_setting
