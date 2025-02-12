@@ -207,3 +207,12 @@ class TestServiceGuilds:
         assert await guilds.has_award_with_count(award1.count)
         assert await guilds.has_award_with_count(award2.count)
         assert not await guilds.has_award_with_count(30)
+
+    async def test_guilds_setup_mythic_track(self) -> None:
+        guild = GuildFactory.create(xid=101, enable_mythic_track=False)
+        guilds = GuildsService()
+        await guilds.select(guild.xid)
+
+        setting = await guilds.setup_mythic_track()
+
+        assert setting

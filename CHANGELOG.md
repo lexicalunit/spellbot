@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds setup command and documentation for Mythic Track integration.
+
 ## [v14.6.0](https://github.com/lexicalunit/spellbot/releases/tag/v14.6.0) - 2025-02-11
 
 ### Added

@@ -92,6 +92,17 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
 Want your community to be featured here as well? Please contact me at
 [spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com)!
 
+## 📊 Mythic Track
+
+SpellBot integrates seamlessly with [Mythic Track](https://www.mythictrack.com/spellbot) which allows you to track games within your Discord server. Visualize and explore your data to reveal interesting trends. To get started run the `/setup_mythic_track` command on your server. Please also consider [supporting Mythic Track](https://www.patreon.com/MythicTrack)!
+<p align="center">
+    <img
+        src="https://github.com/user-attachments/assets/07dacc71-baa6-4605-a44b-bacf8dc23076"
+        width="617"
+        alt="Mythic Track Setup"
+    />
+</p>
+
 ## ❓ Help
 
 Two of the most common issues people using SpellBot run into are related to receiving Direct Messages from the bot. SpellBot uses Discord embeds in the DMs that it sends and there are some settings you need to enable for this to work correctly.

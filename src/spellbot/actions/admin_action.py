@@ -230,6 +230,29 @@ class AdminAction(BaseAction):
         view = SetupView(self.bot)
         await safe_send_channel(self.interaction, embed=embed, view=view)
 
+    async def setup_mythic_track(self) -> None:
+        assert self.guild is not None
+        enabled = await self.services.guilds.setup_mythic_track()
+        embed = Embed(title=f"Mythic Track Setup for {self.guild.name}")
+        embed.set_thumbnail(url=settings.ICO_URL)
+        embed.color = discord.Color(settings.INFO_EMBED_COLOR)
+        if enabled:
+            GUIDE = "https://www.mythictrack.com/spellbot"
+            embed.description = (
+                "✅ Mythic Track has been turned **on** for this server!\n\n"
+                "To continue setup, please "
+                f"[connect your Discord account to Mythic Track]({GUIDE}).\n\n"
+                "While this feature is turned on, SpellBot will generate PIN codes for "
+                "players to enter into Mythic Track so that their games can be tracked."
+            )
+        else:
+            embed.description = (
+                "❌ Mythic Track has been turned **off** for this server. Rerun this command "
+                "to toggle it back on. Note that turning this feature off does _not_ remove "
+                "any existing Mythic Track data."
+            )
+        await safe_send_channel(self.interaction, embed=embed)
+
     async def channels(self, page: int) -> None:
         embeds = await self._build_channels_embeds()
         try:

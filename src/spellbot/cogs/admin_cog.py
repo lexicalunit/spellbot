@@ -29,6 +29,16 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.setup()
 
+    @app_commands.command(
+        name="setup_mythic_track",
+        description="Setup Mythic Track on your server.",
+    )
+    @tracer.wrap(name="interaction", resource="setup")
+    async def setup_mythic_track(self, interaction: discord.Interaction) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.setup_mythic_track()
+
     @app_commands.command(name="forget_channel", description="Forget settings for a channel.")
     @app_commands.describe(channel="What is the Discord ID of the channel?")
     @tracer.wrap(name="interaction", resource="forget_channel")

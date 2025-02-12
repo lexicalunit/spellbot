@@ -192,3 +192,10 @@ class GuildsService:
         if award:
             DatabaseSession.delete(award)
         DatabaseSession.commit()
+
+    @sync_to_async()
+    def setup_mythic_track(self) -> bool:
+        assert self.guild
+        self.guild.enable_mythic_track = not self.guild.enable_mythic_track
+        DatabaseSession.commit()
+        return self.guild.enable_mythic_track
