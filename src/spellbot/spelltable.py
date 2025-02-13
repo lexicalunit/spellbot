@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from enum import Enum
 from random import randint
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
@@ -11,6 +12,7 @@ from aiohttp_retry import ExponentialRetry, RetryClient
 from playwright.async_api import Browser, Page, Route, async_playwright
 
 from spellbot import __version__
+from spellbot.enums import GameFormat
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
@@ -26,6 +28,61 @@ LOGIN = (
 TIMEOUT_S = 5  # seconds
 TIMEOUT_MS = TIMEOUT_S * 1000  # milliseconds
 ROUND_ROBIN = None
+
+
+class SpellTableGameTypes(Enum):
+    Commander = "Commander"
+    Standard = "Standard"
+    Sealed = "Sealed"
+    Modern = "Modern"
+    Vintage = "Vintage"
+    Legacy = "Legacy"
+    BrawlTwoPlayer = "Brawl Two Player"
+    BrawlMultiplayer = "Brawl Multiplayer"
+    TwoHeadedGiant = "Two Headed Giant"
+    Pauper = "Pauper"
+    PauperEDH = "Pauper EDH"
+    Pioneer = "Pioneer"
+    Oathbreaker = "Oathbreaker"
+
+
+def spelltable_game_type(format: GameFormat) -> SpellTableGameTypes:  # noqa: C901
+    match format:
+        case GameFormat.STANDARD | GameFormat.SEALED:
+            return SpellTableGameTypes.Standard
+        case GameFormat.MODERN:
+            return SpellTableGameTypes.Modern
+        case GameFormat.VINTAGE:
+            return SpellTableGameTypes.Vintage
+        case GameFormat.LEGACY | GameFormat.DUEL_COMMANDER:
+            return SpellTableGameTypes.Legacy
+        case GameFormat.BRAWL_TWO_PLAYER:
+            return SpellTableGameTypes.BrawlTwoPlayer
+        case GameFormat.BRAWL_MULTIPLAYER:
+            return SpellTableGameTypes.BrawlMultiplayer
+        case GameFormat.TWO_HEADED_GIANT:
+            return SpellTableGameTypes.TwoHeadedGiant
+        case GameFormat.PAUPER:
+            return SpellTableGameTypes.Pauper
+        case GameFormat.PAUPER_EDH:
+            return SpellTableGameTypes.PauperEDH
+        case GameFormat.PIONEER:
+            return SpellTableGameTypes.Pioneer
+        case GameFormat.OATHBREAKER:
+            return SpellTableGameTypes.Oathbreaker
+        case (
+            GameFormat.COMMANDER
+            | GameFormat.EDH_MAX
+            | GameFormat.EDH_HIGH
+            | GameFormat.EDH_MID
+            | GameFormat.EDH_LOW
+            | GameFormat.EDH_BATTLECRUISER
+            | GameFormat.PLANECHASE
+            | GameFormat.PRE_CONS
+            | GameFormat.CEDH
+            | GameFormat.ARCHENEMY
+        ):
+            return SpellTableGameTypes.Commander
 
 
 def route_intercept(route: Route) -> Any:
@@ -72,7 +129,9 @@ async def generate_spelltable_link(game: GameDict) -> str | None:  # pragma: no 
     return await generate_spelltable_link_headless(game)
 
 
-async def generate_spelltable_link_headless(game: GameDict) -> str | None:  # pragma: no cover
+async def generate_spelltable_link_headless(  # noqa: PLR0915 # pragma: no cover
+    game: GameDict,
+) -> str | None:
     """
     Generate a SpellTable link using a headless browser.
 
@@ -98,31 +157,72 @@ async def generate_spelltable_link_headless(game: GameDict) -> str | None:  # pr
     username, password = accounts[ROUND_ROBIN % len(accounts)]
     ROUND_ROBIN += 1
 
+    format_option = spelltable_game_type(GameFormat(game["format"]))
+
     browser: Browser | None = None
     link: str | None = None
     try:
         async with async_playwright() as p:
             try:
+                # launch a headless browser
                 browser = await p.chromium.launch(timeout=TIMEOUT_MS)
                 page = await browser.new_page()
+
+                # intercept unnecessary requests and prevent navigation to the game,
+                # this prevents the bot from joining the game itself
                 await prevent_navigation(page)
                 await page.route("**/*", route_intercept)
+
+                # load the login page
                 await page.goto(LOGIN, timeout=TIMEOUT_MS)
-                await page.wait_for_selector("button[type='submit']", timeout=TIMEOUT_MS)
-                await page.locator("button").get_by_text("Accept All").click(timeout=TIMEOUT_MS)
+
+                # attempt to accept cookies if there is a prompt to do so
+                try:
+                    await page.wait_for_selector("button[type='submit']", timeout=TIMEOUT_MS)
+                    await page.locator("button").get_by_text("Accept All").click(timeout=TIMEOUT_MS)
+                except Exception:
+                    logger.warning("failed to accept cookies, continuing: (user: %s)", username)
+
+                # login
                 await page.fill("input[name='email']", username, timeout=TIMEOUT_MS)
                 await page.fill("input[name='password']", password, timeout=TIMEOUT_MS)
                 await page.click("button[type='submit']", timeout=TIMEOUT_MS * 2)
                 await page.wait_for_selector("text=Create Game", timeout=TIMEOUT_MS)
+
+                # bring up the create game modal
                 await page.click("text=Create Game", timeout=TIMEOUT_MS)
-                await page.wait_for_selector("input[placeholder='Name']", timeout=TIMEOUT_MS)
-                await page.fill("input[placeholder='Name']", f"SB{game['id']}", timeout=TIMEOUT_MS)
+
+                # attempt to set the format drop down
+                if format_option != SpellTableGameTypes.Commander:
+                    try:
+                        await page.select_option(
+                            "#modal-container select",
+                            format_option.value,
+                            timeout=TIMEOUT_MS,
+                        )
+                    except Exception:
+                        logger.warning("failed to set format, continuing: (user: %s)", username)
+
+                # attempt to set the room name
+                try:
+                    await page.wait_for_selector("input[placeholder='Name']", timeout=TIMEOUT_MS)
+                    await page.fill(
+                        "input[placeholder='Name']",
+                        f"SB{game['id']}",
+                        timeout=TIMEOUT_MS,
+                    )
+                except Exception:
+                    logger.warning("failed to set room name, continuing: (user: %s)", username)
+
+                # intercept the request to create the game from the SpellTable API
                 async with page.expect_response("**/createGame", timeout=TIMEOUT_MS * 2) as info:
                     await (
                         page.locator("button")
                         .get_by_text("Create", exact=True)
                         .click(timeout=TIMEOUT_MS)
                     )
+
+                # pull out the game link from the intercepted response
                 resp = await info.value
                 data = await resp.json()
                 link = f"https://spelltable.wizards.com/game/{data['id']}"
