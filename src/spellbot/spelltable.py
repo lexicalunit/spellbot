@@ -117,7 +117,7 @@ async def generate_spelltable_link_headless(game: GameDict) -> str | None:  # pr
                 await page.click("text=Create Game", timeout=TIMEOUT_MS)
                 await page.wait_for_selector("input[placeholder='Name']", timeout=TIMEOUT_MS)
                 await page.fill("input[placeholder='Name']", f"SB{game['id']}", timeout=TIMEOUT_MS)
-                async with page.expect_response("**/createGame", timeout=TIMEOUT_MS) as info:
+                async with page.expect_response("**/createGame", timeout=TIMEOUT_MS * 2) as info:
                     await (
                         page.locator("button")
                         .get_by_text("Create", exact=True)
