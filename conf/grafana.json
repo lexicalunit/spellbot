@@ -48,7 +48,7 @@
         "content": "† Data applies to selected server.<br />\n‡ Data applies across all servers.",
         "mode": "html"
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "title": "",
       "transparent": true,
       "type": "text"
@@ -100,7 +100,7 @@
         "textMode": "value",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -186,7 +186,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -272,7 +272,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -387,12 +387,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -498,7 +499,7 @@
         "textMode": "value",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -584,7 +585,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -670,7 +671,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -754,7 +755,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -858,7 +859,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -962,7 +963,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -1102,12 +1103,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -1254,7 +1256,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -1361,7 +1363,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -1542,12 +1544,13 @@
           "sortDesc": true
         },
         "tooltip": {
+          "hideZeros": false,
           "maxHeight": 600,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.5.0-81938",
       "targets": [
         {
           "datasource": {
@@ -1623,11 +1626,522 @@
       "title": "Weekly Server Popularity ‡",
       "transparent": true,
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "K5gha0AGz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 19,
+        "w": 23,
+        "x": 1,
+        "y": 41
+      },
+      "id": 68,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min",
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.0-81938",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "K5gha0AGz"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "1d",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"casual\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND games.guild_xid in(\n    304276578005942272, -- PlayEDH\n    574711449566445603, -- TCC\n    531209216443154443, -- Nitpicking Nerds\n    815001383979450368, -- EDH Fight Club\n    793590120049672242, -- IHYD\n    750696719905456189, -- Tambayan\n    752261529390284870, -- DE\n    840959507747569715, -- Combat Step\n    817867020837584906, -- CTC\n    757455940009328670, -- Gaywatch\n    1229388601113051198, -- Fight Club Royal\n    924643928844673045, -- Turbo\n    1176073262078378004, -- Breakfast Club\n    689674672240984067 -- MTG@Home\n  )\nGROUP BY 1\nORDER BY 1;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "id"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "count"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "count"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "games",
+          "timeColumn": "created_at",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            },
+            {
+              "datatype": "timestamp",
+              "name": "",
+              "params": [
+                "started_at",
+                "!=",
+                "null"
+              ],
+              "type": "expression"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "K5gha0AGz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"cEDH\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND games.guild_xid in(\n    113555415446413312, -- Competitive EDH\n    1225118416298315857, -- r/cEDH Discord\n    682734915846275184, -- Play to Win\n    530219227924267008, -- PWP\n    954838268275470367, -- ka0s Tournaments\n    763138565231345665, -- WreckRoomCedh\n    1206898724266319882, -- Espanola cEDH\n    1036729704180355202, -- Training Grounds\n    799686008811290626, -- cEDH PT\n    1061492498402394132, -- cEDH Training Grounds\n    966025312368463922, -- cEDH DE\n    629303378685460530, -- AUS cEDH\n    1110129065152745505, -- UK cEDH\n    749653914839679057, -- cEDH Quebec\n    947983400483033148 -- PDX cEDH\n  )\nGROUP BY 1\nORDER BY 1;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Daily Games (casual vs cEDH) †",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "K5gha0AGz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Addoption Rate"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineInterpolation",
+                "value": "smooth"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 17,
+        "w": 23,
+        "x": 1,
+        "y": 60
+      },
+      "id": 69,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min",
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "timezone": [
+          "browser"
+        ],
+        "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.0-81938",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "K5gha0AGz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"Bracket 1: Exhibition\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND $server\n  AND bracket = 2\nGROUP BY 1\nORDER BY 1;",
+          "refId": "Bracket 1",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "K5gha0AGz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"Bracket 2: Core\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND $server\n  AND bracket = 3\nGROUP BY 1\nORDER BY 1;",
+          "refId": "Bracket 2",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "K5gha0AGz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"Bracket 3: Upgraded\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND $server\n  AND bracket = 4\nGROUP BY 1\nORDER BY 1;",
+          "refId": "Bracket 3",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "K5gha0AGz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"Bracket 4: Optimized\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND $server\n  AND bracket = 5\nGROUP BY 1\nORDER BY 1;",
+          "refId": "Bracket 4",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "K5gha0AGz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"Bracket 5: Competitive\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND $server\n  AND bracket = 6\nGROUP BY 1\nORDER BY 1;",
+          "refId": "Bracket 5",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "K5gha0AGz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  (sum(case when bracket != 1 then 1 else 0 end) * 1.0) / count(1) * 100.0 as \"Addoption Rate\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND $server\nGROUP BY 1\nORDER BY 1;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Daily Bracket Breakdown",
+      "transparent": true,
+      "type": "timeseries"
     }
   ],
   "preload": false,
   "refresh": "",
-  "schemaVersion": 39,
+  "schemaVersion": 40,
   "tags": [],
   "templating": {
     "list": [
@@ -1761,13 +2275,13 @@
     ]
   },
   "time": {
-    "from": "now-30d",
+    "from": "now-7d",
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "",
+  "timezone": "browser",
   "title": "SpellBot",
   "uid": "4TSUCbcMz",
-  "version": 112,
+  "version": 127,
   "weekStart": ""
 }
