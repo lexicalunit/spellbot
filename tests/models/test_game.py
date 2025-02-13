@@ -6,7 +6,6 @@ from unittest.mock import ANY, MagicMock
 
 import discord
 import pytest
-import pytest_asyncio
 import pytz
 
 from spellbot.database import DatabaseSession
@@ -15,15 +14,8 @@ from spellbot.models import Game, GameStatus, Play
 from spellbot.operations import VoiceChannelSuggestion
 
 if TYPE_CHECKING:
-    from freezegun.api import FrozenDateTimeFactory
-
     from spellbot.settings import Settings
     from tests.fixtures import Factories
-
-
-@pytest_asyncio.fixture(autouse=True)
-async def use_consistent_date(freezer: FrozenDateTimeFactory) -> None:
-    freezer.move_to("2021-03-01")
 
 
 class TestModelGame:

@@ -51,7 +51,7 @@ class TestCogAbout(InteractionMixin):
                     "value": "[@lexicalunit](https://github.com/lexicalunit)",
                 },
             ],
-            "thumbnail": {"url": self.settings.THUMB_URL},
+            "thumbnail": {"url": self.settings.thumb(None)},
             "title": "SpellBot",
             "type": "rich",
             "url": "http://spellbot.io/",

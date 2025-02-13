@@ -16,7 +16,6 @@ from tests.mocks import mock_operations
 
 if TYPE_CHECKING:
     import discord
-    from freezegun.api import FrozenDateTimeFactory
 
     from spellbot.client import SpellBot
     from spellbot.models import Game, User
@@ -25,11 +24,6 @@ if TYPE_CHECKING:
 @pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> LeaveGameCog:
     return LeaveGameCog(bot)
-
-
-@pytest_asyncio.fixture(autouse=True)
-async def use_consistent_date(freezer: FrozenDateTimeFactory) -> None:
-    freezer.move_to("2021-03-01")
 
 
 @pytest.mark.asyncio
