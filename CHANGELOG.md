@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- More color logos for various yearly events.
+- Optimization: Check for rate limit when creating SpellTable games.
+- Updated grafana snapshot.
+
 ## [v14.8.1](https://github.com/lexicalunit/spellbot/releases/tag/v14.8.1) - 2025-02-12
 
 ### Changed
