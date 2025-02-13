@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     import discord
     from aiohttp import web
     from aiohttp.test_utils import TestClient
+    from freezegun.api import FrozenDateTimeFactory
 
     from spellbot import SpellBot
     from spellbot.models import Channel, Game, Guild
@@ -264,3 +265,8 @@ def cli() -> Generator[MagicMock, None, None]:
 @pytest.fixture
 def runner() -> CliRunner:
     return CliRunner()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def use_consistent_date(freezer: FrozenDateTimeFactory) -> None:
+    freezer.move_to("1982-04-24")
