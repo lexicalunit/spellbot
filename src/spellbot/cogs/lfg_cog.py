@@ -32,17 +32,17 @@ class LookingForGameCog(commands.Cog):
             Choice(name="4", value=4),
         ],
     )
+    @app_commands.describe(service="What service do you want to use to play this game?")
+    @app_commands.choices(
+        service=[Choice(name=str(service), value=service.value) for service in GAME_SERVICE_ORDER]
+    )
     @app_commands.describe(format="What game format do you want to play?")
     @app_commands.choices(
         format=[Choice(name=str(format), value=format.value) for format in GAME_FORMAT_ORDER]
     )
-    @app_commands.describe(format="What commander bracket do you want to play?")
+    @app_commands.describe(bracket="What commander bracket do you want to play?")
     @app_commands.choices(
         bracket=[Choice(name=str(bracket), value=bracket.value) for bracket in GAME_BRACKET_ORDER]
-    )
-    @app_commands.describe(service="What service do you want to use to play this game?")
-    @app_commands.choices(
-        service=[Choice(name=str(service), value=service.value) for service in GAME_SERVICE_ORDER]
     )
     @tracer.wrap(name="interaction", resource="lfg")
     async def lfg(
@@ -50,9 +50,9 @@ class LookingForGameCog(commands.Cog):
         interaction: discord.Interaction,
         friends: str | None = None,
         seats: int | None = None,
+        service: int | None = None,
         format: int | None = None,
         bracket: int | None = None,
-        service: int | None = None,
     ) -> None:
         assert interaction.guild is not None
         add_span_context(interaction)
