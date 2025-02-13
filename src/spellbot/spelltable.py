@@ -192,6 +192,13 @@ async def generate_spelltable_link_headless(  # noqa: PLR0915 # pragma: no cover
                 # bring up the create game modal
                 await page.click("text=Create Game", timeout=TIMEOUT_MS)
 
+                # check that the create button is clickable (that we're not rate limited)
+                button = page.locator("button").get_by_text("Create", exact=True)
+                button_class = await button.get_attribute("class") or ""
+                if "hover" not in button_class:
+                    logger.warning("spelltable user is rate limited: (user: %s)", username)
+                    return None
+
                 # attempt to set the format drop down
                 if format_option != SpellTableGameTypes.Commander:
                     try:
