@@ -584,6 +584,7 @@ class LookingForGameAction(BaseAction):
                 f"/{game_data['service']}"
                 f"/{player_xid}"
                 f"/{players_data}"
+                f"/{game_data['bracket'] - 1}"
             )
 
         async def notify_player(player_xid: int) -> None:
