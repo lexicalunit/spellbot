@@ -80,6 +80,8 @@ class LookingForGameAction(BaseAction):
     async def get_bracket(self, format: int | None, bracket: int | None = None) -> int:
         if format == GameFormat.CEDH.value:
             return GameBracket.BRACKET_5.value
+        if format == GameFormat.PRE_CONS.value:
+            return GameBracket.BRACKET_2.value
         if bracket is not None:
             return bracket
         if self.channel_data["default_bracket"] is not None:
