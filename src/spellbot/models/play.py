@@ -25,6 +25,7 @@ class PlayDict(TypedDict):
     points: int | None
     confirmed_at: datetime
     pin: str
+    verified_at: datetime | None
 
 
 class Play(Base):
@@ -87,6 +88,12 @@ class Play(Base):
         default=generate_pin,
         doc="A generated PIN for users to identify this game",
     )
+    verified_at = Column(
+        DateTime,
+        nullable=True,
+        default=None,
+        doc="UTC timestamp when this play's PIN was verified",
+    )
 
     def to_dict(self) -> PlayDict:
         return {
@@ -98,4 +105,5 @@ class Play(Base):
             "points": self.points,
             "confirmed_at": self.confirmed_at,
             "pin": self.pin,
+            "verified_at": self.verified_at,
         }
