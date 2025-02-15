@@ -23,4 +23,5 @@ class TestModelPlay:
             "confirmed_at": play.confirmed_at,
             "og_guild_xid": play.og_guild_xid,
             "pin": play.pin,
+            "verified_at": play.verified_at,
         }
