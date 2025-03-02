@@ -71,6 +71,7 @@ def build_web_app() -> web.Application:
             web.get(r"/g/{guild}/c/{channel}", record.channel_endpoint),
             web.get(r"/g/{guild}/u/{user}", record.user_endpoint),
             web.post(r"/api/game/{game}/verify", rest.game_verify_endpoint),
+            web.post(r"/api/game/{game}/record", rest.game_record_endpoint),
         ],
     )
     return app
