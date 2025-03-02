@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Notification support for when players track their games on Mythic Track.
+
 ## [v14.8.4](https://github.com/lexicalunit/spellbot/releases/tag/v14.8.4) - 2025-02-15
 
 ### Added

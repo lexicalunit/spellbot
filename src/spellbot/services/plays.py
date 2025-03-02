@@ -145,6 +145,10 @@ def decomposed(combined_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 class PlaysService:
     @sync_to_async()
+    def get_plays_by_game_id(self, game_id: int) -> list[Play]:
+        return DatabaseSession.query(Play).filter(Play.game_id == game_id).all()
+
+    @sync_to_async()
     def verify_game_pin(self, *, game_id: int, user_xid: int, guild_xid: int, pin: str) -> bool:
         filters = [
             Play.game_id == game_id,

@@ -381,3 +381,7 @@ class UsersService:
             return "database error"
 
         return None
+
+    @sync_to_async()
+    def get_players_by_xid(self, xids: list[int]) -> list[UserDict]:
+        return [u.to_dict() for u in DatabaseSession.query(User).filter(User.xid.in_(xids)).all()]
