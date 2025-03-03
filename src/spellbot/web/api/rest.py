@@ -6,8 +6,9 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, cast
 
+import aiohttp
+import tenacity
 from aiohttp import web
-from aiohttp_retry import ExponentialRetry, RetryClient
 from dateutil import tz
 
 from spellbot.database import db_session_manager
@@ -107,65 +108,74 @@ def game_record_embed(
                 },
                 "description": description,
                 "fields": fields,
-                "color": f"#{settings.INFO_EMBED_COLOR:X}".lower(),
+                "color": settings.INFO_EMBED_COLOR,
                 "footer": {"text": f"SpellBot Game ID: #SB{game['id']}"},
             }
         ],
     }
 
 
-async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
-    logger.info("AMY: Beginning DM send to user %s...", user_xid)
+class InvalidJsonResponseError(ValueError): ...
+
+
+@tenacity.retry(
+    stop=tenacity.stop_after_attempt(5),
+    wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
+    retry=tenacity.retry_if_exception_type(aiohttp.ClientError),
+)
+async def fetch_with_retry(
+    session: aiohttp.ClientSession,
+    path: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bot {settings.BOT_TOKEN}",
     }
+    async with session.post(
+        f"https://discord.com/api{path}",
+        headers=headers,
+        json=payload,
+    ) as response:
+        response.raise_for_status()
+        raw_data = await response.read()
+        if not (data := json.loads(raw_data)):
+            logger.error(
+                "TODO: API ERROR, json invalid: %s",
+                raw_data.decode(),
+            )
+            raise InvalidJsonResponseError
+        return data
+
+
+async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
+    logger.info("TODO: Beginning DM send to user %s...", user_xid)
     try:
-        # create dm channel
-        async with (
-            RetryClient(
-                raise_for_status=False,
-                retry_options=ExponentialRetry(attempts=5),
-            ) as client,
-            client.post(
-                "https://discord.com/api/users/@me/channels",
-                headers=headers,
-                json={"recipient_id": user_xid},
-            ) as create_dm_resp,
-        ):
-            logger.info("AMY: DM channel to user %s created", user_xid)
-            raw_data = await create_dm_resp.read()
-            if not (data := json.loads(raw_data)):
-                logger.error(
-                    "AMY: DM channel to user %s json invalid: %s",
-                    user_xid,
-                    raw_data.decode(),
-                )
-                return
+        async with aiohttp.ClientSession() as session:
+            # create dm channel
+            dm_channel = await fetch_with_retry(
+                session,
+                "/users/@me/channels",
+                {"recipient_id": user_xid},
+            )
+            logger.info("TODO: DM channel to user %s created", user_xid)
 
             # then send message to dm channel
-            channel_xid = data["id"]
-            async with client.post(
-                f"https://discord.com/api/channels/{channel_xid}/messages",
-                headers=headers,
-                json=message,
-            ):
-                logger.info("AMY: Sending DM to user %s...", user_xid)
-                raw_data = await create_dm_resp.read()
-                logger.info(
-                    "AMY: Sent DM to user %s with response: %s",
-                    user_xid,
-                    raw_data.decode(),
-                )
+            channel_xid = dm_channel["id"]
+            logger.info("TODO: Sending DM to user %s...", user_xid)
+            dm_message = await fetch_with_retry(
+                session,
+                f"/channels/{channel_xid}/messages",
+                message,
+            )
+            logger.info(
+                "TODO: Sent DM to user %s with response: %s",
+                user_xid,
+                json.dumps(dm_message),
+            )
 
     except Exception as ex:
-        logger.warning(
-            "AMY: warning: Discord API failure: %s, data: %s, raw: %s",
-            ex,
-            data,
-            raw_data,
-            exc_info=True,
-        )
+        logger.warning("TODO: warning: Discord API failure: %s", ex, exc_info=True)
 
 
 async def game_record_endpoint(request: web.Request) -> WebResponse:
@@ -195,7 +205,7 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
             winner_xid=winner_xid,
             tracker_xid=tracker_xid,
         )
-        logger.info("AMY: Sending DMs to players %s...", ", ".join(str(x) for x in player_xids))
+        logger.info("TODO: Sending DMs to players %s...", ", ".join(str(x) for x in player_xids))
         notify_player_tasks = [send_dm(player_xid, embed) for player_xid in player_xids]
         await asyncio.gather(*notify_player_tasks)
         return web.json_response({"result": {"success": True}})
