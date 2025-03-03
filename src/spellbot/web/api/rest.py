@@ -120,6 +120,8 @@ class InvalidJsonResponseError(ValueError): ...
 
 @tenacity.retry(
     stop=tenacity.stop_after_attempt(5),
+    before_sleep=tenacity.before_sleep_log(logger, logging.WARNING),
+    after=tenacity.after_log(logger, logging.INFO),
     wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
     retry=tenacity.retry_if_exception_type(aiohttp.ClientError),
 )
