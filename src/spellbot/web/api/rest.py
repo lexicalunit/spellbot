@@ -115,6 +115,7 @@ def game_record_embed(
 
 
 async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
+    logger.info("AMY: Beginning DM send to user %s...", user_xid)
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bot {settings.BOT_TOKEN}",
@@ -132,8 +133,14 @@ async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
                 json={"recipient_id": user_xid},
             ) as create_dm_resp,
         ):
+            logger.info("AMY: DM channel to user %s created", user_xid)
             raw_data = await create_dm_resp.read()
             if not (data := json.loads(raw_data)):
+                logger.error(
+                    "AMY: DM channel to user %s json invalid: %s",
+                    user_xid,
+                    raw_data.decode(),
+                )
                 return
 
             # then send message to dm channel
@@ -143,11 +150,17 @@ async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
                 headers=headers,
                 json=message,
             ):
-                pass  # fire and forget...
+                logger.info("AMY: Sending DM to user %s...", user_xid)
+                raw_data = await create_dm_resp.read()
+                logger.info(
+                    "AMY: Sent DM to user %s with response: %s",
+                    user_xid,
+                    raw_data.decode(),
+                )
 
     except Exception as ex:
         logger.warning(
-            "warning: Discord API failure: %s, data: %s, raw: %s",
+            "AMY: warning: Discord API failure: %s, data: %s, raw: %s",
             ex,
             data,
             raw_data,
@@ -182,6 +195,7 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
             winner_xid=winner_xid,
             tracker_xid=tracker_xid,
         )
+        logger.info("AMY: Sending DMs to players %s...", ", ".join(str(x) for x in player_xids))
         notify_player_tasks = [send_dm(player_xid, embed) for player_xid in player_xids]
         await asyncio.gather(*notify_player_tasks)
         return web.json_response({"result": {"success": True}})
