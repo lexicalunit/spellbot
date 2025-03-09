@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added a `/rematch` command to create a new game with the same players.
+
 ## [v14.9.0](https://github.com/lexicalunit/spellbot/releases/tag/v14.9.0) - 2025-03-02
 
 ### Added

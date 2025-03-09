@@ -69,6 +69,7 @@ class TestCogLeaveGame(InteractionMixin):
                 "thumbnail": {"url": self.settings.THUMB_URL},
                 "title": "**Waiting for 3 more players to join...**",
                 "type": "rich",
+                "flags": 0,
             }
 
     async def test_leave_then_delete(
@@ -133,6 +134,7 @@ class TestCogLeaveGame(InteractionMixin):
                 "thumbnail": {"url": self.settings.THUMB_URL},
                 "title": "**Waiting for 3 more players to join...**",
                 "type": "rich",
+                "flags": 0,
             }
 
     async def test_leave_all_then_delete(
@@ -310,6 +312,7 @@ class TestCogLeaveGame(InteractionMixin):
                 "thumbnail": {"url": self.settings.THUMB_URL},
                 "title": "**Waiting for 3 more players to join...**",
                 "type": "rich",
+                "flags": 0,
             }
 
     async def test_leave_button_then_delete(

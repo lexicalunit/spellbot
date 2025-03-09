@@ -275,6 +275,7 @@ class Game(Base):
         guild: discord.Guild | None,
         dm: bool = False,
         suggested_vc: VoiceChannelSuggestion | None = None,
+        rematch: bool = False,
     ) -> str:
         if span := tracer.current_span():  # pragma: no cover
             span.set_tags(
@@ -303,7 +304,12 @@ class Game(Base):
                 description += f"_Please use {GameService(effective_service)} for this game._"
         else:
             if self.show_links(dm):
-                if self.spelltable_link:
+                if rematch:
+                    description += (
+                        "This is a rematch of a previous game. "
+                        "Please continue using the same game lobby and voice channel."
+                    )
+                elif self.spelltable_link:
                     description += (
                         f"# [Join your {GameService(effective_service)} game now!]"
                         f"({self.spelltable_link})"
@@ -460,10 +466,16 @@ class Game(Base):
         guild: discord.Guild | None = None,
         dm: bool = False,
         suggested_vc: VoiceChannelSuggestion | None = None,
+        rematch: bool = False,
     ) -> discord.Embed:
-        embed = discord.Embed(title=self.embed_title)
+        embed = discord.Embed(title="**Rematch Game!**" if rematch else self.embed_title)
         embed.set_thumbnail(url=settings.thumb(self.guild_xid))
-        embed.description = self.embed_description(guild=guild, dm=dm, suggested_vc=suggested_vc)
+        embed.description = self.embed_description(
+            guild=guild,
+            dm=dm,
+            suggested_vc=suggested_vc,
+            rematch=rematch,
+        )
         if self.players:
             embed.add_field(name="Players", value=self.embed_players, inline=False)
         embed.add_field(name="Format", value=self.format_name)
@@ -473,7 +485,7 @@ class Game(Base):
             embed.add_field(name="Started at", value=f"<t:{self.started_at_timestamp}>")
         else:
             embed.add_field(name="Updated at", value=f"<t:{self.updated_at_timestamp}>")
-        if self.service != GameService.SPELLTABLE.value:
+        if self.service != GameService.SPELLTABLE.value and not rematch:
             embed.add_field(
                 name="Service",
                 value=str(GameService(self.service)),

@@ -6,7 +6,7 @@ from spellbot.models import Queue
 
 
 class QueueFactory(factory.alchemy.SQLAlchemyModelFactory):
-    og_guild_xid = factory.Faker("random_int")
+    og_guild_xid = factory.faker.Faker("random_int")
 
     class Meta:
         model = Queue

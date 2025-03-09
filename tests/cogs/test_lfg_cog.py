@@ -105,6 +105,7 @@ class TestCogLookingForGame(InteractionMixin):
                 "thumbnail": {"url": self.settings.THUMB_URL},
                 "title": "**Your game is ready!**",
                 "type": "rich",
+                "flags": 0,
             }
 
     async def test_lfg_when_blocked(self, game: Game, user: User) -> None:
@@ -256,6 +257,7 @@ class TestCogLookingForGameJoinButton(InteractionMixin):
                 "thumbnail": {"url": self.settings.THUMB_URL},
                 "title": "**Waiting for 3 more players to join...**",
                 "type": "rich",
+                "flags": 0,
             }
 
     async def test_join_when_no_original_response(
@@ -325,6 +327,7 @@ class TestCogLookingForGameJoinButton(InteractionMixin):
                 "thumbnail": {"url": self.settings.THUMB_URL},
                 "title": "**Waiting for 3 more players to join...**",
                 "type": "rich",
+                "flags": 0,
             }
 
     async def test_join_when_blocked(

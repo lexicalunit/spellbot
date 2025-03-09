@@ -99,6 +99,7 @@ class TestCogAdminSetup(InteractionMixin):
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": f"SpellBot Setup for {self.guild.name}",
             "type": "rich",
+            "flags": 0,
         }
 
 
@@ -203,6 +204,7 @@ class TestCogAdminSetupView(InteractionMixin):
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": f"SpellBot Setup for {self.guild.name}",
             "type": "rich",
+            "flags": 0,
         }
 
     async def test_toggle_show_links(self, view: SetupView) -> None:
@@ -250,6 +252,7 @@ class TestCogAdminInfo(InteractionMixin):
             "thumbnail": {"url": self.settings.THUMB_URL},
             "title": "**Waiting for 4 more players to join...**",
             "type": "rich",
+            "flags": 0,
         }
 
     async def test_non_numeric_game_id(self, cog: AdminCog) -> None:
@@ -401,6 +404,7 @@ class TestCogAdminChannels(InteractionMixin):
                 "thumbnail": {"url": self.settings.ICO_URL},
                 "title": f"Configuration for channels in {self.guild.name}",
                 "type": "rich",
+                "flags": 0,
             }
 
     async def test_channels_when_invalid_page(
@@ -442,6 +446,7 @@ class TestCogAdminChannels(InteractionMixin):
                 "thumbnail": {"url": self.settings.ICO_URL},
                 "title": f"Configuration for channels in {self.guild.name}",
                 "type": "rich",
+                "flags": 0,
             }
 
     async def test_forget_channel(self, cog: AdminCog, add_channel: Callable[..., Channel]) -> None:
@@ -464,6 +469,7 @@ class TestCogAdminChannels(InteractionMixin):
                 "thumbnail": {"url": self.settings.ICO_URL},
                 "title": f"Configuration for channels in {self.guild.name}",
                 "type": "rich",
+                "flags": 0,
             }
 
     async def test_forget_channel_when_channel_invalid(
@@ -496,6 +502,7 @@ class TestCogAdminChannels(InteractionMixin):
                 "thumbnail": {"url": self.settings.ICO_URL},
                 "title": f"Configuration for channels in {self.guild.name}",
                 "type": "rich",
+                "flags": 0,
             }
 
     @pytest.mark.parametrize("page", [1, 2])
@@ -556,6 +563,7 @@ class TestCogAdminAwards(InteractionMixin):
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": f"SpellBot Player Awards for {self.guild.name}",
             "type": "rich",
+            "flags": 0,
         }
 
     async def test_awards_when_invalid_page(self, cog: AdminCog) -> None:
@@ -577,6 +585,7 @@ class TestCogAdminAwards(InteractionMixin):
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": f"SpellBot Player Awards for {self.guild.name}",
             "type": "rich",
+            "flags": 0,
         }
 
     @pytest.mark.parametrize("page", [1, 2])
@@ -600,6 +609,7 @@ class TestCogAdminAwards(InteractionMixin):
             "description": "You can view all awards with the `/set awards` command.",
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
+            "flags": 0,
         }
         assert self.last_send_message("ephemeral")
         assert DatabaseSession.query(GuildAward).count() == 1
@@ -616,6 +626,7 @@ class TestCogAdminAwards(InteractionMixin):
             ),
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
+            "flags": 0,
         }
         assert self.last_send_message("ephemeral")
         assert award.count == 10

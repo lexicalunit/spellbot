@@ -6,9 +6,9 @@ from spellbot.models import Guild
 
 
 class GuildFactory(factory.alchemy.SQLAlchemyModelFactory):
-    xid = factory.Sequence(lambda n: 1000 + n)
-    name = factory.Faker("company")
-    motd = factory.Faker("sentence")
+    xid = factory.declarations.Sequence(lambda n: 1000 + n)
+    name = factory.faker.Faker("company")
+    motd = factory.faker.Faker("sentence")
 
     class Meta:
         model = Guild
