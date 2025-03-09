@@ -79,6 +79,7 @@ class TestCogBlock(InteractionMixin):
             "title": "Blocked Users",
             "type": "rich",
             "footer": {"text": "Page 1 of 1"},
+            "flags": 0,
         }
 
     async def test_blocked_no_one(self, cog: BlockCog, user: User) -> None:
@@ -91,6 +92,7 @@ class TestCogBlock(InteractionMixin):
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": "Blocked Users",
             "type": "rich",
+            "flags": 0,
         }
 
     async def test_blocked_pagination(self, cog: BlockCog, user: User) -> None:
@@ -110,6 +112,7 @@ class TestCogBlock(InteractionMixin):
             "title": "Blocked Users",
             "type": "rich",
             "footer": {"text": "Page 1 of 2"},
+            "flags": 0,
         }
 
         self.interaction.response.send_message.reset_mock()
@@ -125,4 +128,5 @@ class TestCogBlock(InteractionMixin):
             "title": "Blocked Users",
             "type": "rich",
             "footer": {"text": "Page 2 of 2"},
+            "flags": 0,
         }

@@ -55,4 +55,5 @@ class TestCogAbout(InteractionMixin):
             "title": "SpellBot",
             "type": "rich",
             "url": "http://spellbot.io/",
+            "flags": 0,
         }

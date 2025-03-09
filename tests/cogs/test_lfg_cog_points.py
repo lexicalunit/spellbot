@@ -98,6 +98,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                     "thumbnail": {"url": self.settings.THUMB_URL},
                     "title": "**Your game is ready!**",
                     "type": "rich",
+                    "flags": 0,
                 }
 
                 await select.callback(self.interaction)
@@ -134,6 +135,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                     "thumbnail": {"url": settings.THUMB_URL},
                     "title": "**Your game is ready!**",
                     "type": "rich",
+                    "flags": 0,
                 }
 
     async def test_points_when_message_not_found(
@@ -205,6 +207,7 @@ class TestCogLookingForGamePoints(InteractionMixin):
                     "thumbnail": {"url": self.settings.THUMB_URL},
                     "title": "**Your game is ready!**",
                     "type": "rich",
+                    "flags": 0,
                 }
 
                 self.interaction.original_response.return_value = None

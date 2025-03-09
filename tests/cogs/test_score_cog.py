@@ -39,6 +39,7 @@ class TestCogScore(InteractionMixin):
             f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{user.xid}).",
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
+            "flags": 0,
         }
 
         game = self.factories.game.create(
@@ -59,6 +60,7 @@ class TestCogScore(InteractionMixin):
             f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{user.xid}).",
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
+            "flags": 0,
         }
 
         game = self.factories.game.create(
@@ -78,6 +80,7 @@ class TestCogScore(InteractionMixin):
             f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{user.xid}).",
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
+            "flags": 0,
         }
 
         new_guild = build_guild(2)
@@ -98,6 +101,7 @@ class TestCogScore(InteractionMixin):
             f"(https://bot.spellbot.io/g/{new_guild.id}/u/{user.xid}).",
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
+            "flags": 0,
         }
 
     async def test_score_for_other_user(self, cog: ScoreCog, add_user: Callable[..., User]) -> None:
@@ -113,6 +117,7 @@ class TestCogScore(InteractionMixin):
             f"(https://bot.spellbot.io/g/{self.guild.xid}/u/{target_member.id}).",
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
+            "flags": 0,
         }
 
     async def test_history(self, cog: ScoreCog, channel: Channel) -> None:
@@ -125,6 +130,7 @@ class TestCogScore(InteractionMixin):
             f"(https://bot.spellbot.io/g/{self.guild.xid}/c/{channel.xid}).",
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
+            "flags": 0,
         }
 
     async def test_top(
@@ -186,6 +192,7 @@ class TestCogScore(InteractionMixin):
             ),
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
+            "flags": 0,
         }
 
         self.interaction.response.send_message.reset_mock()
@@ -201,6 +208,7 @@ class TestCogScore(InteractionMixin):
             ),
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
+            "flags": 0,
         }
 
         self.interaction.response.send_message.reset_mock()
@@ -214,4 +222,5 @@ class TestCogScore(InteractionMixin):
             ),
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
+            "flags": 0,
         }

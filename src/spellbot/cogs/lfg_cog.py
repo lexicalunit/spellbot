@@ -69,6 +69,18 @@ class LookingForGameCog(commands.Cog):
                 service=service,
             )
 
+    @app_commands.command(name="rematch", description="Play another game with the last group.")
+    @tracer.wrap(name="interaction", resource="rematch")
+    async def rematch(self, interaction: discord.Interaction) -> None:
+        assert interaction.guild is not None
+        add_span_context(interaction)
+        await safe_defer_interaction(interaction)
+        async with (
+            self.bot.guild_lock(interaction.guild.id),
+            LookingForGameAction.create(self.bot, interaction) as action,
+        ):
+            await action.execute_rematch()
+
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(LookingForGameCog(bot), guild=settings.GUILD_OBJECT)

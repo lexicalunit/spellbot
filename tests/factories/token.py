@@ -6,7 +6,7 @@ from spellbot.models import Token
 
 
 class TokenFactory(factory.alchemy.SQLAlchemyModelFactory):
-    key = factory.Faker("numerify")
+    key = factory.faker.Faker("numerify")
 
     class Meta:
         model = Token

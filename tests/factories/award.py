@@ -6,10 +6,10 @@ from spellbot.models import GuildAward, UserAward
 
 
 class GuildAwardFactory(factory.alchemy.SQLAlchemyModelFactory):
-    id = factory.Sequence(lambda n: n + 1)
-    message = factory.Faker("sentence")
-    count = factory.Faker("random_int", min=1, max=100)
-    role = factory.Faker("color_name")
+    id = factory.declarations.Sequence(lambda n: n + 1)
+    message = factory.faker.Faker("sentence")
+    count = factory.faker.Faker("random_int", min=1, max=100)
+    role = factory.faker.Faker("color_name")
     remove = False
 
     class Meta:

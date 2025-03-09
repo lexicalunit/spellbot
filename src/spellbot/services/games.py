@@ -271,9 +271,10 @@ class GamesService:
         guild: discord.Guild | None,
         dm: bool = False,
         suggested_vc: VoiceChannelSuggestion | None = None,
+        rematch: bool = False,
     ) -> discord.Embed:
         assert self.game
-        return self.game.to_embed(guild=guild, dm=dm, suggested_vc=suggested_vc)
+        return self.game.to_embed(guild=guild, dm=dm, suggested_vc=suggested_vc, rematch=rematch)
 
     @sync_to_async()
     @tracer.wrap()
@@ -597,3 +598,20 @@ class GamesService:
             DatabaseSession.delete(queue)
         DatabaseSession.commit()
         return list(game_ids)
+
+    @sync_to_async()
+    @tracer.wrap()
+    def select_last_game(self, user_xid: int, channel_xid: int) -> GameDict | None:
+        self.game = (
+            DatabaseSession.query(Game)
+            .filter(
+                Game.channel_xid == channel_xid,
+                Game.status == GameStatus.STARTED.value,
+                Game.deleted_at.is_(None),
+                Play.user_xid == user_xid,
+            )
+            .join(Play)
+            .order_by(Game.created_at.desc())
+            .first()
+        )
+        return self.game.to_dict() if self.game else None

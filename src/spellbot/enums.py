@@ -12,7 +12,7 @@ class FormatDetails(NamedTuple):
 class GameService(Enum):
     """A service for playing Magic: The Gathering games."""
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:  # noqa: ARG004
         """Give each enum value an increasing numerical value starting at 1."""
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
@@ -51,7 +51,7 @@ GAME_SERVICE_ORDER = [
 class GameFormat(Enum):
     """A Magic: The Gathering game format."""
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:  # noqa: ARG004
         """Give each enum value an increasing numerical value starting at 1."""
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
@@ -122,7 +122,7 @@ GAME_FORMAT_ORDER = [
 class GameBracket(Enum):
     """The bracket for this game."""
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:  # noqa: ARG004
         """Give each enum value an increasing numerical value starting at 1."""
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)

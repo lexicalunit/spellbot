@@ -154,6 +154,45 @@ class LookingForGameAction(BaseAction):
         return False
 
     @tracer.wrap()
+    async def execute_rematch(self) -> None:
+        if not self.guild or not self.channel:
+            # Someone tried to lfg in a Discord thread rather than in the channel itself.
+            await safe_send_user(
+                self.interaction.user,
+                "Please run this command in the same channel as your last played game.",
+            )
+            return
+
+        if await self.services.users.is_waiting(self.channel.id):
+            await safe_followup_channel(
+                self.interaction,
+                "You're already in a game in this channel, leave that one first.",
+            )
+            return
+
+        game_data = await self.services.games.select_last_game(
+            user_xid=self.interaction.user.id,
+            channel_xid=self.channel.id,
+        )
+        if not game_data:
+            await safe_followup_channel(
+                self.interaction,
+                "You have not played a game in this channel yet.",
+            )
+            return
+
+        player_xids = await self.services.games.player_xids()
+        players = " ".join(f"<@{xid}>" for xid in player_xids)
+
+        await self.create_game(
+            players=players,
+            format=game_data["format"],
+            bracket=game_data["bracket"],
+            service=GameService.NOT_ANY.value,
+            rematch=True,
+        )
+
+    @tracer.wrap()
     async def execute(
         self,
         friends: str | None = None,
@@ -296,6 +335,7 @@ class LookingForGameAction(BaseAction):
         format: int | None = None,
         bracket: int | None = None,
         service: int | None = None,
+        rematch: bool = False,
     ) -> None:
         assert self.channel
 
@@ -346,8 +386,9 @@ class LookingForGameAction(BaseAction):
             origin=False,
             fully_seated=True,
             suggested_vc=suggested_vc,
+            rematch=rematch,
         )
-        await self._handle_direct_messages(suggested_vc=suggested_vc)
+        await self._handle_direct_messages(suggested_vc=suggested_vc, rematch=rematch)
 
     @tracer.wrap()
     async def make_game_ready(
@@ -456,6 +497,7 @@ class LookingForGameAction(BaseAction):
         origin: bool,
         fully_seated: bool,
         suggested_vc: VoiceChannelSuggestion | None = None,
+        rematch: bool = False,
     ) -> None:
         assert self.guild
         assert self.channel
@@ -464,6 +506,7 @@ class LookingForGameAction(BaseAction):
         embed: discord.Embed = await self.services.games.to_embed(
             guild=self.guild,
             suggested_vc=suggested_vc,
+            rematch=rematch,
         )
         content = self.channel_data.get("extra", None)
         game_data = await self.services.games.to_dict()
@@ -544,6 +587,7 @@ class LookingForGameAction(BaseAction):
     async def _handle_direct_messages(
         self,
         suggested_vc: VoiceChannelSuggestion | None = None,
+        rematch: bool = False,
     ) -> None:
         player_pins = await self.services.games.player_pins()
         player_names = await self.services.games.player_names()
@@ -553,6 +597,7 @@ class LookingForGameAction(BaseAction):
             guild=self.guild,
             dm=True,
             suggested_vc=suggested_vc,
+            rematch=rematch,
         )
 
         # notify players
