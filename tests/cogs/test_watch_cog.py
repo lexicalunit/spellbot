@@ -131,6 +131,7 @@ class TestCogWatch(InteractionMixin):
             "thumbnail": {"url": self.settings.ICO_URL},
             "title": "List of watched players on this server",
             "type": "rich",
+            "flags": 0,
         }
 
     async def test_watched_multiple_pages(
@@ -186,6 +187,7 @@ class TestCogWatch(InteractionMixin):
             "title": "List of watched players on this server",
             "type": "rich",
             "footer": {"text": "page 1 of 2"},
+            "flags": 0,
         }
 
         self.interaction.response.send_message.reset_mock()
@@ -197,4 +199,5 @@ class TestCogWatch(InteractionMixin):
             "title": "List of watched players on this server",
             "type": "rich",
             "footer": {"text": "page 2 of 2"},
+            "flags": 0,
         }

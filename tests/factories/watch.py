@@ -6,7 +6,7 @@ from spellbot.models import Watch
 
 
 class WatchFactory(factory.alchemy.SQLAlchemyModelFactory):
-    note = factory.Faker("sentence")
+    note = factory.faker.Faker("sentence")
 
     class Meta:
         model = Watch

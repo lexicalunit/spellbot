@@ -9,8 +9,8 @@ from spellbot.models import Game, Play, Post, Queue, User
 
 
 class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
-    xid = factory.Sequence(lambda n: 3000 + n)
-    name = factory.Faker("name")
+    xid = factory.declarations.Sequence(lambda n: 3000 + n)
+    name = factory.faker.Faker("name")
 
     @classmethod
     def _create(cls, model_class: Any, *args: Any, **kwargs: Any) -> Any:

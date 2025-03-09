@@ -6,7 +6,7 @@ from spellbot.models import Record
 
 
 class RecordFactory(factory.alchemy.SQLAlchemyModelFactory):
-    elo = factory.Faker("random_int")
+    elo = factory.faker.Faker("random_int")
 
     class Meta:
         model = Record

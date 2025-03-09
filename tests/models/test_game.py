@@ -125,6 +125,7 @@ class TestModelGame:
             },
             "title": "**Waiting for 4 more players to join...**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_pending(self, settings: Settings, factories: Factories) -> None:
@@ -148,6 +149,7 @@ class TestModelGame:
             },
             "title": "**Waiting for 3 more players to join...**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_placeholders(self, settings: Settings, factories: Factories) -> None:
@@ -175,6 +177,7 @@ class TestModelGame:
             },
             "title": "**Waiting for 3 more players to join...**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_started_with_spelltable_link(
@@ -215,6 +218,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
@@ -242,6 +246,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_started_with_no_service(
@@ -284,6 +289,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
@@ -311,6 +317,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_started_with_arena(
@@ -353,6 +360,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
@@ -380,6 +388,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_with_guild_notice(self, settings: Settings, factories: Factories) -> None:
@@ -457,6 +466,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_started_without_spelltable_link(
@@ -496,6 +506,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
@@ -524,6 +535,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_started_without_tablestream_link(
@@ -566,6 +578,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
@@ -597,6 +610,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_started_with_voice_channel(
@@ -638,6 +652,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
@@ -667,6 +682,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_started_with_voice_channel_and_link(
@@ -709,6 +725,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
@@ -739,6 +756,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_started_with_motd(self, settings: Settings, factories: Factories) -> None:
@@ -779,6 +797,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
@@ -808,6 +827,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_started_with_win_loss(
@@ -871,6 +891,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
 
     def test_game_embed_started_with_suggested_voice_channel(
@@ -924,6 +945,7 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
         assert game.to_embed(guild=dg, dm=True, suggested_vc=suggested_vc).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
@@ -959,4 +981,5 @@ class TestModelGame:
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
+            "flags": 0,
         }
