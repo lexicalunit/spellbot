@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Made `/rematch` work across channels in a guild.
+
 ## [v14.10.0](https://github.com/lexicalunit/spellbot/releases/tag/v14.10.0) - 2025-03-09
 
 ### Added

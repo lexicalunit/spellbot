@@ -163,21 +163,21 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        if await self.services.users.is_waiting(self.channel.id):
+        if await self.services.users.pending_games():
             await safe_followup_channel(
                 self.interaction,
-                "You're already in a game in this channel, leave that one first.",
+                "You're already in a pending game, leave that one first.",
             )
             return
 
         game_data = await self.services.games.select_last_game(
             user_xid=self.interaction.user.id,
-            channel_xid=self.channel.id,
+            guild_xid=self.guild.id,
         )
         if not game_data:
             await safe_followup_channel(
                 self.interaction,
-                "You have not played a game in this channel yet.",
+                "You have not played a game in this guild yet.",
             )
             return
 

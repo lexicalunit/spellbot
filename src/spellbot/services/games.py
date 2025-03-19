@@ -601,11 +601,11 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def select_last_game(self, user_xid: int, channel_xid: int) -> GameDict | None:
+    def select_last_game(self, user_xid: int, guild_xid: int) -> GameDict | None:
         self.game = (
             DatabaseSession.query(Game)
             .filter(
-                Game.channel_xid == channel_xid,
+                Game.guild_xid == guild_xid,
                 Game.status == GameStatus.STARTED.value,
                 Game.deleted_at.is_(None),
                 Play.user_xid == user_xid,
