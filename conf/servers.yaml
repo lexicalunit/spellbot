@@ -22,17 +22,17 @@ servers:
   - name: Play to Win
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/e04abae7-394e-4f89-94e9-edbdbfd411fb
     url: https://www.playtowinmtg.com/
-  # Playing with Power is on indefinite hiatus: https://twitter.com/PWPMtG/status/1782522922701070413
-  # - name: Playing with Power
-  #   logo: https://github.com/lexicalunit/spellbot/assets/1903876/60a984e4-8fa1-4d8f-bf0d-2e391776b56d
-  #   url: https://www.patreon.com/PlayingWithPowerMTG
+  - name: Playing with Power
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/60a984e4-8fa1-4d8f-bf0d-2e391776b56d
+    url: https://www.patreon.com/PlayingWithPowerMTG
   - name: Comunidad Española de cEDH
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/823a2ed7-c59a-47da-886c-5f468a3b3032
     url: https://linktr.ee/cedhspain
     small: true
-  - name: Commander RC
-    logo: https://github.com/lexicalunit/spellbot/assets/1903876/a4f292c6-65b3-4767-8e82-f39c35a75723
+  - name: The Commander Staple
+    logo: https://github.com/user-attachments/assets/6f4cf0de-ed31-4d19-b2c2-78fb9b544992
     url: https://discord.gg/commander
+    small: true
   - name: Command the Cause
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/47d68a5b-fe08-497c-a76b-c8dde5f56af3
     url: https://discord.gg/ZmPsjrxe4h
