@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar, cast, overload
 
@@ -13,6 +12,8 @@ from spellbot.models import Channel, Game, Guild, Queue, User
 from tests.mocks import build_message
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from discord.app_commands import Command
 
     from spellbot import SpellBot
@@ -159,7 +160,7 @@ class InteractionMixin(BaseMixin):
         callback = command.callback
         if command.binding:  # pragma: no cover
             callback = partial(callback, command.binding)
-        callback = cast(Callable[..., Awaitable[None]], callback)
+        callback = cast("Callable[..., Awaitable[None]]", callback)
         return await callback(**kwargs)
 
 

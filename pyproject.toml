@@ -98,6 +98,7 @@ safe_licenses = [
   "3-Clause BSD License",
   "Apache 2.0",
   "Apache Software License",
+  "Apache-2.0",
   "BSD License",
   "BSD-derived (http://www.repoze.org/LICENSE.txt)",
   "GNU Library or Lesser General Public License (LGPL)",
@@ -106,6 +107,7 @@ safe_licenses = [
   "MIT License",
   "MIT",
   "Mozilla Public License 2.0 (MPL 2.0)",
+  "PSF-2.0",
   "Python Software Foundation License",
   "Unlicense",
 ]

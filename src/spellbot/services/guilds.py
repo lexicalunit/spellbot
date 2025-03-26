@@ -82,12 +82,12 @@ class GuildsService:
     @sync_to_async()
     def should_voice_create(self) -> bool:
         assert self.guild
-        return cast(bool, self.guild.voice_create)
+        return cast("bool", self.guild.voice_create)
 
     @sync_to_async()
     def get_use_max_bitrate(self) -> bool:
         assert self.guild
-        return cast(bool, self.guild.use_max_bitrate)
+        return cast("bool", self.guild.use_max_bitrate)
 
     @sync_to_async()
     def set_motd(self, message: str | None = None) -> None:
@@ -119,7 +119,7 @@ class GuildsService:
     @sync_to_async()
     def current_name(self) -> str:
         assert self.guild
-        return cast(str | None, self.guild.name) or ""
+        return cast("str | None", self.guild.name) or ""
 
     @sync_to_async()
     def voice_category_prefixes(self) -> list[str]:

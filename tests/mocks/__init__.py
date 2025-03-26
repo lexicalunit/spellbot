@@ -71,7 +71,7 @@ class MockClient:  # pragma: no cover
 
 
 def mock_client(*args: Any, **kwargs: Any) -> discord.Client:
-    return cast(discord.Client, MockClient(*args, **kwargs))
+    return cast("discord.Client", MockClient(*args, **kwargs))
 
 
 @contextmanager
@@ -96,13 +96,13 @@ def mock_operations(
             lfg_interaction.safe_get_partial_message.assert_called_once()
 
     """
-    from _pytest.monkeypatch import MonkeyPatch
+    import pytest
 
     from spellbot import operations
 
     _users: list[discord.User] = users or []
 
-    monkeypatch = MonkeyPatch()
+    monkeypatch = pytest.MonkeyPatch()
     for name in operations.__dict__:
         if name in module.__dict__:
             if name.startswith("safe_get_"):  # special handling for non-async get

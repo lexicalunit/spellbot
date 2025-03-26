@@ -333,7 +333,7 @@ class GamesService:
 
         if not queues:  # Not sure this is possible, but just in case.
             DatabaseSession.commit()
-            return cast(int, self.game.id)
+            return cast("int", self.game.id)
 
         # upsert into plays
         DatabaseSession.execute(
@@ -373,7 +373,7 @@ class GamesService:
         )
 
         DatabaseSession.commit()
-        return cast(int, self.game.id)
+        return cast("int", self.game.id)
 
     @sync_to_async()
     @tracer.wrap()
@@ -407,7 +407,7 @@ class GamesService:
             )
             .all()
         )
-        return {cast(int, watch.user_xid): cast(str | None, watch.note) for watch in watched}
+        return {cast("int", watch.user_xid): cast("str | None", watch.note) for watch in watched}
 
     @sync_to_async()
     @tracer.wrap()
@@ -422,12 +422,12 @@ class GamesService:
     def filter_blocked_list(self, author_xid: int, other_xids: list[int]) -> list[int]:
         """Given an author, filters out any blocked players from a list of others."""
         users_author_has_blocked = [
-            cast(int, row.blocked_user_xid)
+            cast("int", row.blocked_user_xid)
             for row in DatabaseSession.query(Block).filter(Block.user_xid == author_xid)
             if row
         ]
         users_who_blocked_author_or_other = [
-            cast(int, row.user_xid)
+            cast("int", row.user_xid)
             for row in DatabaseSession.query(Block).filter(
                 Block.blocked_user_xid.in_([author_xid, *other_xids]),
             )
@@ -593,7 +593,7 @@ class GamesService:
     def dequeue_players(self, player_xids: list[int]) -> list[int]:
         """Remove the given players from any queues that they're in; returns changed game ids."""
         queues = DatabaseSession.query(Queue).filter(Queue.user_xid.in_(player_xids)).all()
-        game_ids = {cast(int, queue.game_id) for queue in queues}
+        game_ids = {cast("int", queue.game_id) for queue in queues}
         for queue in queues:
             DatabaseSession.delete(queue)
         DatabaseSession.commit()

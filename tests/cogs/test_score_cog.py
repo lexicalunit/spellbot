@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
-import discord
 import pytest
 import pytest_asyncio
 import pytz
@@ -15,6 +14,7 @@ from tests.mocks import build_channel, build_guild, build_interaction, mock_disc
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    import discord
     from freezegun.api import FrozenDateTimeFactory
 
     from spellbot import SpellBot
@@ -106,7 +106,7 @@ class TestCogScore(InteractionMixin):
 
     async def test_score_for_other_user(self, cog: ScoreCog, add_user: Callable[..., User]) -> None:
         target_user = add_user()
-        target_member = cast(discord.Member, mock_discord_object(target_user))
+        target_member = cast("discord.Member", mock_discord_object(target_user))
         await self.run(cog.score, user=target_member)
 
         assert self.last_send_message("embed") == {

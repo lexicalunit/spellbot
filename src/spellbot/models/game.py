@@ -107,7 +107,7 @@ class Game(Base):
         doc="The external Discord ID of the associated guild",
     )
     channel_xid: int = cast(
-        int,
+        "int",
         Column(
             BigInteger,
             ForeignKey("channels.xid", ondelete="CASCADE"),
@@ -123,7 +123,7 @@ class Game(Base):
         doc="The external Discord ID of an associated voice channel",
     )
     seats: int = cast(
-        int,
+        "int",
         Column(
             Integer,
             index=True,
@@ -132,7 +132,7 @@ class Game(Base):
         ),
     )
     status: int = cast(
-        int,
+        "int",
         Column(
             Integer(),
             default=GameStatus.PENDING.value,
@@ -143,7 +143,7 @@ class Game(Base):
         ),
     )
     format: int = cast(
-        int,
+        "int",
         Column(
             Integer(),
             default=GameFormat.COMMANDER.value,
@@ -154,7 +154,7 @@ class Game(Base):
         ),
     )
     bracket: int = cast(
-        int,
+        "int",
         Column(
             Integer(),
             default=GameBracket.NONE.value,
@@ -165,7 +165,7 @@ class Game(Base):
         ),
     )
     service: int = cast(
-        int,
+        "int",
         Column(
             Integer(),
             default=GameService.SPELLTABLE.value,
@@ -250,12 +250,12 @@ class Game(Base):
     @property
     def started_at_timestamp(self) -> int:
         assert self.started_at is not None
-        return int(cast(datetime, self.started_at).replace(tzinfo=tz.UTC).timestamp())
+        return int(cast("datetime", self.started_at).replace(tzinfo=tz.UTC).timestamp())
 
     @property
     def updated_at_timestamp(self) -> int:
         assert self.updated_at is not None
-        return int(cast(datetime, self.updated_at).replace(tzinfo=tz.UTC).timestamp())
+        return int(cast("datetime", self.updated_at).replace(tzinfo=tz.UTC).timestamp())
 
     def show_links(self, dm: bool = False) -> bool:
         return True if dm else self.guild.show_links
@@ -264,7 +264,7 @@ class Game(Base):
     def embed_title(self) -> str:
         if self.status == GameStatus.STARTED.value:
             return "**Your game is ready!**"
-        remaining = int(cast(int, self.seats)) - len(self.players)
+        remaining = int(cast("int", self.seats)) - len(self.players)
         plural = "s" if remaining > 1 else ""
         return f"**Waiting for {remaining} more player{plural} to join...**"
 
@@ -377,7 +377,7 @@ class Game(Base):
             "game_start": game_start,
         }
         for i, player in enumerate(self.players):
-            placeholders[f"player_name_{i + 1}"] = cast(str, player.name)
+            placeholders[f"player_name_{i + 1}"] = cast("str", player.name)
         return placeholders
 
     def apply_placeholders(self, placeholders: dict[str, str], text: str) -> str:
@@ -391,7 +391,7 @@ class Game(Base):
         for player in self.players:
             points_str = ""
             if self.status == GameStatus.STARTED.value:
-                points = player.points(cast(int, self.id))
+                points = player.points(cast("int", self.id))
                 if points is not None and points[0] is not None:
                     points_value: int = points[0]
                     points_confirmed: bool = points[1]

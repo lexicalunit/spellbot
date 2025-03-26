@@ -4,7 +4,6 @@ import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, NoReturn, Self, cast
 
-import discord
 from asgiref.sync import sync_to_async
 from ddtrace.trace import tracer
 
@@ -22,6 +21,8 @@ from spellbot.utils import user_can_moderate
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
+
+    import discord
 
     from spellbot import SpellBot
     from spellbot.models import ChannelDict, GuildDict
@@ -56,9 +57,9 @@ class BaseAction:
         self.bot = bot
         self.services = ServicesRegistry()
         self.interaction = interaction
-        self.member = cast(discord.Member, self.interaction.user)
-        self.guild = cast(discord.Guild, self.interaction.guild)
-        self.channel = cast(discord.TextChannel, self.interaction.channel)
+        self.member = cast("discord.Member", self.interaction.user)
+        self.guild = cast("discord.Guild", self.interaction.guild)
+        self.channel = cast("discord.TextChannel", self.interaction.channel)
 
     async def upsert_request_objects(self) -> None:  # pragma: no cover
         self.guild_data: GuildDict | None = None

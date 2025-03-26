@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
 from functools import partial
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, MagicMock
@@ -16,6 +15,8 @@ from spellbot.models import Game
 from tests.mocks import build_author, build_channel, build_guild, build_interaction
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from spellbot import SpellBot
 
 
@@ -24,7 +25,7 @@ async def run_lfg(cog: LookingForGameCog, interaction: discord.Interaction) -> N
     callback = command.callback
     if command.binding:  # pragma: no cover
         callback = partial(callback, command.binding)
-    callback = cast(Callable[..., Awaitable[None]], callback)
+    callback = cast("Callable[..., Awaitable[None]]", callback)
     return await callback(interaction=interaction)
 
 

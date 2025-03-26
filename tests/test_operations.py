@@ -520,7 +520,7 @@ class TestOperationsChannelReply:
 
 @pytest.mark.asyncio
 class TestOperationsSendUser:
-    @pytest_asyncio.fixture(autouse=True)
+    @pytest_asyncio.fixture(autouse=True)  # type: ignore
     def mock_bad_users(self, mocker: MockerFixture) -> set[int]:
         return mocker.patch.object(operations, "bad_users", set())
 

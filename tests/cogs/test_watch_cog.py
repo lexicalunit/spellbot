@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-import discord
 import pytest
 
 from spellbot.cogs import WatchCog
@@ -13,6 +12,8 @@ from tests.mocks import mock_discord_object
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    import discord
 
     from spellbot import SpellBot
 
@@ -26,7 +27,7 @@ def cog(bot: SpellBot) -> WatchCog:
 class TestCogWatch(InteractionMixin):
     async def test_watch_and_unwatch(self, cog: WatchCog, add_user: Callable[..., User]) -> None:
         target_user = add_user()
-        target_member = cast(discord.Member, mock_discord_object(target_user))
+        target_member = cast("discord.Member", mock_discord_object(target_user))
 
         await self.run(cog.watch, target=target_member, note="note")
         self.interaction.response.send_message.assert_called_once_with(
@@ -57,7 +58,7 @@ class TestCogWatch(InteractionMixin):
         add_user: Callable[..., User],
     ) -> None:
         target_user = add_user()
-        target_member = cast(discord.Member, mock_discord_object(target_user))
+        target_member = cast("discord.Member", mock_discord_object(target_user))
 
         await self.run(cog.watch, id=target_member.id, note="note")
         self.interaction.response.send_message.assert_called_once_with(

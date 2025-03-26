@@ -45,7 +45,7 @@ class Channel(Base):
     __tablename__ = "channels"
 
     xid: int = cast(
-        int,
+        "int",
         Column(
             BigInteger,
             primary_key=True,
@@ -195,9 +195,9 @@ class Channel(Base):
             "guild_xid": self.guild_xid,
             "name": self.name,
             "default_seats": self.default_seats,
-            "default_format": GameFormat(cast(int, self.default_format)),
-            "default_bracket": GameBracket(cast(int, self.default_bracket)),
-            "default_service": GameService(cast(int, self.default_service)),
+            "default_format": GameFormat(cast("int", self.default_format)),
+            "default_bracket": GameBracket(cast("int", self.default_bracket)),
+            "default_service": GameService(cast("int", self.default_service)),
             "auto_verify": self.auto_verify,
             "unverified_only": self.unverified_only,
             "verified_only": self.verified_only,
