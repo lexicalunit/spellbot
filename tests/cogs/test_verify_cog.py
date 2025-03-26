@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-import discord
 import pytest
 import pytest_asyncio
 
@@ -14,6 +13,8 @@ from tests.mocks import mock_discord_object
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    import discord
 
     from spellbot import SpellBot
 
@@ -27,7 +28,7 @@ async def cog(bot: SpellBot) -> VerifyCog:
 class TestCogVerify(InteractionMixin):
     @pytest_asyncio.fixture
     async def target(self, add_user: Callable[..., User]) -> discord.Member:
-        return cast(discord.Member, mock_discord_object(add_user()))
+        return cast("discord.Member", mock_discord_object(add_user()))
 
     async def test_verify_and_unverify(self, cog: VerifyCog, target: discord.Member) -> None:
         await self.run(cog.verify, target=target)

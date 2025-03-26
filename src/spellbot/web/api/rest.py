@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, cast
 
 import aiohttp
@@ -17,6 +16,8 @@ from spellbot.settings import settings
 from spellbot.web.tools import rate_limited
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from aiohttp.web_response import Response as WebResponse
 
     from spellbot.models import GameDict, UserDict
@@ -91,7 +92,7 @@ def game_record_embed(
     channel_xid = game["channel_xid"]
     started_at = game["started_at"]
     assert started_at is not None
-    started_at_ts = int(cast(datetime, started_at).replace(tzinfo=tz.UTC).timestamp())
+    started_at_ts = int(cast("datetime", started_at).replace(tzinfo=tz.UTC).timestamp())
     game_start = f"<t:{started_at_ts}>"
     description += (
         f"\n\nThe game was played in <#{channel_xid}> on {game_start}. "

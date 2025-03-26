@@ -45,7 +45,7 @@ class TestCodebase:
         cmd = ["pyright", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True, check=False)  # noqa: S603
-        exitcode: int = cast(int, proc.returncode)
+        exitcode: int = cast("int", proc.returncode)
         assert exitcode == 0, f"pyright issues:\n{proc.stdout.decode('utf-8')}"
 
     def test_ruff(self) -> None:
@@ -54,7 +54,7 @@ class TestCodebase:
         cmd = ["ruff", "check", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True, check=False)  # noqa: S603
-        exitcode: int = cast(int, proc.returncode)
+        exitcode: int = cast("int", proc.returncode)
         assert exitcode == 0, (
             f"ruff issues:\n{proc.stderr.decode('utf-8')}\n{proc.stdout.decode('utf-8')}"
         )
@@ -65,7 +65,7 @@ class TestCodebase:
         cmd = ["ruff", "format", "--check", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True, check=False)  # noqa: S603
-        exitcode: int = cast(int, proc.returncode)
+        exitcode: int = cast("int", proc.returncode)
         assert exitcode == 0, f"ruff format issues:\n{proc.stderr.decode('utf-8')}"
 
     def test_pylic(self) -> None:
@@ -74,7 +74,7 @@ class TestCodebase:
         cmd = ["pylic", "check"]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True, check=False)  # noqa: S603
-        exitcode: int = cast(int, proc.returncode)
+        exitcode: int = cast("int", proc.returncode)
         assert exitcode == 0, f"pylic issues:\n{proc.stdout.decode('utf-8')}"
 
     def test_pyproject_dependencies(self) -> None:

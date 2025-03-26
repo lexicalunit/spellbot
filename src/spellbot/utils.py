@@ -94,7 +94,7 @@ def bot_can_read(channel: MessageableChannel) -> bool:
     channel_type = channel.type
     if channel_type == discord.ChannelType.private:
         return True
-    guild_channel = cast(discord.abc.GuildChannel, channel)
+    guild_channel = cast("discord.abc.GuildChannel", channel)
     if not hasattr(guild_channel, "guild"):
         return True
     guild: discord.Guild = guild_channel.guild
@@ -130,7 +130,7 @@ def bot_can_delete_channel(channel: MessageableChannel) -> bool:
     channel_type = channel.type
     if channel_type == discord.ChannelType.private:
         return False
-    guild_channel = cast(discord.abc.GuildChannel, channel)
+    guild_channel = cast("discord.abc.GuildChannel", channel)
     if not hasattr(guild_channel, "guild"):
         return False
     guild: discord.Guild = guild_channel.guild
@@ -159,7 +159,7 @@ def bot_can_send_messages(channel: MessageableChannel) -> bool:
     channel_type = channel.type
     if channel_type == discord.ChannelType.private:
         return False
-    guild_channel = cast(discord.abc.GuildChannel, channel)
+    guild_channel = cast("discord.abc.GuildChannel", channel)
     if not hasattr(guild_channel, "guild"):
         return False
     guild: discord.Guild = guild_channel.guild
@@ -188,7 +188,7 @@ def is_admin(interaction: discord.Interaction) -> bool:
         raise AdminOnlyError
     author_roles = interaction.user.roles  # type: ignore
     has_admin_role = any(
-        role.name == settings.ADMIN_ROLE for role in cast(list[discord.Role], author_roles)
+        role.name == settings.ADMIN_ROLE for role in cast("list[discord.Role]", author_roles)
     )
     if not has_admin_role:
         raise AdminOnlyError
@@ -222,13 +222,13 @@ def user_can_moderate(
         return True
     if not hasattr(author, "roles"):
         return False
-    member: discord.Member = cast(discord.Member, author)
+    member: discord.Member = cast("discord.Member", author)
     if (perms := safe_permissions_for(channel, member)) and perms.administrator:
         return True
     author_roles = author.roles  # type: ignore
     return any(
         role.name == settings.ADMIN_ROLE or role.name.startswith(settings.MOD_PREFIX)
-        for role in cast(list[discord.Role], author_roles)
+        for role in cast("list[discord.Role]", author_roles)
         if role is not None
     )
 

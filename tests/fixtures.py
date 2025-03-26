@@ -132,7 +132,7 @@ def cleanup_databases(worker_id: str) -> Generator[None, None, None]:
     delete_test_database(worker_id)
 
 
-@pytest_asyncio.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)  # type: ignore
 def use_session_context(session_context: contextvars.Context) -> None:
     for cvar in session_context:
         cvar.set(session_context[cvar])

@@ -25,7 +25,7 @@ from .settings import settings
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from ddtrace._trace.span import Span
+    from ddtrace import Span
     from discord.http import Route
 
 IS_RUNNING_IN_PYTEST = running_in_pytest()

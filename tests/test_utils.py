@@ -74,7 +74,7 @@ class TestUtilsBotCanRole:
         guild.me = MagicMock()
         guild.me.guild_permissions = MagicMock()
         guild.me.top_role = 1
-        role = cast(discord.Role, 10)
+        role = cast("discord.Role", 10)
         assert not bot_can_role(guild, role)
 
 

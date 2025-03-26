@@ -143,7 +143,7 @@ class UsersService:
             return bool(row[0]) if row else False
 
         assert self.user
-        return cast(bool, self.user.banned)
+        return cast("bool", self.user.banned)
 
     @sync_to_async()
     def block(self, author_xid: int, target_xid: int) -> None:

@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from aiohttp.client_exceptions import ClientError
-from aiohttp_retry.client import RetryClient
 
 from spellbot import spelltable
 from spellbot.settings import Settings
@@ -14,6 +13,8 @@ from spellbot.spelltable import generate_spelltable_link_api as generate_link
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
+
+    from aiohttp_retry.client import RetryClient
 
 
 @pytest.mark.asyncio
@@ -39,7 +40,7 @@ class TestSpellTable:
 
         @asynccontextmanager
         async def MockRetryClient(*args: Any, **kwargs: Any) -> AsyncGenerator[RetryClient, None]:
-            yield cast(RetryClient, mock_client)
+            yield cast("RetryClient", mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
 
@@ -63,7 +64,7 @@ class TestSpellTable:
 
         @asynccontextmanager
         async def MockRetryClient(*args: Any, **kwargs: Any) -> AsyncGenerator[RetryClient, None]:
-            yield cast(RetryClient, mock_client)
+            yield cast("RetryClient", mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
 
@@ -87,7 +88,7 @@ class TestSpellTable:
 
         @asynccontextmanager
         async def MockRetryClient(*args: Any, **kwargs: Any) -> AsyncGenerator[RetryClient, None]:
-            yield cast(RetryClient, mock_client)
+            yield cast("RetryClient", mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
 
@@ -114,7 +115,7 @@ class TestSpellTable:
             *args: Any,
             **kwargs: Any,
         ) -> AsyncGenerator[RetryClient, None]:
-            yield cast(RetryClient, mock_client)
+            yield cast("RetryClient", mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
 
@@ -138,7 +139,7 @@ class TestSpellTable:
 
         @asynccontextmanager
         async def MockRetryClient(*args: Any, **kwargs: Any) -> AsyncGenerator[RetryClient, None]:
-            yield cast(RetryClient, mock_client)
+            yield cast("RetryClient", mock_client)
 
         monkeypatch.setattr(spelltable, "RetryClient", MockRetryClient)
 

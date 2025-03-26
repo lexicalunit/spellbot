@@ -67,7 +67,7 @@ class TestCogEvents(InteractionMixin):
             await self.run(
                 cog.game,
                 players=f"<@{player1.xid}><@{player2.xid}>",
-                format=cast(int, GameFormat.LEGACY.value),
+                format=cast("int", GameFormat.LEGACY.value),
             )
 
         game = DatabaseSession.query(Game).one()
@@ -102,7 +102,7 @@ class TestCogEvents(InteractionMixin):
             await self.run(
                 cog.game,
                 players=f"<@{player.xid}>",
-                format=cast(int, GameFormat.LEGACY.value),
+                format=cast("int", GameFormat.LEGACY.value),
             )
 
             lfg_action.safe_followup_channel.assert_called_once_with(
@@ -122,7 +122,7 @@ class TestCogEvents(InteractionMixin):
             await self.run(
                 cog.game,
                 players=f"<@{player.xid}><@{banned.xid}>",
-                format=cast(int, GameFormat.LEGACY.value),
+                format=cast("int", GameFormat.LEGACY.value),
             )
 
             lfg_action.safe_followup_channel.assert_called_once_with(

@@ -176,7 +176,7 @@ def safe_get_partial_message(
         return None
 
     message: discord.PartialMessage | None = None
-    text_channel = cast(discord.TextChannel, channel)
+    text_channel = cast("discord.TextChannel", channel)
     with suppress(
         DiscordException,
         ClientOSError,
@@ -623,11 +623,11 @@ async def safe_add_role(
 
     try:
         member = cast(
-            discord.Member | None,
+            "discord.Member | None",
             (
                 user_or_member
                 if hasattr(user_or_member, "roles")
-                else guild.get_member(cast(discord.User, user_or_member).id)
+                else guild.get_member(cast("discord.User", user_or_member).id)
             ),
         )
         if not member or not hasattr(member, "roles"):

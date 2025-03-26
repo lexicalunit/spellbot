@@ -56,7 +56,7 @@ class Play(Base):
         doc="The external Discord ID of the user who played this game",
     )
     game_id = cast(
-        int,
+        "int",
         Column(
             Integer,
             ForeignKey("games.id", ondelete="CASCADE"),

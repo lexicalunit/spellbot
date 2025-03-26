@@ -36,7 +36,7 @@ class Guild(Base):
 
     __tablename__ = "guilds"
 
-    xid: int = cast(int, Column(BigInteger, primary_key=True, nullable=False))
+    xid: int = cast("int", Column(BigInteger, primary_key=True, nullable=False))
     created_at = Column(
         DateTime,
         nullable=False,

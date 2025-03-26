@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from tests.fixtures import Factories
 
 
-@pytest_asyncio.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)  # type: ignore
 def use_log_level_info(caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level(logging.INFO)
 
