@@ -16,23 +16,26 @@ servers:
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/a2117868-cd86-44a9-8e92-91e5b2d639c2
     url: https://disboard.org/server/757455940009328670
     small: true
+  - name: Top Tier Bangers
+    logo: https://github.com/user-attachments/assets/86bb3488-fa03-4fb6-80c7-3ef929fb8076
+    url: https://discord.gg/CfCb9fmgCD
   - name: EDH Tambayan
     logo: https://user-images.githubusercontent.com/1903876/161825614-64e432d4-85e8-481e-8f41-f66ab8c940cc.png
     url: https://www.facebook.com/EDHTambayan/
   - name: Play to Win
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/e04abae7-394e-4f89-94e9-edbdbfd411fb
     url: https://www.playtowinmtg.com/
-  # Playing with Power is on indefinite hiatus: https://twitter.com/PWPMtG/status/1782522922701070413
-  # - name: Playing with Power
-  #   logo: https://github.com/lexicalunit/spellbot/assets/1903876/60a984e4-8fa1-4d8f-bf0d-2e391776b56d
-  #   url: https://www.patreon.com/PlayingWithPowerMTG
+  - name: Playing with Power
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/60a984e4-8fa1-4d8f-bf0d-2e391776b56d
+    url: https://www.patreon.com/PlayingWithPowerMTG
   - name: Comunidad Española de cEDH
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/823a2ed7-c59a-47da-886c-5f468a3b3032
     url: https://linktr.ee/cedhspain
     small: true
-  - name: Commander RC
-    logo: https://github.com/lexicalunit/spellbot/assets/1903876/a4f292c6-65b3-4767-8e82-f39c35a75723
+  - name: The Commander Staple
+    logo: https://github.com/user-attachments/assets/6f4cf0de-ed31-4d19-b2c2-78fb9b544992
     url: https://discord.gg/commander
+    small: true
   - name: Command the Cause
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/47d68a5b-fe08-497c-a76b-c8dde5f56af3
     url: https://discord.gg/ZmPsjrxe4h

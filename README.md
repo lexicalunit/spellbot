@@ -65,24 +65,26 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
     <tr>
         <td align="center"><a href="https://disboard.org/server/815001383979450368"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/26b824c1-fa82-4b18-a47c-37114a0023b7" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
         <td align="center"><a href="https://disboard.org/server/757455940009328670"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/a2117868-cd86-44a9-8e92-91e5b2d639c2" alt="Oath of the Gaywatch" /><br />Oath&nbsp;of&nbsp;the&nbsp;Gaywatch</a></td>
+        <td align="center"><a href="https://discord.gg/CfCb9fmgCD"><img width="200" height="200" src="https://github.com/user-attachments/assets/86bb3488-fa03-4fb6-80c7-3ef929fb8076" alt="Top Tier Bangers" /><br />Top&nbsp;Tier&nbsp;Bangers</a></td>
+    </tr>
+    <tr>
         <td align="center"><a href="https://www.facebook.com/EDHTambayan/"><img width="200" height="200" src="https://user-images.githubusercontent.com/1903876/161825614-64e432d4-85e8-481e-8f41-f66ab8c940cc.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></td>
-    </tr>
-    <tr>
         <td align="center"><a href="https://www.playtowinmtg.com/"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/e04abae7-394e-4f89-94e9-edbdbfd411fb" alt="Play to Win" /><br />Play&nbsp;to&nbsp;Win</a></td>
-        <td align="center"><a href="https://linktr.ee/cedhspain"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/823a2ed7-c59a-47da-886c-5f468a3b3032" alt="Comunidad Española de cEDH" /><br />Comunidad&nbsp;Española&nbsp;de&nbsp;cEDH</a></td>
-        <td align="center"><a href="https://discord.gg/commander"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/a4f292c6-65b3-4767-8e82-f39c35a75723" alt="Commander RC" /><br />Commander&nbsp;RC</a></td>
+        <td align="center"><a href="https://www.patreon.com/PlayingWithPowerMTG"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/60a984e4-8fa1-4d8f-bf0d-2e391776b56d" alt="Playing with Power" /><br />Playing&nbsp;with&nbsp;Power</a></td>
     </tr>
     <tr>
+        <td align="center"><a href="https://linktr.ee/cedhspain"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/823a2ed7-c59a-47da-886c-5f468a3b3032" alt="Comunidad Española de cEDH" /><br />Comunidad&nbsp;Española&nbsp;de&nbsp;cEDH</a></td>
+        <td align="center"><a href="https://discord.gg/commander"><img width="200" height="200" src="https://github.com/user-attachments/assets/6f4cf0de-ed31-4d19-b2c2-78fb9b544992" alt="The Commander Staple" /><br />The&nbsp;Commander&nbsp;Staple</a></td>
         <td align="center"><a href="https://discord.gg/ZmPsjrxe4h"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/47d68a5b-fe08-497c-a76b-c8dde5f56af3" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
+    </tr>
+    <tr>
         <td align="center"><a href="https://www.ka0stournaments.com/"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/104dc2da-4aad-4998-a778-479b54d1c600" alt="ka0s Tournaments" /><br />ka0s&nbsp;Tournaments</a></td>
         <td align="center"><a href="https://twitter.com/TurboDCommander"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/d7d6c867-c857-4760-8552-8b8e7b4a1bad" alt="Turbo Commander" /><br />Turbo&nbsp;Commander</a></td>
+        <td align="center"><a href="https://www.cedh.uk/"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/34bcb78c-60e2-495a-b919-873d0d331798" alt="cEDH UK" /><br />cEDH&nbsp;UK</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://www.cedh.uk/"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/34bcb78c-60e2-495a-b919-873d0d331798" alt="cEDH UK" /><br />cEDH&nbsp;UK</a></td>
         <td align="center"><a href="https://disboard.org/server/689674672240984067"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/322d1bdf-6b32-45f5-93b2-8d4963075772" alt="MTG@Home" /><br />MTG@Home</a></td>
         <td align="center"><a href="https://www.mtgdc.info/"><img width="200" height="200" src="https://github.com/user-attachments/assets/d7dfa16c-8b65-40e4-b449-4758fd3c3807" alt="Duel Commander" /><br />Duel&nbsp;Commander</a></td>
-    </tr>
-    <tr>
         <td align="center"><a href="https://discord.gg/bA5tf3Xc8M"><img width="200" height="200" src="https://github.com/user-attachments/assets/5a3dbc81-0867-4e86-8c9c-f3801f681f54" alt="Proxy Pirates" /><br />Proxy&nbsp;Pirates</a></td>
     </tr>
 </table>
