@@ -474,7 +474,11 @@ class TestTaskCleanupOldVoiceChannels:
             perms=manage_perms,
             created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
         )
-        stmt = update(Game).where(Game.id == game.id).values(voice_xid=voice_channel.id)
+        stmt = (
+            update(Game)  # type: ignore
+            .where(Game.id == game.id)
+            .values(voice_xid=voice_channel.id)
+        )
         DatabaseSession.execute(stmt)
         DatabaseSession.commit()
         voice_channel.voice_states.keys = lambda: False  # type: ignore
