@@ -55,7 +55,7 @@ class ChannelsService:
     @sync_to_async()
     def set_default_seats(self, xid: int, seats: int) -> None:
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(default_seats=seats)
             .execution_options(synchronize_session=False)
@@ -66,7 +66,7 @@ class ChannelsService:
     @sync_to_async()
     def set_default_format(self, xid: int, format: int) -> None:
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(default_format=format)
             .execution_options(synchronize_session=False)
@@ -77,7 +77,7 @@ class ChannelsService:
     @sync_to_async()
     def set_default_bracket(self, xid: int, bracket: int) -> None:
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(default_bracket=bracket)
             .execution_options(synchronize_session=False)
@@ -88,7 +88,7 @@ class ChannelsService:
     @sync_to_async()
     def set_default_service(self, xid: int, service: int) -> None:
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(default_service=service)
             .execution_options(synchronize_session=False)
@@ -99,7 +99,7 @@ class ChannelsService:
     @sync_to_async()
     def set_auto_verify(self, xid: int, setting: bool) -> None:
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(auto_verify=setting)
             .execution_options(synchronize_session=False)
@@ -110,7 +110,7 @@ class ChannelsService:
     @sync_to_async()
     def set_verified_only(self, xid: int, setting: bool) -> None:
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(verified_only=setting)
             .execution_options(synchronize_session=False)
@@ -121,7 +121,7 @@ class ChannelsService:
     @sync_to_async()
     def set_unverified_only(self, xid: int, setting: bool) -> None:
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(unverified_only=setting)
             .execution_options(synchronize_session=False)
@@ -137,7 +137,7 @@ class ChannelsService:
         else:
             motd = ""
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(motd=motd)
             .execution_options(synchronize_session=False)
@@ -154,7 +154,7 @@ class ChannelsService:
         else:
             extra = ""
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(extra=extra)
             .execution_options(synchronize_session=False)
@@ -168,7 +168,7 @@ class ChannelsService:
         max_len = Channel.voice_category.property.columns[0].type.length  # type: ignore
         name = value[:max_len]
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(voice_category=name)
             .execution_options(synchronize_session=False)
@@ -180,7 +180,7 @@ class ChannelsService:
     @sync_to_async()
     def set_delete_expired(self, xid: int, value: bool) -> bool:
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(delete_expired=value)
             .execution_options(synchronize_session=False)
@@ -192,7 +192,7 @@ class ChannelsService:
     @sync_to_async()
     def set_show_points(self, xid: int, value: bool) -> bool:
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(show_points=value)
             .execution_options(synchronize_session=False)
@@ -217,7 +217,7 @@ class ChannelsService:
     @sync_to_async()
     def set_voice_invite(self, xid: int, value: bool) -> bool:
         query = (
-            update(Channel)
+            update(Channel)  # type: ignore
             .where(Channel.xid == xid)
             .values(voice_invite=value)
             .execution_options(synchronize_session=False)
