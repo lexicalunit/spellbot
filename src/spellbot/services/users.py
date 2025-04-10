@@ -113,7 +113,7 @@ class UsersService:
         # This operation should "dirty" the Games, so
         # we need to update their updated_at field now.
         query = (
-            update(Game)
+            update(Game)  # type: ignore
             .where(Game.id.in_(left_game_ids))
             .values(updated_at=datetime.now(tz=pytz.utc))
             .execution_options(synchronize_session=False)

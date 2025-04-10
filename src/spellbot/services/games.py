@@ -111,7 +111,7 @@ class GamesService:
 
         # This operation should "dirty" the Game, so we need to update its updated_at.
         query = (
-            update(Game)
+            update(Game)  # type: ignore
             .where(Game.id == self.game.id)
             .values(updated_at=datetime.now(tz=pytz.utc))
             .execution_options(synchronize_session=False)
@@ -206,11 +206,11 @@ class GamesService:
         player_count = count(Queue.user_xid).over(partition_by=Game.id)
         inner = (
             select(
-                Game,
+                Game,  # type: ignore
                 Queue.user_xid,
                 player_count.label("player_count"),  # type: ignore
             )
-            .join(Queue, isouter=True)
+            .join(Queue, isouter=True)  # type: ignore
             .filter(  # type: ignore
                 and_(
                     Game.guild_xid == guild_xid,
@@ -524,7 +524,7 @@ class GamesService:
         assert self.game
         confirmed_at = datetime.now(tz=pytz.utc)
         query = (
-            update(Play)
+            update(Play)  # type: ignore
             .where(
                 and_(
                     Play.game_id == self.game.id,
@@ -568,7 +568,9 @@ class GamesService:
     @tracer.wrap()
     def delete_games(self, game_ids: list[int]) -> int:
         query = (
-            update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.now(tz=pytz.utc))
+            update(Game)  # type: ignore
+            .where(Game.id.in_(game_ids))
+            .values(deleted_at=datetime.now(tz=pytz.utc))
         )
         DatabaseSession.execute(query)
         dequeued = (
