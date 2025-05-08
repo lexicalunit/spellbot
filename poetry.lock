@@ -730,14 +730,14 @@ files = [
 
 [[package]]
 name = "dunamai"
-version = "1.23.2"
+version = "1.24.0"
 description = "Dynamic version generation"
 optional = false
 python-versions = ">=3.5"
 groups = ["main"]
 files = [
-    {file = "dunamai-1.23.2-py3-none-any.whl", hash = "sha256:ba2e3db8045a5bc5c4b9e2654cac3710a0980ad13e025c80fe640592a8ffab9d"},
-    {file = "dunamai-1.23.2.tar.gz", hash = "sha256:df71e6de961f715579252011f94982ca864f2120c195c15122f5fd6ad436682f"},
+    {file = "dunamai-1.24.0-py3-none-any.whl", hash = "sha256:4f4367a74450c70b2d6b8469449cb0ed57db0040a9b463afb11c44ac18f58dff"},
+    {file = "dunamai-1.24.0.tar.gz", hash = "sha256:c2d1a9f7359033c04dfc1865481d890acc5be4ac02596ad3275b854aba342294"},
 ]
 
 [package.dependencies]
