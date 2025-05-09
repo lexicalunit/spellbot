@@ -44,7 +44,7 @@ if [[ -n $REMOTE_CHANGES ]]; then
 fi
 
 # bump the version in pyproject.toml
-run "poetry version '$KIND'"
+run "uv version --bump '$KIND'"
 
 # fetch the version from pyproject.toml
 VERSION="$(grep "^version" <pyproject.toml | cut -d= -f2 | sed 's/"//g;s/ //g;s/^/v/;')"
@@ -78,14 +78,14 @@ done <"$OLD_CHANGELOG"
 run "mv '$NEW_CHANGELOG' '$OLD_CHANGELOG'"
 
 # build the release
-run "poetry build"
+run "uv build"
 
 # commit changes
 run "git commit -am 'Release $VERSION'"
 
-# publish the release; assumes you've set up non-interactive publishing by
-# previously having run: `poetry config pypi-token.pypi "YOUR-PYPI-TOKEN-GOES-HERE"`
-if ! poetry publish -n; then
+# publish the release; assumes you've set up non-interactive publishing previously running:
+# security add-generic-password -s spellbot -a "$USER" -w YOUR-PYPI-TOKEN
+if ! uv publish -n --token "$(security find-generic-password -s spellbot -a "$USER" -w)"; then
     echo "error: publish command failed, see log for details" 1>&2
     run "git reset --hard HEAD~1"
     exit 1
