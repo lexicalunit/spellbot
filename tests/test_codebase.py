@@ -81,10 +81,10 @@ class TestCodebase:
         """Checks that pyproject.toml dependencies are sorted."""
         pyproject = toml.load("pyproject.toml")
 
-        dev_deps = list(pyproject["tool"]["poetry"]["group"]["dev"]["dependencies"].keys())
+        dev_deps = list(pyproject["project"]["dependencies"])
         assert dev_deps == sorted(dev_deps)
 
-        deps = list(pyproject["tool"]["poetry"]["dependencies"].keys())
+        deps = list(pyproject["dependency-groups"]["dev"])
         assert deps == sorted(deps)
 
     def test_whitespace(self) -> None:  # noqa: C901 # pragma: no cover

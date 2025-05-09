@@ -75,21 +75,17 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v3
 
-      - name: Install Poetry
-        id: install-poetry
-        run: pipx install poetry
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
+          version: latest
+          enable-cache: true
 
-      - name: Install Packages
-        run: poetry install
+      - name: Install Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
       - name: Run Tests
-        run: poetry run pytest -n auto -vv --cov --cov-report=html --cov-report=xml
+        run: uv run --frozen pytest -n auto -vv --cov --cov-report=html --cov-report=xml
         env:
           DATABASE_URL: ${{ matrix.database-url }}
 

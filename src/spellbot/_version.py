@@ -35,9 +35,8 @@ def version_from_toml() -> str | None:
     except Exception:
         return None
 
-    tool = pyproject.get("tool", {})
-    poetry = tool.get("poetry", {})
-    version = poetry.get("version", None)
+    project = pyproject.get("project", {})
+    version = project.get("version", None)
     return version if version is not None and version != "0.0.0" else None
 
 
