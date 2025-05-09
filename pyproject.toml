@@ -1,3 +1,106 @@
+[project]
+authors = [{name = "Amy Troschinetz", email = "spellbot@lexicalunit.com"}]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: End Users/Desktop",
+  "Topic :: Communications :: Chat",
+  "Topic :: Games/Entertainment :: Board Games",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "aiohttp-jinja2<2.0,>=1.6",
+  "aiohttp-retry<3.0.0,>=2.8.3",
+  "aiohttp<4.0.0,>=3.9.4",
+  "alembic<2.0.0,>=1.13.1",
+  "asgiref<4.0.0,>=3.8.1",
+  "attrs<26,>=23.2.0",
+  "babel<3.0.0,>=2.14.0",
+  "cachetools<6.0.0,>=5.5.0",
+  "certifi<2026.0.0,>=2024.2.2",
+  "click<9.0.0,>=8.1.7",
+  "coloredlogs<16.0.0,>=15.0.1",
+  "datadog<0.52,>=0.49.1",
+  "ddtrace<4.0,>=2.8.0",
+  "discord-py<3.0.0,>=2.3.2",
+  "dunamai<2.0.0,>=1.19.2",
+  "gunicorn<24.0,>=21.2.0",
+  "humanize<5.0.0,>=4.9.0",
+  "hupper<2.0.0,>=1.12.1",
+  "importlib-resources<7.0,>=6.4.0",
+  "packaging<26.0,>=24.0",
+  "playwright<2.0.0,>=1.49.1",
+  "psycopg2-binary<3.0.0,>=2.9.9",
+  "python-dateutil<3.0.0,>=2.8.2",
+  "python-dotenv<2.0.0,>=1.0.1",
+  "pytz>=2024.1",
+  "pyyaml<7.0.0,>=6.0.1",
+  "redis<6.0.0,>=5.2.1",
+  "requests<3.0.0,>=2.31.0",
+  "sqlalchemy-utils<1.0.0,>=0.41.2",
+  "sqlalchemy<3.0.0,>=2.0.29",
+  "supervisor<5.0.0,>=4.2.5",
+  "tenacity<10.0.0,>=9.0.0",
+  "toml<1.0.0,>=0.10.2",
+  "uvloop<0.22,>=0.19",
+  "wrapt<2.0.0,>=1.16.0",
+]
+description = "The Discord bot for SpellTable"
+keywords = ["discord", "magic", "bot", "mtg", "SpellTable"]
+license = {text = "MIT"}
+name = "spellbot"
+readme = "README.md"
+requires-python = "<4,>=3.12"
+version = "14.10.2"
+
+[project.urls]
+homepage = "http://spellbot.io/"
+repository = "https://github.com/lexicalunit/spellbot"
+
+[project.scripts]
+spellbot = "spellbot:main"
+
+[dependency-groups]
+dev = [
+  "callee>=0",
+  "coverage>=7",
+  "exceptiongroup>=1",
+  "factory-boy>=3",
+  "faker>=24",
+  "gitpython>=3",
+  "ipython>=9",
+  "nest-asyncio>=1",
+  "pexpect>=4",
+  "ptyprocess>=0",
+  "pylic>=3",
+  "pyright>=1",
+  "pytest-aiohttp>=1",
+  "pytest-asyncio>=0",
+  "pytest-cov>=6",
+  "pytest-freezegun>=0",
+  "pytest-mock>=3",
+  "pytest-socket>=0",
+  "pytest-xdist>=3",
+  "pytest>=8",
+  "ruff>=0",
+  "shellingham>=1",
+  "sqlalchemy-stubs>=0",
+  "syrupy>=4",
+  "tomli>=2",
+  "tomlkit>=0",
+  "types-cachetools>=5",
+  "types-freezegun>=1",
+  "types-python-dateutil>=2",
+  "types-pytz>=2025",
+  "types-pyyaml>=6",
+  "types-toml>=0",
+  "virtualenv>=20",
+]
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
 [tool.pyright]
 enableTypeIgnoreComments = true
 reportMatchNotExhaustive = true
@@ -100,10 +203,12 @@ safe_licenses = [
   "Apache Software License",
   "Apache-2.0",
   "BSD License",
+  "BSD-2-Clause",
   "BSD-derived (http://www.repoze.org/LICENSE.txt)",
   "GNU Library or Lesser General Public License (LGPL)",
   "ISC License (ISCL)",
   "LICENSE.BSD3",
+  "MIT AND Python-2.0",
   "MIT License",
   "MIT",
   "Mozilla Public License 2.0 (MPL 2.0)",
@@ -117,107 +222,3 @@ addopts = """
     -W ignore::DeprecationWarning --no-header --disable-socket --allow-unix-socket --allow-hosts=127.0.0.1,::1 --cov --cov-append --cov-report xml:coverage.xml --cov-report=html -vv
 """
 asyncio_default_fixture_loop_scope = "function"
-
-[tool.poetry]
-authors = [
-  'Amy Troschinetz <spellbot@lexicalunit.com>',
-]
-classifiers = [
-  "Development Status :: 4 - Beta",
-  "Intended Audience :: End Users/Desktop",
-  "Topic :: Communications :: Chat",
-  "Topic :: Games/Entertainment :: Board Games",
-  "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3.12",
-]
-description = 'The Discord bot for SpellTable'
-homepage = 'http://spellbot.io/'
-keywords = ['discord', 'magic', 'bot', 'mtg', 'SpellTable']
-license = 'MIT'
-name = 'spellbot'
-packages = [
-  {include = "spellbot", from = "src"},
-]
-readme = 'README.md'
-repository = 'https://github.com/lexicalunit/spellbot'
-version = "14.10.2"
-
-[tool.poetry.dependencies]
-aiohttp = "^3.9.4"
-aiohttp-jinja2 = "^1.6"
-aiohttp-retry = "^2.8.3"
-alembic = "^1.13.1"
-asgiref = "^3.8.1"
-attrs = ">=23.2.0,<26"
-babel = "^2.14.0"
-cachetools = "^5.5.0"
-certifi = ">=2024.2.2,<2026.0.0"
-click = "^8.1.7"
-coloredlogs = "^15.0.1"
-datadog = ">=0.49.1,<0.52"
-ddtrace = ">=2.8.0,<4.0"
-discord-py = "^2.3.2"
-dunamai = "^1.19.2"
-gunicorn = ">=21.2.0,<24.0"
-humanize = "^4.9.0"
-hupper = "^1.12.1"
-importlib-resources = ">=6.4.0,<7.0"
-packaging = ">=24.0,<26.0"
-playwright = "^1.49.1"
-psycopg2-binary = "^2.9.9"
-python = ">=3.12,<4"
-python-dateutil = "^2.8.2"
-python-dotenv = "^1.0.1"
-pytz = ">=2024.1"
-pyyaml = "^6.0.1"
-redis = "^5.2.1"
-requests = "^2.31.0"
-sqlalchemy = "^2.0.29"
-sqlalchemy-utils = "^0.41.2"
-supervisor = "^4.2.5"
-tenacity = "^9.0.0"
-toml = "^0.10.2"
-uvloop = ">=0.19,<0.22"
-wrapt = "^1.16.0"
-
-[tool.poetry.scripts]
-spellbot = 'spellbot:main'
-
-[tool.poetry.group.dev.dependencies]
-callee = "^0"
-coverage = "^7"
-exceptiongroup = "^1"
-factory-boy = "^3"
-faker = ">=24"
-gitpython = "^3"
-ipython = ">=8,<10"
-nest-asyncio = "^1"
-pexpect = "^4"
-ptyprocess = "^0"
-pylic = ">=3,<5"
-pyright = "^1"
-pytest = "^8"
-pytest-aiohttp = "^1"
-pytest-asyncio = "^0"
-pytest-cov = ">=4,<7"
-pytest-freezegun = "^0"
-pytest-mock = "^3"
-pytest-socket = "^0"
-pytest-xdist = "^3"
-ruff = "^0"
-shellingham = "^1"
-sqlalchemy-stubs = "^0"
-syrupy = "^4"
-tomli = "^2"
-tomlkit = "^0"
-types-cachetools = "^5"
-types-freezegun = "^1"
-types-python-dateutil = "^2"
-types-pytz = ">=2023,<2026"
-types-pyyaml = "^6"
-types-toml = "^0"
-virtualenv = "^20"
-
-[build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.9.0"]

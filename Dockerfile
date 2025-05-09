@@ -22,7 +22,7 @@ COPY scripts/start-spellapi.sh /start-spellapi.sh
 COPY scripts/start.sh /start.sh
 COPY conf/supervisord.conf /usr/local/etc/
 COPY src /spellbot/src
-COPY LICENSE.md README.md pyproject.toml poetry.lock /spellbot/
+COPY LICENSE.md README.md pyproject.toml uv.lock /spellbot/
 RUN chmod +x /start-spellbot.sh /start-spellapi.sh /start.sh \
     && pip install --no-cache-dir ./spellbot \
     && playwright install --with-deps

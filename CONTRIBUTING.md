@@ -1,59 +1,26 @@
 # Contributing
 
-This bot is a Python based Discord bot built on top of the
-[`discord.py`](https://github.com/Rapptz/discord.py) library.
+This bot is a Python based Discord bot built on top of the [`discord.py`](https://github.com/Rapptz/discord.py) library.
 
-It uses [`poetry`](usage) to manage dependencies. To install development
-dependencies use: `poetry install`. This will allow you to run
-[PyTest](https://docs.pytest.org/en/latest/) and the included scripts.
+It uses [`uv`](usage) to manage dependencies. To install development dependencies use: `uv sync`. This will allow you to run [PyTest](https://docs.pytest.org/en/latest/) and the included scripts.
 
-You can install `poetry` with the script `install-poetry.py`:
+You can install `uv` with the script [`brew`](https://brew.sh/):
 
 ```shell
-curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+brew install uv
 ```
-
-## Setting up environment
-
-The easiest thing to do is to set up a virtual python environment specifically for spellbot.
-
-```shell
-python -m venv .venv
-```
-
-Then you can install `poetry` into this environment with:
-
-```shell
-.venv/bin/pip install --upgrade pip
-.venv/bin/pip install poetry
-```
-
-Now configure `poetry` to use in the virtual environment we already created:
-
-```shell
-.venv/bin/poetry config virtualenvs.create false
-.venv/bin/poetry env use .venv/bin/python
-```
-
-To make this easier I've also included a [`scripts/setup.sh`](scripts/setup.sh)
-to do this automatically.
 
 ## Installing the application
 
-Install in development mode via `poetry`:
+Install in development mode via `uv`:
 
 ```shell
-source .venv/bin/activate
-poetry install
+uv sync
 ```
-
-> **Note:** On some systems such as most Linux ones you may also need to install
-> `python3-venv` using your system's package manager as `poetry` depends on it.
 
 ## Launch Dependencies
 
-SpellBot requires a database to run properly. The connection string for the
-database you want to use must be stored in the environment variable `DATABASE_URL`.
+SpellBot requires a database to run properly. The connection string for the database you want to use must be stored in the environment variable `DATABASE_URL`.
 
 You can start a local database via Docker by running:
 
@@ -61,8 +28,7 @@ You can start a local database via Docker by running:
 docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:15
 ```
 
-Using this locally will allow you to use the default value for `DATABASE_URL`
-without having to manually set it to anything.
+Using this locally will allow you to use the default value for `DATABASE_URL` without having to manually set it to anything.
 
 ## Running the application
 
@@ -73,15 +39,13 @@ If you wish, you can use a [.env file](https://pypi.org/project/python-dotenv/).
 When your environmental variables are set, run:
 
 ```shell
-source .venv/bin/activate
-poetry run spellbot --help
+uv run spellbot --help
 ```
 
 This will list some useful flags you can provide to run SpellBot. To get started developing, run:
 
 ```shell
-source .venv/bin/activate
-poetry run spellbot --dev
+uv run spellbot --dev
 ```
 
 This will start SpellBot and reload it whenever the source code changes.
@@ -89,8 +53,7 @@ This will start SpellBot and reload it whenever the source code changes.
 ## Running tests
 
 ```shell
-source .venv/bin/activate
-poetry run pytest --cov --cov-report=html
+uv run pytest --cov --cov-report=html
 open coverage/index.html
 ```
 
@@ -99,8 +62,7 @@ open coverage/index.html
 Codebase consistency is maintained by [ruff][ruff].
 
 ```shell
-source .venv/bin/activate
-poetry run pytest -k codebase
+uv run pytest -k codebase
 ```
 
 ## Interactive Shell
@@ -108,13 +70,13 @@ poetry run pytest -k codebase
 An interactive shell using [IPyhton](https://ipython.readthedocs.io/en/stable/) can be started by running:
 
 ```shell
-poetry run python shell.py
+uv run python shell.py
 ```
 
 From this shell you will be able to interact with the database using SpellBot models and code. For example:
 
 ```shell
-$ poetry run python shell.py
+$ uv run python shell.py
 
 In [1]: DatabaseSession.query(User).all()
 Out[1]: []
@@ -122,28 +84,19 @@ Out[1]: []
 
 ## Release process
 
-There's two methods for doing a release. You can use a script to handle
-everything for you automatically, or you can basically do every step in that
-script manually. Both methods are described below but I recommend the script.
+There's two methods for doing a release. You can use a script to handle everything for you automatically, or you can basically do every step in that script manually. Both methods are described below but I recommend the script.
 
 ### Scripted
 
 To do a release automatically there is a \*NIX script available in the `scripts`
 directory to help. To use it you will need to have non-interactive
-`poetry publish` enabled by running:
+`uv publish` enabled by running:
 
 ```shell
-source .venv/bin/activate
-poetry config pypi-token.pypi "YOUR-PYPI-TOKEN-GOES-HERE"
+uv publish --token "YOUR-PYPI-TOKEN-GOES-HERE"
 ```
 
-If you don't have one, you can create your PyPI token for this command by going
-to the
-[PyPI settings for spellbot](https://pypi.org/manage/project/spellbot/settings/)
-and clicking on the `Create a token for spellbot` button there. Of course you
-will have to be a collaborator for this project on PyPI to be able to do this.
-Contact [spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com) to be added
-to the project.
+If you don't have one, you can create your PyPI token for this command by going to the [PyPI settings for spellbot](https://pypi.org/manage/project/spellbot/settings/) and clicking on the `Create a token for spellbot` button there. Of course you will have to be a collaborator for this project on PyPI to be able to do this. Contact [spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com) to be added to the project.
 
 Once you have that set up, you can release a new version by running:
 
@@ -151,9 +104,7 @@ Once you have that set up, you can release a new version by running:
 scripts/publish.sh <major | minor | patch>
 ```
 
-You must select either `major`, `minor`, or `patch` as the release kind. Please
-follow [semver](https://semver.org/) for guidance on what kind of release to
-make. But basically:
+You must select either `major`, `minor`, or `patch` as the release kind. Please follow [semver](https://semver.org/) for guidance on what kind of release to make. But basically:
 
 - Major: Breaking changes.
 - Minor: New features.
@@ -161,67 +112,50 @@ make. But basically:
 
 ### Manually
 
-To release a new version of `spellbot`, use `poetry`:
+To release a new version of `spellbot`, use `uv`:
 
 ```shell
-source .venv/bin/activate
-poetry version [major|minor|patch]
-poetry run pytest # verify that all tests pass
+uv version --bump [major|minor|patch]
+uv run pytest # verify that all tests pass
 # edit the CHANGELOG.md file to promote all unlreased changes to the new version
-poetry build
+uv build
 git commit -am "Release vM.N.P"
-poetry publish
+uv publish # you will be prompted for your PyPI login credentials here
 git tag 'vM.N.P'
 git push --tags origin main
 ```
 
-> **Note:** The reason you should run `pytest` after running the `poetry version`
+> **Note:** The reason you should run `pytest` after running the `uv version`
 > command is to ensure that all test still pass after the version is updated.
 
-You can get the `M.N.P` version numbers from `pyproject.toml` after you've run
-the `poetry version` command. On a \*NIX shell you could also get it automatically like so:
+You can get the `M.N.P` version numbers from `pyproject.toml` after you've run the `uv version` command. On a \*NIX shell you could also get it automatically like so:
 
 ```shell
 grep "^version" < pyproject.toml | cut -d= -f2 | sed 's/"//g;s/ //g;s/^/v/;'
 ```
 
-When you use the `poetry publish` command you will be prompted for your
-[PyPI](https://pypi.org/) credentials.
-
-After publishing you can view the package at its
-[pypi.org project page](https://pypi.org/project/spellbot/) to see that
-everything looks good.
+After publishing you can view the package at its [pypi.org project page](https://pypi.org/project/spellbot/) to see that everything looks good.
 
 ## Database migrations
 
-We use [alembic][alembic] for database migrations. It can detect changes you've
-made compared to an existing database and generate migration scripts necessary
-to apply _and_ reverse those changes. First, make the changes to the data
-models. Alembic can detect differences between an existing database and changes
-made to the models. To autogenerate migration scripts that will bring the
-database inline with the changes you've made to the models, run:
+We use [alembic][alembic] for database migrations. It can detect changes you've made compared to an existing database and generate migration scripts necessary to apply _and_ reverse those changes. First, make the changes to the data models. Alembic can detect differences between an existing database and changes made to the models. To autogenerate migration scripts that will bring the database inline with the changes you've made to the models, run:
 
 ```shell
-poetry run scripts/create_db_revision.py \
+uv run scripts/create_db_revision.py \
     "<your-sqlalchemy-database-url>" \
     "<Some description of your changes>"
 ```
 
 > Note: An example database url: postgresql://postgres@localhost:5432/postgres
 
-This will create a revision script in the `src/spellbot/versions/versions`
-directory with a name like `REVISIONID_some_description_of_your_changes.py`.
-You may have to edit this script manually to ensure that it is correct as
-the autogenerate facility of `alembic revision` is not perfect.
+This will create a revision script in the `src/spellbot/versions/versions` directory with a name like `REVISIONID_some_description_of_your_changes.py`. You may have to edit this script manually to ensure that it is correct as the autogenerate facility of `alembic revision` is not perfect.
 
 ### Downgrading
 
-Another migration script is `scripts/downgrade.py` which allows you to pass
-a revision string to downgrade to. For example, to undo the last migration
-you could run something like:
+Another migration script is `scripts/downgrade.py` which allows you to pass a revision string to downgrade to. For example, to undo the last migration you could run something like:
 
 ```shell
-poetry run scripts/downgrade.py postgresql://postgres@localhost:5432/postgres "-1"
+uv run scripts/downgrade.py postgresql://postgres@localhost:5432/postgres "-1"
 ```
 
 ## Metrics
@@ -253,8 +187,7 @@ metrics. This requires a few things:
 1. When starting the `spellbot` process, start it via `ddtrace-run spellbot`
    so that the APM client hooks are properly installed.
 
-Locally in development you can use the following invocation to quickly spin
-up a `dd-agent`. And to set up your environment you should use the `.env` file.
+Locally in development you can use the following invocation to quickly spin up a `dd-agent`. And to set up your environment you should use the `.env` file.
 
 ```shell
 docker run --rm \
