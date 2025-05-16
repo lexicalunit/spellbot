@@ -33,7 +33,7 @@ fi
 
 CHANGES="$(git status -su)"
 if [[ -n $CHANGES ]]; then
-    echo "error: can not publish when there are uncomitted changes" 1>&2
+    echo "error: can not publish when there are uncommitted changes" 1>&2
     exit 1
 fi
 
@@ -50,6 +50,7 @@ run "uv version --bump '$KIND'"
 VERSION="$(grep "^version" <pyproject.toml | cut -d= -f2 | sed 's/"//g;s/ //g;s/^/v/;')"
 
 # promote unreleased changes in the changelog
+echo "Updating CHANGELOG.md..."
 OLD_CHANGELOG="$REPO_ROOT/CHANGELOG.md"
 NEW_CHANGELOG="$REPO_ROOT/CHANGELOG-$VERSION.md"
 cat >"$NEW_CHANGELOG" <<EOF
@@ -78,6 +79,7 @@ done <"$OLD_CHANGELOG"
 run "mv '$NEW_CHANGELOG' '$OLD_CHANGELOG'"
 
 # build the release
+run "rm -rf dist"
 run "uv build"
 
 # commit changes
@@ -85,7 +87,7 @@ run "git commit -am 'Release $VERSION'"
 
 # publish the release; assumes you've set up non-interactive publishing previously running:
 # security add-generic-password -s spellbot -a "$USER" -w YOUR-PYPI-TOKEN
-if ! run "uv publish -n --token '$(security find-generic-password -s spellbot -a "$USER" -w)'"; then
+if ! uv publish -n --token "$(security find-generic-password -s spellbot -a "$USER" -w)"; then
     echo "error: publish command failed, see log for details" 1>&2
     run "git reset --hard HEAD~1"
     exit 1
