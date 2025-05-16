@@ -204,6 +204,7 @@ safe_licenses = [
   "Apache-2.0",
   "BSD License",
   "BSD-2-Clause",
+  "BSD-3-Clause",
   "BSD-derived (http://www.repoze.org/LICENSE.txt)",
   "GNU Library or Lesser General Public License (LGPL)",
   "ISC License (ISCL)",
