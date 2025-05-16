@@ -85,7 +85,7 @@ run "git commit -am 'Release $VERSION'"
 
 # publish the release; assumes you've set up non-interactive publishing previously running:
 # security add-generic-password -s spellbot -a "$USER" -w YOUR-PYPI-TOKEN
-if ! uv publish -n --token "$(security find-generic-password -s spellbot -a "$USER" -w)"; then
+if ! run "uv publish -n --token '$(security find-generic-password -s spellbot -a "$USER" -w)'"; then
     echo "error: publish command failed, see log for details" 1>&2
     run "git reset --hard HEAD~1"
     exit 1
