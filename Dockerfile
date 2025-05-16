@@ -25,7 +25,7 @@ COPY src /spellbot/src
 COPY LICENSE.md README.md pyproject.toml uv.lock /spellbot/
 RUN chmod +x /start-spellbot.sh /start-spellapi.sh /start.sh \
     && pip install --no-cache-dir ./spellbot \
-    && playwright install --with-deps
+    && playwright install --with-deps chromium
 EXPOSE 80
 
 CMD ["supervisord"]
