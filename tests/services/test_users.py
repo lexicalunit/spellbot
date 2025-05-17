@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import ANY, MagicMock
 
 import pytest
-import pytz
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, Channel, Game, Guild, Queue, User, Watch
@@ -25,7 +24,7 @@ class TestServiceUsers:
         await users.upsert(discord_user)
 
         DatabaseSession.expire_all()
-        user = DatabaseSession.query(User).get(discord_user.id)
+        user = DatabaseSession.get(User, discord_user.id)
         assert user
         assert user.xid == discord_user.id
         assert user.name == "user-name"
@@ -34,7 +33,7 @@ class TestServiceUsers:
         await users.upsert(discord_user)
 
         DatabaseSession.expire_all()
-        user = DatabaseSession.query(User).get(discord_user.id)
+        user = DatabaseSession.get(User, discord_user.id)
         assert user
         assert user.xid == discord_user.id
         assert user.name == "new-name"
@@ -92,10 +91,10 @@ class TestServiceUsers:
         game = GameFactory.create(
             guild=guild,
             channel=channel,
-            started_at=datetime.now(tz=pytz.utc),
+            started_at=datetime.now(tz=UTC),
         )
         user = UserFactory.create(game=game)
-        user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)
+        user.plays[0].confirmed_at = datetime.now(tz=UTC)
 
         users = UsersService()
         await users.select(user.xid)

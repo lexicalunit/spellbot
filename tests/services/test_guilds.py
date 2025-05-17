@@ -20,7 +20,7 @@ class TestServiceGuilds:
         await guilds.upsert(discord_guild)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).get(discord_guild.id)
+        guild = DatabaseSession.get(Guild, discord_guild.id)
         assert guild
         assert guild.xid == discord_guild.id
         assert guild.name == "guild-name"
@@ -29,7 +29,7 @@ class TestServiceGuilds:
         await guilds.upsert(discord_guild)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).get(discord_guild.id)
+        guild = DatabaseSession.get(Guild, discord_guild.id)
         assert guild
         assert guild.xid == discord_guild.id
         assert guild.name == "new-name"
@@ -73,7 +73,7 @@ class TestServiceGuilds:
         await guilds.set_motd(message_of_the_day)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).get(guild.xid)
+        guild = DatabaseSession.get(Guild, guild.xid)
         assert guild
         assert guild.motd == message_of_the_day
 
@@ -84,7 +84,7 @@ class TestServiceGuilds:
         await guilds.set_banned(True, guild.xid)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).get(guild.xid)
+        guild = DatabaseSession.get(Guild, guild.xid)
         assert guild
         assert guild.banned
 
@@ -98,7 +98,7 @@ class TestServiceGuilds:
         await guilds.toggle_show_links()
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).get(101)
+        guild = DatabaseSession.get(Guild, 101)
         assert guild
         assert guild.show_links
         DatabaseSession.expire_all()
@@ -108,7 +108,7 @@ class TestServiceGuilds:
         DatabaseSession.expire_all()
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).get(101)
+        guild = DatabaseSession.get(Guild, 101)
         assert guild
         assert not guild.show_links
 
@@ -123,7 +123,7 @@ class TestServiceGuilds:
         await guilds.toggle_voice_create()
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).get(101)
+        guild = DatabaseSession.get(Guild, 101)
         assert guild
         assert guild.voice_create
 
@@ -131,7 +131,7 @@ class TestServiceGuilds:
         await guilds.toggle_voice_create()
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).get(101)
+        guild = DatabaseSession.get(Guild, 101)
         assert guild
         assert not guild.voice_create
 
@@ -195,8 +195,8 @@ class TestServiceGuilds:
         await guilds.award_delete(404)
 
         DatabaseSession.expire_all()
-        assert not DatabaseSession.query(GuildAward).get(award1_id)
-        assert DatabaseSession.query(GuildAward).get(award2.id)
+        assert not DatabaseSession.get(GuildAward, award1_id)
+        assert DatabaseSession.get(GuildAward, award2.id)
 
     async def test_guilds_has_award_with_count(self, guild: Guild) -> None:
         award1 = GuildAwardFactory.create(guild=guild, count=10)

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock
 
 import discord
 import pytest
 import pytest_asyncio
-import pytz
 from sqlalchemy.sql.expression import and_
 
 from spellbot.actions import lfg_action
@@ -72,7 +71,7 @@ class TestCogEvents(InteractionMixin):
 
         game = DatabaseSession.query(Game).one()
         assert game.status == GameStatus.STARTED.value
-        admin = DatabaseSession.query(User).get(self.interaction.user.id)
+        admin = DatabaseSession.get(User, self.interaction.user.id)
         assert admin is not None
         assert self.interaction.channel is not None
         assert admin.game(self.interaction.channel.id) is None
@@ -152,7 +151,7 @@ class TestCogEvents(InteractionMixin):
             id=4001,
             name="does-not-matter",
             perms=manage_perms,
-            created_at=datetime.now(tz=pytz.utc),
+            created_at=datetime.now(tz=UTC),
         )
         voice_invite = MagicMock(spec=discord.Invite, url="http://example")
 

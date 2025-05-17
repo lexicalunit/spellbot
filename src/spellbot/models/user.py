@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, TypedDict
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
@@ -34,16 +34,16 @@ class User(Base):
     created_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=datetime.now(UTC),
         server_default=now,
         doc="UTC timestamp when this user was first created",
     )
     updated_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=datetime.now(UTC),
         server_default=now,
-        onupdate=datetime.utcnow,
+        onupdate=datetime.now(UTC),
         doc="UTC timestamp when this user was last updated",
     )
     name = Column(
@@ -98,7 +98,7 @@ class User(Base):
             .order_by(Game.updated_at.desc())
             .first()
         )
-        return session.query(Game).get(queue.game_id) if queue else None
+        return session.get(Game, queue.game_id) if queue else None
 
     def points(self, game_id: int) -> tuple[int | None, bool] | None:
         play: Play | None = self.plays.filter(Play.game_id == game_id).one_or_none()
