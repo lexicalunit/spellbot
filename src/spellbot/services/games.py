@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
-import pytz
 from asgiref.sync import sync_to_async
 from ddtrace.trace import tracer
 from sqlalchemy import func, select, update
@@ -46,7 +45,7 @@ class GamesService:
     @sync_to_async()
     @tracer.wrap()
     def select(self, game_id: int) -> GameDict | None:
-        self.game = DatabaseSession.query(Game).get(game_id)
+        self.game = DatabaseSession.get(Game, game_id)
         return self.game.to_dict() if self.game else None
 
     @sync_to_async()
@@ -113,7 +112,7 @@ class GamesService:
         query = (
             update(Game)  # type: ignore
             .where(Game.id == self.game.id)
-            .values(updated_at=datetime.now(tz=pytz.utc))
+            .values(updated_at=datetime.now(tz=UTC))
             .execution_options(synchronize_session=False)
         )
         DatabaseSession.execute(query)
@@ -153,7 +152,7 @@ class GamesService:
             game = existing
             new = False
         else:
-            channel = DatabaseSession.query(Channel).get(channel_xid)
+            channel = DatabaseSession.get(Channel, channel_xid)
             game = Game(
                 guild_xid=guild_xid,
                 channel_xid=channel_xid,
@@ -329,7 +328,7 @@ class GamesService:
         self.game.spelltable_link = game_link  # column is "spelltable_link" for legacy reasons
         self.game.password = password
         self.game.status = GameStatus.STARTED.value
-        self.game.started_at = datetime.now(tz=pytz.utc)
+        self.game.started_at = datetime.now(tz=UTC)
 
         if not queues:  # Not sure this is possible, but just in case.
             DatabaseSession.commit()
@@ -522,7 +521,7 @@ class GamesService:
     @tracer.wrap()
     def confirm_points(self, player_xid: int) -> datetime:
         assert self.game
-        confirmed_at = datetime.now(tz=pytz.utc)
+        confirmed_at = datetime.now(tz=UTC)
         query = (
             update(Play)  # type: ignore
             .where(
@@ -546,7 +545,7 @@ class GamesService:
     @sync_to_async()
     @tracer.wrap()
     def inactive_games(self) -> list[GameDict]:
-        limit = datetime.now(tz=pytz.utc) - timedelta(minutes=settings.EXPIRE_TIME_M)
+        limit = datetime.now(tz=UTC) - timedelta(minutes=settings.EXPIRE_TIME_M)
         records = (
             DatabaseSession.query(Game)
             .join(Queue, isouter=True)
@@ -570,7 +569,7 @@ class GamesService:
         query = (
             update(Game)  # type: ignore
             .where(Game.id.in_(game_ids))
-            .values(deleted_at=datetime.now(tz=pytz.utc))
+            .values(deleted_at=datetime.now(tz=UTC))
         )
         DatabaseSession.execute(query)
         dequeued = (

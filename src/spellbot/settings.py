@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from os import getenv
 from typing import TYPE_CHECKING
 
-import pytz
 from discord import Object
 
 from .environment import running_in_pytest
@@ -130,7 +129,7 @@ class Settings:
         self.EXPIRE_TIME_M = 45  # 45 minutes
 
     def workaround_over_eager_caching(self, url: str) -> str:
-        return f"{url}?{datetime.now(tz=pytz.utc).date().strftime('%Y-%m-%d')}"
+        return f"{url}?{datetime.now(tz=UTC).date().strftime('%Y-%m-%d')}"
 
     @property
     def ICO_URL(self) -> str:
@@ -151,7 +150,7 @@ class Settings:
                 757455940009328670,  # Oath of the Gaywatch
                 # 699775410082414733,  # Development
             ]
-            or datetime.now(tz=pytz.utc).month == 6
+            or datetime.now(tz=UTC).month == 6
         )
 
     @property
@@ -162,7 +161,7 @@ class Settings:
         )
 
     def black(self, guild_xid: int | None) -> bool:  # pragma: no cover
-        return datetime.now(tz=pytz.utc).month == 2
+        return datetime.now(tz=UTC).month == 2
 
     @property
     def BLACK_THUMB_URL(self) -> str:  # pragma: no cover
@@ -177,7 +176,7 @@ class Settings:
         )
 
     def trans(self, guild_xid: int | None) -> bool:  # pragma: no cover
-        now = datetime.now(tz=pytz.utc)
+        now = datetime.now(tz=UTC)
         return now.month == 11 or (now.month == 3 and now.day == 31)
 
     @property
@@ -187,7 +186,7 @@ class Settings:
         )
 
     def women(self, guild_xid: int | None) -> bool:  # pragma: no cover
-        return datetime.now(tz=pytz.utc).month == 3
+        return datetime.now(tz=UTC).month == 3
 
     @property
     def AUTISTIC_THUMB_URL(self) -> str:  # pragma: no cover
@@ -196,7 +195,7 @@ class Settings:
         )
 
     def autistic(self, guild_xid: int | None) -> bool:  # pragma: no cover
-        now = datetime.now(tz=pytz.utc)
+        now = datetime.now(tz=UTC)
         return now.month == 4 and now.day == 2
 
     def thumb(self, guild_xid: int | None) -> str:  # pragma: no cover

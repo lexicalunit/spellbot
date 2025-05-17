@@ -4,10 +4,9 @@ import asyncio
 import logging
 import re
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
-import pytz
 from dateutil import tz
 from ddtrace.trace import tracer
 
@@ -41,10 +40,10 @@ class VoiceChannelFilterer:
     def __init__(self, games: GamesService) -> None:
         self.games = games
         grace_delta = timedelta(minutes=settings.VOICE_GRACE_PERIOD_M)
-        grace_time_ago = datetime.now(tz=pytz.utc) - grace_delta
+        grace_time_ago = datetime.now(tz=UTC) - grace_delta
         self.grace_time_ago = grace_time_ago.replace(tzinfo=tz.UTC)
         age_limit_delta = timedelta(hours=settings.VOICE_AGE_LIMIT_H)
-        age_limit_ago = datetime.now(tz=pytz.utc) - age_limit_delta
+        age_limit_ago = datetime.now(tz=UTC) - age_limit_delta
         self.age_limit_ago = age_limit_ago.replace(tzinfo=tz.UTC)
 
     async def filter(self, voice_channels: list[VoiceChannel]) -> list[VoiceChannel]:

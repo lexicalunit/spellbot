@@ -89,7 +89,7 @@ class TestServiceGames:
         await games.add_player(user.xid)
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.query(User).get(user.xid)
+        found = DatabaseSession.get(User, user.xid)
         assert found
         found_game = found.game(game.channel_xid)
         assert found_game is not None
@@ -131,7 +131,7 @@ class TestServiceGames:
         await games.make_ready("http://link", "whatever")
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.query(Game).get(game.id)
+        found = DatabaseSession.get(Game, game.id)
         assert found
         assert found.spelltable_link == "http://link"
         assert found.password == "whatever"
@@ -164,7 +164,7 @@ class TestServiceGames:
         await games.set_voice(voice_xid=12345)
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.query(Game).get(game.id)
+        found = DatabaseSession.get(Game, game.id)
         assert found
         assert found.voice_xid == 12345
 
@@ -174,7 +174,7 @@ class TestServiceGames:
         await games.set_voice(voice_xid=12345, voice_invite_link="http://link")
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.query(Game).get(game.id)
+        found = DatabaseSession.get(Game, game.id)
         assert found
         assert found.voice_xid == 12345
         assert found.voice_invite_link == "http://link"

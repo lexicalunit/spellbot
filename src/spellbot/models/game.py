@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum, auto
 from typing import TYPE_CHECKING, TypedDict, cast
 
@@ -75,16 +75,16 @@ class Game(Base):
     created_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=datetime.now(UTC),
         server_default=now,
         doc="UTC timestamp when this games was first created",
     )
     updated_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=datetime.now(UTC),
         server_default=now,
-        onupdate=datetime.utcnow,
+        onupdate=datetime.now(UTC),
         index=True,
         doc="UTC timestamp when this games was last updated",
     )
