@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
 import pytest
 import pytest_asyncio
-import pytz
 
 from spellbot.cogs import ScoreCog
 from tests.mixins import InteractionMixin
@@ -140,7 +139,7 @@ class TestCogScore(InteractionMixin):
         add_user: Callable[..., User],
         freezer: FrozenDateTimeFactory,
     ) -> None:
-        now = datetime(2020, 1, 1, tzinfo=pytz.utc)
+        now = datetime(2020, 1, 1, tzinfo=UTC)
         freezer.move_to(now)
 
         user1 = add_user()

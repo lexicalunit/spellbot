@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-import pytz
 from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import update
@@ -26,7 +25,7 @@ class ChannelsService:
             "xid": channel.id,
             "guild_xid": channel.guild.id,
             "name": name,
-            "updated_at": datetime.now(tz=pytz.utc),
+            "updated_at": datetime.now(tz=UTC),
         }
         upsert = insert(Channel).values(**values)
         upsert = upsert.on_conflict_do_update(

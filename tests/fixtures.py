@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import contextvars
 import logging
 from typing import TYPE_CHECKING
@@ -78,9 +79,9 @@ async def factories() -> Factories:
 @pytest_asyncio.fixture(autouse=True)
 async def session_context(
     request: pytest.FixtureRequest,
-    event_loop: AbstractEventLoop,
     worker_id: str,
 ) -> contextvars.Context:
+    event_loop = asyncio.get_event_loop()
     if "nosession" not in request.keywords:
         await initialize_connection("spellbot-test", use_transaction=True, worker_id=worker_id)
 

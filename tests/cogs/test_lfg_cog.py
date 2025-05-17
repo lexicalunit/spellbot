@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from unittest.mock import ANY, MagicMock, patch
 
 import discord
 import pytest
-import pytz
 
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
@@ -369,7 +368,7 @@ class TestCogLookingForGameJoinButton(InteractionMixin):
         self.factories.user.create(game=game)
         self.factories.user.create(game=game)
         self.factories.user.create(game=game)
-        game.started_at = datetime.now(tz=pytz.utc)  # type: ignore
+        game.started_at = datetime.now(tz=UTC)  # type: ignore
         game.status = GameStatus.STARTED.value
         DatabaseSession.commit()
 

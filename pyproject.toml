@@ -33,12 +33,11 @@ dependencies = [
   "psycopg2-binary<3.0.0,>=2.9.9",
   "python-dateutil<3.0.0,>=2.8.2",
   "python-dotenv<2.0.0,>=1.0.1",
-  "pytz>=2024.1",
   "pyyaml<7.0.0,>=6.0.1",
-  "redis<6.0.0,>=5.2.1",
+  "redis<7.0.0,>=6.1.0",
   "requests<3.0.0,>=2.31.0",
   "sqlalchemy-utils<1.0.0,>=0.41.2",
-  "sqlalchemy<3.0.0,>=2.0.29",
+  "sqlalchemy<3.0.0,>=2.0.41",
   "supervisor<5.0.0,>=4.2.5",
   "tenacity<10.0.0,>=9.0.0",
   "toml<1.0.0,>=0.10.2",
@@ -77,7 +76,7 @@ dev = [
   "pytest-aiohttp>=1",
   "pytest-asyncio>=0",
   "pytest-cov>=6",
-  "pytest-freezegun>=0",
+  "pytest-freezer>=0",
   "pytest-mock>=3",
   "pytest-socket>=0",
   "pytest-xdist>=3",
@@ -89,9 +88,7 @@ dev = [
   "tomli>=2",
   "tomlkit>=0",
   "types-cachetools>=5",
-  "types-freezegun>=1",
   "types-python-dateutil>=2",
-  "types-pytz>=2025",
   "types-pyyaml>=6",
   "types-toml>=0",
   "virtualenv>=20",
@@ -220,6 +217,6 @@ safe_licenses = [
 
 [tool.pytest.ini_options]
 addopts = """
-    -W ignore::DeprecationWarning --no-header --disable-socket --allow-unix-socket --allow-hosts=127.0.0.1,::1 --cov --cov-append --cov-report xml:coverage.xml --cov-report=html -vv
+    --no-header --disable-socket --allow-unix-socket --allow-hosts=127.0.0.1,::1 --cov --cov-append --cov-report xml:coverage.xml --cov-report=html -vv
 """
 asyncio_default_fixture_loop_scope = "function"

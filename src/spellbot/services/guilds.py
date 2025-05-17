@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
-import pytz
 from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
@@ -26,7 +25,7 @@ class GuildsService:
         values = {
             "xid": guild.id,
             "name": name,
-            "updated_at": datetime.now(tz=pytz.utc),
+            "updated_at": datetime.now(tz=UTC),
         }
         upsert = insert(Guild).values(**values)
         upsert = upsert.on_conflict_do_update(
@@ -53,7 +52,7 @@ class GuildsService:
         values = {
             "xid": xid,
             "name": "Unknown Guild",
-            "updated_at": datetime.now(tz=pytz.utc),
+            "updated_at": datetime.now(tz=UTC),
             "banned": banned,
         }
         upsert = insert(Guild).values(**values)
@@ -188,7 +187,7 @@ class GuildsService:
     @sync_to_async()
     def award_delete(self, guild_award_id: int) -> None:
         assert self.guild
-        award = DatabaseSession.query(GuildAward).get(guild_award_id)
+        award = DatabaseSession.get(GuildAward, guild_award_id)
         if award:
             DatabaseSession.delete(award)
         DatabaseSession.commit()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import secrets
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, TypedDict, cast
 
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
@@ -36,16 +36,16 @@ class Play(Base):
     created_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=datetime.now(UTC),
         server_default=now,
         doc="UTC timestamp when this play was first created",
     )
     updated_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=datetime.now(UTC),
         server_default=now,
-        onupdate=datetime.utcnow,
+        onupdate=datetime.now(UTC),
         doc="UTC timestamp when this play was last updated",
     )
     user_xid = Column(

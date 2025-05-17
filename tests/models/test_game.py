@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from unittest.mock import ANY, MagicMock
 
 import discord
 import pytest
-import pytz
 
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameService
@@ -98,7 +97,7 @@ class TestModelGame:
         game = factories.game.create(
             guild=guild,
             channel=channel,
-            updated_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            updated_at=datetime(2021, 10, 31, tzinfo=UTC),
             service=service.value,
             bracket=GameBracket.BRACKET_2.value,
         )
@@ -190,7 +189,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             spelltable_link="https://spelltable/link",
             guild=guild,
             channel=channel,
@@ -259,7 +258,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             spelltable_link=None,
             guild=guild,
             channel=channel,
@@ -330,7 +329,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             spelltable_link=None,
             guild=guild,
             channel=channel,
@@ -397,7 +396,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             guild=guild,
             channel=channel,
         )
@@ -419,7 +418,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             guild=guild,
             channel=channel,
         )
@@ -479,7 +478,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             guild=guild,
             channel=channel,
         )
@@ -548,7 +547,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             guild=guild,
             channel=channel,
             service=GameService.TABLE_STREAM.value,
@@ -623,7 +622,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             spelltable_link="https://spelltable/link",
             voice_xid=501,
             guild=guild,
@@ -695,7 +694,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             spelltable_link="https://spelltable/link",
             voice_xid=501,
             voice_invite_link="https://voice/invite",
@@ -765,7 +764,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             spelltable_link="https://spelltable/link",
             guild=guild,
             channel=channel,
@@ -845,7 +844,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             guild=guild,
             channel=channel,
             requires_confirmation=True,
@@ -904,7 +903,7 @@ class TestModelGame:
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             spelltable_link="https://spelltable/link",
             guild=guild,
             channel=channel,

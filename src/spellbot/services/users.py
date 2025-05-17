@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
-import pytz
 from asgiref.sync import sync_to_async
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
@@ -29,7 +28,7 @@ class UsersService:
         max_name_len = User.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(target, "display_name", "")
         name = raw_name[:max_name_len]
-        values = {"xid": xid, "name": name, "updated_at": datetime.now(tz=pytz.utc)}
+        values = {"xid": xid, "name": name, "updated_at": datetime.now(tz=UTC)}
         upsert = insert(User).values(**values)
         upsert = upsert.on_conflict_do_update(
             index_elements=[User.xid],
@@ -41,7 +40,7 @@ class UsersService:
         )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
-        self.user = DatabaseSession.query(User).get(xid)
+        self.user = DatabaseSession.get(User, xid)
         assert self.user
         return self.user.to_dict()
 
@@ -55,7 +54,7 @@ class UsersService:
         values = {
             "xid": xid,
             "name": "Unknown User",
-            "updated_at": datetime.now(tz=pytz.utc),
+            "updated_at": datetime.now(tz=UTC),
             "banned": banned,
         }
         upsert = insert(User).values(**values)
@@ -115,7 +114,7 @@ class UsersService:
         query = (
             update(Game)  # type: ignore
             .where(Game.id.in_(left_game_ids))
-            .values(updated_at=datetime.now(tz=pytz.utc))
+            .values(updated_at=datetime.now(tz=UTC))
             .execution_options(synchronize_session=False)
         )
         DatabaseSession.execute(query)

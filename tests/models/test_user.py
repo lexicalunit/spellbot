@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
-
-import pytz
 
 from spellbot.database import DatabaseSession
 from spellbot.models import GameStatus, Play, Post
@@ -76,7 +74,7 @@ class TestModelUserWaiting:
         game = factories.game.create(
             guild=guild,
             channel=channel,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             status=GameStatus.STARTED.value,
         )
         user = factories.user.create(game=game)
@@ -89,7 +87,7 @@ class TestModelUserWaiting:
         game = factories.game.create(
             guild=guild,
             channel=channel,
-            deleted_at=datetime(2021, 11, 1, tzinfo=pytz.utc),
+            deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
         )
         user = factories.user.create(game=game)
         assert not user.waiting(channel.xid)
@@ -110,12 +108,12 @@ class TestModelUserConfirmed:
         game = factories.game.create(
             guild=guild,
             channel=channel,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             status=GameStatus.STARTED.value,
             requires_confirmation=True,
         )
         user = factories.user.create(game=game)
-        user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)
+        user.plays[0].confirmed_at = datetime.now(tz=UTC)
         assert user.confirmed(channel.xid)
 
     def test_no_last_play(self, factories: Factories) -> None:
@@ -124,7 +122,7 @@ class TestModelUserConfirmed:
         game = factories.game.create(
             guild=guild,
             channel=channel,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             status=GameStatus.STARTED.value,
             requires_confirmation=True,
         )
@@ -144,10 +142,10 @@ class TestModelUserConfirmed:
         game = factories.game.create(
             guild=guild,
             channel=channel,
-            started_at=datetime(2021, 10, 31, tzinfo=pytz.utc),
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
             status=GameStatus.STARTED.value,
             requires_confirmation=False,
         )
         user = factories.user.create(game=game)
-        user.plays[0].confirmed_at = datetime.now(tz=pytz.utc)
+        user.plays[0].confirmed_at = datetime.now(tz=UTC)
         assert user.confirmed(channel.xid)

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 import pytest
-import pytz
 
 from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
@@ -26,7 +25,7 @@ class TestWebRecord:
         freezer: FrozenDateTimeFactory,
         mocker: MockerFixture,
     ) -> None:
-        freezer.move_to(datetime(2020, 1, 1, tzinfo=pytz.utc))
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
         user1 = factories.user.create(xid=101, name="user-1")
         user2 = factories.user.create(xid=102, name="user-2")
         guild = factories.guild.create(xid=201, name="guild")
@@ -38,8 +37,8 @@ class TestWebRecord:
             format=GameFormat.MODERN.value,
             guild=guild,
             channel=channel,
-            created_at=datetime.now(tz=pytz.utc),
-            updated_at=datetime.now(tz=pytz.utc),
+            created_at=datetime.now(tz=UTC),
+            updated_at=datetime.now(tz=UTC),
         )
         factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
         factories.play.create(game_id=game.id, user_xid=user1.xid, og_guild_xid=guild.xid, pin="A")
