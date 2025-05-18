@@ -8,13 +8,14 @@ import alembic
 import alembic.command
 import alembic.config
 from sqlalchemy import String, create_engine, text
-from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
+from sqlalchemy.orm import declarative_base  # type: ignore (current type stubs are broken)
 from sqlalchemy_utils import create_database, database_exists
 
 from . import import_models
 
 if TYPE_CHECKING:
     from sqlalchemy.engine.base import Connection
+    from sqlalchemy.ext.declarative import DeclarativeMeta
 
 MODULE_ROOT = Path(__file__).resolve().parent
 PACKAGE_ROOT = MODULE_ROOT.parent

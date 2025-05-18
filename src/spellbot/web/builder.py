@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import logging
 from contextlib import suppress
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import aiohttp_jinja2
 import jinja2
-import pytz
 from aiohttp import web
 from babel.dates import format_datetime
 
@@ -30,9 +30,9 @@ TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
 
 
 def humanize(ts: int, offset: int, zone: str) -> str:
-    d = datetime.fromtimestamp(ts / 1e3, tz=pytz.UTC) - timedelta(minutes=offset)
-    with suppress(pytz.UnknownTimeZoneError):
-        d = d.replace(tzinfo=pytz.timezone(zone))
+    d = datetime.fromtimestamp(ts / 1e3, tz=UTC) - timedelta(minutes=offset)
+    with suppress(ZoneInfoNotFoundError):
+        d = d.replace(tzinfo=ZoneInfo(zone))
     return format_datetime(d, format="long")
 
 

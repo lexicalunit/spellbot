@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import discord
 import pytest
 import pytest_asyncio
-import pytz
 from sqlalchemy import update
 
 from spellbot.actions import TasksAction
@@ -195,7 +194,7 @@ class TestTaskExpireInactiveChannels:
         game: Game = factories.game.create(
             guild=guild,
             channel=channel,
-            updated_at=datetime.now(tz=pytz.utc) - timedelta(days=1),
+            updated_at=datetime.now(tz=UTC) - timedelta(days=1),
         )
 
         await action.expire_inactive_games()
@@ -249,14 +248,15 @@ class TestTaskExpireInactiveChannels:
         game: Game = factories.game.create(
             guild=guild,
             channel=channel,
-            updated_at=datetime.now(tz=pytz.utc) - timedelta(days=1),
+            updated_at=datetime.now(tz=UTC) - timedelta(days=1),
         )
         if message_xid is not None:
             factories.post.create(guild=guild, channel=channel, game=game, message_xid=message_xid)
         factories.user.create(game=game)
         action.services = mock_services
-        action.services.games.inactive_games.return_value = [game.to_dict()]
-        action.services.channels.select.return_value = {"delete_expired": delete_expired}
+        action.services.games.inactive_games = AsyncMock(return_value=[game.to_dict()])
+        action.services.games.delete_games = AsyncMock()
+        action.services.channels.select = AsyncMock(return_value={"delete_expired": delete_expired})
         mock_fetch_channel = AsyncMock(return_value=chan)
         mocker.patch("spellbot.actions.tasks_action.safe_fetch_text_channel", mock_fetch_channel)
         mock_get_partial = MagicMock(return_value=post)
@@ -384,7 +384,7 @@ class TestTaskCleanupOldVoiceChannels:
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.now(tz=pytz.utc),
+            created_at=datetime.now(tz=UTC),
         )
         make_category_channel(
             id=3001,
@@ -414,7 +414,7 @@ class TestTaskCleanupOldVoiceChannels:
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
+            created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
         voice_channel.voice_states.keys = lambda: True  # type: ignore
         make_category_channel(
@@ -443,7 +443,7 @@ class TestTaskCleanupOldVoiceChannels:
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
+            created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
         voice_channel.voice_states.keys = lambda: False  # type: ignore
         make_category_channel(
@@ -472,7 +472,7 @@ class TestTaskCleanupOldVoiceChannels:
             id=4001,
             name=f"XXX-Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
+            created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
         stmt = (
             update(Game)  # type: ignore
@@ -509,7 +509,7 @@ class TestTaskCleanupOldVoiceChannels:
             id=4001,
             name=f"XXX-Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
+            created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
         game.voice_xid = voice_channel.id + 1  # type: ignore
         DatabaseSession.commit()
@@ -541,7 +541,7 @@ class TestTaskCleanupOldVoiceChannels:
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.now(tz=pytz.utc) - timedelta(days=1),
+            created_at=datetime.now(tz=UTC) - timedelta(days=1),
         )
         voice_channel.voice_states.keys = lambda: True  # type: ignore
         make_category_channel(
@@ -572,7 +572,7 @@ class TestTaskCleanupOldVoiceChannels:
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
+            created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
         voice_channel.voice_states.keys = lambda: False  # type: ignore
         make_category_channel(
@@ -607,7 +607,7 @@ class TestTaskCleanupOldVoiceChannels:
             id=4001,
             name=f"Game-SB{game.id}",
             perms=manage_perms,
-            created_at=datetime.now(tz=pytz.utc) - timedelta(hours=1),
+            created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
         voice_channel.voice_states.keys = lambda: False  # type: ignore
         make_category_channel(

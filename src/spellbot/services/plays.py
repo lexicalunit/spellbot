@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import datetime
+from datetime import UTC, datetime
 from typing import Any
 
-import pytz
 from asgiref.sync import sync_to_async
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
@@ -158,7 +157,7 @@ class PlaysService:
         ]
         if not (play := DatabaseSession.query(Play).filter(and_(*filters)).one_or_none()):
             return False
-        play.verified_at = datetime.datetime.now(tz=pytz.utc)
+        play.verified_at = datetime.now(tz=UTC)
         DatabaseSession.commit()
         return True
 
@@ -267,7 +266,7 @@ class PlaysService:
             Game.channel_xid == channel_xid,
         ]
         if monthly:
-            target = datetime.datetime.now(tz=pytz.utc).date() + relativedelta(months=-ago)
+            target = datetime.now(tz=UTC).date() + relativedelta(months=-ago)
             filters.append(extract("year", Game.started_at) == target.year)
             filters.append(extract("month", Game.started_at) == target.month)
         result = (
