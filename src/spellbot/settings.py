@@ -84,6 +84,9 @@ class Settings:
         if database_url.startswith("postgres://"):  # pragma: no cover
             # SQLAlchemy 1.4.x removed support for the postgres:// URI scheme
             database_url = database_url.replace("postgres://", "postgresql://", 1)
+        if database_url.startswith("postgresql://"):  # pragma: no cover
+            # Ensure that we're asking for the psycopg3+ driver (and not psycopg2)
+            database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
         self.DATABASE_URL = database_url
 
         # cache
