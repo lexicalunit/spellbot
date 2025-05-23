@@ -27,7 +27,7 @@ jobs:
       matrix:
         python-version: ["3.12"]
         postgres-version: ["15"]
-        database-url: ["postgresql://postgres:postgres@localhost:5432/postgres"]
+        database-url: ["postgresql+psycopg://postgres:postgres@localhost:5432/postgres"]
 
     services:
       postgres:
