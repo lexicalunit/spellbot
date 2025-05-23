@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Update dependencies including an update to use psycopg version 3.
+
 ## [v15.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v15.0.1) - 2025-05-16
 
 ### Changed
