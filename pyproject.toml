@@ -30,7 +30,7 @@ dependencies = [
   "importlib-resources<7.0,>=6.4.0",
   "packaging<26.0,>=24.0",
   "playwright<2.0.0,>=1.49.1",
-  "psycopg2-binary<3.0.0,>=2.9.9",
+  "psycopg[binary]<4.0.0,>=3.2.9",
   "python-dateutil<3.0.0,>=2.8.2",
   "python-dotenv<2.0.0,>=1.0.1",
   "pyyaml<7.0.0,>=6.0.1",
@@ -100,6 +100,7 @@ requires = ["hatchling"]
 
 [tool.pyright]
 enableTypeIgnoreComments = true
+ignore = [".venv", "dist"]
 reportMatchNotExhaustive = true
 reportMissingParameterType = true
 reportMissingTypeArgument = true
@@ -203,7 +204,6 @@ safe_licenses = [
   "BSD-2-Clause",
   "BSD-3-Clause",
   "BSD-derived (http://www.repoze.org/LICENSE.txt)",
-  "GNU Library or Lesser General Public License (LGPL)",
   "ISC License (ISCL)",
   "LICENSE.BSD3",
   "MIT AND Python-2.0",
@@ -214,6 +214,9 @@ safe_licenses = [
   "Python Software Foundation License",
   "Unlicense",
 ]
+# Psycopg uses LGPLv3, which is ok to link against, but otherwise not compatible with permissive
+# with the license of this project. We can explicitly ignore it here since we're only linking.
+unsafe_packages = ["psycopg-binary", "psycopg"]
 
 [tool.pytest.ini_options]
 addopts = """
