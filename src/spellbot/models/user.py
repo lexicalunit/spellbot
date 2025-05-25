@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from functools import partial
 from typing import TYPE_CHECKING, TypedDict
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
@@ -34,16 +35,16 @@ class User(Base):
     created_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.now(UTC),
+        default=partial(datetime.now, UTC),
         server_default=now,
         doc="UTC timestamp when this user was first created",
     )
     updated_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.now(UTC),
+        default=partial(datetime.now, UTC),
         server_default=now,
-        onupdate=datetime.now(UTC),
+        onupdate=partial(datetime.now, UTC),
         doc="UTC timestamp when this user was last updated",
     )
     name = Column(
