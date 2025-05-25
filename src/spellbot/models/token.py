@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from functools import partial
 from typing import TypedDict
 
 from sqlalchemy import Column, DateTime, Integer, String
@@ -31,16 +32,16 @@ class Token(Base):
     created_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.now(UTC),
+        default=partial(datetime.now, UTC),
         server_default=now,
         doc="UTC timestamp when this key was first created",
     )
     updated_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.now(UTC),
+        default=partial(datetime.now, UTC),
         server_default=now,
-        onupdate=datetime.now(UTC),
+        onupdate=partial(datetime.now, UTC),
         doc="UTC timestamp when this key was last updated",
     )
     deleted_at = Column(

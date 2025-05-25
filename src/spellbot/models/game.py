@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum, auto
+from functools import partial
 from typing import TYPE_CHECKING, TypedDict, cast
 
 import discord
@@ -75,16 +76,16 @@ class Game(Base):
     created_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.now(UTC),
+        default=partial(datetime.now, UTC),
         server_default=now,
         doc="UTC timestamp when this games was first created",
     )
     updated_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.now(UTC),
+        default=partial(datetime.now, UTC),
         server_default=now,
-        onupdate=datetime.now(UTC),
+        onupdate=partial(datetime.now, UTC),
         index=True,
         doc="UTC timestamp when this games was last updated",
     )
