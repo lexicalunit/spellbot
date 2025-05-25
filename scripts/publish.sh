@@ -80,8 +80,8 @@ run "mv '$NEW_CHANGELOG' '$OLD_CHANGELOG'"
 
 # build the release
 run "rm -rf dist"
-run "uv build"
 run "uv sync"
+run "uv build"
 
 # commit changes
 run "git commit -am 'Release $VERSION'"
