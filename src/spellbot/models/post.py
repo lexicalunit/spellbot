@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from functools import partial
 from typing import TYPE_CHECKING, TypedDict
 
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer
@@ -30,16 +31,16 @@ class Post(Base):
     created_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.now(UTC),
+        default=partial(datetime.now, UTC),
         server_default=now,
         doc="UTC timestamp when this post was first created",
     )
     updated_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.now(UTC),
+        default=partial(datetime.now, UTC),
         server_default=now,
-        onupdate=datetime.now(UTC),
+        onupdate=partial(datetime.now, UTC),
         doc="UTC timestamp when this post was last updated",
     )
     game_id = Column(

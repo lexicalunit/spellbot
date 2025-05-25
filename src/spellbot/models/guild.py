@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from functools import partial
 from typing import TYPE_CHECKING, TypedDict, cast
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false, null
@@ -40,16 +41,16 @@ class Guild(Base):
     created_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.now(UTC),
+        default=partial(datetime.now, UTC),
         server_default=now,
         doc="UTC timestamp when this guild was first created",
     )
     updated_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.now(UTC),
+        default=partial(datetime.now, UTC),
         server_default=now,
-        onupdate=datetime.now(UTC),
+        onupdate=partial(datetime.now, UTC),
         doc="UTC timestamp when this guild was last updated",
     )
     name = Column(
