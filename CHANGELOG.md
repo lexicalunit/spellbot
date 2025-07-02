@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Case insensitive suggested voice channel category prefix comparison.
+
 ## [v15.2.0](https://github.com/lexicalunit/spellbot/releases/tag/v15.2.0) - 2025-07-02
 
 ### Added
