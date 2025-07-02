@@ -11,7 +11,7 @@ import discord
 from ddtrace.trace import tracer
 
 from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.models import GameStatus
+from spellbot.models import MAX_RULES_LENGTH, GameStatus
 from spellbot.operations import (
     VoiceChannelSuggestion,
     safe_add_role,
@@ -107,6 +107,7 @@ class LookingForGameAction(BaseAction):
         self,
         friend_xids: list[int],
         seats: int,
+        rules: str | None,
         format: int,
         bracket: int,
         service: int,
@@ -130,6 +131,7 @@ class LookingForGameAction(BaseAction):
                 author_xid=self.interaction.user.id,
                 friends=friend_xids,
                 seats=seats,
+                rules=rules,
                 format=format,
                 bracket=bracket,
                 service=service,
@@ -197,6 +199,7 @@ class LookingForGameAction(BaseAction):
         self,
         friends: str | None = None,
         seats: int | None = None,
+        rules: str | None = None,
         format: int | None = None,
         bracket: int | None = None,
         service: int | None = None,
@@ -219,6 +222,7 @@ class LookingForGameAction(BaseAction):
         actual_bracket: int = await self.get_bracket(actual_format, bracket)
         actual_seats: int = await self.get_seats(actual_format, seats)
         actual_service: int = await self.get_service(service)
+        rules = None if not rules else rules[:MAX_RULES_LENGTH]
 
         if await self.services.users.is_waiting(self.channel.id):
             msg = "You're already in a game in this channel."
@@ -248,6 +252,7 @@ class LookingForGameAction(BaseAction):
         new = await self.upsert_game(
             friend_xids,
             actual_seats,
+            rules,
             actual_format,
             actual_bracket,
             actual_service,
@@ -373,6 +378,7 @@ class LookingForGameAction(BaseAction):
             author_xid=found_players[0],
             friends=found_players[1:],
             seats=requested_seats,
+            rules=None,
             format=game_format.value,
             bracket=game_bracket.value,
             service=game_service.value,
