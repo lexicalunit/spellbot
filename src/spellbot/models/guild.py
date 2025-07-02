@@ -28,7 +28,7 @@ class GuildDict(TypedDict):
     awards: list[GuildAwardDict]
     banned: bool
     notice: str
-    suggest_voice_channel: bool
+    suggest_voice_category: str
     enable_mythic_track: bool
 
 
@@ -96,12 +96,12 @@ class Guild(Base):
         default=None,
         server_default=null(),
     )
-    suggest_voice_channel = Column(
-        Boolean,
-        nullable=False,
-        default=False,
-        server_default=false(),
-        doc="If true, suggest a voice channel to use",
+    suggest_voice_category = Column(
+        String(100),
+        doc="Category to use when suggesting voice channels for games",
+        nullable=True,
+        default=None,
+        server_default=null(),
     )
     enable_mythic_track = Column(
         Boolean,
@@ -151,6 +151,6 @@ class Guild(Base):
             ),
             "banned": self.banned,
             "notice": self.notice,
-            "suggest_voice_channel": self.suggest_voice_channel,
+            "suggest_voice_category": self.suggest_voice_category,
             "enable_mythic_track": self.enable_mythic_track,
         }
