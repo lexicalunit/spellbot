@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v15.2.0](https://github.com/lexicalunit/spellbot/releases/tag/v15.2.0) - 2025-07-02
+
 ### Added
 
 - Adds the ability to configure the "suggested voice channels" feature for your guild.
