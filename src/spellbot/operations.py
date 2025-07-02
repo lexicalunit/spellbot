@@ -698,7 +698,7 @@ def safe_suggest_voice_channel(
     random_empty = None
     already_picked = None
     for vc in guild.voice_channels:
-        if not vc.category or not vc.category.name.lower().startswith(category):
+        if not vc.category or not vc.category.name.lower().startswith(category.lower()):
             continue
         member_xids = {m.id for m in vc.members}
         if any(player_xid in member_xids for player_xid in player_xids):
