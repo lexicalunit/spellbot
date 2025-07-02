@@ -32,6 +32,7 @@ class LookingForGameCog(commands.Cog):
             Choice(name="4", value=4),
         ],
     )
+    @app_commands.describe(rules="Any additional rules or requests for this game.")
     @app_commands.describe(service="What service do you want to use to play this game?")
     @app_commands.choices(
         service=[Choice(name=str(service), value=service.value) for service in GAME_SERVICE_ORDER]
@@ -50,6 +51,7 @@ class LookingForGameCog(commands.Cog):
         interaction: discord.Interaction,
         friends: str | None = None,
         seats: int | None = None,
+        rules: str | None = None,
         service: int | None = None,
         format: int | None = None,
         bracket: int | None = None,
@@ -64,6 +66,7 @@ class LookingForGameCog(commands.Cog):
             await action.execute(
                 friends=friends,
                 seats=seats,
+                rules=rules,
                 format=format,
                 bracket=bracket,
                 service=service,

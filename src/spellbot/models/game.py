@@ -53,6 +53,7 @@ class GameDict(TypedDict):
     confirmed: bool
     requires_confirmation: bool
     password: str | None
+    rules: str | None
 
 
 @dataclass
@@ -186,6 +187,7 @@ class Game(Base):
         server_default=false(),
         doc="Configuration for requiring confirmation on points reporting",
     )
+    rules = Column(String(255), nullable=True, index=True, doc="Additional rules for this game")
 
     posts = relationship(
         "Post",
@@ -477,6 +479,8 @@ class Game(Base):
             suggested_vc=suggested_vc,
             rematch=rematch,
         )
+        if self.rules:
+            embed.add_field(name="⚠️ Additional Rules:", value=self.rules, inline=False)
         if self.players:
             embed.add_field(name="Players", value=self.embed_players, inline=False)
         embed.add_field(name="Format", value=self.format_name)
@@ -540,4 +544,8 @@ class Game(Base):
             "confirmed": self.confirmed,
             "requires_confirmation": self.channel.require_confirmation,
             "password": self.password,
+            "rules": self.rules,
         }
+
+
+MAX_RULES_LENGTH: int = Game.rules.property.columns[0].type.length  # type: ignore
