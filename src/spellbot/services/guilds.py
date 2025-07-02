@@ -89,6 +89,12 @@ class GuildsService:
         return cast("bool", self.guild.use_max_bitrate)
 
     @sync_to_async()
+    def set_suggest_vc_category(self, category: str | None) -> None:
+        assert self.guild
+        self.guild.suggest_voice_category = category
+        DatabaseSession.commit()
+
+    @sync_to_async()
     def set_motd(self, message: str | None = None) -> None:
         if message:
             motd = message[: Guild.motd.property.columns[0].type.length]  # type: ignore
@@ -107,6 +113,8 @@ class GuildsService:
     def toggle_voice_create(self) -> None:
         assert self.guild
         self.guild.voice_create = not self.guild.voice_create
+        if self.guild.voice_create:
+            self.guild.suggest_voice_category = None
         DatabaseSession.commit()
 
     @sync_to_async()

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds the ability to configure the "suggested voice channels" feature for your guild.
+- Adds the `/set suggest_vc_category` command to set the category prefix for suggestions.
+  - If the suggested vc category is set, that will toggle ON the suggestion feature.
+  - If the suggested vc category is unset (set to ""), that will toggle OFF the feature.
+
 ## [v15.1.1](https://github.com/lexicalunit/spellbot/releases/tag/v15.1.1) - 2025-05-25
 
 ### Fixed

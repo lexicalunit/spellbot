@@ -403,10 +403,14 @@ class LookingForGameAction(BaseAction):
             not game["voice_xid"]
             and not game["voice_invite_link"]
             and self.guild_data
-            and self.guild_data["suggest_voice_channel"]
+            and (suggest_voice_category := self.guild_data["suggest_voice_category"])
             and self.guild is not None
         ):
-            suggested_vc = safe_suggest_voice_channel(self.guild, player_xids)
+            suggested_vc = safe_suggest_voice_channel(
+                guild=self.guild,
+                category=suggest_voice_category,
+                player_xids=player_xids,
+            )
 
         if span := tracer.current_span():  # pragma: no cover
             span.set_tags(

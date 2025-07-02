@@ -963,7 +963,7 @@ def test_safe_suggest_voice_channel_when_empty() -> None:
     channel = MagicMock(spec=discord.VoiceChannel, guild=guild, category=category)
     guild.categories = [category]
     guild.voice_channels = [channel]
-    result = safe_suggest_voice_channel(guild, [])
+    result = safe_suggest_voice_channel(guild=guild, category="lfg voice", player_xids=[])
     assert result == VoiceChannelSuggestion(None, channel.id)
 
 
@@ -974,7 +974,7 @@ def test_safe_suggest_voice_channel_when_picked() -> None:
     channel = MagicMock(spec=discord.VoiceChannel, guild=guild, category=category, members=[player])
     guild.categories = [category]
     guild.voice_channels = [channel]
-    result = safe_suggest_voice_channel(guild, [player.id])
+    result = safe_suggest_voice_channel(guild=guild, category="lfg voice", player_xids=[player.id])
     assert result == VoiceChannelSuggestion(channel.id, None)
 
 
@@ -986,7 +986,7 @@ def test_safe_suggest_voice_channel_when_occupied() -> None:
     channel = MagicMock(spec=discord.VoiceChannel, guild=guild, category=category, members=[other])
     guild.categories = [category]
     guild.voice_channels = [channel]
-    result = safe_suggest_voice_channel(guild, [player.id])
+    result = safe_suggest_voice_channel(guild=guild, category="lfg voice", player_xids=[player.id])
     assert result == VoiceChannelSuggestion(None, None)
 
 
@@ -995,5 +995,5 @@ def test_safe_suggest_voice_channel_when_no_channels() -> None:
     category = MagicMock(spec=discord.CategoryChannel, guild=guild)
     guild.categories = [category]
     guild.voice_channels = []
-    result = safe_suggest_voice_channel(guild, [])
+    result = safe_suggest_voice_channel(guild=guild, category="lfg voice", player_xids=[])
     assert result == VoiceChannelSuggestion(None, None)

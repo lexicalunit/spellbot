@@ -686,7 +686,9 @@ class VoiceChannelSuggestion:
 
 
 def safe_suggest_voice_channel(
+    *,
     guild: discord.Guild | None,
+    category: str,
     player_xids: list[int],
 ) -> VoiceChannelSuggestion:
     if guild is None:
@@ -696,10 +698,7 @@ def safe_suggest_voice_channel(
     random_empty = None
     already_picked = None
     for vc in guild.voice_channels:
-        if not vc.category or not vc.category.name.lower().startswith("lfg voice"):
-            # TCC uses voice channels with the category name "LFG VOICE A-B", this
-            # feature is only for TCC, so let's just skip non-LFG voice channels.
-            # This could be made configurable in the future if other guilds want it.
+        if not vc.category or not vc.category.name.lower().startswith(category):
             continue
         member_xids = {m.id for m in vc.members}
         if any(player_xid in member_xids for player_xid in player_xids):

@@ -333,6 +333,27 @@ class AdminAction(BaseAction):
         embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
+    async def set_suggest_vc_category(self, category: str | None) -> None:
+        guild = await self.services.guilds.to_dict()
+        if guild["voice_create"]:
+            await safe_send_channel(
+                self.interaction,
+                (
+                    "Voice channel creation is enabled for this server. "
+                    "There's no need to suggest existing voice channels. "
+                    "New channels will be created automatically."
+                ),
+                ephemeral=True,
+            )
+            return
+
+        await self.services.guilds.set_suggest_vc_category(category)
+        if category:
+            msg = f'Suggested voice channels category prefix set to "{category}".'
+        else:
+            msg = "Suggested voice channels turned off."
+        await safe_send_channel(self.interaction, msg, ephemeral=True)
+
     async def set_motd(self, message: str | None = None) -> None:
         await self.services.guilds.set_motd(message)
         await safe_send_channel(self.interaction, "Message of the day updated.", ephemeral=True)
