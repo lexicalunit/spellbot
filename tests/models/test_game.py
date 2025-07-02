@@ -898,7 +898,7 @@ class TestModelGame:
         settings: Settings,
         factories: Factories,
     ) -> None:
-        guild = factories.guild.create(motd=None, suggest_voice_channel=True)
+        guild = factories.guild.create(motd=None, suggest_voice_category="lfg voice")
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             seats=2,

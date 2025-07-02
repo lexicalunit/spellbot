@@ -33,6 +33,6 @@ class TestModelGuild:
             ),
             "banned": guild.banned,
             "notice": guild.notice,
-            "suggest_voice_channel": guild.suggest_voice_channel,
+            "suggest_voice_category": guild.suggest_voice_category,
             "enable_mythic_track": guild.enable_mythic_track,
         }

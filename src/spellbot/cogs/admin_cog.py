@@ -50,6 +50,21 @@ class AdminCog(commands.Cog):
     set_group = app_commands.Group(name="set", description="...")
 
     @set_group.command(
+        name="suggest_vc_category",
+        description="Set the category prefix to use for suggested voice channels.",
+    )
+    @app_commands.describe(category="Category prefix")
+    @tracer.wrap(name="interaction", resource="set_suggest_vc_category")
+    async def set_suggest_vc_category(
+        self,
+        interaction: discord.Interaction,
+        category: str | None = None,
+    ) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_suggest_vc_category(category)
+
+    @set_group.command(
         name="motd",
         description="Set your server's message of the day. Leave blank to unset.",
     )
