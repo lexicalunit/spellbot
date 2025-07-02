@@ -142,6 +142,62 @@ class TestCogAdminMotd(InteractionMixin):
 
 
 @pytest.mark.asyncio
+class TestCogAdminSuggestVCCategory(InteractionMixin):
+    async def test_set_suggest_vc_category(self, cog: AdminCog) -> None:
+        await self.run(cog.set_suggest_vc_category, category="whatever")
+        self.interaction.response.send_message.assert_called_once_with(
+            'Suggested voice channels category prefix set to "whatever".',
+            ephemeral=True,
+        )
+        guild = DatabaseSession.query(Guild).one()
+        assert guild.suggest_voice_category == "whatever"
+
+        self.interaction.response.send_message.reset_mock()
+        await self.run(cog.set_suggest_vc_category)
+        self.interaction.response.send_message.assert_called_once_with(
+            "Suggested voice channels turned off.",
+            ephemeral=True,
+        )
+        DatabaseSession.expire_all()
+        guild = DatabaseSession.query(Guild).one()
+        assert guild.suggest_voice_category is None
+
+    async def test_set_suggest_vc_category_when_voice_create_on(
+        self,
+        cog: AdminCog,
+        view: SetupView,
+    ) -> None:
+        """You can't set the suggested vc category when voice create is on."""
+        await view.toggle_voice_create.callback(self.interaction)
+
+        await self.run(cog.set_suggest_vc_category, category="whatever")
+
+        self.interaction.response.send_message.assert_called_once_with(
+            (
+                "Voice channel creation is enabled for this server. "
+                "There's no need to suggest existing voice channels. "
+                "New channels will be created automatically."
+            ),
+            ephemeral=True,
+        )
+        guild = DatabaseSession.query(Guild).one()
+        assert guild.suggest_voice_category is None
+
+    async def test_toggle_voice_create_on_when_suggest_vc_category_set(
+        self,
+        cog: AdminCog,
+        view: SetupView,
+    ) -> None:
+        """Setting the voice create feature on clears the suggested vc category."""
+        await self.run(cog.set_suggest_vc_category, category="whatever")
+
+        await view.toggle_voice_create.callback(self.interaction)
+
+        guild = DatabaseSession.query(Guild).one()
+        assert guild.suggest_voice_category is None
+
+
+@pytest.mark.asyncio
 class TestCogAdminSetupView(InteractionMixin):
     async def test_refresh_setup(self, view: SetupView) -> None:
         await view.refresh_setup.callback(self.interaction)
