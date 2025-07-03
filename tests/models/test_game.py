@@ -45,6 +45,7 @@ class TestModelGame:
             "confirmed": game.confirmed,
             "requires_confirmation": game.requires_confirmation,
             "password": game.password,
+            "rules": game.rules,
         }
 
     def test_game_show_links(self, factories: Factories) -> None:
@@ -137,6 +138,31 @@ class TestModelGame:
             "color": settings.PENDING_EMBED_COLOR,
             "description": ("_A SpellTable link will be created when all players have joined._"),
             "fields": [
+                {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Updated at", "value": ANY},
+                {"inline": False, "name": "Support SpellBot", "value": ANY},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "thumbnail": {
+                "url": settings.THUMB_URL,
+            },
+            "title": "**Waiting for 3 more players to join...**",
+            "type": "rich",
+            "flags": 0,
+        }
+
+    def test_game_embed_with_rules(self, settings: Settings, factories: Factories) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(guild=guild, channel=channel, rules="test rules")
+        player = factories.user.create(game=game)
+
+        assert game.to_embed().to_dict() == {
+            "color": settings.PENDING_EMBED_COLOR,
+            "description": ("_A SpellTable link will be created when all players have joined._"),
+            "fields": [
+                {"inline": False, "name": "⚠️ Additional Rules:", "value": "test rules"},
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
