@@ -339,6 +339,7 @@ class TestServiceGamesUpsert:
             author_xid=user.xid,
             friends=[],
             seats=4,
+            rules=None,
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
@@ -370,6 +371,7 @@ class TestServiceGamesUpsert:
             author_xid=user1.xid,
             friends=[user2.xid],
             seats=4,
+            rules=None,
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
@@ -388,6 +390,7 @@ class TestServiceGamesUpsert:
             author_xid=user.xid,
             friends=[],
             seats=4,
+            rules=None,
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
@@ -414,6 +417,7 @@ class TestServiceGamesUpsert:
             author_xid=user1.xid,
             friends=[user2.xid],
             seats=4,
+            rules="some additional rules",
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
@@ -426,6 +430,7 @@ class TestServiceGamesUpsert:
         assert game.channel_xid == channel.xid
         rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == game.id).all()
         assert {row[0] for row in rows} == {101, 102}
+        assert game.rules == "some additional rules"
 
     async def test_lfg_with_friend_when_full_game(self, guild: Guild, channel: Channel) -> None:
         user1 = UserFactory.create(xid=101)
@@ -440,6 +445,7 @@ class TestServiceGamesUpsert:
             author_xid=user1.xid,
             friends=[user2.xid, user3.xid],
             seats=4,
+            rules=None,
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
@@ -475,6 +481,7 @@ class TestServiceGamesUpsert:
             author_xid=user1.xid,
             friends=[user2.xid, user3.xid],
             seats=4,
+            rules=None,
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.SPELLTABLE.value,
@@ -500,6 +507,7 @@ class TestServiceGamesUpsert:
             author_xid=user2.xid,
             friends=[],
             seats=game.seats,
+            rules=None,
             format=game.format,
             bracket=game.bracket,
             service=GameService.SPELLTABLE.value,
@@ -523,6 +531,7 @@ class TestServiceGamesUpsert:
             author_xid=user2.xid,
             friends=[],
             seats=game.seats,
+            rules=None,
             format=game.format,
             bracket=game.bracket,
             service=GameService.SPELLTABLE.value,
