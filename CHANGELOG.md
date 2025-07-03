@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v15.3.0](https://github.com/lexicalunit/spellbot/releases/tag/v15.3.0) - 2025-07-02
+
 ### Added
 
 - Adds the `rules:` option to `/lfg` which lets users stipulate additional rules for their game.
