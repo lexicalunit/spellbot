@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
     from spellbot import SpellBot
 
+pytestmark = pytest.mark.use_db
+
 
 async def run_lfg(cog: LookingForGameCog, interaction: discord.Interaction) -> None:
     command = cog.lfg

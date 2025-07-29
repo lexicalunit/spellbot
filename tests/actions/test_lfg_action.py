@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from spellbot import SpellBot
     from spellbot.models import User
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest_asyncio.fixture
 async def action(bot: SpellBot, interaction: discord.Interaction) -> LookingForGameAction:

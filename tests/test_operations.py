@@ -255,6 +255,7 @@ class TestOperationsUpdateEmbed:
 
 
 @pytest.mark.asyncio
+@pytest.mark.use_db
 class TestOperationsUpdateEmbedOrigin(InteractionMixin):
     async def test_happy_path(self) -> None:
         success = await safe_update_embed_origin(self.interaction, "content", flags=1)

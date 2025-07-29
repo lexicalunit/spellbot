@@ -9,6 +9,8 @@ from spellbot.models import Channel, Guild
 from spellbot.services import ChannelsService
 from tests.factories import ChannelFactory
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.mark.asyncio
 class TestServiceChannels:

@@ -16,6 +16,8 @@ if TYPE_CHECKING:
     from discord.ext import commands
     from pytest_mock import MockerFixture
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.mark.asyncio
 class TestCogOwner(ContextMixin):

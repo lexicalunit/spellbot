@@ -28,6 +28,8 @@ from .mixins import BaseMixin
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.mark.asyncio
 class TestSpellBot(BaseMixin):

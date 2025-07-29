@@ -9,6 +9,8 @@ from spellbot.services import AppsService
 if TYPE_CHECKING:
     from tests.fixtures import Factories
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.mark.asyncio
 class TestServiceApps:

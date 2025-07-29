@@ -31,6 +31,8 @@ from tests.factories import (
     WatchFactory,
 )
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.mark.asyncio
 class TestServiceGames:

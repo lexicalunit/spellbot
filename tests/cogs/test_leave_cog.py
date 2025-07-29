@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from spellbot.client import SpellBot
     from spellbot.models import Game, User
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> LeaveGameCog:
