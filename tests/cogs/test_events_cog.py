@@ -22,6 +22,8 @@ if TYPE_CHECKING:
 
     from spellbot.client import SpellBot
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.fixture
 def cog(bot: SpellBot) -> EventsCog:

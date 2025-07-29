@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 
     from spellbot import SpellBot
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.fixture
 def cog(bot: SpellBot) -> WatchCog:

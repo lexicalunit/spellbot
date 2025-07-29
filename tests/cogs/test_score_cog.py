@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from spellbot import SpellBot
     from spellbot.models import Channel, User
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> ScoreCog:

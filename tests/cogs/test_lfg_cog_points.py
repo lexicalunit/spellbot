@@ -21,6 +21,8 @@ if TYPE_CHECKING:
     from spellbot import SpellBot
     from spellbot.settings import Settings
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.fixture
 def cog(bot: SpellBot) -> LookingForGameCog:

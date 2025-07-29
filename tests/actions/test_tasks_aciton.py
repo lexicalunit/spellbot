@@ -26,9 +26,11 @@ if TYPE_CHECKING:
     from spellbot.models import Channel, Guild
     from tests.fixtures import Factories
 
+pytestmark = pytest.mark.use_db
 
-@pytest_asyncio.fixture(autouse=True)  # type: ignore
-def use_log_level_info(caplog: pytest.LogCaptureFixture) -> None:
+
+@pytest_asyncio.fixture(autouse=True)
+async def use_log_level_info(caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level(logging.INFO)
 
 

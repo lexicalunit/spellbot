@@ -25,6 +25,8 @@ if TYPE_CHECKING:
     from spellbot.client import SpellBot
     from tests.fixtures import Factories
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> AdminCog:

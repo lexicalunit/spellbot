@@ -10,6 +10,8 @@ from spellbot.models import Block, Channel, Game, Guild, Queue, User, Watch
 from spellbot.services import UsersService
 from tests.factories import GameFactory, UserFactory
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.mark.asyncio
 class TestServiceUsers:
