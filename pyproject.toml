@@ -199,6 +199,7 @@ safe_licenses = [
   "3-Clause BSD License",
   "Apache 2.0",
   "Apache Software License",
+  "Apache-2.0 AND MIT",
   "Apache-2.0",
   "BSD License",
   "BSD-2-Clause",

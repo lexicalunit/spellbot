@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 if TYPE_CHECKING:
     from tests.fixtures import Factories
+
+pytestmark = pytest.mark.use_db
 
 
 class TestModelQueue:

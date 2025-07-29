@@ -76,13 +76,14 @@ async def factories() -> Factories:
     return Factories()
 
 
-@pytest_asyncio.fixture(autouse=True)
+@pytest_asyncio.fixture
 async def session_context(
     request: pytest.FixtureRequest,
     worker_id: str,
 ) -> contextvars.Context:
     event_loop = asyncio.get_event_loop()
-    if "nosession" not in request.keywords:
+
+    if "use_db" in request.keywords:  # pragma: no cover
         await initialize_connection("spellbot-test", use_transaction=True, worker_id=worker_id)
 
         test_session = db_session_maker()
@@ -128,15 +129,23 @@ async def session_context(
 
 
 @pytest.fixture(scope="session", autouse=True)
-def cleanup_databases(worker_id: str) -> Generator[None, None, None]:
+def cleanup_databases(
+    request: pytest.FixtureRequest,
+    worker_id: str,
+) -> Generator[None, None, None]:
     yield
-    delete_test_database(worker_id)
+    if "use_db" in request.keywords:  # pragma: no cover
+        delete_test_database(worker_id)
 
 
-@pytest_asyncio.fixture(autouse=True)  # type: ignore
-def use_session_context(session_context: contextvars.Context) -> None:
-    for cvar in session_context:
-        cvar.set(session_context[cvar])
+@pytest_asyncio.fixture(autouse=True)
+async def use_session_context(
+    request: pytest.FixtureRequest,
+    session_context: contextvars.Context,
+) -> None:
+    if "use_db" in request.keywords:  # pragma: no cover
+        for cvar in session_context:
+            cvar.set(session_context[cvar])
 
 
 @pytest_asyncio.fixture

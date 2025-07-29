@@ -11,6 +11,8 @@ from tests.mixins import InteractionMixin
 if TYPE_CHECKING:
     from freezegun.api import FrozenDateTimeFactory
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.mark.asyncio
 class TestCogAbout(InteractionMixin):

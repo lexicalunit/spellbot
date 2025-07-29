@@ -3,11 +3,15 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+import pytest
+
 from spellbot.database import DatabaseSession
 from spellbot.models import GameStatus, Play, Post
 
 if TYPE_CHECKING:
     from tests.fixtures import Factories
+
+pytestmark = pytest.mark.use_db
 
 
 class TestModelUser:
