@@ -10,6 +10,8 @@ if TYPE_CHECKING:
     from spellbot.models import Guild
     from tests.fixtures import Factories
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.mark.asyncio
 class TestServiceVerifies:

@@ -16,6 +16,8 @@ if TYPE_CHECKING:
     from spellbot.settings import Settings
     from tests.fixtures import Factories
 
+pytestmark = pytest.mark.use_db
+
 
 class TestModelGame:
     def test_game_to_dict(self, factories: Factories) -> None:

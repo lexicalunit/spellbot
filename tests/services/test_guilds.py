@@ -9,6 +9,8 @@ from spellbot.models import Guild, GuildAward
 from spellbot.services import GuildsService
 from tests.factories import GuildAwardFactory, GuildFactory
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest.mark.asyncio
 class TestServiceGuilds:

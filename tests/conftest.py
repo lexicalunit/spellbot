@@ -29,10 +29,7 @@ def pytest_collection_modifyitems(
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    config.addinivalue_line(
-        "markers",
-        "nosession: mark test to run without a database session",
-    )
+    config.addinivalue_line("markers", "use_db: mark tests that use the database")
 
 
 pytest_plugins = [

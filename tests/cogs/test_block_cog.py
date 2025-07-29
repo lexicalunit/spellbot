@@ -14,6 +14,8 @@ from tests.mixins import InteractionMixin
 if TYPE_CHECKING:
     from spellbot import SpellBot
 
+pytestmark = pytest.mark.use_db
+
 
 @pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> BlockCog:
