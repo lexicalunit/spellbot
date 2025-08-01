@@ -40,7 +40,6 @@ from tests.factories import (
 from tests.mocks import build_author, build_channel, build_guild, build_interaction, build_message
 
 if TYPE_CHECKING:
-    from asyncio import AbstractEventLoop
     from collections.abc import Awaitable, Callable, Generator
 
     import discord
@@ -156,10 +155,10 @@ async def bot() -> SpellBot:
 
 @pytest.fixture
 def client(
-    event_loop: AbstractEventLoop,
     aiohttp_client: Callable[..., Awaitable[TestClient[web.Request, web.Application]]],
 ) -> TestClient[web.Request, web.Application]:
     app = build_web_app()
+    event_loop = asyncio.get_event_loop()
     return event_loop.run_until_complete(aiohttp_client(app))
 
 
@@ -249,10 +248,7 @@ def cli() -> Generator[MagicMock, None, None]:
     ):
         mock_loop = MagicMock(name="loop")
         mock_loop.run_forever = MagicMock(name="run_forever")
-        mock_asyncio.new_event_loop = MagicMock(
-            return_value=mock_loop,
-            name="new_event_loop",
-        )
+        mock_asyncio.new_event_loop = MagicMock(return_value=mock_loop, name="new_event_loop")
         mock_bot = MagicMock(name="bot")
         mock_bot.run = MagicMock(name="run")
         mock_build_bot.return_value = mock_bot
