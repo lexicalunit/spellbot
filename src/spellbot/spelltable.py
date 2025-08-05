@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from enum import Enum
@@ -86,8 +87,8 @@ def spelltable_game_type(format: GameFormat) -> SpellTableGameTypes:  # noqa: C9
 
 
 def route_intercept(route: Route) -> Any:
-    if route.request.resource_type in {"image", "media", "font", "stylesheet"}:
-        return route.abort()
+    # if route.request.resource_type in {"image", "media", "font", "stylesheet"}:
+    #     return route.abort()
     parsed_url = urlparse(route.request.url)
     hostname = parsed_url.hostname or ""
     if hostname == "spelltable.api.bi.wizards.com":
@@ -129,7 +130,7 @@ async def generate_spelltable_link(game: GameDict) -> str | None:  # pragma: no 
     return await generate_spelltable_link_headless(game)
 
 
-async def generate_spelltable_link_headless(  # noqa: PLR0915 # pragma: no cover
+async def generate_spelltable_link_headless(  # noqa: C901,PLR0912,PLR0915 # pragma: no cover
     game: GameDict,
 ) -> str | None:
     """
@@ -189,8 +190,25 @@ async def generate_spelltable_link_headless(  # noqa: PLR0915 # pragma: no cover
                 await page.click("button[type='submit']", timeout=TIMEOUT_MS * 2)
                 await page.wait_for_selector("text=Create Game", timeout=TIMEOUT_MS)
 
+                # attempt to accept cookies if there is a prompt to do so
+                try:
+                    # await page.wait_for_selector("button[type='submit']", timeout=TIMEOUT_MS)
+                    await page.locator("button").get_by_text("Accept All").click(timeout=TIMEOUT_MS)
+                except Exception:
+                    logger.warning("failed to accept cookies, continuing: (user: %s)", username)
+
                 # bring up the create game modal
-                await page.click("text=Create Game", timeout=TIMEOUT_MS)
+                retries = 0
+                while retries < 10:
+                    try:
+                        button = page.locator("button").get_by_text("Create Game", exact=False)
+                        await button.click(timeout=1000)
+                        break
+                    except Exception:
+                        retries += 1
+                        if retries >= 10:
+                            raise
+                        await asyncio.sleep(1)
 
                 # check that the create button is clickable (that we're not rate limited)
                 button = page.locator("button").get_by_text("Create", exact=True)
