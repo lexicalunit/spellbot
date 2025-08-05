@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updates to all dependencies.
+- Ensure that we accept the privacy policy when creating SpellTable games.
+- More robust click handling for Create Game button.
+
 ## [v15.3.0](https://github.com/lexicalunit/spellbot/releases/tag/v15.3.0) - 2025-07-02
 
 ### Added
