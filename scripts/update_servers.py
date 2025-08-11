@@ -4,7 +4,7 @@ from __future__ import annotations
 from itertools import islice
 from os.path import realpath
 from pathlib import Path
-from typing import TYPE_CHECKING, NotRequired, TypedDict, TypeVar
+from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 import yaml
 
@@ -27,10 +27,7 @@ class Server(TypedDict):
     light_logo: NotRequired[str]  # server logo for light mode
 
 
-T = TypeVar("T")
-
-
-def batched(iterable: Iterable[T], n: int) -> Generator[Sequence[T], None, None]:
+def batched[T](iterable: Iterable[T], n: int) -> Generator[Sequence[T], None, None]:
     it = iter(iterable)
     while True:
         batch = list(islice(it, n))
