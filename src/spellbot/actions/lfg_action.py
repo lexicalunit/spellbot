@@ -135,6 +135,7 @@ class LookingForGameAction(BaseAction):
                 format=format,
                 bracket=bracket,
                 service=service,
+                blind=bool(self.channel_data["blind_games"]),
             )
 
         assert message_xid
@@ -383,6 +384,7 @@ class LookingForGameAction(BaseAction):
             bracket=game_bracket.value,
             service=game_service.value,
             create_new=True,
+            blind=bool(self.channel_data["blind_games"]),
         )
         game_data = await self.services.games.to_dict()
         _, suggested_vc = await self.make_game_ready(game_data, player_xids)
