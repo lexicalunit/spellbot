@@ -493,6 +493,15 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
+    async def set_blind_games(self, value: bool) -> None:
+        assert self.interaction.channel_id is not None
+        setting = await self.services.channels.set_blind_games(self.interaction.channel_id, value)
+        await safe_send_channel(
+            self.interaction,
+            f"Hidden player names for this channel has been set to: {setting}",
+            ephemeral=True,
+        )
+
     # TODO: Refactor how confirmation/points/ELO works.
     # async def set_require_confirmation(self, value: bool) -> None:
     #     assert self.interaction.channel_id is not None

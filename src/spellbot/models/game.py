@@ -54,6 +54,7 @@ class GameDict(TypedDict):
     requires_confirmation: bool
     password: str | None
     rules: str | None
+    blind: bool
 
 
 @dataclass
@@ -188,6 +189,13 @@ class Game(Base):
         doc="Configuration for requiring confirmation on points reporting",
     )
     rules = Column(String(255), nullable=True, index=True, doc="Additional rules for this game")
+    blind = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="Configuration for blind games",
+    )
 
     posts = relationship(
         "Post",
@@ -481,7 +489,16 @@ class Game(Base):
         )
         if self.rules:
             embed.add_field(name="⚠️ Additional Rules:", value=self.rules, inline=False)
-        if self.players:
+        if self.blind and not dm:
+            joined = len(self.players)
+            plural = "s" if joined > 1 else ""
+            verb = "is" if joined == 1 else "are"
+            embed.add_field(
+                name="Players",
+                value=f"**{joined} player name{plural} {verb} hidden**",
+                inline=False,
+            )
+        if self.players and not (self.blind and not dm):
             embed.add_field(name="Players", value=self.embed_players, inline=False)
         embed.add_field(name="Format", value=self.format_name)
         if self.bracket != GameBracket.NONE.value:
@@ -545,6 +562,7 @@ class Game(Base):
             "requires_confirmation": self.channel.require_confirmation,
             "password": self.password,
             "rules": self.rules,
+            "blind": self.blind,
         }
 
 

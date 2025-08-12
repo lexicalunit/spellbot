@@ -133,6 +133,7 @@ class GamesService:
         bracket: int,
         service: int,
         create_new: bool = False,
+        blind: bool = False,
     ) -> bool:
         existing: Game | None = None
         if not create_new:
@@ -164,6 +165,7 @@ class GamesService:
                 bracket=bracket,
                 service=service,
                 requires_confirmation=channel.require_confirmation,
+                blind=blind,
             )
             DatabaseSession.add(game)
             DatabaseSession.commit()

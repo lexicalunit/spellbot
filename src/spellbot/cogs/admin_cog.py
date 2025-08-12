@@ -303,6 +303,17 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_show_points(setting)
 
+    @set_group.command(
+        name="blind_games",
+        description="Should player names be hidden in public game posts?",
+    )
+    @app_commands.describe(setting="Setting")
+    @tracer.wrap(name="interaction", resource="set_blind_games")
+    async def blind_games(self, interaction: discord.Interaction, setting: bool) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.set_blind_games(setting)
+
     # TODO: I need to completely rework how the ELO system works.
     # @set_group.command(
     #     name="require_confirmation",
