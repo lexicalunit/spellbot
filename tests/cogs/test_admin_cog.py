@@ -779,6 +779,19 @@ class TestCogAdminVoiceInvite(InteractionMixin):
 
 
 @pytest.mark.asyncio
+class TestCogAdminBlindGames(InteractionMixin):
+    @pytest.mark.parametrize("setting", [True, False])
+    async def test_set_blind_games(self, cog: AdminCog, setting: bool) -> None:
+        await self.run(cog.blind_games, setting=setting)
+        self.interaction.response.send_message.assert_called_once_with(
+            f"Hidden player names for this channel has been set to: {setting}",
+            ephemeral=True,
+        )
+        channel = DatabaseSession.query(Channel).one()
+        assert channel.blind_games is setting
+
+
+@pytest.mark.asyncio
 class TestCogAdminMythicTrack(InteractionMixin):
     @pytest.mark.parametrize("initial_setting", [True, False])
     async def test_setup_mythic_track(self, cog: AdminCog, initial_setting: bool) -> None:
