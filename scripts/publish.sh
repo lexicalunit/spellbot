@@ -87,6 +87,7 @@ run "uv build"
 run "git commit -am 'Release $VERSION'"
 
 # make sure that the docker build works before publishing
+TAG="lexicalunit/spellbot"
 run "DOCKER_BUILDKIT=0 docker buildx build --ulimit nofile=1024000:1024000 --platform linux/amd64 -t '$TAG' ."
 
 # publish the release; assumes you've set up non-interactive publishing previously running:
@@ -102,6 +103,5 @@ run "git tag '$VERSION'"
 run "git push --tags origin main"
 
 # push updates to docker hub
-TAG="lexicalunit/spellbot"
 run "docker push '$TAG'"
 echo "Note: Any changes to README.md must be made manually at https://hub.docker.com/r/lexicalunit/spellbot ..."
