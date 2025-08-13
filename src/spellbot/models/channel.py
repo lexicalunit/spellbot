@@ -38,6 +38,7 @@ class ChannelDict(TypedDict):
     delete_expired: bool
     show_points: bool
     require_confirmation: bool
+    blind_games: bool
 
 
 class Channel(Base):
@@ -175,6 +176,13 @@ class Channel(Base):
         server_default=false(),
         doc="Configuration for creating voice invites for games in this channel.",
     )
+    blind_games = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="Configuration for creating blind games in this channel.",
+    )
 
     guild = relationship(
         "Guild",
@@ -209,4 +217,5 @@ class Channel(Base):
             "delete_expired": self.delete_expired,
             "show_points": self.show_points,
             "require_confirmation": self.require_confirmation,
+            "blind_games": self.blind_games,
         }

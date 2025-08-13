@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds support for blind games: Player names are hidden; blocked players are still respected.
+
 ## [v15.3.1](https://github.com/lexicalunit/spellbot/releases/tag/v15.3.1) - 2025-08-04
 
 ### Changed
