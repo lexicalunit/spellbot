@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 # datadog, see: https://github.com/DataDog/agent-linux-install-script
 ENV DD_API_KEY="fake"
@@ -24,8 +24,9 @@ COPY conf/supervisord.conf /usr/local/etc/
 COPY src /spellbot/src
 COPY LICENSE.md README.md pyproject.toml uv.lock /spellbot/
 RUN chmod +x /start-spellbot.sh /start-spellapi.sh /start.sh \
-    && pip install --no-cache-dir ./spellbot \
-    && playwright install --with-deps chromium
-EXPOSE 80
+    && uv sync --no-cache --directory ./spellbot
+ENV PATH="/spellbot/.venv/bin:$PATH"
+RUN playwright install --with-deps chromium
 
-CMD ["supervisord"]
+EXPOSE 80
+CMD ["supervisord", "-c", "/usr/local/etc/supervisord.conf"]
