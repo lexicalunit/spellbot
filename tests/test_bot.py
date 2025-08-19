@@ -34,11 +34,12 @@ pytestmark = pytest.mark.use_db
 @pytest.mark.asyncio
 class TestSpellBot(BaseMixin):
     @pytest.mark.parametrize(
-        ("mock_games", "game", "factory"),
+        ("mock_games", "game", "factory", "interactive"),
         [
             pytest.param(
                 True,
                 {},
+                None,
                 None,
                 id="mock-games",
             ),
@@ -46,17 +47,20 @@ class TestSpellBot(BaseMixin):
                 False,
                 {"service": GameService.SPELLTABLE.value},
                 "generate_spelltable_link",
+                False,
                 id="spellbot",
             ),
             pytest.param(
                 False,
                 {"service": GameService.TABLE_STREAM.value},
                 "generate_tablestream_link",
+                None,
                 id="tablestream",
             ),
             pytest.param(
                 False,
                 {"service": GameService.NOT_ANY.value},
+                None,
                 None,
                 id="no-service",
             ),
@@ -68,6 +72,7 @@ class TestSpellBot(BaseMixin):
         mock_games: bool,
         game: GameDict,
         factory: str | None,
+        interactive: bool | None,
         mocker: MockerFixture,
     ) -> None:
         bot.mock_games = mock_games
@@ -75,7 +80,8 @@ class TestSpellBot(BaseMixin):
             mock = mocker.patch(f"spellbot.client.{factory}", AsyncMock())
         response = await bot.create_game_link(game)
         if factory:
-            mock.assert_called_once_with(game)
+            kwargs = {"interactive": interactive} if interactive is not None else {}
+            mock.assert_called_once_with(game, **kwargs)
         if mock_games:
             assert response.link is not None
             assert response.link.startswith("http://exmaple.com/game/")
