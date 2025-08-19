@@ -35,6 +35,7 @@ class SpellBot(AutoShardedBot):
     def __init__(
         self,
         mock_games: bool = False,
+        interactive: bool = False,
         create_connection: bool = True,
     ) -> None:
         intents = discord.Intents().default()
@@ -49,6 +50,7 @@ class SpellBot(AutoShardedBot):
             application_id=settings.BOT_APPLICATION_ID,
         )
         self.mock_games = mock_games
+        self.interactive = interactive
         self.create_connection = create_connection
         self.guild_locks = TTLCache[int, asyncio.Lock](maxsize=100, ttl=3600)  # 1 hr
 
@@ -90,7 +92,7 @@ class SpellBot(AutoShardedBot):
         service = game.get("service")
         if service == GameService.SPELLTABLE.value:
             if settings.ENABLE_SPELLTABLE:
-                link = await generate_spelltable_link(game)
+                link = await generate_spelltable_link(game, interactive=self.interactive)
                 return GameLinkDetails(link)
             # fallback to tablestream if spelltable is disabled
             service = GameService.TABLE_STREAM.value
@@ -191,7 +193,15 @@ class SpellBot(AutoShardedBot):
             await games.delete_games([game_id])
 
 
-def build_bot(mock_games: bool = False, create_connection: bool = True) -> SpellBot:
-    bot = SpellBot(mock_games=mock_games, create_connection=create_connection)
+def build_bot(
+    mock_games: bool = False,
+    interactive: bool = False,
+    create_connection: bool = True,
+) -> SpellBot:
+    bot = SpellBot(
+        mock_games=mock_games,
+        interactive=interactive,
+        create_connection=create_connection,
+    )
     setup_metrics()
     return bot

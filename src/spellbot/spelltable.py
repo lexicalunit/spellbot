@@ -125,13 +125,17 @@ async def prevent_navigation(page: Page) -> None:
     )
 
 
-async def generate_spelltable_link(game: GameDict) -> str | None:  # pragma: no cover
+async def generate_spelltable_link(
+    game: GameDict,
+    interactive: bool = False,
+) -> str | None:  # pragma: no cover
     # In 2024 WotC broke the SpellTable API, so we have to use headless mode now.
-    return await generate_spelltable_link_headless(game)
+    return await generate_spelltable_link_headless(game, interactive=interactive)
 
 
 async def generate_spelltable_link_headless(  # noqa: C901,PLR0912,PLR0915 # pragma: no cover
     game: GameDict,
+    interactive: bool = False,
 ) -> str | None:
     """
     Generate a SpellTable link using a headless browser.
@@ -166,7 +170,7 @@ async def generate_spelltable_link_headless(  # noqa: C901,PLR0912,PLR0915 # pra
         async with async_playwright() as p:
             try:
                 # launch a headless browser
-                browser = await p.chromium.launch(timeout=TIMEOUT_MS)
+                browser = await p.chromium.launch(timeout=TIMEOUT_MS, headless=not interactive)
                 page = await browser.new_page()
 
                 # intercept unnecessary requests and prevent navigation to the game,
@@ -188,6 +192,13 @@ async def generate_spelltable_link_headless(  # noqa: C901,PLR0912,PLR0915 # pra
                 await page.fill("input[name='email']", username, timeout=TIMEOUT_MS)
                 await page.fill("input[name='password']", password, timeout=TIMEOUT_MS)
                 await page.click("button[type='submit']", timeout=TIMEOUT_MS * 2)
+
+                # authorize login
+                try:
+                    await page.locator("button").get_by_text("Authorize").click(timeout=TIMEOUT_MS)
+                except Exception:
+                    logger.warning("failed to authorize login, continuing: (user: %s)", username)
+
                 await page.wait_for_selector("text=Create Game", timeout=TIMEOUT_MS)
 
                 # attempt to accept cookies if there is a prompt to do so

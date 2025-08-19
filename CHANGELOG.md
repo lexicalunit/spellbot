@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Support for interactive chrome headless mode.
+
+### Fixed
+
+- Click the "Authorize" button when creating a SpellTable game.
+
 ## [v15.6.0](https://github.com/lexicalunit/spellbot/releases/tag/v15.6.0) - 2025-08-12
 
 ### Added
