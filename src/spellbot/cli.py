@@ -67,6 +67,13 @@ if not getenv("DISABLE_UVLOOP", ""):  # pragma: no cover
     required=False,
     help="Use the given port number to serve the API",
 )
+@click.option(
+    "-i",
+    "--interactive",
+    default=False,
+    is_flag=True,
+    help="Interactive headless chrome mode",
+)
 @click.version_option(version=__version__)
 def main(
     log_level: str | None,
@@ -75,6 +82,7 @@ def main(
     mock_games: bool,
     api: bool,
     port: int | None = None,
+    interactive: bool = False,
 ) -> None:
     if dev:
         hupper.start_reloader("spellbot.main")
@@ -123,5 +131,5 @@ def main(
         from .client import build_bot
 
         assert settings.BOT_TOKEN is not None
-        bot = build_bot(mock_games=mock_games)
+        bot = build_bot(mock_games=mock_games, interactive=interactive)
         bot.run(settings.BOT_TOKEN)
