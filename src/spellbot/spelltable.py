@@ -251,7 +251,7 @@ async def generate_spelltable_link_headless(  # noqa: C901,PLR0912,PLR0915 # pra
                     logger.warning("failed to set room name, continuing: (user: %s)", username)
 
                 # intercept the request to create the game from the SpellTable API
-                async with page.expect_response("**/createGame", timeout=TIMEOUT_MS) as info:
+                async with page.expect_response("**/createGame", timeout=2 * TIMEOUT_MS) as info:
                     await (
                         page.locator("button")
                         .get_by_text("Create", exact=True)
