@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 from enum import Enum
+from pathlib import Path
 from random import randint
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 from aiohttp.client_exceptions import ClientError
 from aiohttp_retry import ExponentialRetry, RetryClient
-from playwright.async_api import Browser, Page, Route, async_playwright
+from playwright.async_api import Browser, Page, Playwright, Route, async_playwright
 
 from spellbot import __version__
 from spellbot.enums import GameFormat
@@ -22,13 +24,15 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-LOGIN = (
-    "https://myaccounts.wizards.com/login?"
-    "redirectTo=https://spelltable.wizards.com/lobby?login=true"
-)
+LOBBY = "https://spelltable.wizards.com/lobby"
+LOGIN = f"https://myaccounts.wizards.com/login?redirectTo={LOBBY}?login=true"
 TIMEOUT_S = 5  # seconds
 TIMEOUT_MS = TIMEOUT_S * 1000  # milliseconds
 ROUND_ROBIN = None
+STATE_DIR = Path("states")
+STATE_DIR.mkdir(parents=True, exist_ok=True)
+PLAYWRIGHT: Playwright | None = None
+BROWSER: Browser | None = None
 
 
 class SpellTableGameTypes(Enum):
@@ -87,6 +91,7 @@ def spelltable_game_type(format: GameFormat) -> SpellTableGameTypes:  # noqa: C9
 
 
 def route_intercept(route: Route) -> Any:
+    # Note: Not loading images/media/fonts/stylesheets broke the script. Disable for now.
     # if route.request.resource_type in {"image", "media", "font", "stylesheet"}:
     #     return route.abort()
     parsed_url = urlparse(route.request.url)
@@ -133,7 +138,62 @@ async def generate_spelltable_link(
     return await generate_spelltable_link_headless(game, interactive=interactive)
 
 
-async def generate_spelltable_link_headless(  # noqa: C901,PLR0912,PLR0915 # pragma: no cover
+async def init_browser(interactive: bool = False) -> Browser:
+    global PLAYWRIGHT, BROWSER  # noqa: PLW0603
+    if PLAYWRIGHT is None:
+        PLAYWRIGHT = await async_playwright().start()
+    if BROWSER is None:
+        BROWSER = await PLAYWRIGHT.chromium.launch(headless=not interactive)
+    return BROWSER
+
+
+async def get_page_for_account(
+    username: str,
+    password: str,
+    interactive: bool = False,
+) -> Page:
+    browser = await init_browser(interactive)
+
+    state_file = STATE_DIR / f"{username}.json"
+    if state_file.exists():
+        context = await browser.new_context(storage_state=str(state_file))
+        page = await context.new_page()
+    else:
+        context = await browser.new_context()
+        page = await context.new_page()
+
+    # intercept unnecessary requests and prevent navigation to the game,
+    # this prevents the bot from joining the game itself
+    await prevent_navigation(page)
+    await page.route("**/*", route_intercept)
+
+    # attempt to load the lobby page directly (if we're already logged in)
+    with contextlib.suppress(Exception):
+        await page.goto(LOBBY, timeout=TIMEOUT_MS)
+        await page.wait_for_selector("text=Create Game", timeout=TIMEOUT_MS)
+        return page
+
+    # otherwise, try to load the login page and log in
+    await page.goto(LOGIN, timeout=TIMEOUT_MS)
+    await page.fill("input[name='email']", username, timeout=TIMEOUT_MS)
+    await page.fill("input[name='password']", password, timeout=TIMEOUT_MS)
+    await page.click("button[type='submit']", timeout=TIMEOUT_MS * 2)
+
+    # attempt to accept cookies if there is a prompt to do so
+    with contextlib.suppress(Exception):
+        await page.locator("button").get_by_text("Accept All").click(timeout=TIMEOUT_MS / 2)
+
+    # attempt to authorize SpellTable to access our email address if prompted
+    with contextlib.suppress(Exception):
+        await page.locator("button").get_by_text("Authorize").click(timeout=TIMEOUT_MS / 2)
+
+    # wait for the lobby page to load and save our state
+    await page.wait_for_selector("text=Create Game", timeout=TIMEOUT_MS)
+    await context.storage_state(path=str(state_file))
+    return page
+
+
+async def generate_spelltable_link_headless(  # pragma: no cover
     game: GameDict,
     interactive: bool = False,
 ) -> str | None:
@@ -157,120 +217,60 @@ async def generate_spelltable_link_headless(  # noqa: C901,PLR0912,PLR0915 # pra
             strict=True,
         )
     )
+
+    # if we haven't started round robin, pick a random starting point
     if ROUND_ROBIN is None:
         ROUND_ROBIN = randint(0, len(accounts) - 1)  # noqa: S311
-    username, password = accounts[ROUND_ROBIN % len(accounts)]
-    ROUND_ROBIN += 1
 
-    format_option = spelltable_game_type(GameFormat(game["format"]))
-
-    browser: Browser | None = None
+    retries = 3
     link: str | None = None
-    try:
-        async with async_playwright() as p:
-            try:
-                # launch a headless browser
-                browser = await p.chromium.launch(timeout=TIMEOUT_MS, headless=not interactive)
-                page = await browser.new_page()
+    for attempt in range(retries):
+        # round robin through the accounts, pick a new account each time
+        username, password = accounts[ROUND_ROBIN % len(accounts)]
+        ROUND_ROBIN += 1
 
-                # intercept unnecessary requests and prevent navigation to the game,
-                # this prevents the bot from joining the game itself
-                await prevent_navigation(page)
-                await page.route("**/*", route_intercept)
+        try:
+            page = await get_page_for_account(username, password, interactive=interactive)
 
-                # load the login page
-                await page.goto(LOGIN, timeout=TIMEOUT_MS)
+            # bring up the create game modal
+            await page.locator("button").get_by_text("Create Game", exact=False).click()
 
-                # attempt to accept cookies if there is a prompt to do so
-                try:
-                    await page.wait_for_selector("button[type='submit']", timeout=TIMEOUT_MS)
-                    await page.locator("button").get_by_text("Accept All").click(timeout=TIMEOUT_MS)
-                except Exception:
-                    logger.warning("failed to accept cookies, continuing: (user: %s)", username)
+            # check that the create button is clickable (that we're not rate limited)
+            button = page.locator("button").get_by_text("Create", exact=True)
+            button_class = await button.get_attribute("class") or ""
+            if "hover" not in button_class:
+                logger.warning("User is rate-limited: %s", username)
+                return None
 
-                # login
-                await page.fill("input[name='email']", username, timeout=TIMEOUT_MS)
-                await page.fill("input[name='password']", password, timeout=TIMEOUT_MS)
-                await page.click("button[type='submit']", timeout=TIMEOUT_MS * 2)
+            # attempt to set the format drop down
+            format_option = spelltable_game_type(GameFormat(game["format"]))
+            if format_option != SpellTableGameTypes.Commander:
+                with contextlib.suppress(Exception):
+                    await page.select_option("#modal-container select", format_option.value)
 
-                # authorize login
-                try:
-                    await page.locator("button").get_by_text("Authorize").click(timeout=TIMEOUT_MS)
-                except Exception:
-                    logger.warning("failed to authorize login, continuing: (user: %s)", username)
+            # attempt to set the room name
+            with contextlib.suppress(Exception):
+                await page.fill("input[placeholder='Name']", f"SB{game['id']}")
 
-                await page.wait_for_selector("text=Create Game", timeout=TIMEOUT_MS)
+            # intercept the request to create the game from the SpellTable API
+            async with page.expect_response("**/createGame", timeout=2 * TIMEOUT_MS) as info:
+                await button.click()
 
-                # attempt to accept cookies if there is a prompt to do so
-                try:
-                    # await page.wait_for_selector("button[type='submit']", timeout=TIMEOUT_MS)
-                    await page.locator("button").get_by_text("Accept All").click(timeout=TIMEOUT_MS)
-                except Exception:
-                    logger.warning("failed to accept cookies, continuing: (user: %s)", username)
+            resp = await info.value
+            data = await resp.json()
+            link = f"https://spelltable.wizards.com/game/{data['id']}"
+            await page.context.close()
+            break
 
-                # bring up the create game modal
-                retries = 0
-                while retries < 10:
-                    try:
-                        button = page.locator("button").get_by_text("Create Game", exact=False)
-                        await button.click(timeout=1000)
-                        break
-                    except Exception:
-                        retries += 1
-                        if retries >= 10:
-                            raise
-                        await asyncio.sleep(1)
+        except Exception as ex:
+            add_span_error(ex)
+            logger.exception(
+                "error: unexpected exception (attempt %s, user: %s):",
+                attempt + 1,
+                username,
+            )
+            await asyncio.sleep(2**attempt)
 
-                # check that the create button is clickable (that we're not rate limited)
-                button = page.locator("button").get_by_text("Create", exact=True)
-                button_class = await button.get_attribute("class") or ""
-                if "hover" not in button_class:
-                    logger.warning("spelltable user is rate limited: (user: %s)", username)
-                    return None
-
-                # attempt to set the format drop down
-                if format_option != SpellTableGameTypes.Commander:
-                    try:
-                        await page.select_option(
-                            "#modal-container select",
-                            format_option.value,
-                            timeout=TIMEOUT_MS,
-                        )
-                    except Exception:
-                        logger.warning("failed to set format, continuing: (user: %s)", username)
-
-                # attempt to set the room name
-                try:
-                    await page.wait_for_selector("input[placeholder='Name']", timeout=TIMEOUT_MS)
-                    await page.fill(
-                        "input[placeholder='Name']",
-                        f"SB{game['id']}",
-                        timeout=TIMEOUT_MS,
-                    )
-                except Exception:
-                    logger.warning("failed to set room name, continuing: (user: %s)", username)
-
-                # intercept the request to create the game from the SpellTable API
-                async with page.expect_response("**/createGame", timeout=2 * TIMEOUT_MS) as info:
-                    await (
-                        page.locator("button")
-                        .get_by_text("Create", exact=True)
-                        .click(timeout=TIMEOUT_MS)
-                    )
-
-                # pull out the game link from the intercepted response
-                resp = await info.value
-                data = await resp.json()
-                link = f"https://spelltable.wizards.com/game/{data['id']}"
-            except Exception as ex:
-                add_span_error(ex)
-                logger.exception("error: unexpected exception: (user: %s)", username)
-            finally:
-                if browser:
-                    await browser.close()
-    except Exception as ex:
-        add_span_error(ex)
-        logger.exception("error: unexpected exception: (user: %s)", username)
     return link
 
 
