@@ -43,12 +43,10 @@ class SpellBot(AutoShardedBot):
         intents.message_content = True
         intents.messages = True
         logger.info("intents.value: %s", intents.value)
-        super().__init__(
-            command_prefix="!",
-            help_command=None,
-            intents=intents,
-            application_id=settings.BOT_APPLICATION_ID,
-        )
+        kwargs = {}
+        if settings.BOT_APPLICATION_ID is not None:
+            kwargs["application_id"] = int(settings.BOT_APPLICATION_ID)
+        super().__init__(command_prefix="!", help_command=None, intents=intents, **kwargs)
         self.mock_games = mock_games
         self.interactive = interactive
         self.create_connection = create_connection
