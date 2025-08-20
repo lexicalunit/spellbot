@@ -36,6 +36,7 @@ SECURITY.md
 spellbot-sm.png
 spellbot.png
 sql/
+states/
 tests/
 tmp/
 yarn-debug.log*
