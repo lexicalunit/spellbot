@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Much faster SpellTable game creation using cached page states and browser.
+- Updated all dependencies, including an update to discord.py v2.6.0.
 
 ## [v15.6.3](https://github.com/lexicalunit/spellbot/releases/tag/v15.6.3) - 2025-08-19
 
