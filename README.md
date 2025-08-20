@@ -173,7 +173,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [datadog]: https://app.datadoghq.com/apm/home
 [discord-badge]: https://github.com/lexicalunit/spellbot/assets/1903876/871aca88-3636-4c38-bcc1-f4093f89146f
 [discord-invite]: https://discord.gg/HuzTQYpYH4
-[discord-py-badge]: https://img.shields.io/badge/discord.py-2.1.0-blue
+[discord-py-badge]: https://img.shields.io/badge/discord.py-2.x.x-blue
 [discord-py]: https://github.com/Rapptz/discord.py
 [docker-badge]: https://img.shields.io/docker/pulls/lexicalunit/spellbot.svg
 [docker-hub]: https://hub.docker.com/r/lexicalunit/spellbot
