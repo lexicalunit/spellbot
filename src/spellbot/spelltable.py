@@ -138,7 +138,7 @@ async def generate_spelltable_link(
     return await generate_spelltable_link_headless(game, interactive=interactive)
 
 
-async def init_browser(interactive: bool = False) -> Browser:
+async def init_browser(interactive: bool = False) -> Browser:  # pragma: no cover
     global PLAYWRIGHT, BROWSER  # noqa: PLW0603
     if PLAYWRIGHT is None:
         PLAYWRIGHT = await async_playwright().start()
@@ -147,7 +147,7 @@ async def init_browser(interactive: bool = False) -> Browser:
     return BROWSER
 
 
-async def get_page_for_account(
+async def get_page_for_account(  # pragma: no cover
     username: str,
     password: str,
     interactive: bool = False,
