@@ -264,10 +264,13 @@ async def generate_spelltable_link_headless(  # pragma: no cover
 
         except Exception as ex:
             add_span_error(ex)
-            logger.exception(
-                "error: unexpected exception (attempt %s, user: %s):",
+            if attempt + 1 == retries:
+                raise
+            logger.warning(
+                "warning: unexpected exception (attempt %s, user: %s):",
                 attempt + 1,
                 username,
+                exc_info=True,
             )
             await asyncio.sleep(2**attempt)
 
