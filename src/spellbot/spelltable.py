@@ -270,7 +270,6 @@ async def generate_spelltable_link_headless(  # pragma: no cover
                 "warning: unexpected exception (attempt %s, user: %s):",
                 attempt + 1,
                 username,
-                exc_info=True,
             )
             await asyncio.sleep(2**attempt)
 
