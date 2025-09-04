@@ -10,12 +10,6 @@ if [[ -n $DD_API_KEY ]] && [[ -n $DD_APP_KEY ]]; then
     echo "running with ddtrace..."
     CMD="ddtrace-run "
 
-    while ! curl http://localhost:8126/info >/dev/null 2>&1; do
-        echo "waiting for statsd server to start..."
-        sleep 1
-    done
-    echo "statsd server is up!"
-
     DD_VERSION="$(spellbot --version)"
     export DD_VERSION
 else

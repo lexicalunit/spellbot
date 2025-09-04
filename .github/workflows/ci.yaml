@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'docs/**'
+      - "docs/**"
       - CHANGELOG.md
   pull_request:
     branches:
       - main
     paths-ignore:
-      - 'docs/**'
+      - "docs/**"
       - CHANGELOG.md
 
 jobs:
@@ -27,7 +27,8 @@ jobs:
       matrix:
         python-version: ["3.12"]
         postgres-version: ["15"]
-        database-url: ["postgresql+psycopg://postgres:postgres@localhost:5432/postgres"]
+        database-url:
+          ["postgresql+psycopg://postgres:postgres@localhost:5432/postgres"]
 
     services:
       postgres:
@@ -99,3 +100,12 @@ jobs:
 
         with:
           env_vars: PYTHON,POSTGRES,DB_URL
+
+  deploy-staging:
+    name: Deploy to staging
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: staging
+    secrets: inherit
