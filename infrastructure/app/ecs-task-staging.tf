@@ -1,0 +1,235 @@
+# ECS Task Definition - Staging
+resource "aws_ecs_task_definition" "spellbot_staging" {
+  family                   = "spellbot-staging"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "2048" # 1 vCPU (smaller for staging)
+  memory                   = "6144" # 3 GB (smaller for staging)
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  runtime_platform {
+    cpu_architecture = "ARM64"
+  }
+  container_definitions = jsonencode([
+    {
+      name      = "datadog-agent"
+      image     = "gcr.io/datadoghq/agent:7"
+      essential = false
+      portMappings = [
+        {
+          containerPort = 8125
+          protocol      = "udp"
+        },
+        {
+          containerPort = 8126
+          protocol      = "tcp"
+      }]
+      environment = [
+        {
+          name  = "DD_SITE"
+          value = "datadoghq.com"
+        },
+        {
+          name  = "ECS_FARGATE"
+          value = "true"
+        },
+        {
+          name  = "DD_ENV"
+          value = "staging"
+        },
+        {
+          name  = "DD_DOGSTATSD_NON_LOCAL_TRAFFIC"
+          value = "true"
+        },
+        {
+          name  = "DD_APM_ENABLED"
+          value = "true"
+        },
+        {
+          name  = "DD_APM_NON_LOCAL_TRAFFIC"
+          value = "true"
+        }
+      ]
+      secrets = [
+        {
+          name      = "DD_API_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_API_KEY::"
+        },
+        {
+          name      = "DD_APP_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_APP_KEY::"
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.spellbot_staging.name
+          "awslogs-region"        = "us-east-1"
+          "awslogs-stream-prefix" = "datadog"
+        }
+      }
+    },
+    {
+      name      = "spellbot"
+      image     = "${data.aws_ssm_parameter.spellbot_staging_image_uri.value}"
+      essential = true
+
+      environment = [
+        {
+          name  = "DD_SERVICE"
+          value = "spellbot"
+        },
+        {
+          name  = "DD_TRACE_AGENT_HOSTNAME"
+          value = "localhost"
+        },
+        {
+          name  = "DD_TRACE_AGENT_PORT"
+          value = "8126"
+        },
+        {
+          name  = "DD_ENV"
+          value = "staging"
+        },
+        {
+          name  = "ENVIRONMENT"
+          value = "staging"
+        },
+        {
+          name  = "REDISCLOUD"
+          value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}/1"
+        }
+      ]
+      secrets = [
+        {
+          name      = "DD_API_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_API_KEY::"
+        },
+        {
+          name      = "DD_APP_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_APP_KEY::"
+        },
+        {
+          name      = "BOT_TOKEN"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:BOT_TOKEN::"
+        },
+        {
+          name      = "SPELLTABLE_USERS"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_USERS::"
+        },
+        {
+          name      = "SPELLTABLE_PASSES"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_PASSES::"
+        },
+        {
+          name      = "SPELLTABLE_AUTH_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_AUTH_KEY::"
+        },
+        {
+          name      = "DATABASE_URL"
+          valueFrom = "${data.aws_secretsmanager_secret.staging_db_password.arn}:DB_URL::"
+        }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.spellbot_staging.name
+          "awslogs-region"        = "us-east-1"
+          "awslogs-stream-prefix" = "spellbot"
+        }
+      }
+
+      dependsOn = [
+        {
+          containerName = "datadog-agent"
+          condition     = "START"
+        }
+      ]
+    },
+    {
+      name      = "spellbot-gunicorn"
+      command   = ["./start.sh", "spellapi"]
+      image     = "${data.aws_ssm_parameter.spellbot_staging_image_uri.value}"
+      essential = true
+
+      portMappings = [
+        {
+          containerPort = 80
+          protocol      = "tcp"
+        }
+      ]
+
+      environment = [
+        {
+          name  = "DD_SERVICE"
+          value = "spellapi"
+        },
+        {
+          name  = "DD_TRACE_AGENT_HOSTNAME"
+          value = "localhost"
+        },
+        {
+          name  = "DD_TRACE_AGENT_PORT"
+          value = "8126"
+        },
+        {
+          name  = "DD_ENV"
+          value = "staging"
+        },
+        {
+          name  = "ENVIRONMENT"
+          value = "staging"
+        },
+        {
+          name  = "PORT"
+          value = "80"
+        },
+        {
+          name  = "HOST"
+          value = "0.0.0.0"
+        },
+        {
+          name  = "REDISCLOUD"
+          value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}"
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DD_API_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_API_KEY::"
+        },
+        {
+          name      = "DD_APP_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_APP_KEY::"
+        },
+        {
+          name      = "DATABASE_URL"
+          valueFrom = "${data.aws_secretsmanager_secret.staging_db_password.arn}:DB_URL::"
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.spellbot_staging.name
+          "awslogs-region"        = "us-east-1"
+          "awslogs-stream-prefix" = "gunicorn"
+        }
+      }
+
+      dependsOn = [
+        {
+          containerName = "datadog-agent"
+          condition     = "START"
+        }
+      ]
+    }
+  ])
+
+  tags = {
+    Name        = "spellbot-staging-task-definition"
+    Environment = "staging"
+  }
+}
