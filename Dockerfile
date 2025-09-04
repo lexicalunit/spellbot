@@ -1,32 +1,18 @@
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
-# datadog, see: https://github.com/DataDog/agent-linux-install-script
-ENV DD_API_KEY="fake"
-ENV DD_INSTALL_ONLY="true"
-ENV DD_AGENT_MAJOR_VERSION="7"
-ADD https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh /tmp/install_script.sh
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    curl \
-    git \
-    && chmod +x /tmp/install_script.sh \
-    && bash -c /tmp/install_script.sh \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-COPY conf/datadog.yaml /etc/datadog-agent/datadog.yaml
-EXPOSE 8125/udp 8126/tcp
+ARG DD_VERSION=dev
 
-# spellbot
+RUN uvx playwright install --with-deps chromium
 COPY scripts/start-spellbot.sh /start-spellbot.sh
 COPY scripts/start-spellapi.sh /start-spellapi.sh
 COPY scripts/start.sh /start.sh
-COPY conf/supervisord.conf /usr/local/etc/
 COPY src /spellbot/src
 COPY LICENSE.md README.md pyproject.toml uv.lock /spellbot/
 RUN chmod +x /start-spellbot.sh /start-spellapi.sh /start.sh \
     && uv sync --no-cache --directory ./spellbot
+
 ENV PATH="/spellbot/.venv/bin:$PATH"
-RUN playwright install --with-deps chromium
+ENV DD_VERSION=$DD_VERSION
 
 EXPOSE 80
-CMD ["supervisord", "-c", "/usr/local/etc/supervisord.conf"]
+CMD ["/start.sh", "spellbot"]

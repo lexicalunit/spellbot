@@ -41,3 +41,5 @@ tests/
 tmp/
 yarn-debug.log*
 yarn-error.log*
+.terraform/
+terraform.tfvars
