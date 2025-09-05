@@ -101,11 +101,11 @@ jobs:
         with:
           env_vars: PYTHON,POSTGRES,DB_URL
 
-  deploy-staging:
-    name: Deploy to staging
+  deploy-stage:
+    name: Deploy to stage
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     uses: ./.github/workflows/deploy.yml
     with:
-      environment: staging
+      environment: stage
     secrets: inherit
