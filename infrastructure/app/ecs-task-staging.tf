@@ -97,7 +97,7 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
           value = "staging"
         },
         {
-          name  = "REDISCLOUD"
+          name  = "REDIS_URL"
           value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}/1"
         }
       ]
@@ -190,7 +190,7 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
           value = "0.0.0.0"
         },
         {
-          name  = "REDISCLOUD"
+          name  = "REDIS_URL"
           value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}"
         }
       ]

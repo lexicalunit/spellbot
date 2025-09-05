@@ -77,7 +77,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
           value = "production"
         },
         {
-          name  = "REDISCLOUD"
+          name  = "REDIS_URL"
           value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}/0"
         }
       ]
@@ -137,7 +137,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
           value = "production"
         },
         {
-          name  = "REDISCLOUD"
+          name  = "REDIS_URL"
           value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}"
         }
       ]
@@ -172,4 +172,3 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
     Environment = "production"
   }
 }
-
