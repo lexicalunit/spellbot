@@ -1,6 +1,7 @@
 ########################################################################
 # spellbot
 ########################################################################
+.terraform/
 /.python-version
 /.ruff_cache
 /.vscode
@@ -213,4 +214,3 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
-.terraform/
