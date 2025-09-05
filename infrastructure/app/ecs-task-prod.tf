@@ -15,20 +15,27 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
       name      = "datadog-agent"
       image     = "gcr.io/datadoghq/agent:7"
       essential = false
-      memory    = 512
-
-      environment = [
+      portMappings = [
         {
-          name  = "DD_API_KEY"
-          value = "your-datadog-api-key" # Replace with actual key or use secrets
+          containerPort = 8125
+          protocol      = "udp"
         },
+        {
+          containerPort = 8126
+          protocol      = "tcp"
+      }]
+      environment = [
         {
           name  = "DD_SITE"
           value = "datadoghq.com"
         },
         {
+          name  = "ECS_FARGATE"
+          value = "true"
+        },
+        {
           name  = "DD_ENV"
-          value = "production"
+          value = "staging"
         },
         {
           name  = "DD_DOGSTATSD_NON_LOCAL_TRAFFIC"
@@ -41,6 +48,20 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         {
           name  = "DD_APM_NON_LOCAL_TRAFFIC"
           value = "true"
+        },
+        {
+          name  = "API_BASE_URL"
+          value = "https://${local.prod_domain_name}"
+        }
+      ]
+      secrets = [
+        {
+          name      = "DD_API_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:DD_API_KEY::"
+        },
+        {
+          name      = "DD_APP_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:DD_APP_KEY::"
         }
       ]
 
@@ -57,9 +78,12 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
       name      = "spellbot"
       image     = "${data.aws_ssm_parameter.spellbot_production_image_uri.value}"
       essential = true
-      memory    = 2048
 
       environment = [
+        {
+          name  = "DD_SERVICE"
+          value = "spellbot"
+        },
         {
           name  = "DD_TRACE_AGENT_HOSTNAME"
           value = "localhost"
@@ -79,16 +103,47 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         {
           name  = "REDIS_URL"
           value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}/0"
+        },
+        {
+          name  = "API_BASE_URL"
+          value = "https://${local.prod_domain_name}"
         }
       ]
 
       secrets = [
         {
+          name      = "DD_API_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_API_KEY::"
+        },
+        {
+          name      = "DD_APP_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_APP_KEY::"
+        },
+        {
+          name      = "BOT_TOKEN"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:BOT_TOKEN::"
+        },
+        {
+          name      = "SPELLTABLE_USERS"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_USERS::"
+        },
+        {
+          name      = "SPELLTABLE_PASSES"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_PASSES::"
+        },
+        {
+          name      = "SPELLTABLE_AUTH_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_AUTH_KEY::"
+        },
+        {
+          name      = "TABLESTREAM_AUTH_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:TABLESTREAM_AUTH_KEY::"
+        },
+        {
           name      = "DATABASE_URL"
           valueFrom = "${data.aws_secretsmanager_secret.production_db_password.arn}:DB_URL::"
         }
       ]
-
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -110,7 +165,6 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
       command   = ["./start.sh", "spellapi"]
       image     = "${data.aws_ssm_parameter.spellbot_production_image_uri.value}"
       essential = true
-      memory    = 3584
 
       portMappings = [
         {
@@ -120,6 +174,10 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
       ]
 
       environment = [
+        {
+          name  = "DD_SERVICE"
+          value = "spellapi"
+        },
         {
           name  = "DD_TRACE_AGENT_HOSTNAME"
           value = "localhost"
@@ -137,12 +195,28 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
           value = "production"
         },
         {
+          name  = "PORT"
+          value = "80"
+        },
+        {
+          name  = "HOST"
+          value = "0.0.0.0"
+        },
+        {
           name  = "REDIS_URL"
           value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}"
         }
       ]
 
       secrets = [
+        {
+          name      = "DD_API_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:DD_API_KEY::"
+        },
+        {
+          name      = "DD_APP_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:DD_APP_KEY::"
+        },
         {
           name      = "DATABASE_URL"
           valueFrom = "${data.aws_secretsmanager_secret.production_db_password.arn}:DB_URL::"

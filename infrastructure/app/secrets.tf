@@ -46,7 +46,7 @@ resource "aws_secretsmanager_secret_version" "spellbot_staging" {
 
 # SSM Parameters for ECR image tracking
 
-# Production ECR image tag parameter
+# Staging ECR image tag parameter
 # SSM parameters (values ignored by Terraform, managed by deployment script)
 resource "aws_ssm_parameter" "spellbot_staging_image_uri" {
   name  = "/spellbot/staging/ecr-image-uri"
@@ -58,6 +58,8 @@ resource "aws_ssm_parameter" "spellbot_staging_image_uri" {
   }
 }
 
+# Production ECR image tag parameter
+# SSM parameters (values ignored by Terraform, managed by deployment script)
 resource "aws_ssm_parameter" "spellbot_production_image_uri" {
   name  = "/spellbot/production/ecr-image-uri"
   type  = "String"
@@ -69,6 +71,7 @@ resource "aws_ssm_parameter" "spellbot_production_image_uri" {
 }
 
 # Data sources to read SSM parameters (values managed by deployment script)
+# SSM parameters (values ignored by Terraform, managed by deployment script)
 data "aws_ssm_parameter" "spellbot_staging_image_uri" {
   depends_on = [aws_ssm_parameter.spellbot_staging_image_uri]
   name       = "/spellbot/staging/ecr-image-uri"
