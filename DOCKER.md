@@ -8,7 +8,7 @@ to worry about installing anything or managing your environment.
 You can quickly get a PostgreSQL Database running locally with `docker`:
 
 ```shell
-docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:15
+docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17
 ```
 
 You should then be able to connect to this database using `psql`:
