@@ -13,7 +13,7 @@ resource "aws_lb" "main" {
   }
 }
 
-# Target group for production
+# Target group for prod
 resource "aws_lb_target_group" "prod" {
   name                 = "spellbot-prod-tg"
   port                 = 80
@@ -36,13 +36,13 @@ resource "aws_lb_target_group" "prod" {
 
   tags = {
     Name        = "spellbot-prod-tg"
-    Environment = "production"
+    Environment = "prod"
   }
 }
 
-# Target group for staging
-resource "aws_lb_target_group" "staging" {
-  name                 = "spellbot-staging-tg"
+# Target group for stage
+resource "aws_lb_target_group" "stage" {
+  name                 = "spellbot-stage-tg"
   port                 = 80
   protocol             = "HTTP"
   vpc_id               = module.vpc.vpc_id
@@ -62,8 +62,8 @@ resource "aws_lb_target_group" "staging" {
   }
 
   tags = {
-    Name        = "spellbot-staging-tg"
-    Environment = "staging"
+    Name        = "spellbot-stage-tg"
+    Environment = "stage"
   }
 }
 
@@ -86,13 +86,13 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# Additional certificate for staging domain
-resource "aws_lb_listener_certificate" "staging" {
+# Additional certificate for stage domain
+resource "aws_lb_listener_certificate" "stage" {
   listener_arn    = aws_lb_listener.https.arn
-  certificate_arn = aws_acm_certificate_validation.staging.certificate_arn
+  certificate_arn = aws_acm_certificate_validation.stage.certificate_arn
 }
 
-# Listener rule for production domain
+# Listener rule for prod domain
 resource "aws_lb_listener_rule" "prod" {
   listener_arn = aws_lb_listener.https.arn
   priority     = 100
@@ -110,29 +110,29 @@ resource "aws_lb_listener_rule" "prod" {
 
   tags = {
     Name        = "spellbot-prod-rule"
-    Environment = "production"
+    Environment = "prod"
   }
 }
 
-# Listener rule for staging domain
-resource "aws_lb_listener_rule" "staging" {
+# Listener rule for stage domain
+resource "aws_lb_listener_rule" "stage" {
   listener_arn = aws_lb_listener.https.arn
   priority     = 200
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.staging.arn
+    target_group_arn = aws_lb_target_group.stage.arn
   }
 
   condition {
     host_header {
-      values = ["staging.${var.root_domain}"]
+      values = ["stage.${var.root_domain}"]
     }
   }
 
   tags = {
-    Name        = "spellbot-staging-rule"
-    Environment = "staging"
+    Name        = "spellbot-stage-rule"
+    Environment = "stage"
   }
 }
 
@@ -156,4 +156,3 @@ resource "aws_lb_listener" "http" {
     Name = "spellbot-http-listener"
   }
 }
-

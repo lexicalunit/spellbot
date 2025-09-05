@@ -2,7 +2,7 @@
 
 This Terraform configuration sets up the database infrastructure for SpellBot, including:
 
-- Two PostgreSQL databases (staging and production) on a single PostgreSQL instance
+- Two PostgreSQL databases (stage and prod) on a single PostgreSQL instance
 - Two database users (one for each environment)
 - Passwords stored securely in AWS Secrets Manager
 
@@ -17,7 +17,7 @@ This Terraform configuration sets up the database infrastructure for SpellBot, i
 
 1. Copy the example variables file:
 
-   ```bash
+   ```sh
    cp terraform.tfvars.example terraform.tfvars
    ```
 
@@ -32,18 +32,19 @@ This Terraform configuration sets up the database infrastructure for SpellBot, i
 
 3. Initialize Terraform:
 
-   ```bash
+   ```sh
    terraform init
    ```
 
 4. Plan the deployment:
 
-   ```bash
+   ```sh
    terraform plan
    ```
 
 5. Apply the configuration:
-   ```bash
+
+   ```sh
    terraform apply
    ```
 
@@ -51,29 +52,29 @@ This Terraform configuration sets up the database infrastructure for SpellBot, i
 
 ### Databases
 
-- `spellbot_staging` - Database for staging environment
-- `spellbot_production` - Database for production environment
+- `spellbot_stage` - Database for stage environment
+- `spellbot_prod` - Database for prod environment
 
 ### Users
 
-- `spellbot_staging_user` - Database user for staging environment
-- `spellbot_production_user` - Database user for production environment
+- `spellbot_stage_user` - Database user for stage environment
+- `spellbot_prod_user` - Database user for prod environment
 
 ### AWS Secrets Manager
 
-- `spellbot/staging/db-password` - Complete connection info for staging
-- `spellbot/production/db-password` - Complete connection info for production
+- `spellbot/stage/db-password` - Complete connection info for stage
+- `spellbot/prod/db-password` - Complete connection info for prod
 
 Each secret contains a JSON object with:
 
 ```json
 {
-  "username": "spellbot_staging_user",
+  "username": "spellbot_stage_user",
   "password": "generated-password",
-  "database": "spellbot_staging",
+  "database": "spellbot_stage",
   "host": "your-db-host",
   "port": 5432,
-  "DB_URL": "postgresql://spellbot_staging_user:generated-password@your-db-host:5432/spellbot_staging"
+  "DB_URL": "postgresql://spellbot_stage_user:generated-password@your-db-host:5432/spellbot_stage"
 }
 ```
 

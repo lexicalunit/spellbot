@@ -1,4 +1,4 @@
-# ECS Task Definition - Production
+# ECS Task Definition - prod
 resource "aws_ecs_task_definition" "spellbot_prod" {
   family                   = "spellbot-prod"
   network_mode             = "awsvpc"
@@ -35,7 +35,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         },
         {
           name  = "DD_ENV"
-          value = "staging"
+          value = "stage"
         },
         {
           name  = "DD_DOGSTATSD_NON_LOCAL_TRAFFIC"
@@ -76,7 +76,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
     },
     {
       name      = "spellbot"
-      image     = "${data.aws_ssm_parameter.spellbot_production_image_uri.value}"
+      image     = "${data.aws_ssm_parameter.spellbot_prod_image_uri.value}"
       essential = true
 
       environment = [
@@ -94,11 +94,11 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         },
         {
           name  = "DD_ENV"
-          value = "production"
+          value = "prod"
         },
         {
           name  = "ENVIRONMENT"
-          value = "production"
+          value = "prod"
         },
         {
           name  = "REDIS_URL"
@@ -113,35 +113,35 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
       secrets = [
         {
           name      = "DD_API_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_API_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:DD_API_KEY::"
         },
         {
           name      = "DD_APP_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_APP_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:DD_APP_KEY::"
         },
         {
           name      = "BOT_TOKEN"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:BOT_TOKEN::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:BOT_TOKEN::"
         },
         {
           name      = "SPELLTABLE_USERS"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_USERS::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_USERS::"
         },
         {
           name      = "SPELLTABLE_PASSES"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_PASSES::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_PASSES::"
         },
         {
           name      = "SPELLTABLE_AUTH_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_AUTH_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_AUTH_KEY::"
         },
         {
           name      = "TABLESTREAM_AUTH_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:TABLESTREAM_AUTH_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:TABLESTREAM_AUTH_KEY::"
         },
         {
           name      = "DATABASE_URL"
-          valueFrom = "${data.aws_secretsmanager_secret.production_db_password.arn}:DB_URL::"
+          valueFrom = "${data.aws_secretsmanager_secret.prod_db_password.arn}:DB_URL::"
         }
       ]
       logConfiguration = {
@@ -163,7 +163,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
     {
       name      = "spellbot-gunicorn"
       command   = ["./start.sh", "spellapi"]
-      image     = "${data.aws_ssm_parameter.spellbot_production_image_uri.value}"
+      image     = "${data.aws_ssm_parameter.spellbot_prod_image_uri.value}"
       essential = true
 
       portMappings = [
@@ -188,11 +188,11 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         },
         {
           name  = "DD_ENV"
-          value = "production"
+          value = "prod"
         },
         {
           name  = "ENVIRONMENT"
-          value = "production"
+          value = "prod"
         },
         {
           name  = "PORT"
@@ -219,7 +219,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         },
         {
           name      = "DATABASE_URL"
-          valueFrom = "${data.aws_secretsmanager_secret.production_db_password.arn}:DB_URL::"
+          valueFrom = "${data.aws_secretsmanager_secret.prod_db_password.arn}:DB_URL::"
         }
       ]
 
@@ -243,6 +243,6 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
 
   tags = {
     Name        = "spellbot-prod-task-definition"
-    Environment = "production"
+    Environment = "prod"
   }
 }

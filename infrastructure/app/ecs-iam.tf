@@ -63,12 +63,11 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets_policy" {
         ]
         Resource = [
           aws_secretsmanager_secret.spellbot_prod.arn,
-          aws_secretsmanager_secret.spellbot_staging.arn,
-          data.aws_secretsmanager_secret.staging_db_password.arn,
-          data.aws_secretsmanager_secret.production_db_password.arn
+          aws_secretsmanager_secret.spellbot_stage.arn,
+          data.aws_secretsmanager_secret.stage_db_password.arn,
+          data.aws_secretsmanager_secret.prod_db_password.arn
         ]
       }
     ]
   })
 }
-
