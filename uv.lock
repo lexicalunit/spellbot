@@ -393,6 +393,7 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "wrapt" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/73/f6/c2e8f38b029dd8ac7ca1dee4f8f05127b783bb0ccb092cb645005985ad3e/ddtrace-3.12.5.tar.gz", hash = "sha256:b6a54930f2719ee0f9fe3da97d02717d7bdcd1ba3adca79dece464f753238bc3", size = 6941528, upload-time = "2025-09-04T00:20:30.424Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/35/0a/2b45253408389619049002044d6461508568037944d166fb441e98bedc1a/ddtrace-3.12.5-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:ab456684eb8f2e5a190e512b83e401d60b4fb12b69c4684381187b21663d92b6", size = 6352714, upload-time = "2025-09-04T00:18:48.529Z" },
     { url = "https://files.pythonhosted.org/packages/e5/68/ac7c34e208cbb15048131ed436bc61908e24d0110f0d3df9dced07c73578/ddtrace-3.12.5-cp312-cp312-macosx_12_0_x86_64.whl", hash = "sha256:a33d3d6ec1974a7884cf1cf5d333cd52476d22132c38f15ce589521e26376be2", size = 6676430, upload-time = "2025-09-04T00:18:51.373Z" },
@@ -1653,7 +1654,7 @@ requires-dist = [
     { name = "hupper", specifier = ">=1.12.1,<2.0.0" },
     { name = "importlib-resources", specifier = ">=6.4.0,<7.0" },
     { name = "packaging", specifier = ">=24.0,<26.0" },
-    { name = "playwright", specifier = ">=1.49.1,<2.0.0" },
+    { name = "playwright", specifier = "==1.55.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.9,<4.0.0" },
     { name = "python-dateutil", specifier = ">=2.8.2,<3.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.1,<2.0.0" },
