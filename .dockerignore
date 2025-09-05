@@ -13,6 +13,7 @@
 .prettierrc
 .pytest_cache/
 .python-version
+.terraform/
 .tox/
 .vscode/
 *.log
@@ -37,9 +38,8 @@ spellbot-sm.png
 spellbot.png
 sql/
 states/
+terraform.tfvars
 tests/
 tmp/
 yarn-debug.log*
 yarn-error.log*
-.terraform/
-terraform.tfvars
