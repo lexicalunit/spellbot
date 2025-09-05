@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       environment:
-        description: "Environment to deploy to (staging or production)"
+        description: "Environment to deploy to (stage or prod)"
         required: true
         type: string
       image-tag-suffix:
@@ -43,10 +43,10 @@ jobs:
       - name: Set environment-specific variables
         id: env-vars
         run: |
-          if [[ "${{ inputs.environment }}" == "staging" ]]; then
-            echo "ecs-service=spellbot-staging" >> $GITHUB_OUTPUT
-            echo "task-definition-family=spellbot-staging" >> $GITHUB_OUTPUT
-          elif [[ "${{ inputs.environment }}" == "production" ]]; then
+          if [[ "${{ inputs.environment }}" == "stage" ]]; then
+            echo "ecs-service=spellbot-stage" >> $GITHUB_OUTPUT
+            echo "task-definition-family=spellbot-stage" >> $GITHUB_OUTPUT
+          elif [[ "${{ inputs.environment }}" == "prod" ]]; then
             echo "ecs-service=spellbot-prod" >> $GITHUB_OUTPUT
             echo "task-definition-family=spellbot-prod" >> $GITHUB_OUTPUT
           else
@@ -77,13 +77,13 @@ jobs:
           BASE_TAG="${{ steps.ecr-uri.outputs.ecr-uri }}:${{ steps.short-sha.outputs.short-sha }}"
           TAGS="$BASE_TAG"
 
-          if [[ "${{ inputs.environment }}" == "staging" ]]; then
+          if [[ "${{ inputs.environment }}" == "stage" ]]; then
             if [[ "${{ github.event_name }}" == "pull_request" ]]; then
               TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:pr-${{ github.event.number }}"
             fi
-          elif [[ "${{ inputs.environment }}" == "production" ]]; then
+          elif [[ "${{ inputs.environment }}" == "prod" ]]; then
             TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:latest"
-            TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:production"
+            TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:prod"
           fi
 
           if [[ -n "${{ inputs.image-tag-suffix }}" ]]; then
