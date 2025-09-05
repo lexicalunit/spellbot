@@ -35,7 +35,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         },
         {
           name  = "DD_ENV"
-          value = "stage"
+          value = "prod"
         },
         {
           name  = "DD_DOGSTATSD_NON_LOCAL_TRAFFIC"
@@ -113,31 +113,31 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
       secrets = [
         {
           name      = "DD_API_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:DD_API_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:DD_API_KEY::"
         },
         {
           name      = "DD_APP_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:DD_APP_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:DD_APP_KEY::"
         },
         {
           name      = "BOT_TOKEN"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:BOT_TOKEN::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:BOT_TOKEN::"
         },
         {
           name      = "SPELLTABLE_USERS"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_USERS::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SPELLTABLE_USERS::"
         },
         {
           name      = "SPELLTABLE_PASSES"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_PASSES::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SPELLTABLE_PASSES::"
         },
         {
           name      = "SPELLTABLE_AUTH_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_AUTH_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SPELLTABLE_AUTH_KEY::"
         },
         {
           name      = "TABLESTREAM_AUTH_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:TABLESTREAM_AUTH_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:TABLESTREAM_AUTH_KEY::"
         },
         {
           name      = "DATABASE_URL"
