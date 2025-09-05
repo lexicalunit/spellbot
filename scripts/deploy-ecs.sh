@@ -2,7 +2,7 @@
 
 # AWS ECS Deployment Script
 # Usage: ./deploy-ecs.sh <image-uri> <environment>
-# Example: ./deploy-ecs.sh 123456789.dkr.ecr.us-east-1.amazonaws.com/spellbot-app:abc123 staging
+# Example: ./deploy-ecs.sh 123456789.dkr.ecr.us-east-1.amazonaws.com/spellbot-app:abc123 stage
 
 set -euo pipefail
 
@@ -33,7 +33,7 @@ warning() {
 # Check if required arguments are provided
 if [[ $# -lt 2 ]]; then
     error "Usage: $0 <image-uri> <environment>"
-    error "Example: $0 123456789.dkr.ecr.us-east-1.amazonaws.com/spellbot-app:abc123 staging"
+    error "Example: $0 123456789.dkr.ecr.us-east-1.amazonaws.com/spellbot-app:abc123 stage"
     exit 1
 fi
 
@@ -41,20 +41,20 @@ IMAGE_URI="$1"
 ENVIRONMENT="$2"
 
 # Validate environment
-if [[ "$ENVIRONMENT" != "staging" && "$ENVIRONMENT" != "production" ]]; then
-    error "Environment must be 'staging' or 'production'"
+if [[ "$ENVIRONMENT" != "stage" && "$ENVIRONMENT" != "prod" ]]; then
+    error "Environment must be 'stage' or 'prod'"
     exit 1
 fi
 
 # Set environment-specific variables
-if [[ "$ENVIRONMENT" == "staging" ]]; then
-    ECS_SERVICE="spellbot-staging"
-    ECS_TASK_DEFINITION_FAMILY="spellbot-staging"
-    SSM_PARAMETER_NAME="/spellbot/staging/ecr-image-uri"
+if [[ "$ENVIRONMENT" == "stage" ]]; then
+    ECS_SERVICE="spellbot-stage"
+    ECS_TASK_DEFINITION_FAMILY="spellbot-stage"
+    SSM_PARAMETER_NAME="/spellbot/stage/ecr-image-uri"
 else
     ECS_SERVICE="spellbot-prod"
     ECS_TASK_DEFINITION_FAMILY="spellbot-prod"
-    SSM_PARAMETER_NAME="/spellbot/production/ecr-image-uri"
+    SSM_PARAMETER_NAME="/spellbot/prod/ecr-image-uri"
 fi
 
 # Default values (can be overridden by environment variables)

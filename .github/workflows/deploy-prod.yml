@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to prod
 
 on:
   push:
@@ -12,10 +12,10 @@ on:
         type: string
 
 jobs:
-  deploy-production:
-    name: Deploy to Production
+  deploy-prod:
+    name: Deploy to prod
     uses: ./.github/workflows/deploy.yml
     with:
-      environment: production
+      environment: prod
       image-tag-suffix: ${{ inputs.image-tag-suffix || '' }}
     secrets: inherit
