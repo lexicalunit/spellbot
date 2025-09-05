@@ -48,6 +48,10 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
         {
           name  = "DD_APM_NON_LOCAL_TRAFFIC"
           value = "true"
+        },
+        {
+          name  = "API_BASE_URL"
+          value = "https://${local.staging_domain_name}"
         }
       ]
       secrets = [
@@ -99,6 +103,10 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
         {
           name  = "REDIS_URL"
           value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}/1"
+        },
+        {
+          name  = "API_BASE_URL"
+          value = "https://${local.staging_domain_name}"
         }
       ]
       secrets = [
@@ -125,6 +133,10 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
         {
           name      = "SPELLTABLE_AUTH_KEY"
           valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_AUTH_KEY::"
+        },
+        {
+          name      = "TABLESTREAM_AUTH_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:TABLESTREAM_AUTH_KEY::"
         },
         {
           name      = "DATABASE_URL"
