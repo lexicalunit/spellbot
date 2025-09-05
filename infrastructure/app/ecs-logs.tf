@@ -5,16 +5,16 @@ resource "aws_cloudwatch_log_group" "spellbot_prod" {
 
   tags = {
     Name        = "spellbot-prod-logs"
-    Environment = "production"
+    Environment = "prod"
   }
 }
 
-resource "aws_cloudwatch_log_group" "spellbot_staging" {
-  name              = "/ecs/spellbot-staging"
+resource "aws_cloudwatch_log_group" "spellbot_stage" {
+  name              = "/ecs/spellbot-stage"
   retention_in_days = 7
 
   tags = {
-    Name        = "spellbot-staging-logs"
-    Environment = "staging"
+    Name        = "spellbot-stage-logs"
+    Environment = "stage"
   }
 }

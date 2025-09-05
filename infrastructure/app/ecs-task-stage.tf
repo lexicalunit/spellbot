@@ -1,10 +1,10 @@
-# ECS Task Definition - Staging
-resource "aws_ecs_task_definition" "spellbot_staging" {
-  family                   = "spellbot-staging"
+# ECS Task Definition - stage
+resource "aws_ecs_task_definition" "spellbot_stage" {
+  family                   = "spellbot-stage"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "2048" # 1 vCPU (smaller for staging)
-  memory                   = "6144" # 3 GB (smaller for staging)
+  cpu                      = "2048" # 1 vCPU (smaller for stage)
+  memory                   = "6144" # 3 GB (smaller for stage)
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
   runtime_platform {
@@ -35,7 +35,7 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
         },
         {
           name  = "DD_ENV"
-          value = "staging"
+          value = "stage"
         },
         {
           name  = "DD_DOGSTATSD_NON_LOCAL_TRAFFIC"
@@ -51,24 +51,24 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
         },
         {
           name  = "API_BASE_URL"
-          value = "https://${local.staging_domain_name}"
+          value = "https://${local.stage_domain_name}"
         }
       ]
       secrets = [
         {
           name      = "DD_API_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_API_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:DD_API_KEY::"
         },
         {
           name      = "DD_APP_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_APP_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:DD_APP_KEY::"
         }
       ]
 
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.spellbot_staging.name
+          "awslogs-group"         = aws_cloudwatch_log_group.spellbot_stage.name
           "awslogs-region"        = "us-east-1"
           "awslogs-stream-prefix" = "datadog"
         }
@@ -76,7 +76,7 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
     },
     {
       name      = "spellbot"
-      image     = "${data.aws_ssm_parameter.spellbot_staging_image_uri.value}"
+      image     = "${data.aws_ssm_parameter.spellbot_stage_image_uri.value}"
       essential = true
 
       environment = [
@@ -94,11 +94,11 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
         },
         {
           name  = "DD_ENV"
-          value = "staging"
+          value = "stage"
         },
         {
           name  = "ENVIRONMENT"
-          value = "staging"
+          value = "stage"
         },
         {
           name  = "REDIS_URL"
@@ -106,47 +106,47 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
         },
         {
           name  = "API_BASE_URL"
-          value = "https://${local.staging_domain_name}"
+          value = "https://${local.stage_domain_name}"
         }
       ]
       secrets = [
         {
           name      = "DD_API_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_API_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:DD_API_KEY::"
         },
         {
           name      = "DD_APP_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_APP_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:DD_APP_KEY::"
         },
         {
           name      = "BOT_TOKEN"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:BOT_TOKEN::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:BOT_TOKEN::"
         },
         {
           name      = "SPELLTABLE_USERS"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_USERS::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_USERS::"
         },
         {
           name      = "SPELLTABLE_PASSES"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_PASSES::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_PASSES::"
         },
         {
           name      = "SPELLTABLE_AUTH_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:SPELLTABLE_AUTH_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_AUTH_KEY::"
         },
         {
           name      = "TABLESTREAM_AUTH_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:TABLESTREAM_AUTH_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:TABLESTREAM_AUTH_KEY::"
         },
         {
           name      = "DATABASE_URL"
-          valueFrom = "${data.aws_secretsmanager_secret.staging_db_password.arn}:DB_URL::"
+          valueFrom = "${data.aws_secretsmanager_secret.stage_db_password.arn}:DB_URL::"
         }
       ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.spellbot_staging.name
+          "awslogs-group"         = aws_cloudwatch_log_group.spellbot_stage.name
           "awslogs-region"        = "us-east-1"
           "awslogs-stream-prefix" = "spellbot"
         }
@@ -162,7 +162,7 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
     {
       name      = "spellbot-gunicorn"
       command   = ["./start.sh", "spellapi"]
-      image     = "${data.aws_ssm_parameter.spellbot_staging_image_uri.value}"
+      image     = "${data.aws_ssm_parameter.spellbot_stage_image_uri.value}"
       essential = true
 
       portMappings = [
@@ -187,11 +187,11 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
         },
         {
           name  = "DD_ENV"
-          value = "staging"
+          value = "stage"
         },
         {
           name  = "ENVIRONMENT"
-          value = "staging"
+          value = "stage"
         },
         {
           name  = "PORT"
@@ -210,22 +210,22 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
       secrets = [
         {
           name      = "DD_API_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_API_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:DD_API_KEY::"
         },
         {
           name      = "DD_APP_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_staging.arn}:DD_APP_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:DD_APP_KEY::"
         },
         {
           name      = "DATABASE_URL"
-          valueFrom = "${data.aws_secretsmanager_secret.staging_db_password.arn}:DB_URL::"
+          valueFrom = "${data.aws_secretsmanager_secret.stage_db_password.arn}:DB_URL::"
         }
       ]
 
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.spellbot_staging.name
+          "awslogs-group"         = aws_cloudwatch_log_group.spellbot_stage.name
           "awslogs-region"        = "us-east-1"
           "awslogs-stream-prefix" = "gunicorn"
         }
@@ -241,7 +241,7 @@ resource "aws_ecs_task_definition" "spellbot_staging" {
   ])
 
   tags = {
-    Name        = "spellbot-staging-task-definition"
-    Environment = "staging"
+    Name        = "spellbot-stage-task-definition"
+    Environment = "stage"
   }
 }

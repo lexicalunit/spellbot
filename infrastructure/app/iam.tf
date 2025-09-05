@@ -120,7 +120,7 @@ resource "aws_iam_policy" "spellbot_ecs_deployment" {
         ]
         Resource = [
           "arn:aws:ecs:*:${data.aws_caller_identity.current.account_id}:service/${aws_ecs_cluster.main.name}/spellbot-prod",
-          "arn:aws:ecs:*:${data.aws_caller_identity.current.account_id}:service/${aws_ecs_cluster.main.name}/spellbot-staging"
+          "arn:aws:ecs:*:${data.aws_caller_identity.current.account_id}:service/${aws_ecs_cluster.main.name}/spellbot-stage"
         ]
       },
       {
@@ -173,8 +173,8 @@ resource "aws_iam_policy" "spellbot_ssm_deployment" {
           "ssm:DescribeParameters"
         ]
         Resource = [
-          "${aws_ssm_parameter.spellbot_production_image_uri.arn}",
-          "${aws_ssm_parameter.spellbot_staging_image_uri.arn}"
+          "${aws_ssm_parameter.spellbot_prod_image_uri.arn}",
+          "${aws_ssm_parameter.spellbot_stage_image_uri.arn}"
         ]
       }
     ]
