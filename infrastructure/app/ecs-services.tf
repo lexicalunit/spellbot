@@ -1,4 +1,4 @@
-# ECS Service - Production
+# ECS Service - prod
 resource "aws_ecs_service" "spellbot_prod" {
   name            = "spellbot-prod"
   cluster         = aws_ecs_cluster.main.id
@@ -29,15 +29,15 @@ resource "aws_ecs_service" "spellbot_prod" {
 
   tags = {
     Name        = "spellbot-prod-service"
-    Environment = "production"
+    Environment = "prod"
   }
 }
 
-# ECS Service - Staging
-resource "aws_ecs_service" "spellbot_staging" {
-  name            = "spellbot-staging"
+# ECS Service - stage
+resource "aws_ecs_service" "spellbot_stage" {
+  name            = "spellbot-stage"
   cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.spellbot_staging.arn
+  task_definition = aws_ecs_task_definition.spellbot_stage.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
@@ -52,18 +52,18 @@ resource "aws_ecs_service" "spellbot_staging" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.staging.arn
+    target_group_arn = aws_lb_target_group.stage.arn
     container_name   = "spellbot-gunicorn"
     container_port   = 80
   }
 
   depends_on = [
     aws_lb_listener.https,
-    aws_lb_listener_rule.staging
+    aws_lb_listener_rule.stage
   ]
 
   tags = {
-    Name        = "spellbot-staging-service"
-    Environment = "staging"
+    Name        = "spellbot-stage-service"
+    Environment = "stage"
   }
 }

@@ -8,11 +8,11 @@ resource "aws_route53_zone" "main" {
 }
 
 locals {
-  prod_domain_name    = "prod.${var.root_domain}"
-  staging_domain_name = "staging.${var.root_domain}"
+  prod_domain_name  = "prod.${var.root_domain}"
+  stage_domain_name = "stage.${var.root_domain}"
 }
 
-# Production subdomain A record
+# prod subdomain A record
 resource "aws_route53_record" "prod" {
   zone_id = aws_route53_zone.main.zone_id
   name    = local.prod_domain_name
@@ -25,10 +25,10 @@ resource "aws_route53_record" "prod" {
   }
 }
 
-# Staging subdomain A record
-resource "aws_route53_record" "staging" {
+# stage subdomain A record
+resource "aws_route53_record" "stage" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = local.staging_domain_name
+  name    = local.stage_domain_name
   type    = "A"
 
   alias {

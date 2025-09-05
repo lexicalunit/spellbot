@@ -46,134 +46,132 @@ provider "postgresql" {
 }
 
 # Generate random passwords for spellbot users
-resource "random_password" "staging_spellbot_password" {
+resource "random_password" "stage_spellbot_password" {
   length  = 32
   special = false
 }
 
-resource "random_password" "production_spellbot_password" {
+resource "random_password" "prod_spellbot_password" {
   length  = 32
   special = false
 }
 
 # Create databases
-resource "postgresql_database" "staging_db" {
-  name  = "spellbot_staging"
+resource "postgresql_database" "stage_db" {
+  name  = "spellbot_stage"
   owner = var.root_db_user
 }
 
-resource "postgresql_database" "production_db" {
-  name  = "spellbot_production"
+resource "postgresql_database" "prod_db" {
+  name  = "spellbot_prod"
   owner = var.root_db_user
 }
 
-# Create staging spellbot user
-resource "postgresql_role" "staging_spellbot_user" {
-  name     = "spellbot_staging_user"
+# Create stage spellbot user
+resource "postgresql_role" "stage_spellbot_user" {
+  name     = "spellbot_stage_user"
   login    = true
-  password = random_password.staging_spellbot_password.result
+  password = random_password.stage_spellbot_password.result
 }
 
-# Create production spellbot user
-resource "postgresql_role" "production_spellbot_user" {
-  name     = "spellbot_production_user"
+# Create prod spellbot user
+resource "postgresql_role" "prod_spellbot_user" {
+  name     = "spellbot_prod_user"
   login    = true
-  password = random_password.production_spellbot_password.result
+  password = random_password.prod_spellbot_password.result
 }
 
-# Grant privileges on staging database
-resource "postgresql_grant" "staging_db_privileges" {
-  database    = postgresql_database.staging_db.name
-  role        = postgresql_role.staging_spellbot_user.name
+# Grant privileges on stage database
+resource "postgresql_grant" "stage_db_privileges" {
+  database    = postgresql_database.stage_db.name
+  role        = postgresql_role.stage_spellbot_user.name
   schema      = "public"
   object_type = "schema"
   privileges  = ["USAGE", "CREATE"]
 }
 
-resource "postgresql_grant" "staging_table_privileges" {
-  database    = postgresql_database.staging_db.name
-  role        = postgresql_role.staging_spellbot_user.name
+resource "postgresql_grant" "stage_table_privileges" {
+  database    = postgresql_database.stage_db.name
+  role        = postgresql_role.stage_spellbot_user.name
   schema      = "public"
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
 }
 
-resource "postgresql_grant" "staging_sequence_privileges" {
-  database    = postgresql_database.staging_db.name
-  role        = postgresql_role.staging_spellbot_user.name
+resource "postgresql_grant" "stage_sequence_privileges" {
+  database    = postgresql_database.stage_db.name
+  role        = postgresql_role.stage_spellbot_user.name
   schema      = "public"
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT"]
 }
 
-# Grant privileges on production database
-resource "postgresql_grant" "production_db_privileges" {
-  database    = postgresql_database.production_db.name
-  role        = postgresql_role.production_spellbot_user.name
+# Grant privileges on prod database
+resource "postgresql_grant" "prod_db_privileges" {
+  database    = postgresql_database.prod_db.name
+  role        = postgresql_role.prod_spellbot_user.name
   schema      = "public"
   object_type = "schema"
   privileges  = ["USAGE", "CREATE"]
 }
 
-resource "postgresql_grant" "production_table_privileges" {
-  database    = postgresql_database.production_db.name
-  role        = postgresql_role.production_spellbot_user.name
+resource "postgresql_grant" "prod_table_privileges" {
+  database    = postgresql_database.prod_db.name
+  role        = postgresql_role.prod_spellbot_user.name
   schema      = "public"
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
 }
 
-resource "postgresql_grant" "production_sequence_privileges" {
-  database    = postgresql_database.production_db.name
-  role        = postgresql_role.production_spellbot_user.name
+resource "postgresql_grant" "prod_sequence_privileges" {
+  database    = postgresql_database.prod_db.name
+  role        = postgresql_role.prod_spellbot_user.name
   schema      = "public"
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT"]
 }
 
 # Store passwords in AWS Secrets Manager
-resource "aws_secretsmanager_secret" "staging_spellbot_password" {
-  name        = "spellbot/staging/db-details"
-  description = "Password for staging spellbot database user"
+resource "aws_secretsmanager_secret" "stage_spellbot_password" {
+  name        = "spellbot/stage/db-details"
+  description = "Password for stage spellbot database user"
 
   tags = {
-    Environment = "staging"
+    Environment = "stage"
     Component   = "database"
   }
 }
 
-resource "aws_secretsmanager_secret_version" "staging_spellbot_password" {
-  secret_id = aws_secretsmanager_secret.staging_spellbot_password.id
+resource "aws_secretsmanager_secret_version" "stage_spellbot_password" {
+  secret_id = aws_secretsmanager_secret.stage_spellbot_password.id
   secret_string = jsonencode({
-    username = postgresql_role.staging_spellbot_user.name
-    password = random_password.staging_spellbot_password.result
-    database = postgresql_database.staging_db.name
+    username = postgresql_role.stage_spellbot_user.name
+    password = random_password.stage_spellbot_password.result
+    database = postgresql_database.stage_db.name
     host     = var.db_host
     port     = var.db_port
-    DB_URL   = "postgresql://${postgresql_role.staging_spellbot_user.name}:${random_password.staging_spellbot_password.result}@${var.db_host}:${var.db_port}/${postgresql_database.staging_db.name}"
+    DB_URL   = "postgresql://${postgresql_role.stage_spellbot_user.name}:${random_password.stage_spellbot_password.result}@${var.db_host}:${var.db_port}/${postgresql_database.stage_db.name}"
   })
 }
 
-resource "aws_secretsmanager_secret" "production_spellbot_password" {
-  name        = "spellbot/production/db-details"
-  description = "Password for production spellbot database user"
+resource "aws_secretsmanager_secret" "prod_spellbot_password" {
+  name        = "spellbot/prod/db-details"
+  description = "Password for prod spellbot database user"
 
   tags = {
-    Environment = "production"
+    Environment = "prod"
     Component   = "database"
   }
 }
 
-resource "aws_secretsmanager_secret_version" "production_spellbot_password" {
-  secret_id = aws_secretsmanager_secret.production_spellbot_password.id
+resource "aws_secretsmanager_secret_version" "prod_spellbot_password" {
+  secret_id = aws_secretsmanager_secret.prod_spellbot_password.id
   secret_string = jsonencode({
-    username = postgresql_role.production_spellbot_user.name
-    password = random_password.production_spellbot_password.result
-    database = postgresql_database.production_db.name
+    username = postgresql_role.prod_spellbot_user.name
+    password = random_password.prod_spellbot_password.result
+    database = postgresql_database.prod_db.name
     host     = var.db_host
     port     = var.db_port
-    DB_URL   = "postgresql://${postgresql_role.production_spellbot_user.name}:${random_password.production_spellbot_password.result}@${var.db_host}:${var.db_port}/${postgresql_database.production_db.name}"
+    DB_URL   = "postgresql://${postgresql_role.prod_spellbot_user.name}:${random_password.prod_spellbot_password.result}@${var.db_host}:${var.db_port}/${postgresql_database.prod_db.name}"
   })
 }
-
-

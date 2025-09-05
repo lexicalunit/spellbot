@@ -1,17 +1,17 @@
 # AWS Secrets Manager secrets for SpellBot
 
-# Production secrets
+# prod secrets
 resource "aws_secretsmanager_secret" "spellbot_prod" {
-  name        = "spellbot/production"
-  description = "SpellBot production environment secrets"
+  name        = "spellbot/prod"
+  description = "SpellBot prod environment secrets"
 
   tags = {
     Name        = "spellbot-prod-secrets"
-    Environment = "production"
+    Environment = "prod"
   }
 }
 
-# Production secret version with initial empty JSON
+# prod secret version with initial empty JSON
 resource "aws_secretsmanager_secret_version" "spellbot_prod" {
   secret_id     = aws_secretsmanager_secret.spellbot_prod.id
   secret_string = jsonencode({})
@@ -22,20 +22,20 @@ resource "aws_secretsmanager_secret_version" "spellbot_prod" {
   }
 }
 
-# Staging secrets
-resource "aws_secretsmanager_secret" "spellbot_staging" {
-  name        = "spellbot/staging"
-  description = "SpellBot staging environment secrets"
+# stage secrets
+resource "aws_secretsmanager_secret" "spellbot_stage" {
+  name        = "spellbot/stage"
+  description = "SpellBot stage environment secrets"
 
   tags = {
-    Name        = "spellbot-staging-secrets"
-    Environment = "staging"
+    Name        = "spellbot-stage-secrets"
+    Environment = "stage"
   }
 }
 
-# Staging secret version with initial empty JSON
-resource "aws_secretsmanager_secret_version" "spellbot_staging" {
-  secret_id     = aws_secretsmanager_secret.spellbot_staging.id
+# stage secret version with initial empty JSON
+resource "aws_secretsmanager_secret_version" "spellbot_stage" {
+  secret_id     = aws_secretsmanager_secret.spellbot_stage.id
   secret_string = jsonencode({})
 
   # Ignore changes to secret values (managed manually)
@@ -46,10 +46,10 @@ resource "aws_secretsmanager_secret_version" "spellbot_staging" {
 
 # SSM Parameters for ECR image tracking
 
-# Staging ECR image tag parameter
+# stage ECR image tag parameter
 # SSM parameters (values ignored by Terraform, managed by deployment script)
-resource "aws_ssm_parameter" "spellbot_staging_image_uri" {
-  name  = "/spellbot/staging/ecr-image-uri"
+resource "aws_ssm_parameter" "spellbot_stage_image_uri" {
+  name  = "/spellbot/stage/ecr-image-uri"
   type  = "String"
   value = "latest"
 
@@ -58,10 +58,10 @@ resource "aws_ssm_parameter" "spellbot_staging_image_uri" {
   }
 }
 
-# Production ECR image tag parameter
+# prod ECR image tag parameter
 # SSM parameters (values ignored by Terraform, managed by deployment script)
-resource "aws_ssm_parameter" "spellbot_production_image_uri" {
-  name  = "/spellbot/production/ecr-image-uri"
+resource "aws_ssm_parameter" "spellbot_prod_image_uri" {
+  name  = "/spellbot/prod/ecr-image-uri"
   type  = "String"
   value = "latest"
 
@@ -72,12 +72,12 @@ resource "aws_ssm_parameter" "spellbot_production_image_uri" {
 
 # Data sources to read SSM parameters (values managed by deployment script)
 # SSM parameters (values ignored by Terraform, managed by deployment script)
-data "aws_ssm_parameter" "spellbot_staging_image_uri" {
-  depends_on = [aws_ssm_parameter.spellbot_staging_image_uri]
-  name       = "/spellbot/staging/ecr-image-uri"
+data "aws_ssm_parameter" "spellbot_stage_image_uri" {
+  depends_on = [aws_ssm_parameter.spellbot_stage_image_uri]
+  name       = "/spellbot/stage/ecr-image-uri"
 }
 
-data "aws_ssm_parameter" "spellbot_production_image_uri" {
-  depends_on = [aws_ssm_parameter.spellbot_production_image_uri]
-  name       = "/spellbot/production/ecr-image-uri"
+data "aws_ssm_parameter" "spellbot_prod_image_uri" {
+  depends_on = [aws_ssm_parameter.spellbot_prod_image_uri]
+  name       = "/spellbot/prod/ecr-image-uri"
 }

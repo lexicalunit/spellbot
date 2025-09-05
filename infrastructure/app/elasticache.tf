@@ -38,7 +38,7 @@ resource "aws_elasticache_replication_group" "main" {
   engine         = "valkey"
   engine_version = "7.2"
 
-  # Disable encryption for cost savings (not recommended for production)
+  # Disable encryption for cost savings (not recommended for prod)
   at_rest_encryption_enabled = false
   transit_encryption_enabled = false
 
@@ -46,4 +46,3 @@ resource "aws_elasticache_replication_group" "main" {
     Name = "spellbot-valkey"
   }
 }
-

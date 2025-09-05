@@ -1,11 +1,11 @@
-# ACM certificate for production subdomain
+# ACM certificate for prod subdomain
 resource "aws_acm_certificate" "prod" {
   domain_name       = "prod.${var.root_domain}"
   validation_method = "DNS"
 
   tags = {
     Name        = "prod.${var.root_domain}"
-    Environment = "production"
+    Environment = "prod"
   }
 
   lifecycle {
@@ -13,14 +13,14 @@ resource "aws_acm_certificate" "prod" {
   }
 }
 
-# ACM certificate for staging subdomain
-resource "aws_acm_certificate" "staging" {
-  domain_name       = "staging.${var.root_domain}"
+# ACM certificate for stage subdomain
+resource "aws_acm_certificate" "stage" {
+  domain_name       = "stage.${var.root_domain}"
   validation_method = "DNS"
 
   tags = {
-    Name        = "staging.${var.root_domain}"
-    Environment = "staging"
+    Name        = "stage.${var.root_domain}"
+    Environment = "stage"
   }
 
   lifecycle {
@@ -28,7 +28,7 @@ resource "aws_acm_certificate" "staging" {
   }
 }
 
-# DNS validation records for production certificate
+# DNS validation records for prod certificate
 resource "aws_route53_record" "prod_cert_validation" {
   for_each = {
     for dvo in aws_acm_certificate.prod.domain_validation_options : dvo.domain_name => {
@@ -46,10 +46,10 @@ resource "aws_route53_record" "prod_cert_validation" {
   zone_id         = aws_route53_zone.main.zone_id
 }
 
-# DNS validation records for staging certificate
-resource "aws_route53_record" "staging_cert_validation" {
+# DNS validation records for stage certificate
+resource "aws_route53_record" "stage_cert_validation" {
   for_each = {
-    for dvo in aws_acm_certificate.staging.domain_validation_options : dvo.domain_name => {
+    for dvo in aws_acm_certificate.stage.domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
       record = dvo.resource_record_value
       type   = dvo.resource_record_type
@@ -64,15 +64,14 @@ resource "aws_route53_record" "staging_cert_validation" {
   zone_id         = aws_route53_zone.main.zone_id
 }
 
-# Certificate validation for production
+# Certificate validation for prod
 resource "aws_acm_certificate_validation" "prod" {
   certificate_arn         = aws_acm_certificate.prod.arn
   validation_record_fqdns = [for record in aws_route53_record.prod_cert_validation : record.fqdn]
 }
 
-# Certificate validation for staging
-resource "aws_acm_certificate_validation" "staging" {
-  certificate_arn         = aws_acm_certificate.staging.arn
-  validation_record_fqdns = [for record in aws_route53_record.staging_cert_validation : record.fqdn]
+# Certificate validation for stage
+resource "aws_acm_certificate_validation" "stage" {
+  certificate_arn         = aws_acm_certificate.stage.arn
+  validation_record_fqdns = [for record in aws_route53_record.stage_cert_validation : record.fqdn]
 }
-
