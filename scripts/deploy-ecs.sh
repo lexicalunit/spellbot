@@ -96,6 +96,7 @@ aws ssm put-parameter \
     --overwrite \
     --region "$AWS_REGION" > /dev/null
 
+# shellcheck disable=SC2181
 if [[ $? -ne 0 ]]; then
     error "Failed to update SSM parameter $SSM_PARAMETER_NAME"
     exit 1
@@ -138,6 +139,7 @@ fi
 log "Registering new task definition..."
 # Create temporary file for the task definition JSON
 TEMP_TASK_DEF_FILE=$(mktemp)
+# shellcheck disable=SC2064
 trap "rm -f $TEMP_TASK_DEF_FILE" EXIT
 
 echo "$UPDATED_TASK_DEF" > "$TEMP_TASK_DEF_FILE"
@@ -164,6 +166,7 @@ aws ecs update-service \
     --region "$AWS_REGION" \
     --output table > /dev/null
 
+# shellcheck disable=SC2181
 if [[ $? -ne 0 ]]; then
     error "Failed to update ECS service"
     exit 1

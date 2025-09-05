@@ -2,7 +2,8 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 ARG DD_VERSION=dev
 
-RUN uvx playwright install --with-deps chromium
+# When updating playwright, also update the version in pyproject.toml / uv.lock!
+RUN uvx --from "playwright==1.55.0" playwright install --with-deps chromium
 COPY scripts/start-spellbot.sh /start-spellbot.sh
 COPY scripts/start-spellapi.sh /start-spellapi.sh
 COPY scripts/start.sh /start.sh
