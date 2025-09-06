@@ -1,0 +1,10 @@
+# Example terraform.tfvars file
+# Copy this to terraform.tfvars and fill in your actual values
+
+# Root database credentials
+root_db_user     = "postgres"
+root_db_password = "your-root-password-here"
+
+# Database connection details
+db_host = "your-aurora-cluster.cluster-xxxxx.us-east-1.rds.amazonaws.com"
+db_port = 5432

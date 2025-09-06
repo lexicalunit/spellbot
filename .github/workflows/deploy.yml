@@ -1,0 +1,120 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment to deploy to (stage or prod)"
+        required: true
+        type: string
+      image-tag-suffix:
+        description: "Additional tag suffix for the Docker image"
+        required: false
+        type: string
+        default: ""
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: spellbot-app
+  ECS_CLUSTER: spellbot-cluster
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOYMENT_ROLE_ARN }}
+          role-session-name: GitHubActions-Deploy-${{ inputs.environment }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set environment-specific variables
+        id: env-vars
+        run: |
+          if [[ "${{ inputs.environment }}" == "stage" ]]; then
+            echo "ecs-service=spellbot-stage" >> $GITHUB_OUTPUT
+            echo "task-definition-family=spellbot-stage" >> $GITHUB_OUTPUT
+          elif [[ "${{ inputs.environment }}" == "prod" ]]; then
+            echo "ecs-service=spellbot-prod" >> $GITHUB_OUTPUT
+            echo "task-definition-family=spellbot-prod" >> $GITHUB_OUTPUT
+          else
+            echo "Invalid environment: ${{ inputs.environment }}"
+            exit 1
+          fi
+
+      - name: Get ECR repository URI
+        id: ecr-uri
+        run: |
+          ECR_URI=$(aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} --query 'repositories[0].repositoryUri' --output text)
+          echo "ecr-uri=$ECR_URI" >> $GITHUB_OUTPUT
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Get short SHA
+        id: short-sha
+        run: echo "short-sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image tags
+        id: image-tags
+        run: |
+          BASE_TAG="${{ steps.ecr-uri.outputs.ecr-uri }}:${{ steps.short-sha.outputs.short-sha }}"
+          TAGS="$BASE_TAG"
+
+          if [[ "${{ inputs.environment }}" == "stage" ]]; then
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:pr-${{ github.event.number }}"
+            fi
+          elif [[ "${{ inputs.environment }}" == "prod" ]]; then
+            TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:latest"
+            TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:prod"
+          fi
+
+          if [[ -n "${{ inputs.image-tag-suffix }}" ]]; then
+            TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:${{ inputs.image-tag-suffix }}"
+          fi
+
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.image-tags.outputs.tags }}
+          build-args: |
+            DD_VERSION=${{ steps.short-sha.outputs.short-sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to ECS
+        id: deploy
+        run: |
+          IMAGE_URI="${{ steps.ecr-uri.outputs.ecr-uri }}:${{ steps.short-sha.outputs.short-sha }}"
+          ./scripts/deploy-ecs.sh "$IMAGE_URI" "${{ inputs.environment }}"
+
+      - name: Deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image URI:** ${{ steps.ecr-uri.outputs.ecr-uri }}:${{ steps.short-sha.outputs.short-sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **ECS Service:** ${{ steps.env-vars.outputs.ecs-service }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **ECS Cluster:** ${{ env.ECS_CLUSTER }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Task Definition Family:** ${{ steps.env-vars.outputs.task-definition-family }}" >> $GITHUB_STEP_SUMMARY
