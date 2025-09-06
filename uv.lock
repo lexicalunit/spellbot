@@ -393,6 +393,7 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "wrapt" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/73/f6/c2e8f38b029dd8ac7ca1dee4f8f05127b783bb0ccb092cb645005985ad3e/ddtrace-3.12.5.tar.gz", hash = "sha256:b6a54930f2719ee0f9fe3da97d02717d7bdcd1ba3adca79dece464f753238bc3", size = 6941528, upload-time = "2025-09-04T00:20:30.424Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/35/0a/2b45253408389619049002044d6461508568037944d166fb441e98bedc1a/ddtrace-3.12.5-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:ab456684eb8f2e5a190e512b83e401d60b4fb12b69c4684381187b21663d92b6", size = 6352714, upload-time = "2025-09-04T00:18:48.529Z" },
     { url = "https://files.pythonhosted.org/packages/e5/68/ac7c34e208cbb15048131ed436bc61908e24d0110f0d3df9dced07c73578/ddtrace-3.12.5-cp312-cp312-macosx_12_0_x86_64.whl", hash = "sha256:a33d3d6ec1974a7884cf1cf5d333cd52476d22132c38f15ce589521e26376be2", size = 6676430, upload-time = "2025-09-04T00:18:51.373Z" },
@@ -1383,14 +1384,14 @@ wheels = [
 
 [[package]]
 name = "pytest-mock"
-version = "3.14.1"
+version = "3.15.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/71/28/67172c96ba684058a4d24ffe144d64783d2a270d0af0d9e792737bddc75c/pytest_mock-3.14.1.tar.gz", hash = "sha256:159e9edac4c451ce77a5cdb9fc5d1100708d2dd4ba3c3df572f14097351af80e", size = 33241, upload-time = "2025-05-26T13:58:45.167Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/61/99/3323ee5c16b3637b4d941c362182d3e749c11e400bea31018c42219f3a98/pytest_mock-3.15.0.tar.gz", hash = "sha256:ab896bd190316b9d5d87b277569dfcdf718b2d049a2ccff5f7aca279c002a1cf", size = 33838, upload-time = "2025-09-04T20:57:48.679Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b2/05/77b60e520511c53d1c1ca75f1930c7dd8e971d0c4379b7f4b3f9644685ba/pytest_mock-3.14.1-py3-none-any.whl", hash = "sha256:178aefcd11307d874b4cd3100344e7e2d888d9791a6a1d9bfe90fbc1b74fd1d0", size = 9923, upload-time = "2025-05-26T13:58:43.487Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/b3/7fefc43fb706380144bcd293cc6e446e6f637ddfa8b83f48d1734156b529/pytest_mock-3.15.0-py3-none-any.whl", hash = "sha256:ef2219485fb1bd256b00e7ad7466ce26729b30eadfc7cbcdb4fa9a92ca68db6f", size = 10050, upload-time = "2025-09-04T20:57:47.274Z" },
 ]
 
 [[package]]
