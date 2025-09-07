@@ -224,6 +224,7 @@ async def generate_spelltable_link_headless(  # pragma: no cover
 
     retries = 3
     link: str | None = None
+    page: Page | None = None
     for attempt in range(retries):
         # round robin through the accounts, pick a new account each time
         username, password = accounts[ROUND_ROBIN % len(accounts)]
@@ -259,7 +260,6 @@ async def generate_spelltable_link_headless(  # pragma: no cover
             resp = await info.value
             data = await resp.json()
             link = f"https://spelltable.wizards.com/game/{data['id']}"
-            await page.context.close()
             break
 
         except Exception as ex:
@@ -272,6 +272,10 @@ async def generate_spelltable_link_headless(  # pragma: no cover
                 username,
             )
             await asyncio.sleep(2**attempt)
+
+        finally:
+            if page is not None:
+                await page.close()
 
     return link
 
