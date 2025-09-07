@@ -3,7 +3,7 @@ resource "aws_ecs_service" "spellbot_prod" {
   name            = "spellbot-prod"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.spellbot_prod.arn
-  desired_count   = 0
+  desired_count   = 1
   launch_type     = "FARGATE"
 
   # Deployment configuration - no duplicates allowed (0% min, 100% max)
