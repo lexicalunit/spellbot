@@ -23,7 +23,7 @@ The Discord bot for <a href="https://spelltable.wizards.com/">SpellTable</a>
 
 | <!-- --> | <!-- --> |
 | ---: | :---: |
-| **Deployment**    | [![build][build-badge]][build] [![heroku][heroku-badge]][heroku] |
+| **Deployment**    | [![build][build-badge]][build] [![aws][aws-badge]][aws] |
 | **Dependencies**  | [![python][python-badge]][python] [![discord.py][discord-py-badge]][discord-py] |
 | **Distribution**  | [![pypi][pypi-badge]][pypi] [![docker][docker-badge]][docker-hub] [![mit][mit-badge]][mit] |
 | **Quality**       | [![codecov][codecov-badge]][codecov] [![ruff][ruff-badge]][ruff] [![pyright][pyright-badge]][pyright] |
@@ -164,6 +164,8 @@ Any usage of SpellBot implies that you accept the following policies.
 
 [MIT][mit] © [amy@lexicalunit][lexicalunit] et [al][contributors]
 
+[aws-badge]: https://img.shields.io/badge/cloud-aws-green
+[aws]: https://console.aws.amazon.com/console/home
 [build-badge]: https://github.com/lexicalunit/spellbot/workflows/build/badge.svg
 [build]: https://github.com/lexicalunit/spellbot/actions
 [codecov-badge]: https://codecov.io/gh/lexicalunit/spellbot/branch/main/graph/badge.svg
@@ -179,8 +181,6 @@ Any usage of SpellBot implies that you accept the following policies.
 [docker-hub]: https://hub.docker.com/r/lexicalunit/spellbot
 [follow-badge]: https://img.shields.io/badge/Bluesky-1185FE?style=flat&logo=bluesky&logoColor=white
 [follow]: https://bsky.app/profile/spellbot.io
-[heroku-badge]: https://img.shields.io/badge/cloud-heroku-green
-[heroku]: https://dashboard.heroku.com/apps/lexicalunit-spellbot
 [issues]: https://github.com/lexicalunit/spellbot/issues
 [kofi-button]: https://img.shields.io/badge/Ko--fi-F16061?style=flat&logo=ko-fi&logoColor=white
 [kofi]: https://ko-fi.com/lexicalunit

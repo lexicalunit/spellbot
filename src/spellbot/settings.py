@@ -37,7 +37,7 @@ class Settings:
         "MOD_PREFIX",
         "PENDING_EMBED_COLOR",
         "PORT",
-        "REDISCLOUD_URL",
+        "REDIS_URL",
         "SPELLTABLE_AUTH_KEY",
         "SPELLTABLE_CREATE",
         "SPELLTABLE_PASSES",
@@ -90,7 +90,7 @@ class Settings:
         self.DATABASE_URL = database_url
 
         # cache
-        self.REDISCLOUD_URL = getenv("REDISCLOUD_URL")
+        self.REDIS_URL = getenv("REDIS_URL")
 
         # spelltable
         self.ENABLE_SPELLTABLE = getenv("ENABLE_SPELLTABLE", "true").lower() == "true"

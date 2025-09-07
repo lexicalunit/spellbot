@@ -1654,7 +1654,7 @@ requires-dist = [
     { name = "hupper", specifier = ">=1.12.1,<2.0.0" },
     { name = "importlib-resources", specifier = ">=6.4.0,<7.0" },
     { name = "packaging", specifier = ">=24.0,<26.0" },
-    { name = "playwright", specifier = ">=1.49.1,<2.0.0" },
+    { name = "playwright", specifier = "==1.55.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.9,<4.0.0" },
     { name = "python-dateutil", specifier = ">=2.8.2,<3.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.1,<2.0.0" },

@@ -27,10 +27,10 @@ return current
 
 
 async def rate_limited(request: web.Request, key: str | None = None) -> bool:
-    if not settings.REDISCLOUD_URL:
+    if not settings.REDIS_URL:
         return False
 
-    redis = await aioredis.from_url(settings.REDISCLOUD_URL)
+    redis = await aioredis.from_url(settings.REDIS_URL)
     ip = request.remote
     key = key or f"rate_limit:{ip}"
 
