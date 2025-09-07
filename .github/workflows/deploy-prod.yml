@@ -1,0 +1,21 @@
+name: Deploy to prod
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      image-tag-suffix:
+        description: "Additional tag suffix for the Docker image (optional)"
+        required: false
+        type: string
+
+jobs:
+  deploy-prod:
+    name: Deploy to prod
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: prod
+      image-tag-suffix: ${{ inputs.image-tag-suffix || '' }}
+    secrets: inherit
