@@ -24,7 +24,7 @@ ROUND_ROBIN_LOCK = asyncio.Lock()
 USER_LOCKS: dict[str, asyncio.Lock] = {}
 USER_LOCKS_LOCK = asyncio.Lock()  # protects USER_LOCKS itself
 TIMEOUT_S = 3
-RETRY_ATTEMPTS = 3
+RETRY_ATTEMPTS = 2
 
 
 class SpellTableCSRFError(RuntimeError):
@@ -301,6 +301,5 @@ async def generate_spelltable_link(game: GameDict) -> str | None:  # pragma: no 
                     username,
                     exc_info=True,
                 )
-                await asyncio.sleep(TIMEOUT_S)
 
     return None
