@@ -1,14 +1,20 @@
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
-
+FROM python:3.12-alpine
 ARG DD_VERSION=dev
+
+RUN apk add --no-cache bash libpq libffi \
+  && pip install --no-cache-dir uv
+
+COPY LICENSE.md README.md pyproject.toml uv.lock /spellbot/
+RUN uv sync --no-cache --frozen --no-dev --directory ./spellbot --no-install-project
 
 COPY scripts/start-spellbot.sh /start-spellbot.sh
 COPY scripts/start-spellapi.sh /start-spellapi.sh
 COPY scripts/start.sh /start.sh
+RUN chmod +x /start-spellbot.sh /start-spellapi.sh /start.sh
+
 COPY src /spellbot/src
-COPY LICENSE.md README.md pyproject.toml uv.lock /spellbot/
-RUN chmod +x /start-spellbot.sh /start-spellapi.sh /start.sh \
-    && uv sync --no-cache --directory ./spellbot
+RUN uv sync --no-cache --frozen --no-dev --directory ./spellbot \
+  && pip uninstall -y uv
 
 ENV PATH="/spellbot/.venv/bin:$PATH"
 ENV DD_VERSION=$DD_VERSION
