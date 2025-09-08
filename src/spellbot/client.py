@@ -83,12 +83,11 @@ class SpellBot(AutoShardedBot):
 
     @tracer.wrap()
     async def create_game_link(self, game: GameDict) -> GameLinkDetails:
-        if span := tracer.current_span():
-            span.set_tag("link_service", GameService(game["service"]).name)
-
         if self.mock_games:
             return GameLinkDetails(f"http://exmaple.com/game/{uuid4()}")
         service = game.get("service")
+        if span := tracer.current_span():
+            span.set_tag("link_service", GameService(service).name)
         if service == GameService.SPELLTABLE.value:
             if settings.ENABLE_SPELLTABLE:
                 link = await generate_spelltable_link(game)
