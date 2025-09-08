@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Deployment changed to AWS.
+- Removed dependency on headless chrome for SpellTable game creation.
 
 ### Fixed
 

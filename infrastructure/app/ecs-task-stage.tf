@@ -139,6 +139,14 @@ resource "aws_ecs_task_definition" "spellbot_stage" {
           valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:TABLESTREAM_AUTH_KEY::"
         },
         {
+          name      = "SPELLTABLE_CLIENT_ID"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_CLIENT_ID::"
+        },
+        {
+          name      = "SPELLTABLE_API_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_API_KEY::"
+        },
+        {
           name      = "DATABASE_URL"
           valueFrom = "${data.aws_secretsmanager_secret.stage_db_password.arn}:DB_URL::"
         }
