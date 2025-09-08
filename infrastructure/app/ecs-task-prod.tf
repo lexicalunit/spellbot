@@ -50,6 +50,10 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
           value = "true"
         },
         {
+          name  = "DD_LOG_FORMAT"
+          value = "json"
+        },
+        {
           name  = "API_BASE_URL"
           value = "https://${local.prod_domain_name}"
         }
