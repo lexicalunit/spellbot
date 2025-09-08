@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Workaround a weird issue with pylic that is blocking CI.
+
 ## [v16.0.3](https://github.com/lexicalunit/spellbot/releases/tag/v16.0.3) - 2025-09-07
 
 ### Fixed
