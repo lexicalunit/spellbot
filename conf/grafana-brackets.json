@@ -24,13 +24,13 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 13,
+  "id": 0,
   "links": [],
   "panels": [
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "K5gha0AGz"
+        "uid": "dexhxyaxvbu2od"
       },
       "fieldConfig": {
         "defaults": {
@@ -43,7 +43,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               }
             ]
           }
@@ -74,12 +74,12 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.5.0-81938",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
@@ -111,7 +111,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "K5gha0AGz"
+        "uid": "dexhxyaxvbu2od"
       },
       "fieldConfig": {
         "defaults": {
@@ -123,8 +123,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "yellow",
+                "value": 0
               }
             ]
           }
@@ -155,12 +155,12 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.5.0-81938",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
@@ -192,7 +192,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "K5gha0AGz"
+        "uid": "dexhxyaxvbu2od"
       },
       "fieldConfig": {
         "defaults": {
@@ -204,8 +204,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "blue",
+                "value": 0
               }
             ]
           }
@@ -236,12 +236,12 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.5.0-81938",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
@@ -273,7 +273,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "K5gha0AGz"
+        "uid": "dexhxyaxvbu2od"
       },
       "fieldConfig": {
         "defaults": {
@@ -285,8 +285,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "orange",
+                "value": 0
               }
             ]
           }
@@ -317,12 +317,12 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.5.0-81938",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
@@ -354,7 +354,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "K5gha0AGz"
+        "uid": "dexhxyaxvbu2od"
       },
       "fieldConfig": {
         "defaults": {
@@ -366,8 +366,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "red",
+                "value": 0
               }
             ]
           }
@@ -398,12 +398,12 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.5.0-81938",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
@@ -435,7 +435,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "K5gha0AGz"
+        "uid": "dexhxyaxvbu2od"
       },
       "fieldConfig": {
         "defaults": {
@@ -447,8 +447,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "purple",
+                "value": 0
               }
             ]
           },
@@ -480,17 +480,17 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.5.0-81938",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  (sum(case when bracket != 1 then 1 else 0 end) * 1.0) /\n   sum(case when format in (1, 12, 13, 14, 15, 16, 17) then 1 else 0 end) * 100.0\n   as \"Addoption Rate\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\nGROUP BY 1\nORDER BY 1;",
+          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  (sum(case when format in (1, 12, 13, 14, 15, 16, 17) and bracket != 1 then 1 else 0 end) * 1.0) /\n   sum(case when format in (1, 12, 13, 14, 15, 16, 17) then 1 else 0 end) * 100.0\n   as \"Addoption Rate\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\nGROUP BY 1\nORDER BY 1;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -516,8 +516,8 @@
     },
     {
       "datasource": {
-        "type": "postgres",
-        "uid": "K5gha0AGz"
+        "type": "grafana-postgresql-datasource",
+        "uid": "dexhxyaxvbu2od"
       },
       "fieldConfig": {
         "defaults": {
@@ -525,14 +525,15 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisGridShow": true,
+            "axisGridShow": false,
             "axisLabel": "",
             "axisPlacement": "left",
+            "axisSoftMax": 100,
             "barAlignment": 0,
-            "barWidthFactor": 0.6,
+            "barWidthFactor": 0.5,
             "drawStyle": "bars",
             "fillOpacity": 100,
             "gradientMode": "none",
@@ -543,12 +544,13 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 1,
+            "lineWidth": 0,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -564,7 +566,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               }
             ]
           },
@@ -613,7 +615,7 @@
         ]
       },
       "gridPos": {
-        "h": 14,
+        "h": 19,
         "w": 24,
         "x": 0,
         "y": 5
@@ -623,8 +625,7 @@
         "legend": {
           "calcs": [
             "mean",
-            "max",
-            "min"
+            "max"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -640,18 +641,18 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.5.0-81938",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"Bracket 1: Exhibition\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND bracket = 2\nGROUP BY 1\nORDER BY 1;",
+          "rawSql": "SELECT\n  $__timeGroup(created_at,1d) AS \"time\",\n  COUNT(id) AS \"Bracket 1: Exhibition\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND bracket = 2\nGROUP BY 1\nORDER BY 1;",
           "refId": "Bracket 1",
           "sql": {
             "columns": [
@@ -674,7 +675,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
@@ -703,7 +704,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
@@ -732,7 +733,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
@@ -761,7 +762,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
@@ -790,13 +791,13 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
+            "uid": "dexhxyaxvbu2od"
           },
           "editorMode": "code",
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  (sum(case when bracket != 1 then 1 else 0 end) * 1.0) /\n   sum(case when format in (1, 12, 13, 14, 15, 16, 17) then 1 else 0 end) * 100.0\n   as \"Adoption Rate\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\nGROUP BY 1\nORDER BY 1;",
+          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  (sum(case when format in (1, 12, 13, 14, 15, 16, 17) and bracket != 1 then 1 else 0 end) * 1.0) /\n   sum(case when format in (1, 12, 13, 14, 15, 16, 17) then 1 else 0 end) * 100.0\n   as \"Adoption Rate\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\nGROUP BY 1\nORDER BY 1;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -817,290 +818,13 @@
           }
         }
       ],
-      "title": "Daily Bracket Breakdown (Including cEDH)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "K5gha0AGz"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisGridShow": true,
-            "axisLabel": "",
-            "axisPlacement": "left",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 100,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 1,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Adoption Rate"
-            },
-            "properties": [
-              {
-                "id": "custom.drawStyle",
-                "value": "line"
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-purple",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineInterpolation",
-                "value": "smooth"
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 3
-              },
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 24,
-        "x": 0,
-        "y": 19
-      },
-      "id": 70,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max",
-            "min"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "timezone": [
-          "browser"
-        ],
-        "tooltip": {
-          "hideZeros": false,
-          "maxHeight": 600,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.5.0-81938",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"Bracket 1: Exhibition\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND bracket = 2\nGROUP BY 1\nORDER BY 1;",
-          "refId": "Bracket 1",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"Bracket 2: Core\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND bracket = 3\nGROUP BY 1\nORDER BY 1;",
-          "refId": "Bracket 2",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"Bracket 3: Upgraded\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND bracket = 4\nGROUP BY 1\nORDER BY 1;",
-          "refId": "Bracket 3",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  COUNT(id) AS \"Bracket 4: Optimized\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND bracket = 5\nGROUP BY 1\nORDER BY 1;",
-          "refId": "Bracket 4",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "K5gha0AGz"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(created_at,1d),\n  (sum(case when bracket != 1 then 1 else 0 end) * 1.0) /\n   sum(case when format in (1, 12, 13, 14, 15, 16, 17) then 1 else 0 end) * 100.0\n   as \"Adoption Rate\"\nFROM games\nWHERE $__timeFilter(created_at)\n  AND started_at is not null\n  AND bracket != 6\nGROUP BY 1\nORDER BY 1;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "Daily Bracket Breakdown (Excluding cEDH)",
+      "title": "Daily Bracket Breakdown",
       "type": "timeseries"
     }
   ],
   "preload": false,
   "refresh": "",
-  "schemaVersion": 40,
+  "schemaVersion": 41,
   "tags": [],
   "templating": {
     "list": []
@@ -1113,6 +837,5 @@
   "timezone": "browser",
   "title": "Commander Brackets",
   "uid": "brackets",
-  "version": 18,
-  "weekStart": ""
+  "version": 31
 }
