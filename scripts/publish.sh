@@ -88,7 +88,8 @@ run "git commit -am 'Release $VERSION'"
 
 # make sure that the docker build works before publishing
 TAG="lexicalunit/spellbot"
-run "DOCKER_BUILDKIT=0 docker buildx build --ulimit nofile=1024000:1024000 --platform linux/amd64 -t '$TAG' ."
+DD_VERSION="$(git rev-parse --short HEAD)"
+run "DOCKER_BUILDKIT=0 docker buildx build --ulimit nofile=1024000:1024000 --build-arg DD_VERSION='$DD_VERSION' --platform linux/arm64 -t '$TAG' ."
 
 # publish the release; assumes you've set up non-interactive publishing previously running:
 # security add-generic-password -s spellbot -a "$USER" -w YOUR-PYPI-TOKEN
