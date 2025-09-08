@@ -50,6 +50,10 @@ resource "aws_ecs_task_definition" "spellbot_stage" {
           value = "true"
         },
         {
+          name  = "DD_LOG_FORMAT"
+          value = "json"
+        },
+        {
           name  = "API_BASE_URL"
           value = "https://${local.stage_domain_name}"
         }

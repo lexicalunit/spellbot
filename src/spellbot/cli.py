@@ -124,4 +124,4 @@ def main(
 
         assert settings.BOT_TOKEN is not None
         bot = build_bot(mock_games=mock_games)
-        bot.run(settings.BOT_TOKEN)
+        bot.run(settings.BOT_TOKEN, log_handler=None)

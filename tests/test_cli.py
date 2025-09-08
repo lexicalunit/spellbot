@@ -54,7 +54,7 @@ class TestCLI:
         cli.hupper.start_reloader.assert_not_called()
         cli.configure_logging.assert_called_once_with("INFO")
         cli.build_bot.assert_called_once_with(mock_games=False)
-        cli.bot.run.assert_called_once_with("facedeadbeef")
+        cli.bot.run.assert_called_once_with("facedeadbeef", log_handler=None)
 
     def test_run_bot_with_log_level(
         self,
