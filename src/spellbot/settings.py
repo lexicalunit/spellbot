@@ -38,7 +38,9 @@ class Settings:
         "PENDING_EMBED_COLOR",
         "PORT",
         "REDIS_URL",
+        "SPELLTABLE_API_KEY",
         "SPELLTABLE_AUTH_KEY",
+        "SPELLTABLE_CLIENT_ID",
         "SPELLTABLE_CREATE",
         "SPELLTABLE_PASSES",
         "SPELLTABLE_ROOT",
@@ -97,6 +99,8 @@ class Settings:
         self.SPELLTABLE_ROOT = "https://us-central1-magic-night-30324.cloudfunctions.net"
         self.SPELLTABLE_CREATE = f"{self.SPELLTABLE_ROOT}/createGame"
         self.SPELLTABLE_AUTH_KEY = getenv("SPELLTABLE_AUTH_KEY")
+        self.SPELLTABLE_API_KEY = getenv("SPELLTABLE_API_KEY")
+        self.SPELLTABLE_CLIENT_ID = getenv("SPELLTABLE_CLIENT_ID")
 
         # spelltable headless
         self.SPELLTABLE_USERS = getenv("SPELLTABLE_USERS")

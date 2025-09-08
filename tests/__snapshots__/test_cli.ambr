@@ -13,7 +13,6 @@
     -m, --mock-games                Produce mock game urls instead of real ones
     -a, --api                       Start the API web server instead of the bot
     -p, --port INTEGER              Use the given port number to serve the API
-    -i, --interactive               Interactive headless chrome mode
     --version                       Show the version and exit.
     --help                          Show this message and exit.
   
