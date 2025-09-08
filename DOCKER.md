@@ -28,7 +28,12 @@ docker pull lexicalunit/spellbot
 Or build it yourself:
 
 ```shell
-docker build -t spellbot .
+DD_VERSION="$(git rev-parse --short HEAD)"
+DOCKER_BUILDKIT=0 docker buildx build \
+    --build-arg DD_VERSION="$DD_VERSION" \
+    --ulimit nofile=1024000:1024000 \
+    --platform linux/arm64 \
+    -t 'lexicalunit/spellbot' .
 ```
 
 Now you can run SpellBot via `docker run`. You should pass your
@@ -44,5 +49,5 @@ docker run -it --rm -p 8080:80 \
     -e BOT_TOKEN="<Your Discord provided bot token>" \
     -e SPELLTABLE_AUTH_KEY="<Your SpellTable API auth token>" \
     -e DEBUG_GUILD="<optional: Debug guild id to use>" \
-    <lexicalunit/spellbot (pulled from registry) or spellbot (built locally)>
+    lexicalunit/spellbot
 ```
