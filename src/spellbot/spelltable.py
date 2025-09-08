@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from random import randint
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple, cast
 from urllib.parse import parse_qs, urlparse
 
-import requests
+import httpx
 
 from spellbot.enums import GameFormat
 from spellbot.metrics import add_span_error
@@ -19,7 +20,36 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 ROUND_ROBIN = None
+ROUND_ROBIN_LOCK = asyncio.Lock()
+USER_LOCKS: dict[str, asyncio.Lock] = {}
+USER_LOCKS_LOCK = asyncio.Lock()  # protects USER_LOCKS itself
 TIMEOUT_S = 3
+RETRY_ATTEMPTS = 3
+
+
+class SpellTableCSRFError(RuntimeError):
+    def __init__(self) -> None:  # pragma: no cover
+        super().__init__("No CSRF token in login response")
+
+
+class SpellTableRedirectError(RuntimeError):
+    def __init__(self) -> None:  # pragma: no cover
+        super().__init__("No redirect_target in authorize response")
+
+
+class SpellTableCodeError(RuntimeError):
+    def __init__(self) -> None:  # pragma: no cover
+        super().__init__("No code in redirect_target query params")
+
+
+class TokenData(NamedTuple):
+    access_token: str
+    refresh_token: str
+    expires_at: datetime
+
+
+# Global in-memory token store
+user_tokens: dict[str, TokenData] = {}
 
 
 class SpellTableGameTypes(Enum):
@@ -77,15 +107,10 @@ def spelltable_game_type(format: GameFormat) -> SpellTableGameTypes:  # noqa: C9
             return SpellTableGameTypes.Commander
 
 
-async def generate_spelltable_link(  # pragma: no cover  # noqa: PLR0915
-    game: GameDict,
-) -> str | None:
-    global ROUND_ROBIN  # noqa: PLW0603
-
-    assert settings.SPELLTABLE_USERS is not None
-    assert settings.SPELLTABLE_PASSES is not None
-
-    accounts = list(
+def get_accounts() -> list[tuple[str, str]]:  # pragma: no cover
+    assert settings.SPELLTABLE_USERS, "SPELLTABLE_USERS not configured"
+    assert settings.SPELLTABLE_PASSES, "SPELLTABLE_PASSES not configured"
+    return list(
         zip(
             settings.SPELLTABLE_USERS.split(","),
             settings.SPELLTABLE_PASSES.split(","),
@@ -93,129 +118,189 @@ async def generate_spelltable_link(  # pragma: no cover  # noqa: PLR0915
         )
     )
 
-    # if we haven't started round robin, pick a random starting point
-    if ROUND_ROBIN is None:
-        ROUND_ROBIN = randint(0, len(accounts) - 1)  # noqa: S311
 
-    retries = 3
-    link: str | None = None
-    for attempt in range(retries):
-        session = requests.Session()
-
-        # round robin through the accounts, pick a new account each time
+async def pick_account(accounts: list[tuple[str, str]]) -> tuple[str, str]:  # pragma: no cover
+    global ROUND_ROBIN  # noqa: PLW0603
+    async with ROUND_ROBIN_LOCK:
+        if ROUND_ROBIN is None:
+            ROUND_ROBIN = randint(0, len(accounts) - 1)  # noqa: S311
         username, password = accounts[ROUND_ROBIN % len(accounts)]
         ROUND_ROBIN += 1
+        return username, password
 
-        try:
-            # Step 1: Get CSRF token (set in session cookies)
-            csrf_resp = session.get("https://myaccounts.wizards.com/login", timeout=TIMEOUT_S)
-            csrf_resp.raise_for_status()
-            csrf_token = session.cookies.get("_csrf")
-            if not csrf_token:
-                logger.warning("warning: no csrf token found in login response")
-                continue
 
-            # Step 2: Login
-            login_url = "https://myaccounts.wizards.com/api/login"
-            login_payload = {
-                "username": username,
-                "password": password,
-                "referringClientID": settings.SPELLTABLE_CLIENT_ID,
-                "remember": False,
-                "_csrf": csrf_token,
-            }
-            login_resp = session.post(login_url, json=login_payload, timeout=TIMEOUT_S)
-            login_resp.raise_for_status()
+async def get_user_lock(username: str) -> asyncio.Lock:  # pragma: no cover
+    async with USER_LOCKS_LOCK:
+        if username not in USER_LOCKS:
+            USER_LOCKS[username] = asyncio.Lock()
+        return USER_LOCKS[username]
 
-            # Step 2: Get client info
-            client_url = "https://myaccounts.wizards.com/api/client"
-            client_payload = {
-                "clientID": settings.SPELLTABLE_CLIENT_ID,
-                "language": "en-US",
-                "_csrf": csrf_token,
-            }
-            client_resp = session.post(client_url, json=client_payload, timeout=TIMEOUT_S)
-            client_resp.raise_for_status()
 
-            # Step 3: Authorize client (SpellTable)
-            auth_url = "https://myaccounts.wizards.com/api/authorize"
-            auth_payload = {
-                "clientInput": {
-                    "clientID": settings.SPELLTABLE_CLIENT_ID,
-                    "redirectURI": "https://spelltable.wizards.com/auth/authorize",
-                    "scope": "email",
-                    "state": "",
-                    "version": "2",
-                },
-                "_csrf": csrf_token,
-            }
-            auth_resp = session.post(
-                auth_url,
-                json=auth_payload,
-                allow_redirects=False,
-                timeout=TIMEOUT_S,
-            )
-            auth_resp.raise_for_status()
+async def get_csrf(client: httpx.AsyncClient) -> str:  # pragma: no cover
+    resp = await client.get("https://myaccounts.wizards.com/login")
+    resp.raise_for_status()
+    csrf_token = client.cookies.get("_csrf")
+    if not csrf_token:
+        raise SpellTableCSRFError
+    return csrf_token
 
-            # Step 4: Extract code from JSON response
-            redirect_target = auth_resp.json().get("data", {}).get("redirect_target")
-            if not redirect_target:
-                logger.warning("No redirect_target found in authorize response")
-                continue
 
-            parsed = urlparse(redirect_target)
-            query_params = parse_qs(parsed.query)
-            code = query_params.get("code", [None])[0]
-            if not code:
-                logger.warning("No code found in redirect_target query params")
-                continue
+async def login(  # pragma: no cover
+    client: httpx.AsyncClient,
+    username: str,
+    password: str,
+    csrf: str,
+) -> None:
+    url = "https://myaccounts.wizards.com/api/login"
+    payload = {
+        "username": username,
+        "password": password,
+        "referringClientID": settings.SPELLTABLE_CLIENT_ID,
+        "remember": False,
+        "_csrf": csrf,
+    }
+    resp = await client.post(url, json=payload)
+    resp.raise_for_status()
 
-            # Step 5: Exchange code for access token
-            ex_url = "https://xgaqvxzggl.execute-api.us-west-2.amazonaws.com/prod/exchangeCode"
-            ex_payload = {"code": code}
-            ex_headers = {"x-api-key": settings.SPELLTABLE_API_KEY}
-            ex_resp = session.post(ex_url, json=ex_payload, headers=ex_headers, timeout=TIMEOUT_S)
-            ex_resp.raise_for_status()
-            access_token = ex_resp.json()["access_token"]
 
-            # Step 7: Create the game
-            format = spelltable_game_type(GameFormat(game["format"])).value
-            create_url = "https://xgaqvxzggl.execute-api.us-west-2.amazonaws.com/prod/createGame"
-            create_headers = {"x-api-key": settings.SPELLTABLE_API_KEY}
-            create_payload = {
-                "token": access_token,
-                "name": f"SB{game['id']}",
-                "description": "",
-                "format": format,
-                "isPublic": False,
-                "tags": {},
-            }
-            create_resp = session.post(
-                create_url,
-                headers=create_headers,
-                json=create_payload,
-                timeout=TIMEOUT_S,
-            )
-            create_resp.raise_for_status()
-            create_data = create_resp.json()
-            link = f"https://spelltable.wizards.com/game/{create_data['id']}"
-            break
+async def client_info(client: httpx.AsyncClient, csrf: str) -> None:  # pragma: no cover
+    url = "https://myaccounts.wizards.com/api/client"
+    payload = {
+        "clientID": settings.SPELLTABLE_CLIENT_ID,
+        "language": "en-US",
+        "_csrf": csrf,
+    }
+    resp = await client.post(url, json=payload)
+    resp.raise_for_status()
 
-        except Exception as ex:
-            add_span_error(ex)
-            if attempt + 1 == retries:
-                logger.exception("error: SpellTable API issue (final attempt, user: %s):")
-                return None
 
-            logger.warning(
-                "warning: SpellTable API issue (attempt %s, user: %s):",
-                attempt + 1,
-                username,
-                exc_info=True,
-            )
-            await asyncio.sleep(TIMEOUT_S)
+async def authorize(client: httpx.AsyncClient, csrf: str) -> str:  # pragma: no cover
+    url = "https://myaccounts.wizards.com/api/authorize"
+    payload = {
+        "clientInput": {
+            "clientID": settings.SPELLTABLE_CLIENT_ID,
+            "redirectURI": "https://spelltable.wizards.com/auth/authorize",
+            "scope": "email",
+            "state": "",
+            "version": "2",
+        },
+        "_csrf": csrf,
+    }
+    resp = await client.post(url, json=payload, follow_redirects=False)
+    resp.raise_for_status()
+    redirect_target = resp.json().get("data", {}).get("redirect_target")
+    if not redirect_target:
+        raise SpellTableRedirectError
 
-        finally:
-            session.close()
+    parsed = urlparse(redirect_target)
+    code = parse_qs(parsed.query).get("code", [None])[0]
+    if not code:
+        raise SpellTableCodeError
+    return code
 
-    return link
+
+async def exchange_code(client: httpx.AsyncClient, code: str) -> TokenData:  # pragma: no cover
+    url = "https://xgaqvxzggl.execute-api.us-west-2.amazonaws.com/prod/exchangeCode"
+    payload = {"code": code}
+    headers = {"x-api-key": cast("str", settings.SPELLTABLE_API_KEY)}
+    resp = await client.post(url, json=payload, headers=headers)
+    resp.raise_for_status()
+    data = resp.json()
+    return TokenData(
+        access_token=data["access_token"],
+        refresh_token=data["refresh_token"],
+        expires_at=datetime.now(tz=UTC) + timedelta(seconds=data["expires_in"]),
+    )
+
+
+async def refresh_access_token(  # pragma: no cover
+    client: httpx.AsyncClient,
+    refresh_token: str,
+) -> TokenData | None:
+    headers = {"x-api-key": cast("str", settings.SPELLTABLE_API_KEY)}
+    url = "https://xgaqvxzggl.execute-api.us-west-2.amazonaws.com/prod/refreshToken"
+    try:
+        resp = await client.post(url, headers=headers, json={"refreshToken": refresh_token})
+        resp.raise_for_status()
+        data = resp.json()
+        return TokenData(
+            access_token=data["access_token"],
+            refresh_token=data["refresh_token"],
+            expires_at=datetime.now(tz=UTC) + timedelta(seconds=data["expires_in"]),
+        )
+    except Exception as ex:
+        logger.warning("Token refresh failed: %s", ex, exc_info=True)
+        return None
+
+
+async def create_game(  # pragma: no cover
+    client: httpx.AsyncClient,
+    token: str,
+    game: GameDict,
+) -> str:
+    url = "https://xgaqvxzggl.execute-api.us-west-2.amazonaws.com/prod/createGame"
+    headers = {"x-api-key": cast("str", settings.SPELLTABLE_API_KEY)}
+    format = spelltable_game_type(GameFormat(game["format"])).value
+    payload = {
+        "token": token,
+        "name": f"SB{game['id']}",
+        "description": "",
+        "format": format,
+        "isPublic": False,
+        "tags": {},
+    }
+    resp = await client.post(url, headers=headers, json=payload)
+    resp.raise_for_status()
+    data = resp.json()
+    return f"https://spelltable.wizards.com/game/{data['id']}"
+
+
+async def generate_spelltable_link(game: GameDict) -> str | None:  # pragma: no cover
+    accounts = get_accounts()
+    timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
+
+    for attempt in range(RETRY_ATTEMPTS):
+        username, password = await pick_account(accounts)
+        user_lock = await get_user_lock(username)
+
+        async with user_lock, httpx.AsyncClient(timeout=timeout) as client:
+            try:
+                now = datetime.now(tz=UTC)
+                token_data = user_tokens.get(username)
+                access_token: str | None = None
+                if token_data and token_data.access_token and token_data.expires_at > now:
+                    access_token = token_data.access_token
+                elif token_data and token_data.refresh_token and token_data.expires_at <= now:
+                    refreshed = await refresh_access_token(client, token_data.refresh_token)
+                    if refreshed:
+                        user_tokens[username] = refreshed
+                        access_token = refreshed.access_token
+
+                if not access_token:
+                    csrf = await get_csrf(client)
+                    await login(client, username, password, csrf)
+                    await client_info(client, csrf)
+                    code = await authorize(client, csrf)
+                    new_token = await exchange_code(client, code)
+                    user_tokens[username] = new_token
+                    access_token = new_token.access_token
+
+                return await create_game(client, access_token, game)
+
+            except Exception as ex:
+                add_span_error(ex)
+                if attempt == RETRY_ATTEMPTS - 1:
+                    logger.exception(
+                        "SpellTable API failure (final attempt, user=%s):",
+                        username,
+                    )
+                    return None
+                logger.warning(
+                    "SpellTable API issue (attempt %s, user=%s):",
+                    attempt + 1,
+                    username,
+                    exc_info=True,
+                )
+                await asyncio.sleep(TIMEOUT_S)
+
+    return None
