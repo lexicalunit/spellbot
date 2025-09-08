@@ -208,7 +208,6 @@ safe_licenses = [
   "BSD-derived (http://www.repoze.org/LICENSE.txt)",
   "ISC License (ISCL)",
   "LICENSE.BSD3",
-  "MIT AND Python-2.0",
   "MIT License",
   "MIT",
   "Mozilla Public License 2.0 (MPL 2.0)",
