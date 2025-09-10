@@ -38,7 +38,7 @@ resource "aws_ecs_service" "spellbot_stage" {
   name            = "spellbot-stage"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.spellbot_stage.arn
-  desired_count   = 1
+  desired_count   = 0
   launch_type     = "FARGATE"
 
   # Deployment configuration - no duplicates allowed (0% min, 100% max)

@@ -3,8 +3,8 @@ resource "aws_ecs_task_definition" "spellbot_stage" {
   family                   = "spellbot-stage"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "2048" # 1 vCPU (smaller for stage)
-  memory                   = "6144" # 3 GB (smaller for stage)
+  cpu                      = "512"  # .5 vCPU (smaller for stage)
+  memory                   = "2048" # 2 GB (smaller for stage)
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
   runtime_platform {
