@@ -157,15 +157,17 @@ class TestCogOwner(ContextMixin):
             ),
         )
 
-    async def test_naughty(self, mocker: MockerFixture) -> None:
-        mocker.patch("spellbot.cogs.owner_cog.bad_users", [1, 2, 3])
+    async def test_is_bad(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.cogs.owner_cog.is_bad_user", side_effect=[True, False])
         cog = OwnerCog(self.bot)
 
-        await self.run(cog, cog.naughty, self.context)
+        await self.run(cog, cog.is_bad, self.context, "1")
+        self.context.author.send.assert_called_once_with("Yes")
 
-        self.context.author.send.assert_called_once_with(
-            "Naughty users: <@1> (1)\n<@2> (2)\n<@3> (3)",
-        )
+        self.context.author.send.reset_mock()
+
+        await self.run(cog, cog.is_bad, self.context, "2")
+        self.context.author.send.assert_called_once_with("No")
 
     async def test_sync(self, mocker: MockerFixture) -> None:
         mocker.patch("spellbot.cogs.owner_cog.load_extensions", AsyncMock())

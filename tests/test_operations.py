@@ -521,9 +521,23 @@ class TestOperationsChannelReply:
 
 @pytest.mark.asyncio
 class TestOperationsSendUser:
-    @pytest_asyncio.fixture(autouse=True)  # type: ignore
-    def mock_bad_users(self, mocker: MockerFixture) -> set[int]:
-        return mocker.patch.object(operations, "bad_users", set())
+    @pytest_asyncio.fixture  # type: ignore
+    def bad_users(self) -> set[int]:
+        return set()
+
+    @pytest_asyncio.fixture(autouse=True)
+    def mark_bad_user(self, mocker: MockerFixture, bad_users: set[int]) -> AsyncMock:
+        async def mark_bad_user(user_xid: int) -> None:
+            bad_users.add(user_xid)
+
+        return mocker.patch.object(operations, "mark_bad_user", mark_bad_user)
+
+    @pytest_asyncio.fixture(autouse=True)
+    def is_bad_user(self, mocker: MockerFixture, bad_users: set[int]) -> AsyncMock:
+        async def is_bad_user(user_xid: int) -> bool:
+            return user_xid in bad_users
+
+        return mocker.patch.object(operations, "is_bad_user", is_bad_user)
 
     async def test_happy_path(self) -> None:
         user = MagicMock(spec=discord.User | discord.Member)
