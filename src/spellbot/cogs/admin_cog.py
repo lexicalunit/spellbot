@@ -1,5 +1,3 @@
-import logging
-
 import discord
 from ddtrace.trace import tracer
 from discord import app_commands
@@ -9,11 +7,12 @@ from discord.ext import commands
 from spellbot import SpellBot
 from spellbot.actions import AdminAction
 from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
+from spellbot.logs import get_logger
 from spellbot.metrics import add_span_context
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_admin, is_guild
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @for_all_callbacks(app_commands.check(is_admin))

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import logging
-
 from ddtrace.trace import tracer
 
+from spellbot.logs import get_logger
 from spellbot.operations import (
     safe_delete_message,
     safe_fetch_text_channel,
@@ -17,7 +16,7 @@ from spellbot.views import PendingGameView
 
 from .base_action import BaseAction
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class LeaveAction(BaseAction):

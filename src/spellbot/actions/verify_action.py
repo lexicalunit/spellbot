@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING
 
+from spellbot.logs import get_logger
 from spellbot.operations import safe_send_channel
 
 from .base_action import BaseAction
@@ -10,7 +10,7 @@ from .base_action import BaseAction
 if TYPE_CHECKING:
     import discord
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class VerifyAction(BaseAction):

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from contextlib import suppress
 from enum import Enum, auto
 from typing import TYPE_CHECKING, NamedTuple
@@ -9,12 +8,13 @@ import aiohttp_jinja2
 from aiohttp.web_response import Response as WebResponse
 
 from spellbot.database import db_session_manager
+from spellbot.logs import get_logger
 from spellbot.services import PlaysService
 
 if TYPE_CHECKING:
     from aiohttp import web
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RecordKind(Enum):

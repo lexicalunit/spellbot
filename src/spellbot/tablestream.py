@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 
@@ -13,10 +12,12 @@ from spellbot.enums import GameFormat
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
+from .logs import get_logger
+
 if TYPE_CHECKING:
     from spellbot.models import GameDict
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TableSteamGameTypes(Enum):

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, NoReturn
@@ -13,13 +12,14 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 from wrapt import CallableObjectProxy
 
+from .logs import get_logger
 from .models import create_all, reverse_all
 from .settings import settings
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 context_vars: dict[ContextLocal, ContextVar] = {}  # type: ignore[reportMissingTypeArgument]
 
 

@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import logging
-
 import discord
 from ddtrace.trace import tracer
 
+from spellbot.logs import get_logger
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_defer_interaction
 from spellbot.utils import is_admin
 from spellbot.views import BaseView
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SetupView(BaseView):

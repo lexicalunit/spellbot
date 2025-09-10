@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import re
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
@@ -11,6 +10,7 @@ from dateutil import tz
 from ddtrace.trace import tracer
 
 from spellbot.database import db_session_manager, rollback_session
+from spellbot.logs import get_logger
 from spellbot.metrics import add_span_error, setup_ignored_errors
 from spellbot.operations import (
     bot_can_delete_channel,
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from spellbot import SpellBot
     from spellbot.models import GameDict
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class VoiceChannelFilterer:

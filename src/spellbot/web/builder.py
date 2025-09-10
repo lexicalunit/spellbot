@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -13,6 +12,7 @@ from aiohttp import web
 from babel.dates import format_datetime
 
 from spellbot.database import db_session_manager, initialize_connection
+from spellbot.logs import get_logger
 from spellbot.models import import_models
 from spellbot.services.apps import AppsService
 from spellbot.settings import settings
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     from aiohttp.typedefs import Handler
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
 

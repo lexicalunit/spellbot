@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, cast
 
 from redis import asyncio as aioredis
 
+from spellbot.logs import get_logger
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
     from aiohttp import web
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 RATE_LIMIT = 10  # attempts
 TIME_WINDOW = 60  # seconds

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import traceback
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, cast
@@ -22,6 +21,7 @@ from .errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
+from .logs import get_logger
 from .metrics import add_span_error
 from .settings import settings
 
@@ -31,8 +31,7 @@ if TYPE_CHECKING:
     from discord.abc import MessageableChannel
     from discord.ui import Item
 
-
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Discord API error code indicating that we can not send messages to this user.
 CANT_SEND_CODE = 50007

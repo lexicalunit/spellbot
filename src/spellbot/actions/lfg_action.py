@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 import re
 import urllib.parse
 from typing import TYPE_CHECKING
@@ -11,6 +10,7 @@ import discord
 from ddtrace.trace import tracer
 
 from spellbot.enums import GameBracket, GameFormat, GameService
+from spellbot.logs import get_logger
 from spellbot.models import MAX_RULES_LENGTH, GameStatus
 from spellbot.operations import (
     VoiceChannelSuggestion,
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from spellbot import SpellBot
     from spellbot.models import GameDict
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class LookingForGameAction(BaseAction):

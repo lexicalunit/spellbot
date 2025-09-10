@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -10,6 +9,8 @@ import alembic.config
 from sqlalchemy import String, create_engine, text
 from sqlalchemy.orm import declarative_base  # type: ignore (current type stubs are broken)
 from sqlalchemy_utils import create_database, database_exists
+
+from spellbot.logs import get_logger
 
 from . import import_models
 
@@ -22,7 +23,7 @@ PACKAGE_ROOT = MODULE_ROOT.parent
 MIGRATIONS_DIR = PACKAGE_ROOT / "migrations"
 ALEMBIC_INI = MIGRATIONS_DIR / "alembic.ini"
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 now = text("(now() at time zone 'utc')")
 Base: DeclarativeMeta = declarative_base()

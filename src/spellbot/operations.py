@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import random
 from asyncio import sleep
 from dataclasses import dataclass
@@ -12,6 +11,7 @@ from ddtrace.trace import tracer
 from discord.errors import DiscordException
 from discord.utils import MISSING
 
+from .logs import get_logger
 from .metrics import add_span_error
 from .utils import (
     CANT_SEND_CODE,
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
     GetChannelReturnType = GuildChannel | Thread | PrivateChannel | None
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 bad_users: set[int] = set()
 
 

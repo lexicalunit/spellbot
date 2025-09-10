@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 from uuid import uuid4
@@ -13,6 +12,7 @@ from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, 
 
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
+from .logs import get_logger
 from .metrics import setup_ignored_errors, setup_metrics
 from .models import GameLinkDetails
 from .operations import safe_delete_message
@@ -27,8 +27,7 @@ if TYPE_CHECKING:
 
     from .models import GameDict
 
-
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SpellBot(AutoShardedBot):

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from random import randint
@@ -14,10 +13,12 @@ from spellbot.enums import GameFormat
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
+from .logs import get_logger
+
 if TYPE_CHECKING:
     from spellbot.models import GameDict
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 ROUND_ROBIN = None
 ROUND_ROBIN_LOCK = asyncio.Lock()

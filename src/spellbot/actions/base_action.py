@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, NoReturn, Self, cast
 
@@ -15,6 +14,7 @@ from spellbot.errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
+from spellbot.logs import get_logger
 from spellbot.metrics import setup_ignored_errors
 from spellbot.services import ServicesRegistry
 from spellbot.utils import user_can_moderate
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from spellbot import SpellBot
     from spellbot.models import ChannelDict, GuildDict
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @sync_to_async()

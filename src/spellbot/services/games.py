@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
@@ -13,6 +12,7 @@ from sqlalchemy.sql.expression import and_, asc, column, or_
 from sqlalchemy.sql.functions import count
 
 from spellbot.database import DatabaseSession
+from spellbot.logs import get_logger
 from spellbot.models import (
     Block,
     Channel,
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from spellbot.operations import VoiceChannelSuggestion
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 MAX_GAME_LINK_LEN = Game.spelltable_link.property.columns[0].type.length  # type: ignore
 

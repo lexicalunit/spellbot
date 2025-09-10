@@ -1,4 +1,3 @@
-import logging
 from importlib import import_module
 from inspect import isclass
 from pathlib import Path
@@ -6,6 +5,8 @@ from pkgutil import iter_modules
 
 from discord.ext import commands
 from discord.ext.commands import AutoShardedBot
+
+from spellbot.logs import get_logger
 
 from .about_cog import AboutCog
 from .admin_cog import AdminCog
@@ -19,7 +20,7 @@ from .tasks_cog import TasksCog
 from .verify_cog import VerifyCog
 from .watch_cog import WatchCog
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Only exported cogs will be loaded into the bot at runtime.
 __all__ = [

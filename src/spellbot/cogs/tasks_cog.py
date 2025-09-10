@@ -1,5 +1,4 @@
 import asyncio
-import logging
 
 from ddtrace.trace import tracer
 from discord import Client
@@ -8,9 +7,10 @@ from discord.ext import commands, tasks
 from spellbot import SpellBot
 from spellbot.actions import TasksAction
 from spellbot.environment import running_in_pytest
+from spellbot.logs import get_logger
 from spellbot.settings import settings
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 WAIT_UNTIL_READY_TIMEOUT = 900.0  # 15 minutes
 

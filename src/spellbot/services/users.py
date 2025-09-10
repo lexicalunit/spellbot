@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
@@ -10,12 +9,13 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
+from spellbot.logs import get_logger
 from spellbot.models import Block, Game, Play, Post, Queue, User, UserAward, UserDict, Verify, Watch
 
 if TYPE_CHECKING:
     import discord
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class UsersService:

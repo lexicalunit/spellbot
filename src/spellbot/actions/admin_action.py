@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 import discord
 from discord.embeds import Embed
 
 from spellbot.enums import GameBracket, GameFormat, GameService
+from spellbot.logs import get_logger
 from spellbot.models import Channel, ChannelDict, GuildAward, GuildAwardDict
 from spellbot.operations import (
     safe_fetch_text_channel,
@@ -23,7 +23,7 @@ from .base_action import BaseAction
 if TYPE_CHECKING:
     from spellbot import SpellBot
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def humanize_bool(setting: bool) -> str:

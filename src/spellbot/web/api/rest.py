@@ -11,6 +11,7 @@ from aiohttp import web
 from dateutil import tz
 
 from spellbot.database import db_session_manager
+from spellbot.logs import get_logger
 from spellbot.services import GamesService, PlaysService, UsersService
 from spellbot.settings import settings
 from spellbot.web.tools import rate_limited
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 
     from spellbot.models import GameDict, UserDict
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def game_verify_endpoint(request: web.Request) -> WebResponse:
@@ -121,8 +122,8 @@ class InvalidJsonResponseError(ValueError): ...
 
 @tenacity.retry(
     stop=tenacity.stop_after_attempt(5),
-    before_sleep=tenacity.before_sleep_log(logger, logging.WARNING),
-    after=tenacity.after_log(logger, logging.INFO),
+    before_sleep=tenacity.before_sleep_log(cast("logging.Logger", logger), logging.WARNING),
+    after=tenacity.after_log(cast("logging.Logger", logger), logging.INFO),
     wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
     retry=tenacity.retry_if_exception_type(aiohttp.ClientError),
 )

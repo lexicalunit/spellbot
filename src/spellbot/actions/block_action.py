@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-import logging
 from enum import Enum
 
 import discord
 
+from spellbot.logs import get_logger
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
 
 from .base_action import BaseAction
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ActionType(Enum):
