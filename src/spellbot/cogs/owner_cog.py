@@ -8,7 +8,7 @@ from spellbot import SpellBot
 from spellbot.actions.base_action import handle_exception
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_context
-from spellbot.operations import bad_users, safe_send_user
+from spellbot.operations import is_bad_user, safe_send_user
 from spellbot.services import GuildsService, UsersService
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, load_extensions
@@ -136,12 +136,12 @@ class OwnerCog(commands.Cog):
             ),
         )
 
-    @commands.command(name="naughty")
-    @tracer.wrap(name="interaction", resource="naughty")
-    async def naughty(self, ctx: commands.Context[SpellBot]) -> None:
+    @commands.command(name="is_bad")
+    @tracer.wrap(name="interaction", resource="is_bad")
+    async def is_bad(self, ctx: commands.Context[SpellBot], arg: str | None) -> None:
         add_span_context(ctx)
-        resp = "\n".join([f"<@{xid}> ({xid})" for xid in bad_users])
-        await safe_send_user(ctx.message.author, f"Naughty users: {resp}")
+        result = await is_bad_user(arg)
+        await safe_send_user(ctx.message.author, "Yes" if result else "No")
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover

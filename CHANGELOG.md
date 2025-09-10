@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Use redis for bad user cache since uptime is much longer on AWS.
+
 ## [v16.1.1](https://github.com/lexicalunit/spellbot/releases/tag/v16.1.1) - 2025-09-08
 
 ### Changed
