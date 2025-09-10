@@ -3,8 +3,8 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
   family                   = "spellbot-prod"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "2048" # 2 vCPU
-  memory                   = "6144" # 6 GB
+  cpu                      = "1024" # 1 vCPU
+  memory                   = "3072" # 3 GB
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
   runtime_platform {
