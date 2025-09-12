@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v16.1.3](https://github.com/lexicalunit/spellbot/releases/tag/v16.1.3) - 2025-09-12
+
 ### Changed
 
 - Add the status attribute to logs so the show up nicely in datadog.
