@@ -16,7 +16,7 @@ from .enums import GameService
 from .metrics import setup_ignored_errors, setup_metrics
 from .models import GameLinkDetails
 from .operations import safe_delete_message
-from .services import ChannelsService, GamesService, GuildsService, VerifiesService
+from .services import ServicesRegistry
 from .settings import settings
 from .spelltable import generate_spelltable_link
 from .tablestream import generate_tablestream_link
@@ -159,21 +159,19 @@ class SpellBot(AutoShardedBot):
 
     @tracer.wrap()
     async def handle_verification(self, message: discord.Message) -> None:
+        services = ServicesRegistry()
         message_author_xid = message.author.id
         verified: bool | None = None
-        guilds = GuildsService()
         assert message.guild is not None
-        await guilds.upsert(message.guild)
-        channels = ChannelsService()
-        channel_data = await channels.upsert(message.channel)
+        await services.guilds.upsert(message.guild)
+        channel_data = await services.channels.upsert(message.channel)
         if channel_data["auto_verify"]:
             verified = True
-        verify = VerifiesService()
         assert message.guild
         guild: discord.Guild = message.guild
-        await verify.upsert(guild.id, message_author_xid, verified)
+        await services.verifies.upsert(guild.id, message_author_xid, verified)
         if not user_can_moderate(message.author, guild, message.channel):
-            user_is_verified = await verify.is_verified()
+            user_is_verified = await services.verifies.is_verified()
             if user_is_verified and channel_data["unverified_only"]:
                 await safe_delete_message(message)
             if not user_is_verified and channel_data["verified_only"]:
@@ -181,14 +179,14 @@ class SpellBot(AutoShardedBot):
 
     @tracer.wrap()
     async def handle_message_deleted(self, message: discord.Message) -> None:
-        games = GamesService()
-        data = await games.select_by_message_xid(message.id)
+        services = ServicesRegistry()
+        data = await services.games.select_by_message_xid(message.id)
         if not data:
             return
         game_id = data["id"]
         logger.info("Game %s was deleted manually.", game_id)
         if not data["started_at"]:  # someone deleted a pending game
-            await games.delete_games([game_id])
+            await services.games.delete_games([game_id])
 
 
 def build_bot(

@@ -14,7 +14,7 @@ from babel.dates import format_datetime
 
 from spellbot.database import db_session_manager, initialize_connection
 from spellbot.models import import_models
-from spellbot.services.apps import AppsService
+from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.web.api import ping, record, rest
 from spellbot.web.tools import rate_limited
@@ -48,8 +48,8 @@ async def auth_middleware(request: web.Request, handler: Handler) -> web.StreamR
 
     token = auth_header.split("Bearer ")[1]
     async with db_session_manager():
-        apps = AppsService()
-        if not await apps.verify_token(token):
+        services = ServicesRegistry()
+        if not await services.apps.verify_token(token):
             if await rate_limited(request):
                 return web.json_response({"error": "Too many requests"}, status=429)
             return web.json_response({"error": "Unauthorized"}, status=403)
