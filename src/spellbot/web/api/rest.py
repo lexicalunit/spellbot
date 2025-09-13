@@ -11,7 +11,7 @@ from aiohttp import web
 from dateutil import tz
 
 from spellbot.database import db_session_manager
-from spellbot.services import GamesService, PlaysService, UsersService
+from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.web.tools import rate_limited
 
@@ -33,8 +33,8 @@ async def game_verify_endpoint(request: web.Request) -> WebResponse:
             user_xid = int(payload["user_xid"])
             guild_xid = int(payload["guild_xid"])
             pin = payload["pin"]
-            plays = PlaysService()
-            verified = await plays.verify_game_pin(
+            services = ServicesRegistry()
+            verified = await services.plays.verify_game_pin(
                 game_id=game_id,
                 user_xid=user_xid,
                 guild_xid=guild_xid,
@@ -183,11 +183,9 @@ async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
 
 async def game_record_endpoint(request: web.Request) -> WebResponse:
     async with db_session_manager():
-        users = UsersService()
-        plays = PlaysService()
-        games = GamesService()
+        services = ServicesRegistry()
         game_id = int(request.match_info["game"])
-        if not (game := await games.select(game_id)):
+        if not (game := await services.games.select(game_id)):
             return web.json_response({"error": "Game not found"}, status=404)
         payload = await request.json()
         winner_xid = int(w) if (w := payload.get("winner")) else None
@@ -196,9 +194,9 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
         commanders: dict[int | None, str] = {int(p["xid"]): p["commander"] for p in players_data}
         if not players_data:
             return web.json_response({"error": "No players provided"}, status=400)
-        plays = await plays.get_plays_by_game_id(game_id)
+        plays = await services.plays.get_plays_by_game_id(game_id)
         player_xids = [int(p["xid"]) for p in players_data]
-        players = await users.get_players_by_xid(player_xids)
+        players = await services.users.get_players_by_xid(player_xids)
         if len(plays) != len(players) or len(players) != len(players_data):
             return web.json_response({"error": "Mismatched player count"}, status=400)
         embed = game_record_embed(

@@ -9,7 +9,7 @@ import aiohttp_jinja2
 from aiohttp.web_response import Response as WebResponse
 
 from spellbot.database import db_session_manager
-from spellbot.services import PlaysService
+from spellbot.services import ServicesRegistry
 
 if TYPE_CHECKING:
     from aiohttp import web
@@ -64,15 +64,15 @@ async def impl(request: web.Request, kind: RecordKind) -> WebResponse:
     except ValueError:
         return WebResponse(status=404)
 
-    plays = PlaysService()
+    services = ServicesRegistry()
     if kind is RecordKind.CHANNEL:
-        records = await plays.channel_records(
+        records = await services.plays.channel_records(
             guild_xid=opts.guild_xid,
             channel_xid=opts.target_xid,
             page=opts.page,
         )
     else:
-        records = await plays.user_records(
+        records = await services.plays.user_records(
             guild_xid=opts.guild_xid,
             user_xid=opts.target_xid,
             page=opts.page,

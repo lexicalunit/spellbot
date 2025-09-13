@@ -9,7 +9,7 @@ from spellbot.actions.base_action import handle_exception
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_context
 from spellbot.operations import is_bad_user, safe_send_user
-from spellbot.services import GuildsService, UsersService
+from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, load_extensions
 
@@ -26,7 +26,8 @@ async def set_banned(banned: bool, ctx: commands.Context[SpellBot], arg: str | N
         user_xid = int(arg)
     except ValueError:
         return await safe_send_user(ctx.message.author, "Invalid user id.")
-    await UsersService().set_banned(banned, user_xid)
+    services = ServicesRegistry()
+    await services.users.set_banned(banned, user_xid)
     await safe_send_user(
         ctx.message.author,
         f"User <@{user_xid}> has been {'banned' if banned else 'unbanned'}.",
@@ -44,7 +45,8 @@ async def set_banned_guild(banned: bool, ctx: commands.Context[SpellBot], arg: s
         guild_xid = int(arg)
     except ValueError:
         return await safe_send_user(ctx.message.author, "Invalid guild id.")
-    await GuildsService().set_banned(banned, guild_xid)
+    services = ServicesRegistry()
+    await services.guilds.set_banned(banned, guild_xid)
     await safe_send_user(
         ctx.message.author,
         f"Guild {guild_xid} has been {'banned' if banned else 'unbanned'}.",
