@@ -9,6 +9,7 @@ import aiohttp
 import tenacity
 from aiohttp import web
 from dateutil import tz
+from ddtrace.trace import tracer
 
 from spellbot.database import db_session_manager
 from spellbot.services import ServicesRegistry
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@tracer.wrap(name="rest", resource="game_verify_endpoint")
 async def game_verify_endpoint(request: web.Request) -> WebResponse:
     try:
         async with db_session_manager():
@@ -57,6 +59,7 @@ async def game_verify_endpoint(request: web.Request) -> WebResponse:
         return web.json_response({"error": str(e)}, status=500)
 
 
+@tracer.wrap(name="rest", resource="game_record_embed")
 def game_record_embed(
     *,
     game: GameDict,
@@ -119,13 +122,18 @@ def game_record_embed(
 class InvalidJsonResponseError(ValueError): ...
 
 
+def retry_if_not_401_or_403(exc: BaseException) -> bool:
+    return not isinstance(exc, aiohttp.ClientResponseError) or exc.status not in {401, 403}
+
+
 @tenacity.retry(
     stop=tenacity.stop_after_attempt(5),
     before_sleep=tenacity.before_sleep_log(logger, logging.WARNING),
     after=tenacity.after_log(logger, logging.INFO),
     wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
-    retry=tenacity.retry_if_exception_type(aiohttp.ClientError),
+    retry=tenacity.retry_if_exception(retry_if_not_401_or_403),
 )
+@tracer.wrap(name="rest", resource="fetch_with_retry")
 async def fetch_with_retry(
     session: aiohttp.ClientSession,
     path: str,
@@ -143,16 +151,14 @@ async def fetch_with_retry(
         response.raise_for_status()
         raw_data = await response.read()
         if not (data := json.loads(raw_data)):
-            logger.error(
-                "TODO: API ERROR, json invalid: %s",
-                raw_data.decode(),
-            )
+            logger.error("API ERROR, json invalid: %s", raw_data.decode())
             raise InvalidJsonResponseError
         return data
 
 
+@tracer.wrap(name="rest", resource="send_dm")
 async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
-    logger.info("TODO: Beginning DM send to user %s...", user_xid)
+    logger.info("Beginning DM send to user %s...", user_xid)
     try:
         async with aiohttp.ClientSession() as session:
             # create dm channel
@@ -161,26 +167,26 @@ async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
                 "/users/@me/channels",
                 {"recipient_id": user_xid},
             )
-            logger.info("TODO: DM channel to user %s created", user_xid)
+            logger.info("DM channel to user %s created", user_xid)
 
             # then send message to dm channel
             channel_xid = dm_channel["id"]
-            logger.info("TODO: Sending DM to user %s...", user_xid)
+            logger.info("Sending DM to user %s...", user_xid)
             dm_message = await fetch_with_retry(
                 session,
                 f"/channels/{channel_xid}/messages",
                 message,
             )
-            logger.info(
-                "TODO: Sent DM to user %s with response: %s",
-                user_xid,
-                json.dumps(dm_message),
-            )
+            logger.info("Sent DM to user %s with response: %s", user_xid, json.dumps(dm_message))
 
+    except aiohttp.ClientResponseError as ex:
+        if ex.status in {401, 403}:
+            logger.info("Not allowed to DM this user: %s", user_xid)
     except Exception as ex:
-        logger.warning("TODO: warning: Discord API failure: %s", ex, exc_info=True)
+        logger.warning("Discord API failure: %s", ex, exc_info=True)
 
 
+@tracer.wrap(name="rest", resource="game_record_endpoint")
 async def game_record_endpoint(request: web.Request) -> WebResponse:
     async with db_session_manager():
         services = ServicesRegistry()
@@ -206,7 +212,7 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
             winner_xid=winner_xid,
             tracker_xid=tracker_xid,
         )
-        logger.info("TODO: Sending DMs to players %s...", ", ".join(str(x) for x in player_xids))
+        logger.info("Sending DMs to players %s...", ", ".join(str(x) for x in player_xids))
         notify_player_tasks = [send_dm(player_xid, embed) for player_xid in player_xids]
         await asyncio.gather(*notify_player_tasks)
         return web.json_response({"result": {"success": True}})
