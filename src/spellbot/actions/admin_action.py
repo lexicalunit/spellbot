@@ -13,7 +13,6 @@ from spellbot.operations import (
     safe_send_channel,
     safe_update_embed_origin,
 )
-from spellbot.services import GamesService
 from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
 from spellbot.views import SetupView
@@ -216,12 +215,11 @@ class AdminAction(BaseAction):
             return await self._report_failure()
         game_id_int = int(numeric_string)
 
-        games = GamesService()
-        found = await games.select(game_id_int)
+        found = await self.services.games.select(game_id_int)
         if not found:
             return await self._report_failure()
 
-        embed = await games.to_embed(guild=self.guild, dm=True)
+        embed = await self.services.games.to_embed(guild=self.guild, dm=True)
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
         return None
 

@@ -7,7 +7,6 @@ import discord
 from discord.embeds import Embed
 
 from spellbot.operations import safe_send_channel
-from spellbot.services import WatchesService
 from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
 
@@ -117,9 +116,8 @@ class WatchAction(BaseAction):
             embed.color = discord.Color(settings.INFO_EMBED_COLOR)
             return embed
 
-        watches = WatchesService()
         assert self.interaction.guild_id is not None
-        entries = await watches.fetch(guild_xid=self.interaction.guild_id)
+        entries = await self.services.watches.fetch(guild_xid=self.interaction.guild_id)
 
         embeds: list[Embed] = []
         embed = new_embed()
