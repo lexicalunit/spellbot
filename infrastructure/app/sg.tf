@@ -95,4 +95,3 @@ resource "aws_security_group" "elasticache" {
     Name = "spellbot-elasticache-sg"
   }
 }
-

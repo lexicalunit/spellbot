@@ -80,7 +80,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
     },
     {
       name      = "spellbot"
-      image     = "${data.aws_ssm_parameter.spellbot_prod_image_uri.value}"
+      image     = data.aws_ssm_parameter.spellbot_prod_image_uri.value
       essential = true
 
       environment = [
@@ -175,7 +175,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
     {
       name      = "spellbot-gunicorn"
       command   = ["./start.sh", "spellapi"]
-      image     = "${data.aws_ssm_parameter.spellbot_prod_image_uri.value}"
+      image     = data.aws_ssm_parameter.spellbot_prod_image_uri.value
       essential = true
 
       portMappings = [
