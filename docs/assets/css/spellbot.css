@@ -181,3 +181,16 @@ code {
   background-color: #e1000d;
   color: white;
 }
+
+.fa-stack .fa-circle {
+  color: rgb(90, 62, 253);
+}
+
+.fa-stack:hover .fa-circle {
+  transition: all 0.3s ease-in-out;
+  color: #0085a1;
+}
+
+.social-icon {
+  color: white;
+}
