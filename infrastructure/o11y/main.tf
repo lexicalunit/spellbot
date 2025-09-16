@@ -30,7 +30,7 @@ resource "datadog_monitor" "spellbot_tasks_not_running" {
   tags    = ["service:spellbot", "env:prod"]
   type    = "log alert"
   query   = <<-EOT
-    logs("env:prod "starting task expire_inactive_games"").index("*").rollup("count").last("2h") < 1
+    logs("environment:prod "starting task expire_inactive_games"").index("*").rollup("count").last("2h") < 1
   EOT
   message = "@${var.alert_email}"
 }
@@ -47,7 +47,7 @@ resource "datadog_monitor" "spellbot_application_error" {
   type    = "log alert"
   tags    = ["service:spellbot", "env:prod"]
   query   = <<-EOT
-    logs("env:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -"ELB-HealthChecker" (error OR status:error)").index("*").rollup("count").last("5m") > 1
+    logs("environment:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -"ELB-HealthChecker" (error OR status:error)").index("*").rollup("count").last("5m") > 1
   EOT
   message = "@${var.alert_email}"
 }
