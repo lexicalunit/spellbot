@@ -1,5 +1,6 @@
 module "aurora_cluster" {
-  source = "terraform-aws-modules/rds-aurora/aws"
+  source  = "terraform-aws-modules/rds-aurora/aws"
+  version = "9.15.0"
 
   name                        = "spellbot-aurora"
   engine                      = "aurora-postgresql"
@@ -35,5 +36,4 @@ module "aurora_cluster" {
 
   # Performance Insights
   performance_insights_enabled = true
-
 }
