@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Lower CloudWatch retention to reduce costs.
+- Update dependencies.
+- Use basic logging for development mode.
+
 ## [v16.1.5](https://github.com/lexicalunit/spellbot/releases/tag/v16.1.5) - 2025-09-14
 
 ### Changed
