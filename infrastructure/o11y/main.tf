@@ -19,6 +19,7 @@ provider "datadog" {
   app_key = var.datadog_app_key
 }
 
+# SpellBot Alerts
 resource "datadog_monitor" "spellbot_tasks_not_running" {
   on_missing_data     = "default"
   require_full_window = false
@@ -26,10 +27,10 @@ resource "datadog_monitor" "spellbot_tasks_not_running" {
     critical = 1
   }
   name    = "SpellBot: Tasks are not running"
-  tags    = ["service:spellbot"]
+  tags    = ["service:spellbot", "env:prod"]
   type    = "log alert"
   query   = <<-EOT
-    logs("starting task expire_inactive_games").index("*").rollup("count").last("2h") < 1
+    logs("env:prod "starting task expire_inactive_games"").index("*").rollup("count").last("2h") < 1
   EOT
   message = "@${var.alert_email}"
 }
@@ -44,9 +45,9 @@ resource "datadog_monitor" "spellbot_application_error" {
   }
   name    = "SpellBot: Application error: {{log.message}}"
   type    = "log alert"
-  tags    = ["service:spellbot"]
+  tags    = ["service:spellbot", "env:prod"]
   query   = <<-EOT
-    logs("-@aws.awslogs.logStream:datadog/datadog-agent/* -"ELB-HealthChecker" (error OR status:error)").index("*").rollup("count").last("5m") > 1
+    logs("env:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -"ELB-HealthChecker" (error OR status:error)").index("*").rollup("count").last("5m") > 1
   EOT
   message = "@${var.alert_email}"
 }
@@ -65,6 +66,23 @@ resource "datadog_monitor" "spellbot_no_data_prod" {
   message = "@${var.alert_email}"
 }
 
+resource "datadog_monitor" "SpellBot_SpellTable_create_game_issues" {
+  include_tags        = false
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 6000000000
+  }
+  name    = "SpellBot: SpellTable create game issues"
+  type    = "trace-analytics alert"
+  tags    = ["env:prod", "service:spellbot"]
+  query   = <<-EOT
+    trace-analytics("env:prod service:spellbot operation_name:spellbot.client.create_game_link @link_service:SPELLTABLE").index("trace-search", "djm-search").rollup("avg", "@duration").last("5m") > 6000000000
+  EOT
+  message = "@${var.alert_email}"
+}
+
+# ECS Alerts
 resource "datadog_monitor" "SpellBot_ECS_Tasks_Failed_to_Start_Successfully" {
   evaluation_delay       = 900
   groupby_simple_monitor = false
@@ -153,22 +171,7 @@ resource "datadog_monitor" "ECS_Fargate_AWS_ECS_Task_CPU_utilization_is_high" {
   EOT
 }
 
-resource "datadog_monitor" "SpellBot_SpellTable_create_game_issues" {
-  include_tags        = false
-  on_missing_data     = "default"
-  require_full_window = false
-  monitor_thresholds {
-    critical = 6000000000
-  }
-  name    = "SpellBot: SpellTable create game issues"
-  type    = "trace-analytics alert"
-  tags    = ["env:prod", "service:spellbot"]
-  query   = <<-EOT
-    trace-analytics("env:prod service:spellbot operation_name:spellbot.client.create_game_link @link_service:SPELLTABLE").index("trace-search", "djm-search").rollup("avg", "@duration").last("5m") > 6000000000
-  EOT
-  message = "@${var.alert_email}"
-}
-
+# Dashboards
 resource "datadog_dashboard" "spellbot_create_game_link_dashboard" {
   title       = "Avg of duration of create_game_link"
   description = "Average duration of create_game_link calls"
