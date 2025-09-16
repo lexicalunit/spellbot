@@ -30,6 +30,14 @@ class DatadogJsonFormatter(JsonFormatter):
         if "status" not in log_record:
             log_record["status"] = record.levelname
 
+        # ECS configuration puts the environment in an "environment" field, but
+        # we want to use "env" for consistency with other logs and metrics.
+        # Otherwise, we fallback to the value set for DD_ENV.
+        env = DD_ENV
+        if environment := log_record.get("environment"):
+            env = environment
+        log_record["env"] = env
+
 
 # Note: be sure to call this before importing any application modules!
 def configure_logging(level: int | str = "INFO") -> None:  # pragma: no cover
