@@ -30,6 +30,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Disable pointless nacl warning log coming from discord.py.
+if hasattr(discord.VoiceClient, "warn_nacl"):  # pragma: no cover
+    discord.VoiceClient.warn_nacl = False
+
 
 class SpellBot(AutoShardedBot):
     def __init__(
