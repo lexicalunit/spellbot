@@ -7,8 +7,9 @@ Infrastructure for SpellBot is managed by Terraform. Changes to the infrastructu
 Please verify changes using [`tflint`][tflint] before committing.
 
 ```sh
-tflint -chdir=infrastructure/app --minimum-failure-severity=error
-tflint -chdir=infrastructure/db --minimum-failure-severity=error
+tflint --chdir infrastructure/app --minimum-failure-severity=error
+tflint --chdir infrastructure/db --minimum-failure-severity=error
+tflint --chdir infrastructure/o11y --minimum-failure-severity=error
 ```
 
 ## Application (app)
