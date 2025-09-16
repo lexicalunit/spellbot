@@ -90,3 +90,25 @@ resource "datadog_monitor" "SpellBot_ECS_Tasks_Failed_to_Start_Successfully" {
     @${var.alert_email}
   EOT
 }
+
+resource "datadog_dashboard" "spellbot_create_game_link_dashboard" {
+  title       = "Avg of duration of create_game_link"
+  description = "Average duration of create_game_link calls"
+  layout_type = "ordered"
+  widget {
+    timeseries_definition {
+      request {
+        apm_query {
+          index        = "*"
+          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link @link_service:SPELLTABLE"
+          compute_query {
+            aggregation = "avg"
+            facet       = "@duration"
+            interval    = 1800000
+          }
+        }
+      }
+      live_span = "1w"
+    }
+  }
+}
