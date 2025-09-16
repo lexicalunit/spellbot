@@ -23,6 +23,28 @@ terraform -chdir=infrastructure/app plan   # optional: verify changes
 terraform -chdir=infrastructure/app apply  # apply changes (will prompt for confirmation)
 ```
 
+## Observability (o11y)
+
+The `o11y` directory contains the Terraform configuration for SpellBot observability. This includes datadog monitors, dashboards, etc...
+
+### Observability setup
+
+First copy the example variables file:
+
+```sh
+cp infrastructure/o11y/terraform.tfvars.example infrastructure/o11y/terraform.tfvars
+```
+
+Then edit `infrastructure/o11y/terraform.tfvars` to replace the placeholder values with your actual values.
+
+Finally, run the following commands:
+
+```sh
+terraform -chdir=infrastructure/o11y init   # only needed once
+terraform -chdir=infrastructure/o11y plan   # optional: verify changes
+terraform -chdir=infrastructure/o11y apply  # apply changes (will prompt for confirmation)
+```
+
 ## Database (db)
 
 This Terraform configuration sets up the database infrastructure for SpellBot, including:
@@ -40,22 +62,13 @@ This Terraform configuration sets up the database infrastructure for SpellBot, i
 
 ### Database setup
 
-## Setup
-
 Firs copy the example variables file:
 
 ```sh
 cp infrastructure/db/terraform.tfvars.example infrastructure/db/terraform.tfvars
 ```
 
-Then edit `infrastructure/db/terraform.tfvars` to replace the placeholder values with your actual values:
-
-```hcl
-root_db_user     = "postgres"
-root_db_password = "your-actual-root-password"
-db_host          = "your-aurora-cluster.cluster-xxxxx.us-east-1.rds.amazonaws.com"
-db_port          = 5432
-```
+Then edit `infrastructure/db/terraform.tfvars` to replace the placeholder values with your actual values.
 
 Finally, run the following commands:
 
