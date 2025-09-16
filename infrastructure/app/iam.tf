@@ -173,8 +173,8 @@ resource "aws_iam_policy" "spellbot_ssm_deployment" {
           "ssm:DescribeParameters"
         ]
         Resource = [
-          "${aws_ssm_parameter.spellbot_prod_image_uri.arn}",
-          "${aws_ssm_parameter.spellbot_stage_image_uri.arn}"
+          aws_ssm_parameter.spellbot_prod_image_uri.arn,
+          aws_ssm_parameter.spellbot_stage_image_uri.arn
         ]
       }
     ]

@@ -30,6 +30,8 @@ docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:15
 
 Using this locally will allow you to use the default value for `DATABASE_URL` without having to manually set it to anything.
 
+For more details on managing the database, see [our database documentation](./DATABASE.md).
+
 ## Running the application
 
 Make sure that you have [set up your environmental variables](/README.md#-running-spellbot-yourself).
@@ -136,27 +138,4 @@ grep "^version" < pyproject.toml | cut -d= -f2 | sed 's/"//g;s/ //g;s/^/v/;'
 
 After publishing you can view the package at its [pypi.org project page](https://pypi.org/project/spellbot/) to see that everything looks good.
 
-## Database migrations
-
-We use [alembic][alembic] for database migrations. It can detect changes you've made compared to an existing database and generate migration scripts necessary to apply _and_ reverse those changes. First, make the changes to the data models. Alembic can detect differences between an existing database and changes made to the models. To autogenerate migration scripts that will bring the database inline with the changes you've made to the models, run:
-
-```shell
-uv run scripts/create_db_revision.py \
-    "<your-sqlalchemy-database-url>" \
-    "<Some description of your changes>"
-```
-
-> Note: An example database url: postgresql+psycopg://postgres@localhost:5432/postgres
-
-This will create a revision script in the `src/spellbot/versions/versions` directory with a name like `REVISIONID_some_description_of_your_changes.py`. You may have to edit this script manually to ensure that it is correct as the autogenerate facility of `alembic revision` is not perfect.
-
-### Downgrading
-
-Another migration script is `scripts/downgrade.py` which allows you to pass a revision string to downgrade to. For example, to undo the last migration you could run something like:
-
-```shell
-uv run scripts/downgrade.py postgresql+psycopg://postgres@localhost:5432/postgres "-1"
-```
-
-[alembic]: https://alembic.sqlalchemy.org/
 [ruff]: https://docs.astral.sh/ruff/
