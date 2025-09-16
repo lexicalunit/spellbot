@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from os import getenv
 from typing import Any
 
 from pythonjsonlogger.json import JsonFormatter
@@ -15,6 +16,7 @@ FORMAT = (
     "- %(message)s"
 )
 DATE_FMT = "%Y-%m-%d %H:%M:%S"
+DD_ENV = getenv("DD_ENV", "dev")  # not pulled from settings.py (to avoid any imports)
 
 
 class DatadogJsonFormatter(JsonFormatter):
@@ -31,6 +33,10 @@ class DatadogJsonFormatter(JsonFormatter):
 
 # Note: be sure to call this before importing any application modules!
 def configure_logging(level: int | str = "INFO") -> None:  # pragma: no cover
+    if DD_ENV == "dev":
+        print("using basic logging for development mode")  # noqa: T201
+        logging.basicConfig(level=level)
+        return
     handler = logging.StreamHandler()
     formatter = DatadogJsonFormatter(fmt=FORMAT, datefmt=DATE_FMT)
     handler.setFormatter(formatter)
