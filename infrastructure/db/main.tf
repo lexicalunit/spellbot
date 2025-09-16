@@ -96,6 +96,10 @@ resource "postgresql_grant" "stage_table_privileges" {
   schema      = "public"
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
+
+  lifecycle {
+    ignore_changes = [privileges]
+  }
 }
 
 resource "postgresql_grant" "stage_sequence_privileges" {
@@ -104,6 +108,10 @@ resource "postgresql_grant" "stage_sequence_privileges" {
   schema      = "public"
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT"]
+
+  lifecycle {
+    ignore_changes = [privileges]
+  }
 }
 
 # Grant privileges on prod database
@@ -121,6 +129,10 @@ resource "postgresql_grant" "prod_table_privileges" {
   schema      = "public"
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
+
+  lifecycle {
+    ignore_changes = [privileges]
+  }
 }
 
 resource "postgresql_grant" "prod_sequence_privileges" {
@@ -129,6 +141,10 @@ resource "postgresql_grant" "prod_sequence_privileges" {
   schema      = "public"
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT"]
+
+  lifecycle {
+    ignore_changes = [privileges]
+  }
 }
 
 # Store passwords in AWS Secrets Manager
