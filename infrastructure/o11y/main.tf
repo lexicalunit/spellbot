@@ -91,6 +91,68 @@ resource "datadog_monitor" "SpellBot_ECS_Tasks_Failed_to_Start_Successfully" {
   EOT
 }
 
+resource "datadog_monitor" "AWS_ECS_Memory_Reservation_Exceeds_Threshold" {
+  escalation_message   = ""
+  evaluation_delay     = 900
+  new_group_delay      = 60
+  on_missing_data      = "show_no_data"
+  renotify_interval    = 1440
+  renotify_occurrences = 0
+  renotify_statuses    = ["alert"]
+  require_full_window  = false
+  monitor_thresholds {
+    critical = 90
+    warning  = 80
+  }
+  name    = "[AWS] ECS Memory Reservation Exceeds Threshold"
+  type    = "query alert"
+  tags    = ["integration:amazon_ecs"]
+  query   = <<-EOT
+    min(last_30m):sum:aws.ecs.memory_utilization{*} by {clustername,aws_account,region}.weighted() > 90
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    Memory Reservation for ECS cluster {{clustername.name}} is approaching the threshold of {{threshold}}%
+    {{/is_warning}}
+
+    {{#is_alert}}
+    Memory Reservation for ECS cluster {{clustername.name}} has exceeded the threshold of {{threshold}}%
+    {{/is_alert}}
+
+    To investigate further, view the affected cluster in the [ECS Explorer](/orchestration/explorer/ecsCluster?query=ecs_cluster:{{clustername.name}}+aws_account:{{aws_account.name}}+region:{{region.name}})
+
+    @${var.alert_email}
+  EOT
+}
+
+resource "datadog_monitor" "ECS_Fargate_AWS_ECS_Task_CPU_utilization_is_high" {
+  new_group_delay     = 300
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 80
+  }
+  name    = "[ECS Fargate] AWS ECS Task CPU utilization is high"
+  type    = "query alert"
+  tags    = ["integration:ecs_fargate"]
+  query   = <<-EOT
+    avg(last_15m):sum:ecs.fargate.cpu.usage{*} by {ecs_cluster,task_arn,ecs_service} / sum:ecs.fargate.cpu.task.limit{*} by {ecs_cluster,task_arn,ecs_service} * 100 > 80
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    AWS ECS Task {{task_arn.name}} in service {{ecs_service.name}} (cluster {{ecs_cluster.name}}) is approaching CPU Utilization threshold
+    {{/is_warning}}
+
+    {{#is_alert}}
+    AWS ECS Task {{task_arn.name}} in service {{ecs_service.name}} (cluster {{ecs_cluster.name}}) has crossed CPU Utilization threshold
+    {{/is_alert}}
+
+    To investigate further, view the affected task in the [ECS Explorer](/orchestration/explorer/ecsTask?inspect={{task_arn.name}})
+
+    @${var.alert_email}
+  EOT
+}
+
 resource "datadog_dashboard" "spellbot_create_game_link_dashboard" {
   title       = "Avg of duration of create_game_link"
   description = "Average duration of create_game_link calls"
