@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v16.1.7](https://github.com/lexicalunit/spellbot/releases/tag/v16.1.7) - 2025-09-16
+
 ### Changed
 
 - Ensure that the tag "env" is always set for logs.
