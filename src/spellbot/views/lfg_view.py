@@ -33,7 +33,8 @@ class PendingGameView(BaseView):
         with tracer.trace(name="interaction", resource="join"):
             add_span_context(interaction)
             assert interaction.original_response
-            await safe_defer_interaction(interaction)
+            if not await safe_defer_interaction(interaction):
+                return
             async with (
                 self.bot.guild_lock(interaction.guild.id),
                 LookingForGameAction.create(self.bot, interaction) as action,
@@ -58,7 +59,8 @@ class PendingGameView(BaseView):
         assert interaction.guild is not None
         with tracer.trace(name="interaction", resource="leave"):
             add_span_context(interaction)
-            await safe_defer_interaction(interaction)
+            if not await safe_defer_interaction(interaction):
+                return
             async with (
                 self.bot.guild_lock(interaction.guild.id),
                 LeaveAction.create(self.bot, interaction) as action,
@@ -101,7 +103,8 @@ class StartedGameSelect(ui.Select[T]):
 
         with tracer.trace(name="interaction", resource="points"):
             add_span_context(interaction)
-            await safe_defer_interaction(interaction)
+            if not await safe_defer_interaction(interaction):
+                return
             assert interaction.original_response
             points = int(self.values[0])
             async with LookingForGameAction.create(self.bot, interaction) as action:
