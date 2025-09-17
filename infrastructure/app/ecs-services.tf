@@ -12,6 +12,12 @@ resource "aws_ecs_service" "spellbot_prod" {
   deployment_minimum_healthy_percent = 0
   deployment_maximum_percent         = 200
 
+  # Circuit breaker: rollback automatically if new tasks fail to become healthy
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
   network_configuration {
     subnets          = module.vpc.public_subnets
     security_groups  = [aws_security_group.ecs_tasks.id]
