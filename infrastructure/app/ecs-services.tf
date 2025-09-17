@@ -6,9 +6,11 @@ resource "aws_ecs_service" "spellbot_prod" {
   desired_count   = 1
   launch_type     = "FARGATE"
 
-  # Deployment configuration - no duplicates allowed (0% min, 100% max)
+  # Deployment configuration - 1 duplicate allowed (0% min, 200% max)
+  # This allows ECS to spin up the new task before terminating the old one.
+  # Discord should be able to handle this if the overlap is brief.
   deployment_minimum_healthy_percent = 0
-  deployment_maximum_percent         = 100
+  deployment_maximum_percent         = 200
 
   network_configuration {
     subnets          = module.vpc.public_subnets
