@@ -48,7 +48,8 @@ class EventsCog(commands.Cog):
     ) -> None:
         assert interaction.channel_id is not None
         add_span_context(interaction)
-        await safe_defer_interaction(interaction)
+        if not await safe_defer_interaction(interaction):
+            return
         async with LookingForGameAction.create(self.bot, interaction) as action:
             await action.create_game(players, format, bracket, service)
 

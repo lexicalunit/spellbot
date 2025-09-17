@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Handle multiple bots running with some grace.
+- Added a monitor for ecs running task desire count.
+
 ## [v16.1.7](https://github.com/lexicalunit/spellbot/releases/tag/v16.1.7) - 2025-09-16
 
 ### Changed

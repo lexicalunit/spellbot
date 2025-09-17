@@ -58,7 +58,8 @@ class LookingForGameCog(commands.Cog):
     ) -> None:
         assert interaction.guild is not None
         add_span_context(interaction)
-        await safe_defer_interaction(interaction)
+        if not await safe_defer_interaction(interaction):
+            return
         async with (
             self.bot.guild_lock(interaction.guild.id),
             LookingForGameAction.create(self.bot, interaction) as action,
@@ -77,7 +78,8 @@ class LookingForGameCog(commands.Cog):
     async def rematch(self, interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
         add_span_context(interaction)
-        await safe_defer_interaction(interaction)
+        if not await safe_defer_interaction(interaction):
+            return
         async with (
             self.bot.guild_lock(interaction.guild.id),
             LookingForGameAction.create(self.bot, interaction) as action,
