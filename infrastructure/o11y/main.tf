@@ -171,6 +171,30 @@ resource "datadog_monitor" "ECS_Fargate_AWS_ECS_Task_CPU_utilization_is_high" {
   EOT
 }
 
+resource "datadog_monitor" "AWS_ECS_Running_Task_Count_differs_from_Desired_Count" {
+  evaluation_delay    = 900
+  new_group_delay     = 60
+  require_full_window = false
+  monitor_thresholds {
+    critical = 1
+  }
+  name    = "[AWS] ECS Running Task Count differs from Desired Count"
+  type    = "query alert"
+  tags    = ["integration:amazon_ecs"]
+  query   = <<-EOT
+    min(last_1h):sum:aws.ecs.service.desired{environment:prod} by {servicename,clustername,aws_account,region} - sum:aws.ecs.service.running{environment:prod} by {servicename,clustername,aws_account,region} >= 1
+  EOT
+  message = <<-EOT
+    {{#is_alert}}
+    ECS Running Task Count is not equal to Desired Task Count for {{servicename.name}} in cluster {{clustername.name}}.
+    {{/is_alert}}
+
+    To investigate further, view the affected service in the [ECS Explorer](/orchestration/explorer/ecsService?query=ecs_service:{{servicename.name}}+ecs_cluster:{{clustername.name}}+aws_account:{{aws_account.name}}+region:{{region.name}})
+
+    @${var.alert_email}
+  EOT
+}
+
 # Dashboards
 resource "datadog_dashboard" "spellbot_create_game_link_dashboard" {
   title       = "Avg of duration of create_game_link"
