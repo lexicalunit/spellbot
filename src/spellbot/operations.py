@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, cast
 import discord
 from aiohttp.client_exceptions import ClientOSError
 from ddtrace.trace import tracer
-from discord.errors import DiscordException
+from discord.errors import DiscordException, NotFound
 from discord.utils import MISSING
 from redis import asyncio as aioredis
 
@@ -100,6 +100,7 @@ async def safe_original_response(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="could fetch original response for user %(user_xid)s",
         user_xid=interaction.user.id,
     ):
@@ -108,14 +109,18 @@ async def safe_original_response(
 
 
 @tracer.wrap()
-async def safe_defer_interaction(interaction: discord.Interaction) -> None:
+async def safe_defer_interaction(interaction: discord.Interaction) -> bool:
+    rvalue = False
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="could not defer interaction for user %(user_xid)s",
         user_xid=interaction.user.id,
     ):
         await retry(interaction.response.defer)
+        rvalue = True
+    return rvalue
 
 
 @tracer.wrap()
@@ -133,6 +138,7 @@ async def safe_fetch_user(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="could not fetch user %(user_xid)s",
         user_xid=user_xid,
     ):
@@ -155,6 +161,7 @@ async def safe_fetch_guild(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="could not fetch guild %(guild_xid)s",
         guild_xid=guild_xid,
     ):
@@ -187,6 +194,7 @@ async def safe_fetch_text_channel(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="in guild %(guild_xid)s, could not fetch channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,
@@ -218,6 +226,7 @@ def safe_get_partial_message(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="in guild %(guild_xid)s, could not get partial message %(message_xid)s",
         guild_xid=guild_xid,
         message_xid=message_xid,
@@ -239,14 +248,11 @@ async def safe_update_embed(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="could not update embed in message %(message_xid)s",
         message_xid=message.id,
     ):
-        try:
-            updated_message = await retry(lambda: message.edit(*args, **kwargs))
-        except discord.errors.NotFound:
-            guild_xid = message.guild.id if message.guild else None
-            logger.warning("in guild %s, unknown message %s", guild_xid, message.id)
+        updated_message = await retry(lambda: message.edit(*args, **kwargs))
     return updated_message
 
 
@@ -273,6 +279,7 @@ async def safe_delete_message(message: discord.Message | discord.PartialMessage)
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="could not delete message %(message_xid)s",
         message_xid=message.id,
     ):
@@ -297,6 +304,7 @@ async def safe_update_embed_origin(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="could not update origin embed in message %(message_xid)s",
         message_xid=interaction.message.id,
     ):
@@ -325,6 +333,7 @@ async def safe_create_category_channel(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="in guild %(guild_xid)s, could not create category channel",
         guild_xid=guild_xid,
     ):
@@ -352,6 +361,7 @@ async def safe_create_voice_channel(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="in guild %(guild_xid)s, could not create voice channel",
         guild_xid=guild_xid,
     ):
@@ -447,11 +457,8 @@ async def safe_delete_channel(
         guild_xid=guild_xid,
         channel_xid=channel_xid,
     ):
-        try:
-            await retry(channel.delete)  # type: ignore - this is asserted above
-            success = True
-        except discord.errors.NotFound:
-            logger.warning("in guild  %s, unknown channel %s", guild_xid, channel_xid)
+        await retry(channel.delete)  # type: ignore - this is asserted above
+        success = True
     return success
 
 
@@ -473,6 +480,7 @@ async def safe_send_channel(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="in guild %(guild_xid)s, could not send message to channel %(channel_xid)s",
         guild_xid=interaction.guild_id,
         channel_xid=interaction.channel_id,
@@ -505,6 +513,7 @@ async def safe_followup_channel(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="in guild %(guild_xid)s, could not send message to channel %(channel_xid)s",
         guild_xid=interaction.guild_id,
         channel_xid=interaction.channel_id,
@@ -536,6 +545,7 @@ async def safe_channel_reply(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="in guild %(guild_xid)s, could not reply to channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,
@@ -559,6 +569,7 @@ async def safe_create_channel_invite(
     with suppress(
         DiscordException,
         ClientOSError,
+        NotFound,
         log="in guild %(guild_xid)s, could not create invite to channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,
