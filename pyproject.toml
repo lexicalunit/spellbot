@@ -99,7 +99,19 @@ dev = [
 build-backend = "hatchling.build"
 requires = ["hatchling"]
 
+[tool.hatch.build]
+exclude = [
+  ".env",
+  ".github",
+  "conf",
+  "docs",
+  "infrastructure",
+  "scripts",
+  "terraform.tfvars",
+]
+
 [tool.hatch.build.targets.wheel]
+exclude = ["tests"]
 packages = ["src/spellbot"]
 
 [tool.pyright]
