@@ -71,13 +71,13 @@ resource "datadog_monitor" "SpellBot_SpellTable_create_game_issues" {
   on_missing_data     = "default"
   require_full_window = false
   monitor_thresholds {
-    critical = 6000000000
+    critical = 7000000000
   }
   name    = "SpellBot: SpellTable create game issues"
   type    = "trace-analytics alert"
   tags    = ["env:prod", "service:spellbot"]
   query   = <<-EOT
-    trace-analytics("env:prod service:spellbot operation_name:spellbot.client.create_game_link @link_service:SPELLTABLE").index("trace-search", "djm-search").rollup("avg", "@duration").last("5m") > 6000000000
+    trace-analytics("env:prod service:spellbot operation_name:spellbot.client.create_game_link @link_service:SPELLTABLE").index("trace-search", "djm-search").rollup("avg", "@duration").last("5m") > 7000000000
   EOT
   message = "@${var.alert_email}"
 }
@@ -144,7 +144,7 @@ resource "datadog_monitor" "AWS_ECS_Memory_Reservation_Exceeds_Threshold" {
 }
 
 resource "datadog_monitor" "ECS_Fargate_AWS_ECS_Task_CPU_utilization_is_high" {
-  new_group_delay     = 300
+  evaluation_delay    = 900
   on_missing_data     = "default"
   require_full_window = false
   monitor_thresholds {
@@ -154,7 +154,7 @@ resource "datadog_monitor" "ECS_Fargate_AWS_ECS_Task_CPU_utilization_is_high" {
   type    = "query alert"
   tags    = ["integration:ecs_fargate"]
   query   = <<-EOT
-    avg(last_15m):sum:ecs.fargate.cpu.usage{*} by {ecs_cluster,task_arn,ecs_service} / sum:ecs.fargate.cpu.task.limit{*} by {ecs_cluster,task_arn,ecs_service} * 100 > 80
+    avg(last_1h):sum:aws.ecs.cpuutilization{*}.weighted() > 80
   EOT
   message = <<-EOT
     {{#is_warning}}
@@ -193,6 +193,21 @@ resource "datadog_monitor" "AWS_ECS_Running_Task_Count_differs_from_Desired_Coun
 
     @${var.alert_email}
   EOT
+}
+
+resource "datadog_monitor" "SpellBot_No_traces" {
+  no_data_timeframe   = 10
+  require_full_window = false
+  monitor_thresholds {
+    critical = 0
+  }
+  name    = "SpellBot: No traces"
+  type    = "query alert"
+  tags    = ["service:spellbot", "env:prod"]
+  query   = <<-EOT
+    sum(last_5m):sum:trace.interaction.hits{env:prod,service:spellbot,span.kind:internal}.as_rate() <= 0
+  EOT
+  message = "@${var.alert_email}"
 }
 
 # Dashboards
