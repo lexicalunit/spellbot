@@ -45,13 +45,13 @@ class TestSpellBot(BaseMixin):
             pytest.param(
                 False,
                 {"service": GameService.SPELLTABLE.value},
-                "generate_spelltable_link",
+                "spelltable.generate_link",
                 id="spellbot",
             ),
             pytest.param(
                 False,
                 {"service": GameService.TABLE_STREAM.value},
-                "generate_tablestream_link",
+                "tablestream.generate_link",
                 id="tablestream",
             ),
             pytest.param(

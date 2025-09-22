@@ -137,7 +137,7 @@ async def get_user_lock(username: str) -> asyncio.Lock:  # pragma: no cover
 
 
 async def get_csrf(client: httpx.AsyncClient) -> str:  # pragma: no cover
-    resp = await client.get("https://myaccounts.wizards.com/login")
+    resp = await client.get(f"{settings.WIZARDS_ROOT}/login")
     resp.raise_for_status()
     csrf_token = client.cookies.get("_csrf")
     if not csrf_token:
@@ -151,7 +151,7 @@ async def login(  # pragma: no cover
     password: str,
     csrf: str,
 ) -> None:
-    url = "https://myaccounts.wizards.com/api/login"
+    url = f"{settings.WIZARDS_ROOT}/api/login"
     payload = {
         "username": username,
         "password": password,
@@ -164,7 +164,7 @@ async def login(  # pragma: no cover
 
 
 async def client_info(client: httpx.AsyncClient, csrf: str) -> None:  # pragma: no cover
-    url = "https://myaccounts.wizards.com/api/client"
+    url = f"{settings.WIZARDS_ROOT}/api/client"
     payload = {
         "clientID": settings.SPELLTABLE_CLIENT_ID,
         "language": "en-US",
@@ -175,11 +175,11 @@ async def client_info(client: httpx.AsyncClient, csrf: str) -> None:  # pragma: 
 
 
 async def authorize(client: httpx.AsyncClient, csrf: str) -> str:  # pragma: no cover
-    url = "https://myaccounts.wizards.com/api/authorize"
+    url = f"{settings.WIZARDS_ROOT}/api/authorize"
     payload = {
         "clientInput": {
             "clientID": settings.SPELLTABLE_CLIENT_ID,
-            "redirectURI": "https://spelltable.wizards.com/auth/authorize",
+            "redirectURI": settings.SPELLTABLE_AUTH_REDIRECT,
             "scope": "email",
             "state": "",
             "version": "2",
@@ -200,7 +200,7 @@ async def authorize(client: httpx.AsyncClient, csrf: str) -> str:  # pragma: no 
 
 
 async def exchange_code(client: httpx.AsyncClient, code: str) -> TokenData:  # pragma: no cover
-    url = "https://xgaqvxzggl.execute-api.us-west-2.amazonaws.com/prod/exchangeCode"
+    url = f"{settings.SPELLTABLE_ROOT}/prod/exchangeCode"
     payload = {"code": code}
     headers = {"x-api-key": cast("str", settings.SPELLTABLE_API_KEY)}
     resp = await client.post(url, json=payload, headers=headers)
@@ -218,7 +218,7 @@ async def refresh_access_token(  # pragma: no cover
     refresh_token: str,
 ) -> TokenData | None:
     headers = {"x-api-key": cast("str", settings.SPELLTABLE_API_KEY)}
-    url = "https://xgaqvxzggl.execute-api.us-west-2.amazonaws.com/prod/refreshToken"
+    url = f"{settings.SPELLTABLE_ROOT}/prod/refreshToken"
     try:
         resp = await client.post(url, headers=headers, json={"refreshToken": refresh_token})
         resp.raise_for_status()
@@ -238,7 +238,7 @@ async def create_game(  # pragma: no cover
     token: str,
     game: GameDict,
 ) -> str:
-    url = "https://xgaqvxzggl.execute-api.us-west-2.amazonaws.com/prod/createGame"
+    url = f"{settings.SPELLTABLE_ROOT}/prod/createGame"
     headers = {"x-api-key": cast("str", settings.SPELLTABLE_API_KEY)}
     format = spelltable_game_type(GameFormat(game["format"])).value
     payload = {
@@ -255,7 +255,7 @@ async def create_game(  # pragma: no cover
     return f"https://spelltable.wizards.com/game/{data['id']}"
 
 
-async def generate_spelltable_link(game: GameDict) -> str | None:  # pragma: no cover
+async def generate_link(game: GameDict) -> str | None:  # pragma: no cover
     accounts = get_accounts()
     timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
 

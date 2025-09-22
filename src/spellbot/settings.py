@@ -28,7 +28,6 @@ class Settings:
         "DEBUG_GUILD",
         "DONATE_LINK",
         "EMPTY_EMBED_COLOR",
-        "ENABLE_SPELLTABLE",
         "EXPIRE_GAMES_LOOP_M",
         "EXPIRE_TIME_M",
         "HOST",
@@ -39,9 +38,8 @@ class Settings:
         "PORT",
         "REDIS_URL",
         "SPELLTABLE_API_KEY",
-        "SPELLTABLE_AUTH_KEY",
+        "SPELLTABLE_AUTH_REDIRECT",
         "SPELLTABLE_CLIENT_ID",
-        "SPELLTABLE_CREATE",
         "SPELLTABLE_PASSES",
         "SPELLTABLE_ROOT",
         "SPELLTABLE_USERS",
@@ -54,6 +52,7 @@ class Settings:
         "VOICE_CLEANUP_BATCH",
         "VOICE_CLEANUP_LOOP_M",
         "VOICE_GRACE_PERIOD_M",
+        "WIZARDS_ROOT",
         "guild_xid",
     )
 
@@ -95,16 +94,19 @@ class Settings:
         self.REDIS_URL = getenv("REDIS_URL")
 
         # spelltable
-        self.ENABLE_SPELLTABLE = getenv("ENABLE_SPELLTABLE", "true").lower() == "true"
-        self.SPELLTABLE_ROOT = "https://us-central1-magic-night-30324.cloudfunctions.net"
-        self.SPELLTABLE_CREATE = f"{self.SPELLTABLE_ROOT}/createGame"
-        self.SPELLTABLE_AUTH_KEY = getenv("SPELLTABLE_AUTH_KEY")
-        self.SPELLTABLE_API_KEY = getenv("SPELLTABLE_API_KEY")
-        self.SPELLTABLE_CLIENT_ID = getenv("SPELLTABLE_CLIENT_ID")
-
-        # spelltable headless
+        self.WIZARDS_ROOT = getenv("WIZARDS_ROOT", "https://myaccounts.wizards.com")
+        self.SPELLTABLE_ROOT = getenv(
+            "SPELLTABLE_ROOT",
+            "https://xgaqvxzggl.execute-api.us-west-2.amazonaws.com",
+        )
         self.SPELLTABLE_USERS = getenv("SPELLTABLE_USERS")
         self.SPELLTABLE_PASSES = getenv("SPELLTABLE_PASSES")
+        self.SPELLTABLE_API_KEY = getenv("SPELLTABLE_API_KEY")
+        self.SPELLTABLE_CLIENT_ID = getenv("SPELLTABLE_CLIENT_ID")
+        self.SPELLTABLE_AUTH_REDIRECT = getenv(
+            "SPELLTABLE_AUTH_REDIRECT",
+            "https://spelltable.wizards.com/auth/authorize",
+        )
 
         # tablestream
         self.TABLESTREAM_ROOT = "https://api.table-stream.com"

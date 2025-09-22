@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import json
 import logging
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 
-from aiohttp.client_exceptions import ClientError
-from aiohttp_retry import ExponentialRetry, RetryClient
+import httpx
 
 from spellbot import __version__
 from spellbot.enums import GameFormat
@@ -18,6 +16,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+RETRY_ATTEMPTS = 2
+TIMEOUT_S = 3
+
 
 class TableSteamGameTypes(Enum):
     MTGCommander = "MTGCommander"
@@ -27,7 +28,7 @@ class TableSteamGameTypes(Enum):
     MTGVintage = "MTGVintage"
 
 
-def table_stream_game_type(format: GameFormat) -> TableSteamGameTypes:
+def table_stream_game_type(format: GameFormat) -> TableSteamGameTypes:  # pragma: no cover
     match format:
         case (
             GameFormat.COMMANDER
@@ -79,75 +80,75 @@ class TableStreamArgs(TypedDict):
     initialScheduleTTLInSeconds: NotRequired[int]
 
 
-async def generate_tablestream_link(game: GameDict) -> tuple[str | None, str | None]:
-    assert settings.TABLESTREAM_AUTH_KEY
-
-    headers = {
-        "user-agent": f"spellbot/{__version__}",
-        "Authorization": f"Bearer: {settings.SPELLTABLE_AUTH_KEY}",
-    }
-
-    data: dict[str, Any] | None = None
-    raw_data: bytes | None = None
-
+def build_ts_args(game: GameDict) -> TableStreamArgs:  # pragma: no cover
     room_name = f"SB{game['id']}"
     sb_game_format = GameFormat(game["format"])
     ts_game_type = table_stream_game_type(sb_game_format).value
-    ts_args = TableStreamArgs(
+    return TableStreamArgs(
         roomName=room_name,
         gameType=ts_game_type,
         maxPlayers=sb_game_format.players,
         private=True,
-        initialScheduleTTLInSeconds=1 * 60 * 60,  # 1 hour
+        initialScheduleTTLInSeconds=60 * 60,  # 1 hour
     )
 
-    try:
-        async with (
-            RetryClient(
-                raise_for_status=False,
-                retry_options=ExponentialRetry(attempts=5),
-            ) as client,
-            client.post(
-                settings.TABLESTREAM_CREATE,
-                headers=headers,
-                json={**ts_args},
-            ) as resp,
-        ):
-            # Rather than use `resp.json()`, which respects mimetype, let's just
-            # grab the data and try to decode it ourselves.
-            # https://github.com/inyutin/aiohttp_retry/issues/55
-            raw_data = await resp.read()
 
-            if not (data := json.loads(raw_data)):
-                return None, None
+async def fetch_table_stream_link(  # pragma: no cover
+    client: httpx.AsyncClient,
+    ts_args: TableStreamArgs,
+) -> dict[str, Any] | None:
+    """
+    Hits the TableStream API to create a new room and returns the response data.
 
-            # Example response:
-            # {
-            #   "room": {
-            #     "roomName": "SB12345",
-            #     "roomId": "UUID",
-            #     "roomUrl": "https://table-stream.com/game?id=UUID",
-            #     "gameType": "MTGCommander",
-            #     "maxPlayers": 4,
-            #     "password": "OMIT",
-            #   }
-            # }
-            room = data.get("room", {})
-            return room.get("roomUrl"), room.get("password")
-    except ClientError as ex:
-        add_span_error(ex)
-        logger.warning(
-            "warning: TableStream API failure: %s, data: %s, raw: %s",
-            ex,
-            data,
-            raw_data,
-            exc_info=True,
-        )
+    Example TableStream API response:
+    {
+      "room": {
+        "roomName": "SB12345",
+        "roomId": "UUID",
+        "roomUrl": "https://table-stream.com/game?id=UUID",
+        "gameType": "MTGCommander",
+        "maxPlayers": 4,
+        "password": "OMIT",
+      }
+    }
+    """
+    headers = {
+        "user-agent": f"spellbot/{__version__}",
+        "Authorization": f"Bearer: {settings.TABLESTREAM_AUTH_KEY}",
+    }
+    response = await client.post(
+        settings.TABLESTREAM_CREATE,
+        headers=headers,
+        json=ts_args,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+async def generate_link(game: GameDict) -> tuple[str | None, str | None]:  # pragma: no cover
+    if not settings.TABLESTREAM_AUTH_KEY:
         return None, None
-    except Exception as ex:
-        if raw_data == b"upstream request timeout":
-            return None, None
 
-        add_span_error(ex)
-        logger.exception("error: unexpected exception: data: %s, raw: %s", data, raw_data)
-        return None, None
+    ts_args = build_ts_args(game)
+    timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        for attempt in range(RETRY_ATTEMPTS):
+            try:
+                data = await fetch_table_stream_link(client, ts_args)
+                if not data:
+                    return None, None
+                room = data.get("room", {})
+                return room.get("roomUrl"), room.get("password")
+            except Exception as ex:
+                add_span_error(ex)
+                if attempt == RETRY_ATTEMPTS - 1:
+                    logger.exception("TableStream API failure (final attempt)")
+                    return None, None
+                logger.warning(
+                    "TableStream API issue (attempt %s)",
+                    attempt + 1,
+                    exc_info=True,
+                )
+
+    return None, None
