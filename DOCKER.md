@@ -40,14 +40,25 @@ Now you can run SpellBot via `docker run`. You should pass your
 configuration into the process via environment variables:
 
 ```shell
-docker run -it --rm -p 8080:80 \
-    -e HOST="0.0.0.0" \
-    -e PORT="80" \
+docker run -it --rm \
     -e DATABASE_URL="postgresql://postgres@host.docker.internal:5432/postgres" \
     -e API_BASE_URL="http://localhost:8080" \
     -e DD_TRACE_ENABLED="false" \
     -e BOT_TOKEN="<Your Discord provided bot token>" \
+    -e SPELLTABLE_API_KEY="<Your SpellTable API key>" \
+    -e SPELLTABLE_CLIENT_ID="<Your SpellTable client ID>" \
     -e SPELLTABLE_AUTH_KEY="<Your SpellTable API auth token>" \
-    -e DEBUG_GUILD="<optional: Debug guild id to use>" \
+    -e TABLESTREAM_AUTH_KEY="<Your TableStream auth key>" \
     lexicalunit/spellbot
+```
+
+For full functionality you will need to start the API as well:
+
+```shell
+docker run -it --rm -p 8080:80 \
+    -e HOST="0.0.0.0" \
+    -e PORT="80" \
+    -e DATABASE_URL="postgresql://postgres@host.docker.internal:5432/postgres" \
+    -e DD_TRACE_ENABLED="false" \
+    lexicalunit/spellbot ./start.sh spellapi
 ```

@@ -21,7 +21,7 @@ if not running_in_pytest():  # pragma: no cover
     load_dotenv()
 
 if not getenv("DISABLE_UVLOOP", ""):  # pragma: no cover
-    uvloop.install()
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
 @click.command()

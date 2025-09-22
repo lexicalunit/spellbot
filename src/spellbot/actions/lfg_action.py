@@ -722,7 +722,7 @@ class LookingForGameAction(BaseAction):
         description = ""
         for jump_link in data["jump_links"].values():
             description += f"[⇤ Jump to the game post]({jump_link})\n"
-        description += f"[➤ Spectate the game on SpellTable]({data['spectate_link']})\n\n**Users:**"
+        description += "\n\n**Users:**"
         for user_xid, note in watch_notes.items():
             description += f"\n• <@{user_xid}>: {note}"
         embed.description = description

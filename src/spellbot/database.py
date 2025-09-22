@@ -124,8 +124,8 @@ def initialize_connection(
 
 @sync_to_async()
 def begin_session() -> None:
-    db_session = db_session_maker()
-    DatabaseSession.set(db_session)
+    session = db_session_maker()
+    DatabaseSession.set(session)
 
 
 @sync_to_async()
@@ -142,8 +142,10 @@ def end_session() -> None:
 @asynccontextmanager
 async def db_session_manager() -> AsyncGenerator[None, None]:
     await begin_session()
-    yield
-    await end_session()
+    try:
+        yield
+    finally:
+        await end_session()
 
 
 @sync_to_async()
