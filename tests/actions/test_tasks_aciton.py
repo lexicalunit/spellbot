@@ -397,7 +397,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_not_called()
+        voice_channel.delete.assert_not_called()  # type: ignore
         assert "channel is in grace period" in caplog.text
 
     async def test_when_voice_channel_is_occupied(
@@ -428,7 +428,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_not_called()
+        voice_channel.delete.assert_not_called()  # type: ignore
         assert "channel is occupied" in caplog.text
 
     async def test_when_voice_channel_is_without_permissions(
@@ -457,7 +457,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_not_called()
+        voice_channel.delete.assert_not_called()  # type: ignore
         assert f"no permissions to delete channel ({voice_channel.id})" in caplog.text
 
     async def test_when_voice_channel_is_renamed(
@@ -493,7 +493,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_called_once()
+        voice_channel.delete.assert_called_once()  # type: ignore
         assert f"deleting channel {voice_channel.name}({voice_channel.id})" in caplog.text
 
     async def test_when_voice_channel_is_not_for_game(
@@ -525,7 +525,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_not_called()
+        voice_channel.delete.assert_not_called()  # type: ignore
 
     async def test_when_voice_channel_is_occupied_and_old(
         self,
@@ -555,7 +555,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_called_once()
+        voice_channel.delete.assert_called_once()  # type: ignore
         assert f"deleting channel Game-SB{game.id}({voice_channel.id})" in caplog.text
 
     async def test_when_voice_channel_is_deleted(
@@ -586,7 +586,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_called_once()
+        voice_channel.delete.assert_called_once()  # type: ignore
         assert f"deleting channel Game-SB{game.id}({voice_channel.id})" in caplog.text
 
     async def test_when_voice_channel_is_deleted_and_batched(
@@ -621,6 +621,6 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_called_once()
+        voice_channel.delete.assert_called_once()  # type: ignore
         assert f"deleting channel Game-SB{game.id}({voice_channel.id})" in caplog.text
         assert "batch limit reached" in caplog.text

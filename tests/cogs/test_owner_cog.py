@@ -38,7 +38,7 @@ class TestCogOwner(ContextMixin):
 
         await self.run(cog, cog.ban, self.context, str(target_user.id))
 
-        self.context.author.send.assert_called_once_with(
+        self.context.author.send.assert_called_once_with(  # type: ignore
             f"User <@{target_user.id}> has been banned.",
         )
         users = list(DatabaseSession.query(User).all())
@@ -56,12 +56,12 @@ class TestCogOwner(ContextMixin):
     async def test_ban_without_target(self) -> None:
         cog = OwnerCog(self.bot)
         await self.run(cog, cog.ban, self.context, None)
-        self.context.author.send.assert_called_once_with("No target user.")
+        self.context.author.send.assert_called_once_with("No target user.")  # type: ignore
 
     async def test_ban_with_invalid_target(self) -> None:
         cog = OwnerCog(self.bot)
         await self.run(cog, cog.ban, self.context, "abc")
-        self.context.author.send.assert_called_once_with("Invalid user id.")
+        self.context.author.send.assert_called_once_with("Invalid user id.")  # type: ignore
 
     async def test_ban_and_unban_exceptions(
         self,
@@ -90,7 +90,7 @@ class TestCogOwner(ContextMixin):
 
         await self.run(cog, cog.ban_guild, self.context, str(target_guild))
 
-        self.context.author.send.assert_called_once_with(
+        self.context.author.send.assert_called_once_with(  # type: ignore
             f"Guild {target_guild} has been banned.",
         )
         guilds = list(DatabaseSession.query(Guild).all())
@@ -108,12 +108,12 @@ class TestCogOwner(ContextMixin):
     async def test_ban_guild_without_target(self) -> None:
         cog = OwnerCog(self.bot)
         await self.run(cog, cog.ban_guild, self.context, None)
-        self.context.author.send.assert_called_once_with("No target guild.")
+        self.context.author.send.assert_called_once_with("No target guild.")  # type: ignore
 
     async def test_ban_guild_with_invalid_target(self) -> None:
         cog = OwnerCog(self.bot)
         await self.run(cog, cog.ban_guild, self.context, "abc")
-        self.context.author.send.assert_called_once_with("Invalid guild id.")
+        self.context.author.send.assert_called_once_with("Invalid guild id.")  # type: ignore
 
     async def test_ban_and_unban_guild_exceptions(
         self,
@@ -142,7 +142,7 @@ class TestCogOwner(ContextMixin):
 
         await self.run(cog, cog.stats, self.context)
 
-        self.context.author.send.assert_called_once_with(
+        self.context.author.send.assert_called_once_with(  # type: ignore
             cleandoc(
                 """
                     ```
@@ -162,12 +162,12 @@ class TestCogOwner(ContextMixin):
         cog = OwnerCog(self.bot)
 
         await self.run(cog, cog.is_bad, self.context, "1")
-        self.context.author.send.assert_called_once_with("Yes")
+        self.context.author.send.assert_called_once_with("Yes")  # type: ignore
 
-        self.context.author.send.reset_mock()
+        self.context.author.send.reset_mock()  # type: ignore
 
         await self.run(cog, cog.is_bad, self.context, "2")
-        self.context.author.send.assert_called_once_with("No")
+        self.context.author.send.assert_called_once_with("No")  # type: ignore
 
     async def test_sync(self, mocker: MockerFixture) -> None:
         mocker.patch("spellbot.cogs.owner_cog.load_extensions", AsyncMock())
@@ -176,7 +176,7 @@ class TestCogOwner(ContextMixin):
 
         await callback(self.context)
 
-        self.context.author.send.assert_called_once_with("Commands synced!")
+        self.context.author.send.assert_called_once_with("Commands synced!")  # type: ignore
 
     async def test_sync_exception(self, mocker: MockerFixture) -> None:
         mocker.patch(
@@ -189,4 +189,4 @@ class TestCogOwner(ContextMixin):
         with pytest.raises(RuntimeError):
             await callback(self.context)
 
-        self.context.author.send.assert_called_once_with("Error: oops")
+        self.context.author.send.assert_called_once_with("Error: oops")  # type: ignore

@@ -50,7 +50,7 @@ class TestCogScore(InteractionMixin):
         )
         self.factories.play.create(user_xid=user.xid, game_id=game.id)
 
-        self.interaction.response.send_message.reset_mock()
+        self.interaction.response.send_message.reset_mock()  # type: ignore
         await self.run(cog.score)
 
         assert self.last_send_message("embed") == {
@@ -71,7 +71,7 @@ class TestCogScore(InteractionMixin):
         )
         self.factories.play.create(user_xid=user.xid, game_id=game.id)
 
-        self.interaction.response.send_message.reset_mock()
+        self.interaction.response.send_message.reset_mock()  # type: ignore
         await self.run(cog.score)
         assert self.last_send_message("embed") == {
             "author": {"name": f"Record of games played on {self.guild.name}"},
@@ -91,8 +91,8 @@ class TestCogScore(InteractionMixin):
         await self.run(cog.score, interaction=new_interaction)
 
         send_message = new_interaction.response.send_message
-        send_message.assert_called_once()
-        embed = send_message.call_args.kwargs.get("embed")
+        send_message.assert_called_once()  # type: ignore
+        embed = send_message.call_args.kwargs.get("embed")  # type: ignore
         assert embed is not None
         assert embed.to_dict() == {
             "author": {"name": f"Record of games played on {new_guild.name}"},
@@ -196,7 +196,7 @@ class TestCogScore(InteractionMixin):
             "flags": 0,
         }
 
-        self.interaction.response.send_message.reset_mock()
+        self.interaction.response.send_message.reset_mock()  # type: ignore
         await self.run(cog.top)
         assert self.last_send_message("embed") == {
             "title": f"Top players in #{channel.name} (this month)",
@@ -212,7 +212,7 @@ class TestCogScore(InteractionMixin):
             "flags": 0,
         }
 
-        self.interaction.response.send_message.reset_mock()
+        self.interaction.response.send_message.reset_mock()  # type: ignore
         await self.run(cog.top, ago=1)
         assert self.last_send_message("embed") == {
             "title": f"Top players in #{channel.name} (1 months ago)",

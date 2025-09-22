@@ -10,9 +10,18 @@ In `src/spellbot/enums.py` add a new entry to the `GameService` enum. For exampl
 class GameService(Enum):
     ...
 
-    TTS = "TabletopSim"
-    TABLE_STREAM = "Table Stream"
-    NEW_SERVICE = "Your New Service"  # <-- add this line
+    TTS = "TabletopSim", "_Please use TabletopSim for this game._", None
+    TABLE_STREAM = (
+        "Table Stream",
+        "_A Table Stream link will be created when all players have joined._",
+        "https://table-stream.com/",
+    )
+    # Add your new service here:
+    NEW_SERVICE = (
+        "Your New Service",
+        "_A Your New Service link will be created when all players have joined._",
+        "https://your-new-service.com/",
+    )
 ```
 
 Then update the `GAME_SERVICE_ORDER` list to include the new service. This list controls the order in which services are presented to the user.
@@ -43,7 +52,7 @@ Create a new file in `src/spellbot/` for your service. For example `src/spellbot
 
 ## Handle your service in the Game model
 
-In `src/spellbot/models/game.py` there is a `Game` model which represents games managed by SpellBot. Of particular interest is the `embed_description()` function which you will need to update to properly handle your new service. There are a number of custom messages that depend on the service; This could probably be refactored to be more generic.
+In `src/spellbot/models/game.py` there is a `Game` model which represents games managed by SpellBot. Of particular interest is the `embed_description()` function which you may need to update to properly handle your new service, especially if you added additional information to the `GameLinkDetails` class.
 
 ## Update the test suite
 
