@@ -106,8 +106,8 @@ async def session_context(
         def cleanup_session() -> None:
             async def finalizer() -> None:
                 try:
-                    await rollback_transaction()
                     test_session.close()
+                    await rollback_transaction()
                 except Exception:  # pragma: no cover
                     logger.exception("Error rolling back transaction")
 

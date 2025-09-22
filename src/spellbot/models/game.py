@@ -47,8 +47,7 @@ class GameDict(TypedDict):
     format: int
     bracket: int
     service: int
-    spelltable_link: str | None
-    spectate_link: str | None
+    game_link: str | None
     jump_links: dict[int, str]
     confirmed: bool
     requires_confirmation: bool
@@ -178,7 +177,7 @@ class Game(Base):
             doc="The service that will be used to create this game",
         ),
     )
-    spelltable_link = Column(String(255), doc="The generated SpellTable link for this game")
+    game_link = Column(String(255), doc="The generated link for this game")
     password = Column(String(255), nullable=True, doc="The password for this game")
     voice_invite_link = Column(String(255), doc="The voice channel invite link for this game")
     requires_confirmation = Column(
@@ -302,8 +301,6 @@ class Game(Base):
         if self.guild.notice:
             description += f"{self.guild.notice}\n\n"
         effective_service = int(self.service)
-        if effective_service == GameService.SPELLTABLE.value and not settings.ENABLE_SPELLTABLE:
-            effective_service = GameService.TABLE_STREAM.value
         if self.status == GameStatus.PENDING.value:
             if effective_service == GameService.SPELLTABLE.value:
                 description += "_A SpellTable link will be created when all players have joined._"
@@ -320,14 +317,11 @@ class Game(Base):
                         "This is a rematch of a previous game. "
                         "Please continue using the same game lobby and voice channel."
                     )
-                elif self.spelltable_link:
+                elif self.game_link:
                     description += (
                         f"# [Join your {GameService(effective_service)} game now!]"
-                        f"({self.spelltable_link})"
+                        f"({self.game_link})"
                     )
-                    # Spectate links do not seem to work anymore on SpellTable.
-                    # if effective_service == GameService.SPELLTABLE.value:
-                    #     description += f" (or [spectate this game]({self.spectate_link}))"
                 elif effective_service == GameService.SPELLTABLE.value:
                     description += (
                         "Sorry but SpellBot was unable to create a SpellTable link"
@@ -437,10 +431,6 @@ class Game(Base):
     @property
     def embed_footer(self) -> str:
         return f"SpellBot Game ID: #SB{self.id}"
-
-    @property
-    def spectate_link(self) -> str | None:
-        return f"{self.spelltable_link}?spectate=true" if self.spelltable_link else None
 
     @property
     def jump_links(self) -> dict[int, str]:
@@ -555,8 +545,7 @@ class Game(Base):
             "format": self.format,
             "bracket": self.bracket,
             "service": self.service,
-            "spelltable_link": self.spelltable_link,
-            "spectate_link": self.spectate_link,
+            "game_link": self.game_link,
             "jump_links": self.jump_links,
             "confirmed": self.confirmed,
             "requires_confirmation": self.channel.require_confirmation,

@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added a SERVICES.md document to explain how to add support for a new game service.
+
+### Fixed
+
+- Fixed the .env.example file (incorrect variable names).
+- Fixed the DOCKER.md documentation since splitting up the bot and API.
+- Added a try .. finally to `db_session_manager()` to ensure we always end the session.
+- Fixed a bug with TableStream game creation not using the correct auth token.
+
+### Changed
+
+- Changed the spelltable_link column to game_link, since it's not just for SpellTable.
+- Using GunicornUVLoopWebWorker workers for the API now.
+- Replaced deprecated `uvloop.install()` with a `asyncio.set_event_loop_policy()` call.
+- Refactored `create_game_link()` for clarity.
+- Refactored tablestream.py to remove aiohttp in favor of httpx.
+- Updated dependencies.
+
+### Deleted
+
+- Removed old legacy scripts from database upgrade.
+- Removed `ENABLE_SPELLTABLE` flag since it's no longer used.
+- Deleted code related to spectator links since the feature is no longer supported.
+- Removed dependency on aiohttp-retry.
+
 ## [v16.2.0](https://github.com/lexicalunit/spellbot/releases/tag/v16.2.0) - 2025-09-17
 
 ### Fixed

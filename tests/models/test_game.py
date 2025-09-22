@@ -41,9 +41,8 @@ class TestModelGame:
             "format": game.format,
             "bracket": game.bracket,
             "service": game.service,
-            "spelltable_link": game.spelltable_link,
+            "game_link": game.game_link,
             "jump_links": game.jump_links,
-            "spectate_link": game.spectate_link,
             "confirmed": game.confirmed,
             "requires_confirmation": game.requires_confirmation,
             "password": game.password,
@@ -289,7 +288,7 @@ class TestModelGame:
             "flags": 0,
         }
 
-    def test_game_embed_started_with_spelltable_link(
+    def test_game_embed_started_with_game_link(
         self,
         settings: Settings,
         factories: Factories,
@@ -300,7 +299,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            spelltable_link="https://spelltable/link",
+            game_link="https://spelltable/link",
             guild=guild,
             channel=channel,
         )
@@ -333,7 +332,7 @@ class TestModelGame:
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "# [Join your SpellTable game now!]"
-                f"({game.spelltable_link})\n"
+                f"({game.game_link})\n"
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
@@ -369,7 +368,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            spelltable_link=None,
+            game_link=None,
             guild=guild,
             channel=channel,
             service=GameService.NOT_ANY.value,
@@ -440,7 +439,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            spelltable_link=None,
+            game_link=None,
             guild=guild,
             channel=channel,
             service=GameService.MTG_ARENA.value,
@@ -578,7 +577,7 @@ class TestModelGame:
             "flags": 0,
         }
 
-    def test_game_embed_started_without_spelltable_link(
+    def test_game_embed_started_without_game_link(
         self,
         settings: Settings,
         factories: Factories,
@@ -733,7 +732,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            spelltable_link="https://spelltable/link",
+            game_link="https://spelltable/link",
             voice_xid=501,
             guild=guild,
             channel=channel,
@@ -767,7 +766,7 @@ class TestModelGame:
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "# [Join your SpellTable game now!]"
-                f"({game.spelltable_link})\n"
+                f"({game.game_link})\n"
                 "\n"
                 f"## Join your voice chat now: <#{game.voice_xid}>\n"
                 "\n"
@@ -805,7 +804,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            spelltable_link="https://spelltable/link",
+            game_link="https://spelltable/link",
             voice_xid=501,
             voice_invite_link="https://voice/invite",
             guild=guild,
@@ -840,7 +839,7 @@ class TestModelGame:
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "# [Join your SpellTable game now!]"
-                f"({game.spelltable_link})\n"
+                f"({game.game_link})\n"
                 "\n"
                 f"## Join your voice chat now: <#{game.voice_xid}>\n"
                 f"Or use this voice channel invite: {game.voice_invite_link}\n"
@@ -875,7 +874,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            spelltable_link="https://spelltable/link",
+            game_link="https://spelltable/link",
             guild=guild,
             channel=channel,
         )
@@ -912,7 +911,7 @@ class TestModelGame:
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "# [Join your SpellTable game now!]"
-                f"({game.spelltable_link})\n"
+                f"({game.game_link})\n"
                 "\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
@@ -1014,7 +1013,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            spelltable_link="https://spelltable/link",
+            game_link="https://spelltable/link",
             guild=guild,
             channel=channel,
         )
@@ -1060,7 +1059,7 @@ class TestModelGame:
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "# [Join your SpellTable game now!]"
-                f"({game.spelltable_link})\n"
+                f"({game.game_link})\n"
                 "\n"
                 f"## Please consider using this available voice channel: <#{dc.id}>.\n"
                 "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**\n"

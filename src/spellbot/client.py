@@ -11,6 +11,7 @@ from cachetools import TTLCache
 from ddtrace.trace import tracer
 from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, Context
 
+from . import spelltable, tablestream
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
 from .metrics import setup_ignored_errors, setup_metrics
@@ -18,8 +19,6 @@ from .models import GameLinkDetails
 from .operations import safe_delete_message
 from .services import ServicesRegistry
 from .settings import settings
-from .spelltable import generate_spelltable_link
-from .tablestream import generate_tablestream_link
 from .utils import user_can_moderate
 
 if TYPE_CHECKING:
@@ -92,16 +91,15 @@ class SpellBot(AutoShardedBot):
         service = game.get("service")
         if span := tracer.current_span():
             span.set_tag("link_service", GameService(service).name)
-        if service == GameService.SPELLTABLE.value:
-            if settings.ENABLE_SPELLTABLE:
-                link = await generate_spelltable_link(game)
+        match service:
+            case GameService.SPELLTABLE.value:
+                link = await spelltable.generate_link(game)
                 return GameLinkDetails(link)
-            # fallback to tablestream if spelltable is disabled
-            service = GameService.TABLE_STREAM.value
-        if service == GameService.TABLE_STREAM.value:
-            details = await generate_tablestream_link(game)
-            return GameLinkDetails(*details)
-        return GameLinkDetails()
+            case GameService.TABLE_STREAM.value:
+                details = await tablestream.generate_link(game)
+                return GameLinkDetails(*details)
+            case _:
+                return GameLinkDetails()
 
     @tracer.wrap(name="interaction", resource="on_message")
     async def on_message(

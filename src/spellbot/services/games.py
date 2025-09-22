@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-MAX_GAME_LINK_LEN = Game.spelltable_link.property.columns[0].type.length  # type: ignore
+MAX_GAME_LINK_LEN = Game.game_link.property.columns[0].type.length  # type: ignore
 
 
 class GamesService:
@@ -332,7 +332,7 @@ class GamesService:
         ]
 
         # update game's state
-        self.game.spelltable_link = game_link  # column is "spelltable_link" for legacy reasons
+        self.game.game_link = game_link  # column is "game_link" for legacy reasons
         self.game.password = password
         self.game.status = GameStatus.STARTED.value
         self.game.started_at = datetime.now(tz=UTC)

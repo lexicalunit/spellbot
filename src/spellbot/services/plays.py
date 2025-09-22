@@ -22,7 +22,7 @@ USER_RECORDS_SQL = r"""
             games.updated_at,
             games.channel_xid,
             posts.message_xid,
-            games.spelltable_link,
+            games.game_link,
             games.format
         FROM games
         JOIN plays ON plays.game_id = games.id
@@ -41,7 +41,7 @@ USER_RECORDS_SQL = r"""
         game_plays.updated_at,
         game_plays.channel_xid,
         game_plays.message_xid,
-        game_plays.spelltable_link,
+        game_plays.game_link,
         game_plays.format,
         channels.name,
         STRING_AGG(
@@ -64,7 +64,7 @@ USER_RECORDS_SQL = r"""
         game_plays.updated_at,
         game_plays.channel_xid,
         game_plays.message_xid,
-        game_plays.spelltable_link,
+        game_plays.game_link,
         game_plays.format,
         channels.name
     ORDER BY game_plays.updated_at DESC
@@ -76,7 +76,7 @@ CHANNEL_RECORDS_SQL = r"""
         games.id,
         games.updated_at,
         posts.message_xid,
-        games.spelltable_link,
+        games.game_link,
         games.format,
         STRING_AGG(
             CONCAT(
@@ -102,7 +102,7 @@ CHANNEL_RECORDS_SQL = r"""
         games.id,
         games.updated_at,
         posts.message_xid,
-        games.spelltable_link,
+        games.game_link,
         games.format
     ORDER BY games.updated_at DESC
     OFFSET :offset
