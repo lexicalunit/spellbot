@@ -619,7 +619,7 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "Sorry but SpellBot was unable to create a SpellTable link for "
+                "Sorry but SpellBot was unable to create a link for "
                 "this game. Please go to [SpellTable]"
                 "(https://spelltable.wizards.com/) to create one.\n"
                 "\n"
@@ -691,7 +691,7 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "Sorry but SpellBot was unable to create a Table Stream link for "
+                "Sorry but SpellBot was unable to create a link for "
                 "this game. Please go to [Table Stream]"
                 "(https://table-stream.com/) to create one.\n"
                 "\n"

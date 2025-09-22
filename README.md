@@ -196,7 +196,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [pypi]: https://pypi.org/project/spellbot/
 [pyright-badge]: https://img.shields.io/badge/types-pyright-c3c38f.svg
 [pyright]: https://github.com/microsoft/pyright
-[python-badge]: https://img.shields.io/badge/python-3.12-blue.svg
+[python-badge]: https://img.shields.io/badge/python-3.13-blue.svg
 [python]: https://www.python.org/
 [ruff-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [ruff]: https://github.com/astral-sh/ruff
