@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v16.3.0](https://github.com/lexicalunit/spellbot/releases/tag/v16.3.0) - 2025-09-21
+
 ### Added
 
 - Added a SERVICES.md document to explain how to add support for a new game service.
