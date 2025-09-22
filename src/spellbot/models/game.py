@@ -279,7 +279,7 @@ class Game(Base):
         return f"**Waiting for {remaining} more player{plural} to join...**"
 
     @tracer.wrap()
-    def embed_description(  # noqa: C901,PLR0912,PLR0915
+    def embed_description(  # noqa: C901, PLR0912
         self,
         *,
         guild: discord.Guild | None,
@@ -300,16 +300,9 @@ class Game(Base):
         description = ""
         if self.guild.notice:
             description += f"{self.guild.notice}\n\n"
-        effective_service = int(self.service)
+        effective_service = GameService(int(self.service))
         if self.status == GameStatus.PENDING.value:
-            if effective_service == GameService.SPELLTABLE.value:
-                description += "_A SpellTable link will be created when all players have joined._"
-            elif effective_service == GameService.TABLE_STREAM.value:
-                description += "_A Table Stream link will be created when all players have joined._"
-            elif effective_service == GameService.NOT_ANY.value:
-                description += "_Please contact the players in your game to organize this game._"
-            else:
-                description += f"_Please use {GameService(effective_service)} for this game._"
+            description += effective_service.pending_msg
         else:
             if self.show_links(dm):
                 if rematch:
@@ -318,24 +311,15 @@ class Game(Base):
                         "Please continue using the same game lobby and voice channel."
                     )
                 elif self.game_link:
+                    description += f"# [Join your {effective_service} game now!]({self.game_link})"
+                elif effective_service.fallback_url:
                     description += (
-                        f"# [Join your {GameService(effective_service)} game now!]"
-                        f"({self.game_link})"
+                        "Sorry but SpellBot was unable to create a link"
+                        f" for this game. Please go to [{effective_service}]"
+                        f"({effective_service.fallback_url}) to create one."
                     )
-                elif effective_service == GameService.SPELLTABLE.value:
-                    description += (
-                        "Sorry but SpellBot was unable to create a SpellTable link"
-                        " for this game. Please go to [SpellTable]"
-                        "(https://spelltable.wizards.com/) to create one."
-                    )
-                elif effective_service == GameService.TABLE_STREAM.value:
-                    description += (
-                        "Sorry but SpellBot was unable to create a Table Stream link"
-                        " for this game. Please go to [Table Stream]"
-                        "(https://table-stream.com/) to create one."
-                    )
-                elif effective_service != GameService.NOT_ANY.value:
-                    description += f"Please use {GameService(effective_service)} to play this game."
+                elif effective_service.value != GameService.NOT_ANY.value:
+                    description += f"Please use {effective_service} to play this game."
                 else:
                     description += "Contact the other players in your game to organize this match."
                 if self.password:
