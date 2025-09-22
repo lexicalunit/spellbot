@@ -31,7 +31,7 @@ class TestCogBlock(InteractionMixin):
 
         await self.run(cog.block, target=target)
 
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"<@{target.id}> has been blocked.",
             ephemeral=True,
         )
@@ -60,7 +60,7 @@ class TestCogBlock(InteractionMixin):
 
         await self.run(cog.block, target=target)
 
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             "You can not block yourself.",
             ephemeral=True,
         )
@@ -73,7 +73,10 @@ class TestCogBlock(InteractionMixin):
 
         await self.run(cog.blocked)
 
-        self.interaction.response.send_message.assert_called_once_with(embed=ANY, ephemeral=True)
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
+            embed=ANY,
+            ephemeral=True,
+        )
         assert self.last_send_message("embed") == {
             "color": self.settings.INFO_EMBED_COLOR,
             "description": f"<@{target.xid}> ({target.name})\n",
@@ -87,7 +90,10 @@ class TestCogBlock(InteractionMixin):
     async def test_blocked_no_one(self, cog: BlockCog, user: User) -> None:
         await self.run(cog.blocked)
 
-        self.interaction.response.send_message.assert_called_once_with(embed=ANY, ephemeral=True)
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
+            embed=ANY,
+            ephemeral=True,
+        )
         assert self.last_send_message("embed") == {
             "color": self.settings.INFO_EMBED_COLOR,
             "description": "You have no blocked users.",
@@ -106,7 +112,10 @@ class TestCogBlock(InteractionMixin):
         with patch("spellbot.actions.block_action.EMBED_DESCRIPTION_SIZE_LIMIT", 20):
             await self.run(cog.blocked)
 
-        self.interaction.response.send_message.assert_called_once_with(embed=ANY, ephemeral=True)
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
+            embed=ANY,
+            ephemeral=True,
+        )
         assert self.last_send_message("embed") == {
             "color": self.settings.INFO_EMBED_COLOR,
             "description": f"<@{target1.xid}> ({target1.name})\n",
@@ -117,12 +126,15 @@ class TestCogBlock(InteractionMixin):
             "flags": 0,
         }
 
-        self.interaction.response.send_message.reset_mock()
+        self.interaction.response.send_message.reset_mock()  # type: ignore
 
         with patch("spellbot.actions.block_action.EMBED_DESCRIPTION_SIZE_LIMIT", 20):
             await self.run(cog.blocked, page=2)
 
-        self.interaction.response.send_message.assert_called_once_with(embed=ANY, ephemeral=True)
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
+            embed=ANY,
+            ephemeral=True,
+        )
         assert self.last_send_message("embed") == {
             "color": self.settings.INFO_EMBED_COLOR,
             "description": f"<@{target2.xid}> ({target2.name})\n",

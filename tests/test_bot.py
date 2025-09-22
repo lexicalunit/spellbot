@@ -129,7 +129,7 @@ class TestSpellBot(BaseMixin):
         response: str,
     ) -> None:
         await handle_interaction_errors(interaction, error)
-        interaction.user.send.assert_called_once_with(response)
+        interaction.user.send.assert_called_once_with(response)  # type: ignore
 
     async def test_handle_interaction_errors_unhandled_exception(
         self,
@@ -189,8 +189,8 @@ class TestSpellBot(BaseMixin):
         dpy_message.flags.value = 16
         await bot.on_message(dpy_message)
         super_on_message_mock.assert_not_called()
-        bot.handle_verification.assert_called_once_with(dpy_message)
-        dpy_message.reply.assert_not_called()
+        bot.handle_verification.assert_called_once_with(dpy_message)  # type: ignore
+        dpy_message.reply.assert_not_called()  # type: ignore
 
     async def test_on_message_delete_happy_path(
         self,
@@ -201,7 +201,7 @@ class TestSpellBot(BaseMixin):
         mock_handle_message_deleted = AsyncMock()
         monkeypatch.setattr(bot, "handle_message_deleted", mock_handle_message_deleted)
         await bot.on_message_delete(dpy_message)
-        bot.handle_message_deleted.assert_called_once_with(dpy_message)
+        bot.handle_message_deleted.assert_called_once_with(dpy_message)  # type: ignore
 
     async def test_on_message_delete_message_without_id(
         self,
@@ -213,7 +213,7 @@ class TestSpellBot(BaseMixin):
         mock_handle_message_deleted = AsyncMock()
         monkeypatch.setattr(bot, "handle_message_deleted", mock_handle_message_deleted)
         await bot.on_message_delete(dpy_message)
-        bot.handle_message_deleted.assert_not_called()
+        bot.handle_message_deleted.assert_not_called()  # type: ignore
 
     async def test_on_command_error_command_not_found(
         self,
@@ -329,7 +329,7 @@ class TestSpellBotHandleVerification(BaseMixin):
 
         await self.bot.on_message(message)
 
-        self.bot.handle_verification.assert_not_called()
+        self.bot.handle_verification.assert_not_called()  # type: ignore
 
     async def test_without_auto_verify(self, dpy_message: discord.Message) -> None:
         assert dpy_message.guild
@@ -380,7 +380,7 @@ class TestSpellBotHandleVerification(BaseMixin):
 
         await self.bot.handle_verification(dpy_message)
 
-        dpy_message.delete.assert_called_once()
+        dpy_message.delete.assert_called_once()  # type: ignore
 
     async def test_verified_only_when_verified(self, dpy_message: discord.Message) -> None:
         assert dpy_message.guild
@@ -400,7 +400,7 @@ class TestSpellBotHandleVerification(BaseMixin):
 
         await self.bot.handle_verification(dpy_message)
 
-        dpy_message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()  # type: ignore
 
     async def test_unverified_only_when_unverified(self, dpy_message: discord.Message) -> None:
         assert dpy_message.guild
@@ -414,7 +414,7 @@ class TestSpellBotHandleVerification(BaseMixin):
 
         await self.bot.handle_verification(dpy_message)
 
-        dpy_message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()  # type: ignore
 
     async def test_unverified_only_when_verified(self, dpy_message: discord.Message) -> None:
         assert dpy_message.guild
@@ -434,7 +434,7 @@ class TestSpellBotHandleVerification(BaseMixin):
 
         await self.bot.handle_verification(dpy_message)
 
-        dpy_message.delete.assert_called_once()
+        dpy_message.delete.assert_called_once()  # type: ignore
 
     async def test_message_from_mod_role(
         self,
@@ -455,7 +455,7 @@ class TestSpellBotHandleVerification(BaseMixin):
 
         await self.bot.handle_verification(dpy_message)
 
-        dpy_message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()  # type: ignore
 
     async def test_message_from_admin_role(
         self,
@@ -476,7 +476,7 @@ class TestSpellBotHandleVerification(BaseMixin):
 
         await self.bot.handle_verification(dpy_message)
 
-        dpy_message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()  # type: ignore
 
     async def test_message_from_owner(
         self,
@@ -495,7 +495,7 @@ class TestSpellBotHandleVerification(BaseMixin):
 
         await self.bot.handle_verification(dpy_message)
 
-        dpy_message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()  # type: ignore
 
     async def test_message_from_administrator(self, dpy_message: discord.Message) -> None:
         assert dpy_message.guild
@@ -511,4 +511,4 @@ class TestSpellBotHandleVerification(BaseMixin):
 
         await self.bot.handle_verification(dpy_message)
 
-        dpy_message.delete.assert_not_called()
+        dpy_message.delete.assert_not_called()  # type: ignore

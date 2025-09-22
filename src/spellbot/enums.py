@@ -19,21 +19,38 @@ class GameService(Enum):
         obj._value_ = value
         return obj
 
-    def __init__(self, title: str) -> None:
+    def __init__(self, title: str, pending_msg: str, fallback_url: str | None) -> None:
+        """
+        Build a service for Magic: The Gathering games.
+
+        - title: The human readable name of the service.
+        - pending_msg: A message to display when a game is pending for this service.
+        - fallback_url: A fallback URL where users can manually create a game if needed.
+        """
         self.title = title
+        self.pending_msg = pending_msg
+        self.fallback_url = fallback_url
 
     def __str__(self) -> str:
         return self.title
 
     # DO NOT REORDER -- IT WOULD INVALIDATE EXISTING DATABASE ENTRIES!
-    NOT_ANY = "Not any"
-    SPELLTABLE = "SpellTable"
-    COCKATRICE = "Cockatrice"
-    X_MAGE = "XMage"
-    MTG_ARENA = "MTG Arena"
-    MTG_ONLINE = "MTG Online"
-    TTS = "TabletopSim"
-    TABLE_STREAM = "Table Stream"
+    NOT_ANY = "Not any", "_Please contact the players in your game to organize this game._", None
+    SPELLTABLE = (
+        "SpellTable",
+        "_A SpellTable link will be created when all players have joined._",
+        "https://spelltable.wizards.com/",
+    )
+    COCKATRICE = "Cockatrice", "_Please use Cockatrice for this game._", None
+    X_MAGE = "XMage", "_Please use XMage for this game._", None
+    MTG_ARENA = "MTG Arena", "_Please use MTG Arena for this game._", None
+    MTG_ONLINE = "MTG Online", "_Please use MTG Online for this game._", None
+    TTS = "TabletopSim", "_Please use TabletopSim for this game._", None
+    TABLE_STREAM = (
+        "Table Stream",
+        "_A Table Stream link will be created when all players have joined._",
+        "https://table-stream.com/",
+    )
 
 
 GAME_SERVICE_ORDER = [

@@ -126,8 +126,8 @@ class InteractionMixin(BaseMixin):
 
     def last_send_message(self, kwarg: str) -> dict[str, Any] | list[dict[str, Any]] | Any:
         send_message = self.interaction.response.send_message
-        send_message.assert_called_once()
-        send_message_call = send_message.call_args_list[0]
+        send_message.assert_called_once()  # type: ignore
+        send_message_call = send_message.call_args_list[0]  # type: ignore
         actual = send_message_call.kwargs[kwarg]
         if kwarg == "embed":
             actual = actual.to_dict()
@@ -143,8 +143,8 @@ class InteractionMixin(BaseMixin):
 
     def last_edit_message(self, kwarg: str) -> dict[str, Any] | list[dict[str, Any]] | Any:
         edit_message = self.interaction.edit_original_response
-        edit_message.assert_called_once()
-        edit_message_call = edit_message.call_args_list[0]
+        edit_message.assert_called_once()  # type: ignore
+        edit_message_call = edit_message.call_args_list[0]  # type: ignore
         actual = edit_message_call.kwargs[kwarg]
         if kwarg == "embed":
             actual = actual.to_dict()

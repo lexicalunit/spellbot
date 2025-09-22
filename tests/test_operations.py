@@ -260,12 +260,12 @@ class TestOperationsUpdateEmbedOrigin(InteractionMixin):
     async def test_happy_path(self) -> None:
         success = await safe_update_embed_origin(self.interaction, "content", flags=1)
         assert success
-        self.interaction.edit_original_response.assert_called_once_with("content", flags=1)
+        self.interaction.edit_original_response.assert_called_once_with("content", flags=1)  # type: ignore
 
     async def test_exception(self) -> None:
-        self.interaction.edit_original_response.side_effect = DiscordException
+        self.interaction.edit_original_response.side_effect = DiscordException  # type: ignore
         success = await safe_update_embed_origin(self.interaction, "content", flags=1)
-        self.interaction.edit_original_response.assert_called_once_with("content", flags=1)
+        self.interaction.edit_original_response.assert_called_once_with("content", flags=1)  # type: ignore
         assert not success
 
 
@@ -274,13 +274,13 @@ class TestOperationsCreateCategoryChannel:
     async def test_happy_path(self, dpy_guild: discord.Guild) -> None:
         client = mock_client(guilds=[dpy_guild])
         await safe_create_category_channel(client, dpy_guild.id, "name")
-        dpy_guild.create_category_channel.assert_called_once_with("name")
+        dpy_guild.create_category_channel.assert_called_once_with("name")  # type: ignore
 
     async def test_no_permissions(self, dpy_guild: discord.Guild, mocker: MockerFixture) -> None:
         mocker.patch("spellbot.operations.bot_can_manage_channels", MagicMock(return_value=False))
         client = mock_client(guilds=[dpy_guild])
         response = await safe_create_category_channel(client, dpy_guild.id, "name")
-        dpy_guild.create_category_channel.assert_not_called()
+        dpy_guild.create_category_channel.assert_not_called()  # type: ignore
         assert response is None
 
     async def test_uncached(
@@ -291,22 +291,22 @@ class TestOperationsCreateCategoryChannel:
         client = mock_client(guilds=[dpy_guild])
         monkeypatch.setattr(client, "get_guild", MagicMock(return_value=None))
         await safe_create_category_channel(client, dpy_guild.id, "name")
-        dpy_guild.create_category_channel.assert_called_once_with("name")
+        dpy_guild.create_category_channel.assert_called_once_with("name")  # type: ignore
 
     async def test_not_found(self, dpy_guild: discord.Guild) -> None:
         client = mock_client()
         await safe_create_category_channel(client, dpy_guild.id, "name")
-        dpy_guild.create_category_channel.assert_not_called()
+        dpy_guild.create_category_channel.assert_not_called()  # type: ignore
 
 
 @pytest.mark.asyncio
 class TestOperationsCreateChannelInvite:
     async def test_happy_path(self, dpy_channel: discord.TextChannel) -> None:
         await safe_create_channel_invite(dpy_channel)
-        dpy_channel.create_invite.assert_called_once()
+        dpy_channel.create_invite.assert_called_once()  # type: ignore
 
     async def test_exception(self, dpy_channel: discord.TextChannel) -> None:
-        dpy_channel.create_invite.side_effect = DiscordException
+        dpy_channel.create_invite.side_effect = DiscordException  # type: ignore
         invite = await safe_create_channel_invite(dpy_channel)
         assert invite is None
 
@@ -317,7 +317,7 @@ class TestOperationsCreateVoiceChannel:
         category = MagicMock(spec=discord.CategoryChannel)
         client = mock_client(guilds=[dpy_guild])
         await safe_create_voice_channel(client, dpy_guild.id, "name", category=category)
-        dpy_guild.create_voice_channel.assert_called_once_with(
+        dpy_guild.create_voice_channel.assert_called_once_with(  # type: ignore
             "name",
             category=category,
             bitrate=ANY,
@@ -338,7 +338,7 @@ class TestOperationsCreateVoiceChannel:
             category=category,
             use_max_bitrate=True,
         )
-        dpy_guild.create_voice_channel.assert_called_once_with(
+        dpy_guild.create_voice_channel.assert_called_once_with(  # type: ignore
             "name",
             category=category,
             bitrate=int(dpy_guild.bitrate_limit),
@@ -354,7 +354,7 @@ class TestOperationsCreateVoiceChannel:
             category=category,
             use_max_bitrate=False,
         )
-        dpy_guild.create_voice_channel.assert_not_called()
+        dpy_guild.create_voice_channel.assert_not_called()  # type: ignore
 
 
 @pytest.mark.asyncio

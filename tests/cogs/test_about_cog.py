@@ -22,8 +22,8 @@ class TestCogAbout(InteractionMixin):
         cog = AboutCog(self.bot)
         await self.run(cog.about)
 
-        self.interaction.response.send_message.assert_called_once()
-        assert self.interaction.response.send_message.call_args_list[0].kwargs[
+        self.interaction.response.send_message.assert_called_once()  # type: ignore
+        assert self.interaction.response.send_message.call_args_list[0].kwargs[  # type: ignore
             "embed"
         ].to_dict() == {
             "color": self.settings.INFO_EMBED_COLOR,

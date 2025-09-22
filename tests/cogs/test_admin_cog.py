@@ -130,7 +130,7 @@ class TestSetupView(InteractionMixin):
 class TestCogAdminMotd(InteractionMixin):
     async def test_set_motd(self, cog: AdminCog) -> None:
         await self.run(cog.motd, message="this is a test")
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             "Message of the day updated.",
             ephemeral=True,
         )
@@ -147,16 +147,16 @@ class TestCogAdminMotd(InteractionMixin):
 class TestCogAdminSuggestVCCategory(InteractionMixin):
     async def test_set_suggest_vc_category(self, cog: AdminCog) -> None:
         await self.run(cog.set_suggest_vc_category, category="whatever")
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             'Suggested voice channels category prefix set to "whatever".',
             ephemeral=True,
         )
         guild = DatabaseSession.query(Guild).one()
         assert guild.suggest_voice_category == "whatever"
 
-        self.interaction.response.send_message.reset_mock()
+        self.interaction.response.send_message.reset_mock()  # type: ignore
         await self.run(cog.set_suggest_vc_category)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             "Suggested voice channels turned off.",
             ephemeral=True,
         )
@@ -174,7 +174,7 @@ class TestCogAdminSuggestVCCategory(InteractionMixin):
 
         await self.run(cog.set_suggest_vc_category, category="whatever")
 
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             (
                 "Voice channel creation is enabled for this server. "
                 "There's no need to suggest existing voice channels. "
@@ -268,21 +268,21 @@ class TestCogAdminSetupView(InteractionMixin):
     async def test_toggle_show_links(self, view: SetupView) -> None:
         await view.toggle_show_links.callback(self.interaction)
 
-        self.interaction.edit_original_response.assert_called_once()
+        self.interaction.edit_original_response.assert_called_once()  # type: ignore
         guild = DatabaseSession.query(Guild).one()
         assert guild.show_links != Guild.show_links.default.arg  # type: ignore
 
     async def test_toggle_voice_create(self, view: SetupView) -> None:
         await view.toggle_voice_create.callback(self.interaction)
 
-        self.interaction.edit_original_response.assert_called_once()
+        self.interaction.edit_original_response.assert_called_once()  # type: ignore
         guild = DatabaseSession.query(Guild).one()
         assert guild.voice_create != Guild.voice_create.default.arg  # type: ignore
 
     async def test_toggle_use_max_bitrate(self, view: SetupView) -> None:
         await view.toggle_use_max_bitrate.callback(self.interaction)
 
-        self.interaction.edit_original_response.assert_called_once()
+        self.interaction.edit_original_response.assert_called_once()  # type: ignore
         guild = DatabaseSession.query(Guild).one()
         assert guild.use_max_bitrate != Guild.voice_create.default.arg  # type: ignore
 
@@ -315,14 +315,14 @@ class TestCogAdminInfo(InteractionMixin):
 
     async def test_non_numeric_game_id(self, cog: AdminCog) -> None:
         await self.run(cog.info, game_id="bogus")
-        self.interaction.response.send_message.assert_awaited_once_with(
+        self.interaction.response.send_message.assert_awaited_once_with(  # type: ignore
             "There is no game with that ID.",
             ephemeral=True,
         )
 
     async def test_non_existant_game_id(self, cog: AdminCog) -> None:
         await self.run(cog.info, game_id="1")
-        self.interaction.response.send_message.assert_awaited_once_with(
+        self.interaction.response.send_message.assert_awaited_once_with(  # type: ignore
             "There is no game with that ID.",
             ephemeral=True,
         )
@@ -333,7 +333,7 @@ class TestCogAdminChannels(InteractionMixin):
     async def test_default_seats(self, cog: AdminCog) -> None:
         seats = Channel.default_seats.default.arg - 1  # type: ignore
         await self.run(cog.default_seats, seats=seats)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Default seats set to {seats} for this channel.",
             ephemeral=True,
         )
@@ -343,7 +343,7 @@ class TestCogAdminChannels(InteractionMixin):
     async def test_default_format(self, cog: AdminCog) -> None:
         format = Channel.default_format.default.arg + 1  # type: ignore
         await self.run(cog.default_format, format=format)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Default format set to {GameFormat(format)} for this channel.",
             ephemeral=True,
         )
@@ -353,7 +353,7 @@ class TestCogAdminChannels(InteractionMixin):
     async def test_default_bracket(self, cog: AdminCog) -> None:
         bracket = Channel.default_bracket.default.arg + 1  # type: ignore
         await self.run(cog.default_bracket, bracket=bracket)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Default bracket set to {GameBracket(bracket)} for this channel.",
             ephemeral=True,
         )
@@ -363,7 +363,7 @@ class TestCogAdminChannels(InteractionMixin):
     async def test_default_service(self, cog: AdminCog) -> None:
         service = Channel.default_service.default.arg + 1  # type: ignore
         await self.run(cog.default_service, service=service)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Default service set to {GameService(service)} for this channel.",
             ephemeral=True,
         )
@@ -373,7 +373,7 @@ class TestCogAdminChannels(InteractionMixin):
     async def test_auto_verify(self, cog: AdminCog) -> None:
         default_value = Channel.auto_verify.default.arg  # type: ignore
         await self.run(cog.auto_verify, setting=not default_value)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Auto verification set to {not default_value} for this channel.",
             ephemeral=True,
         )
@@ -383,7 +383,7 @@ class TestCogAdminChannels(InteractionMixin):
     async def test_verified_only(self, cog: AdminCog) -> None:
         default_value = Channel.verified_only.default.arg  # type: ignore
         await self.run(cog.verified_only, setting=not default_value)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Verified only set to {not default_value} for this channel.",
             ephemeral=True,
         )
@@ -393,7 +393,7 @@ class TestCogAdminChannels(InteractionMixin):
     async def test_unverified_only(self, cog: AdminCog) -> None:
         default_value = Channel.unverified_only.default.arg  # type: ignore
         await self.run(cog.unverified_only, setting=not default_value)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Unverified only set to {not default_value} for this channel.",
             ephemeral=True,
         )
@@ -404,7 +404,7 @@ class TestCogAdminChannels(InteractionMixin):
         default_value = Channel.voice_category.default.arg  # type: ignore
         new_value = "wotnot" + default_value
         await self.run(cog.voice_category, prefix=new_value)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Voice category prefix for this channel has been set to: {new_value}",
             ephemeral=True,
         )
@@ -414,7 +414,7 @@ class TestCogAdminChannels(InteractionMixin):
     async def test_channel_motd(self, cog: AdminCog) -> None:
         motd = "this is a channel message of the day"
         await self.run(cog.channel_motd, message=motd)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Message of the day for this channel has been set to: {motd}",
             ephemeral=True,
         )
@@ -429,7 +429,7 @@ class TestCogAdminChannels(InteractionMixin):
     async def test_channel_extra(self, cog: AdminCog) -> None:
         extra = "this is some extra content"
         await self.run(cog.channel_extra, message=extra)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Extra message for this channel has been set to: {extra}",
             ephemeral=True,
         )
@@ -511,7 +511,7 @@ class TestCogAdminChannels(InteractionMixin):
         channel = add_channel(auto_verify=True)
 
         await self.run(cog.forget_channel, channel=str(channel.xid))
-        self.interaction.response.send_message.reset_mock()
+        self.interaction.response.send_message.reset_mock()  # type: ignore
 
         with mock_operations(admin_action):
             await self.run(cog.channels)
@@ -536,7 +536,7 @@ class TestCogAdminChannels(InteractionMixin):
         channel: Channel,
     ) -> None:
         await self.run(cog.forget_channel, channel="foobar")
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             "Invalid ID.",
             ephemeral=True,
         )
@@ -627,7 +627,7 @@ class TestCogAdminAwards(InteractionMixin):
     async def test_awards_when_invalid_page(self, cog: AdminCog) -> None:
         await self.run(cog.awards, page=2)
 
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             "Invalid page.",
             ephemeral=True,
         )
@@ -702,7 +702,7 @@ class TestCogAdminAwards(InteractionMixin):
             unverified_only=True,
         )
         assert DatabaseSession.query(GuildAward).count() == 0
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             "Your award can't be both verified and unverifed only.",
             ephemeral=True,
         )
@@ -710,7 +710,7 @@ class TestCogAdminAwards(InteractionMixin):
     async def test_award_add_message_too_long(self, cog: AdminCog) -> None:
         message = "hippo " * 300
         await self.run(cog.award_add, count=1, role="role", message=message)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             "Your message can't be longer than 500 characters.",
             ephemeral=True,
         )
@@ -718,7 +718,7 @@ class TestCogAdminAwards(InteractionMixin):
 
     async def test_award_add_zero_count(self, cog: AdminCog) -> None:
         await self.run(cog.award_add, count=0, role="role", message="message")
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             "You can't create an award for zero games played.",
             ephemeral=True,
         )
@@ -730,7 +730,7 @@ class TestCogAdminDeleteExpired(InteractionMixin):
     @pytest.mark.parametrize("setting", [True, False])
     async def test_set_delete_expired(self, cog: AdminCog, setting: bool) -> None:
         await self.run(cog.delete_expired, setting=setting)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Delete expired setting for this channel has been set to: {setting}",
             ephemeral=True,
         )
@@ -743,7 +743,7 @@ class TestCogAdminShowPoints(InteractionMixin):
     @pytest.mark.parametrize("setting", [True, False])
     async def test_set_show_points(self, cog: AdminCog, setting: bool) -> None:
         await self.run(cog.show_points, setting=setting)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Show points setting for this channel has been set to: {setting}",
             ephemeral=True,
         )
@@ -770,7 +770,7 @@ class TestCogAdminVoiceInvite(InteractionMixin):
     @pytest.mark.parametrize("setting", [True, False])
     async def test_set_voice_invite(self, cog: AdminCog, setting: bool) -> None:
         await self.run(cog.voice_invite, setting=setting)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Voice invite setting for this channel has been set to: {setting}",
             ephemeral=True,
         )
@@ -783,7 +783,7 @@ class TestCogAdminBlindGames(InteractionMixin):
     @pytest.mark.parametrize("setting", [True, False])
     async def test_set_blind_games(self, cog: AdminCog, setting: bool) -> None:
         await self.run(cog.blind_games, setting=setting)
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Hidden player names for this channel has been set to: {setting}",
             ephemeral=True,
         )
@@ -800,6 +800,6 @@ class TestCogAdminMythicTrack(InteractionMixin):
 
         await self.run(cog.setup_mythic_track)
 
-        self.interaction.response.send_message.assert_called_once()
+        self.interaction.response.send_message.assert_called_once()  # type: ignore
         guild = DatabaseSession.query(Guild).one()
         assert guild.enable_mythic_track != initial_setting

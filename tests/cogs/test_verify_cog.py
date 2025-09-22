@@ -35,7 +35,7 @@ class TestCogVerify(InteractionMixin):
     async def test_verify_and_unverify(self, cog: VerifyCog, target: discord.Member) -> None:
         await self.run(cog.verify, target=target)
 
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Verified <@{target.id}>.",
             ephemeral=True,
         )
@@ -44,10 +44,10 @@ class TestCogVerify(InteractionMixin):
         assert found.user_xid == target.id
         assert found.verified
 
-        self.interaction.response.send_message.reset_mock()
+        self.interaction.response.send_message.reset_mock()  # type: ignore
         await self.run(cog.unverify, target=target)
 
-        self.interaction.response.send_message.assert_called_once_with(
+        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Unverified <@{target.id}>.",
             ephemeral=True,
         )
