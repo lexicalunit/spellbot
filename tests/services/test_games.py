@@ -135,7 +135,7 @@ class TestServiceGames:
         DatabaseSession.expire_all()
         found = DatabaseSession.get(Game, game.id)
         assert found
-        assert found.spelltable_link == "http://link"
+        assert found.game_link == "http://link"
         assert found.password == "whatever"
         assert found.status == GameStatus.STARTED.value
 
