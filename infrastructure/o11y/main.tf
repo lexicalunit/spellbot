@@ -71,13 +71,13 @@ resource "datadog_monitor" "SpellBot_SpellTable_create_game_issues" {
   on_missing_data     = "default"
   require_full_window = false
   monitor_thresholds {
-    critical = 7000000000
+    critical = 8000000000
   }
   name    = "SpellBot: SpellTable create game issues"
   type    = "trace-analytics alert"
   tags    = ["env:prod", "service:spellbot"]
   query   = <<-EOT
-    trace-analytics("env:prod service:spellbot operation_name:spellbot.client.create_game_link @link_service:SPELLTABLE").index("trace-search", "djm-search").rollup("avg", "@duration").last("5m") > 7000000000
+    trace-analytics("env:prod service:spellbot operation_name:spellbot.client.create_game_link @link_service:SPELLTABLE").index("trace-search", "djm-search").rollup("avg", "@duration").last("5m") > 8000000000
   EOT
   message = "@${var.alert_email}"
 }
