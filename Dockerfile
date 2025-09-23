@@ -19,5 +19,8 @@ RUN uv sync --no-cache --frozen --no-dev --directory ./spellbot \
 ENV PATH="/spellbot/.venv/bin:$PATH"
 ENV DD_VERSION=$DD_VERSION
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3005/ || exit 1
+
 EXPOSE 80
 CMD ["/start.sh", "spellbot"]
