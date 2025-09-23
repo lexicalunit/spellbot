@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import socketserver
-import threading
 import time
 from os import getenv
 from socket import socket
@@ -24,17 +22,6 @@ if not running_in_pytest():  # pragma: no cover
 
 if not getenv("DISABLE_UVLOOP", ""):  # pragma: no cover
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
-
-class HealthHandler(socketserver.BaseRequestHandler):
-    def handle(self) -> None:  # pragma: no cover
-        response = b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok"
-        self.request.sendall(response)
-
-
-def start_health_server(port: int = 3005) -> None:  # pragma: no cover
-    server = socketserver.TCPServer(("0.0.0.0", port), HealthHandler)  # noqa: S104
-    threading.Thread(target=server.serve_forever, daemon=True).start()
 
 
 @click.command()
@@ -124,9 +111,6 @@ def main(
             finally:
                 assert conn is not None
                 conn.close()
-
-    if not running_in_pytest():  # pragma: no cover
-        start_health_server()
 
     if api:
         from .web import launch_web_server
