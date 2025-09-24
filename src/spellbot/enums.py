@@ -146,19 +146,20 @@ class GameBracket(Enum):
         obj._value_ = value
         return obj
 
-    def __init__(self, title: str) -> None:
+    def __init__(self, title: str, icon: str | None) -> None:
         self.title = title
+        self.icon = icon
 
     def __str__(self) -> str:
         return self.title
 
     # DO NOT REORDER -- IT WOULD INVALIDATE EXISTING DATABASE ENTRIES!
-    NONE = "None"
-    BRACKET_1 = "Bracket 1: Exhibition"
-    BRACKET_2 = "Bracket 2: Core"
-    BRACKET_3 = "Bracket 3: Upgraded"
-    BRACKET_4 = "Bracket 4: Optimized"
-    BRACKET_5 = "Bracket 5: Competitive"
+    NONE = "None", None
+    BRACKET_1 = "Bracket 1: Exhibition", "✧"
+    BRACKET_2 = "Bracket 2: Core", "✦"
+    BRACKET_3 = "Bracket 3: Upgraded", "★"
+    BRACKET_4 = "Bracket 4: Optimized", "✷"
+    BRACKET_5 = "Bracket 5: Competitive", "✺"
 
 
 GAME_BRACKET_ORDER = [

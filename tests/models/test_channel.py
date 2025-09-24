@@ -35,7 +35,5 @@ class TestModelChannel:
             "voice_category": channel.voice_category,
             "voice_invite": channel.voice_invite,
             "delete_expired": channel.delete_expired,
-            "show_points": channel.show_points,
-            "require_confirmation": channel.require_confirmation,
             "blind_games": channel.blind_games,
         }

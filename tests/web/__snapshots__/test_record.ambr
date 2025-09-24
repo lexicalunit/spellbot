@@ -279,7 +279,7 @@
       }
   
       table tbody tr td:nth-child(6):before {
-          content: "Scores";
+          content: "Players";
       }
   
       tbody tr {
@@ -419,7 +419,6 @@
               <th>Link</th>
               <th>User Name</th>
               <th>User ID</th>
-              <th>Points</th>
           </tr>
       </thead>
       <tbody id="rows">
@@ -437,7 +436,6 @@
                   
                   <td>user1</td>
                   <td class="user_id">101</td>
-                  <td><em>3</em></td>
               </tr>
           
               <tr>
@@ -453,7 +451,6 @@
                   
                   <td>user2</td>
                   <td class="user_id">102</td>
-                  <td><em>1</em></td>
               </tr>
           
               <tr>
@@ -469,7 +466,6 @@
                   
                   <td>user1</td>
                   <td class="user_id">101</td>
-                  <td><em>0</em></td>
               </tr>
           
               <tr>
@@ -485,7 +481,6 @@
                   
                   <td>user2</td>
                   <td class="user_id">102</td>
-                  <td><em>5</em></td>
               </tr>
           
               <tr>
@@ -501,7 +496,6 @@
                   
                   <td>user1</td>
                   <td class="user_id">101</td>
-                  <td><em>0</em></td>
               </tr>
           
               <tr>
@@ -517,7 +511,6 @@
                   
                   <td>user2</td>
                   <td class="user_id">102</td>
-                  <td><em>10</em></td>
               </tr>
           
       </tbody>
@@ -970,7 +963,7 @@
       }
   
       table tbody tr td:nth-child(6):before {
-          content: "Scores";
+          content: "Players";
       }
   
       tbody tr {
@@ -1110,7 +1103,6 @@
               <th>Link</th>
               <th>User Name</th>
               <th>User ID</th>
-              <th>Points</th>
           </tr>
       </thead>
       <tbody id="rows">
@@ -1565,7 +1557,7 @@
       }
   
       table tbody tr td:nth-child(6):before {
-          content: "Scores";
+          content: "Players";
       }
   
       tbody tr {
@@ -1705,7 +1697,6 @@
               <th>Link</th>
               <th>User Name</th>
               <th>User ID</th>
-              <th>Points</th>
           </tr>
       </thead>
       <tbody id="rows">
@@ -1723,7 +1714,6 @@
                   
                   <td>user1</td>
                   <td class="user_id">101</td>
-                  <td><em>3</em></td>
               </tr>
           
               <tr>
@@ -1739,7 +1729,6 @@
                   
                   <td>user2</td>
                   <td class="user_id">102</td>
-                  <td><em>1</em></td>
               </tr>
           
               <tr>
@@ -1755,7 +1744,6 @@
                   
                   <td>user1</td>
                   <td class="user_id">101</td>
-                  <td><em>0</em></td>
               </tr>
           
               <tr>
@@ -1771,7 +1759,6 @@
                   
                   <td>user2</td>
                   <td class="user_id">102</td>
-                  <td><em>5</em></td>
               </tr>
           
               <tr>
@@ -1787,7 +1774,6 @@
                   
                   <td>user1</td>
                   <td class="user_id">101</td>
-                  <td><em>0</em></td>
               </tr>
           
               <tr>
@@ -1803,7 +1789,6 @@
                   
                   <td>user2</td>
                   <td class="user_id">102</td>
-                  <td><em>10</em></td>
               </tr>
           
       </tbody>
@@ -2256,7 +2241,7 @@
       }
   
       table tbody tr td:nth-child(6):before {
-          content: "Scores";
+          content: "Players";
       }
   
       tbody tr {
@@ -2396,7 +2381,6 @@
               <th>Link</th>
               <th>User Name</th>
               <th>User ID</th>
-              <th>Points</th>
           </tr>
       </thead>
       <tbody id="rows">
@@ -2414,7 +2398,6 @@
                   
                   <td>user1</td>
                   <td class="user_id">101</td>
-                  <td><em>3</em></td>
               </tr>
           
               <tr>
@@ -2430,7 +2413,6 @@
                   
                   <td>user2</td>
                   <td class="user_id">102</td>
-                  <td><em>1</em></td>
               </tr>
           
               <tr>
@@ -2446,7 +2428,6 @@
                   
                   <td>user1</td>
                   <td class="user_id">101</td>
-                  <td><em>0</em></td>
               </tr>
           
               <tr>
@@ -2462,7 +2443,6 @@
                   
                   <td>user2</td>
                   <td class="user_id">102</td>
-                  <td><em>5</em></td>
               </tr>
           
               <tr>
@@ -2478,7 +2458,6 @@
                   
                   <td>user1</td>
                   <td class="user_id">101</td>
-                  <td><em>0</em></td>
               </tr>
           
               <tr>
@@ -2494,7 +2473,6 @@
                   
                   <td>user2</td>
                   <td class="user_id">102</td>
-                  <td><em>10</em></td>
               </tr>
           
       </tbody>
@@ -2947,7 +2925,7 @@
       }
   
       table tbody tr td:nth-child(6):before {
-          content: "Scores";
+          content: "Players";
       }
   
       tbody tr {
@@ -3085,7 +3063,7 @@
               <th>Channel</th>
               <th>Format</th>
               <th>Link</th>
-              <th>Scores</th>
+              <th>Players</th>
           </tr>
       </thead>
       <tbody id="rows">
@@ -3105,8 +3083,6 @@
                       <ul>
                           
                               <li>
-                                  <em>3 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user1
                                       <span class="tooltiptext">
@@ -3117,8 +3093,6 @@
                               </li>
                           
                               <li>
-                                  <em>1 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user2
                                       <span class="tooltiptext">
@@ -3130,7 +3104,7 @@
                           
                       </ul>
                       <span class="data">
-                          user1:101=3;user2:102=1;
+                          user1:101=;user2:102=;
                       </span>
                   </td>
               </tr>
@@ -3150,8 +3124,6 @@
                       <ul>
                           
                               <li>
-                                  <em>0 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user1
                                       <span class="tooltiptext">
@@ -3162,8 +3134,6 @@
                               </li>
                           
                               <li>
-                                  <em>5 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user2
                                       <span class="tooltiptext">
@@ -3175,7 +3145,7 @@
                           
                       </ul>
                       <span class="data">
-                          user1:101=0;user2:102=5;
+                          user1:101=;user2:102=;
                       </span>
                   </td>
               </tr>
@@ -3195,8 +3165,6 @@
                       <ul>
                           
                               <li>
-                                  <em>0 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user1
                                       <span class="tooltiptext">
@@ -3207,8 +3175,6 @@
                               </li>
                           
                               <li>
-                                  <em>10 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user2
                                       <span class="tooltiptext">
@@ -3220,7 +3186,7 @@
                           
                       </ul>
                       <span class="data">
-                          user1:101=0;user2:102=10;
+                          user1:101=;user2:102=;
                       </span>
                   </td>
               </tr>
@@ -3675,7 +3641,7 @@
       }
   
       table tbody tr td:nth-child(6):before {
-          content: "Scores";
+          content: "Players";
       }
   
       tbody tr {
@@ -3813,7 +3779,7 @@
               <th>Channel</th>
               <th>Format</th>
               <th>Link</th>
-              <th>Scores</th>
+              <th>Players</th>
           </tr>
       </thead>
       <tbody id="rows">
@@ -4268,7 +4234,7 @@
       }
   
       table tbody tr td:nth-child(6):before {
-          content: "Scores";
+          content: "Players";
       }
   
       tbody tr {
@@ -4406,7 +4372,7 @@
               <th>Channel</th>
               <th>Format</th>
               <th>Link</th>
-              <th>Scores</th>
+              <th>Players</th>
           </tr>
       </thead>
       <tbody id="rows">
@@ -4426,8 +4392,6 @@
                       <ul>
                           
                               <li>
-                                  <em>3 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user1
                                       <span class="tooltiptext">
@@ -4438,8 +4402,6 @@
                               </li>
                           
                               <li>
-                                  <em>1 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user2
                                       <span class="tooltiptext">
@@ -4451,7 +4413,7 @@
                           
                       </ul>
                       <span class="data">
-                          user1:101=3;user2:102=1;
+                          user1:101=;user2:102=;
                       </span>
                   </td>
               </tr>
@@ -4471,8 +4433,6 @@
                       <ul>
                           
                               <li>
-                                  <em>0 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user1
                                       <span class="tooltiptext">
@@ -4483,8 +4443,6 @@
                               </li>
                           
                               <li>
-                                  <em>5 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user2
                                       <span class="tooltiptext">
@@ -4496,7 +4454,7 @@
                           
                       </ul>
                       <span class="data">
-                          user1:101=0;user2:102=5;
+                          user1:101=;user2:102=;
                       </span>
                   </td>
               </tr>
@@ -4516,8 +4474,6 @@
                       <ul>
                           
                               <li>
-                                  <em>0 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user1
                                       <span class="tooltiptext">
@@ -4528,8 +4484,6 @@
                               </li>
                           
                               <li>
-                                  <em>10 points</em>
-                                  &mdash;
                                   <div class="tooltip">
                                       user2
                                       <span class="tooltiptext">
@@ -4541,7 +4495,7 @@
                           
                       </ul>
                       <span class="data">
-                          user1:101=0;user2:102=10;
+                          user1:101=;user2:102=;
                       </span>
                   </td>
               </tr>

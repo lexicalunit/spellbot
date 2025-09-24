@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -13,7 +12,6 @@ from spellbot.models import (
     Game,
     GameStatus,
     Guild,
-    Play,
     Post,
     Queue,
     User,
@@ -55,32 +53,6 @@ class TestServiceGames:
         games = GamesService()
         assert await games.select_by_message_xid(game.posts[0].message_xid)
         assert not await games.select_by_message_xid(404)
-
-    async def test_games_select_last_ranked_game(self, guild: Guild, user: User) -> None:
-        channel = ChannelFactory.create(guild=guild, require_confirmation=True)
-        old_game = GameFactory.create(
-            guild=guild,
-            channel=channel,
-            status=GameStatus.STARTED.value,
-            requires_confirmation=True,
-            started_at=datetime.now(tz=UTC) - timedelta(days=1),
-        )
-        PostFactory.create(guild=old_game.guild, channel=old_game.channel, game=old_game)
-        PlayFactory.create(user_xid=user.xid, game_id=old_game.id)
-        recent_game = GameFactory.create(
-            guild=guild,
-            channel=channel,
-            status=GameStatus.STARTED.value,
-            requires_confirmation=True,
-            started_at=datetime.now(tz=UTC),
-        )
-        PostFactory.create(guild=recent_game.guild, channel=recent_game.channel, game=recent_game)
-        PlayFactory.create(user_xid=user.xid, game_id=recent_game.id)
-
-        games = GamesService()
-        await games.select_last_ranked_game(user.xid)
-        assert games.game is not None
-        assert games.game.id == recent_game.id
 
     async def test_games_add_player(self, game: Game) -> None:
         PostFactory.create(guild=game.guild, channel=game.channel, game=game)
@@ -216,38 +188,6 @@ class TestServiceGamesPlays:
         await games.select(game.id)
         assert await games.players_included(user1.xid)
         assert not await games.players_included(user2.xid)
-
-    async def test_games_add_points(self, game: Game) -> None:
-        user1 = UserFactory.create(game=game)
-        user2 = UserFactory.create(game=game)
-        PlayFactory.create(user_xid=user1.xid, game_id=game.id, points=5)
-        PlayFactory.create(user_xid=user2.xid, game_id=game.id, points=None)
-
-        games = GamesService()
-        await games.select(game.id)
-        await games.add_points(user1.xid, 5)
-
-        DatabaseSession.expire_all()
-        found = DatabaseSession.query(Play).filter(Play.user_xid == user1.xid).one()
-        assert found.points == 5
-        found = DatabaseSession.query(Play).filter(Play.user_xid == user2.xid).one()
-        assert found.points is None
-
-
-@pytest.mark.asyncio
-class TestServiceGamesConfirmPoints:
-    async def test_games_confirm_points(self, game: Game) -> None:
-        user = UserFactory.create(game=game)
-        play = PlayFactory.create(user_xid=user.xid, game_id=game.id, points=5)
-
-        games = GamesService()
-        await games.select(game.id)
-        await games.add_points(user.xid, 5)
-        await games.confirm_points(user.xid)
-
-        DatabaseSession.refresh(play)
-        assert play.points == 5
-        assert play.confirmed_at is not None
 
 
 @pytest.mark.asyncio

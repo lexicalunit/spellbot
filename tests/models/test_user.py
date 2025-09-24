@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.models import GameStatus, Play, Post
+from spellbot.models import GameStatus, Post
 
 if TYPE_CHECKING:
     from tests.fixtures import Factories
@@ -29,10 +29,9 @@ class TestModelUser:
         )
         player1 = factories.user.create(game=game2)
         player2 = factories.user.create(game=game2)
-        play1 = factories.play.create(user_xid=player1.xid, game_id=game2.id, points=5)
-        play2 = factories.play.create(user_xid=player2.xid, game_id=game2.id, points=1)
+        factories.play.create(user_xid=player1.xid, game_id=game2.id)
+        factories.play.create(user_xid=player2.xid, game_id=game2.id)
 
-        assert user1.points(1) is None
         assert user1.to_dict() == {
             "xid": user1.xid,
             "created_at": user1.created_at,
@@ -47,8 +46,6 @@ class TestModelUser:
             "name": user2.name,
             "banned": user2.banned,
         }
-        assert player1.points(game2.id) == (play1.points, False)
-        assert player2.points(game2.id) == (play2.points, False)
 
     def test_pending_games(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -103,53 +100,3 @@ class TestModelUserWaiting:
         user = factories.user.create(game=game)
         DatabaseSession.query(Post).delete(synchronize_session=False)
         assert not user.waiting(channel.xid)
-
-
-class TestModelUserConfirmed:
-    def test_happy_path(self, factories: Factories) -> None:
-        guild = factories.guild.create()
-        channel = factories.channel.create(guild=guild)
-        game = factories.game.create(
-            guild=guild,
-            channel=channel,
-            started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            status=GameStatus.STARTED.value,
-            requires_confirmation=True,
-        )
-        user = factories.user.create(game=game)
-        user.plays[0].confirmed_at = datetime.now(tz=UTC)
-        assert user.confirmed(channel.xid)
-
-    def test_no_last_play(self, factories: Factories) -> None:
-        guild = factories.guild.create()
-        channel = factories.channel.create(guild=guild)
-        game = factories.game.create(
-            guild=guild,
-            channel=channel,
-            started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            status=GameStatus.STARTED.value,
-            requires_confirmation=True,
-        )
-        user = factories.user.create(game=game)
-        DatabaseSession.query(Play).delete(synchronize_session=False)
-        assert user.confirmed(channel.xid)
-
-    def test_no_last_game(self, factories: Factories) -> None:
-        guild = factories.guild.create()
-        channel = factories.channel.create(guild=guild)
-        user = factories.user.create()
-        assert user.confirmed(channel.xid)
-
-    def test_no_game_requires_confirmation(self, factories: Factories) -> None:
-        guild = factories.guild.create()
-        channel = factories.channel.create(guild=guild)
-        game = factories.game.create(
-            guild=guild,
-            channel=channel,
-            started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            status=GameStatus.STARTED.value,
-            requires_confirmation=False,
-        )
-        user = factories.user.create(game=game)
-        user.plays[0].confirmed_at = datetime.now(tz=UTC)
-        assert user.confirmed(channel.xid)
