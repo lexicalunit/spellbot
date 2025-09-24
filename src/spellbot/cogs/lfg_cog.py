@@ -35,15 +35,15 @@ class LookingForGameCog(commands.Cog):
     @app_commands.describe(rules="Any additional rules or requests for this game.")
     @app_commands.describe(service="What service do you want to use to play this game?")
     @app_commands.choices(
-        service=[Choice(name=str(service), value=service.value) for service in GAME_SERVICE_ORDER]
+        service=[Choice(name=str(service), value=service.value) for service in GAME_SERVICE_ORDER],
     )
     @app_commands.describe(format="What game format do you want to play?")
     @app_commands.choices(
-        format=[Choice(name=str(format), value=format.value) for format in GAME_FORMAT_ORDER]
+        format=[Choice(name=str(format), value=format.value) for format in GAME_FORMAT_ORDER],
     )
     @app_commands.describe(bracket="What commander bracket do you want to play?")
     @app_commands.choices(
-        bracket=[Choice(name=str(bracket), value=bracket.value) for bracket in GAME_BRACKET_ORDER]
+        bracket=[Choice(name=str(bracket), value=bracket.value) for bracket in GAME_BRACKET_ORDER],
     )
     @tracer.wrap(name="interaction", resource="lfg")
     async def lfg(

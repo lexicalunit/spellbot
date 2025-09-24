@@ -152,7 +152,9 @@ class InteractionMixin(BaseMixin):
     #       here, but everything I've tried seems to run afoul of pyright type checker.
     #       So I'm just using `...` here for now, even though it sucks.
     async def run[CogT: commands.Cog, **CogCallbackP](
-        self, command: Command[CogT, CogCallbackP, None], **kwargs: Any
+        self,
+        command: Command[CogT, CogCallbackP, None],
+        **kwargs: Any,
     ) -> None:
         interaction = kwargs.get("interaction")
         if not interaction:

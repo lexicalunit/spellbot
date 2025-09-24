@@ -333,7 +333,8 @@ async def handle_view_errors(
 
 
 async def handle_command_errors(
-    interaction: discord.Interaction, error: AppCommandError
+    interaction: discord.Interaction,
+    error: AppCommandError,
 ) -> None:  # pragma: no cover
     return await handle_interaction_errors(interaction, error)
 

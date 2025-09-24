@@ -23,10 +23,14 @@ def upgrade() -> None:
         sa.Column("default_service", sa.Integer(), server_default=sa.text("2"), nullable=False),
     )
     op.create_index(
-        op.f("ix_channels_default_service"), "channels", ["default_service"], unique=False
+        op.f("ix_channels_default_service"),
+        "channels",
+        ["default_service"],
+        unique=False,
     )
     op.add_column(
-        "games", sa.Column("service", sa.Integer(), server_default=sa.text("2"), nullable=False)
+        "games",
+        sa.Column("service", sa.Integer(), server_default=sa.text("2"), nullable=False),
     )
     op.create_index(op.f("ix_games_service"), "games", ["service"], unique=False)
 
