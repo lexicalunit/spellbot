@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import discord
 import pytest
@@ -35,10 +35,6 @@ class BaseMixin:
     @pytest.fixture(autouse=True)
     def use_factories(self, factories: Factories) -> None:
         self.factories = factories
-
-
-CogT = TypeVar("CogT", bound=commands.Cog)
-CogCallbackP = ParamSpec("CogCallbackP")
 
 
 class InteractionMixin(BaseMixin):
@@ -155,7 +151,9 @@ class InteractionMixin(BaseMixin):
     # Note: I don't know if there's a better way to use CogCallbackP's .args and .kwargs
     #       here, but everything I've tried seems to run afoul of pyright type checker.
     #       So I'm just using `...` here for now, even though it sucks.
-    async def run(self, command: Command[CogT, CogCallbackP, None], **kwargs: Any) -> None:
+    async def run[CogT: commands.Cog, **CogCallbackP](
+        self, command: Command[CogT, CogCallbackP, None], **kwargs: Any
+    ) -> None:
         interaction = kwargs.get("interaction")
         if not interaction:
             kwargs["interaction"] = self.interaction
