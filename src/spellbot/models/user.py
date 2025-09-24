@@ -65,21 +65,11 @@ class User(Base):
         primaryjoin="User.xid == Queue.user_xid",
         doc="Queues this user is currently in",
     )
-
     plays = relationship(
         "Play",
         primaryjoin="User.xid == Play.user_xid",
-        lazy="dynamic",  # this is a sqlalchemy legacy feature not supported in 2.0
         doc="Queryset of games played by this user",
     )
-    # A possible alternative -- less performant?
-    #
-    # plays = relationship(
-    #     "Play",
-    #     primaryjoin="User.xid == Play.user_xid",
-    #     collection_class=attribute_mapped_collection("game_id"),
-    # )
-    #
 
     def game(self, channel_xid: int) -> Game | None:
         from spellbot.database import DatabaseSession
