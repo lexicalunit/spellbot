@@ -42,7 +42,7 @@ def create_game_link(self, game: Game) -> str:
             return GameLinkDetails(link=info.link, password=info.password)
 ```
 
-At the time of this writing the `GameLinkDetails` only supports `link` and optionally `password`. If your service requires additional information you will need to update the `GameLinkDetails` class to include it.
+At the time of this writing the `GameLinkDetails` only supports `link` and optionally `password`. If your service requires additional information you will need to update the `GameLinkDetails` class to include it. You will also need to update the `Game` model to include that information on the database side so that the information will be persisted somewhere so that it can be included in the game embed.
 
 ## Implement the generate_link() function
 
@@ -52,7 +52,7 @@ Create a new file in `src/spellbot/` for your service. For example `src/spellbot
 
 ## Handle your service in the Game model
 
-In `src/spellbot/models/game.py` there is a `Game` model which represents games managed by SpellBot. Of particular interest is the `embed_description()` function which you may need to update to properly handle your new service, especially if you added additional information to the `GameLinkDetails` class.
+In `src/spellbot/models/game.py` there is a `Game` model which represents games managed by SpellBot. Of particular interest is the `to_embed()` function (and various related functions) which you may need to update to properly handle your new service, especially if you added additional information to the `GameLinkDetails` class.
 
 ## Update the test suite
 
