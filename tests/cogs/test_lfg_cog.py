@@ -12,14 +12,12 @@ from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat, GameService
 from spellbot.models import Channel, Game, GameStatus, Queue, User
-from spellbot.views import PendingGameView
+from spellbot.views import GameView
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_discord_object, mock_operations
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from syrupy.assertion import SnapshotAssertion
 
     from spellbot.client import SpellBot
 
@@ -231,7 +229,7 @@ class TestCogLookingForGameJoinButton(InteractionMixin):
         ):
             lfg_action.safe_update_embed_origin.return_value = message
             self.interaction.message = message
-            view = PendingGameView(bot=self.bot)
+            view = GameView(bot=self.bot)
 
             await view.join.callback(self.interaction)
 
@@ -276,60 +274,11 @@ class TestCogLookingForGameJoinButton(InteractionMixin):
         ):
             lfg_action.safe_update_embed_origin.return_value = message
             self.interaction.message = message
-            view = PendingGameView(bot=self.bot)
+            view = GameView(bot=self.bot)
 
             await view.join.callback(self.interaction)
 
             lfg_action.safe_update_embed_origin.assert_not_called()
-
-    async def test_join_with_show_points(
-        self,
-        game: Game,
-        user: User,
-        message: discord.Message,
-        snapshot: SnapshotAssertion,
-    ) -> None:
-        self.guild.show_points = True
-        DatabaseSession.commit()
-        with (
-            mock_operations(lfg_action, users=[mock_discord_object(user)]),
-            patch(
-                "spellbot.views.lfg_view.safe_original_response",
-                return_value=message,
-            ),
-        ):
-            lfg_action.safe_update_embed_origin.return_value = message
-            self.interaction.message = message
-            view = PendingGameView(bot=self.bot)
-
-            await view.join.callback(self.interaction)
-
-            mock_call = lfg_action.safe_update_embed_origin
-            mock_call.assert_called_once()
-            assert mock_call.call_args_list[0].kwargs["view"] == snapshot
-            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
-                "color": self.settings.PENDING_EMBED_COLOR,
-                "description": (
-                    "_A SpellTable link will be created when all players have joined._\n"
-                    f"\n{self.guild.motd}\n"
-                    f"\n{self.channel.motd}"
-                ),
-                "fields": [
-                    {
-                        "inline": False,
-                        "name": "Players",
-                        "value": f"• <@{user.xid}> (user-{user.xid})",
-                    },
-                    {"inline": True, "name": "Format", "value": "Commander"},
-                    {"inline": True, "name": "Updated at", "value": ANY},
-                    {"inline": False, "name": "Support SpellBot", "value": ANY},
-                ],
-                "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-                "thumbnail": {"url": self.settings.THUMB_URL},
-                "title": "**Waiting for 3 more players to join...**",
-                "type": "rich",
-                "flags": 0,
-            }
 
     async def test_join_when_blocked(
         self,
@@ -348,7 +297,7 @@ class TestCogLookingForGameJoinButton(InteractionMixin):
             ],
         ):
             self.interaction.message = message
-            view = PendingGameView(bot=self.bot)
+            view = GameView(bot=self.bot)
 
             await view.join.callback(self.interaction)
 
@@ -380,7 +329,7 @@ class TestCogLookingForGameJoinButton(InteractionMixin):
             users=[mock_discord_object(user)],
         ):
             self.interaction.message = message
-            view = PendingGameView(bot=self.bot)
+            view = GameView(bot=self.bot)
 
             await view.join.callback(self.interaction)
 

@@ -36,8 +36,6 @@ class ChannelDict(TypedDict):
     voice_category: str
     voice_invite: bool
     delete_expired: bool
-    show_points: bool
-    require_confirmation: bool
     blind_games: bool
 
 
@@ -155,20 +153,6 @@ class Channel(Base):
         server_default=false(),
         doc="If true delete any expired games rather than updating them to show their expiration.",
     )
-    show_points = Column(
-        Boolean,
-        nullable=False,
-        default=False,
-        server_default=false(),
-        doc="Configuration for showing points reporting on started games",
-    )
-    require_confirmation = Column(
-        Boolean,
-        nullable=False,
-        default=False,
-        server_default=false(),
-        doc="Configuration for requiring confirmation on points reporting",
-    )
     voice_invite = Column(
         Boolean,
         nullable=False,
@@ -215,7 +199,5 @@ class Channel(Base):
             "voice_category": self.voice_category,
             "voice_invite": self.voice_invite,
             "delete_expired": self.delete_expired,
-            "show_points": self.show_points,
-            "require_confirmation": self.require_confirmation,
             "blind_games": self.blind_games,
         }

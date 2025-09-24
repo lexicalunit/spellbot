@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed an issue with `/score` causing a 500 http error due to locales.
+
+### Changed
+
+- Added icons to bracket levels.
+- Updated dependencies.
+
+### Removed
+
+- Removed unused code related to game points, score, and elo.
+
 ## [v16.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v16.4.0) - 2025-09-21
 
 ### Changed

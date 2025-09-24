@@ -92,8 +92,6 @@ class AdminAction(BaseAction):
             update_channel_settings(channel, channel_settings, "unverified_only")
             update_channel_settings(channel, channel_settings, "verified_only")
             update_channel_settings(channel, channel_settings, "voice_category")
-            update_channel_settings(channel, channel_settings, "show_points")
-            update_channel_settings(channel, channel_settings, "require_confirmation")
             update_channel_settings(channel, channel_settings, "voice_invite")
             if channel_settings:
                 all_default = False
@@ -482,15 +480,6 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def set_show_points(self, value: bool) -> None:
-        assert self.interaction.channel_id is not None
-        setting = await self.services.channels.set_show_points(self.interaction.channel_id, value)
-        await safe_send_channel(
-            self.interaction,
-            f"Show points setting for this channel has been set to: {setting}",
-            ephemeral=True,
-        )
-
     async def set_blind_games(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
         setting = await self.services.channels.set_blind_games(self.interaction.channel_id, value)
@@ -499,18 +488,6 @@ class AdminAction(BaseAction):
             f"Hidden player names for this channel has been set to: {setting}",
             ephemeral=True,
         )
-
-    # TODO: Refactor how confirmation/points/ELO works.
-    # async def set_require_confirmation(self, value: bool) -> None:
-    #     assert self.interaction.channel_id is not None
-    #     setting = await self.services.channels.set_require_confirmation(
-    #         self.interaction.channel_id, value
-    #     )
-    #     await safe_send_channel(
-    #         self.interaction,
-    #         f"Require confirmation setting for this channel has been set to: {setting}",
-    #         ephemeral=True,
-    #     )
 
     async def set_voice_invite(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
@@ -532,42 +509,3 @@ class AdminAction(BaseAction):
             f"User {from_user_xid} has been moved to {to_user_xid}",
             ephemeral=True,
         )
-
-    # TODO: Refactor how confirmation/points/ELO works.
-    # async def set_points(self, game_id: int, player_xid: int, points: int) -> None:
-    #     found = await self.services.games.select(game_id)
-    #     if not found:
-    #         await safe_send_channel(
-    #             self.interaction,
-    #             "There is no game with that ID.",
-    #             ephemeral=True,
-    #         )
-    #         return
-    #
-    #     if not await self.services.games.players_included(player_xid):
-    #         await safe_send_channel(
-    #             self.interaction,
-    #             f"User <@{player_xid}> did not play in game SB{found.get('id')}.",
-    #             ephemeral=True,
-    #         )
-    #         return
-    #
-    #     await self.services.games.add_points(player_xid, points)
-    #     await self.services.games.confirm_points(player_xid)
-    #
-    #     for post in found.get("posts", []):
-    #         guild_xid = post["guild_xid"]
-    #         channel_xid = post["channel_xid"]
-    #         channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
-    #         if channel:
-    #             message_xid = post["message_xid"]
-    #             message = safe_get_partial_message(channel, guild_xid, message_xid)
-    #             if message:
-    #                 embed = await self.services.games.to_embed(self.guild)
-    #                 await safe_update_embed(message, embed=embed)
-    #
-    #     await safe_send_channel(
-    #         self.interaction,
-    #         f"Points for <@{player_xid}> for game SB{game_id} set to {points}.",
-    #         ephemeral=True,
-    #     )

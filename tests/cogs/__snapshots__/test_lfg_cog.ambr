@@ -1,4 +1,4 @@
 # serializer version: 1
 # name: TestCogLookingForGameJoinButton.test_join_with_show_points
-  <PendingGameView timeout=None children=2>
+  <GameView timeout=None children=2>
 # ---

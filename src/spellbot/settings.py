@@ -32,6 +32,7 @@ class Settings:
         "EXPIRE_TIME_M",
         "HOST",
         "INFO_EMBED_COLOR",
+        "LOCALE",
         "MAX_PENDING_GAMES",
         "MOD_PREFIX",
         "PENDING_EMBED_COLOR",
@@ -128,6 +129,7 @@ class Settings:
         self.ADMIN_ROLE = "SpellBot Admin"
         self.MOD_PREFIX = "Moderator"
         self.MAX_PENDING_GAMES = 5
+        self.LOCALE = getenv("LOCALE", "en")
 
         # tasks
         self.VOICE_GRACE_PERIOD_M = 10  # 10 minutes

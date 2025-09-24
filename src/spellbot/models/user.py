@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, TypedDict
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
 from sqlalchemy.orm import relationship
 
-from . import Base, GameStatus, Play, now
+from . import Base, GameStatus, now
 
 if TYPE_CHECKING:
     from . import Game
@@ -80,7 +80,6 @@ class User(Base):
     #     collection_class=attribute_mapped_collection("game_id"),
     # )
     #
-    # Allows for application code like: `some_user.points[game_id].points`
 
     def game(self, channel_xid: int) -> Game | None:
         from spellbot.database import DatabaseSession
@@ -101,26 +100,6 @@ class User(Base):
         )
         return session.get(Game, queue.game_id) if queue else None
 
-    def points(self, game_id: int) -> tuple[int | None, bool] | None:
-        play: Play | None = self.plays.filter(Play.game_id == game_id).one_or_none()
-        return (play.points, play.confirmed_at is not None) if play else None
-
-    def elo(self, guild_xid: int, channel_xid: int) -> int | None:
-        from spellbot.database import DatabaseSession
-
-        from . import Record
-
-        record: Record | None = (
-            DatabaseSession.query(Record)
-            .filter(
-                Record.guild_xid == guild_xid,
-                Record.channel_xid == channel_xid,
-                Record.user_xid == self.xid,
-            )
-            .one_or_none()
-        )
-        return record.elo if record else None
-
     def waiting(self, channel_xid: int) -> bool:
         game = self.game(channel_xid)
         if game is None:
@@ -131,33 +110,6 @@ class User(Base):
         # if not any(post.channel_xid == channel_xid for post in game.posts):
         #     return False
         return game.deleted_at is None
-
-    def confirmed(self, channel_xid: int) -> bool:
-        from spellbot.database import DatabaseSession
-
-        from . import Game, Play, Post
-
-        session = DatabaseSession.object_session(self)
-        last_game = (
-            session.query(Game)
-            .join(Post)
-            .filter(
-                Post.channel_xid == channel_xid,
-                Game.status == GameStatus.STARTED.value,
-            )
-            .order_by(Game.started_at.desc())
-            .first()
-        )
-        if not last_game or last_game.requires_confirmation is False:
-            return True
-        last_play = (
-            session.query(Play)
-            .filter(Play.user_xid == self.xid, Play.game_id == last_game.id)
-            .first()
-        )
-        if not last_play:
-            return True
-        return last_play.confirmed_at is not None
 
     def pending_games(self) -> int:
         from spellbot.database import DatabaseSession

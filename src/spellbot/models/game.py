@@ -49,8 +49,6 @@ class GameDict(TypedDict):
     service: int
     game_link: str | None
     jump_links: dict[int, str]
-    confirmed: bool
-    requires_confirmation: bool
     password: str | None
     rules: str | None
     blind: bool
@@ -180,13 +178,6 @@ class Game(Base):
     game_link = Column(String(255), doc="The generated link for this game")
     password = Column(String(255), nullable=True, doc="The password for this game")
     voice_invite_link = Column(String(255), doc="The voice channel invite link for this game")
-    requires_confirmation = Column(
-        Boolean,
-        nullable=False,
-        default=False,
-        server_default=false(),
-        doc="Configuration for requiring confirmation on points reporting",
-    )
     rules = Column(String(255), nullable=True, index=True, doc="Additional rules for this game")
     blind = Column(
         Boolean,
@@ -347,8 +338,6 @@ class Game(Base):
                     "\n\nYou can also [jump to the original game post]"
                     f"({jump_link}) in <#{self.channel_xid}>."
                 )
-            elif self.channel.show_points:
-                description += "\n\nWhen your game is over use the drop down to report your points."
         placeholders = self.placeholders
         if self.guild.motd:
             description += f"\n\n{self.apply_placeholders(placeholders, self.guild.motd)}"
@@ -362,7 +351,7 @@ class Game(Base):
         placeholders = {
             "game_id": str(self.id),
             "game_format": self.format_name,
-            "game_bracket": self.bracket_name,
+            "game_bracket": f"Bracket {self.bracket_name}",
             "game_start": game_start,
         }
         for i, player in enumerate(self.players):
@@ -376,40 +365,8 @@ class Game(Base):
 
     @property
     def embed_players(self) -> str:
-        player_parts: list[tuple[str, int, str, str]] = []
-        for player in self.players:
-            points_str = ""
-            if self.status == GameStatus.STARTED.value:
-                points = player.points(cast("int", self.id))
-                if points is not None and points[0] is not None:
-                    points_value: int = points[0]
-                    points_confirmed: bool = points[1]
-                    plural_str = "s" if points_value > 1 or points_value == 0 else ""
-                    if self.requires_confirmation:
-                        if points_value == 3:
-                            value_str = "WIN"
-                        elif 1 <= points_value <= 2:
-                            value_str = "TIE"
-                        else:
-                            value_str = "LOSS"
-                    else:
-                        value_str = f"{points_value} point{plural_str}"
-                    confirmed_str = (
-                        "✅ "
-                        if points_confirmed
-                        else "❌ "
-                        if self.channel.require_confirmation
-                        else ""
-                    )
-                    points_str = f"\n**ﾠ⮑ {confirmed_str}{value_str}**"
-
-            elo = player.elo(self.guild_xid, self.channel_xid)
-            elo_str = f"**ELO {elo}** - " if elo else ""
-            player_parts.append((elo_str, player.xid, player.name, points_str))
-
-        player_strs: list[str] = [
-            f"• {parts[0]}<@{parts[1]}> ({parts[2]}){parts[3]}" for parts in sorted(player_parts)
-        ]
+        player_parts: list[tuple[int, str]] = [(player.xid, player.name) for player in self.players]
+        player_strs: list[str] = [f"• <@{parts[0]}> ({parts[1]})" for parts in sorted(player_parts)]
         return "\n".join(player_strs)
 
     @property
@@ -429,21 +386,16 @@ class Game(Base):
         return str(GameBracket(self.bracket))
 
     @property
-    def confirmed(self) -> bool:
-        from spellbot.database import DatabaseSession
+    def bracket_icon(self) -> str | None:
+        icon = GameBracket(self.bracket).icon
+        return icon if icon else None
 
-        from . import Play, User
-
-        player_count = DatabaseSession.query(User).filter(User.xid.in_(self.player_xids)).count()
-        confirmed_count = (
-            DatabaseSession.query(Play)
-            .filter(
-                Play.game_id == self.id,
-                ~Play.confirmed_at.is_(None),
-            )
-            .count()
-        )
-        return player_count == confirmed_count
+    @property
+    def bracket_title(self) -> str:
+        name = self.bracket_name[8:]
+        if icon := self.bracket_icon:
+            return f"{icon} {name}"
+        return name
 
     def to_embed(
         self,
@@ -453,7 +405,9 @@ class Game(Base):
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
     ) -> discord.Embed:
-        embed = discord.Embed(title="**Rematch Game!**" if rematch else self.embed_title)
+        # Basic embed
+        title = "**Rematch Game!**" if rematch else self.embed_title
+        embed = discord.Embed(title=title)
         embed.set_thumbnail(url=settings.thumb(self.guild_xid))
         embed.description = self.embed_description(
             guild=guild,
@@ -461,32 +415,42 @@ class Game(Base):
             suggested_vc=suggested_vc,
             rematch=rematch,
         )
+
+        # Rules
         if self.rules:
             embed.add_field(name="⚠️ Additional Rules:", value=self.rules, inline=False)
+
+        # Player info
         if self.blind and not dm:
             joined = len(self.players)
-            plural = "s" if joined > 1 else ""
+            plural = "s" if joined != 1 else ""
             verb = "is" if joined == 1 else "are"
             embed.add_field(
                 name="Players",
                 value=f"**{joined} player name{plural} {verb} hidden**",
                 inline=False,
             )
-        if self.players and not (self.blind and not dm):
+        elif self.players:
             embed.add_field(name="Players", value=self.embed_players, inline=False)
+
+        # Format and Bracket
         embed.add_field(name="Format", value=self.format_name)
         if self.bracket != GameBracket.NONE.value:
-            embed.add_field(name="Bracket", value=self.bracket_name)
-        if self.started_at:
-            embed.add_field(name="Started at", value=f"<t:{self.started_at_timestamp}>")
-        else:
-            embed.add_field(name="Updated at", value=f"<t:{self.updated_at_timestamp}>")
+            embed.add_field(name="Bracket", value=self.bracket_title)
+
+        # Timestamps
+        timestamp_field = (
+            ("Started at", f"<t:{self.started_at_timestamp}>")
+            if self.started_at
+            else ("Updated at", f"<t:{self.updated_at_timestamp}>")
+        )
+        embed.add_field(name=timestamp_field[0], value=timestamp_field[1])
+
+        # Service info
         if self.service != GameService.SPELLTABLE.value and not rematch:
-            embed.add_field(
-                name="Service",
-                value=str(GameService(self.service)),
-                inline=False,
-            )
+            embed.add_field(name="Service", value=str(GameService(self.service)), inline=False)
+
+        # Embed color
         if self.players:
             embed.color = (
                 discord.Color(settings.STARTED_EMBED_COLOR)
@@ -495,12 +459,12 @@ class Game(Base):
             )
         else:
             embed.color = discord.Color(settings.EMPTY_EMBED_COLOR)
-        if suggested_vc and (suggested_vc_xid := suggested_vc.get()):
-            embed.add_field(
-                name="🔊 Suggested Voice Channel",
-                value=f"<#{suggested_vc_xid}>",
-                inline=False,
-            )
+
+        # Suggested voice channel
+        if suggested_vc and (vc_xid := suggested_vc.get()):
+            embed.add_field(name="🔊 Suggested Voice Channel", value=f"<#{vc_xid}>", inline=False)
+
+        # Support / footer
         embed.add_field(
             name="Support SpellBot",
             value=(
@@ -510,6 +474,7 @@ class Game(Base):
             inline=False,
         )
         embed.set_footer(text=self.embed_footer)
+
         return embed
 
     def to_dict(self) -> GameDict:
@@ -531,8 +496,6 @@ class Game(Base):
             "service": self.service,
             "game_link": self.game_link,
             "jump_links": self.jump_links,
-            "confirmed": self.confirmed,
-            "requires_confirmation": self.channel.require_confirmation,
             "password": self.password,
             "rules": self.rules,
             "blind": self.blind,

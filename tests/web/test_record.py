@@ -65,12 +65,12 @@ class TestWebRecord:
             updated_at=datetime.now(tz=UTC),
         )
         factories.post.create(guild=guild, channel=channel, game=game3, message_xid=903)
-        factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
-        factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
-        factories.play.create(game_id=game2.id, user_xid=user1.xid, points=None)
-        factories.play.create(game_id=game2.id, user_xid=user2.xid, points=5)
-        factories.play.create(game_id=game3.id, user_xid=user1.xid, points=None)
-        factories.play.create(game_id=game3.id, user_xid=user2.xid, points=10)
+        factories.play.create(game_id=game1.id, user_xid=user1.xid)
+        factories.play.create(game_id=game1.id, user_xid=user2.xid)
+        factories.play.create(game_id=game2.id, user_xid=user1.xid)
+        factories.play.create(game_id=game2.id, user_xid=user2.xid)
+        factories.play.create(game_id=game3.id, user_xid=user1.xid)
+        factories.play.create(game_id=game3.id, user_xid=user2.xid)
 
         resp = await client.get(f"/g/{guild.xid}/u/{user1.xid}")
         assert resp.status == 200
@@ -122,12 +122,12 @@ class TestWebRecord:
             updated_at=datetime.now(tz=UTC),
         )
         factories.post.create(guild=guild, channel=channel, game=game3, message_xid=903)
-        factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
-        factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
-        factories.play.create(game_id=game2.id, user_xid=user1.xid, points=None)
-        factories.play.create(game_id=game2.id, user_xid=user2.xid, points=5)
-        factories.play.create(game_id=game3.id, user_xid=user1.xid, points=None)
-        factories.play.create(game_id=game3.id, user_xid=user2.xid, points=10)
+        factories.play.create(game_id=game1.id, user_xid=user1.xid)
+        factories.play.create(game_id=game1.id, user_xid=user2.xid)
+        factories.play.create(game_id=game2.id, user_xid=user1.xid)
+        factories.play.create(game_id=game2.id, user_xid=user2.xid)
+        factories.play.create(game_id=game3.id, user_xid=user1.xid)
+        factories.play.create(game_id=game3.id, user_xid=user2.xid)
 
         resp = await client.get(
             f"/g/{guild.xid}/u/{user1.xid}",
@@ -199,12 +199,12 @@ class TestWebRecord:
             updated_at=datetime.now(tz=UTC),
         )
         factories.post.create(guild=guild, channel=channel, game=game3, message_xid=903)
-        factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
-        factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
-        factories.play.create(game_id=game2.id, user_xid=user1.xid, points=0)
-        factories.play.create(game_id=game2.id, user_xid=user2.xid, points=5)
-        factories.play.create(game_id=game3.id, user_xid=user1.xid, points=0)
-        factories.play.create(game_id=game3.id, user_xid=user2.xid, points=10)
+        factories.play.create(game_id=game1.id, user_xid=user1.xid)
+        factories.play.create(game_id=game1.id, user_xid=user2.xid)
+        factories.play.create(game_id=game2.id, user_xid=user1.xid)
+        factories.play.create(game_id=game2.id, user_xid=user2.xid)
+        factories.play.create(game_id=game3.id, user_xid=user1.xid)
+        factories.play.create(game_id=game3.id, user_xid=user2.xid)
 
         resp = await client.get(f"/g/{guild.xid}/c/{channel.xid}")
         assert resp.status == 200
@@ -256,12 +256,12 @@ class TestWebRecord:
             updated_at=datetime.now(tz=UTC),
         )
         factories.post.create(guild=guild, channel=channel, game=game3, message_xid=903)
-        factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
-        factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
-        factories.play.create(game_id=game2.id, user_xid=user1.xid, points=0)
-        factories.play.create(game_id=game2.id, user_xid=user2.xid, points=5)
-        factories.play.create(game_id=game3.id, user_xid=user1.xid, points=0)
-        factories.play.create(game_id=game3.id, user_xid=user2.xid, points=10)
+        factories.play.create(game_id=game1.id, user_xid=user1.xid)
+        factories.play.create(game_id=game1.id, user_xid=user2.xid)
+        factories.play.create(game_id=game2.id, user_xid=user1.xid)
+        factories.play.create(game_id=game2.id, user_xid=user2.xid)
+        factories.play.create(game_id=game3.id, user_xid=user1.xid)
+        factories.play.create(game_id=game3.id, user_xid=user2.xid)
 
         resp = await client.get(
             f"/g/{guild.xid}/c/{channel.xid}",
@@ -319,17 +319,17 @@ class TestWebRecord:
             updated_at=datetime.now(tz=UTC),
         )
         factories.post.create(guild=guild, channel=channel, game=game3, message_xid=903)
-        factories.play.create(game_id=game1.id, user_xid=user1.xid, points=3)
-        factories.play.create(game_id=game1.id, user_xid=user2.xid, points=1)
-        factories.play.create(game_id=game2.id, user_xid=user1.xid, points=0)
-        factories.play.create(game_id=game2.id, user_xid=user2.xid, points=5)
-        factories.play.create(game_id=game3.id, user_xid=user1.xid, points=0)
-        factories.play.create(game_id=game3.id, user_xid=user2.xid, points=10)
+        factories.play.create(game_id=game1.id, user_xid=user1.xid)
+        factories.play.create(game_id=game1.id, user_xid=user2.xid)
+        factories.play.create(game_id=game2.id, user_xid=user1.xid)
+        factories.play.create(game_id=game2.id, user_xid=user2.xid)
+        factories.play.create(game_id=game3.id, user_xid=user1.xid)
+        factories.play.create(game_id=game3.id, user_xid=user2.xid)
 
         resp = await client.get(
             f"/g/{guild.xid}/c/{channel.xid}",
             cookies={
-                "timezone_offset": "BUGUS",
+                "timezone_offset": "BOGUS",
                 "timezone_name": "America/Los_Angeles",
             },
         )

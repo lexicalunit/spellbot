@@ -33,7 +33,7 @@ def humanize(ts: int, offset: int, zone: str) -> str:
     d = datetime.fromtimestamp(ts / 1e3, tz=UTC) - timedelta(minutes=offset)
     with suppress(ZoneInfoNotFoundError):
         d = d.replace(tzinfo=ZoneInfo(zone))
-    return format_datetime(d, format="long")
+    return format_datetime(d, format="long", locale=settings.LOCALE)
 
 
 @web.middleware
