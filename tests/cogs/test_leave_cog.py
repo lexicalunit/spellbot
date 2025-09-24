@@ -10,7 +10,7 @@ from spellbot.actions import leave_action
 from spellbot.cogs import LeaveGameCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Queue
-from spellbot.views.lfg_view import PendingGameView
+from spellbot.views.lfg_view import GameView
 from tests.mixins import InteractionMixin
 from tests.mocks import mock_operations
 
@@ -291,7 +291,7 @@ class TestCogLeaveGame(InteractionMixin):
 
         with mock_operations(leave_action):
             leave_action.safe_original_response.return_value = message
-            view = PendingGameView(self.bot)
+            view = GameView(self.bot)
 
             await view.leave.callback(self.interaction)
 
@@ -326,7 +326,7 @@ class TestCogLeaveGame(InteractionMixin):
     ) -> None:
         with mock_operations(leave_action):
             leave_action.safe_original_response.return_value = message
-            view = PendingGameView(self.bot)
+            view = GameView(self.bot)
 
             await view.leave.callback(self.interaction)
 
@@ -341,7 +341,7 @@ class TestCogLeaveGame(InteractionMixin):
     ) -> None:
         with mock_operations(leave_action):
             leave_action.safe_original_response.return_value = message
-            view = PendingGameView(self.bot)
+            view = GameView(self.bot)
 
             await view.leave.callback(self.interaction)
 
@@ -357,7 +357,7 @@ class TestCogLeaveGame(InteractionMixin):
             leave_action.safe_original_response.return_value = None
             leave_action.safe_fetch_text_channel.return_value = self.interaction.channel
             leave_action.safe_get_partial_message.return_value = message
-            view = PendingGameView(self.bot)
+            view = GameView(self.bot)
 
             await view.leave.callback(self.interaction)
 
@@ -374,7 +374,7 @@ class TestCogLeaveGame(InteractionMixin):
             leave_action.safe_original_response.return_value = None
             leave_action.safe_fetch_text_channel.return_value = None
             leave_action.safe_get_partial_message.return_value = message
-            view = PendingGameView(self.bot)
+            view = GameView(self.bot)
 
             await view.leave.callback(self.interaction)
 
@@ -391,7 +391,7 @@ class TestCogLeaveGame(InteractionMixin):
             leave_action.safe_original_response.return_value = None
             leave_action.safe_fetch_text_channel.return_value = self.interaction.channel
             leave_action.safe_get_partial_message.return_value = None
-            view = PendingGameView(self.bot)
+            view = GameView(self.bot)
 
             await view.leave.callback(self.interaction)
 

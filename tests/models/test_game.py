@@ -7,9 +7,8 @@ from unittest.mock import ANY, MagicMock
 import discord
 import pytest
 
-from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameService
-from spellbot.models import Game, GameStatus, Play
+from spellbot.models import Game, GameStatus
 from spellbot.operations import VoiceChannelSuggestion
 
 if TYPE_CHECKING:
@@ -43,8 +42,6 @@ class TestModelGame:
             "service": game.service,
             "game_link": game.game_link,
             "jump_links": game.jump_links,
-            "confirmed": game.confirmed,
-            "requires_confirmation": game.requires_confirmation,
             "password": game.password,
             "rules": game.rules,
             "blind": game.blind,
@@ -107,7 +104,7 @@ class TestModelGame:
 
         expected_fields = [
             {"inline": True, "name": "Format", "value": "Commander"},
-            {"inline": True, "name": "Bracket", "value": GameBracket.BRACKET_2.title},
+            {"inline": True, "name": "Bracket", "value": "✦ 2: Core"},
             {"inline": True, "name": "Updated at", "value": "<t:1635638400>"},
         ]
         if service != GameService.SPELLTABLE:
@@ -501,7 +498,7 @@ class TestModelGame:
 
     def test_game_with_guild_notice(self, settings: Settings, factories: Factories) -> None:
         guild = factories.guild.create(motd=None, notice="this is a notice")
-        channel = factories.channel.create(guild=guild, show_points=True, motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(
             seats=2,
             status=GameStatus.STARTED.value,
@@ -512,70 +509,8 @@ class TestModelGame:
         factories.user.create(game=game)
         factories.user.create(game=game)
         assert game.to_embed().to_dict()["description"] == (
-            "this is a notice\n\n"
-            "Please check your Direct Messages for your game details.\n\n"
-            "When your game is over use the drop down to report your points."
+            "this is a notice\n\nPlease check your Direct Messages for your game details."
         )
-
-    def test_game_embed_started_with_points(
-        self,
-        settings: Settings,
-        factories: Factories,
-    ) -> None:
-        guild = factories.guild.create(motd=None)
-        channel = factories.channel.create(guild=guild, show_points=True, motd=None)
-        game = factories.game.create(
-            seats=2,
-            status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            guild=guild,
-            channel=channel,
-        )
-        player1 = factories.user.create(game=game)
-        player2 = factories.user.create(game=game)
-        DatabaseSession.query(Play).filter(
-            Play.game_id == game.id,
-            Play.user_xid == player1.xid,
-        ).update(
-            {
-                Play.points: 5,  # type: ignore
-            },
-        )
-        DatabaseSession.query(Play).filter(
-            Play.game_id == game.id,
-            Play.user_xid == player2.xid,
-        ).update(
-            {
-                Play.points: 1,  # type: ignore
-            },
-        )
-
-        assert game.to_embed().to_dict() == {
-            "color": settings.STARTED_EMBED_COLOR,
-            "description": (
-                "Please check your Direct Messages for your game details.\n"
-                "\n"
-                "When your game is over use the drop down to report your points."
-            ),
-            "fields": [
-                {
-                    "inline": False,
-                    "name": "Players",
-                    "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n**ﾠ⮑ 5 points**\n"
-                        f"• <@{player2.xid}> ({player2.name})\n**ﾠ⮑ 1 point**"
-                    ),
-                },
-                {"inline": True, "name": "Format", "value": "Commander"},
-                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "Support SpellBot", "value": ANY},
-            ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-            "thumbnail": {"url": settings.THUMB_URL},
-            "title": "**Your game is ready!**",
-            "type": "rich",
-            "flags": 0,
-        }
 
     def test_game_embed_started_without_game_link(
         self,
@@ -925,70 +860,6 @@ class TestModelGame:
                     "name": "Players",
                     "value": (
                         f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
-                    ),
-                },
-                {"inline": True, "name": "Format", "value": "Commander"},
-                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "Support SpellBot", "value": ANY},
-            ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
-            "thumbnail": {"url": settings.THUMB_URL},
-            "title": "**Your game is ready!**",
-            "type": "rich",
-            "flags": 0,
-        }
-
-    def test_game_embed_started_with_win_loss(
-        self,
-        settings: Settings,
-        factories: Factories,
-    ) -> None:
-        guild = factories.guild.create(motd=None)
-        channel = factories.channel.create(
-            guild=guild,
-            show_points=True,
-            require_confirmation=True,
-            motd=None,
-        )
-        game = factories.game.create(
-            seats=2,
-            status=GameStatus.STARTED.value,
-            started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            guild=guild,
-            channel=channel,
-            requires_confirmation=True,
-        )
-        player1 = factories.user.create(game=game, xid=1)
-        player2 = factories.user.create(game=game, xid=2)
-        player3 = factories.user.create(game=game, xid=3)
-        DatabaseSession.query(Play).filter(
-            Play.game_id == game.id,
-            Play.user_xid == player1.xid,
-        ).update({Play.points: 3})  # type: ignore
-        DatabaseSession.query(Play).filter(
-            Play.game_id == game.id,
-            Play.user_xid == player2.xid,
-        ).update({Play.points: 1})  # type: ignore
-        DatabaseSession.query(Play).filter(
-            Play.game_id == game.id,
-            Play.user_xid == player3.xid,
-        ).update({Play.points: 0})  # type: ignore
-
-        assert game.to_embed().to_dict() == {
-            "color": settings.STARTED_EMBED_COLOR,
-            "description": (
-                "Please check your Direct Messages for your game details.\n"
-                "\n"
-                "When your game is over use the drop down to report your points."
-            ),
-            "fields": [
-                {
-                    "inline": False,
-                    "name": "Players",
-                    "value": (
-                        f"• <@{player1.xid}> ({player1.name})\n**ﾠ⮑ ❌ WIN**\n"
-                        f"• <@{player2.xid}> ({player2.name})\n**ﾠ⮑ ❌ TIE**\n"
-                        f"• <@{player3.xid}> ({player3.name})\n**ﾠ⮑ ❌ LOSS**"
                     ),
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},

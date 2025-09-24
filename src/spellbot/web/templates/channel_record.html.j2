@@ -11,7 +11,6 @@
             <th>Link</th>
             <th>User Name</th>
             <th>User ID</th>
-            <th>Points</th>
         </tr>
     </thead>
     <tbody id="rows">
@@ -33,7 +32,6 @@
                 {% endif %}
                 <td>{{record.user_name | default('Unknown User', true)}}</td>
                 <td class="user_id">{{record.user_xid}}</td>
-                <td><em>{{record.user_points}}</em></td>
             </tr>
         {% endfor %}
     </tbody>

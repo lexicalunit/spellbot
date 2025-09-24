@@ -201,18 +201,6 @@ class ChannelsService:
         return value
 
     @sync_to_async()
-    def set_show_points(self, xid: int, value: bool) -> bool:
-        query = (
-            update(Channel)  # type: ignore
-            .where(Channel.xid == xid)
-            .values(show_points=value)
-            .execution_options(synchronize_session=False)
-        )
-        DatabaseSession.execute(query)
-        DatabaseSession.commit()
-        return value
-
-    @sync_to_async()
     def set_blind_games(self, xid: int, value: bool) -> bool:
         query = (
             update(Channel)  # type: ignore
@@ -223,19 +211,6 @@ class ChannelsService:
         DatabaseSession.execute(query)
         DatabaseSession.commit()
         return value
-
-    # TODO: Refactor how confirmation/points/ELO works.
-    # @sync_to_async()
-    # def set_require_confirmation(self, xid: int, value: bool) -> bool:
-    #     query = (
-    #         update(Channel)
-    #         .where(Channel.xid == xid)
-    #         .values(require_confirmation=value)
-    #         .execution_options(synchronize_session=False)
-    #     )
-    #     DatabaseSession.execute(query)
-    #     DatabaseSession.commit()
-    #     return value
 
     @sync_to_async()
     def set_voice_invite(self, xid: int, value: bool) -> bool:

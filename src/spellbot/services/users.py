@@ -126,11 +126,6 @@ class UsersService:
         return self.user.waiting(channel_xid)
 
     @sync_to_async()
-    def is_confirmed(self, channel_xid: int) -> bool:
-        assert self.user
-        return self.user.confirmed(channel_xid)
-
-    @sync_to_async()
     def pending_games(self) -> int:
         assert self.user
         return self.user.pending_games()
@@ -331,7 +326,6 @@ class UsersService:
                 play_values = {
                     "user_xid": to_user_xid,
                     "game_id": play.game_id,
-                    "points": play.points,
                 }
                 logger.info("upsert play: %s", play_values)
                 play_upsert = insert(Play).values(**play_values)
@@ -343,7 +337,6 @@ class UsersService:
                     ),
                     set_={
                         "user_xid": to_user_xid,
-                        "points": play_upsert.excluded.points,
                     },
                 )
                 DatabaseSession.execute(play_upsert, play_values)

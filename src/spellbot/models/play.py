@@ -23,8 +23,6 @@ class PlayDict(TypedDict):
     user_xid: int
     game_id: int
     og_guild_xid: int
-    points: int | None
-    confirmed_at: datetime
     pin: str
     verified_at: datetime | None
 
@@ -72,17 +70,6 @@ class Play(Base):
         nullable=False,
         doc="The external Discord ID of the guild where the user entered this game",
     )
-    points = Column(
-        Integer,
-        nullable=True,
-        doc="The number of points reported by the user",
-    )
-    confirmed_at = Column(
-        DateTime,
-        nullable=True,
-        default=None,
-        doc="UTC timestamp when this play was confirmed",
-    )
     pin = Column(
         String(6),
         nullable=True,
@@ -103,8 +90,6 @@ class Play(Base):
             "user_xid": self.user_xid,
             "game_id": self.game_id,
             "og_guild_xid": self.og_guild_xid,
-            "points": self.points,
-            "confirmed_at": self.confirmed_at,
             "pin": self.pin,
             "verified_at": self.verified_at,
         }
