@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed an issue where the join/leave buttons were not removed from started games.
+
+### Changed
+
+- Refactored game embed generated code.
+
 ## [v17.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v17.0.0) - 2025-09-23
 
 ### Fixed

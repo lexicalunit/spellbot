@@ -504,7 +504,7 @@ class LookingForGameAction(BaseAction):
         content = self.channel_data.get("extra", None)
         game_data = await self.services.games.to_dict()
 
-        view = GameView(bot=self.bot)
+        view = None if fully_seated else GameView(bot=self.bot)
         if new:  # create the initial game post:
             await self._create_initial_post(embed, view, content)
             return
