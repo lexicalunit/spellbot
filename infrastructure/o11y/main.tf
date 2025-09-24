@@ -47,7 +47,7 @@ resource "datadog_monitor" "spellbot_application_error" {
   type    = "log alert"
   tags    = ["service:spellbot", "env:prod"]
   query   = <<-EOT
-    logs("environment:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -"ELB-HealthChecker" (error OR status:error)").index("*").rollup("count").last("5m") > 1
+    logs("environment:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -"ELB-HealthChecker" (error OR status:error OR raise)").index("*").rollup("count").last("5m") > 1
   EOT
   message = "@${var.alert_email}"
 }
