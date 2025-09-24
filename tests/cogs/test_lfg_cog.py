@@ -32,9 +32,24 @@ def cog(bot: SpellBot) -> LookingForGameCog:
 @pytest.mark.asyncio
 class TestCogLookingForGame(InteractionMixin):
     async def test_lfg(self, cog: LookingForGameCog, channel: Channel) -> None:
-        await self.run(cog.lfg)
-        game = DatabaseSession.query(Game).one()
+        with mock_operations(lfg_action):
+            message = MagicMock(spec=discord.Message)
+            message.id = 123
+            lfg_action.safe_followup_channel.return_value = message
+
+            await self.run(cog.lfg)
+
+            lfg_action.safe_followup_channel.assert_called_once_with(
+                self.interaction,
+                content=None,
+                embed=ANY,
+                view=ANY,
+            )
+            # check that the view (join/leave buttons) exists for pending games:
+            assert isinstance(lfg_action.safe_followup_channel.call_args.kwargs["view"], GameView)
+
         user = DatabaseSession.query(User).one()
+        game = DatabaseSession.query(Game).one()
         assert game.channel_xid == channel.xid
         assert game.guild_xid == self.guild.xid
         assert self.interaction.channel is not None
@@ -106,6 +121,8 @@ class TestCogLookingForGame(InteractionMixin):
                 "type": "rich",
                 "flags": 0,
             }
+            # check that the view (join/leave buttons) is removed from fully seated games:
+            assert mock_call.call_args_list[0].kwargs["view"] is None
 
     async def test_lfg_when_blocked(self, game: Game, user: User) -> None:
         other_user = self.factories.user.create(game=game)
