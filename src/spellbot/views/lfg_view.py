@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import TypeVar
-
 import discord
 from ddtrace.trace import tracer
 from discord import ui
@@ -63,6 +61,3 @@ class GameView(BaseView):
                 LeaveAction.create(self.bot, interaction) as action,
             ):
                 await action.execute(origin=True)
-
-
-T = TypeVar("T", bound=ui.View)
