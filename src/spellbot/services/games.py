@@ -15,7 +15,6 @@ from sqlalchemy.sql.functions import count
 from spellbot.database import DatabaseSession
 from spellbot.models import (
     Block,
-    Channel,
     Game,
     GameDict,
     GameStatus,
@@ -62,25 +61,6 @@ class GamesService:
             .join(Post)
             .filter(Post.message_xid == message_xid)
             .one_or_none()
-        )
-        return self.game.to_dict() if self.game else None
-
-    @sync_to_async()
-    @tracer.wrap()
-    def select_last_ranked_game(self, user_xid: int) -> GameDict | None:
-        self.game = (
-            DatabaseSession.query(Game)
-            .join(Play)
-            .join(Channel)
-            .filter(
-                Play.user_xid == user_xid,
-                Play.confirmed_at.is_(None),
-                Game.status == GameStatus.STARTED.value,
-                Game.requires_confirmation.is_(True),
-                Channel.require_confirmation.is_(True),
-            )
-            .order_by(Game.started_at.desc())
-            .first()
         )
         return self.game.to_dict() if self.game else None
 
@@ -155,7 +135,6 @@ class GamesService:
             game = existing
             new = False
         else:
-            channel = DatabaseSession.get(Channel, channel_xid)
             game = Game(
                 guild_xid=guild_xid,
                 channel_xid=channel_xid,
@@ -164,7 +143,6 @@ class GamesService:
                 format=format,
                 bracket=bracket,
                 service=service,
-                requires_confirmation=channel.require_confirmation,
                 blind=blind,
             )
             DatabaseSession.add(game)
@@ -498,50 +476,6 @@ class GamesService:
             .one_or_none()
         )
         return bool(record)
-
-    @sync_to_async()
-    @tracer.wrap()
-    def add_points(self, player_xid: int, points: int) -> None:
-        assert self.game
-        values = {
-            "user_xid": player_xid,
-            "game_id": self.game.id,
-            "points": points,
-            "og_guild_xid": self.game.guild_xid,
-        }
-        upsert = insert(Play).values(**values)
-        upsert = upsert.on_conflict_do_update(
-            constraint="plays_pkey",
-            index_where=and_(
-                Play.user_xid == values["user_xid"],
-                Play.game_id == values["game_id"],
-            ),
-            set_={
-                "points": upsert.excluded.points,
-                "og_guild_xid": upsert.excluded.og_guild_xid,
-            },
-        )
-        DatabaseSession.execute(upsert, values)
-        DatabaseSession.commit()
-
-    @sync_to_async()
-    @tracer.wrap()
-    def confirm_points(self, player_xid: int) -> datetime:
-        assert self.game
-        confirmed_at = datetime.now(tz=UTC)
-        query = (
-            update(Play)  # type: ignore
-            .where(
-                and_(
-                    Play.game_id == self.game.id,
-                    Play.user_xid == player_xid,
-                ),
-            )
-            .values(confirmed_at=confirmed_at)
-        )
-        DatabaseSession.execute(query)
-        DatabaseSession.commit()
-        return confirmed_at
 
     @sync_to_async()
     @tracer.wrap()

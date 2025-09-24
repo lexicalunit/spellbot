@@ -48,9 +48,7 @@ USER_RECORDS_SQL = r"""
             CONCAT(
                 REPLACE(REPLACE(users.name, ':', ''), '@', ''),
                 ':',
-                users.xid,
-                ':',
-                COALESCE(plays.points, 0)::text
+                users.xid
             ),
             '@'
             ORDER BY users.xid
@@ -82,9 +80,7 @@ CHANNEL_RECORDS_SQL = r"""
             CONCAT(
                 REPLACE(REPLACE(users.name, ':', ''), '@', ''),
                 ':',
-                users.xid,
-                ':',
-                COALESCE(plays.points, 0)::text
+                users.xid
             ),
             '@'
             ORDER BY users.xid
@@ -115,8 +111,8 @@ def make_scores(data: str) -> dict[str, Any]:
     scores = {}
     records = data.split("@")
     for record in records:
-        name, xid, points = record.split(":")
-        scores[name] = (xid, points)
+        name, xid = record.split(":")
+        scores[name] = (xid,)
     return scores
 
 
@@ -136,7 +132,6 @@ def decomposed(combined_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "channel_name": data["channel_name"],
                 "user_name": name,
                 "user_xid": score_data[0],
-                "user_points": score_data[1],
             }
             decomposed_data.append(decomposed_datum)
     return decomposed_data

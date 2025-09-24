@@ -224,7 +224,7 @@ tbody tr:hover {
     }
 
     table tbody tr td:nth-child(6):before {
-        content: "Scores";
+        content: "Players";
     }
 
     tbody tr {

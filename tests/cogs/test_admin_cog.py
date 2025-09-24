@@ -739,33 +739,6 @@ class TestCogAdminDeleteExpired(InteractionMixin):
 
 
 @pytest.mark.asyncio
-class TestCogAdminShowPoints(InteractionMixin):
-    @pytest.mark.parametrize("setting", [True, False])
-    async def test_set_show_points(self, cog: AdminCog, setting: bool) -> None:
-        await self.run(cog.show_points, setting=setting)
-        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
-            f"Show points setting for this channel has been set to: {setting}",
-            ephemeral=True,
-        )
-        channel = DatabaseSession.query(Channel).one()
-        assert channel.show_points is setting
-
-
-# TODO: I need to completely rework how the ELO system works.
-# @pytest.mark.asyncio
-# class TestCogAdminRequireConfirmation(InteractionMixin):
-#     @pytest.mark.parametrize("setting", [True, False])
-#     async def test_set_require_confirmation(self, cog: AdminCog, setting: bool) -> None:
-#         await self.run(cog.require_confirmation, setting=setting)
-#         self.interaction.response.send_message.assert_called_once_with(
-#             f"Require confirmation setting for this channel has been set to: {setting}",
-#             ephemeral=True,
-#         )
-#         channel = DatabaseSession.query(Channel).one()
-#         assert channel.require_confirmation is setting
-
-
-@pytest.mark.asyncio
 class TestCogAdminVoiceInvite(InteractionMixin):
     @pytest.mark.parametrize("setting", [True, False])
     async def test_set_voice_invite(self, cog: AdminCog, setting: bool) -> None:

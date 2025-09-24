@@ -9,7 +9,7 @@
             <th>Channel</th>
             <th>Format</th>
             <th>Link</th>
-            <th>Scores</th>
+            <th>Players</th>
         </tr>
     </thead>
     <tbody id="rows">
@@ -33,8 +33,6 @@
                     <ul>
                         {% for name, data in record.scores.items() %}
                             <li>
-                                <em>{{data[1]}} points</em>
-                                &mdash;
                                 <div class="tooltip">
                                     {{name | default('Unknown User', true)}}
                                     <span class="tooltiptext">

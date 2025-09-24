@@ -13,7 +13,7 @@ from spellbot.operations import (
     safe_update_embed,
     safe_update_embed_origin,
 )
-from spellbot.views import PendingGameView
+from spellbot.views import GameView
 
 from .base_action import BaseAction
 
@@ -149,7 +149,7 @@ class LeaveAction(BaseAction):
                             await safe_update_embed(
                                 message,
                                 embed=embed,
-                                view=PendingGameView(bot=self.bot),
+                                view=GameView(bot=self.bot),
                             )
 
             if do_delete_game:

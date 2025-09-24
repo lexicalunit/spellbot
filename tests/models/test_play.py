@@ -16,15 +16,13 @@ class TestModelPlay:
         guild = factories.guild.create()
         channel = factories.channel.create(guild_xid=guild.xid)
         game = factories.game.create(guild_xid=guild.xid, channel_xid=channel.xid)
-        play = factories.play.create(user_xid=user.xid, game_id=game.id, points=1)
+        play = factories.play.create(user_xid=user.xid, game_id=game.id)
 
         assert play.to_dict() == {
             "user_xid": play.user_xid,
             "game_id": play.game_id,
-            "points": play.points,
             "created_at": play.created_at,
             "updated_at": play.updated_at,
-            "confirmed_at": play.confirmed_at,
             "og_guild_xid": play.og_guild_xid,
             "pin": play.pin,
             "verified_at": play.verified_at,

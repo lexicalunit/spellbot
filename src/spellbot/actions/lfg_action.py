@@ -29,13 +29,11 @@ from spellbot.operations import (
     safe_update_embed_origin,
 )
 from spellbot.settings import settings
-from spellbot.views import BaseView, PendingGameView, StartedGameView
+from spellbot.views import BaseView, GameView
 
 from .base_action import BaseAction
 
 if TYPE_CHECKING:
-    from discord.message import Message
-
     from spellbot import SpellBot
     from spellbot.models import GameDict
 
@@ -314,25 +312,8 @@ class LookingForGameAction(BaseAction):
                 await safe_update_embed(
                     message,
                     embed=embed,
-                    view=PendingGameView(bot=self.bot),
+                    view=GameView(bot=self.bot),
                 )
-
-    @tracer.wrap()
-    async def add_points(self, message: Message, points: int) -> None:
-        found = await self.services.games.select_by_message_xid(message.id)
-        if not found:
-            return
-
-        if not await self.services.games.players_included(self.interaction.user.id):
-            await safe_send_user(
-                self.interaction.user,
-                f"You are not one of the players in game SB{found.get('id')}.",
-            )
-            return
-
-        await self.services.games.add_points(self.interaction.user.id, points)
-        embed = await self.services.games.to_embed(guild=self.guild)
-        await safe_update_embed(message, embed=embed)
 
     @tracer.wrap()
     async def create_game(
@@ -502,7 +483,7 @@ class LookingForGameAction(BaseAction):
             await self.services.games.add_post(self.guild.id, self.channel.id, message.id)
 
     @tracer.wrap()
-    async def _handle_embed_creation(  # noqa: C901,PLR0912
+    async def _handle_embed_creation(
         self,
         *,
         new: bool,
@@ -523,13 +504,7 @@ class LookingForGameAction(BaseAction):
         content = self.channel_data.get("extra", None)
         game_data = await self.services.games.to_dict()
 
-        view: BaseView | None = None
-        if fully_seated:
-            if self.channel_data.get("show_points", False):
-                view = StartedGameView(bot=self.bot)
-        else:
-            view = PendingGameView(bot=self.bot)
-
+        view = GameView(bot=self.bot)
         if new:  # create the initial game post:
             await self._create_initial_post(embed, view, content)
             return

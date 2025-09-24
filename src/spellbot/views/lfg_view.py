@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TypeVar
 
 import discord
 from ddtrace.trace import tracer
@@ -11,11 +11,8 @@ from spellbot.operations import safe_defer_interaction, safe_original_response
 
 from . import BaseView
 
-if TYPE_CHECKING:
-    from spellbot.client import SpellBot
 
-
-class PendingGameView(BaseView):
+class GameView(BaseView):
     @ui.button(
         custom_id="join",
         emoji="✋",
@@ -25,7 +22,7 @@ class PendingGameView(BaseView):
     async def join(
         self,
         interaction: discord.Interaction,
-        button: ui.Button[PendingGameView],
+        button: ui.Button[GameView],
     ) -> None:
         from spellbot.actions import LookingForGameAction
 
@@ -52,7 +49,7 @@ class PendingGameView(BaseView):
     async def leave(
         self,
         interaction: discord.Interaction,
-        button: ui.Button[PendingGameView],
+        button: ui.Button[GameView],
     ) -> None:
         from spellbot.actions import LeaveAction
 
@@ -69,45 +66,3 @@ class PendingGameView(BaseView):
 
 
 T = TypeVar("T", bound=ui.View)
-
-
-class StartedGameView(BaseView):
-    def __init__(self, bot: SpellBot) -> None:
-        super().__init__(bot)
-        self.add_item(StartedGameSelect[StartedGameView](self.bot))
-
-
-class StartedGameSelect(ui.Select[T]):
-    def __init__(self, bot: SpellBot) -> None:
-        self.bot = bot
-        super().__init__(
-            custom_id="points",
-            placeholder="How many points do you have to report?",
-            options=[
-                discord.SelectOption(label="No points", value="0", emoji="0️⃣"),
-                discord.SelectOption(label="One point", value="1", emoji="1️⃣"),
-                discord.SelectOption(label="Two points", value="2", emoji="2️⃣"),
-                discord.SelectOption(label="Three points", value="3", emoji="3️⃣"),
-                discord.SelectOption(label="Four points", value="4", emoji="4️⃣"),
-                discord.SelectOption(label="Five points", value="5", emoji="5️⃣"),
-                discord.SelectOption(label="Six points", value="6", emoji="6️⃣"),
-                discord.SelectOption(label="Seven points", value="7", emoji="7️⃣"),
-                discord.SelectOption(label="Eight points", value="8", emoji="8️⃣"),
-                discord.SelectOption(label="Nine points", value="9", emoji="9️⃣"),
-                discord.SelectOption(label="Ten points", value="10", emoji="🔟"),
-            ],
-        )
-
-    async def callback(self, interaction: discord.Interaction) -> None:
-        from spellbot.actions import LookingForGameAction
-
-        with tracer.trace(name="interaction", resource="points"):
-            add_span_context(interaction)
-            if not await safe_defer_interaction(interaction):
-                return
-            assert interaction.original_response
-            points = int(self.values[0])
-            async with LookingForGameAction.create(self.bot, interaction) as action:
-                original_response = await safe_original_response(interaction)
-                if original_response:
-                    await action.add_points(original_response, points)
