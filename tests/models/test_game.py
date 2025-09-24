@@ -328,9 +328,8 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "# [Join your SpellTable game now!]"
-                f"({game.game_link})\n"
-                "\n"
+                f"# [Join your SpellTable game now!]({game.game_link})"
+                "\n\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
@@ -399,10 +398,9 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "Contact the other players in your game to organize this match.\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
+                "Contact the other players in your game to organize this match."
+                "\n\n"
+                "You can also [jump to the original game post](https://discordapp.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -470,10 +468,9 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "Please use MTG Arena to play this game.\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
+                "Please use MTG Arena to play this game."
+                "\n\n"
+                "You can also [jump to the original game post](https://discordapp.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -556,10 +553,9 @@ class TestModelGame:
             "description": (
                 "Sorry but SpellBot was unable to create a link for "
                 "this game. Please go to [SpellTable]"
-                "(https://spelltable.wizards.com/) to create one.\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
+                "(https://spelltable.wizards.com/) to create one."
+                "\n\n"
+                "You can also [jump to the original game post](https://discordapp.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -628,12 +624,11 @@ class TestModelGame:
             "description": (
                 "Sorry but SpellBot was unable to create a link for "
                 "this game. Please go to [Table Stream]"
-                "(https://table-stream.com/) to create one.\n"
-                "\n"
-                "Password: `fake`\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
+                "(https://table-stream.com/) to create one."
+                "\n\n"
+                "Password: `fake`"
+                "\n\n"
+                "You can also [jump to the original game post](https://discordapp.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -700,13 +695,11 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "# [Join your SpellTable game now!]"
-                f"({game.game_link})\n"
-                "\n"
-                f"## Join your voice chat now: <#{game.voice_xid}>\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
+                f"# [Join your SpellTable game now!]({game.game_link})"
+                "\n\n"
+                f"## Join your voice chat now: <#{game.voice_xid}>"
+                "\n\n"
+                "You can also [jump to the original game post](https://discordapp.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -774,11 +767,9 @@ class TestModelGame:
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "# [Join your SpellTable game now!]"
-                f"({game.game_link})\n"
-                "\n"
-                f"## Join your voice chat now: <#{game.voice_xid}>\n"
-                f"Or use this voice channel invite: {game.voice_invite_link}\n"
-                "\n"
+                f"({game.game_link})\n\n"
+                f"## Join your voice chat now: <#{game.voice_xid}>\n\n"
+                f"Or use this voice channel invite: {game.voice_invite_link}\n\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
@@ -820,8 +811,7 @@ class TestModelGame:
         assert game.to_embed().to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "Please check your Direct Messages for your game details.\n"
-                "\n"
+                "Please check your Direct Messages for your game details.\n\n"
                 "this is a message of the day"
             ),
             "fields": [
@@ -845,13 +835,11 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "# [Join your SpellTable game now!]"
-                f"({game.game_link})\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
-                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>.\n"
-                "\n"
+                f"# [Join your SpellTable game now!]({game.game_link})"
+                "\n\n"
+                "You can also [jump to the original game post](https://discordapp.com/channels/"
+                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) "
+                f"in <#{channel.xid}>.\n\n"
                 "this is a message of the day"
             ),
             "fields": [
@@ -929,14 +917,12 @@ class TestModelGame:
         assert game.to_embed(guild=dg, dm=True, suggested_vc=suggested_vc).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "# [Join your SpellTable game now!]"
-                f"({game.game_link})\n"
-                "\n"
+                f"# [Join your SpellTable game now!]({game.game_link})"
+                "\n\n"
                 f"## Please consider using this available voice channel: <#{dc.id}>.\n"
-                "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**\n"
-                "\n"
-                "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
+                "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
+                "\n\n"
+                "You can also [jump to the original game post](https://discordapp.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
