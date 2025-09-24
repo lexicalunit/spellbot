@@ -81,8 +81,8 @@ class GamesService:
                         "user_xid": player_xid,
                         "game_id": self.game.id,
                         "og_guild_xid": self.game.guild_xid,
-                    }
-                ]
+                    },
+                ],
             )
             .on_conflict_do_nothing(),
         )
@@ -161,7 +161,7 @@ class GamesService:
                         "og_guild_xid": guild_xid,
                     }
                     for xid in user_xids
-                ]
+                ],
             )
             .on_conflict_do_nothing(),
         )
@@ -273,7 +273,7 @@ class GamesService:
                         "guild_xid": guild_xid,
                         "channel_xid": channel_xid,
                         "message_xid": message_xid,
-                    }
+                    },
                 ],
             )
             .on_conflict_do_nothing(),

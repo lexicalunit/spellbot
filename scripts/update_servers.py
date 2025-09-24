@@ -61,7 +61,7 @@ def update_readme(servers: list[Server]) -> None:
                     "<br />"
                     f"{nbsp_name}"
                     "</a>"
-                    "</td>\n"
+                    "</td>\n",
                 )
             f.write("    </tr>\n")
         f.write("</table>\n")
@@ -94,7 +94,7 @@ def update_index(servers: list[Server]) -> None:
                 "<br />"
                 f"{nbsp_name}"
                 "</a>"
-                "</div>\n"
+                "</div>\n",
             )
         f.write("    </div>\n")
         f.write("<!-- SERVERS END -->")

@@ -370,7 +370,7 @@ async def safe_create_voice_channel(
                 name,
                 category=category,
                 bitrate=int(guild.bitrate_limit) if use_max_bitrate else MISSING,
-            )
+            ),
         )
     return channel
 

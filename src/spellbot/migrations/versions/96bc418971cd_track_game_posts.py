@@ -47,7 +47,7 @@ def upgrade() -> None:
             SELECT id, guild_xid, channel_xid, message_xid
             FROM games
             WHERE message_xid IS NOT NULL
-        """
+        """,
     )
     op.drop_index("ix_games_message_xid", table_name="games")
     op.drop_column("games", "message_xid")
@@ -55,7 +55,8 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.add_column(
-        "games", sa.Column("message_xid", sa.BIGINT(), autoincrement=False, nullable=True)
+        "games",
+        sa.Column("message_xid", sa.BIGINT(), autoincrement=False, nullable=True),
     )
     op.create_index("ix_games_message_xid", "games", ["message_xid"], unique=False)
     op.execute(
@@ -66,6 +67,6 @@ def downgrade() -> None:
             WHERE posts.game_id = games.id
                 AND posts.guild_xid = games.guild_xid
                 AND posts.channel_xid = games.channel_xid
-        """
+        """,
     )
     op.drop_table("posts")

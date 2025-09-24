@@ -124,7 +124,8 @@ class TestCogOwner(ContextMixin):
         cog = OwnerCog(self.bot)
 
         mocker.patch(
-            "spellbot.cogs.owner_cog.set_banned_guild", AsyncMock(side_effect=RuntimeError())
+            "spellbot.cogs.owner_cog.set_banned_guild",
+            AsyncMock(side_effect=RuntimeError()),
         )
 
         with pytest.raises(RuntimeError):
