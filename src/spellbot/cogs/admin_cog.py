@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import discord
 from ddtrace.trace import tracer
@@ -6,12 +9,14 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from spellbot import SpellBot
 from spellbot.actions import AdminAction
 from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
 from spellbot.metrics import add_span_context
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_admin, is_guild
+
+if TYPE_CHECKING:
+    from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +139,9 @@ class AdminCog(commands.Cog):
     @app_commands.describe(
         remove="Instead of assigning the role, remove it from the player",
     )
-    @tracer.wrap(name="interaction", resource="award_add")
+    # @tracer.wrap(name="interaction", resource="award_add")
+    # There's a bug when combining `@tracer.wrap`, `@app_commands.describe` and discord.Role.
+    # See: https://github.com/Rapptz/discord.py/issues/10317.
     async def award_add(
         self,
         interaction: discord.Interaction,
@@ -146,17 +153,18 @@ class AdminCog(commands.Cog):
         verified_only: bool | None = False,
         unverified_only: bool | None = False,
     ) -> None:
-        add_span_context(interaction)
-        async with AdminAction.create(self.bot, interaction) as action:
-            await action.award_add(
-                count,
-                str(role),
-                message,
-                repeating=repeating,
-                remove=remove,
-                verified_only=verified_only,
-                unverified_only=unverified_only,
-            )
+        with tracer.trace("interaction", resource="award_add"):
+            add_span_context(interaction)
+            async with AdminAction.create(self.bot, interaction) as action:
+                await action.award_add(
+                    count,
+                    str(role),
+                    message,
+                    repeating=repeating,
+                    remove=remove,
+                    verified_only=verified_only,
+                    unverified_only=unverified_only,
+                )
 
     @award_group.command(
         name="delete",
