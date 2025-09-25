@@ -23,5 +23,6 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.add_column(
-        "configs", sa.Column("power_level", sa.INTEGER(), autoincrement=False, nullable=True)
+        "configs",
+        sa.Column("power_level", sa.INTEGER(), autoincrement=False, nullable=True),
     )

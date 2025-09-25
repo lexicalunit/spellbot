@@ -324,18 +324,18 @@ class Game(Base):
                 if suggested_vc.already_picked is not None:
                     parts.append(
                         "## Your pod is already using a voice channel, "
-                        f"join them now: <#{suggested_vc.already_picked}>!\n{HR}"
+                        f"join them now: <#{suggested_vc.already_picked}>!\n{HR}",
                     )
                 elif suggested_vc.random_empty is not None:
                     parts.append(
                         "## Please consider using this available voice channel: "
-                        f"<#{suggested_vc.random_empty}>.\n{HR}"
+                        f"<#{suggested_vc.random_empty}>.\n{HR}",
                     )
         if dm:
             jump_link = next(iter(self.jump_links.values()))
             parts.append(
                 "You can also [jump to the original game post]"
-                f"({jump_link}) in <#{self.channel_xid}>."
+                f"({jump_link}) in <#{self.channel_xid}>.",
             )
         return parts
 
@@ -355,7 +355,7 @@ class Game(Base):
                     "dm": str(dm),
                     "already_picked": str(suggested_vc.already_picked if suggested_vc else None),
                     "random_empty": str(suggested_vc.random_empty if suggested_vc else None),
-                }
+                },
             )
 
         effective_service = GameService(int(self.service))

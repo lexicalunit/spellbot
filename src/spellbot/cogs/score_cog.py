@@ -1,15 +1,20 @@
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import discord
 from ddtrace.trace import tracer
 from discord import app_commands
 from discord.ext import commands
 
-from spellbot import SpellBot
 from spellbot.actions import ScoreAction
 from spellbot.metrics import add_span_context
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_guild
+
+if TYPE_CHECKING:
+    from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
 
@@ -24,15 +29,18 @@ class ScoreCog(commands.Cog):
         description="View your or another user's play history on this server.",
     )
     @app_commands.describe(user="Mention another user to see their history instead of your own")
-    @tracer.wrap(name="interaction", resource="score")
+    # @tracer.wrap(name="interaction", resource="score")
+    # There's a bug when combining `@tracer.wrap`, `@app_commands.describe` and discord.User.
+    # See: https://github.com/Rapptz/discord.py/issues/10317.
     async def score(
         self,
         interaction: discord.Interaction,
         user: discord.User | discord.Member | None = None,
     ) -> None:
-        add_span_context(interaction)
-        async with ScoreAction.create(self.bot, interaction) as action:
-            await action.execute(target=user or interaction.user)
+        with tracer.trace("interaction", resource="score"):
+            add_span_context(interaction)
+            async with ScoreAction.create(self.bot, interaction) as action:
+                await action.execute(target=user or interaction.user)
 
     @app_commands.command(
         name="history",

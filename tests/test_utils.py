@@ -170,7 +170,7 @@ class TestUtilsBotCanDeleteMessage:
         message.guild = MagicMock(spec=discord.Guild)
         message.guild.me = MagicMock()
         message.guild.me.guild_permissions = discord.Permissions(
-            discord.Permissions.manage_messages.flag
+            discord.Permissions.manage_messages.flag,
         )
         assert bot_can_delete_message(message)
 
@@ -190,7 +190,7 @@ class TestUtilsBotCanDeleteMessage:
         message.guild = MagicMock(spec=discord.Guild)
         message.guild.me = MagicMock()
         message.guild.me.guild_permissions = discord.Permissions(
-            discord.Permissions.read_messages.flag
+            discord.Permissions.read_messages.flag,
         )
         assert not bot_can_delete_message(message)
 

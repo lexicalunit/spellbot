@@ -25,7 +25,7 @@ def upgrade() -> None:
         SET og_guild_xid = games.guild_xid
         FROM games
         WHERE games.id = plays.game_id
-        """
+        """,
     )
     op.alter_column("plays", "og_guild_xid", nullable=False)
 
@@ -36,7 +36,7 @@ def upgrade() -> None:
         SET og_guild_xid = games.guild_xid
         FROM games
         WHERE games.id = queues.game_id
-        """
+        """,
     )
     op.alter_column("queues", "og_guild_xid", nullable=False)
 

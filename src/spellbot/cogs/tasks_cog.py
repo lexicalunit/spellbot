@@ -1,14 +1,20 @@
+from __future__ import annotations
+
 import asyncio
 import logging
+from typing import TYPE_CHECKING
 
 from ddtrace.trace import tracer
-from discord import Client
 from discord.ext import commands, tasks
 
-from spellbot import SpellBot
 from spellbot.actions import TasksAction
 from spellbot.environment import running_in_pytest
 from spellbot.settings import settings
+
+if TYPE_CHECKING:
+    from discord import Client
+
+    from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
 

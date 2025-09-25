@@ -41,7 +41,10 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["to_channel_xid"], ["channels.xid"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["to_guild_xid"], ["guilds.xid"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint(
-            "from_guild_xid", "from_channel_xid", "to_guild_xid", "to_channel_xid"
+            "from_guild_xid",
+            "from_channel_xid",
+            "to_guild_xid",
+            "to_channel_xid",
         ),
     )
     op.create_index(op.f("ix_posts_game_id"), "posts", ["game_id"], unique=False)

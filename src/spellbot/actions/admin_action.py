@@ -314,7 +314,7 @@ class AdminAction(BaseAction):
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name="Award added!")
         line = award_line(award)
-        description = f"{line}\n\nYou can view all awards with the `/set awards` command."
+        description = f"{line}\n\nYou can view all awards with the `/awards` command."
         embed.description = description
         embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
@@ -324,7 +324,7 @@ class AdminAction(BaseAction):
         embed = Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name="Award deleted!")
-        description = "You can view all awards with the `/set awards` command."
+        description = "You can view all awards with the `/awards` command."
         embed.description = description
         embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
@@ -461,7 +461,8 @@ class AdminAction(BaseAction):
     async def set_voice_category(self, value: str) -> None:
         assert self.interaction.channel_id is not None
         setting = await self.services.channels.set_voice_category(
-            self.interaction.channel_id, value
+            self.interaction.channel_id,
+            value,
         )
         await safe_send_channel(
             self.interaction,
@@ -472,7 +473,8 @@ class AdminAction(BaseAction):
     async def set_delete_expired(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
         setting = await self.services.channels.set_delete_expired(
-            self.interaction.channel_id, value
+            self.interaction.channel_id,
+            value,
         )
         await safe_send_channel(
             self.interaction,
@@ -499,7 +501,10 @@ class AdminAction(BaseAction):
         )
 
     async def move_user(
-        self, guild_xid: int, from_user_xid: int, to_user_xid: int
+        self,
+        guild_xid: int,
+        from_user_xid: int,
+        to_user_xid: int,
     ) -> None:  # pragma: no cover
         if error := await self.services.users.move_user(guild_xid, from_user_xid, to_user_xid):
             await safe_send_channel(self.interaction, f"Error: {error}", ephemeral=True)
