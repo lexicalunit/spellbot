@@ -314,7 +314,7 @@ class AdminAction(BaseAction):
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name="Award added!")
         line = award_line(award)
-        description = f"{line}\n\nYou can view all awards with the `/set awards` command."
+        description = f"{line}\n\nYou can view all awards with the `/awards` command."
         embed.description = description
         embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
@@ -324,7 +324,7 @@ class AdminAction(BaseAction):
         embed = Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name="Award deleted!")
-        description = "You can view all awards with the `/set awards` command."
+        description = "You can view all awards with the `/awards` command."
         embed.description = description
         embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)

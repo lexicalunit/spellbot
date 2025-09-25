@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import logging
 from inspect import cleandoc
+from typing import TYPE_CHECKING
 
 from ddtrace.trace import tracer
 from discord.ext import commands
 
-from spellbot import SpellBot
 from spellbot.actions.base_action import handle_exception
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_context
@@ -12,6 +14,9 @@ from spellbot.operations import is_bad_user, safe_send_user
 from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, load_extensions
+
+if TYPE_CHECKING:
+    from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
 

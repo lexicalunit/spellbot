@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import logging
 from importlib import import_module
 from inspect import isclass
 from pathlib import Path
 from pkgutil import iter_modules
+from typing import TYPE_CHECKING
 
 from discord.ext import commands
-from discord.ext.commands import AutoShardedBot
 
 from .about_cog import AboutCog
 from .admin_cog import AdminCog
@@ -18,6 +20,9 @@ from .score_cog import ScoreCog
 from .tasks_cog import TasksCog
 from .verify_cog import VerifyCog
 from .watch_cog import WatchCog
+
+if TYPE_CHECKING:
+    from discord.ext.commands import AutoShardedBot
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import discord
 from ddtrace.trace import tracer
@@ -6,13 +9,15 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from spellbot import SpellBot
 from spellbot.actions.lfg_action import LookingForGameAction
 from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_defer_interaction
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_guild
+
+if TYPE_CHECKING:
+    from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
 
