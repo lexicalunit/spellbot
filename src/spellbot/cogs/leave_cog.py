@@ -1,15 +1,20 @@
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import discord
 from ddtrace.trace import tracer
 from discord import app_commands
 from discord.ext import commands
 
-from spellbot import SpellBot
 from spellbot.actions import LeaveAction
 from spellbot.metrics import add_span_context
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_guild
+
+if TYPE_CHECKING:
+    from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
 

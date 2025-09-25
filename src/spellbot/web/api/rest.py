@@ -114,7 +114,7 @@ def game_record_embed(
                 "fields": fields,
                 "color": settings.INFO_EMBED_COLOR,
                 "footer": {"text": f"SpellBot Game ID: #SB{game['id']}"},
-            }
+            },
         ],
     }
 

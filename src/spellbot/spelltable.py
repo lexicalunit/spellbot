@@ -115,7 +115,7 @@ def get_accounts() -> list[tuple[str, str]]:  # pragma: no cover
             settings.SPELLTABLE_USERS.split(","),
             settings.SPELLTABLE_PASSES.split(","),
             strict=True,
-        )
+        ),
     )
 
 

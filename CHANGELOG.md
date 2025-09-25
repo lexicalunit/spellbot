@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed a typo in the output of `/award add` which said that `/set awards` is a command.
+
+### Changed
+
+- Refactored code to workaround a bug with `ddtrace.wrap()` and `discord.Role` arguments.
+- Updated code formatting to use COM812. This might cause issues in the future. Fingers crossed.
+- Updates to SERVICES.md documentation.
+- Updated codebase tests to check for future annotations in cog files.
+
 ## [v17.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v17.0.1) - 2025-09-23
 
 ### Fixed

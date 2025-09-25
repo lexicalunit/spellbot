@@ -664,7 +664,7 @@ class TestCogAdminAwards(InteractionMixin):
         assert self.last_send_message("embed") == {
             "author": {"name": "Award deleted!"},
             "color": self.settings.INFO_EMBED_COLOR,
-            "description": "You can view all awards with the `/set awards` command.",
+            "description": "You can view all awards with the `/awards` command.",
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",
             "flags": 0,
@@ -680,7 +680,7 @@ class TestCogAdminAwards(InteractionMixin):
             "color": self.settings.INFO_EMBED_COLOR,
             "description": (
                 f"• **ID {award.id}** — _every 10 games_ — give `@role` — message\n\n"
-                "You can view all awards with the `/set awards` command."
+                "You can view all awards with the `/awards` command."
             ),
             "thumbnail": {"url": self.settings.ICO_URL},
             "type": "rich",

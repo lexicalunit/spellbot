@@ -160,7 +160,9 @@ class TestOperationsFetchTextChannel:
         assert await safe_fetch_text_channel(client, ANY, channel.id) is None
 
     async def test_uncached_non_text(
-        self, dpy_guild: discord.Guild, monkeypatch: pytest.MonkeyPatch
+        self,
+        dpy_guild: discord.Guild,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         channel = MagicMock(spec=discord.VoiceChannel)
         client = mock_client(channels=[channel], guilds=[dpy_guild])
@@ -193,7 +195,7 @@ class TestOperationsFetchTextChannel:
 @pytest.mark.asyncio
 class TestOperationsGetPartialMessage:
     read_perms = discord.Permissions(
-        discord.Permissions.read_messages.flag | discord.Permissions.read_message_history.flag
+        discord.Permissions.read_messages.flag | discord.Permissions.read_message_history.flag,
     )
 
     @pytest.fixture(autouse=True)

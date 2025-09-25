@@ -27,10 +27,16 @@ def downgrade() -> None:
         sa.Column("guild_xid", sa.BIGINT(), autoincrement=False, nullable=False),
         sa.Column("user_xid", sa.BIGINT(), autoincrement=False, nullable=False),
         sa.ForeignKeyConstraint(
-            ["guild_xid"], ["guilds.xid"], name="configs_guild_xid_fkey", ondelete="CASCADE"
+            ["guild_xid"],
+            ["guilds.xid"],
+            name="configs_guild_xid_fkey",
+            ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
-            ["user_xid"], ["users.xid"], name="configs_user_xid_fkey", ondelete="CASCADE"
+            ["user_xid"],
+            ["users.xid"],
+            name="configs_user_xid_fkey",
+            ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("guild_xid", "user_xid", name="configs_pkey"),
     )

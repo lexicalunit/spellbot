@@ -302,11 +302,7 @@ class LookingForGameAction(BaseAction):
             channel_xid = data["channel_xid"]
             guild_xid = data["guild_xid"]
             if (channel := await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)) and (
-                message := safe_get_partial_message(
-                    channel,
-                    guild_xid,
-                    message_xid,
-                )
+                message := safe_get_partial_message(channel, guild_xid, message_xid)
             ):
                 embed = await self.services.games.to_embed(guild=self.guild)
                 await safe_update_embed(
@@ -410,7 +406,7 @@ class LookingForGameAction(BaseAction):
                     "guild_data__isnull": str(bool(self.guild_data is None)),
                     "already_picked": str(suggested_vc.already_picked if suggested_vc else None),
                     "random_empty": str(suggested_vc.random_empty if suggested_vc else None),
-                }
+                },
             )
 
         return await self.services.games.make_ready(details.link, details.password), suggested_vc
