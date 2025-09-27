@@ -51,11 +51,13 @@ class GameService(Enum):
         "_A Table Stream link will be created when all players have joined._",
         "https://table-stream.com/",
     )
+    CONVOKE = "Convoke", "_Please use Convoke for this game._", "https://www.convoke.games/"
 
 
 GAME_SERVICE_ORDER = [
     GameService.NOT_ANY,
     GameService.SPELLTABLE,
+    GameService.CONVOKE,
     GameService.TABLE_STREAM,
     GameService.COCKATRICE,
     GameService.X_MAGE,
