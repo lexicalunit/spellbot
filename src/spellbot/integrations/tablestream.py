@@ -136,10 +136,6 @@ async def generate_link(game: GameDict) -> tuple[str | None, str | None]:  # pra
         for attempt in range(RETRY_ATTEMPTS):
             try:
                 data = await fetch_table_stream_link(client, ts_args)
-                if not data:
-                    return None, None
-                room = data.get("room", {})
-                return room.get("roomUrl"), room.get("password")
             except Exception as ex:
                 add_span_error(ex)
                 if attempt == RETRY_ATTEMPTS - 1:
@@ -150,5 +146,10 @@ async def generate_link(game: GameDict) -> tuple[str | None, str | None]:  # pra
                     attempt + 1,
                     exc_info=True,
                 )
+
+            if not data:
+                return None, None
+            room = data.get("room", {})
+            return room.get("roomUrl"), room.get("password")
 
     return None, None
