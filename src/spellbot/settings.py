@@ -20,6 +20,8 @@ class Settings:
         "BOT_INVITE_LINK",
         "BOT_TOKEN",
         "CONTENT_ROOT",
+        "CONVOKE_API_KEY",
+        "CONVOKE_ROOT",
         "DATABASE_ECHO",
         "DATABASE_URL",
         "DD_API_KEY",
@@ -57,7 +59,7 @@ class Settings:
         "guild_xid",
     )
 
-    def __init__(self, guild_xid: int | None = None) -> None:
+    def __init__(self, guild_xid: int | None = None) -> None:  # noqa: PLR0915
         self.guild_xid = guild_xid
 
         # content
@@ -113,6 +115,10 @@ class Settings:
         self.TABLESTREAM_ROOT = "https://api.table-stream.com"
         self.TABLESTREAM_CREATE = f"{self.TABLESTREAM_ROOT}/create-room"
         self.TABLESTREAM_AUTH_KEY = getenv("TABLESTREAM_AUTH_KEY")
+
+        # convoke
+        self.CONVOKE_ROOT = "https://api.convoke.games/api"
+        self.CONVOKE_API_KEY = getenv("CONVOKE_API_KEY")
 
         # configuration
         self.BOT_INVITE_LINK = (
