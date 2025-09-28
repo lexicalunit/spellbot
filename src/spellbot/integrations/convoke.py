@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import logging
 import random
-from time import time
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 import httpx
 
 from spellbot import __version__
+from spellbot.enums import GameFormat
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
@@ -61,82 +62,66 @@ NOUNS = [
     "zombie",
 ]
 
-cached_token: str | None = None
-token_expiry: float | None = None
+
+class ConvokeGameTypes(Enum):
+    Commander = "commander", 4
+    Standard = "standard", 2
+    Modern = "modern", 2
+    Other = "other", 4
+
+
+def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:  # pragma: no cover
+    match format:
+        case (
+            GameFormat.COMMANDER
+            | GameFormat.EDH_MAX
+            | GameFormat.EDH_HIGH
+            | GameFormat.EDH_MID
+            | GameFormat.EDH_LOW
+            | GameFormat.EDH_BATTLECRUISER
+            | GameFormat.PLANECHASE
+            | GameFormat.PRE_CONS
+            | GameFormat.CEDH
+            | GameFormat.PAUPER_EDH
+        ):
+            return ConvokeGameTypes.Commander
+        case GameFormat.MODERN:
+            return ConvokeGameTypes.Modern
+        case GameFormat.STANDARD:
+            return ConvokeGameTypes.Standard
+        case _:
+            return ConvokeGameTypes.Other
 
 
 def passphrase() -> str:  # pragma: no cover
     return f"{random.choice(ADJECTIVES)} {random.choice(NOUNS)}"  # noqa: S311
 
 
-async def get_auth_token(  # pragma: no cover
-    client_id: str,
-    client_secret: str,
-    audience: str,
-) -> str | None:
-    global cached_token, token_expiry  # noqa: PLW0603
-
-    if cached_token and token_expiry and time() < token_expiry:
-        return cached_token
-
-    payload = {
-        "grant_type": "client_credentials",
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "audience": audience,
-    }
-    async with httpx.AsyncClient(timeout=TIMEOUT_S) as client:
-        resp = await client.post(f"{settings.CONVOKE_AUTH_URL}/oauth/token", data=payload)
-        resp.raise_for_status()
-        data = resp.json()["access_token"]
-        cached_token = data["access_token"]
-        token_expiry = time.time() + data.get("expires_in", 3600) - 30  # buffer 30s
-        return cached_token
-
-
 async def fetch_convoke_link(  # pragma: no cover
     client: httpx.AsyncClient,
-    name: str,
+    game: GameDict,
     key: str,
-    access_token: str,
 ) -> dict[str, Any]:
+    name = f"SB{game['id']}"
+    sb_game_format = GameFormat(game["format"])
+    format = convoke_game_format(sb_game_format).value
     payload = {
+        "apiKey": settings.CONVOKE_API_KEY,
         "name": name,
         "isPublic": False,
-        "seatLimit": 4,
+        "seatLimit": format[1],
         "password": key,
-        "format": "commander",
+        "format": format[0],
     }
-    headers = {
-        "user-agent": f"spellbot/{__version__}",
-        "Authorization": f"Bearer {access_token}",
-    }
-    endpoint = f"{settings.CONTENT_ROOT}/game/create-game"
+    headers = {"user-agent": f"spellbot/{__version__}"}
+    endpoint = f"{settings.CONVOKE_ROOT}/game/create-game"
     resp = await client.post(endpoint, json=payload, headers=headers)
     resp.raise_for_status()
     return resp.json()
 
 
 async def generate_link(game: GameDict) -> tuple[str | None, str | None]:  # pragma: no cover
-    if (
-        not settings.CONVOKE_CLIENT_ID
-        or not settings.CONVOKE_CLIENT_SECRET
-        or not settings.CONVOKE_AUDIENCE
-    ):
-        return None, None
-
-    client_id = settings.CONVOKE_CLIENT_ID
-    client_secret = settings.CONVOKE_CLIENT_SECRET
-    audience = settings.CONVOKE_AUDIENCE
-
-    try:
-        access_token = await get_auth_token(client_id, client_secret, audience)
-    except Exception as ex:
-        add_span_error(ex)
-        logger.exception("Convoke API failed to get auth token")
-        return None, None
-    if not access_token:
-        logger.error("Convoke API returned no auth token")
+    if not settings.CONVOKE_API_KEY:
         return None, None
 
     key = passphrase()
@@ -144,7 +129,7 @@ async def generate_link(game: GameDict) -> tuple[str | None, str | None]:  # pra
     async with httpx.AsyncClient(timeout=timeout) as client:
         for attempt in range(RETRY_ATTEMPTS):
             try:
-                data = await fetch_convoke_link(client, f"SB{game['id']}", key, access_token)
+                data = await fetch_convoke_link(client, game, key)
             except Exception as ex:
                 add_span_error(ex)
                 if attempt == RETRY_ATTEMPTS - 1:

@@ -20,11 +20,7 @@ class Settings:
         "BOT_INVITE_LINK",
         "BOT_TOKEN",
         "CONTENT_ROOT",
-        "CONVOKE_AUDIENCE",
-        "CONVOKE_AUTH_URL",
-        "CONVOKE_CLIENT_ID",
-        "CONVOKE_CLIENT_SECRET",
-        "CONVOKE_REDIRECT_URL",
+        "CONVOKE_API_KEY",
         "CONVOKE_ROOT",
         "DATABASE_ECHO",
         "DATABASE_URL",
@@ -122,17 +118,7 @@ class Settings:
 
         # convoke
         self.CONVOKE_ROOT = "https://api.convoke.games/api"
-        self.CONVOKE_CLIENT_ID = getenv("CONVOKE_CLIENT_ID")
-        self.CONVOKE_CLIENT_SECRET = getenv("CONVOKE_CLIENT_SECRET")
-        self.CONVOKE_AUDIENCE = getenv("CONVOKE_AUDIENCE")
-        self.CONVOKE_AUTH_URL = getenv(
-            "CONVOKE_AUTH_URL",
-            "https://dev-jakxx7fgme8hnfkn.ca.auth0.com",
-        )
-        self.CONVOKE_REDIRECT_URL = getenv(
-            "CONVOKE_REDIRECT_URL",
-            "https://www.convoke.games/auth/callback",
-        )
+        self.CONVOKE_API_KEY = getenv("CONVOKE_API_KEY")
 
         # configuration
         self.BOT_INVITE_LINK = (
