@@ -368,6 +368,7 @@ dependencies = [
     { name = "protobuf" },
     { name = "wrapt" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/af/6b/15a712ea4aa390f50790af439edb9c08a21f126fea02fe500f9c223362fe/ddtrace-3.15.0.tar.gz", hash = "sha256:6f9df8cd22180c8521ab226f0b5ffc3ef2579484aa0daef879d4af3f3109d7a0", size = 7334604, upload-time = "2025-09-26T20:44:28.43Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5b/78/7dcf9c52c66f6eaec3ce9341da74d45f7fa9358be61974375057f899048a/ddtrace-3.15.0-cp313-cp313-macosx_12_0_arm64.whl", hash = "sha256:53ad8354dff89196a59effdb50437c6a67ad51e953ac786d7d9185181076a2dc", size = 6311237, upload-time = "2025-09-26T20:42:54.123Z" },
     { url = "https://files.pythonhosted.org/packages/af/8e/ce612803daace00d20c75465a028e5a91076cf796a71c44b0cd6d08799e3/ddtrace-3.15.0-cp313-cp313-macosx_12_0_x86_64.whl", hash = "sha256:5a0c44bf5c3e4b6abb7145ecd69883b10744859483ea9fb7c69f821f1c35a1cb", size = 6658051, upload-time = "2025-09-26T20:42:57.315Z" },
@@ -705,7 +706,7 @@ wheels = [
 
 [[package]]
 name = "ipython"
-version = "9.5.0"
+version = "9.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -719,9 +720,9 @@ dependencies = [
     { name = "stack-data" },
     { name = "traitlets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6e/71/a86262bf5a68bf211bcc71fe302af7e05f18a2852fdc610a854d20d085e6/ipython-9.5.0.tar.gz", hash = "sha256:129c44b941fe6d9b82d36fc7a7c18127ddb1d6f02f78f867f402e2e3adde3113", size = 4389137, upload-time = "2025-08-29T12:15:21.519Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2a/34/29b18c62e39ee2f7a6a3bba7efd952729d8aadd45ca17efc34453b717665/ipython-9.6.0.tar.gz", hash = "sha256:5603d6d5d356378be5043e69441a072b50a5b33b4503428c77b04cb8ce7bc731", size = 4396932, upload-time = "2025-09-29T10:55:53.948Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/08/2a/5628a99d04acb2d2f2e749cdf4ea571d2575e898df0528a090948018b726/ipython-9.5.0-py3-none-any.whl", hash = "sha256:88369ffa1d5817d609120daa523a6da06d02518e582347c29f8451732a9c5e72", size = 612426, upload-time = "2025-08-29T12:15:18.866Z" },
+    { url = "https://files.pythonhosted.org/packages/48/c5/d5e07995077e48220269c28a221e168c91123ad5ceee44d548f54a057fc0/ipython-9.6.0-py3-none-any.whl", hash = "sha256:5f77efafc886d2f023442479b8149e7d86547ad0a979e9da9f045d252f648196", size = 616170, upload-time = "2025-09-29T10:55:47.676Z" },
 ]
 
 [[package]]
