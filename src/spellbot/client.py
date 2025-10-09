@@ -13,7 +13,7 @@ from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, 
 
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
-from .integrations import convoke, spelltable, tablestream
+from .integrations import spelltable, tablestream
 from .metrics import setup_ignored_errors, setup_metrics
 from .models import GameLinkDetails
 from .operations import safe_delete_message
@@ -94,9 +94,10 @@ class SpellBot(AutoShardedBot):
             case GameService.SPELLTABLE.value:
                 link = await spelltable.generate_link(game)
                 return GameLinkDetails(link)
-            case GameService.CONVOKE.value:
-                details = await convoke.generate_link(game)
-                return GameLinkDetails(*details)
+            # To be released soon!
+            # case GameService.CONVOKE.value:
+            #     details = await convoke.generate_link(game)
+            #     return GameLinkDetails(*details)
             case GameService.TABLE_STREAM.value:
                 details = await tablestream.generate_link(game)
                 return GameLinkDetails(*details)
