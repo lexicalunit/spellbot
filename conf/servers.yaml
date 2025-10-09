@@ -2,36 +2,39 @@ servers:
   - name: PlayEDH
     logo: https://user-images.githubusercontent.com/1903876/140843874-78510411-dcc8-4a26-a59a-0d6856698dcc.png
     url: https://www.playedh.com/
-  - name: cEDH
-    logo: https://github.com/lexicalunit/spellbot/assets/1903876/32c324a3-b060-4bd2-8d8a-a72799acc0ff
-    url: https://discord.com/invite/cedh
   - name: Tolarian Community College
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/92aa9c59-9f30-4f4e-83ab-fc86e72e8f40
     url: https://www.patreon.com/tolariancommunitycollege
     small: true
+  - name: cEDH
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/32c324a3-b060-4bd2-8d8a-a72799acc0ff
+    url: https://discord.com/invite/cedh
+  - name: CriticalEDH
+    logo: https://github.com/user-attachments/assets/694a9a9b-6ac8-4f3d-97dd-ca1bf5b94ed5
+    url: https://linktr.ee/CriticalEDH
   - name: EDH Fight Club
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/26b824c1-fa82-4b18-a47c-37114a0023b7
-    url: https://disboard.org/server/815001383979450368
+    url: https://discord.com/invite/9Z7x8dh6Tf
   - name: Oath of the Gaywatch
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/a2117868-cd86-44a9-8e92-91e5b2d639c2
     url: https://disboard.org/server/757455940009328670
     small: true
-  - name: Top Tier Bangers
-    logo: https://github.com/user-attachments/assets/86bb3488-fa03-4fb6-80c7-3ef929fb8076
-    url: https://discord.gg/CfCb9fmgCD
-  - name: EDH Tambayan
-    logo: https://user-images.githubusercontent.com/1903876/161825614-64e432d4-85e8-481e-8f41-f66ab8c940cc.png
-    url: https://www.facebook.com/EDHTambayan/
-  - name: Play to Win
-    logo: https://github.com/lexicalunit/spellbot/assets/1903876/e04abae7-394e-4f89-94e9-edbdbfd411fb
-    url: https://www.playtowinmtg.com/
-  - name: Playing with Power
-    logo: https://github.com/lexicalunit/spellbot/assets/1903876/60a984e4-8fa1-4d8f-bf0d-2e391776b56d
-    url: https://www.patreon.com/PlayingWithPowerMTG
   - name: Comunidad Española de cEDH
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/823a2ed7-c59a-47da-886c-5f468a3b3032
     url: https://linktr.ee/cedhspain
     small: true
+  - name: Top Tier Bangers
+    logo: https://github.com/user-attachments/assets/86bb3488-fa03-4fb6-80c7-3ef929fb8076
+    url: https://discord.gg/CfCb9fmgCD
+  - name: Play to Win
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/e04abae7-394e-4f89-94e9-edbdbfd411fb
+    url: https://www.playtowinmtg.com/
+  - name: EDH Tambayan
+    logo: https://user-images.githubusercontent.com/1903876/161825614-64e432d4-85e8-481e-8f41-f66ab8c940cc.png
+    url: https://www.facebook.com/EDHTambayan/
+  - name: Playing with Power
+    logo: https://github.com/lexicalunit/spellbot/assets/1903876/60a984e4-8fa1-4d8f-bf0d-2e391776b56d
+    url: https://www.patreon.com/PlayingWithPowerMTG
   - name: The Commander Staple
     logo: https://github.com/user-attachments/assets/6f4cf0de-ed31-4d19-b2c2-78fb9b544992
     url: https://discord.gg/commander
@@ -39,10 +42,10 @@ servers:
   - name: Command the Cause
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/47d68a5b-fe08-497c-a76b-c8dde5f56af3
     url: https://discord.gg/ZmPsjrxe4h
-  - name: ka0s Tournaments
-    light_logo: https://github.com/lexicalunit/spellbot/assets/1903876/2f989560-b4c2-42e7-9708-0718913aecec
-    dark_logo: https://github.com/lexicalunit/spellbot/assets/1903876/104dc2da-4aad-4998-a778-479b54d1c600
-    url: https://www.ka0stournaments.com/
+  # - name: ka0s Tournaments
+  #   light_logo: https://github.com/lexicalunit/spellbot/assets/1903876/2f989560-b4c2-42e7-9708-0718913aecec
+  #   dark_logo: https://github.com/lexicalunit/spellbot/assets/1903876/104dc2da-4aad-4998-a778-479b54d1c600
+  #   url: https://www.ka0stournaments.com/
   - name: Turbo Commander
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/d7d6c867-c857-4760-8552-8b8e7b4a1bad
     url: https://twitter.com/TurboDCommander
@@ -51,7 +54,7 @@ servers:
     url: https://www.cedh.uk/
   - name: MTG@Home
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/322d1bdf-6b32-45f5-93b2-8d4963075772
-    url: https://disboard.org/server/689674672240984067
+    url: https://discord.com/invite/mtg-home-689674672240984067
   # - name: Combat Step
   #   logo: https://github.com/lexicalunit/spellbot/assets/1903876/cc420426-7d3c-4829-b963-a63c7d36a253
   #   url: https://discord.gg/Jkn5FpTASv

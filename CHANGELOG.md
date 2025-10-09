@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated dependencies.
+- Updated server list.
+
 ### Added
 
-- Support convoke.games!
+- Support for convoke.games (to be released soon).
 
 ## [v17.0.2](https://github.com/lexicalunit/spellbot/releases/tag/v17.0.2) - 2025-09-24
 
