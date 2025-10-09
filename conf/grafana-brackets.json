@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 0,
+  "id": 13,
   "links": [],
   "panels": [
     {
@@ -74,7 +74,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -155,7 +155,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -236,7 +236,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -317,7 +317,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -398,7 +398,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -480,7 +480,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -641,7 +641,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -824,7 +824,7 @@
   ],
   "preload": false,
   "refresh": "",
-  "schemaVersion": 41,
+  "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": []

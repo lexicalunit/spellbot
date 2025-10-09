@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 0,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -48,7 +48,7 @@
         "content": "† Data applies to selected server.<br />\n‡ Data applies across all servers.",
         "mode": "html"
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "title": "",
       "transparent": true,
       "type": "text"
@@ -100,7 +100,7 @@
         "textMode": "value",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -186,7 +186,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -272,7 +272,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -394,7 +394,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -500,7 +500,7 @@
         "textMode": "value",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -586,7 +586,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -672,7 +672,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -756,7 +756,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -860,7 +860,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -964,7 +964,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -1111,7 +1111,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -1258,7 +1258,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -1365,7 +1365,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -1553,7 +1553,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -1718,7 +1718,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.2.0-17245430286.patch2",
+      "pluginVersion": "12.3.0-18186912471.patch2",
       "targets": [
         {
           "datasource": {
@@ -1837,7 +1837,7 @@
   ],
   "preload": false,
   "refresh": "",
-  "schemaVersion": 41,
+  "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": [
