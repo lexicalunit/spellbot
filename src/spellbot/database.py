@@ -20,7 +20,8 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
 logger = logging.getLogger(__name__)
-context_vars: dict[ContextLocal, ContextVar] = {}  # type: ignore[reportMissingTypeArgument]
+
+context_vars: dict[ContextLocal[Any], ContextVar[Any]] = {}
 
 
 class ContextLocal[ProxiedObject]:
@@ -45,7 +46,9 @@ class ContextLocal[ProxiedObject]:
         raise NotImplementedError
 
 
-class TypedProxy[ProxiedObject](CallableObjectProxy):
+class TypedProxy[ProxiedObject](CallableObjectProxy):  # type: ignore
+    __wrapped__: ProxiedObject | None
+
     def __init__(self) -> None:
         super().__init__(None)
 
@@ -63,11 +66,11 @@ class TypedProxy[ProxiedObject](CallableObjectProxy):
         raise NotImplementedError
 
 
-engine = TypedProxy.of_type(Engine)
-connection = TypedProxy.of_type(Connection)
-transaction = TypedProxy.of_type(Transaction)
-db_session_maker = TypedProxy.of_type(sessionmaker)
-DatabaseSession = ContextLocal.of_type(Session)
+engine = TypedProxy[Engine].of_type(Engine)
+connection = TypedProxy[Connection].of_type(Connection)
+transaction = TypedProxy[Transaction].of_type(Transaction)
+db_session_maker = TypedProxy[sessionmaker].of_type(sessionmaker)
+DatabaseSession = ContextLocal[Session].of_type(Session)
 
 
 @sync_to_async()
@@ -150,12 +153,14 @@ async def db_session_manager() -> AsyncGenerator[None, None]:
 
 @sync_to_async()
 def rollback_transaction() -> None:
-    if transaction.is_active:
-        transaction.rollback()
-    if not connection.closed:  # pragma: no cover
-        connection.close()
-    print(engine.pool.status())  # noqa: T201
-    engine.dispose()
+    if transaction.__wrapped__ and transaction.__wrapped__.is_active:
+        transaction.__wrapped__.rollback()
+    if connection.__wrapped__ and not connection.__wrapped__.closed:  # pragma: no cover
+        connection.__wrapped__.close()
+    status = engine.__wrapped__.pool.status() if engine.__wrapped__ else None
+    print(f"pool status: {status}")  # noqa: T201
+    if engine.__wrapped__:
+        engine.__wrapped__.dispose()
 
 
 def delete_test_database(worker_id: str) -> None:
