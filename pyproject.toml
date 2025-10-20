@@ -232,7 +232,8 @@ safe_licenses = [
 ]
 # Psycopg uses LGPLv3, which is ok to link against, but otherwise not compatible with permissive
 # with the license of this project. We can explicitly ignore it here since we're only linking.
-unsafe_packages = ["psycopg-binary", "psycopg"]
+# As for wrapt, the license is BSD 2-Clause, but it's not detected correctly.
+unsafe_packages = ["psycopg-binary", "psycopg", "wrapt"]
 
 [tool.pytest.ini_options]
 addopts = """
