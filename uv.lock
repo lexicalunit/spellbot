@@ -1735,7 +1735,7 @@ requires-dist = [
     { name = "tenacity", specifier = ">=9.0.0" },
     { name = "toml", specifier = ">=0.10.2" },
     { name = "uvloop", specifier = ">=0.19" },
-    { name = "wrapt", specifier = ">=1.16.0" },
+    { name = "wrapt", specifier = ">=2.0.0" },
 ]
 
 [package.metadata.requires-dev]
