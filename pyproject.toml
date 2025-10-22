@@ -42,7 +42,7 @@ dependencies = [
   "tenacity>=9.0.0",
   "toml>=0.10.2",
   "uvloop>=0.19",
-  "wrapt>=1.16.0",
+  "wrapt>=2.0.0",
 ]
 description = "The Discord bot for SpellTable"
 keywords = ["discord", "magic", "bot", "mtg", "SpellTable"]
