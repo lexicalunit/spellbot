@@ -105,7 +105,6 @@ exclude = [
   "conf",
   "docs",
   "infrastructure",
-  "scripts",
   "terraform.tfvars",
 ]
 
