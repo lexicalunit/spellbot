@@ -46,7 +46,7 @@ class ContextLocal[ProxiedObject]:
         raise NotImplementedError
 
 
-class TypedProxy[ProxiedObject](CallableObjectProxy):  # type: ignore
+class TypedProxy[ProxiedObject](CallableObjectProxy):
     __wrapped__: ProxiedObject | None
 
     def __init__(self) -> None:
