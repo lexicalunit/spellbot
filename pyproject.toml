@@ -19,7 +19,7 @@ dependencies = [
   "certifi>=2024.2.2",
   "click>=8.1.7",
   "datadog>=0.49.1",
-  "ddtrace>=2.8.0",
+  "ddtrace>=3.16.2",
   "discord-py>=2.3.2",
   "dunamai>=1.19.2",
   "greenlet>=3.2.2",
@@ -42,7 +42,7 @@ dependencies = [
   "tenacity>=9.0.0",
   "toml>=0.10.2",
   "uvloop>=0.19",
-  "wrapt>=2.0.0",
+  "wrapt>=1,<2",
 ]
 description = "The Discord bot for SpellTable"
 keywords = ["discord", "magic", "bot", "mtg", "SpellTable"]
@@ -231,8 +231,7 @@ safe_licenses = [
 ]
 # Psycopg uses LGPLv3, which is ok to link against, but otherwise not compatible with permissive
 # with the license of this project. We can explicitly ignore it here since we're only linking.
-# As for wrapt, the license is BSD 2-Clause, but it's not detected correctly.
-unsafe_packages = ["psycopg-binary", "psycopg", "wrapt"]
+unsafe_packages = ["psycopg-binary", "psycopg"]
 
 [tool.pytest.ini_options]
 addopts = """
