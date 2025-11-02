@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Support for connecting your Patreon account to SpellBot.
+
 ## [v17.0.3](https://github.com/lexicalunit/spellbot/releases/tag/v17.0.3) - 2025-10-09
 
 ### Changed

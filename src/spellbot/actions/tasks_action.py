@@ -198,3 +198,7 @@ class TasksAction:
                     embed=None,
                     view=None,
                 )
+
+    async def patreon_sync(self) -> None:
+        logger.info("starting task patreon_sync")
+        self.bot.supporters = await self.services.patreon.supporters()

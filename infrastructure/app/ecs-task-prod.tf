@@ -111,6 +111,14 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         {
           name  = "API_BASE_URL"
           value = "https://${local.prod_domain_name}"
+        },
+        {
+          name  = "OWNER_XID"
+          value = "82174992933986304"
+        },
+        {
+          name  = "PATREON_CAMPAIGN"
+          value = "5809116"
         }
       ]
 
@@ -158,6 +166,10 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         {
           name      = "DATABASE_URL"
           valueFrom = "${data.aws_secretsmanager_secret.prod_db_password.arn}:DB_URL::"
+        },
+        {
+          name      = "PATREON_TOKEN"
+          valueFrom = "${data.aws_secretsmanager_secret.prod_patreon_token.arn}:PATREON_TOKEN::"
         }
       ]
       logConfiguration = {

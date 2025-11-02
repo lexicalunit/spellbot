@@ -153,6 +153,7 @@ class TestCogOwner(ContextMixin):
                     shards:   None
                     guilds:   0
                     users:    0
+                    patrons:  set()
                     ```
                 """,
             ),
