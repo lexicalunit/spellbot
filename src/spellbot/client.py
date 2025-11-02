@@ -52,6 +52,7 @@ class SpellBot(AutoShardedBot):
         self.mock_games = mock_games
         self.create_connection = create_connection
         self.guild_locks = TTLCache[int, asyncio.Lock](maxsize=100, ttl=3600)  # 1 hr
+        self.supporters: set[int] = set()
 
     async def on_ready(self) -> None:  # pragma: no cover
         logger.info("client ready")

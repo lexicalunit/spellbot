@@ -58,6 +58,7 @@ class TasksCog(commands.Cog):  # pragma: no cover
         if not running_in_pytest():
             self.cleanup_old_voice_channels.start()
             self.expire_inactive_games.start()
+            self.patreon_sync.start()
 
     @tasks.loop(minutes=settings.VOICE_CLEANUP_LOOP_M)
     async def cleanup_old_voice_channels(self) -> None:
@@ -83,6 +84,19 @@ class TasksCog(commands.Cog):  # pragma: no cover
 
     @expire_inactive_games.before_loop
     async def before_expire_inactive_games(self) -> None:
+        await wait_until_ready(self.bot)
+
+    @tasks.loop(minutes=settings.PATREON_SYNC_LOOP_M)
+    async def patreon_sync(self) -> None:
+        try:
+            with tracer.trace(name="command", resource="patreon_sync"):
+                async with TasksAction.create(self.bot) as action:
+                    await action.patreon_sync()
+        except BaseException:  # Catch EVERYTHING so tasks don't die
+            logger.exception("error: exception in task cog")
+
+    @patreon_sync.before_loop
+    async def before_patreon_sync(self) -> None:
         await wait_until_ready(self.bot)
 
 

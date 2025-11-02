@@ -37,6 +37,10 @@ class Settings:
         "LOCALE",
         "MAX_PENDING_GAMES",
         "MOD_PREFIX",
+        "OWNER_XID",
+        "PATREON_CAMPAIGN",
+        "PATREON_SYNC_LOOP_M",
+        "PATREON_TOKEN",
         "PENDING_EMBED_COLOR",
         "PORT",
         "REDIS_URL",
@@ -74,6 +78,7 @@ class Settings:
         self.HOST = getenv("HOST") or "localhost"
         self.DEBUG_GUILD = getenv("DEBUG_GUILD")
         self.API_BASE_URL = getenv("API_BASE_URL", "https://bot.spellbot.io")
+        self.OWNER_XID = getenv("OWNER_XID")
 
         # datadog
         self.DD_API_KEY = getenv("DD_API_KEY")
@@ -144,6 +149,11 @@ class Settings:
         self.VOICE_CLEANUP_BATCH = 30  # batch size
         self.EXPIRE_GAMES_LOOP_M = 10  # 10 minutes
         self.EXPIRE_TIME_M = 45  # 45 minutes
+
+        # patreon integration
+        self.PATREON_TOKEN = getenv("PATREON_TOKEN")
+        self.PATREON_CAMPAIGN = getenv("PATREON_CAMPAIGN")
+        self.PATREON_SYNC_LOOP_M = 60  # 60 minutes
 
     def workaround_over_eager_caching(self, url: str) -> str:
         return f"{url}?{datetime.now(tz=UTC).date().strftime('%Y-%m-%d')}"

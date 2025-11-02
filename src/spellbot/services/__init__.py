@@ -5,6 +5,7 @@ from .awards import AwardsService, NewAward
 from .channels import ChannelsService
 from .games import GamesService
 from .guilds import GuildsService
+from .patreon import PatreonService
 from .plays import PlaysService
 from .users import UsersService
 from .verifies import VerifiesService
@@ -13,15 +14,16 @@ from .watches import WatchesService
 
 class ServicesRegistry:
     def __init__(self) -> None:
+        self.apps = AppsService()
         self.awards = AwardsService()
         self.channels = ChannelsService()
         self.games = GamesService()
         self.guilds = GuildsService()
+        self.patreon = PatreonService()
         self.plays = PlaysService()
         self.users = UsersService()
         self.verifies = VerifiesService()
         self.watches = WatchesService()
-        self.apps = AppsService()
 
 
 __all__ = [
@@ -31,6 +33,7 @@ __all__ = [
     "GamesService",
     "GuildsService",
     "NewAward",
+    "PatreonService",
     "PlaysService",
     "ServicesRegistry",
     "UsersService",

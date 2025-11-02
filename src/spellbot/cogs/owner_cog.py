@@ -138,6 +138,7 @@ class OwnerCog(commands.Cog):
                     shards:   {self.bot.shard_count}
                     guilds:   {len(self.bot.guilds)}
                     users:    {len(self.bot.users)}
+                    patrons:  {self.bot.supporters}
                     ```
                 """,
             ),
