@@ -406,6 +406,7 @@ dependencies = [
     { name = "protobuf" },
     { name = "wrapt" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/12/1b/b674f014dfec800f7b543551dd5805527acf0d25d485bccf47035ecd2859/ddtrace-3.18.0.tar.gz", hash = "sha256:9b5c19d491c0a368d2fbeaa82abafcc1707bef406cd531480dc61fb05b8278d0", size = 7560014, upload-time = "2025-11-05T20:12:17.66Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/92/ef/75b7ba054a63db4c2114ab37063af98096815f674f97e06fa327c1574714/ddtrace-3.18.0-cp313-cp313-macosx_12_0_arm64.whl", hash = "sha256:77c43c6fd0e6d1352f6695ac3aa5a1879ab1a4f14a5fce0e26678e2218a55d61", size = 6318299, upload-time = "2025-11-05T20:10:03.207Z" },
     { url = "https://files.pythonhosted.org/packages/33/72/0f96d6fa7ba58ebe8efad4d63bd351bd91268cf1e5b66f2597a03deda819/ddtrace-3.18.0-cp313-cp313-macosx_12_0_x86_64.whl", hash = "sha256:69a7959b4d16398cda5b65a993de548183385441b4c9aae0af9f85380dec48af", size = 6679743, upload-time = "2025-11-05T20:10:06.126Z" },
@@ -1629,7 +1630,7 @@ wheels = [
 
 [[package]]
 name = "spellbot"
-version = "17.0.3"
+version = "17.0.4"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
