@@ -387,8 +387,20 @@ class Game(Base):
 
     @property
     def embed_players(self) -> str:
-        player_parts: list[tuple[int, str]] = [(player.xid, player.name) for player in self.players]
-        player_strs: list[str] = [f"• <@{parts[0]}> ({parts[1]})" for parts in sorted(player_parts)]
+        def emoji(xid: int) -> str:
+            return "<:spellbot:1436766162372264006> "
+
+        player_parts: list[tuple[int, str, str]] = [
+            (
+                player.xid,
+                player.name,
+                emoji(player.xid),
+            )
+            for player in self.players
+        ]
+        player_strs: list[str] = [
+            f"• {parts[2]}<@{parts[0]}> ({parts[1]})" for parts in sorted(player_parts)
+        ]
         return "\n".join(player_strs)
 
     @property
