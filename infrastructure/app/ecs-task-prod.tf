@@ -153,11 +153,11 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         },
         {
           name      = "SPELLTABLE_CLIENT_ID"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_CLIENT_ID::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SPELLTABLE_CLIENT_ID::"
         },
         {
           name      = "SPELLTABLE_API_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:SPELLTABLE_API_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SPELLTABLE_API_KEY::"
         },
         {
           name      = "CONVOKE_API_KEY"
@@ -169,7 +169,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         },
         {
           name      = "PATREON_TOKEN"
-          valueFrom = "${data.aws_secretsmanager_secret.prod_patreon_token.arn}:PATREON_TOKEN::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:PATREON_TOKEN::"
         }
       ]
       logConfiguration = {
