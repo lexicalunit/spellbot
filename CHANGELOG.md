@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Revert GunicornUVLoopWebWorker, go back to GunicornWebWorker for now.
+
 ## [v17.0.5](https://github.com/lexicalunit/spellbot/releases/tag/v17.0.5) - 2025-11-07
 
 ### Changed
