@@ -1,6 +1,6 @@
 # Contributing
 
-This bot is a Python based Discord bot built on top of the [`discord.py`](https://github.com/Rapptz/discord.py) library.
+This bot is a Python based [Discord bot][discord-dev] built on top of the [`discord.py`](https://github.com/Rapptz/discord.py) library.
 
 It uses [`uv`](usage) to manage dependencies. To install development dependencies use: `uv sync`. This will allow you to run [PyTest](https://docs.pytest.org/en/latest/) and the included scripts.
 
@@ -139,3 +139,4 @@ grep "^version" < pyproject.toml | cut -d= -f2 | sed 's/"//g;s/ //g;s/^/v/;'
 After publishing you can view the package at its [pypi.org project page](https://pypi.org/project/spellbot/) to see that everything looks good.
 
 [ruff]: https://docs.astral.sh/ruff/
+[discord-dev]: https://discord.com/developers/applications
