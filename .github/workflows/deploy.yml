@@ -78,6 +78,7 @@ jobs:
           TAGS="$BASE_TAG"
 
           if [[ "${{ inputs.environment }}" == "stage" ]]; then
+            TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:stage"
             if [[ "${{ github.event_name }}" == "pull_request" ]]; then
               TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:pr-${{ github.event.number }}"
             fi
