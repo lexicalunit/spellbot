@@ -96,13 +96,11 @@ IMAGES_TO_DELETE=$(echo "$IMAGES" | jq -r --arg cutoff "$CUTOFF_TIMESTAMP" '
     select(
         (.imageTags | any(. == "prod" or . == "stage" or . == "latest")) | not
     ) |
-    select(
-        (.imagePushedAt | fromdateiso8601) < ($cutoff | tonumber)
-    ) |
+    select(.imagePushedAt < ($cutoff | tonumber)) |
     {
         digest: .imageDigest,
         tags: (.imageTags | join(", ")),
-        pushedAt: (.imagePushedAt | todate)
+        pushedAt: .imagePushedAt
     }
 ')
 
@@ -151,4 +149,3 @@ log "  Deleted: $DELETED_COUNT image(s)"
 if [[ $FAILED_COUNT -gt 0 ]]; then
     warn "  Failed: $FAILED_COUNT image(s)"
 fi
-
