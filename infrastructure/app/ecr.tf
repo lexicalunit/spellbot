@@ -16,20 +16,45 @@ resource "aws_ecr_lifecycle_policy" "spellbot" {
     rules = [
       {
         rulePriority = 1
-        description  = "Keep last 20 tagged images (git SHAs)"
+        description  = "Always retain prod images"
+        selection = {
+          tagStatus      = "tagged"
+          tagPatternList = ["prod"]
+          countType      = "imageCountMoreThan"
+          countNumber    = 9999
+        }
+        action = {
+          type = "retain"
+        }
+      },
+      {
+        rulePriority = 2
+        description  = "Always retain stage images"
+        selection = {
+          tagStatus      = "tagged"
+          tagPatternList = ["stage"]
+          countType      = "imageCountMoreThan"
+          countNumber    = 9999
+        }
+        action = {
+          type = "retain"
+        }
+      },
+      {
+        rulePriority = 3
+        description  = "Keep last 50 tagged images (git SHAs)"
         selection = {
           tagStatus      = "tagged"
           countType      = "imageCountMoreThan"
-          countNumber    = 20
+          countNumber    = 50
           tagPatternList = ["*"]
-
         }
         action = {
           type = "expire"
         }
       },
       {
-        rulePriority = 2
+        rulePriority = 4
         description  = "Delete untagged images older than 1 day"
         selection = {
           tagStatus   = "untagged"
