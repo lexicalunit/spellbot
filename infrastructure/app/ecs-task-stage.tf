@@ -160,7 +160,7 @@ resource "aws_ecs_task_definition" "spellbot_stage" {
         },
         {
           name      = "CONVOKE_API_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:CONVOKE_API_KEY::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:CONVOKE_API_KEY::"
         },
         {
           name      = "DATABASE_URL"
@@ -168,7 +168,7 @@ resource "aws_ecs_task_definition" "spellbot_stage" {
         },
         {
           name      = "PATREON_TOKEN"
-          valueFrom = "${data.aws_secretsmanager_secret.stage_patreon_token.arn}:PATREON_TOKEN::"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:PATREON_TOKEN::"
         }
       ]
       logConfiguration = {
