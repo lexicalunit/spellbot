@@ -233,6 +233,52 @@ class TestCogLookingForGame(InteractionMixin):
         await self.run(cog.lfg)
         assert DatabaseSession.query(Game).count() == 1
 
+    async def test_rematch(
+        self,
+        cog: LookingForGameCog,
+        user: User,
+        channel: Channel,
+    ) -> None:
+        friend = self.factories.user.create()
+        game = self.factories.game.create(
+            guild=self.guild,
+            channel=channel,
+            seats=2,
+            format=GameFormat.MODERN.value,
+            service=GameService.GIRUDO.value,
+            status=GameStatus.STARTED.value,
+            started_at=datetime.now(tz=UTC),
+        )
+        message = MagicMock(spec=discord.Message)
+        message.id = 123
+        self.factories.post.create(
+            guild=self.guild,
+            channel=channel,
+            game=game,
+            message_xid=message.id,
+        )
+        self.factories.play.create(user_xid=self.user.xid, game_id=game.id)
+        self.factories.play.create(user_xid=friend.xid, game_id=game.id)
+        players = [mock_discord_object(x) for x in (self.user, friend)]
+
+        with mock_operations(lfg_action, users=players):
+            message = MagicMock(spec=discord.Message)
+            message.id = 456
+            lfg_action.safe_followup_channel.return_value = message
+
+            await self.run(cog.rematch)
+
+            lfg_action.safe_followup_channel.assert_called_once_with(
+                self.interaction,
+                content=None,
+                embed=ANY,
+                view=ANY,
+                allowed_mentions=ANY,
+            )
+
+        DatabaseSession.expire_all()
+        assert DatabaseSession.query(Game).count() == 2
+
 
 @pytest.mark.asyncio
 class TestCogLookingForGameJoinButton(InteractionMixin):

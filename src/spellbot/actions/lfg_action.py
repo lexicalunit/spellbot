@@ -499,10 +499,13 @@ class LookingForGameAction(BaseAction):
         assert self.channel
 
         # build the game post's embed and view:
+        emojis = await self._fetch_emojis()
         embed: discord.Embed = await self.services.games.to_embed(
             guild=self.guild,
             suggested_vc=suggested_vc,
             rematch=rematch,
+            emojis=emojis,
+            supporters=self.bot.supporters,
         )
         content = self.channel_data.get("extra", None)
         game_data = await self.services.games.to_dict()
@@ -555,6 +558,14 @@ class LookingForGameAction(BaseAction):
 
         if not origin:
             await self._reply_found_embed()
+
+    @tracer.wrap()
+    async def _fetch_emojis(self) -> list[discord.Emoji]:
+        try:
+            return await self.bot.fetch_application_emojis()
+        except Exception:
+            logger.exception("warning: could not fetch application emojis")
+        return []
 
     @tracer.wrap()
     async def _reply_found_embed(self) -> None:
