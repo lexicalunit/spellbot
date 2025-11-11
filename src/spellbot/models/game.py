@@ -385,9 +385,22 @@ class Game(Base):
             text = text.replace(f"${{{k}}}", v)
         return text
 
-    @property
-    def embed_players(self) -> str:
+    def embed_players(
+        self,
+        emojis: list[discord.Emoji] | None = None,
+        supporters: set[int] | None = None,
+    ) -> str:
+        emojis = emojis or []
+        supporters = supporters or set()
+
+        supporter_emoji = next((e for e in emojis if e.name == "spellbot"), None)
+        owner_emoji = next((e for e in emojis if e.name == "king"), None)
+
         def emoji(xid: int) -> str:
+            if supporter_emoji and xid in supporters:
+                return f"{supporter_emoji} "
+            if owner_emoji and settings.OWNER_XID and xid == int(settings.OWNER_XID):
+                return f"{owner_emoji} "
             return ""
 
         player_parts: list[tuple[int, str, str]] = [
@@ -438,7 +451,10 @@ class Game(Base):
         dm: bool = False,
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
+        emojis: list[discord.Emoji] | None = None,
+        supporters: set[int] | None = None,
     ) -> discord.Embed:
+        emojis = emojis or []
         title = "**Rematch Game!**" if rematch else self.embed_title
         embed = discord.Embed(title=title)
         embed.set_thumbnail(url=settings.thumb(self.guild_xid))
@@ -460,7 +476,8 @@ class Game(Base):
                 inline=False,
             )
         elif self.players:
-            embed.add_field(name="Players", value=self.embed_players, inline=False)
+            players_value = self.embed_players(emojis, supporters)
+            embed.add_field(name="Players", value=players_value, inline=False)
         embed.add_field(name="Format", value=self.format_name)
         if self.bracket != GameBracket.NONE.value:
             embed.add_field(name="Bracket", value=self.bracket_title)

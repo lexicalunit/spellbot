@@ -492,10 +492,13 @@ class LookingForGameAction(BaseAction):
         assert self.channel
 
         # build the game post's embed and view:
+        emojis = await self.bot.fetch_application_emojis()
         embed: discord.Embed = await self.services.games.to_embed(
             guild=self.guild,
             suggested_vc=suggested_vc,
             rematch=rematch,
+            emojis=emojis,
+            supporters=self.bot.supporters,
         )
         content = self.channel_data.get("extra", None)
         game_data = await self.services.games.to_dict()
