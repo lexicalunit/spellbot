@@ -388,7 +388,7 @@ class Game(Base):
     @property
     def embed_players(self) -> str:
         def emoji(xid: int) -> str:
-            return "<:spellbot:1436766162372264006> "
+            return ""
 
         player_parts: list[tuple[int, str, str]] = [
             (
