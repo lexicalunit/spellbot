@@ -159,9 +159,9 @@ def rollback_transaction() -> None:
         connection.__wrapped__.close()
     status = engine.__wrapped__.pool.status() if engine.__wrapped__ else None
     print(f"pool status: {status}")  # noqa: T201
-    if engine.__wrapped__:
+    if engine.__wrapped__:  # pragma: no cover
         engine.__wrapped__.dispose()
 
 
-def delete_test_database(worker_id: str) -> None:
+def delete_test_database(worker_id: str) -> None:  # pragma: no cover
     reverse_all(f"{settings.DATABASE_URL}-{worker_id}")

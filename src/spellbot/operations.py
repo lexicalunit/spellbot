@@ -734,6 +734,7 @@ class VoiceChannelSuggestion:
         return self.already_picked or self.random_empty
 
 
+@tracer.wrap()
 def safe_suggest_voice_channel(
     *,
     guild: discord.Guild | None,

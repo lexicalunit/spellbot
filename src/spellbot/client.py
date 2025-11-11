@@ -4,6 +4,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import discord
@@ -46,7 +47,7 @@ class SpellBot(AutoShardedBot):
         intents.messages = True
         logger.info("intents.value: %s", intents.value)
         kwargs = {}
-        if settings.BOT_APPLICATION_ID is not None:
+        if settings.BOT_APPLICATION_ID is not None:  # pragma: no cover
             kwargs["application_id"] = int(settings.BOT_APPLICATION_ID)
         super().__init__(command_prefix="!", help_command=None, intents=intents, **kwargs)
         self.mock_games = mock_games
@@ -99,7 +100,7 @@ class SpellBot(AutoShardedBot):
         if self.mock_games:
             return GameLinkDetails(f"http://exmaple.com/game/{uuid4()}")
         service = game.get("service")
-        if span := tracer.current_span():
+        if span := tracer.current_span():  # pragma: no cover
             span.set_tag("link_service", GameService(service).name)
         match service:
             case GameService.SPELLTABLE.value:
@@ -215,5 +216,6 @@ def build_bot(
         mock_games=mock_games,
         create_connection=create_connection,
     )
+    bot.fetch_application_emojis = AsyncMock(return_value=[])
     setup_metrics()
     return bot

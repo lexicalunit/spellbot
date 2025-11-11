@@ -333,6 +333,50 @@ class TestCogLeaveGame(InteractionMixin):
             leave_action.safe_update_embed_origin.assert_not_called()
             leave_action.safe_delete_message.assert_called_once_with(self.interaction.message)
 
+    async def test_leave_button_with_other_players(
+        self,
+        cog: LeaveGameCog,
+        message: discord.Message,
+        game: Game,
+        player: User,
+    ) -> None:
+        p2 = self.factories.user.create()
+        DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
+        DatabaseSession.commit()
+
+        with mock_operations(leave_action):
+            leave_action.safe_original_response.return_value = message
+            view = GameView(self.bot)
+
+            await view.leave.callback(self.interaction)
+
+            leave_action.safe_update_embed_origin.assert_called_once_with(
+                self.interaction,
+                embed=ANY,
+            )
+            safe_update_embed_origin_call = leave_action.safe_update_embed_origin.call_args_list[0]
+            assert safe_update_embed_origin_call.kwargs["embed"].to_dict() == {
+                "color": self.settings.PENDING_EMBED_COLOR,
+                "description": (
+                    "_A SpellTable link will be created when all players have joined._\n"
+                    "\n"
+                    f"{self.guild.motd}\n\n{self.channel.motd}"
+                ),
+                "fields": [
+                    {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
+                    {"inline": True, "name": "Format", "value": "Commander"},
+                    {"inline": True, "name": "Updated at", "value": ANY},
+                    {"inline": False, "name": "Support SpellBot", "value": ANY},
+                ],
+                "footer": {"text": f"SpellBot Game ID: #SB{self.game.id} — Service: SpellTable"},
+                "thumbnail": {"url": self.settings.THUMB_URL},
+                "title": "**Waiting for 3 more players to join...**",
+                "type": "rich",
+                "flags": 0,
+            }
+
+            leave_action.safe_delete_message.assert_not_called()
+
     async def test_leave_button_when_no_game(
         self,
         cog: LeaveGameCog,
