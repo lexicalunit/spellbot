@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Added link to status page from main page and README.md.
+- Special emojis for bot owner and supporters in game embeds.
 
 ## [v17.6.3](https://github.com/lexicalunit/spellbot/releases/tag/v17.6.3) - 2026-01-12
 
