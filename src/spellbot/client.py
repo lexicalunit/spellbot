@@ -4,6 +4,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import discord
@@ -203,5 +204,6 @@ def build_bot(
         mock_games=mock_games,
         create_connection=create_connection,
     )
+    bot.fetch_application_emojis = AsyncMock(return_value=[])
     setup_metrics()
     return bot
