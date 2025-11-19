@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v17.1.1](https://github.com/lexicalunit/spellbot/releases/tag/v17.1.1) - 2025-11-18
+
 ### Fixed
 
 - Fix issue with patreon sync.
