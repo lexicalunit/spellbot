@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+USE_PASSWORD = False  # no password is now supported!
 RETRY_ATTEMPTS = 2
 TIMEOUT_S = 3
 ADJECTIVES = [
@@ -93,14 +94,16 @@ def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:  # pragma: no c
             return ConvokeGameTypes.Other
 
 
-def passphrase() -> str:  # pragma: no cover
-    return f"{random.choice(ADJECTIVES)} {random.choice(NOUNS)}"  # noqa: S311
+def passphrase() -> str | None:  # pragma: no cover
+    if USE_PASSWORD:
+        return f"{random.choice(ADJECTIVES)} {random.choice(NOUNS)}"  # noqa: S311
+    return None
 
 
 async def fetch_convoke_link(  # pragma: no cover
     client: httpx.AsyncClient,
     game: GameDict,
-    key: str,
+    key: str | None,
 ) -> dict[str, Any]:
     name = f"SB{game['id']}"
     sb_game_format = GameFormat(game["format"])
@@ -110,9 +113,10 @@ async def fetch_convoke_link(  # pragma: no cover
         "name": name,
         "isPublic": False,
         "seatLimit": format[1],
-        "password": key,
         "format": format[0],
     }
+    if key:
+        payload["password"] = key
     headers = {"user-agent": f"spellbot/{__version__}"}
     endpoint = f"{settings.CONVOKE_ROOT}/game/create-game"
     resp = await client.post(endpoint, json=payload, headers=headers)
