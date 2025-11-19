@@ -72,6 +72,7 @@ class PatreonService:
         if running_in_pytest():
             return set()
         patreon_campaign_url = get_patreon_campaign_url()
+        response: httpx.Response | None = None
         try:
             headers = {"Authorization": f"Bearer {settings.PATREON_TOKEN}"}
             with httpx.Client(timeout=10.0) as client:
@@ -85,5 +86,8 @@ class PatreonService:
             return get_supporters(data, patrons)
 
         except Exception:
-            logger.exception("patreon sync failed, invalid response: %s", data)
+            logger.exception(
+                "patreon sync failed, unknown error: %s",
+                response.text if response else "no response",
+            )
             return set()
