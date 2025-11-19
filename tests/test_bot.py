@@ -54,13 +54,12 @@ class TestSpellBot(BaseMixin):
                 "tablestream.generate_link",
                 id="tablestream",
             ),
-            # To be released soon!
-            # pytest.param(
-            #     False,
-            #     {"service": GameService.CONVOKE.value},
-            #     "convoke.generate_link",
-            #     id="convoke",
-            # ),
+            pytest.param(
+                False,
+                {"service": GameService.CONVOKE.value},
+                "convoke.generate_link",
+                id="convoke",
+            ),
             pytest.param(
                 False,
                 {"service": GameService.NOT_ANY.value},
