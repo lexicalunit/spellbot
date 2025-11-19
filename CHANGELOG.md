@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Support for no-password lobbies on convoke.
+
 ## [v17.1.2](https://github.com/lexicalunit/spellbot/releases/tag/v17.1.2) - 2025-11-18
 
 ### Fixed
