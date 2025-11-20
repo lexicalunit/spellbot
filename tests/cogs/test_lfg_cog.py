@@ -44,6 +44,7 @@ class TestCogLookingForGame(InteractionMixin):
                 content=None,
                 embed=ANY,
                 view=ANY,
+                allowed_mentions=ANY,
             )
             # check that the view (join/leave buttons) exists for pending games:
             assert isinstance(lfg_action.safe_followup_channel.call_args.kwargs["view"], GameView)
