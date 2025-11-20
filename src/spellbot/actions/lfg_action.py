@@ -463,17 +463,20 @@ class LookingForGameAction(BaseAction):
     ) -> None:
         assert self.guild
         assert self.channel
+        allowed_mentions = discord.AllowedMentions(everyone=True, users=False, roles=True)
         if message := await safe_followup_channel(
             self.interaction,
             content=content,
             embed=embed,
             view=view,
+            allowed_mentions=allowed_mentions,
         ) or (
             message := await safe_channel_reply(
                 self.channel,
                 content=content,
                 embed=embed,
                 view=view,
+                allowed_mentions=allowed_mentions,
             )
         ):
             await self.services.games.add_post(self.guild.id, self.channel.id, message.id)
