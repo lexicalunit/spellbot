@@ -60,7 +60,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
         <td align="center"><a href="https://discord.com/invite/cedh"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/32c324a3-b060-4bd2-8d8a-a72799acc0ff" alt="cEDH" /><br />cEDH</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://linktr.ee/CriticalEDH"><img width="200" height="200" src="https://github.com/user-attachments/assets/694a9a9b-6ac8-4f3d-97dd-ca1bf5b94ed5" alt="CriticalEDH" /><br />CriticalEDH</a></td>
+        <td align="center"><a href="https://linktr.ee/CriticalEDH"><img width="200" height="200" src="https://github.com/user-attachments/assets/2ff3e55e-2efa-4f15-b0f8-402a3ec3ba37" alt="CriticalEDH" /><br />CriticalEDH</a></td>
         <td align="center"><a href="https://discord.com/invite/9Z7x8dh6Tf"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/26b824c1-fa82-4b18-a47c-37114a0023b7" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
         <td align="center"><a href="https://disboard.org/server/757455940009328670"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/a2117868-cd86-44a9-8e92-91e5b2d639c2" alt="Oath of the Gaywatch" /><br />Oath&nbsp;of&nbsp;the&nbsp;Gaywatch</a></td>
     </tr>
