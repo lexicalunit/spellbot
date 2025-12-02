@@ -20,10 +20,10 @@ author: "Amy Troschinetz"
 ###############################################
 
 navbar-links:
+  Convoke: "https://convoke.games/"
   SpellTable: "https://spelltable.wizards.com/"
   Patreon: "https://www.patreon.com/lexicalunit"
   Development: "https://github.com/lexicalunit/spellbot"
-  "#TransRights": "https://translegislation.com/"
 
 ################
 # --- Logo --- #
