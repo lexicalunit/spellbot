@@ -17,7 +17,7 @@
     />
 </a>
 <br />
-The Discord bot for <a href="https://spelltable.wizards.com/">SpellTable</a>
+The Discord bot for <a href="https://convoke.games/">Convoke</a> and <a href="https://spelltable.wizards.com/">SpellTable</a>
 <br />
 <br />
 
@@ -35,8 +35,7 @@ The Discord bot for <a href="https://spelltable.wizards.com/">SpellTable</a>
 
 ## 🤖 Using SpellBot
 
-SpellBot helps you find _Magic: The Gathering_ games on [SpellTable][spelltable] or [Table Stream][tablestream]. Just looking to
-play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
+SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [SpellTable][spelltable], and [Table Stream][tablestream]. Just looking to play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
 
 <p align="center">
     <img
@@ -46,9 +45,7 @@ play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
     />
 </p>
 
-SpellBot uses [Discord slash commands][slash]. Each command provides its own help documentation that
-you can view directly within Discord itself before running the command. Take a look and see what's
-available by typing `/` and browsing the commands for SpellBot!
+SpellBot uses [Discord slash commands][slash]. Each command provides its own help documentation that you can view directly within Discord itself before running the command. Take a look and see what's available by typing `/` and browsing the commands for SpellBot!
 
 ## 🔭 Where to Play?
 
@@ -91,8 +88,7 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
 <!-- SERVERS END -->
 </div>
 
-Want your community to be featured here as well? Please contact me at
-[spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com)!
+Want your community to be featured here as well? Please contact me at [spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com)!
 
 ## 📊 Mythic Track
 
@@ -133,9 +129,7 @@ If you have more questions, please don't hesitate to join us on the [SpellBot Di
 
 ## 🎤 Feedback
 
-Thoughts and suggestions? Come join us on the [SpellBot Discord server][discord-invite]! Please
-also feel free to [directly report any bugs][issues] that you encounter. Or reach out to me on
-BlueSky at [@spellbot.io][follow].
+Thoughts and suggestions? Come join us on the [SpellBot Discord server][discord-invite]! Please also feel free to [directly report any bugs][issues] that you encounter. Or reach out to me on BlueSky at [@spellbot.io][follow].
 
 ## 🙌 Supported By
 
@@ -143,15 +137,11 @@ The continued operation of SpellBot is supported by <a href="https://www.playedh
 
 ## ❤️ Contributing
 
-If you'd like to become a part of the SpellBot development community please first know that we have
-a documented [code of conduct](CODE_OF_CONDUCT.md) and then see our
-[documentation on how to contribute](CONTRIBUTING.md) for details on how to get started.
+If you'd like to become a part of the SpellBot development community please first know that we have a documented [code of conduct](CODE_OF_CONDUCT.md) and then see our [documentation on how to contribute](CONTRIBUTING.md) for details on how to get started.
 
 ## 🐳 Docker Support
 
-SpellBot can be run via docker. Our image is published to
-[lexicalunit/spellbot][docker-hub]. See [our documentation on Docker Support](DOCKER.md) for help
-with installing and using it.
+SpellBot can be run via docker. Our image is published to [lexicalunit/spellbot][docker-hub]. See [our documentation on Docker Support](DOCKER.md) for help with installing and using it.
 
 ## 🔍 Fine-print
 
@@ -166,11 +156,12 @@ Any usage of SpellBot implies that you accept the following policies.
 
 [aws-badge]: https://img.shields.io/badge/cloud-aws-green
 [aws]: https://console.aws.amazon.com/console/home
-[build-badge]: https://github.com/lexicalunit/spellbot/workflows/build/badge.svg
-[build]: https://github.com/lexicalunit/spellbot/actions
+[build-badge]: https://github.com/lexicalunit/spellbot/actions/workflows/ci.yaml/badge.svg
+[build]: https://github.com/lexicalunit/spellbot/actions/workflows/ci.yaml
 [codecov-badge]: https://codecov.io/gh/lexicalunit/spellbot/branch/main/graph/badge.svg
 [codecov]: https://codecov.io/gh/lexicalunit/spellbot
 [contributors]: https://github.com/lexicalunit/spellbot/graphs/contributors
+[convoke]: https://www.convoke.games/
 [datadog-badge]: https://img.shields.io/badge/monitors-datadog-blueviolet.svg
 [datadog]: https://app.datadoghq.com/apm/home
 <!-- [discord-badge]: https://github.com/lexicalunit/spellbot/assets/1903876/871aca88-3636-4c38-bcc1-f4093f89146f -->
