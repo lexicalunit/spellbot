@@ -434,7 +434,7 @@ async def safe_delete_channel(
     guild_xid: int,
 ) -> bool:
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tag("guild_xid", guild_xid)
+        span.set_tag("guild_xid", str(guild_xid))
 
     if not bot_can_delete_channel(channel):
         return False
@@ -447,7 +447,7 @@ async def safe_delete_channel(
 
     channel_xid: int = channel.id
     if span:  # pragma: no cover
-        span.set_tag("channel_xid", channel_xid)
+        span.set_tag("channel_xid", str(channel_xid))
 
     success = False
     with suppress(
