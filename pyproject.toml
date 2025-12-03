@@ -209,7 +209,6 @@ max-line-length = 100
 
 [tool.pylic]
 safe_licenses = [
-  "3-Clause BSD License",
   "Apache 2.0",
   "Apache License 2.0",
   "Apache Software License",
@@ -231,7 +230,9 @@ safe_licenses = [
 ]
 # Psycopg uses LGPLv3, which is ok to link against, but otherwise not compatible with permissive
 # with the license of this project. We can explicitly ignore it here since we're only linking.
-unsafe_packages = ["psycopg-binary", "psycopg"]
+# Protobuf is also licensed under the BSD-3-Clause license, but only on some systems, so pylic
+# will sometimes generate spurious errors about it, so we ignore it here as well.
+unsafe_packages = ["psycopg-binary", "psycopg", "protobuf"]
 
 [tool.pytest.ini_options]
 addopts = """
