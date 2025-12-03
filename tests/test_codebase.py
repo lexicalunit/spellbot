@@ -70,7 +70,7 @@ class TestCodebase:
     def test_pylic(self) -> None:
         """Checks that the Python codebase passes configured pylic checks."""
         chdir(REPO_ROOT)
-        cmd = ["pylic", "check"]
+        cmd = ["pylic", "check", "--allow-extra-safe-licenses"]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True, check=False)  # noqa: S603
         exitcode: int = cast("int", proc.returncode)

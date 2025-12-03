@@ -117,13 +117,13 @@ class SpellBot(AutoShardedBot):
         if not message.guild or not hasattr(message.guild, "id"):
             return await super().on_message(message)
         if span:  # pragma: no cover
-            span.set_tag("guild_id", message.guild.id)
+            span.set_tag("guild_id", str(message.guild.id))
 
         # ignore everything except messages in text channels
         if not hasattr(message.channel, "type") or message.channel.type != discord.ChannelType.text:
             return None
         if span:  # pragma: no cover
-            span.set_tag("channel_id", message.channel.id)
+            span.set_tag("channel_id", str(message.channel.id))
 
         # ignore hidden/ephemeral messages
         if message.flags.value & 64:
@@ -135,7 +135,7 @@ class SpellBot(AutoShardedBot):
 
         message_author_xid = message.author.id
         if span:
-            span.set_tag("author_id", message_author_xid)
+            span.set_tag("author_id", str(message_author_xid))
 
         # don't try to verify the bot itself
         if self.user and message_author_xid == self.user.id:  # pragma: no cover
