@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v17.2.0](https://github.com/lexicalunit/spellbot/releases/tag/v17.2.0) - 2025-12-05
+
 ### Added
 
 - Supports generating notifications in Discord from games created by external services.
