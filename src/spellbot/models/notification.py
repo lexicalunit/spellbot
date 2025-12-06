@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TypedDict, cast
+from typing import TYPE_CHECKING, TypedDict, cast
 
 from sqlalchemy import BigInteger, Column, DateTime, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -12,6 +12,9 @@ from spellbot.enums import GameBracket, GameFormat, GameService
 
 from . import Base, now
 
+if TYPE_CHECKING:
+    from spellbot.services import NotificationData
+
 
 class NotificationDict(TypedDict):
     id: int
@@ -20,6 +23,7 @@ class NotificationDict(TypedDict):
     started_at: datetime | None
     guild: int
     channel: int
+    message: int | None
     players: list[str]
     format: int
     bracket: int
@@ -71,6 +75,12 @@ class Notification(Base):
         index=True,
         nullable=False,
         doc="The external Discord ID of the associated channel",
+    )
+    message = Column(
+        BigInteger,
+        index=True,
+        nullable=True,
+        doc="The external Discord ID of the associated message",
     )
     players = Column(
         ARRAY(String),
@@ -126,9 +136,15 @@ class Notification(Base):
             "started_at": self.started_at,
             "guild": self.guild,
             "channel": self.channel,
+            "message": self.message,
             "players": self.players,
             "format": self.format,
             "bracket": self.bracket,
             "service": self.service,
             "link": self.link,
         }
+
+    def to_data(self) -> NotificationData:
+        from spellbot.services import NotificationData
+
+        return NotificationData.from_db(self)
