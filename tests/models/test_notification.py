@@ -21,6 +21,7 @@ class TestModelNotification:
             "started_at": notif.started_at,
             "guild": notif.guild,
             "channel": notif.channel,
+            "message": notif.message,
             "players": notif.players,
             "format": notif.format,
             "bracket": notif.bracket,

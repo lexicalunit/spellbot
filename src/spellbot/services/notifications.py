@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from asgiref.sync import sync_to_async
+from sqlalchemy import update
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Notification
@@ -28,6 +29,26 @@ class NotificationData:
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
+    # These are None if not yet sent to Discord:
+    message: int | None = None
+
+    @staticmethod
+    def from_db(obj: Notification) -> NotificationData:
+        return NotificationData(
+            link=obj.link,
+            guild=obj.guild,
+            channel=obj.channel,
+            players=obj.players,
+            format=obj.format,
+            bracket=obj.bracket,
+            service=obj.service,
+            started_at=obj.started_at,
+            id=obj.id,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+            message=obj.message,
+        )
+
 
 class NotificationsService:
     @sync_to_async()
@@ -49,3 +70,25 @@ class NotificationsService:
         notif.created_at = db_object.created_at
         notif.updated_at = db_object.updated_at
         return notif
+
+    @sync_to_async()
+    def update(
+        self,
+        pk: int,
+        players: list[str],
+        started_at: datetime | None = None,
+    ) -> NotificationData | None:
+        obj = DatabaseSession.get(Notification, pk)
+        if obj is None:
+            return None
+        obj.players = players
+        obj.started_at = started_at
+        DatabaseSession.commit()
+        DatabaseSession.refresh(obj)
+        return obj.to_data()
+
+    @sync_to_async()
+    def set_message(self, pk: int, message: int) -> None:
+        qs = update(Notification.__table__).where(Notification.id == pk).values(message=message)
+        DatabaseSession.execute(qs)
+        DatabaseSession.commit()
