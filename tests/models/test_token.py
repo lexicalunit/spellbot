@@ -20,4 +20,5 @@ class TestModelToken:
             "updated_at": token.updated_at,
             "deleted_at": token.deleted_at,
             "key": token.key,
+            "note": token.note,
         }
