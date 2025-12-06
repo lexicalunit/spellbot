@@ -405,7 +405,7 @@ class Game(Base):
 
     @property
     def embed_footer(self) -> str:
-        return f"SpellBot Game ID: #SB{self.id}"
+        return f"SpellBot Game ID: #SB{self.id} — Service: {GameService(self.service)}"
 
     @property
     def jump_links(self) -> dict[int, str]:
@@ -470,8 +470,6 @@ class Game(Base):
             else ("Updated at", f"<t:{self.updated_at_timestamp}>")
         )
         embed.add_field(name=timestamp_field[0], value=timestamp_field[1])
-        if self.service != GameService.SPELLTABLE.value and not rematch:
-            embed.add_field(name="Service", value=str(GameService(self.service)), inline=False)
         if self.players:
             embed.color = (
                 discord.Color(settings.STARTED_EMBED_COLOR)

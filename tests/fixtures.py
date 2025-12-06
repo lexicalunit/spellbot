@@ -27,6 +27,7 @@ from tests.factories import (
     GameFactory,
     GuildAwardFactory,
     GuildFactory,
+    NotificationFactory,
     PlayFactory,
     PostFactory,
     QueueFactory,
@@ -66,6 +67,7 @@ class Factories:
     verify = VerifyFactory
     watch = WatchFactory
     token = TokenFactory
+    notification = NotificationFactory
 
 
 @pytest_asyncio.fixture()
@@ -91,6 +93,7 @@ async def session_context(
         GameFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         GuildAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         GuildFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        NotificationFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         PlayFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         PostFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         QueueFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore

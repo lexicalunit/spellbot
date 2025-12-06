@@ -306,7 +306,7 @@ class TestCogAdminInfo(InteractionMixin):
                 {"inline": True, "name": "Updated at", "value": ANY},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id}"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
             "thumbnail": {"url": self.settings.THUMB_URL},
             "title": "**Waiting for 4 more players to join...**",
             "type": "rich",
