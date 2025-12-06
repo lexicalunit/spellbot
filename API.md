@@ -4,6 +4,16 @@ SpellBot has a public API that can be used to access game and user data. As well
 
 **Base URL:** `https://prod.app.spellbot.io/`
 
+- [Public Endpoints](#public-endpoints)
+  - [GET `/`](#get-)
+  - [GET `/g/{guild}/c/{channel}`](#get-gguildcchannel)
+  - [GET `/g/{guild}/u/{user}`](#get-gguilduuser)
+- [Authenticated Endpoints](#authenticated-endpoints)
+  - [POST `/api/game/{game}/verify`](#post-apigamegameverify)
+  - [POST `/api/game/{game}/record`](#post-apigamegamerecord)
+  - [POST `/api/notification`](#post-apinotification)
+  - [PATCH `/api/notification/{notif}`](#patch-apinotificationnotif)
+
 ## Public Endpoints
 
 ### GET `/`
