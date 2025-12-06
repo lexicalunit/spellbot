@@ -15,12 +15,13 @@ class TokenDict(TypedDict):
     updated_at: datetime
     deleted_at: datetime | None
     key: str
+    note: str | None
 
 
 class Token(Base):
     """Token keys for access to the SpellBot API."""
 
-    __tablename__ = "token"
+    __tablename__ = "tokens"
 
     id = Column(
         Integer,
@@ -56,6 +57,11 @@ class Token(Base):
         index=True,
         doc="The API token key",
     )
+    note = Column(
+        String,
+        nullable=True,
+        doc="A note for my reference",
+    )
 
     def to_dict(self) -> TokenDict:
         return {
@@ -64,4 +70,5 @@ class Token(Base):
             "updated_at": self.updated_at,
             "deleted_at": self.deleted_at,
             "key": self.key,
+            "note": self.note,
         }
