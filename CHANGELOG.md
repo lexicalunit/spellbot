@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds scopes to API tokens.
+
 ## [v17.2.2](https://github.com/lexicalunit/spellbot/releases/tag/v17.2.2) - 2025-12-06
 
 ### Added

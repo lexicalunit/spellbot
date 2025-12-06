@@ -21,4 +21,5 @@ class TestModelToken:
             "deleted_at": token.deleted_at,
             "key": token.key,
             "note": token.note,
+            "scopes": token.scopes,
         }
