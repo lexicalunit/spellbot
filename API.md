@@ -32,6 +32,8 @@ Returns a HTML page with a list of games played by the given user.
 
 All authenticated endpoints require a valid API token to be passed in the `Authorization` header. The token should be prefixed with `"Bearer "`.
 
+> Note: API tokens are scoped to certain endpoints. Just because you have an API token does not mean that all authenticated endpoints are accessible.
+
 If there is an error processing these requests, the response will follow the following format:
 
 ```json
@@ -43,6 +45,8 @@ If there is an error processing these requests, the response will follow the fol
 ### POST `/api/game/{game}/verify`
 
 Verifies the user's PIN for the given game for the given guild. This API is for external applications that track a user's game history, such as [Mythic Track](https://www.mythictrack.com/).
+
+> Note: Required API scope: `game`.
 
 #### Request
 
@@ -67,6 +71,8 @@ Verifies the user's PIN for the given game for the given guild. This API is for 
 ### POST `/api/game/{game}/record`
 
 Records the given game as played by the given users and their commanders. This will send a DM to each user with the game record, informing them that the game was recorded. This API is for external applications that track a user's game history, such as [Mythic Track](https://www.mythictrack.com/).
+
+> Note: Required API scope: `game`.
 
 #### Request
 
@@ -100,6 +106,8 @@ Records the given game as played by the given users and their commanders. This w
 ### POST `/api/notification`
 
 This API is for external applications that want to create a notification in Discord for a game that was created outside of Discord. For example, a user might create a game on [Convoke](https://www.convoke.games/) and want to notify their friends in Discord that the game is ready to play.
+
+> Note: Required API scope: `notification`.
 
 #### Request
 
@@ -182,6 +190,8 @@ This API is for external applications that want to create a notification in Disc
 ### PATCH `/api/notification/{notif}`
 
 This is for updating notifications created with `POST /api/notification`. You can update the list of players and/or mark the game as started.
+
+> Note: Required API scope: `notification`.
 
 #### Request
 
