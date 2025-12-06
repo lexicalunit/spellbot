@@ -29,6 +29,19 @@ logger = logging.getLogger(__name__)
 UNRECOVERABLE = {400, 401, 403}
 
 
+def reply(
+    data: dict[str, Any] | None = None,
+    *,
+    status: int | None = None,
+    error: str | None = None,
+) -> WebResponse:
+    data = data or {}
+    status = status or (200 if error is None else 500)
+    if error is None:
+        return web.json_response({"result": data}, status=status)
+    return web.json_response({"error": error}, status=status)
+
+
 @tracer.wrap(name="rest", resource="game_verify_endpoint")
 async def game_verify_endpoint(request: web.Request) -> WebResponse:
     try:
@@ -46,20 +59,20 @@ async def game_verify_endpoint(request: web.Request) -> WebResponse:
                 pin=pin,
             )
             if not verified and await rate_limited(request, key=f"game_verify:{game_id}"):
-                return web.json_response({"error": "Rate limited"}, status=429)
-            return web.json_response({"result": {"verified": verified}})
+                return reply({}, error="Rate limited", status=429)
+            return reply({"verified": verified})
     except ValueError as e:
         if await rate_limited(request):
-            return web.json_response({"error": "Rate limited"}, status=429)
-        return web.json_response({"error": str(e)}, status=400)
+            return reply({}, error="Rate limited", status=429)
+        return reply(error=str(e), status=400)
     except KeyError as e:
         if await rate_limited(request):
-            return web.json_response({"error": "Rate limited"}, status=429)
-        return web.json_response({"error": f"missing key: {e}"}, status=400)
+            return reply({}, error="Rate limited", status=429)
+        return reply(error=f"missing key: {e}", status=400)
     except Exception as e:
         if await rate_limited(request):
-            return web.json_response({"error": "Rate limited"}, status=429)
-        return web.json_response({"error": str(e)}, status=500)
+            return reply({}, error="Rate limited", status=429)
+        return reply(error=str(e))
 
 
 @tracer.wrap(name="rest", resource="game_record_embed")
@@ -141,36 +154,55 @@ async def post_with_retry(
     session: aiohttp.ClientSession,
     path: str,
     payload: dict[str, Any],
+    method: str = "post",
 ) -> dict[str, Any]:
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bot {settings.BOT_TOKEN}",
     }
-    async with session.post(
+    op = getattr(session, method)
+    async with op(
         f"https://discord.com/api{path}",
         headers=headers,
         json=payload,
     ) as response:
         response.raise_for_status()
-        raw_data = await response.read()
-        if not (data := json.loads(raw_data)):
-            logger.error("API ERROR, json invalid: %s", raw_data.decode())
-            raise InvalidJsonResponseError
-        return data
+        return await response.json()
 
 
 @tracer.wrap(name="rest", resource="send_message")
-async def send_message(channel_xid: int, message: dict[str, Any]) -> None:
+async def send_message(channel_xid: int, message: dict[str, Any]) -> dict[str, Any] | None:
     logger.info("Sending message to channel %s...", channel_xid)
     try:
         async with aiohttp.ClientSession() as session:
-            await post_with_retry(
+            return await post_with_retry(
                 session,
                 f"/channels/{channel_xid}/messages",
                 message,
             )
     except Exception as ex:
         logger.warning("Send message failure: %s", ex, exc_info=True)
+    return None
+
+
+@tracer.wrap(name="rest", resource="send_message")
+async def update_message(
+    channel_xid: int,
+    message_xid: int,
+    message: dict[str, Any],
+) -> dict[str, Any] | None:
+    logger.info("Sending message to channel %s...", channel_xid)
+    try:
+        async with aiohttp.ClientSession() as session:
+            return await post_with_retry(
+                session,
+                f"/channels/{channel_xid}/messages/{message_xid}",
+                message,
+                method="patch",
+            )
+    except Exception as ex:
+        logger.warning("Send message failure: %s", ex, exc_info=True)
+    return None
 
 
 @tracer.wrap(name="rest", resource="send_dm")
@@ -266,7 +298,7 @@ def parse_datetime_str(dt_str: str) -> datetime:
     return dt.replace(tzinfo=tz.UTC) if dt.tzinfo is None else dt.astimezone(tz.UTC)
 
 
-@tracer.wrap(name="rest", resource="send_dm")
+@tracer.wrap(name="rest", resource="create_notification_endpoint")
 async def create_notification_endpoint(request: web.Request) -> WebResponse:
     async with db_session_manager():
         services = ServicesRegistry()
@@ -291,15 +323,45 @@ async def create_notification_endpoint(request: web.Request) -> WebResponse:
         )
         notif = await services.notifications.create(notif)
         message = game_notification_message(notif)
-        await send_message(channel, message)
-        return web.json_response(
-            {
-                "result": {
-                    "success": True,
-                    "notification": notif.id,
-                },
-            },
-        )
+        message_id: int | None = None
+        if (
+            (resp := await send_message(channel, message))
+            and (message_id := resp.get("id"))
+            and (notif_id := notif.id)
+        ):
+            await services.notifications.set_message(notif_id, message_id)
+        return reply({"success": bool(resp and message_id), "notification": notif.id}, status=201)
+
+
+@tracer.wrap(name="rest", resource="update_notification_endpoint")
+async def update_notification_endpoint(request: web.Request) -> WebResponse:
+    try:
+        async with db_session_manager():
+            services = ServicesRegistry()
+            payload = await request.json()
+            notif_id = int(request.match_info["notif"])
+            players = payload["players"]
+            started_at = payload.get("started_at")
+            notif = await services.notifications.update(
+                notif_id,
+                players=players,
+                started_at=started_at,
+            )
+            if not notif:
+                return reply(error="Notification not found", status=404)
+            message = game_notification_message(notif)
+            message_id: int | None = None
+            if notif.message:
+                resp = await update_message(notif.channel, notif.message, message)
+                message_id = notif.message
+            else:
+                resp = await send_message(notif.channel, message)
+                message_id = resp.get("id") if resp else None
+            if not notif.message and message_id:
+                await services.notifications.set_message(notif_id, message_id)
+            return reply({"success": bool(resp and "id" in resp)})
+    except Exception as e:
+        return reply(error=str(e))
 
 
 @tracer.wrap(name="rest", resource="game_record_endpoint")
@@ -308,19 +370,19 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
         services = ServicesRegistry()
         game_id = int(request.match_info["game"])
         if not (game := await services.games.select(game_id)):
-            return web.json_response({"error": "Game not found"}, status=404)
+            return reply(error="Game not found", status=404)
         payload = await request.json()
         winner_xid = int(w) if (w := payload.get("winner")) else None
         tracker_xid = int(payload.get("tracker"))
         players_data = payload.get("players", []) or []
         commanders: dict[int | None, str] = {int(p["xid"]): p["commander"] for p in players_data}
         if not players_data:
-            return web.json_response({"error": "No players provided"}, status=400)
+            return reply(error="No players provided", status=400)
         plays = await services.plays.get_plays_by_game_id(game_id)
         player_xids = [int(p["xid"]) for p in players_data]
         players = await services.users.get_players_by_xid(player_xids)
         if len(plays) != len(players) or len(players) != len(players_data):
-            return web.json_response({"error": "Mismatched player count"}, status=400)
+            return reply(error="Mismatched player count", status=400)
         embed = game_record_embed(
             game=game,
             players=players,
@@ -331,4 +393,4 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
         logger.info("Sending DMs to players %s...", ", ".join(str(x) for x in player_xids))
         notify_player_tasks = [send_dm(player_xid, embed) for player_xid in player_xids]
         await asyncio.gather(*notify_player_tasks)
-        return web.json_response({"result": {"success": True}})
+        return reply({"success": True})
