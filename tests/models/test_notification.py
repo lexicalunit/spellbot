@@ -1,0 +1,29 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+import pytest
+
+if TYPE_CHECKING:
+    from tests.fixtures import Factories
+
+pytestmark = pytest.mark.use_db
+
+
+class TestModelNotification:
+    def test_notification(self, factories: Factories) -> None:
+        notif = factories.notification.create()
+
+        assert notif.to_dict() == {
+            "id": notif.id,
+            "created_at": notif.created_at,
+            "updated_at": notif.updated_at,
+            "started_at": notif.started_at,
+            "guild": notif.guild,
+            "channel": notif.channel,
+            "players": notif.players,
+            "format": notif.format,
+            "bracket": notif.bracket,
+            "service": notif.service,
+            "link": notif.link,
+        }

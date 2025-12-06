@@ -51,7 +51,11 @@ class GameService(Enum):
         "_A Table Stream link will be created when all players have joined._",
         "https://table-stream.com/",
     )
-    CONVOKE = "Convoke", "_Please use Convoke for this game._", "https://www.convoke.games/"
+    CONVOKE = (
+        "Convoke",
+        "_A Convoke link will be created when all players have joined._",
+        "https://www.convoke.games/",
+    )
 
 
 GAME_SERVICE_ORDER = [
