@@ -49,7 +49,7 @@ async def auth_middleware(request: web.Request, handler: Handler) -> web.StreamR
     token = auth_header.split("Bearer ")[1]
     async with db_session_manager():
         services = ServicesRegistry()
-        if not await services.apps.verify_token(token):
+        if not await services.apps.verify_token(token, request.rel_url.path):
             if await rate_limited(request):
                 return web.json_response({"error": "Too many requests"}, status=429)
             return web.json_response({"error": "Unauthorized"}, status=403)

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from functools import partial
 from typing import TypedDict
 
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Column, DateTime, Integer, String, text
 
 from . import Base, now
 
@@ -16,6 +16,7 @@ class TokenDict(TypedDict):
     deleted_at: datetime | None
     key: str
     note: str | None
+    scopes: str
 
 
 class Token(Base):
@@ -62,6 +63,13 @@ class Token(Base):
         nullable=True,
         doc="A note for my reference",
     )
+    scopes = Column(
+        String,
+        nullable=False,
+        default="*",
+        server_default=text("'*'"),
+        doc="A comma-separated list of scopes for this token",
+    )
 
     def to_dict(self) -> TokenDict:
         return {
@@ -71,4 +79,5 @@ class Token(Base):
             "deleted_at": self.deleted_at,
             "key": self.key,
             "note": self.note,
+            "scopes": self.scopes,
         }
