@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-UNRECOVERABLE = {400, 401, 403}
+UNRECOVERABLE = {400, 401, 403, 404}
 
 
 def reply(
