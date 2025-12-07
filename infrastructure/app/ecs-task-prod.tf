@@ -248,7 +248,11 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         {
           name      = "DATABASE_URL"
           valueFrom = "${data.aws_secretsmanager_secret.prod_db_password.arn}:DB_URL::"
-        }
+        },
+        {
+          name      = "BOT_TOKEN"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:BOT_TOKEN::"
+        },
       ]
 
       logConfiguration = {
