@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added BOT_TOKEN to spellapi task definition.
 - Added 404 status code to retry ignore list.
+- Use the `url` parameter from Convoke API response directly.
 
 ## [v17.2.3](https://github.com/lexicalunit/spellbot/releases/tag/v17.2.3) - 2025-12-06
 

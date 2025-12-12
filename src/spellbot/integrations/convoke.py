@@ -147,8 +147,8 @@ async def generate_link(game: GameDict) -> tuple[str | None, str | None]:  # pra
 
             if not data:
                 return None, None
-            game_id = data["id"]
+            game_link = data["url"]
             game_pass = data.get("password") or key
-            return f"https://www.convoke.games/en/play/private/{game_id}", game_pass
+            return game_link, game_pass
 
     return None, None
