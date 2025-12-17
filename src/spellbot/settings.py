@@ -225,7 +225,18 @@ class Settings:
         now = datetime.now(tz=UTC)
         return now.month == 4 and now.day == 2
 
+    @property
+    def CONVOKE_THUMB_URL(self) -> str:  # pragma: no cover
+        return self.workaround_over_eager_caching(
+            "https://github.com/user-attachments/assets/16d4867b-4fe2-49be-b812-b169c347c6d4",
+        )
+
+    def convoke(self, guild_xid: int | None) -> bool:  # pragma: no cover
+        return guild_xid == 1417960690110697504  # Convoke
+
     def thumb(self, guild_xid: int | None) -> str:  # pragma: no cover
+        if self.convoke(guild_xid):
+            return settings.CONVOKE_THUMB_URL
         if self.autistic(guild_xid):
             return settings.AUTISTIC_THUMB_URL
         if settings.trans(guild_xid):
