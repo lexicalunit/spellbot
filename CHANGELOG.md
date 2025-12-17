@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v17.2.6](https://github.com/lexicalunit/spellbot/releases/tag/v17.2.6) - 2025-12-16
+
 ### Added
 
 - Added `role` ping support to the external game notification API.
