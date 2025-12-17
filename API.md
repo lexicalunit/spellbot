@@ -119,7 +119,8 @@ This API is for external applications that want to create a notification in Disc
   "players": ["Alice", "Bob"],
   "format": 1,
   "bracket": 1,
-  "service": 1
+  "service": 1,
+  "role": 1234567890 // Optional: The role to ping when the notification is sent
 }
 ```
 
