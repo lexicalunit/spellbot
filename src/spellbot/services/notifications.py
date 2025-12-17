@@ -23,6 +23,7 @@ class NotificationData:
     bracket: int
     service: int
     started_at: datetime | None = None
+    role: str | None = None
 
     # These are None if not yet persisted to the database:
     id: int | None = None

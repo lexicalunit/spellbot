@@ -185,7 +185,7 @@ async def send_message(channel_xid: int, message: dict[str, Any]) -> dict[str, A
     return None
 
 
-@tracer.wrap(name="rest", resource="send_message")
+@tracer.wrap(name="rest", resource="update_message")
 async def update_message(
     channel_xid: int,
     message_xid: int,
@@ -259,7 +259,7 @@ def game_notification_message(notif: NotificationData) -> dict[str, Any]:
         fields.append({"name": "Updated at", "value": f"<t:{updated_ts}>", "inline": True})
         description = "Join the game by opening the game link in your browser."
         title = f"**There's a new public game on {service}!**"
-    return {
+    message = {
         "content": "",
         "embeds": [
             {
@@ -291,6 +291,10 @@ def game_notification_message(notif: NotificationData) -> dict[str, Any]:
             },
         ],
     }
+    if notif.role:
+        message["content"] = f"<@&{notif.role}>"
+        message["allowed_mentions"] = {"roles": [notif.role]}
+    return message
 
 
 def parse_datetime_str(dt_str: str) -> datetime:
@@ -311,6 +315,7 @@ async def create_notification_endpoint(request: web.Request) -> WebResponse:
         bracket = payload["bracket"]
         service = payload["service"]
         started_at = payload.get("started_at")
+        role = payload.get("role")
         notif = NotificationData(
             link=link,
             guild=guild,
@@ -320,6 +325,7 @@ async def create_notification_endpoint(request: web.Request) -> WebResponse:
             bracket=bracket,
             service=service,
             started_at=parse_datetime_str(started_at) if started_at else None,
+            role=role,
         )
         notif = await services.notifications.create(notif)
         message = game_notification_message(notif)
