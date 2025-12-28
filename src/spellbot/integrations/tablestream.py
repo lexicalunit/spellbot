@@ -45,6 +45,7 @@ def table_stream_game_type(format: GameFormat) -> TableSteamGameTypes:  # pragma
             | GameFormat.CEDH
             | GameFormat.PAUPER_EDH
             | GameFormat.ARCHENEMY
+            | GameFormat.HORDE_MAGIC
         ):
             return TableSteamGameTypes.MTGCommander
         case (

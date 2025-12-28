@@ -103,6 +103,7 @@ def spelltable_game_type(format: GameFormat) -> SpellTableGameTypes:  # noqa: C9
             | GameFormat.PRE_CONS
             | GameFormat.CEDH
             | GameFormat.ARCHENEMY
+            | GameFormat.HORDE_MAGIC
         ):
             return SpellTableGameTypes.Commander
 

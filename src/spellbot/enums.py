@@ -19,7 +19,13 @@ class GameService(Enum):
         obj._value_ = value
         return obj
 
-    def __init__(self, title: str, pending_msg: str, fallback_url: str | None) -> None:
+    def __init__(
+        self,
+        title: str,
+        pending_msg: str,
+        fallback_url: str | None,
+        max_seats: int,
+    ) -> None:
         """
         Build a service for Magic: The Gathering games.
 
@@ -30,31 +36,35 @@ class GameService(Enum):
         self.title = title
         self.pending_msg = pending_msg
         self.fallback_url = fallback_url
+        self.max_seats = max_seats
 
     def __str__(self) -> str:
         return self.title
 
     # DO NOT REORDER -- IT WOULD INVALIDATE EXISTING DATABASE ENTRIES!
-    NOT_ANY = "Not any", "_Please contact the players in your game to organize this game._", None
+    NOT_ANY = "Not any", "_Please contact the players in your game to organize this game._", None, 8
     SPELLTABLE = (
         "SpellTable",
         "_A SpellTable link will be created when all players have joined._",
         "https://spelltable.wizards.com/",
+        4,
     )
-    COCKATRICE = "Cockatrice", "_Please use Cockatrice for this game._", None
-    X_MAGE = "XMage", "_Please use XMage for this game._", None
-    MTG_ARENA = "MTG Arena", "_Please use MTG Arena for this game._", None
-    MTG_ONLINE = "MTG Online", "_Please use MTG Online for this game._", None
-    TTS = "TabletopSim", "_Please use TabletopSim for this game._", None
+    COCKATRICE = "Cockatrice", "_Please use Cockatrice for this game._", None, 5
+    X_MAGE = "XMage", "_Please use XMage for this game._", None, 10
+    MTG_ARENA = "MTG Arena", "_Please use MTG Arena for this game._", None, 2
+    MTG_ONLINE = "MTG Online", "_Please use MTG Online for this game._", None, 4
+    TTS = "TabletopSim", "_Please use TabletopSim for this game._", None, 10
     TABLE_STREAM = (
         "Table Stream",
         "_A Table Stream link will be created when all players have joined._",
         "https://table-stream.com/",
+        6,
     )
     CONVOKE = (
         "Convoke",
         "_A Convoke link will be created when all players have joined._",
         "https://www.convoke.games/",
+        8,
     )
 
 
@@ -113,6 +123,7 @@ class GameFormat(Enum):
     CEDH = 4, "cEDH"
     ARCHENEMY = 4
     PAUPER_EDH = 4, "Pauper EDH"
+    HORDE_MAGIC = 4, "Horde Magic"
 
 
 GAME_FORMAT_ORDER = [
@@ -130,6 +141,7 @@ GAME_FORMAT_ORDER = [
     GameFormat.PAUPER_EDH,
     GameFormat.OATHBREAKER,
     GameFormat.ARCHENEMY,
+    GameFormat.HORDE_MAGIC,
     GameFormat.DUEL_COMMANDER,
     GameFormat.STANDARD,
     GameFormat.MODERN,
