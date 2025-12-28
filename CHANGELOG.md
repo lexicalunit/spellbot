@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added Horde Magic as a game format.
+- Added support for up to 10 players in a game (up to the limit supported by the game service).
+
 ## [v17.2.6](https://github.com/lexicalunit/spellbot/releases/tag/v17.2.6) - 2025-12-16
 
 ### Added
