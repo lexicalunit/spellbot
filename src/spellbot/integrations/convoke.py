@@ -65,10 +65,12 @@ NOUNS = [
 
 
 class ConvokeGameTypes(Enum):
-    Commander = "commander", 4
-    Standard = "standard", 2
-    Modern = "modern", 2
-    Other = "other", 4
+    Commander = "commander"
+    Standard = "standard"
+    Modern = "modern"
+    Planechase = "planechase-commander"
+    Horde = "horde-commander"
+    Other = "other"
 
 
 def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:  # pragma: no cover
@@ -80,7 +82,6 @@ def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:  # pragma: no c
             | GameFormat.EDH_MID
             | GameFormat.EDH_LOW
             | GameFormat.EDH_BATTLECRUISER
-            | GameFormat.PLANECHASE
             | GameFormat.PRE_CONS
             | GameFormat.CEDH
             | GameFormat.PAUPER_EDH
@@ -90,6 +91,10 @@ def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:  # pragma: no c
             return ConvokeGameTypes.Modern
         case GameFormat.STANDARD:
             return ConvokeGameTypes.Standard
+        case GameFormat.HORDE_MAGIC:
+            return ConvokeGameTypes.Horde
+        case GameFormat.PLANECHASE:
+            return ConvokeGameTypes.Planechase
         case _:
             return ConvokeGameTypes.Other
 
@@ -112,8 +117,8 @@ async def fetch_convoke_link(  # pragma: no cover
         "apiKey": settings.CONVOKE_API_KEY,
         "name": name,
         "isPublic": False,
-        "seatLimit": format[1],
-        "format": format[0],
+        "seatLimit": game["seats"],
+        "format": format,
     }
     if key:
         payload["password"] = key

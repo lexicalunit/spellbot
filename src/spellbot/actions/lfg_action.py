@@ -52,11 +52,15 @@ class LookingForGameAction(BaseAction):
     async def get_seats(
         self,
         format: int | None = None,
+        service: int | None = None,
         seats: int | None = None,
     ) -> int:
+        requested_seats = 0
         if format and not seats:
-            return GameFormat(format).players
-        return seats or self.channel_data["default_seats"]
+            requested_seats = GameFormat(format).players
+        else:
+            requested_seats = seats or self.channel_data["default_seats"]
+        return min(requested_seats, GameService(service).max_seats)
 
     @tracer.wrap()
     async def get_service(self, service: int | None = None) -> int:
@@ -219,8 +223,8 @@ class LookingForGameAction(BaseAction):
         actual_friends: str = await self.get_friends(friends)
         actual_format: int = await self.get_format(format)
         actual_bracket: int = await self.get_bracket(actual_format, bracket)
-        actual_seats: int = await self.get_seats(actual_format, seats)
         actual_service: int = await self.get_service(service)
+        actual_seats: int = await self.get_seats(actual_format, actual_service, seats)
         rules = None if not rules else rules[:MAX_RULES_LENGTH]
 
         if await self.services.users.is_waiting(self.channel.id):
