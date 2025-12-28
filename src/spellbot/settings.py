@@ -122,7 +122,7 @@ class Settings:
         self.TABLESTREAM_AUTH_KEY = getenv("TABLESTREAM_AUTH_KEY")
 
         # convoke
-        self.CONVOKE_ROOT = "https://api.convoke.games/api"
+        self.CONVOKE_ROOT = getenv("CONVOKE_ROOT", "https://api.convoke.games/api")
         self.CONVOKE_API_KEY = getenv("CONVOKE_API_KEY")
 
         # configuration

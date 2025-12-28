@@ -35,6 +35,12 @@ class LookingForGameCog(commands.Cog):
             Choice(name="2", value=2),
             Choice(name="3", value=3),
             Choice(name="4", value=4),
+            Choice(name="5", value=5),
+            Choice(name="6", value=6),
+            Choice(name="7", value=7),
+            Choice(name="8", value=8),
+            Choice(name="9", value=9),
+            Choice(name="10", value=10),
         ],
     )
     @app_commands.describe(rules="Any additional rules or requests for this game.")
