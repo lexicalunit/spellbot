@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v17.3.0](https://github.com/lexicalunit/spellbot/releases/tag/v17.3.0) - 2025-12-28
+
 ### Added
 
 - Added Horde Magic as a game format.
