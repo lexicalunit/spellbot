@@ -162,6 +162,7 @@ This API is for external applications that want to create a notification in Disc
 | 21 | cEDH |
 | 22 | Archenemy |
 | 23 | Pauper EDH |
+| 24 | Horde Magic |
 
 **Services:**
 
