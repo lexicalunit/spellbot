@@ -60,6 +60,20 @@ class Settings:
         "VOICE_CLEANUP_LOOP_M",
         "VOICE_GRACE_PERIOD_M",
         "WIZARDS_ROOT",
+        "GIRUDO_AUTH_URL",
+        "GIRUDO_LOBBY_URL",
+        "GIRUDO_CREATE_URL",
+        "GIRUDO_EMAILS",
+        "GIRUDO_PASSWORDS",
+        "GIRUDO_DEFAULT_FORMAT_UUID",
+        "GIRUDO_DEFAULT_FORMAT_NAME",
+        "GIRUDO_DEFAULT_TCG_UUID",
+        "GIRUDO_DEFAULT_TCG_NAME",
+        "GIRUDO_STORE_DATA_URL",
+        "GIRUDO_BASE_URL",
+        "GIRUDO_RETRY_ATTEMPTS",
+        "GIRUDO_TIMEOUT_S",
+        "GIRUDO_DEFAULT_TCG_MAGIC_UUID",
         "guild_xid",
     )
 
@@ -154,6 +168,24 @@ class Settings:
         self.PATREON_TOKEN = getenv("PATREON_TOKEN")
         self.PATREON_CAMPAIGN = getenv("PATREON_CAMPAIGN")
         self.PATREON_SYNC_LOOP_M = 60  # 60 minutes
+
+        # girudo integration
+        self.GIRUDO_BASE_URL = getenv("GIRUDO_BASE_URL")
+        self.GIRUDO_AUTH_URL = getenv("GIRUDO_AUTH_URL")
+        self.GIRUDO_LOBBY_URL = getenv("GIRUDO_LOBBY_URL")
+        self.GIRUDO_CREATE_URL = getenv("GIRUDO_CREATE_URL")
+        self.GIRUDO_EMAILS = getenv("GIRUDO_EMAILS")
+        self.GIRUDO_PASSWORDS = getenv("GIRUDO_PASSWORDS")
+        self.GIRUDO_DEFAULT_FORMAT_UUID = getenv("GIRUDO_DEFAULT_FORMAT_UUID")
+        self.GIRUDO_DEFAULT_FORMAT_NAME = getenv("GIRUDO_DEFAULT_FORMAT_NAME")
+        self.GIRUDO_DEFAULT_TCG_UUID = getenv("GIRUDO_DEFAULT_TCG_UUID")
+        self.GIRUDO_DEFAULT_TCG_NAME = getenv("GIRUDO_DEFAULT_TCG_NAME")
+        self.GIRUDO_STORE_DATA_URL = getenv("GIRUDO_STORE_DATA_URL")
+        self.GIRUDO_RETRY_ATTEMPTS = int(getenv("GIRUDO_RETRY_ATTEMPTS", "2"))
+        self.GIRUDO_TIMEOUT_S = int(getenv("GIRUDO_TIMEOUT_S", "10"))
+        self.GIRUDO_DEFAULT_TCG_MAGIC_UUID = getenv(
+            "GIRUDO_DEFAULT_TCG_MAGIC_UUID"
+        )
 
     def workaround_over_eager_caching(self, url: str) -> str:
         return f"{url}?{datetime.now(tz=UTC).date().strftime('%Y-%m-%d')}"
