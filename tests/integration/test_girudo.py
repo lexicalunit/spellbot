@@ -4,6 +4,7 @@ import asyncio
 import base64
 
 import pytest
+from unittest.mock import AsyncMock
 
 from spellbot.enums import GameFormat
 from spellbot.integrations.girudo import GirudoGameFormat
@@ -228,16 +229,13 @@ class TestGirudoFormats:
     @pytest.mark.asyncio
     async def test_fetch_and_cache_formats_success(self, monkeypatch):
         from spellbot.integrations import girudo
-
         monkeypatch.setattr(girudo.settings, "GIRUDO_BASE_URL", GirudoTestData.API_BASE_URL)
-
         response = MockHTTPResponse(200, GirudoTestData.formats_response())
         client = MockHTTPClient(response)
-
         result = await girudo.fetch_and_cache_formats(client, GirudoTestData.AUTH_TOKEN)
-        assert "commander_edh" in result
+        assert "commander/edh" in result
         assert "standard" in result
-        assert result["commander_edh"].uuid == GirudoTestData.FORMAT_COMMANDER_UUID
+        assert result["commander/edh"].uuid == GirudoTestData.FORMAT_COMMANDER_UUID
 
     @pytest.mark.asyncio
     async def test_fetch_and_cache_formats_non_success_status(self, monkeypatch):
@@ -483,12 +481,17 @@ class TestGirudoGenerateLink:
 
         monkeypatch.setattr(girudo, "authenticate", mock_auth)
         monkeypatch.setattr(girudo, "create_game", mock_create)
-        monkeypatch.setattr(girudo, "fetch_and_cache_formats", lambda c, t: {})
-        monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", lambda c, t: {})
+
+        
+        mock_func_cahce_formats = AsyncMock(return_value={})
+        mock_func_cahce_tcg_names = AsyncMock(return_value={})
+
+        monkeypatch.setattr(girudo, "fetch_and_cache_formats", mock_func_cahce_formats)
+        monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", mock_func_cahce_tcg_names)
 
         game = create_mock_game()
         result = await girudo.generate_link(game)
-
+   
         assert result.link is not None
         assert f"join-game/{GirudoTestData.GAME_UUID}" in result.link
 
