@@ -280,3 +280,27 @@ def mock_discord_object(
     if isinstance(obj, Guild):
         return mock_discord_guild(obj)
     raise NotImplementedError
+
+
+# Export girudo mock classes for easier importing
+from tests.mocks.girudo import (  # noqa: E402
+    GirudoTestData,
+    MockHTTPClient,
+    MockHTTPResponse,
+    create_mock_game,
+)
+
+__all__ = [
+    "CLIENT_USER_ID",
+    "OWNER_USER_ID",
+    "MockClient",
+    "mock_operations",
+    "mock_discord_user",
+    "mock_discord_guild",
+    "mock_discord_object",
+    # Girudo mocks
+    "GirudoTestData",
+    "MockHTTPClient",
+    "MockHTTPResponse",
+    "create_mock_game",
+]
