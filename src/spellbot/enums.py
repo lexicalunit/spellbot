@@ -64,13 +64,13 @@ class GameService(Enum):
         "Convoke",
         "_A Convoke link will be created when all players have joined._",
         "https://www.convoke.games/",
-        8
+        8,
     )
     GIRUDO = (
         "Girudo",
         "_A Girudo link will be created when all players have joined._",
         "https://www.girudo.com/",
-        4
+        4,
     )
 
 

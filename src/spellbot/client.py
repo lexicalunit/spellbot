@@ -13,7 +13,7 @@ from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, 
 
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
-from .integrations import convoke, spelltable, girudo,tablestream
+from .integrations import convoke, girudo, spelltable, tablestream
 from .metrics import setup_ignored_errors, setup_metrics
 from .models import GameLinkDetails
 from .operations import safe_delete_message
