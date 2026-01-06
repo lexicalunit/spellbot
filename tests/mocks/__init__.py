@@ -293,14 +293,13 @@ from tests.mocks.girudo import (  # noqa: E402
 __all__ = [
     "CLIENT_USER_ID",
     "OWNER_USER_ID",
-    "MockClient",
-    "mock_operations",
-    "mock_discord_user",
-    "mock_discord_guild",
-    "mock_discord_object",
-    # Girudo mocks
     "GirudoTestData",
+    "MockClient",
     "MockHTTPClient",
     "MockHTTPResponse",
     "create_mock_game",
+    "mock_discord_guild",
+    "mock_discord_object",
+    "mock_discord_user",
+    "mock_operations",
 ]

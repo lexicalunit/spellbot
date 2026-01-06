@@ -1,23 +1,31 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 from spellbot.integrations.girudo import GirudoGameFormat, GirudoLinkDetails
+
+
+class HTTPError(Exception):
+    """Mock HTTP error for testing."""
 
 
 class MockHTTPResponse:
     """Mock HTTP response for testing Girudo integration without network calls."""
 
-    def __init__(self, status_code: int = 200, json_data: dict | None = None):
+    def __init__(self, status_code: int = 200, json_data: dict[str, Any] | None = None) -> None:
         self.status_code = status_code
         self._json_data = json_data or {}
 
     def raise_for_status(self) -> None:
         """Raise exception for error status codes."""
         if self.status_code >= 400:
-            raise Exception(f"HTTP {self.status_code}")
+            msg = f"HTTP {self.status_code}"
+            raise HTTPError(msg)
 
-    def json(self) -> dict:
+    def json(self) -> dict[str, Any]:
         """Return JSON data."""
         return self._json_data
 
@@ -25,10 +33,10 @@ class MockHTTPResponse:
 class MockHTTPClient:
     """Mock HTTP client for testing Girudo integration without network calls."""
 
-    def __init__(self, response: MockHTTPResponse | None = None):
+    def __init__(self, response: MockHTTPResponse | None = None) -> None:
         self.response = response or MockHTTPResponse()
-        self.get_calls: list[tuple[str, dict]] = []
-        self.post_calls: list[tuple[str, dict]] = []
+        self.get_calls: list[tuple[str, dict[str, Any]]] = []
+        self.post_calls: list[tuple[str, dict[str, Any]]] = []
 
     async def get(self, url: str, **kwargs: Any) -> MockHTTPResponse:
         """Mock GET request."""
@@ -40,10 +48,15 @@ class MockHTTPClient:
         self.post_calls.append((url, kwargs))
         return self.response
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool:
         return False
 
 
@@ -80,12 +93,12 @@ class GirudoTestData:
     LOBBY_UUID_FULL = "lobby-full-uuid"
 
     @classmethod
-    def auth_response(cls, token: str | None = None) -> dict:
+    def auth_response(cls, token: str | None = None) -> dict[str, Any]:
         """Generate authentication success response."""
         return {"data": {"token": token or cls.AUTH_TOKEN}}
 
     @classmethod
-    def formats_response(cls) -> dict:
+    def formats_response(cls) -> dict[str, Any]:
         """Generate format list success response."""
         return {
             "status": "success",
@@ -102,7 +115,7 @@ class GirudoTestData:
         }
 
     @classmethod
-    def tcg_names_response(cls) -> dict:
+    def tcg_names_response(cls) -> dict[str, Any]:
         """Generate TCG names success response."""
         return {
             "status": "success",
@@ -110,17 +123,17 @@ class GirudoTestData:
                 "store_games": [
                     {"id": cls.TCG_MAGIC_UUID, "name": cls.TCG_MAGIC_NAME},
                     {"id": cls.TCG_POKEMON_UUID, "name": cls.TCG_POKEMON_NAME},
-                ]
+                ],
             },
         }
 
     @classmethod
-    def create_game_response(cls, game_uuid: str | None = None) -> dict:
+    def create_game_response(cls, game_uuid: str | None = None) -> dict[str, Any]:
         """Generate create game success response."""
         return {"data": {"game_uuid": game_uuid or cls.GAME_UUID}}
 
     @classmethod
-    def lobbies_response(cls) -> dict:
+    def lobbies_response(cls) -> dict[str, Any]:
         """Generate lobbies list response."""
         return {
             "data": {
@@ -132,7 +145,7 @@ class GirudoTestData:
                     "current_player_count": 4,
                     "max_players": 4,
                 },
-            }
+            },
         }
 
     @classmethod
@@ -158,7 +171,7 @@ class GirudoTestData:
         }
 
 
-def create_mock_game(game_id: int = 42, game_format: int = 1) -> dict:
+def create_mock_game(game_id: int = 42, game_format: int = 1) -> dict[str, Any]:
     """Create a mock game dictionary for testing."""
     return {
         "id": game_id,
