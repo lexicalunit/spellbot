@@ -272,17 +272,16 @@ async def get_user_lock(email: str) -> asyncio.Lock:
 async def authenticate(
     client: httpx.AsyncClient,
     email: str | None = None,
-    username: str | None = None,
     password: str | None = None,
 ) -> str | None:
     email = email
     raw_password = password or ""
     encoded_password = encode_password(raw_password)
-    username = username or ""
+
 
     payload = {
         "email": email,
-        "username": username,
+        "username": "",
         "password": encoded_password,
         "provider": "",
         "token": "",
@@ -311,12 +310,11 @@ async def authenticate_with_token(
     client: httpx.AsyncClient,
     token: str | None = None,
     email: str | None = None,
-    username: str | None = None,
     password: str | None = None,
 ) -> str | None:
     if token:
         return token
-    return await authenticate(client, email=email, username=username, password=password)
+    return await authenticate(client, email=email, password=password)
 
 async def create_game(
     client: httpx.AsyncClient,
