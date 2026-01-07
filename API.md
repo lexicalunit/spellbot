@@ -13,6 +13,7 @@ SpellBot has a public API that can be used to access game and user data. As well
   - [POST `/api/game/{game}/record`](#post-apigamegamerecord)
   - [POST `/api/notification`](#post-apinotification)
   - [PATCH `/api/notification/{notif}`](#patch-apinotificationnotif)
+  - [DELETE `/api/notification/{notif}`](#delete-apinotificationnotif)
 
 ## Public Endpoints
 
@@ -203,6 +204,26 @@ This is for updating notifications created with `POST /api/notification`. You ca
   "started_at": "2025-12-05T12:00:00Z"
 }
 ```
+
+#### Response
+
+```json
+{
+  "result": {
+    "success": true
+  }
+}
+```
+
+### DELETE `/api/notification/{notif}`
+
+This is for deleting notifications created with `POST /api/notification`. Useful for expired or abandoned games.
+
+> Note: Required API scope: `notification`.
+
+#### Request
+
+None
 
 #### Response
 

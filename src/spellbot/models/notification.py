@@ -21,6 +21,7 @@ class NotificationDict(TypedDict):
     created_at: datetime
     updated_at: datetime
     started_at: datetime | None
+    deleted_at: datetime | None
     guild: int
     channel: int
     message: int | None
@@ -63,6 +64,11 @@ class Notification(Base):
         DateTime,
         nullable=True,
         doc="UTC timestamp when this game was started",
+    )
+    deleted_at = Column(
+        DateTime,
+        nullable=True,
+        doc="UTC timestamp when this game was deleted",
     )
     guild = Column(
         BigInteger,
@@ -134,6 +140,7 @@ class Notification(Base):
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "started_at": self.started_at,
+            "deleted_at": self.deleted_at,
             "guild": self.guild,
             "channel": self.channel,
             "message": self.message,
