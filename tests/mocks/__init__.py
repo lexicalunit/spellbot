@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 import discord
 
 from spellbot.models import Channel, Guild, User
+from tests.mocks.girudo import GirudoTestData, MockHTTPClient, MockHTTPResponse, create_mock_game
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -281,14 +282,6 @@ def mock_discord_object(
         return mock_discord_guild(obj)
     raise NotImplementedError
 
-
-# Export girudo mock classes for easier importing
-from tests.mocks.girudo import (  # noqa: E402
-    GirudoTestData,
-    MockHTTPClient,
-    MockHTTPResponse,
-    create_mock_game,
-)
 
 __all__ = [
     "CLIENT_USER_ID",
