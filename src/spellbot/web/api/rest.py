@@ -153,7 +153,7 @@ def retry_if_not_unrecoverable(exc: BaseException) -> bool:
 async def post_with_retry(
     session: aiohttp.ClientSession,
     path: str,
-    payload: dict[str, Any],
+    payload: dict[str, Any] | None = None,
     method: str = "post",
 ) -> dict[str, Any]:
     headers = {
@@ -202,6 +202,24 @@ async def update_message(
             )
     except Exception as ex:
         logger.warning("Send message failure: %s", ex, exc_info=True)
+    return None
+
+
+@tracer.wrap(name="rest", resource="delete_message")
+async def delete_message(
+    channel_xid: int,
+    message_xid: int,
+) -> dict[str, Any] | None:
+    logger.info("Deleting message in channel %s...", channel_xid)
+    try:
+        async with aiohttp.ClientSession() as session:
+            return await post_with_retry(
+                session,
+                f"/channels/{channel_xid}/messages/{message_xid}",
+                method="delete",
+            )
+    except Exception as ex:
+        logger.warning("Delete message failure: %s", ex, exc_info=True)
     return None
 
 
@@ -366,6 +384,22 @@ async def update_notification_endpoint(request: web.Request) -> WebResponse:
             if not notif.message and message_id:
                 await services.notifications.set_message(notif_id, message_id)
             return reply({"success": bool(resp and "id" in resp)})
+    except Exception as e:
+        return reply(error=str(e))
+
+
+@tracer.wrap(name="rest", resource="delete_notification_endpoint")
+async def delete_notification_endpoint(request: web.Request) -> WebResponse:
+    try:
+        async with db_session_manager():
+            services = ServicesRegistry()
+            notif_id = int(request.match_info["notif"])
+            notif = await services.notifications.delete(notif_id)
+            if not notif:
+                return reply(error="Notification not found", status=404)
+            if notif.message:
+                await delete_message(notif.channel, notif.message)
+            return reply({"success": True})
     except Exception as e:
         return reply(error=str(e))
 

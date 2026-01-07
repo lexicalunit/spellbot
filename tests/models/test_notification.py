@@ -19,6 +19,7 @@ class TestModelNotification:
             "created_at": notif.created_at,
             "updated_at": notif.updated_at,
             "started_at": notif.started_at,
+            "deleted_at": notif.deleted_at,
             "guild": notif.guild,
             "channel": notif.channel,
             "message": notif.message,
