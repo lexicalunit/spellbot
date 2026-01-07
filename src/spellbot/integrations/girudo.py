@@ -317,17 +317,6 @@ async def authenticate(
         return None
 
 
-async def authenticate_with_token(
-    client: httpx.AsyncClient,
-    token: str | None = None,
-    email: str | None = None,
-    password: str | None = None,
-) -> str | None:
-    if token:
-        return token
-    return await authenticate(client, email=email, password=password)
-
-
 async def create_game(
     client: httpx.AsyncClient,
     token: str,

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Self
 
+from httpx import AsyncClient
+
 if TYPE_CHECKING:
     from types import TracebackType
 
@@ -30,10 +32,9 @@ class MockHTTPResponse:
         return self._json_data
 
 
-class MockHTTPClient:
-    """Mock HTTP client for testing Girudo integration without network calls."""
-
-    def __init__(self, response: MockHTTPResponse | None = None) -> None:
+class MockHTTPClient(AsyncClient):
+    def __init__(self, response: MockHTTPResponse | None = None, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
         self.response = response or MockHTTPResponse()
         self.get_calls: list[tuple[str, dict[str, Any]]] = []
         self.post_calls: list[tuple[str, dict[str, Any]]] = []
@@ -57,6 +58,7 @@ class MockHTTPClient:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> bool:
+        await super().__aexit__(exc_type, exc_val, exc_tb)
         return False
 
 
