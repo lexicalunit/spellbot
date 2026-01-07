@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from asgiref.sync import sync_to_async
 from sqlalchemy import update
+from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Notification
@@ -23,6 +25,7 @@ class NotificationData:
     bracket: int
     service: int
     started_at: datetime | None = None
+    deleted_at: datetime | None = None
     role: str | None = None
 
     # These are None if not yet persisted to the database:
@@ -44,6 +47,7 @@ class NotificationData:
             bracket=obj.bracket,
             service=obj.service,
             started_at=obj.started_at,
+            deleted_at=obj.deleted_at,
             id=obj.id,
             created_at=obj.created_at,
             updated_at=obj.updated_at,
@@ -82,6 +86,8 @@ class NotificationsService:
         obj = DatabaseSession.get(Notification, pk)
         if obj is None:
             return None
+        if obj.deleted_at is not None:
+            return None
         obj.players = players
         obj.started_at = started_at
         DatabaseSession.commit()
@@ -90,6 +96,22 @@ class NotificationsService:
 
     @sync_to_async()
     def set_message(self, pk: int, message: int) -> None:
-        qs = update(Notification.__table__).where(Notification.id == pk).values(message=message)
+        qs = (
+            update(Notification.__table__)
+            .where(and_(Notification.id == pk, Notification.deleted_at.is_(None)))
+            .values(message=message)
+        )
         DatabaseSession.execute(qs)
         DatabaseSession.commit()
+
+    @sync_to_async()
+    def delete(self, pk: int) -> NotificationData | None:
+        obj = DatabaseSession.get(Notification, pk)
+        if obj is None:
+            return None
+        if obj.deleted_at is not None:
+            return None
+        obj.deleted_at = datetime.now(tz=UTC)
+        DatabaseSession.commit()
+        DatabaseSession.refresh(obj)
+        return obj.to_data()
