@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Expire inactive notifications after 45 minutes.
+
 ## [v17.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v17.4.0) - 2026-01-06
 
 ### Added
