@@ -59,6 +59,7 @@ class TasksCog(commands.Cog):  # pragma: no cover
             self.cleanup_old_voice_channels.start()
             self.expire_inactive_games.start()
             self.patreon_sync.start()
+            self.expire_inactive_notifications.start()
 
     @tasks.loop(minutes=settings.VOICE_CLEANUP_LOOP_M)
     async def cleanup_old_voice_channels(self) -> None:
@@ -97,6 +98,19 @@ class TasksCog(commands.Cog):  # pragma: no cover
 
     @patreon_sync.before_loop
     async def before_patreon_sync(self) -> None:
+        await wait_until_ready(self.bot)
+
+    @tasks.loop(minutes=settings.EXPIRE_GAMES_LOOP_M)
+    async def expire_inactive_notifications(self) -> None:
+        try:
+            with tracer.trace(name="command", resource="expire_inactive_notifications"):
+                async with TasksAction.create(self.bot) as action:
+                    await action.expire_inactive_notifications()
+        except BaseException:  # Catch EVERYTHING so tasks don't die
+            logger.exception("error: exception in task cog")
+
+    @expire_inactive_notifications.before_loop
+    async def before_expire_inactive_notifications(self) -> None:
         await wait_until_ready(self.bot)
 
 

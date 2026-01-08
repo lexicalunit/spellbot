@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from asgiref.sync import sync_to_async
+from ddtrace.trace import tracer
 from sqlalchemy import update
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Notification
+from spellbot.models import Notification, NotificationDict
+from spellbot.settings import settings
 
 
 @dataclass
@@ -53,6 +55,7 @@ class NotificationData:
 
 class NotificationsService:
     @sync_to_async()
+    @tracer.wrap()
     def create(self, notif: NotificationData) -> NotificationData:
         db_object = Notification(
             link=notif.link,
@@ -73,6 +76,7 @@ class NotificationsService:
         return notif
 
     @sync_to_async()
+    @tracer.wrap()
     def update(
         self,
         pk: int,
@@ -91,6 +95,7 @@ class NotificationsService:
         return obj.to_data()
 
     @sync_to_async()
+    @tracer.wrap()
     def set_message(self, pk: int, message: int) -> None:
         qs = (
             update(Notification.__table__)
@@ -101,6 +106,7 @@ class NotificationsService:
         DatabaseSession.commit()
 
     @sync_to_async()
+    @tracer.wrap()
     def delete(self, pk: int) -> NotificationData | None:
         obj = DatabaseSession.get(Notification, pk)
         if obj is None:
@@ -111,3 +117,14 @@ class NotificationsService:
         DatabaseSession.commit()
         DatabaseSession.refresh(obj)
         return obj.to_data()
+
+    @sync_to_async()
+    @tracer.wrap()
+    def inactive_notifications(self) -> list[NotificationDict]:
+        limit = datetime.now(tz=UTC) - timedelta(minutes=settings.EXPIRE_TIME_M)
+        records = DatabaseSession.query(Notification).filter(
+            Notification.started_at.is_(None),
+            Notification.deleted_at.is_(None),
+            Notification.created_at <= limit,
+        )
+        return [record.to_dict() for record in records]
