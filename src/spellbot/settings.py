@@ -170,17 +170,29 @@ class Settings:
         self.PATREON_SYNC_LOOP_M = 60  # 60 minutes
 
         # girudo integration
-        self.GIRUDO_BASE_URL = getenv("GIRUDO_BASE_URL")
-        self.GIRUDO_AUTH_URL = getenv("GIRUDO_AUTH_URL")
-        self.GIRUDO_LOBBY_URL = getenv("GIRUDO_LOBBY_URL")
-        self.GIRUDO_CREATE_URL = getenv("GIRUDO_CREATE_URL")
+        self.GIRUDO_BASE_URL = getenv("GIRUDO_BASE_URL", "https://game.girudo.com")
+        self.GIRUDO_AUTH_URL = getenv(
+            "GIRUDO_AUTH_URL",
+            "https://game.girudo.com/auth-service/api/v1/login",
+        )
+        self.GIRUDO_LOBBY_URL = getenv(
+            "GIRUDO_LOBBY_URL",
+            "https://game.girudo.com/game-service/v1/game/lobby?limit=15&offset=0",
+        )
+        self.GIRUDO_CREATE_URL = getenv(
+            "GIRUDO_CREATE_URL",
+            "https://game.girudo.com/game-service/v1/game/multiplayer",
+        )
         self.GIRUDO_EMAILS = getenv("GIRUDO_EMAILS")
         self.GIRUDO_PASSWORDS = getenv("GIRUDO_PASSWORDS")
         self.GIRUDO_DEFAULT_FORMAT_UUID = getenv("GIRUDO_DEFAULT_FORMAT_UUID")
-        self.GIRUDO_DEFAULT_FORMAT_NAME = getenv("GIRUDO_DEFAULT_FORMAT_NAME")
+        self.GIRUDO_DEFAULT_FORMAT_NAME = getenv("GIRUDO_DEFAULT_FORMAT_NAME", "Commander / EDH")
         self.GIRUDO_DEFAULT_TCG_UUID = getenv("GIRUDO_DEFAULT_TCG_UUID")
-        self.GIRUDO_DEFAULT_TCG_NAME = getenv("GIRUDO_DEFAULT_TCG_NAME")
-        self.GIRUDO_STORE_DATA_URL = getenv("GIRUDO_STORE_DATA_URL")
+        self.GIRUDO_DEFAULT_TCG_NAME = getenv("GIRUDO_DEFAULT_TCG_NAME", "Magic The Gathering")
+        self.GIRUDO_STORE_DATA_URL = getenv(
+            "GIRUDO_STORE_DATA_URL",
+            "https://game.girudo.com/user-service/api/v1/store-data",
+        )
         self.GIRUDO_RETRY_ATTEMPTS = int(getenv("GIRUDO_RETRY_ATTEMPTS", "2"))
         self.GIRUDO_TIMEOUT_S = int(getenv("GIRUDO_TIMEOUT_S", "10"))
         self.GIRUDO_DEFAULT_TCG_MAGIC_UUID = getenv("GIRUDO_DEFAULT_TCG_MAGIC_UUID")
