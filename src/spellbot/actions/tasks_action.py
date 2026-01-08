@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from discord.channel import VoiceChannel
 
     from spellbot import SpellBot
-    from spellbot.models import GameDict
+    from spellbot.models import GameDict, NotificationDict
 
 logger = logging.getLogger(__name__)
 
@@ -198,6 +198,49 @@ class TasksAction:
                     embed=None,
                     view=None,
                 )
+
+    async def expire_inactive_notifications(self) -> None:
+        logger.info("starting task expire_inactive_notifications")
+        try:
+            notifications = await self.services.notifications.inactive_notifications()
+            await self.expire_notifications(notifications)
+        except BaseException as e:  # Catch EVERYTHING so tasks don't die
+            add_span_error(e)
+            logger.exception("error: exception in background task")
+            await rollback_session()
+
+    async def expire_notifications(self, notifications: list[NotificationDict]) -> None:
+        batch = 0
+        for notification in notifications:
+            if notification["id"] is None:
+                continue
+            logger.info("expiring notification %s...", notification["id"])
+            await self.services.notifications.delete(notification["id"])
+            await self.expire_notification(notification)
+
+            batch += 1
+            if batch >= 5:  # pragma: no cover
+                await asyncio.sleep(5)
+                batch = 0
+            else:
+                await asyncio.sleep(1)
+
+    async def expire_notification(self, notification: NotificationDict) -> None:
+        if not (message_xid := notification["message"]):
+            return
+
+        chan = await safe_fetch_text_channel(
+            self.bot,
+            notification["guild"],
+            notification["channel"],
+        )
+        if not chan:
+            return
+
+        if not (msg := safe_get_partial_message(chan, notification["guild"], message_xid)):
+            return
+
+        await safe_delete_message(msg)
 
     async def patreon_sync(self) -> None:
         logger.info("starting task patreon_sync")
