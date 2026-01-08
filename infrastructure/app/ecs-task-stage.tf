@@ -119,6 +119,18 @@ resource "aws_ecs_task_definition" "spellbot_stage" {
         {
           name  = "PATREON_CAMPAIGN"
           value = "5809116"
+        },
+        {
+          name  = "GIRUDO_DEFAULT_FORMAT_UUID"
+          value = "5d43935-9374-416f-8ddd-ef71ed50670e"
+        },
+        {
+          name  = "GIRUDO_DEFAULT_TCG_UUID"
+          value = "ca8b23af-c9dd-4b16-bfaf-ee351caf4a16"
+        },
+        {
+          name  = "GIRUDO_DEFAULT_TCG_MAGIC_UUID"
+          value = "ca8b23af-c9dd-4b16-bfaf-ee351caf4a16"
         }
       ]
       secrets = [
@@ -169,6 +181,14 @@ resource "aws_ecs_task_definition" "spellbot_stage" {
         {
           name      = "PATREON_TOKEN"
           valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:PATREON_TOKEN::"
+        },
+        {
+          name      = "GIRUDO_EMAILS"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:GIRUDO_EMAILS::"
+        },
+        {
+          name      = "GIRUDO_PASSWORDS"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:GIRUDO_PASSWORDS::"
         }
       ]
       logConfiguration = {
