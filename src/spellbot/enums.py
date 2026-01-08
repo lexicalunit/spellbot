@@ -66,6 +66,12 @@ class GameService(Enum):
         "https://www.convoke.games/",
         8,
     )
+    GIRUDO = (
+        "Girudo",
+        "_A Girudo link will be created when all players have joined._",
+        "https://www.girudo.com/",
+        4,
+    )
 
 
 GAME_SERVICE_ORDER = [
@@ -78,6 +84,7 @@ GAME_SERVICE_ORDER = [
     GameService.MTG_ARENA,
     GameService.MTG_ONLINE,
     GameService.TTS,
+    GameService.GIRUDO,
 ]
 
 
