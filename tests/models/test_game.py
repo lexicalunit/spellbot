@@ -943,3 +943,93 @@ class TestModelGame:
             "type": "rich",
             "flags": 0,
         }
+
+        # Setting already_picked to True will change the wording in the embed just a bit:
+        suggested_vc.already_picked = 555
+        assert game.to_embed(guild=dg, dm=True, suggested_vc=suggested_vc).to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": (
+                f"# [Join your SpellTable game now!]({game.game_link})"
+                "\n\n"
+                f"## Your pod is already using a voice channel, join them now: "
+                f"<#{suggested_vc.already_picked}>!\n"
+                "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
+                "\n\n"
+                "You can also [jump to the original game post](https://discordapp.com/channels/"
+                f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
+            ),
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": (
+                        f"• <@{player1.xid}> ({player1.name})\n• <@{player2.xid}> ({player2.name})"
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {
+                    "inline": False,
+                    "name": "🔊 Suggested Voice Channel",
+                    "value": f"<#{suggested_vc.already_picked}>",
+                },
+                {"inline": False, "name": "Support SpellBot", "value": ANY},
+            ],
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Your game is ready!**",
+            "type": "rich",
+            "flags": 0,
+        }
+
+    def test_game_embed_for_rematch(self, factories: Factories, settings: Settings) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            seats=2,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
+            game_link="https://spelltable/link",
+            guild=guild,
+            channel=channel,
+        )
+        post = factories.post.create(guild=guild, channel=channel, game=game)
+        player1 = factories.user.create(game=game)
+        player2 = factories.user.create(game=game)
+
+        assert game.to_embed(dm=True, rematch=True).to_dict() == {
+            "color": settings.STARTED_EMBED_COLOR,
+            "description": (
+                "This is a rematch of a previous game. "
+                "Please continue using the same game lobby and voice channel.\n\n"
+                "You can also [jump to the original game post]"
+                f"(https://discordapp.com/channels/{guild.xid}/{channel.xid}/{post.message_xid})"
+                f" in <#{channel.xid}>."
+            ),
+            "fields": [
+                {
+                    "inline": False,
+                    "name": "Players",
+                    "value": "\n".join(
+                        [
+                            f"• <@{player1.xid}> ({player1.name})",
+                            f"• <@{player2.xid}> ({player2.name})",
+                        ],
+                    ),
+                },
+                {"inline": True, "name": "Format", "value": "Commander"},
+                {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
+                {"inline": False, "name": "Support SpellBot", "value": ANY},
+            ],
+            "flags": 0,
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "thumbnail": {"url": settings.THUMB_URL},
+            "title": "**Rematch Game!**",
+            "type": "rich",
+        }
+
+    def test_bracket_title_when_no_bracket(self, factories: Factories) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(bracket=GameBracket.NONE.value, guild=guild, channel=channel)
+        assert game.bracket_title == ""
