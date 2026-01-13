@@ -84,7 +84,8 @@ class TestUpdateShardStatus:
 
         bot = MagicMock()
         bot.shard_count = 1
-        bot.shard_ids = [0]
+        bot.shards = {0: mock_shard}
+        bot.ready_shards = {0}
         bot.get_shard.return_value = mock_shard
         bot.guilds = [mock_guild]
 
