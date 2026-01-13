@@ -53,12 +53,22 @@ class SpellBot(AutoShardedBot):
         self.create_connection = create_connection
         self.guild_locks = TTLCache[int, asyncio.Lock](maxsize=100, ttl=3600)  # 1 hr
         self.supporters: set[int] = set()
+        self.ready_shards: set[int] = set()
 
     async def on_ready(self) -> None:  # pragma: no cover
         logger.info("client ready")
 
     async def on_shard_ready(self, shard_id: int) -> None:  # pragma: no cover
         logger.info("shard %s ready", shard_id)
+        self.ready_shards.add(shard_id)
+
+    async def on_shard_disconnect(self, shard_id: int) -> None:  # pragma: no cover
+        logger.info("shard %s disconnected", shard_id)
+        self.ready_shards.discard(shard_id)
+
+    async def on_shard_resumed(self, shard_id: int) -> None:  # pragma: no cover
+        logger.info("shard %s resumed", shard_id)
+        self.ready_shards.add(shard_id)
 
     async def setup_hook(self) -> None:  # pragma: no cover
         # Note: In tests we create the connection using fixtures.

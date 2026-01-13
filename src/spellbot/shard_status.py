@@ -11,7 +11,7 @@ from redis import asyncio as aioredis
 from .settings import settings
 
 if TYPE_CHECKING:
-    from discord.ext.commands import AutoShardedBot
+    from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class ShardStatus:
         )
 
 
-async def update_shard_status(bot: AutoShardedBot) -> None:
+async def update_shard_status(bot: SpellBot) -> None:
     """Update shard status information in Redis."""
     if not settings.REDIS_URL:
         logger.debug("REDIS_URL not configured, skipping shard status update")
@@ -69,8 +69,8 @@ async def update_shard_status(bot: AutoShardedBot) -> None:
             # Count guilds for this shard
             guild_count = sum(1 for g in bot.guilds if g.shard_id == shard_id)
 
-            # Check if shard is ready
-            is_ready = latency is not None and not latency.is_closed()
+            # Check if shard is ready (tracked via on_shard_ready/on_shard_disconnect events)
+            is_ready = shard_id in bot.ready_shards
 
             status = ShardStatus(
                 shard_id=shard_id,

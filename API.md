@@ -6,6 +6,7 @@ SpellBot has a public API that can be used to access game and user data. As well
 
 - [Public Endpoints](#public-endpoints)
   - [GET `/`](#get-)
+  - [GET `/status`](#get-status)
   - [GET `/g/{guild}/c/{channel}`](#get-gguildcchannel)
   - [GET `/g/{guild}/u/{user}`](#get-gguilduuser)
 - [Authenticated Endpoints](#authenticated-endpoints)
@@ -20,6 +21,10 @@ SpellBot has a public API that can be used to access game and user data. As well
 ### GET `/`
 
 Returns a 200 response with the text "ok" in the body.
+
+### GET `/status`
+
+Returns a HTML page with the current status of the bot.
 
 ### GET `/g/{guild}/c/{channel}`
 
