@@ -58,6 +58,7 @@ class Settings:
         "PENDING_EMBED_COLOR",
         "PORT",
         "REDIS_URL",
+        "SHARD_STATUS_UPDATE_INTERVAL_S",
         "SPELLTABLE_API_KEY",
         "SPELLTABLE_AUTH_REDIRECT",
         "SPELLTABLE_CLIENT_ID",
@@ -163,6 +164,7 @@ class Settings:
         self.VOICE_CLEANUP_BATCH = 30  # batch size
         self.EXPIRE_GAMES_LOOP_M = 10  # 10 minutes
         self.EXPIRE_TIME_M = 45  # 45 minutes
+        self.SHARD_STATUS_UPDATE_INTERVAL_S = 30  # 30 seconds
 
         # patreon integration
         self.PATREON_TOKEN = getenv("PATREON_TOKEN")
