@@ -10,6 +10,7 @@ from discord.ext import commands, tasks
 from spellbot.actions import TasksAction
 from spellbot.environment import running_in_pytest
 from spellbot.settings import settings
+from spellbot.shard_status import update_shard_status
 
 if TYPE_CHECKING:
     from discord import Client
@@ -60,6 +61,7 @@ class TasksCog(commands.Cog):  # pragma: no cover
             self.expire_inactive_games.start()
             self.patreon_sync.start()
             self.expire_inactive_notifications.start()
+            self.update_shard_status_task.start()
 
     @tasks.loop(minutes=settings.VOICE_CLEANUP_LOOP_M)
     async def cleanup_old_voice_channels(self) -> None:
@@ -111,6 +113,18 @@ class TasksCog(commands.Cog):  # pragma: no cover
 
     @expire_inactive_notifications.before_loop
     async def before_expire_inactive_notifications(self) -> None:
+        await wait_until_ready(self.bot)
+
+    @tasks.loop(seconds=settings.SHARD_STATUS_UPDATE_INTERVAL_S)
+    async def update_shard_status_task(self) -> None:
+        try:
+            with tracer.trace(name="command", resource="update_shard_status_task"):
+                await update_shard_status(self.bot)
+        except BaseException:  # Catch EVERYTHING so tasks don't die
+            logger.exception("error: exception in shard status update task")
+
+    @update_shard_status_task.before_loop
+    async def before_update_shard_status_task(self) -> None:
         await wait_until_ready(self.bot)
 
 
