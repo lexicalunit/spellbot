@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added some more observability to shard status code paths.
+
 ## [v17.6.1](https://github.com/lexicalunit/spellbot/releases/tag/v17.6.1) - 2026-01-12
 
 ### Added
