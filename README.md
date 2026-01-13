@@ -23,7 +23,7 @@ The Discord bot for <a href="https://convoke.games/">Convoke</a> and <a href="ht
 
 | <!-- --> | <!-- --> |
 | ---: | :---: |
-| **Deployment**    | [![build][build-badge]][build] [![aws][aws-badge]][aws] |
+| **Deployment**    | [![build][build-badge]][build] [![aws][aws-badge]][aws] [![status][status-badge]][status] |
 | **Dependencies**  | [![python][python-badge]][python] [![discord.py][discord-py-badge]][discord-py] |
 | **Distribution**  | [![pypi][pypi-badge]][pypi] [![docker][docker-badge]][docker-hub] [![mit][mit-badge]][mit] |
 | **Quality**       | [![codecov][codecov-badge]][codecov] [![ruff][ruff-badge]][ruff] [![pyright][pyright-badge]][pyright] |
@@ -167,7 +167,6 @@ Any usage of SpellBot implies that you accept the following policies.
 [convoke]: https://www.convoke.games/
 [datadog-badge]: https://img.shields.io/badge/monitors-datadog-blueviolet.svg
 [datadog]: https://app.datadoghq.com/apm/home
-<!-- [discord-badge]: https://github.com/lexicalunit/spellbot/assets/1903876/871aca88-3636-4c38-bcc1-f4093f89146f -->
 [discord-badge]: https://img.shields.io/discord/949425995969093722?logo=Discord&logoColor=ffffff&labelColor=7289da
 [discord-invite]: https://discord.gg/HuzTQYpYH4
 [discord-py-badge]: https://img.shields.io/badge/discord.py-2.x.x-blue
@@ -197,6 +196,8 @@ Any usage of SpellBot implies that you accept the following policies.
 [ruff]: https://github.com/astral-sh/ruff
 [slash]: https://discord.com/blog/slash-commands-are-here
 [spelltable]: https://spelltable.wizards.com/
+[status-badge]: https://img.shields.io/badge/bot-status-green
+[status]: https://spellbot.io/status
 [tablestream]: https://table-stream.com/
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]: https://uptimerobot.com/dashboard#785764282
