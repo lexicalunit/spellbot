@@ -55,9 +55,15 @@ async def update_shard_status(bot: SpellBot) -> None:
     try:
         redis = await aioredis.from_url(settings.REDIS_URL)
 
-        # Get shard count - if not sharded, treat as single shard
         shard_count = bot.shard_count or 1
-        shard_ids = bot.shard_ids or [0]
+        shard_ids = list(bot.shards.keys()) if bot.shards else [0]
+
+        logger.info(
+            "update_shard_status: shard_count=%s, shard_ids=%s, ready_shards=%s",
+            shard_count,
+            shard_ids,
+            bot.ready_shards,
+        )
 
         for shard_id in shard_ids:
             # Calculate latency for this shard
