@@ -256,9 +256,18 @@ class GamesService:
         dm: bool = False,
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
+        emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
+        supporters: set[int] | None = None,
     ) -> discord.Embed:
         assert self.game
-        return self.game.to_embed(guild=guild, dm=dm, suggested_vc=suggested_vc, rematch=rematch)
+        return self.game.to_embed(
+            guild=guild,
+            dm=dm,
+            suggested_vc=suggested_vc,
+            rematch=rematch,
+            emojis=emojis,
+            supporters=supporters,
+        )
 
     @sync_to_async()
     @tracer.wrap()
