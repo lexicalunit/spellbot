@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import discord
+import httpx
 from cachetools import TTLCache
 from ddtrace.trace import tracer
 from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, Context
@@ -55,6 +56,7 @@ class SpellBot(AutoShardedBot):
         self.guild_locks = TTLCache[int, asyncio.Lock](maxsize=100, ttl=3600)  # 1 hr
         self.supporters: set[int] = set()
         self.ready_shards: set[int] = set()
+        self.emojis_cache: list[discord.PartialEmoji | discord.Emoji] = []
 
     async def on_ready(self) -> None:  # pragma: no cover
         logger.info("client ready")
@@ -87,6 +89,64 @@ class SpellBot(AutoShardedBot):
         from .utils import load_extensions
 
         await load_extensions(self)
+
+        # ensure application emojis exist and cache them
+        await self._ensure_application_emojis()
+
+    async def _create_application_emoji(
+        self,
+        name: str,
+        image_url: str,
+    ) -> discord.Emoji | None:
+        try:
+            async with httpx.AsyncClient(follow_redirects=True) as client:
+                response = await client.get(image_url)
+                response.raise_for_status()
+                image_bytes = response.content
+            return await self.create_application_emoji(name=name, image=image_bytes)
+        except Exception:
+            logger.exception("warning: could not create application emoji %s", name)
+        return None
+
+    async def _ensure_application_emojis(self) -> None:
+        """Fetch all application emojis from Discord API, creating missing ones if needed."""
+
+        async def fetch() -> list[discord.PartialEmoji | discord.Emoji]:
+            async with httpx.AsyncClient() as client:
+                headers = {"Authorization": f"Bot {settings.BOT_TOKEN}"}
+                resp = await client.get(
+                    f"https://discord.com/api/v10/applications/{self.application_id}/emojis",
+                    headers=headers,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                return [
+                    discord.PartialEmoji(name=item["name"], id=int(item["id"]))
+                    for item in data.get("items", [])
+                ]
+
+        async def ensure(
+            emojis: list[discord.PartialEmoji | discord.Emoji],
+            name: str,
+            image_url: str,
+        ) -> discord.PartialEmoji | discord.Emoji | None:
+            for emoji in emojis:
+                if emoji.name == name:
+                    return emoji
+            return await self._create_application_emoji(name, image_url)
+
+        try:
+            emojis = await fetch()
+            created = await ensure(emojis, "spellbot_creator", settings.EMOJI_SPELLBOT_CREATOR)
+            if created and created not in emojis:
+                emojis.append(created)
+            created = await ensure(emojis, "spellbot_supporter", settings.EMOJI_SPELLBOT_SUPPORTER)
+            if created and created not in emojis:
+                emojis.append(created)
+            self.emojis_cache = emojis
+            logger.info("cached %d application emojis", len(self.emojis_cache))
+        except Exception:
+            logger.exception("warning: could not fetch application emojis")
 
     @asynccontextmanager
     async def guild_lock(self, guild_xid: int) -> AsyncGenerator[None, None]:

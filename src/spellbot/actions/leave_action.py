@@ -50,7 +50,11 @@ class LeaveAction(BaseAction):
                     assert self.interaction.message is not None
                     await safe_delete_message(self.interaction.message)
                 else:
-                    embed = await self.services.games.to_embed(guild=self.guild)
+                    embed = await self.services.games.to_embed(
+                        guild=self.guild,
+                        emojis=self.bot.emojis_cache,
+                        supporters=self.bot.supporters,
+                    )
                     await safe_update_embed_origin(self.interaction, embed=embed)
                 continue
 
@@ -65,7 +69,11 @@ class LeaveAction(BaseAction):
             if do_delete_game:
                 await safe_delete_message(message)
             else:
-                embed = await self.services.games.to_embed(guild=self.guild)
+                embed = await self.services.games.to_embed(
+                    guild=self.guild,
+                    emojis=self.bot.emojis_cache,
+                    supporters=self.bot.supporters,
+                )
                 await safe_update_embed(message, embed=embed)
 
         if do_delete_game:
@@ -91,6 +99,7 @@ class LeaveAction(BaseAction):
         game_data = await self.services.games.to_dict()
         player_count = len(await self.services.games.player_xids())
         do_delete_game = player_count == 0
+
         for post in game_data.get("posts", []):
             chan_xid = post["channel_xid"]
             guild_xid = post["guild_xid"]
@@ -104,7 +113,11 @@ class LeaveAction(BaseAction):
             if do_delete_game:
                 await safe_delete_message(message)
             else:
-                embed = await self.services.games.to_embed(guild=self.guild)
+                embed = await self.services.games.to_embed(
+                    guild=self.guild,
+                    emojis=self.bot.emojis_cache,
+                    supporters=self.bot.supporters,
+                )
                 await safe_update_embed(message, embed=embed)
 
         if do_delete_game:
@@ -145,7 +158,11 @@ class LeaveAction(BaseAction):
                         if do_delete_game:
                             await safe_delete_message(message)
                         else:
-                            embed = await self.services.games.to_embed(guild=self.guild)
+                            embed = await self.services.games.to_embed(
+                                guild=self.guild,
+                                emojis=self.bot.emojis_cache,
+                                supporters=self.bot.supporters,
+                            )
                             await safe_update_embed(
                                 message,
                                 embed=embed,
