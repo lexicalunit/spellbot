@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed issues with supporter emojis not always showing up.
+
 ## [v17.7.0](https://github.com/lexicalunit/spellbot/releases/tag/v17.7.0) - 2026-01-13
 
 ### Added
