@@ -8,6 +8,7 @@ import urllib.parse
 from typing import TYPE_CHECKING
 
 import discord
+import httpx
 from ddtrace.trace import tracer
 
 from spellbot.enums import GameBracket, GameFormat, GameService
@@ -499,10 +500,13 @@ class LookingForGameAction(BaseAction):
         assert self.channel
 
         # build the game post's embed and view:
+        emojis = await self._fetch_emojis()
         embed: discord.Embed = await self.services.games.to_embed(
             guild=self.guild,
             suggested_vc=suggested_vc,
             rematch=rematch,
+            emojis=emojis,
+            supporters=self.bot.supporters,
         )
         content = self.channel_data.get("extra", None)
         game_data = await self.services.games.to_dict()
@@ -555,6 +559,70 @@ class LookingForGameAction(BaseAction):
 
         if not origin:
             await self._reply_found_embed()
+
+    @tracer.wrap()
+    async def _create_emoji(self, name: str, image_url: str) -> discord.Emoji | None:
+        try:
+            async with httpx.AsyncClient(follow_redirects=True) as client:
+                response = await client.get(image_url)
+                response.raise_for_status()
+                image_bytes = response.content
+            return await self.bot.create_application_emoji(name=name, image=image_bytes)
+        except Exception:
+            logger.exception("warning: could create application emoji")
+        return None
+
+    @tracer.wrap()
+    async def _fetch_emojis(self) -> list[discord.PartialEmoji | discord.Emoji]:
+        """
+        Fetch all application emojis from Discord API, creating missing ones if needed.
+
+        Note: We can't use self.bot.fetch_application_emojis() because of a discord.py bug
+        where it doesn't correctly parse the 'items' wrapper in the API response.
+        """
+
+        async def fetch() -> list[discord.PartialEmoji | discord.Emoji]:
+            async with httpx.AsyncClient() as client:
+                headers = {"Authorization": f"Bot {settings.BOT_TOKEN}"}
+                resp = await client.get(
+                    f"https://discord.com/api/v10/applications/{self.bot.application_id}/emojis",
+                    headers=headers,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                return [
+                    discord.PartialEmoji(name=item["name"], id=int(item["id"]))
+                    for item in data.get("items", [])
+                ]
+
+        async def ensure(
+            emojis: list[discord.PartialEmoji | discord.Emoji],
+            name: str,
+            image_url: str,
+        ) -> discord.PartialEmoji | discord.Emoji | None:
+            for emoji in emojis:
+                if emoji.name == name:
+                    return emoji
+            return await self._create_emoji(name, image_url)
+
+        emojis: list[discord.PartialEmoji | discord.Emoji] = []
+        try:
+            emojis = await fetch()
+            if created := await ensure(
+                emojis,
+                "spellbot_creator",
+                settings.EMOJI_SPELLBOT_CREATOR,
+            ):
+                emojis.append(created)
+            if created := await ensure(
+                emojis,
+                "spellbot_supporter",
+                settings.EMOJI_SPELLBOT_SUPPORTER,
+            ):
+                emojis.append(created)
+        except Exception:
+            logger.exception("warning: could not fetch application emojis")
+        return emojis
 
     @tracer.wrap()
     async def _reply_found_embed(self) -> None:

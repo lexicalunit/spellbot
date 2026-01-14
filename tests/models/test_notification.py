@@ -29,3 +29,24 @@ class TestModelNotification:
             "service": notif.service,
             "link": notif.link,
         }
+
+    def test_notification_to_data(self, factories: Factories) -> None:
+        from spellbot.services import NotificationData
+
+        notif = factories.notification.create()
+
+        assert notif.to_data() == NotificationData(
+            link=notif.link,
+            guild=notif.guild,
+            channel=notif.channel,
+            players=notif.players,
+            format=notif.format,
+            bracket=notif.bracket,
+            service=notif.service,
+            started_at=notif.started_at,
+            deleted_at=notif.deleted_at,
+            id=notif.id,
+            created_at=notif.created_at,
+            updated_at=notif.updated_at,
+            message=notif.message,
+        )
