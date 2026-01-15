@@ -18,6 +18,12 @@
             min-height: 100vh;
             padding: 2rem;
         }
+        a, a:visited, a:active {
+            color: rgba(246, 173, 75);
+            text-decoration: none;
+            transition: all 0.3s ease-in-out;
+        }
+        a:hover { filter: brightness(150%);  }
         .container { max-width: 900px; margin: 0 auto; }
         .header {
             display: flex; align-items: center; gap: 1rem;
@@ -47,6 +53,7 @@
         .status-degraded .status-dot { background: #fbbf24; box-shadow: 0 0 12px #fbbf24; }
         .status-down .status-dot { background: #f87171; box-shadow: 0 0 12px #f87171; }
         .status-unknown .status-dot { background: #9ca3af; }
+        .status-upgrading .status-dot { background: #60a5fa; box-shadow: 0 0 12px #60a5fa; }
         .stats { display: flex; gap: 2rem; flex-wrap: wrap; }
         .stat { text-align: center; }
         .stat-value { font-size: 1.5rem; font-weight: 700; color: #818cf8; }
@@ -88,6 +95,64 @@
             text-align: center; padding: 3rem; background: #252545;
             border-radius: 12px; color: #9ca3af;
         }
+        .upgrade-banner {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+            border: 1px solid #3b82f6;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .upgrade-icon {
+            font-size: 1.5rem;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .upgrade-content { flex: 1; }
+        .upgrade-title {
+            font-weight: 600;
+            color: #60a5fa;
+            margin-bottom: 0.25rem;
+        }
+        .upgrade-details { font-size: 0.875rem; color: #9ca3af; }
+        .version-groups {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+        .version-group {
+            background: #252545;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        .version-group.is-newest {
+            border: 1px solid #4ade80;
+        }
+        .version-group.is-old {
+            border: 1px solid #6b7280;
+            opacity: 0.8;
+        }
+        .version-label {
+            font-weight: 600;
+            color: #818cf8;
+        }
+        .version-shards {
+            color: #9ca3af;
+            font-size: 0.75rem;
+        }
+        .shard-version {
+            font-size: 0.7rem;
+            color: #60a5fa;
+            margin-left: auto;
+            margin-right: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -113,8 +178,30 @@
                     <div class="stat-value">{{ "{:,}".format(total_guilds) }}</div>
                     <div class="stat-label">Servers</div>
                 </div>
+                <div class="stat">
+                    <div class="stat-value">{{ version }}</div>
+                    <div class="stat-label">Version</div>
+                </div>
             </div>
         </div>
+
+        {% if upgrade_in_progress %}
+        <div class="upgrade-banner">
+            <span class="upgrade-icon">⚙️</span>
+            <div class="upgrade-content">
+                <div class="upgrade-title">Upgrade in Progress</div>
+                <div class="upgrade-details">Rolling deployment is in progress. Some shards are running different versions.</div>
+                <div class="version-groups">
+                    {% for group in version_groups %}
+                    <div class="version-group {{ 'is-newest' if group.is_newest else 'is-old' }}">
+                        <span class="version-label">{{ group.version }}</span>
+                        <span class="version-shards">{% if group.shard_ids | length == 1 %}Shard #{{ group.shard_ids[0] }}{% else %}Shards #{{ group.shard_ids | join(', #') }}{% endif %}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         {% if shards %}
         <div class="shards-grid">
@@ -122,6 +209,9 @@
             <div class="shard-card {{ shard.status_class }}">
                 <div class="shard-header">
                     <span class="shard-id">Shard {{ shard.shard_id }}</span>
+                    {% if upgrade_in_progress %}
+                    <span class="shard-version">{{ shard.version }}</span>
+                    {% endif %}
                     <span class="shard-status {{ shard.status_class }}">{{ shard.status_text }}</span>
                 </div>
                 <div class="shard-metrics">
@@ -150,6 +240,7 @@
 
         <div class="footer">
             <p>Last updated: {{ last_updated }} • Auto-refreshes every 30 seconds</p>
+            <p>Please check <a href="https://bsky.app/profile/spellbot.io">Bluesky</a> for more information</p>
         </div>
     </div>
 </body>
