@@ -10,15 +10,16 @@ import hupper
 import uvloop
 from dotenv import load_dotenv
 
-from . import __version__
 from .environment import running_in_pytest
+
+# load .env environment variables as early as possible, BEFORE importing settings
+if not running_in_pytest():  # pragma: no cover
+    load_dotenv()
+
+from . import __version__
 from .logs import configure_logging
 from .metrics import no_metrics
 from .settings import settings
-
-# load .env environment variables as early as possible
-if not running_in_pytest():  # pragma: no cover
-    load_dotenv()
 
 if not getenv("DISABLE_UVLOOP", ""):  # pragma: no cover
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())

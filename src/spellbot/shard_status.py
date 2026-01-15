@@ -6,7 +6,10 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
+from packaging.version import parse as parse_version
 from redis import asyncio as aioredis
+
+from spellbot import __version__
 
 from .settings import settings
 
@@ -30,6 +33,7 @@ class ShardStatus:
     guild_count: int
     is_ready: bool
     last_updated: str  # ISO format timestamp
+    version: str  # Bot version running this shard
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -43,6 +47,7 @@ class ShardStatus:
             guild_count=int(data["guild_count"]),
             is_ready=bool(data["is_ready"]),
             last_updated=str(data["last_updated"]),
+            version=str(data.get("version", "unknown")),
         )
 
 
@@ -84,18 +89,43 @@ async def update_shard_status(bot: SpellBot) -> None:
                 guild_count=guild_count,
                 is_ready=is_ready,
                 last_updated=datetime.now(tz=UTC).isoformat(),
+                version=__version__,
             )
 
-            key = f"{SHARD_STATUS_PREFIX}{shard_id}"
+            # Include version in key so multiple versions can coexist during rolling deployments
+            key = f"{SHARD_STATUS_PREFIX}{shard_id}:{__version__}"
             await redis.set(key, json.dumps(status.to_dict()), ex=SHARD_STATUS_TTL)
 
         # Also store metadata about total shards
+        # Only update version if current version is greater than stored version
+        # This prevents version flip-flopping during rolling deployments
+        current_version = parse_version(__version__)
+        metadata_key = f"{SHARD_STATUS_PREFIX}metadata"
+        existing_metadata_raw = await redis.get(metadata_key)
+        existing_version_str = None
+        if existing_metadata_raw:
+            existing_metadata = json.loads(existing_metadata_raw)
+            existing_version_str = existing_metadata.get("version")
+
+        # Determine which version to write
+        version_to_write = __version__
+        if existing_version_str:
+            try:
+                if parse_version(existing_version_str) > current_version:
+                    version_to_write = existing_version_str
+            except Exception:
+                logger.debug(
+                    "Failed to parse existing version %r, using current",
+                    existing_version_str,
+                )
+
         metadata = {
+            "version": version_to_write,
             "shard_count": shard_count,
             "total_guilds": len(bot.guilds),
             "last_updated": datetime.now(tz=UTC).isoformat(),
         }
-        await redis.set(f"{SHARD_STATUS_PREFIX}metadata", json.dumps(metadata), ex=SHARD_STATUS_TTL)
+        await redis.set(metadata_key, json.dumps(metadata), ex=SHARD_STATUS_TTL)
 
         await redis.aclose()
         logger.debug("Updated shard status for %d shards", shard_count)
@@ -120,8 +150,8 @@ async def get_all_shard_statuses() -> tuple[list[ShardStatus], dict[str, object]
         metadata_raw = await redis.get(f"{SHARD_STATUS_PREFIX}metadata")
         metadata = json.loads(metadata_raw) if metadata_raw else None
 
-        # Get all shard status keys
-        keys = [key async for key in redis.scan_iter(match=f"{SHARD_STATUS_PREFIX}[0-9]*")]
+        # Get all shard status keys (pattern: shard_status:{shard_id}:{version})
+        keys = [key async for key in redis.scan_iter(match=f"{SHARD_STATUS_PREFIX}[0-9]*:*")]
 
         statuses: list[ShardStatus] = []
         for key in keys:
@@ -131,8 +161,13 @@ async def get_all_shard_statuses() -> tuple[list[ShardStatus], dict[str, object]
 
         await redis.aclose()
 
-        # Sort by shard_id
-        statuses.sort(key=lambda s: s.shard_id)
+        # Sort by shard_id, then by version (newest first)
+        statuses.sort(
+            key=lambda s: (
+                s.shard_id,
+                parse_version(s.version) if s.version != "unknown" else parse_version("0.0.0"),
+            ),
+        )
 
     except Exception:
         logger.warning("Failed to get shard statuses from Redis", exc_info=True)
