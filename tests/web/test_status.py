@@ -32,6 +32,7 @@ class TestWebStatus:
                 guild_count=100,
                 is_ready=True,
                 last_updated="2026-01-13T12:00:00+00:00",
+                version="1.0.0",
             ),
             ShardStatus(
                 shard_id=1,
@@ -39,6 +40,7 @@ class TestWebStatus:
                 guild_count=150,
                 is_ready=True,
                 last_updated="2026-01-13T12:00:00+00:00",
+                version="1.0.0",
             ),
         ]
         mock_metadata = {
@@ -71,6 +73,7 @@ class TestWebStatus:
                 guild_count=100,
                 is_ready=True,
                 last_updated="2026-01-13T12:00:00+00:00",
+                version="1.0.0",
             ),
             ShardStatus(
                 shard_id=1,
@@ -78,6 +81,7 @@ class TestWebStatus:
                 guild_count=0,
                 is_ready=False,
                 last_updated="2026-01-13T12:00:00+00:00",
+                version="1.0.0",
             ),
         ]
         mock_metadata = {

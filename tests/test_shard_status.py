@@ -21,6 +21,7 @@ class TestShardStatus:
             guild_count=100,
             is_ready=True,
             last_updated="2026-01-13T12:00:00+00:00",
+            version="1.0.0",
         )
         data = status.to_dict()
         assert data["shard_id"] == 0
@@ -138,7 +139,9 @@ class TestGetAllShardStatuses:
                 json.dumps(shard_data),  # Second call for shard data
             ],
         )
-        mock_redis.scan_iter = MagicMock(return_value=AsyncIterator([f"{SHARD_STATUS_PREFIX}0"]))
+        mock_redis.scan_iter = MagicMock(
+            return_value=AsyncIterator([f"{SHARD_STATUS_PREFIX}0"])
+        )
         mock_redis.aclose = AsyncMock()
 
         with (
