@@ -27,8 +27,9 @@ def get_patreon_campaign_url() -> str:
     )
 
 
-def get_patron_ids(data: dict[str, Any]) -> set[int]:
-    active_members = set()
+def get_patron_ids(data: dict[str, Any]) -> set[str]:
+    """Extract Patreon's Discord IDs for active patrons."""
+    active_members: set[str] = set()
     members: list[dict[str, Any]] = data.get("data") or []
     for member in members:
         if not (attributes := member.get("attributes")):
@@ -45,12 +46,12 @@ def get_patron_ids(data: dict[str, Any]) -> set[int]:
             continue
         if not (user_id := user_data.get("id")):
             continue
-        active_members.add(int(user_id))
+        active_members.add(user_id)
     return active_members
 
 
-def get_supporters(data: dict[str, Any], patrons: set[int]) -> set[int]:
-    supporters = set()
+def get_supporters(data: dict[str, Any], patrons: set[str]) -> set[int]:
+    supporters: set[int] = set()
     included = data.get("included") or []
     for item in included:
         if not (item_id := item.get("id")):
