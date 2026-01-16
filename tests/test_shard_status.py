@@ -72,6 +72,7 @@ class TestUpdateShardStatus:
         """Test that update_shard_status writes to Redis."""
         mock_redis = AsyncMock()
         mock_redis.set = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=None)  # No existing metadata
         mock_redis.aclose = AsyncMock()
 
         # Mock shard info
