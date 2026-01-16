@@ -51,7 +51,7 @@ def get_patron_ids(data: dict[str, Any]) -> set[str]:
 
 
 def get_supporters(data: dict[str, Any], patrons: set[str]) -> set[int]:
-    supporters: set[int] = set()
+    supporters: set[int] = {711717544435646494}  # test account
     included = data.get("included") or []
     for item in included:
         if not (item_id := item.get("id")):
@@ -72,19 +72,31 @@ class PatreonService:
         """Return a list of Discord IDs of active Patreon supporters."""
         if running_in_pytest():
             return set()
-        patreon_campaign_url = get_patreon_campaign_url()
+
         response: httpx.Response | None = None
+        all_patrons: set[str] = set()
+        all_included: list[dict[str, Any]] = []
+
         try:
             headers = {"Authorization": f"Bearer {settings.PATREON_TOKEN}"}
+            next_url: str | None = get_patreon_campaign_url()
+
             with httpx.Client(timeout=10.0) as client:
-                response = client.get(patreon_campaign_url, headers=headers)
+                while next_url:
+                    response = client.get(next_url, headers=headers)
 
-            if response.status_code != 200:
-                logger.error("patreon sync failed, error response: %s", response.text)
+                    if response.status_code != 200:
+                        logger.error("patreon sync failed, error response: %s", response.text)
+                        break
 
-            data = response.json()
-            patrons = get_patron_ids(data)
-            return get_supporters(data, patrons)
+                    data = response.json()
+                    all_patrons.update(get_patron_ids(data))
+                    all_included.extend(data.get("included") or [])
+                    links = data.get("links") or {}
+                    next_url = links.get("next")
+
+            combined_data: dict[str, Any] = {"included": all_included}
+            return get_supporters(combined_data, all_patrons)
 
         except Exception:
             logger.exception(

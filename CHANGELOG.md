@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Make sure to paginate through all Patreon data.
+
 ## [v17.7.6](https://github.com/lexicalunit/spellbot/releases/tag/v17.7.6) - 2026-01-16
 
 ### Fixed
@@ -776,7 +780,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Publish platform linux/amd64.
 - Reduce complexity of Dockerfile.
 - Reduce proliferation of Settings objects.
-- Use __slots__ in some classes to reduce memory usage.
+- Use **slots** in some classes to reduce memory usage.
 
 ## [v11.0.2](https://github.com/lexicalunit/spellbot/releases/tag/v11.0.2) - 2024-05-02
 
@@ -1538,7 +1542,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Allow "award" level to __remove__ a role, rather than give a role to a player.
+- Allow "award" level to **remove** a role, rather than give a role to a player.
 
 ## [v7.10.11](https://github.com/lexicalunit/spellbot/releases/tag/v7.10.11) - 2021-12-30
 
