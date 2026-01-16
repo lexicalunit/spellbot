@@ -71,17 +71,25 @@ async def update_shard_status(bot: SpellBot) -> None:
         )
 
         for shard_id in shard_ids:
+            # Get shard info
+            shard_info = bot.get_shard(shard_id)
+
             # Calculate latency for this shard
-            latency = bot.get_shard(shard_id)
             latency_ms = None
-            if latency is not None and latency.latency is not None:
-                latency_ms = round(latency.latency * 1000, 2)
+            if shard_info is not None and shard_info.latency is not None:
+                latency_ms = round(shard_info.latency * 1000, 2)
 
             # Count guilds for this shard
             guild_count = sum(1 for g in bot.guilds if g.shard_id == shard_id)
 
-            # Check if shard is ready (tracked via on_shard_ready/on_shard_disconnect events)
-            is_ready = shard_id in bot.ready_shards
+            # Check if shard is connected and operational
+            # Use is_closed() as primary indicator - this checks if the websocket is connected
+            # Also consider ready_shards for initial ready state tracking
+            # A shard is healthy if: websocket is not closed OR we have valid latency
+            is_connected = shard_info is not None and not shard_info.is_closed()
+            has_latency = latency_ms is not None
+            event_ready = shard_id in bot.ready_shards
+            is_ready = is_connected or has_latency or event_ready
 
             status = ShardStatus(
                 shard_id=shard_id,
