@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v17.7.8](https://github.com/lexicalunit/spellbot/releases/tag/v17.7.8) - 2026-01-16
+
 ### Changed
 
 - Change how patreon and shard status tasks are run, so they start faster.
