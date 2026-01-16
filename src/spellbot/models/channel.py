@@ -104,8 +104,8 @@ class Channel(Base):
     )
     default_service = Column(
         Integer(),
-        default=GameService.SPELLTABLE.value,
-        server_default=text(str(GameService.SPELLTABLE.value)),
+        default=GameService.CONVOKE.value,
+        server_default=text(str(GameService.CONVOKE.value)),
         index=True,
         nullable=False,
         doc="The default service for games in this channel",
