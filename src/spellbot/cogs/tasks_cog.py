@@ -53,16 +53,53 @@ async def wait_until_ready(bot: Client) -> None:  # pragma: no cover
             logger.exception("error: exception in task before loop")
 
 
+async def run_shard_status_loop(bot: SpellBot) -> None:  # pragma: no cover
+    interval = settings.SHARD_STATUS_UPDATE_INTERVAL_S
+    while True:
+        try:
+            with tracer.trace(name="command", resource="update_shard_status_task"):
+                await update_shard_status(bot)
+        except BaseException:  # Catch EVERYTHING so tasks don't die
+            logger.exception("error: exception in shard status update task")
+        await asyncio.sleep(interval)
+
+
+async def run_patreon_sync_loop(bot: SpellBot) -> None:  # pragma: no cover
+    interval = settings.PATREON_SYNC_LOOP_M * 60  # Convert minutes to seconds
+    while True:
+        try:
+            with tracer.trace(name="command", resource="patreon_sync"):
+                async with TasksAction.create(bot) as action:
+                    await action.patreon_sync()
+        except BaseException:  # Catch EVERYTHING so tasks don't die
+            logger.exception("error: exception in patreon sync task")
+        await asyncio.sleep(interval)
+
+
 class TasksCog(commands.Cog):  # pragma: no cover
     def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
+        self._shard_status_task: asyncio.Task[None] | None = None
+        self._patreon_sync_task: asyncio.Task[None] | None = None
+
         if not running_in_pytest():
             self.cleanup_old_voice_channels.start()
             self.expire_inactive_games.start()
-            self.patreon_sync.start()
             self.expire_inactive_notifications.start()
-            self.update_shard_status_task.start()
 
+            # Start tasks that don't require discord.py ready signal
+            self._shard_status_task = asyncio.create_task(run_shard_status_loop(bot))
+            self._patreon_sync_task = asyncio.create_task(run_patreon_sync_loop(bot))
+
+    def cog_unload(self) -> None:
+        if self._shard_status_task:
+            self._shard_status_task.cancel()
+        if self._patreon_sync_task:
+            self._patreon_sync_task.cancel()
+
+    ###############################################
+    # Clean up old voice channels
+    ###############################################
     @tasks.loop(minutes=settings.VOICE_CLEANUP_LOOP_M)
     async def cleanup_old_voice_channels(self) -> None:
         try:
@@ -76,6 +113,9 @@ class TasksCog(commands.Cog):  # pragma: no cover
     async def before_cleanup_old_voice_channels(self) -> None:
         await wait_until_ready(self.bot)
 
+    ###############################################
+    # Expire inactive games
+    ###############################################
     @tasks.loop(minutes=settings.EXPIRE_GAMES_LOOP_M)
     async def expire_inactive_games(self) -> None:
         try:
@@ -89,19 +129,9 @@ class TasksCog(commands.Cog):  # pragma: no cover
     async def before_expire_inactive_games(self) -> None:
         await wait_until_ready(self.bot)
 
-    @tasks.loop(minutes=settings.PATREON_SYNC_LOOP_M)
-    async def patreon_sync(self) -> None:
-        try:
-            with tracer.trace(name="command", resource="patreon_sync"):
-                async with TasksAction.create(self.bot) as action:
-                    await action.patreon_sync()
-        except BaseException:  # Catch EVERYTHING so tasks don't die
-            logger.exception("error: exception in task cog")
-
-    @patreon_sync.before_loop
-    async def before_patreon_sync(self) -> None:
-        await wait_until_ready(self.bot)
-
+    ###############################################
+    # Expire inactive game notifications
+    ###############################################
     @tasks.loop(minutes=settings.EXPIRE_GAMES_LOOP_M)
     async def expire_inactive_notifications(self) -> None:
         try:
@@ -114,18 +144,6 @@ class TasksCog(commands.Cog):  # pragma: no cover
     @expire_inactive_notifications.before_loop
     async def before_expire_inactive_notifications(self) -> None:
         await wait_until_ready(self.bot)
-
-    @tasks.loop(seconds=settings.SHARD_STATUS_UPDATE_INTERVAL_S)
-    async def update_shard_status_task(self) -> None:
-        try:
-            with tracer.trace(name="command", resource="update_shard_status_task"):
-                await update_shard_status(self.bot)
-        except BaseException:  # Catch EVERYTHING so tasks don't die
-            logger.exception("error: exception in shard status update task")
-
-    # Note: No before_loop wait_until_ready for shard status - it only writes to Redis
-    # and doesn't make Discord API calls, so it can start immediately to show accurate
-    # status during bot startup.
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
