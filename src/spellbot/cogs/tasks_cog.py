@@ -123,9 +123,9 @@ class TasksCog(commands.Cog):  # pragma: no cover
         except BaseException:  # Catch EVERYTHING so tasks don't die
             logger.exception("error: exception in shard status update task")
 
-    @update_shard_status_task.before_loop
-    async def before_update_shard_status_task(self) -> None:
-        await wait_until_ready(self.bot)
+    # Note: No before_loop wait_until_ready for shard status - it only writes to Redis
+    # and doesn't make Discord API calls, so it can start immediately to show accurate
+    # status during bot startup.
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
