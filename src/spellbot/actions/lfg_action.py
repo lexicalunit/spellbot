@@ -68,7 +68,7 @@ class LookingForGameAction(BaseAction):
             return service
         if self.channel_data["default_service"] is not None:
             return self.channel_data["default_service"].value
-        return GameService.SPELLTABLE.value
+        return GameService.CONVOKE.value
 
     @tracer.wrap()
     async def get_format(self, format: int | None = None) -> int:

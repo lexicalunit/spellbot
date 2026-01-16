@@ -37,7 +37,7 @@ class TestLookingForGameAction:
 
     async def test_get_service_fallback_default(self, action: LookingForGameAction) -> None:
         action.channel_data["default_service"] = None  # type: ignore
-        assert await action.get_service(None) == GameService.SPELLTABLE.value
+        assert await action.get_service(None) == GameService.CONVOKE.value
 
     async def test_get_format(self, action: LookingForGameAction) -> None:
         assert await action.get_format(GameFormat.PAUPER.value) == GameFormat.PAUPER.value
