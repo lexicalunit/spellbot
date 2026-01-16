@@ -140,7 +140,7 @@ class TestGetAllShardStatuses:
             ],
         )
         mock_redis.scan_iter = MagicMock(
-            return_value=AsyncIterator([f"{SHARD_STATUS_PREFIX}0"])
+            return_value=AsyncIterator([f"{SHARD_STATUS_PREFIX}0"]),
         )
         mock_redis.aclose = AsyncMock()
 
