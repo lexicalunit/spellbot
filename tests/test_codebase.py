@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import re
 import sys
 from os import chdir
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 
 
 class TestCodebase:
-    def test_annotations(self) -> None:
+    def test_annotations(self) -> None:  # pragma: no cover
         """Checks that all python modules import annotations from future."""
         chdir(REPO_ROOT)
         output = getoutput(  # noqa: S605
@@ -38,7 +39,7 @@ class TestCodebase:
         )
         assert output == "", "ensure that these files import annotations from __future__"
 
-    def test_pyright(self) -> None:
+    def test_pyright(self) -> None:  # pragma: no cover
         """Checks that the Python codebase passes pyright static analysis checks."""
         chdir(REPO_ROOT)
         cmd = ["pyright", *SRC_DIRS]
@@ -47,7 +48,7 @@ class TestCodebase:
         exitcode: int = cast("int", proc.returncode)
         assert exitcode == 0, f"pyright issues:\n{proc.stdout.decode('utf-8')}"
 
-    def test_ruff(self) -> None:
+    def test_ruff(self) -> None:  # pragma: no cover
         """Checks that the Python codebase passes configured ruff checks."""
         chdir(REPO_ROOT)
         cmd = ["ruff", "check", *SRC_DIRS]
@@ -58,7 +59,7 @@ class TestCodebase:
             f"ruff issues:\n{proc.stderr.decode('utf-8')}\n{proc.stdout.decode('utf-8')}"
         )
 
-    def test_ruff_format(self) -> None:
+    def test_ruff_format(self) -> None:  # pragma: no cover
         """Checks that the Python codebase passes configured ruff format checks."""
         chdir(REPO_ROOT)
         cmd = ["ruff", "format", "--check", *SRC_DIRS]
@@ -67,7 +68,7 @@ class TestCodebase:
         exitcode: int = cast("int", proc.returncode)
         assert exitcode == 0, f"ruff format issues:\n{proc.stderr.decode('utf-8')}"
 
-    def test_pylic(self) -> None:
+    def test_pylic(self) -> None:  # pragma: no cover
         """Checks that the Python codebase passes configured pylic checks."""
         chdir(REPO_ROOT)
         cmd = ["pylic", "check", "--allow-extra-safe-licenses"]
@@ -76,7 +77,7 @@ class TestCodebase:
         exitcode: int = cast("int", proc.returncode)
         assert exitcode == 0, f"pylic issues:\n{proc.stdout.decode('utf-8')}"
 
-    def test_pyproject_dependencies(self) -> None:
+    def test_pyproject_dependencies(self) -> None:  # pragma: no cover
         """Checks that pyproject.toml dependencies are sorted."""
         pyproject = toml.load("pyproject.toml")
 
@@ -108,17 +109,20 @@ class TestCodebase:
             rels = str(path.relative_to(REPO_ROOT))
             if "__snapshots__" in rels:
                 return
-            with Path.open(path, encoding="utf-8") as file:
-                lastline = None
-                key = None
-                for i, line in enumerate(file.readlines()):
-                    rel_path = f"{path.relative_to(REPO_ROOT)}"
-                    key = f"{rel_path}:{i + 1}"
-                    if prog.match(line) and rel_path not in WHITESPACE_EXCEPTIONS:
-                        errors.add(f"\t{key} - trailing whitespace")
-                    lastline = line
-                if not rels.endswith("CNAME") and lastline and not lastline.endswith("\n"):
-                    errors.add(f"\t{key} - missing endline")
+            try:
+                with Path.open(path, encoding="utf-8") as file:
+                    lastline = None
+                    key = None
+                    for i, line in enumerate(file.readlines()):
+                        rel_path = f"{path.relative_to(REPO_ROOT)}"
+                        key = f"{rel_path}:{i + 1}"
+                        if prog.match(line) and rel_path not in WHITESPACE_EXCEPTIONS:
+                            errors.add(f"\t{key} - trailing whitespace")
+                        lastline = line
+                    if not rels.endswith("CNAME") and lastline and not lastline.endswith("\n"):
+                        errors.add(f"\t{key} - missing endline")
+            except FileNotFoundError:
+                return  # file has been deleted, so obviously we don't need to check it
 
         for path in paths(repo.tree(), REPO_ROOT):
             check(path)
@@ -131,3 +135,48 @@ class TestCodebase:
             for error in sorted(errors):
                 print(error, file=sys.stderr)  # noqa: T201
             pytest.fail("Trailing whitespace is not allowed.")
+
+    def test_no_inline_imports(self) -> None:  # noqa: C901 # pragma: no cover
+        """
+        Checks that all imports are at module level, not inside functions.
+
+        To allow an inline import, add a comment containing 'allow_inline' on the same
+        line or the line before the import statement.
+        """
+        errors: list[str] = []
+
+        def check_file(filepath: Path) -> None:
+            try:
+                source = filepath.read_text(encoding="utf-8")
+                tree = ast.parse(source, filename=str(filepath))
+            except SyntaxError:
+                return
+
+            source_lines = source.splitlines()
+
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+                    continue
+                for child in ast.walk(node):
+                    if not isinstance(child, ast.Import | ast.ImportFrom):
+                        continue
+                    lineno = child.lineno
+                    current_line = source_lines[lineno - 1] if lineno <= len(source_lines) else ""
+                    prev_line = source_lines[lineno - 2] if lineno > 1 else ""
+                    if (
+                        "allow_inline" in current_line.lower()
+                        or "allow_inline" in prev_line.lower()
+                    ):
+                        continue
+                    rel_path = filepath.relative_to(REPO_ROOT)
+                    errors.append(f"{rel_path}:{lineno} - inline import in '{node.name}'")
+
+        for src_dir in SRC_DIRS:
+            for filepath in src_dir.rglob("*.py"):
+                check_file(filepath)
+
+        if errors:
+            print("Files with inline imports:", file=sys.stderr)  # noqa: T201
+            for error in sorted(errors):
+                print(f"\t{error}", file=sys.stderr)  # noqa: T201
+            pytest.fail("Inline imports require an 'allow_inline' comment.")

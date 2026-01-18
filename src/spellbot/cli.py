@@ -84,7 +84,7 @@ def main(
     level = log_level if log_level is not None else (getenv("LOG_LEVEL") or "INFO")
     configure_logging(level)
 
-    import logging
+    import logging  # allow_inline
 
     # ddtrace logging is awful and spammy
     ddtrace_logger = logging.getLogger("ddtrace")
@@ -114,14 +114,14 @@ def main(
                 conn.close()
 
     if api:
-        from .web import launch_web_server
+        from .web import launch_web_server  # allow_inline
 
         loop = asyncio.new_event_loop()
         loop.set_debug(debug)
         launch_web_server(loop, port or settings.PORT)
         loop.run_forever()
     else:
-        from .client import build_bot
+        from .client import build_bot  # allow_inline
 
         assert settings.BOT_TOKEN is not None
         bot = build_bot(mock_games=mock_games)

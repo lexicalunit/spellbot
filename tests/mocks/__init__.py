@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING, Any, cast, overload
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
+import pytest
 
+from spellbot import operations
 from spellbot.models import Channel, Guild, User
 from tests.mocks.girudo import GirudoTestData, MockHTTPClient, MockHTTPResponse, create_mock_game
 
@@ -97,10 +99,6 @@ def mock_operations(
             lfg_interaction.safe_get_partial_message.assert_called_once()
 
     """
-    import pytest
-
-    from spellbot import operations
-
     _users: list[discord.User] = users or []
 
     monkeypatch = pytest.MonkeyPatch()
@@ -211,6 +209,7 @@ def build_interaction(
     stub.channel_id = channel.id
     stub.user = author
     stub.original_response = AsyncMock(return_value=build_message(guild, channel, author))
+    stub.translate = AsyncMock(side_effect=lambda s: s)
     return stub
 
 
