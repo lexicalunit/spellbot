@@ -72,9 +72,9 @@ class User(Base):
     )
 
     def game(self, channel_xid: int) -> Game | None:
-        from spellbot.database import DatabaseSession
+        from spellbot.database import DatabaseSession  # allow_inline
 
-        from . import Game, Post, Queue
+        from . import Game, Post, Queue  # allow_inline
 
         session = DatabaseSession.object_session(self)
         queue = (
@@ -102,9 +102,9 @@ class User(Base):
         return game.deleted_at is None
 
     def pending_games(self) -> int:
-        from spellbot.database import DatabaseSession
+        from spellbot.database import DatabaseSession  # allow_inline
 
-        from . import Queue
+        from . import Queue  # allow_inline
 
         session = DatabaseSession.object_session(self)
         return session.query(Queue).filter(Queue.user_xid == self.xid).count()

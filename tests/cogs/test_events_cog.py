@@ -14,13 +14,14 @@ from spellbot.cogs import EventsCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat, GameService
 from spellbot.models import Game, GameStatus, Guild, Play, User
-from tests.mixins import InteractionMixin
+from tests.fixtures import run_command
 from tests.mocks import mock_discord_object, mock_operations
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from spellbot.client import SpellBot
+    from spellbot import SpellBot
+    from tests.fixtures import Factories
 
 pytestmark = pytest.mark.use_db
 
@@ -52,12 +53,14 @@ async def make_voice_channel() -> Callable[..., discord.VoiceChannel]:
 
 
 @pytest.mark.asyncio
-class TestCogEvents(InteractionMixin):
+class TestCogEvents:
     async def test_game(
         self,
         cog: EventsCog,
         message: discord.Message,
         add_user: Callable[..., User],
+        interaction: discord.Interaction,
+        guild: Guild,
     ) -> None:
         player1 = add_user()
         player2 = add_user()
@@ -65,19 +68,20 @@ class TestCogEvents(InteractionMixin):
         with mock_operations(lfg_action, users=users):
             lfg_action.safe_followup_channel.return_value = message
 
-            await self.run(
+            await run_command(
                 cog.game,
+                interaction,
                 players=f"<@{player1.xid}><@{player2.xid}>",
                 format=cast("int", GameFormat.LEGACY.value),
             )
 
         game = DatabaseSession.query(Game).one()
         assert game.status == GameStatus.STARTED.value
-        admin = DatabaseSession.get(User, self.interaction.user.id)
+        admin = DatabaseSession.get(User, interaction.user.id)
         assert admin is not None
-        assert self.interaction.channel is not None
-        assert admin.game(self.interaction.channel.id) is None
-        players = DatabaseSession.query(User).filter(User.xid != self.interaction.user.id).all()
+        assert interaction.channel is not None
+        assert admin.game(interaction.channel.id) is None
+        players = DatabaseSession.query(User).filter(User.xid != interaction.user.id).all()
         assert len(players) == 2
         for player in players:
             play = (
@@ -96,18 +100,21 @@ class TestCogEvents(InteractionMixin):
         self,
         cog: EventsCog,
         add_user: Callable[..., User],
+        interaction: discord.Interaction,
+        guild: Guild,
     ) -> None:
         player = add_user()
         users = [mock_discord_object(player)]
         with mock_operations(lfg_action, users=users):
-            await self.run(
+            await run_command(
                 cog.game,
+                interaction,
                 players=f"<@{player.xid}>",
                 format=cast("int", GameFormat.LEGACY.value),
             )
 
             lfg_action.safe_followup_channel.assert_called_once_with(
-                self.interaction,
+                interaction,
                 "You can't create a Legacy game with 1 players.",
             )
 
@@ -115,19 +122,22 @@ class TestCogEvents(InteractionMixin):
         self,
         cog: EventsCog,
         add_user: Callable[..., User],
+        interaction: discord.Interaction,
+        guild: Guild,
     ) -> None:
         player = add_user()
         banned = add_user(banned=True)
         users = [mock_discord_object(player), mock_discord_object(banned)]
         with mock_operations(lfg_action, users=users):
-            await self.run(
+            await run_command(
                 cog.game,
+                interaction,
                 players=f"<@{player.xid}><@{banned.xid}>",
                 format=cast("int", GameFormat.LEGACY.value),
             )
 
             lfg_action.safe_followup_channel.assert_called_once_with(
-                self.interaction,
+                interaction,
                 f"Some of the players you mentioned can not be added to a game: <@{banned.xid}>",
             )
 
@@ -137,15 +147,17 @@ class TestCogEvents(InteractionMixin):
         guild: Guild,
         message: discord.Message,
         make_voice_channel: Callable[..., discord.VoiceChannel],
+        interaction: discord.Interaction,
+        factories: Factories,
     ) -> None:
         discord_guild = mock_discord_object(guild)
-        user_1 = self.factories.user.create()
-        user_2 = self.factories.user.create()
+        user_1 = factories.user.create()
+        user_2 = factories.user.create()
         discord_user_1 = mock_discord_object(user_1)
         discord_user_2 = mock_discord_object(user_2)
         guild.voice_create = True  # type: ignore
         DatabaseSession.commit()
-        channel = self.factories.channel.create(guild=guild, voice_invite=True)
+        channel = factories.channel.create(guild=guild, voice_invite=True)
         message.channel.id = channel.xid
         manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
         voice_channel = make_voice_channel(
@@ -162,8 +174,9 @@ class TestCogEvents(InteractionMixin):
             lfg_action.safe_create_voice_channel.return_value = voice_channel
             lfg_action.safe_create_channel_invite.return_value = voice_invite
 
-            await self.run(
+            await run_command(
                 cog.game,
+                interaction,
                 players=f"<@{user_1.xid}><@{user_2.xid}>",
                 format=GameFormat.MODERN.value,
                 service=GameService.NOT_ANY.value,

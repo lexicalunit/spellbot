@@ -28,17 +28,17 @@ RETRY_ATTEMPTS = 2
 
 
 class SpellTableCSRFError(RuntimeError):
-    def __init__(self) -> None:  # pragma: no cover
+    def __init__(self) -> None:
         super().__init__("No CSRF token in login response")
 
 
 class SpellTableRedirectError(RuntimeError):
-    def __init__(self) -> None:  # pragma: no cover
+    def __init__(self) -> None:
         super().__init__("No redirect_target in authorize response")
 
 
 class SpellTableCodeError(RuntimeError):
-    def __init__(self) -> None:  # pragma: no cover
+    def __init__(self) -> None:
         super().__init__("No code in redirect_target query params")
 
 
@@ -92,7 +92,7 @@ def spelltable_game_type(format: GameFormat) -> SpellTableGameTypes:  # noqa: C9
             return SpellTableGameTypes.Pioneer
         case GameFormat.OATHBREAKER:
             return SpellTableGameTypes.Oathbreaker
-        case (
+        case (  # pragma: no cover
             GameFormat.COMMANDER
             | GameFormat.EDH_MAX
             | GameFormat.EDH_HIGH
@@ -108,7 +108,7 @@ def spelltable_game_type(format: GameFormat) -> SpellTableGameTypes:  # noqa: C9
             return SpellTableGameTypes.Commander
 
 
-def get_accounts() -> list[tuple[str, str]]:  # pragma: no cover
+def get_accounts() -> list[tuple[str, str]]:
     assert settings.SPELLTABLE_USERS, "SPELLTABLE_USERS not configured"
     assert settings.SPELLTABLE_PASSES, "SPELLTABLE_PASSES not configured"
     return list(
@@ -120,7 +120,7 @@ def get_accounts() -> list[tuple[str, str]]:  # pragma: no cover
     )
 
 
-async def pick_account(accounts: list[tuple[str, str]]) -> tuple[str, str]:  # pragma: no cover
+async def pick_account(accounts: list[tuple[str, str]]) -> tuple[str, str]:
     global ROUND_ROBIN  # noqa: PLW0603
     async with ROUND_ROBIN_LOCK:
         if ROUND_ROBIN is None:
@@ -130,14 +130,14 @@ async def pick_account(accounts: list[tuple[str, str]]) -> tuple[str, str]:  # p
         return username, password
 
 
-async def get_user_lock(username: str) -> asyncio.Lock:  # pragma: no cover
+async def get_user_lock(username: str) -> asyncio.Lock:
     async with USER_LOCKS_LOCK:
         if username not in USER_LOCKS:
             USER_LOCKS[username] = asyncio.Lock()
         return USER_LOCKS[username]
 
 
-async def get_csrf(client: httpx.AsyncClient) -> str:  # pragma: no cover
+async def get_csrf(client: httpx.AsyncClient) -> str:
     resp = await client.get(f"{settings.WIZARDS_ROOT}/login")
     resp.raise_for_status()
     csrf_token = client.cookies.get("_csrf")
@@ -146,7 +146,7 @@ async def get_csrf(client: httpx.AsyncClient) -> str:  # pragma: no cover
     return csrf_token
 
 
-async def login(  # pragma: no cover
+async def login(
     client: httpx.AsyncClient,
     username: str,
     password: str,
@@ -164,7 +164,7 @@ async def login(  # pragma: no cover
     resp.raise_for_status()
 
 
-async def client_info(client: httpx.AsyncClient, csrf: str) -> None:  # pragma: no cover
+async def client_info(client: httpx.AsyncClient, csrf: str) -> None:
     url = f"{settings.WIZARDS_ROOT}/api/client"
     payload = {
         "clientID": settings.SPELLTABLE_CLIENT_ID,
@@ -175,7 +175,7 @@ async def client_info(client: httpx.AsyncClient, csrf: str) -> None:  # pragma: 
     resp.raise_for_status()
 
 
-async def authorize(client: httpx.AsyncClient, csrf: str) -> str:  # pragma: no cover
+async def authorize(client: httpx.AsyncClient, csrf: str) -> str:
     url = f"{settings.WIZARDS_ROOT}/api/authorize"
     payload = {
         "clientInput": {
@@ -200,7 +200,7 @@ async def authorize(client: httpx.AsyncClient, csrf: str) -> str:  # pragma: no 
     return code
 
 
-async def exchange_code(client: httpx.AsyncClient, code: str) -> TokenData:  # pragma: no cover
+async def exchange_code(client: httpx.AsyncClient, code: str) -> TokenData:
     url = f"{settings.SPELLTABLE_ROOT}/prod/exchangeCode"
     payload = {"code": code}
     headers = {"x-api-key": cast("str", settings.SPELLTABLE_API_KEY)}
@@ -214,7 +214,7 @@ async def exchange_code(client: httpx.AsyncClient, code: str) -> TokenData:  # p
     )
 
 
-async def refresh_access_token(  # pragma: no cover
+async def refresh_access_token(
     client: httpx.AsyncClient,
     refresh_token: str,
 ) -> TokenData | None:
@@ -234,7 +234,7 @@ async def refresh_access_token(  # pragma: no cover
         return None
 
 
-async def create_game(  # pragma: no cover
+async def create_game(
     client: httpx.AsyncClient,
     token: str,
     game: GameDict,
@@ -256,7 +256,7 @@ async def create_game(  # pragma: no cover
     return f"https://spelltable.wizards.com/game/{data['id']}"
 
 
-async def generate_link(game: GameDict) -> str | None:  # pragma: no cover
+async def generate_link(game: GameDict) -> str | None:
     accounts = get_accounts()
     timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
 

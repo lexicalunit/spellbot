@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, cast
 import discord
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
 from ddtrace.trace import tracer
+from discord import app_commands
 from discord.app_commands import AppCommandError, ContextMenu, NoPrivateMessage
 from discord.app_commands import Command as AppCommand
 from discord.ext.commands import AutoShardedBot
@@ -294,7 +295,7 @@ def for_all_callbacks(decorator: Any) -> Any:
 
 
 async def handle_interaction_errors(interaction: discord.Interaction, error: Exception) -> None:
-    from .operations import safe_send_user
+    from .operations import safe_send_user  # allow_inline: circular import
 
     if isinstance(error, AdminOnlyError):
         return await safe_send_user(interaction.user, "You do not have permission to do that.")
@@ -339,10 +340,23 @@ async def handle_command_errors(
     return await handle_interaction_errors(interaction, error)
 
 
+class SpellBotTranslator(app_commands.Translator):
+    async def translate(
+        self,
+        string: app_commands.locale_str,
+        locale: discord.Locale,
+        context: app_commands.TranslationContext,  # type: ignore
+    ) -> str | None:
+        return str(string)
+
+
 async def load_extensions(bot: AutoShardedBot, do_sync: bool = False) -> None:  # pragma: no cover
-    from .cogs import load_all_cogs
+    from .cogs import load_all_cogs  # allow_inline
 
     guild = settings.GUILD_OBJECT
+
+    if bot.tree.translator is None:
+        await bot.tree.set_translator(SpellBotTranslator())
 
     if do_sync:
         if guild:

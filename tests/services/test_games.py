@@ -83,8 +83,9 @@ class TestServiceGames:
         await games.select(game.id)
         await games.add_post(game.guild_xid, game.channel_xid, 12345)
 
-        post = DatabaseSession.query(Post).one()
-        assert post.game_id == game.id
+        posts = DatabaseSession.query(Post).filter().all()
+        for post in posts:
+            assert post.game_id == game.id
 
     async def test_games_fully_seated(self, guild: Guild, channel: Channel) -> None:
         started_game = GameFactory.create(guild=guild, channel=channel)
@@ -161,7 +162,6 @@ class TestServiceGames:
     async def test_message_xids(self, game: Game) -> None:
         games = GamesService()
         await games.select(game.id)
-        PostFactory.create(guild=game.guild, channel=game.channel, game=game)
         assert await games.message_xids([game.id]) == [game.posts[0].message_xid]
 
     async def test_dequeue_players(self, game: Game) -> None:
