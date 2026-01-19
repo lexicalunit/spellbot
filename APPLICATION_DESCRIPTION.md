@@ -1,7 +1,6 @@
-## 🎲 **The Discord bot for SpellTable**
+## 🎲 **The Discord bot for Webcam Magic**
 
-SpellBot helps you find _Magic: The Gathering_ games on [SpellTable][spelltable]. Just looking to
-play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
+SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [SpellTable][spelltable], [Girudo][girudo], and [Table Stream][tablestream]. Just looking to play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
 
 ## **🔭 Where to Play?**
 
@@ -10,25 +9,26 @@ you?
 
 ## **🎤 Feedback**
 
-Thoughts and suggestions? Come join us on the [SpellBot Discord server][discord-invite]! Please also
-feel free to [directly report any bugs][issues] that you encounter. Or reach out to me on Twitter at
-[@SpellBotIO][follow].
+Thoughts and suggestions? Come join us on the [SpellBot Discord server][discord-invite]! Please also feel free to [directly report any bugs][issues] that you encounter. Or reach out to me on BlueSky at [@spellbot.io][follow].
 
-## **🙌 Support Me**
+## 🙌 Supported By
 
-I'm keeping SpellBot running using my own money but if you like the bot and want to help me out,
-please consider [becoming a patron][patreon].
+The continued operation of SpellBot is supported by <a href="https://www.playedh.com/">PlayEDH</a> as well as generous donations from [my patrons on Patreon][patreon] and [Ko-fi][kofi]. If you would like to help support SpellBot, please consider [signing up][patreon] for as little a _one dollar a month_ or [giving me a one-off tip][kofi] for whatever you feel is appropriate.
 
 ---
 
 [MIT][mit] © [amy@lexicalunit][lexicalunit] et [al][contributors]
 
 [contributors]: https://github.com/lexicalunit/spellbot/graphs/contributors
+[convoke]: https://www.convoke.games/
 [discord-invite]: https://discord.gg/HuzTQYpYH4
-[follow]: https://twitter.com/intent/follow?screen_name=SpellBotIO
+[follow]: https://bsky.app/profile/spellbot.io
+[girudo]: https://www.girudo.com/
 [issues]: https://github.com/lexicalunit/spellbot/issues
+[kofi]: https://ko-fi.com/lexicalunit
 [lexicalunit]: http://github.com/lexicalunit
 [mit]: https://opensource.org/licenses/MIT
 [patreon]: https://www.patreon.com/lexicalunit
 [spelltable]: https://spelltable.wizards.com/
+[tablestream]: https://table-stream.com/
 [where-to-play]: https://spellbot.io/#where-to-play
