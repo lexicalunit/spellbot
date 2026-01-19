@@ -9,18 +9,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v17.8.3](https://github.com/lexicalunit/spellbot/releases/tag/v17.8.3) - 2026-01-19
 
-## [v17.8.2](https://github.com/lexicalunit/spellbot/releases/tag/v17.8.2) - 2026-01-19
-
-## [v17.8.1](https://github.com/lexicalunit/spellbot/releases/tag/v17.8.1) - 2026-01-19
-
-## [v17.8.0](https://github.com/lexicalunit/spellbot/releases/tag/v17.8.0) - 2026-01-19
-
 ### Changed
 
 - Test suite now has 100% coverage.
 - Updated APP_DESCRIPTION.md.
 - Fixed a typo in a message.
+- Fixed bugs in the Convoke integration.
 - Added discordChannel and discordGuild to the Convoke integration.
+- Previous versions of v.17.8.x have been yanked.
 
 ## [v17.7.8](https://github.com/lexicalunit/spellbot/releases/tag/v17.7.8) - 2026-01-16
 
