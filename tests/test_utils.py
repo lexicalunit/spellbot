@@ -5,11 +5,9 @@ from unittest.mock import MagicMock
 
 import discord
 import pytest
-from discord import app_commands
 
 from spellbot.errors import AdminOnlyError, GuildOnlyError
 from spellbot.utils import (
-    SpellBotTranslator,
     bot_can_delete_channel,
     bot_can_delete_message,
     bot_can_manage_channels,
@@ -551,17 +549,3 @@ class TestUtilsUserCanModerate:
         user.id = 1
         user.roles = [role]
         assert not user_can_moderate(user, guild, channel)
-
-
-@pytest.mark.asyncio
-class TestSpellBotTranslator:
-    async def test_translate(self) -> None:
-        translator = SpellBotTranslator()
-        locale_str = app_commands.locale_str("Hello World")
-        mock_context = MagicMock(spec=app_commands.TranslationContext)
-        result = await translator.translate(
-            locale_str,
-            discord.Locale.american_english,
-            mock_context,
-        )
-        assert result == "Hello World"
