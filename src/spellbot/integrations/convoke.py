@@ -138,6 +138,7 @@ async def generate_link(game: GameDict) -> tuple[str | None, str | None]:  # pra
 
     key = passphrase()
     timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
+    data: dict[str, Any] | None = None
     async with httpx.AsyncClient(timeout=timeout) as client:
         for attempt in range(RETRY_ATTEMPTS):
             try:
