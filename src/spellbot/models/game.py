@@ -206,17 +206,17 @@ class Game(Base):
 
     @property
     def players(self) -> list[User]:
-        from spellbot.database import DatabaseSession
+        from spellbot.database import DatabaseSession  # allow_inline
 
-        from . import User
+        from . import User  # allow_inline
 
         return DatabaseSession.query(User).filter(User.xid.in_(self.player_xids)).all()
 
     @property
     def player_xids(self) -> list[int]:
-        from spellbot.database import DatabaseSession
+        from spellbot.database import DatabaseSession  # allow_inline
 
-        from . import Play, Queue
+        from . import Play, Queue  # allow_inline
 
         if self.started_at is None:
             rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == self.id)
@@ -226,9 +226,9 @@ class Game(Base):
 
     @property
     def player_pins(self) -> dict[int, str | None]:
-        from spellbot.database import DatabaseSession
+        from spellbot.database import DatabaseSession  # allow_inline
 
-        from . import Play
+        from . import Play  # allow_inline
 
         plays = DatabaseSession.query(Play).filter(Play.game_id == self.id)
         return {
@@ -237,9 +237,9 @@ class Game(Base):
 
     @property
     def player_names(self) -> dict[int, str | None]:
-        from spellbot.database import DatabaseSession
+        from spellbot.database import DatabaseSession  # allow_inline
 
-        from . import Play, User
+        from . import Play, User  # allow_inline
 
         rows = (
             DatabaseSession.query(Play.user_xid, User.name)

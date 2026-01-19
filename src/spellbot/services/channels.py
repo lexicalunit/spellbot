@@ -30,7 +30,7 @@ class ChannelsService:
         name_max_len = Channel.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(channel, "name", "")
         name = raw_name[:name_max_len]
-        if not is_cached(channel.id, name):
+        if not is_cached(channel.id, name):  # pragma: no branch (caching disabled in tests)
             values = {
                 "xid": channel.id,
                 "guild_xid": channel.guild.id,

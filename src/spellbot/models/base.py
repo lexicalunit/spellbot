@@ -71,7 +71,7 @@ class StringLiteral(String):  # pragma: no cover
 
 def literalquery(statement: Any) -> str:  # pragma: no cover
     """WARNING: This is **insecure**. DO NOT execute returned strings."""
-    import sqlalchemy.orm
+    import sqlalchemy.orm  # allow_inline
 
     if isinstance(statement, sqlalchemy.orm.Query):
         statement = statement.statement

@@ -34,7 +34,7 @@ class AboutCog(commands.Cog):
         embed.add_field(name="Version", value=version)
         author = "[@lexicalunit](https://github.com/lexicalunit)"
         embed.add_field(name="Author", value=author)
-        embed.description = (
+        embed.description = await interaction.translate(
             "_The Discord bot for [SpellTable](https://spelltable.wizards.com/)._\n"
             "\n"
             f"Having issues with SpellBot? Please [report bugs]({ISSUES})!\n"
@@ -44,7 +44,7 @@ class AboutCog(commands.Cog):
             "SpellBot's continued operation is made possible"
             " by [PlayEDH](https://www.playedh.com/) and my Patreon supporters.\n"
             "\n"
-            f"💜 Help keep SpellBot running by [becoming a patron!]({PATREON})"
+            f"💜 Help keep SpellBot running by [becoming a patron!]({PATREON})",
         )
         embed.url = "http://spellbot.io/"
         embed.color = Color(settings.INFO_EMBED_COLOR)

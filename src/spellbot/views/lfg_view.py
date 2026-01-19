@@ -22,7 +22,7 @@ class GameView(BaseView):
         interaction: discord.Interaction,
         button: ui.Button[GameView],
     ) -> None:
-        from spellbot.actions import LookingForGameAction
+        from spellbot.actions import LookingForGameAction  # allow_inline: circular import
 
         assert interaction.guild is not None
         with tracer.trace(name="interaction", resource="join"):
@@ -49,7 +49,7 @@ class GameView(BaseView):
         interaction: discord.Interaction,
         button: ui.Button[GameView],
     ) -> None:
-        from spellbot.actions import LeaveAction
+        from spellbot.actions import LeaveAction  # allow_inline: circular import
 
         assert interaction.guild is not None
         with tracer.trace(name="interaction", resource="leave"):

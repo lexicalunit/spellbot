@@ -599,7 +599,7 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
         mocker: MockerFixture,
     ) -> None:
-        import spellbot.actions.tasks_action as mod
+        import spellbot.actions.tasks_action as mod  # allow_inline
 
         mocker.patch.object(mod.settings, "VOICE_CLEANUP_BATCH", 0)
         manage_perms = discord.Permissions(
@@ -624,3 +624,162 @@ class TestTaskCleanupOldVoiceChannels:
         voice_channel.delete.assert_called_once()  # type: ignore
         assert f"deleting channel Game-SB{game.id}({voice_channel.id})" in caplog.text
         assert "batch limit reached" in caplog.text
+
+
+@pytest.mark.asyncio
+class TestTaskExpireInactiveNotifications:
+    async def test_when_nothing_to_expire(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        action.services = mock_services
+        action.services.notifications = MagicMock()
+        action.services.notifications.inactive_notifications = AsyncMock(return_value=[])
+        await action.expire_inactive_notifications()
+        assert "starting task expire_inactive_notifications" in caplog.text
+
+    async def test_when_exception_raised(
+        self,
+        action: TasksAction,
+        caplog: pytest.LogCaptureFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(
+            action,
+            "expire_notifications",
+            AsyncMock(side_effect=RuntimeError),
+        )
+        mocker.patch.object(
+            action.services.notifications,
+            "inactive_notifications",
+            AsyncMock(return_value=[]),
+        )
+        await action.expire_inactive_notifications()
+        assert "error: exception in background task" in caplog.text
+
+    async def test_when_notification_with_no_id(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        action.services = mock_services
+        action.services.notifications = MagicMock()
+        action.services.notifications.inactive_notifications = AsyncMock(
+            return_value=[{"id": None, "message": None, "guild": 1, "channel": 1}],
+        )
+        await action.expire_inactive_notifications()
+        action.services.notifications.delete.assert_not_called()
+
+    async def test_when_notification_with_no_message(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        action.services = mock_services
+        action.services.notifications = MagicMock()
+        action.services.notifications.inactive_notifications = AsyncMock(
+            return_value=[{"id": 1, "message": None, "guild": 1, "channel": 1}],
+        )
+        action.services.notifications.delete = AsyncMock()
+        await action.expire_inactive_notifications()
+        action.services.notifications.delete.assert_called_once_with(1)
+
+    async def test_when_channel_not_found(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        action.services = mock_services
+        action.services.notifications = MagicMock()
+        action.services.notifications.inactive_notifications = AsyncMock(
+            return_value=[{"id": 1, "message": 123, "guild": 1, "channel": 1}],
+        )
+        action.services.notifications.delete = AsyncMock()
+        mock_fetch_channel = AsyncMock(return_value=None)
+        mocker.patch(
+            "spellbot.actions.tasks_action.safe_fetch_text_channel",
+            mock_fetch_channel,
+        )
+        await action.expire_inactive_notifications()
+        action.services.notifications.delete.assert_called_once_with(1)
+
+    async def test_when_message_not_found(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        action.services = mock_services
+        action.services.notifications = MagicMock()
+        action.services.notifications.inactive_notifications = AsyncMock(
+            return_value=[{"id": 1, "message": 123, "guild": 1, "channel": 1}],
+        )
+        action.services.notifications.delete = AsyncMock()
+        mock_channel = MagicMock()
+        mock_fetch_channel = AsyncMock(return_value=mock_channel)
+        mocker.patch(
+            "spellbot.actions.tasks_action.safe_fetch_text_channel",
+            mock_fetch_channel,
+        )
+        mock_get_partial = MagicMock(return_value=None)
+        mocker.patch(
+            "spellbot.actions.tasks_action.safe_get_partial_message",
+            mock_get_partial,
+        )
+        await action.expire_inactive_notifications()
+        action.services.notifications.delete.assert_called_once_with(1)
+
+    async def test_when_message_deleted(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        action.services = mock_services
+        action.services.notifications = MagicMock()
+        action.services.notifications.inactive_notifications = AsyncMock(
+            return_value=[{"id": 1, "message": 123, "guild": 1, "channel": 1}],
+        )
+        action.services.notifications.delete = AsyncMock()
+        mock_channel = MagicMock()
+        mock_fetch_channel = AsyncMock(return_value=mock_channel)
+        mocker.patch(
+            "spellbot.actions.tasks_action.safe_fetch_text_channel",
+            mock_fetch_channel,
+        )
+        mock_msg = MagicMock()
+        mock_get_partial = MagicMock(return_value=mock_msg)
+        mocker.patch(
+            "spellbot.actions.tasks_action.safe_get_partial_message",
+            mock_get_partial,
+        )
+        mock_delete = AsyncMock()
+        mocker.patch("spellbot.actions.tasks_action.safe_delete_message", mock_delete)
+        await action.expire_inactive_notifications()
+        action.services.notifications.delete.assert_called_once_with(1)
+        mock_delete.assert_called_once_with(mock_msg)
+
+
+@pytest.mark.asyncio
+class TestPatreonSync:
+    async def test_patreon_sync(
+        self,
+        action: TasksAction,
+        mocker: MockerFixture,
+    ) -> None:
+        mock_supporters = AsyncMock(return_value={123, 456, 789})
+        action.services.patreon = MagicMock()
+        action.services.patreon.supporters = mock_supporters
+
+        await action.patreon_sync()
+
+        mock_supporters.assert_called_once()
+        assert action.bot.supporters == {123, 456, 789}

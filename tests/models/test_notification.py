@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from spellbot.services import NotificationData
+
 if TYPE_CHECKING:
     from tests.fixtures import Factories
 
@@ -31,8 +33,6 @@ class TestModelNotification:
         }
 
     def test_notification_to_data(self, factories: Factories) -> None:
-        from spellbot.services import NotificationData
-
         notif = factories.notification.create()
 
         assert notif.to_data() == NotificationData(

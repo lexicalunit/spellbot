@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import contextvars
+import itertools
 import logging
-from typing import TYPE_CHECKING
+from functools import partial
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import discord
 import pytest
 import pytest_asyncio
 from click.testing import CliRunner
@@ -19,6 +22,8 @@ from spellbot.database import (
     initialize_connection,
     rollback_transaction,
 )
+from spellbot.models import Queue
+from spellbot.models import User as UserModel
 from spellbot.settings import Settings
 from spellbot.web import build_web_app
 from tests.factories import (
@@ -42,15 +47,101 @@ from tests.mocks import build_author, build_channel, build_guild, build_interact
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Generator
 
-    import discord
     from aiohttp import web
     from aiohttp.test_utils import TestClient
+    from discord.app_commands import Command
     from freezegun.api import FrozenDateTimeFactory
 
     from spellbot import SpellBot
-    from spellbot.models import Channel, Game, Guild
+    from spellbot.models import Channel, Game, Guild, User
 
 logger = logging.getLogger(__name__)
+
+# Counter for generating unique offsets in fixtures when running tests in parallel.
+# Each test gets a unique offset to avoid primary key conflicts within the same
+# transaction (which is shared across all tests in a worker).
+_fixture_offset_counter = itertools.count(1)
+
+
+@overload
+def get_last_send_message(  # pragma: no cover
+    interaction: discord.Interaction,
+    kwarg: Literal["embed"],
+) -> dict[str, Any]: ...
+
+
+@overload
+def get_last_send_message(  # pragma: no cover
+    interaction: discord.Interaction,
+    kwarg: Literal["view"],
+) -> list[dict[str, Any]]: ...
+
+
+@overload
+def get_last_send_message(  # pragma: no cover
+    interaction: discord.Interaction,
+    kwarg: str,
+) -> Any: ...
+
+
+def get_last_send_message(
+    interaction: discord.Interaction,
+    kwarg: str,
+) -> dict[str, Any] | list[dict[str, Any]] | Any:
+    """Get the last send_message call's kwargs from an interaction."""
+    send_message = interaction.response.send_message
+    send_message.assert_called_once()  # type: ignore
+    send_message_call = send_message.call_args_list[0]  # type: ignore
+    actual = send_message_call.kwargs[kwarg]
+    if kwarg == "embed":
+        actual = actual.to_dict()
+    if kwarg == "view":
+        actual = actual.to_components()
+    return actual
+
+
+@overload
+def get_last_edit_message(  # pragma: no cover
+    interaction: discord.Interaction,
+    kwarg: Literal["embed"],
+) -> dict[str, Any]: ...
+
+
+@overload
+def get_last_edit_message(  # pragma: no cover
+    interaction: discord.Interaction,
+    kwarg: Literal["view"],
+) -> list[dict[str, Any]]: ...
+
+
+def get_last_edit_message(
+    interaction: discord.Interaction,
+    kwarg: str,
+) -> dict[str, Any] | list[dict[str, Any]] | Any:
+    """Get the last edit_original_response call's kwargs from an interaction."""
+    edit_message = interaction.edit_original_response
+    edit_message.assert_called_once()  # type: ignore
+    edit_message_call = edit_message.call_args_list[0]  # type: ignore
+    actual = edit_message_call.kwargs[kwarg]
+    if kwarg == "embed":
+        actual = actual.to_dict()
+    if kwarg == "view":
+        actual = actual.to_components()
+    return actual
+
+
+async def run_command[CogT: commands.Cog, **CogCallbackP](
+    command: Command[CogT, CogCallbackP, None],
+    interaction: discord.Interaction,
+    **kwargs: Any,
+) -> None:
+    """Run a discord.py app command with the given interaction and kwargs."""
+    kwargs["interaction"] = interaction
+    callback = command.callback
+    if command.binding:  # pragma: no cover
+        callback = partial(callback, command.binding)
+    callback = cast("Callable[..., Awaitable[None]]", callback)
+    return await callback(**kwargs)
 
 
 class Factories:
@@ -168,38 +259,98 @@ def settings() -> Settings:
 
 
 @pytest.fixture
-def guild(factories: Factories) -> Guild:
-    return factories.guild.create()
+def guild(factories: Factories, interaction: discord.Interaction) -> Guild:
+    """Create a database Guild that matches the interaction's guild."""
+    assert interaction.guild is not None
+    return factories.guild.create(xid=interaction.guild_id, name=interaction.guild.name)
 
 
 @pytest.fixture
-def channel(factories: Factories, guild: Guild) -> Channel:
-    return factories.channel.create(guild=guild)
+def add_guild(factories: Factories) -> Callable[..., Guild]:
+    """Add a guild."""
+    return factories.guild.create
 
 
 @pytest.fixture
-def game(factories: Factories, guild: Guild, channel: Channel) -> Game:
-    return factories.game.create(guild=guild, channel=channel)
+def add_channel(factories: Factories, guild: Guild) -> Callable[..., Channel]:
+    """Add a channel to the given guild."""
+    return partial(factories.channel.create, guild=guild)
 
 
 @pytest.fixture
-def user(factories: Factories) -> Game:
-    return factories.user.create()
+def channel(interaction: discord.Interaction, add_channel: Callable[..., Channel]) -> Channel:
+    """Create a database Channel that matches the interaction's channel."""
+    assert interaction.channel is not None
+    assert hasattr(interaction.channel, "name")
+    channel_name = interaction.channel.name  # type: ignore
+    return add_channel(xid=interaction.channel_id, name=channel_name)
 
 
 @pytest.fixture
-def dpy_author() -> discord.User:
-    return build_author()
+def add_user(factories: Factories) -> Callable[..., User]:
+    """Add a user."""
+    return factories.user.create
 
 
 @pytest.fixture
-def dpy_guild() -> discord.Guild:
-    return build_guild()
+def user(interaction: discord.Interaction, add_user: Callable[..., User]) -> User:
+    """Get or create a database User that matches the interaction's user."""
+    # Check if a user with this xid already exists (e.g., created by action fixtures)
+    existing = DatabaseSession.query(UserModel).filter_by(xid=interaction.user.id).first()
+    if existing:
+        return existing
+    return add_user(xid=interaction.user.id)
 
 
 @pytest.fixture
-def dpy_channel(dpy_guild: discord.Guild) -> discord.TextChannel:
-    return build_channel(dpy_guild)
+def message(interaction: discord.Interaction) -> discord.Message:
+    """Create a mock discord.Message for the interaction."""
+    assert interaction.guild is not None
+    assert interaction.channel is not None
+    assert isinstance(interaction.channel, discord.TextChannel)
+    return build_message(interaction.guild, interaction.channel, interaction.user)
+
+
+@pytest.fixture
+def game(
+    factories: Factories,
+    guild: Guild,
+    channel: Channel,
+    message: discord.Message,
+) -> Game:
+    """Create a database Game with a post."""
+    game = factories.game.create(guild=guild, channel=channel)
+    factories.post.create(guild=guild, channel=channel, game=game, message_xid=message.id)
+    return game
+
+
+@pytest.fixture
+def player(user: User, game: Game) -> User:
+    """Put user into a game queue."""
+    DatabaseSession.add(Queue(user_xid=user.xid, game_id=game.id, og_guild_xid=game.guild_xid))
+    DatabaseSession.commit()
+    return user
+
+
+@pytest.fixture
+def unique_offset() -> int:
+    """Generate a unique offset for each test to avoid primary key conflicts in parallel tests."""
+    return next(_fixture_offset_counter)
+
+
+@pytest.fixture
+def dpy_author(unique_offset: int) -> discord.User:
+    return build_author(offset=unique_offset)
+
+
+@pytest.fixture
+def dpy_guild(unique_offset: int) -> discord.Guild:
+    return build_guild(offset=unique_offset)
+
+
+@pytest.fixture
+def dpy_channel(dpy_guild: discord.Guild, unique_offset: int) -> discord.TextChannel:
+    return build_channel(dpy_guild, offset=unique_offset)
 
 
 @pytest.fixture

@@ -7,7 +7,7 @@ from httpx import AsyncClient
 if TYPE_CHECKING:
     from types import TracebackType
 
-from spellbot.integrations.girudo import GirudoGameFormat, GirudoLinkDetails
+from spellbot.integrations.girudo import GirudoGameFormat
 
 
 class HTTPError(Exception):
@@ -49,10 +49,10 @@ class MockHTTPClient(AsyncClient):
         self.post_calls.append((url, kwargs))
         return self.response
 
-    async def __aenter__(self) -> Self:
+    async def __aenter__(self) -> Self:  # pragma: no cover
         return self
 
-    async def __aexit__(
+    async def __aexit__(  # pragma: no cover
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
@@ -179,11 +179,3 @@ def create_mock_game(game_id: int = 42, game_format: int = 1) -> dict[str, Any]:
         "id": game_id,
         "format": game_format,
     }
-
-
-def mock_girudo_link_result(
-    link: str | None = None,
-    password: str | None = None,
-) -> GirudoLinkDetails:
-    """Create a GirudoLinkDetails instance for testing."""
-    return GirudoLinkDetails(link=link, password=password)
