@@ -119,8 +119,9 @@ async def fetch_convoke_link(  # pragma: no cover
         "name": name,
         "seatLimit": game["seats"],
         "format": format,
-        "discordGuild": str(game["guild_xid"]),
-        "discordChannel": str(game["channel_xid"]),
+        # Rollback this change for now.
+        # "discordGuild": str(game["guild_xid"]),
+        # "discordChannel": str(game["channel_xid"]),
         "bracketLevel": None if game["bracket"] == GameBracket.NONE.value else game["bracket"] - 1,
     }
     if key:
