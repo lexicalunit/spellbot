@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes bracket support for Convoke created games.
+
 ## [v17.8.3](https://github.com/lexicalunit/spellbot/releases/tag/v17.8.3) - 2026-01-19
 
 ### Changed
