@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Test suite now has 100% coverage.
 - Updated APP_DESCRIPTION.md.
+- Fixed a typo in a message.
+- Added discordChannel and discordGuild to the Convoke integration.
 
 ## [v17.7.8](https://github.com/lexicalunit/spellbot/releases/tag/v17.7.8) - 2026-01-16
 

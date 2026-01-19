@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 
 from spellbot import __version__
-from spellbot.enums import GameFormat
+from spellbot.enums import GameBracket, GameFormat
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
@@ -115,10 +115,13 @@ async def fetch_convoke_link(  # pragma: no cover
     format = convoke_game_format(sb_game_format).value
     payload = {
         "apiKey": settings.CONVOKE_API_KEY,
-        "name": name,
         "isPublic": False,
+        "name": name,
         "seatLimit": game["seats"],
         "format": format,
+        "discordGuild": str(game["guild_xid"]),
+        "discordChannel": str(game["channel_xid"]),
+        "bracketLevel": None if game["bracket"] == GameBracket.NONE.value else game["bracket"] - 1,
     }
     if key:
         payload["password"] = key

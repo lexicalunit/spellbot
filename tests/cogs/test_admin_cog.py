@@ -900,7 +900,7 @@ class TestCogAdminAwards:
         )
         assert DatabaseSession.query(GuildAward).count() == 0
         interaction.response.send_message.assert_called_once_with(  # type: ignore
-            "Your award can't be both verified and unverifed only.",
+            "Your award can't be both verified and unverified only.",
             ephemeral=True,
         )
 
