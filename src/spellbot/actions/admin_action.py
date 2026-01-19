@@ -283,7 +283,7 @@ class AdminAction(BaseAction):
         if verified_only and unverified_only:
             await safe_send_channel(
                 self.interaction,
-                "Your award can't be both verified and unverifed only.",
+                "Your award can't be both verified and unverified only.",
                 ephemeral=True,
             )
             return
