@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 
 from spellbot import __version__
-from spellbot.enums import GameFormat, GameBracket
+from spellbot.enums import GameBracket, GameFormat
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
@@ -123,7 +123,7 @@ async def fetch_convoke_link(  # pragma: no cover
         "discordChannel": str(game["channel_xid"]),
     }
     if game["bracket"] != GameBracket.NONE.value:
-        payload["bracketLevel"] = str(game["bracket"] - 1)
+        payload["bracketLevel"] = f"B{game['bracket'] - 1}"
     if key:
         payload["password"] = key
     headers = {"user-agent": f"spellbot/{__version__}"}
@@ -141,7 +141,10 @@ async def generate_link(
 
     key = passphrase()
     timeout = httpx.Timeout(
-        TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S
+        TIMEOUT_S,
+        connect=TIMEOUT_S,
+        read=TIMEOUT_S,
+        write=TIMEOUT_S,
     )
     data: dict[str, Any] | None = None
     async with httpx.AsyncClient(timeout=timeout) as client:
