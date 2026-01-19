@@ -209,7 +209,6 @@ def build_interaction(
     stub.channel_id = channel.id
     stub.user = author
     stub.original_response = AsyncMock(return_value=build_message(guild, channel, author))
-    stub.translate = AsyncMock(side_effect=lambda s: s)
     return stub
 
 
