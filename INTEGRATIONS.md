@@ -1,6 +1,6 @@
 # Integrations with external services
 
-At the time of this writing SpellBot can create games on [SpellTable][spelltable], Convoke[convoke], and [TableStream][tablestream]. This document explains how to add support for additional services.
+At the time of this writing SpellBot can create games on [SpellTable][spelltable], Convoke[convoke], Girudo[girudo], and [TableStream][tablestream]. This document explains how to add support for additional services.
 
 ## Update the GameService enum
 
@@ -59,5 +59,6 @@ In `src/spellbot/models/game.py` there is a `Game` model which represents games 
 There are a number of tests that you will need to either extend or create. Please try to maintain the test coverage as best as you can. However, please do not add any tests that require network access. To maintain coverage you can utilize mocks to simulate network requests (preferred) or (if you're lazy like me) add `# pragma: no cover` to skip coverage checks.
 
 [convoke]: https://www.convoke.games/
+[girudo]: https://www.girudo.com/
 [spelltable]: https://spelltable.wizards.com/
 [tablestream]: https://table-stream.com/
