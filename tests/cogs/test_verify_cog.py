@@ -7,8 +7,8 @@ import pytest_asyncio
 
 from spellbot.cogs import VerifyCog
 from spellbot.database import DatabaseSession
-from spellbot.models import User, Verify
-from tests.mixins import InteractionMixin
+from spellbot.models import Guild, User, Verify
+from tests.fixtures import run_command
 from tests.mocks import mock_discord_object
 
 if TYPE_CHECKING:
@@ -27,27 +27,33 @@ async def cog(bot: SpellBot) -> VerifyCog:
 
 
 @pytest.mark.asyncio
-class TestCogVerify(InteractionMixin):
+class TestCogVerify:
     @pytest_asyncio.fixture
     async def target(self, add_user: Callable[..., User]) -> discord.Member:
         return cast("discord.Member", mock_discord_object(add_user()))
 
-    async def test_verify_and_unverify(self, cog: VerifyCog, target: discord.Member) -> None:
-        await self.run(cog.verify, target=target)
+    async def test_verify_and_unverify(
+        self,
+        cog: VerifyCog,
+        target: discord.Member,
+        interaction: discord.Interaction,
+        guild: Guild,
+    ) -> None:
+        await run_command(cog.verify, interaction, target=target)
 
-        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Verified <@{target.id}>.",
             ephemeral=True,
         )
         found = DatabaseSession.query(Verify).filter(Verify.user_xid == target.id).one()
-        assert found.guild_xid == self.guild.xid
+        assert found.guild_xid == guild.xid
         assert found.user_xid == target.id
         assert found.verified
 
-        self.interaction.response.send_message.reset_mock()  # type: ignore
-        await self.run(cog.unverify, target=target)
+        interaction.response.send_message.reset_mock()  # type: ignore
+        await run_command(cog.unverify, interaction, target=target)
 
-        self.interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Unverified <@{target.id}>.",
             ephemeral=True,
         )

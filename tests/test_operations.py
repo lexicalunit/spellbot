@@ -14,6 +14,8 @@ from discord.utils import MISSING
 from spellbot import operations
 from spellbot.operations import (
     VoiceChannelSuggestion,
+    is_bad_user,
+    mark_bad_user,
     retry,
     safe_add_role,
     safe_channel_reply,
@@ -38,7 +40,6 @@ from spellbot.operations import (
     safe_update_embed_origin,
 )
 from spellbot.utils import CANT_SEND_CODE
-from tests.mixins import InteractionMixin
 from tests.mocks import build_message, mock_client
 
 if TYPE_CHECKING:
@@ -257,17 +258,18 @@ class TestOperationsUpdateEmbed:
 
 
 @pytest.mark.asyncio
-@pytest.mark.use_db
-class TestOperationsUpdateEmbedOrigin(InteractionMixin):
+class TestOperationsUpdateEmbedOrigin:
     async def test_happy_path(self) -> None:
-        success = await safe_update_embed_origin(self.interaction, "content", flags=1)
+        interaction = AsyncMock()
+        success = await safe_update_embed_origin(interaction, "content", flags=1)
         assert success
-        self.interaction.edit_original_response.assert_called_once_with("content", flags=1)  # type: ignore
+        interaction.edit_original_response.assert_called_once_with("content", flags=1)
 
     async def test_exception(self) -> None:
-        self.interaction.edit_original_response.side_effect = DiscordException  # type: ignore
-        success = await safe_update_embed_origin(self.interaction, "content", flags=1)
-        self.interaction.edit_original_response.assert_called_once_with("content", flags=1)  # type: ignore
+        interaction = AsyncMock()
+        interaction.edit_original_response.side_effect = DiscordException
+        success = await safe_update_embed_origin(interaction, "content", flags=1)
+        interaction.edit_original_response.assert_called_once_with("content", flags=1)
         assert not success
 
 
@@ -1014,3 +1016,103 @@ def test_safe_suggest_voice_channel_when_no_channels() -> None:
     guild.voice_channels = []
     result = safe_suggest_voice_channel(guild=guild, category="lfg voice", player_xids=[])
     assert result == VoiceChannelSuggestion(None, None)
+
+
+def test_safe_suggest_voice_channel_when_guild_is_none() -> None:
+    result = safe_suggest_voice_channel(guild=None, category="lfg voice", player_xids=[])
+    assert result == VoiceChannelSuggestion(None, None)
+
+
+def test_safe_suggest_voice_channel_when_channel_category_doesnt_match() -> None:
+    guild = MagicMock(spec=discord.Guild)
+    vc = MagicMock(spec=discord.VoiceChannel)
+    vc.category = MagicMock()
+    vc.category.name = "other category"
+    vc.members = []
+    guild.voice_channels = [vc]
+    result = safe_suggest_voice_channel(guild=guild, category="lfg voice", player_xids=[])
+    assert result == VoiceChannelSuggestion(None, None)
+
+
+@pytest.mark.asyncio
+class TestBadUserFunctions:
+    async def test_mark_bad_user_no_redis(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.operations.settings.REDIS_URL", None)
+        await mark_bad_user(12345)  # Should not raise
+
+    async def test_mark_bad_user_with_redis(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.operations.settings.REDIS_URL", "redis://localhost")
+        mock_redis = MagicMock()  # Not AsyncMock since redis.set is not awaited in the code
+        mock_from_url = AsyncMock(return_value=mock_redis)
+        mocker.patch("spellbot.operations.aioredis.from_url", mock_from_url)
+
+        await mark_bad_user(12345)
+
+        mock_from_url.assert_called_once_with("redis://localhost")
+        mock_redis.set.assert_called_once()
+
+    async def test_mark_bad_user_redis_error(
+        self,
+        mocker: MockerFixture,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        mocker.patch("spellbot.operations.settings.REDIS_URL", "redis://localhost")
+        mock_redis = MagicMock()
+        mock_redis.set.side_effect = Exception("redis error")
+        mock_from_url = AsyncMock(return_value=mock_redis)
+        mocker.patch("spellbot.operations.aioredis.from_url", mock_from_url)
+
+        await mark_bad_user(12345)
+
+        assert "redis error bad user cache" in caplog.text
+
+    async def test_is_bad_user_no_redis(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.operations.settings.REDIS_URL", None)
+        result = await is_bad_user(12345)
+        assert result is False
+
+    async def test_is_bad_user_no_user_xid(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.operations.settings.REDIS_URL", "redis://localhost")
+        result = await is_bad_user(None)
+        assert result is False
+
+    async def test_is_bad_user_str_user_xid(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.operations.settings.REDIS_URL", "redis://localhost")
+        mock_redis = AsyncMock()
+        mock_redis.exists = AsyncMock(return_value=True)
+        mock_from_url = AsyncMock(return_value=mock_redis)
+        mocker.patch("spellbot.operations.aioredis.from_url", mock_from_url)
+
+        result = await is_bad_user("12345")
+        assert result is True
+
+    async def test_is_bad_user_invalid_str(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.operations.settings.REDIS_URL", "redis://localhost")
+        result = await is_bad_user("not_a_number")
+        assert result is False
+
+    async def test_is_bad_user_with_redis(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.operations.settings.REDIS_URL", "redis://localhost")
+        mock_redis = AsyncMock()
+        mock_redis.exists = AsyncMock(return_value=True)
+        mock_from_url = AsyncMock(return_value=mock_redis)
+        mocker.patch("spellbot.operations.aioredis.from_url", mock_from_url)
+
+        result = await is_bad_user(12345)
+        assert result is True
+        mock_redis.exists.assert_called_once_with("bad_user:12345")
+
+    async def test_is_bad_user_redis_error(
+        self,
+        mocker: MockerFixture,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        mocker.patch("spellbot.operations.settings.REDIS_URL", "redis://localhost")
+        mock_redis = AsyncMock()
+        mock_redis.exists = AsyncMock(side_effect=Exception("redis error"))
+        mock_from_url = AsyncMock(return_value=mock_redis)
+        mocker.patch("spellbot.operations.aioredis.from_url", mock_from_url)
+
+        result = await is_bad_user(12345)
+        assert result is False
+        assert "redis error bad user cache" in caplog.text

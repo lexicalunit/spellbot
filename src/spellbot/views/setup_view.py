@@ -31,7 +31,7 @@ class SetupView(BaseView):
         interaction: discord.Interaction,
         button: discord.ui.Button[SetupView],
     ) -> None:
-        from spellbot.actions.admin_action import AdminAction
+        from spellbot.actions.admin_action import AdminAction  # allow_inline: circular import
 
         with tracer.trace(name="interaction", resource="toggle_show_links"):
             await safe_defer_interaction(interaction)
@@ -50,7 +50,7 @@ class SetupView(BaseView):
         interaction: discord.Interaction,
         button: discord.ui.Button[SetupView],
     ) -> None:
-        from spellbot.actions.admin_action import AdminAction
+        from spellbot.actions.admin_action import AdminAction  # allow_inline: circular import
 
         with tracer.trace(name="interaction", resource="toggle_voice_create"):
             await safe_defer_interaction(interaction)
@@ -69,7 +69,7 @@ class SetupView(BaseView):
         interaction: discord.Interaction,
         button: discord.ui.Button[SetupView],
     ) -> None:
-        from spellbot.actions.admin_action import AdminAction
+        from spellbot.actions.admin_action import AdminAction  # allow_inline: circular import
 
         with tracer.trace(name="interaction", resource="toggle_use_max_bitrate"):
             await safe_defer_interaction(interaction)
@@ -88,7 +88,7 @@ class SetupView(BaseView):
         interaction: discord.Interaction,
         button: discord.ui.Button[SetupView],
     ) -> None:
-        from spellbot.actions.admin_action import AdminAction
+        from spellbot.actions.admin_action import AdminAction  # allow_inline: circular import
 
         with tracer.trace(name="interaction", resource="refresh_setup"):
             await safe_defer_interaction(interaction)

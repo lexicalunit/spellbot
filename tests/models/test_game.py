@@ -12,6 +12,8 @@ from spellbot.models import Game, GameStatus
 from spellbot.operations import VoiceChannelSuggestion
 
 if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
+
     from spellbot.settings import Settings
     from tests.fixtures import Factories
 
@@ -1033,3 +1035,66 @@ class TestModelGame:
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(bracket=GameBracket.NONE.value, guild=guild, channel=channel)
         assert game.bracket_title == ""
+
+    def test_embed_players_with_supporter_emoji(self, factories: Factories) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(guild=guild, channel=channel)
+        player = factories.user.create(game=game)
+
+        supporter_emoji = MagicMock(spec=discord.Emoji)
+        supporter_emoji.name = "spellbot_supporter"
+        emojis = [supporter_emoji]
+        supporters = {player.xid}
+
+        result = game.embed_players(emojis=emojis, supporters=supporters)
+        assert f"{supporter_emoji}" in result
+        assert f"<@{player.xid}>" in result
+
+    def test_embed_players_with_owner_emoji(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(guild=guild, channel=channel)
+        player = factories.user.create(game=game, xid=12345)
+
+        mocker.patch("spellbot.models.game.settings.OWNER_XID", "12345")
+
+        owner_emoji = MagicMock(spec=discord.Emoji)
+        owner_emoji.name = "spellbot_creator"
+        emojis = [owner_emoji]
+
+        result = game.embed_players(emojis=emojis, supporters=set())
+        assert f"{owner_emoji}" in result
+        assert f"<@{player.xid}>" in result
+
+    def test_embed_with_suggested_vc_no_channels(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ) -> None:
+        """Test when suggested_vc is provided but has no channels (both None)."""
+        guild = factories.guild.create(motd=None, suggest_voice_category="lfg voice")
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            seats=2,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
+            game_link="https://spelltable/link",
+            guild=guild,
+            channel=channel,
+        )
+        factories.post.create(guild=guild, channel=channel, game=game)
+        factories.user.create(game=game)
+        factories.user.create(game=game)
+
+        dg = MagicMock(spec=discord.Guild)
+        dg.id = guild.xid
+        suggested_vc = VoiceChannelSuggestion()  # Both already_picked and random_empty are None
+
+        embed = game.to_embed(guild=dg, dm=True, suggested_vc=suggested_vc)
+        # Should not include voice channel suggestion text
+        assert "voice channel" not in embed.description.lower()

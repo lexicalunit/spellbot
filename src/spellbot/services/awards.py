@@ -63,33 +63,31 @@ class AwardsService:
             award_q = DatabaseSession.query(GuildAward).filter(
                 GuildAward.guild_xid == guild_xid,
             )
-            if plays > 0:
-                next_awards = award_q.filter(
-                    or_(
-                        GuildAward.count == plays,
-                        and_(
-                            plays % GuildAward.count == 0,
-                            GuildAward.repeating.is_(True),
-                        ),
+            next_awards = award_q.filter(
+                or_(
+                    GuildAward.count == plays,
+                    and_(
+                        plays % GuildAward.count == 0,
+                        GuildAward.repeating.is_(True),
                     ),
-                ).all()
-                for next_award in next_awards:
-                    if next_award and (
-                        (user_award.guild_award_id != next_award.id)
-                        or (user_award.guild_award_id == next_award.id and next_award.repeating)
-                    ):
-                        if next_award.unverified_only and verified:
-                            continue
-                        if next_award.verified_only and not verified:
-                            continue
-                        new_roles[player_xid].append(
-                            NewAward(
-                                next_award.role,
-                                next_award.message,
-                                next_award.remove,
-                            ),
-                        )
-                        user_award.guild_award_id = next_award.id
+                ),
+            ).all()
+            for next_award in next_awards:
+                if (user_award.guild_award_id != next_award.id) or (
+                    user_award.guild_award_id == next_award.id and next_award.repeating
+                ):
+                    if next_award.unverified_only and verified:
+                        continue
+                    if next_award.verified_only and not verified:
+                        continue
+                    new_roles[player_xid].append(
+                        NewAward(
+                            next_award.role,
+                            next_award.message,
+                            next_award.remove,
+                        ),
+                    )
+                    user_award.guild_award_id = next_award.id
         DatabaseSession.commit()
 
         return new_roles

@@ -152,6 +152,6 @@ class Notification(Base):
         }
 
     def to_data(self) -> NotificationData:
-        from spellbot.services import NotificationData
+        from spellbot.services import NotificationData  # allow_inline: avoid circular
 
         return NotificationData.from_db(self)

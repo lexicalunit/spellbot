@@ -219,12 +219,12 @@ def girudo_game_format(game_format: GameFormat) -> GirudoGameFormat:
     if game_format in commander_formats:
         return formats.get("commander_edh", default)
 
-    logger.info(
+    logger.info(  # pragma: no cover
         "No Girudo format mapping for %s, using fallback format %s",
         game_format.name,
         default.name,
     )
-    return default
+    return default  # pragma: no cover
 
 
 class GirudoLinkDetails(NamedTuple):

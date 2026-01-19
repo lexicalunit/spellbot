@@ -22,10 +22,10 @@ def version_from_package() -> str | None:
 
 
 def version_from_toml() -> str | None:
-    from os.path import realpath
-    from pathlib import Path
+    from os.path import realpath  # allow_inline
+    from pathlib import Path  # allow_inline
 
-    import toml
+    import toml  # allow_inline
 
     try:
         pkg_root = Path(realpath(__file__)).parent
