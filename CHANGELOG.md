@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added discordPlayers to Convoke game creation.
+
 ## [v17.8.4](https://github.com/lexicalunit/spellbot/releases/tag/v17.8.4) - 2026-01-19
 
 ### Fixed

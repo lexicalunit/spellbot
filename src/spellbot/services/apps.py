@@ -18,8 +18,9 @@ class AppsService:
             return False
         if token.scopes == "*":
             return True
-        required_scope = path.lstrip("/").split("/")[1]
-        if not required_scope:
+        try:
+            required_scope = path.lstrip("/").split("/")[1]
+        except IndexError:
             return False
         scopes_list = token.scopes.split(",")
         return required_scope in scopes_list
