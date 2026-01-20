@@ -10,12 +10,14 @@ import httpx
 from spellbot import __version__
 from spellbot.enums import GameBracket, GameFormat
 from spellbot.metrics import add_span_error
+from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
     from spellbot.models import GameDict
 
 logger = logging.getLogger(__name__)
+services = ServicesRegistry()
 
 USE_PASSWORD = False  # no password is now supported!
 RETRY_ATTEMPTS = 2
@@ -113,6 +115,7 @@ async def fetch_convoke_link(  # pragma: no cover
     name = f"SB{game['id']}"
     sb_game_format = GameFormat(game["format"])
     format = convoke_game_format(sb_game_format).value
+    players = await services.games.player_data(game["id"])
     payload = {
         "apiKey": settings.CONVOKE_API_KEY,
         "isPublic": False,
@@ -121,6 +124,7 @@ async def fetch_convoke_link(  # pragma: no cover
         "format": format,
         "discordGuild": str(game["guild_xid"]),
         "discordChannel": str(game["channel_xid"]),
+        "discordPlayers": [{"id": str(p["xid"]), "name": p["name"]} for p in players],
     }
     if game["bracket"] != GameBracket.NONE.value:
         payload["bracketLevel"] = f"B{game['bracket'] - 1}"
@@ -140,12 +144,7 @@ async def generate_link(
         return None, None
 
     key = passphrase()
-    timeout = httpx.Timeout(
-        TIMEOUT_S,
-        connect=TIMEOUT_S,
-        read=TIMEOUT_S,
-        write=TIMEOUT_S,
-    )
+    timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
     data: dict[str, Any] | None = None
     async with httpx.AsyncClient(timeout=timeout) as client:
         for attempt in range(RETRY_ATTEMPTS):
