@@ -55,3 +55,9 @@ class TestServiceApps:
         # Let's test with a path that produces an empty string at index 1
         # "//game" -> ["", "", "game"] -> [1] is "" which triggers the check
         assert await apps.verify_token(token.key, "//game/1") is False
+
+    async def test_verify_token_when_path_is_bad(self, factories: Factories) -> None:
+        """Test that a bad path doesn't crash and returns False."""
+        apps = AppsService()
+        token = factories.token.create(key="key", scopes="game")
+        assert await apps.verify_token(token.key, "/bogus") is False

@@ -1099,3 +1099,10 @@ class TestLookingForGameAction:
         add_role_stub.assert_called_once()
         # Should send award message
         assert send_stub.call_count >= 2  # One for game DM, one for award message
+
+    async def test_get_bracket_when_no_format_no_bracket_no_default(
+        self,
+        action: LookingForGameAction,
+    ) -> None:
+        action.channel_data = {"default_bracket": None}  # type: ignore
+        assert await action.get_bracket(None, None) == GameBracket.NONE.value
