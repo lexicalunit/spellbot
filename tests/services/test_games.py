@@ -7,15 +7,7 @@ from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.models import (
-    Channel,
-    Game,
-    GameStatus,
-    Guild,
-    Post,
-    Queue,
-    User,
-)
+from spellbot.models import Channel, Game, GameStatus, Guild, Post, Queue, User
 from spellbot.services import GamesService
 from tests.factories import (
     BlockFactory,
@@ -175,6 +167,16 @@ class TestServiceGames:
         DatabaseSession.expire_all()
         assert user1.game(game.channel_xid) is None
         assert user2.game(game.channel_xid) is None
+
+    async def test_player_data(self, game: Game) -> None:
+        user1 = UserFactory.create(game=game)
+        user2 = UserFactory.create(game=game)
+        games = GamesService()
+        assert await games.player_data(game.id) == [user1.to_dict(), user2.to_dict()]
+
+    async def test_player_data_when_game_not_found(self) -> None:
+        games = GamesService()
+        assert await games.player_data(404) == []
 
 
 @pytest.mark.asyncio
