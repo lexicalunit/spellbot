@@ -237,8 +237,7 @@ class Settings:
     @property
     def QUEER_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://user-images.githubusercontent.com/1903876/"
-            "149257079-e3efe74f-482b-4410-a0ea-dd988a4d3c63.png",
+            "https://github.com/user-attachments/assets/06eef9cf-0957-49bf-9736-a1b0709646fd",
         )
 
     def black(self, guild_xid: int | None) -> bool:  # pragma: no cover
@@ -247,13 +246,13 @@ class Settings:
     @property
     def BLACK_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://github.com/user-attachments/assets/146f40fd-1d8a-4027-937a-b00799ce89bc",
+            "https://github.com/user-attachments/assets/2b345405-c3cf-4623-b582-cf31fee73643",
         )
 
     @property
     def TRANS_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://github.com/user-attachments/assets/cb469ae7-5a31-4855-9510-03762e204b52",
+            "https://github.com/user-attachments/assets/7d144a57-1a6a-49a7-9522-98032c05eeaa",
         )
 
     def trans(self, guild_xid: int | None) -> bool:  # pragma: no cover
@@ -261,18 +260,9 @@ class Settings:
         return now.month == 11 or (now.month == 3 and now.day == 31)
 
     @property
-    def WOMEN_THUMB_URL(self) -> str:  # pragma: no cover
-        return self.workaround_over_eager_caching(
-            "https://github.com/user-attachments/assets/b66f40cc-d2c7-49eb-880a-c8965d94d412",
-        )
-
-    def women(self, guild_xid: int | None) -> bool:  # pragma: no cover
-        return datetime.now(tz=UTC).month == 3
-
-    @property
     def AUTISTIC_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://github.com/user-attachments/assets/e2799f26-6873-452a-97a4-e25a64d6d991",
+            "https://github.com/user-attachments/assets/1d521ac6-60b4-49b9-a882-48cf21a2ee34",
         )
 
     def autistic(self, guild_xid: int | None) -> bool:  # pragma: no cover
@@ -295,8 +285,6 @@ class Settings:
             return settings.AUTISTIC_THUMB_URL
         if settings.trans(guild_xid):
             return settings.TRANS_THUMB_URL
-        if settings.women(guild_xid):
-            return settings.WOMEN_THUMB_URL
         if settings.queer(guild_xid):
             return settings.QUEER_THUMB_URL
         if settings.black(guild_xid):
