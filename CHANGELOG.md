@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a `/expire_games` admin command to manually expire all inactive games on a server.
+
 ## [v17.9.1](https://github.com/lexicalunit/spellbot/releases/tag/v17.9.1) - 2026-01-21
 
 ### Changed
