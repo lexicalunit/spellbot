@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -9,8 +10,11 @@ from discord.embeds import Embed
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Channel, ChannelDict, GuildAward, GuildAwardDict
 from spellbot.operations import (
+    safe_delete_message,
     safe_fetch_text_channel,
+    safe_get_partial_message,
     safe_send_channel,
+    safe_update_embed,
     safe_update_embed_origin,
 )
 from spellbot.settings import settings
@@ -519,3 +523,57 @@ class AdminAction(BaseAction):
             f"User {from_user_xid} has been moved to {to_user_xid}",
             ephemeral=True,
         )
+
+    async def expire_games(self, guild_xid: int) -> None:
+        results = []
+        games = await self.services.games.inactive_games(guild_xid)
+
+        batch = 0
+        for game in games:
+            game_id = game["id"]
+            results.append(f"Expiring game #SB{game_id} ...")
+            dequeued = await self.services.games.delete_games([game_id])
+            results.append(f"├── Dequeued {dequeued} players")
+
+            for post in game.get("posts", []):
+                guild_xid = post["guild_xid"]
+                channel_xid = post["channel_xid"]
+                message_xid = post["message_xid"]
+
+                chan = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
+                if not chan:
+                    results.append(f"├── Could not find channel {channel_xid}")
+                    continue
+
+                if not (post := safe_get_partial_message(chan, guild_xid, message_xid)):
+                    results.append(f"├── Could not find message {message_xid}")
+                    continue
+
+                channel_data = await self.services.channels.select(channel_xid)
+                if not dequeued or (channel_data and channel_data["delete_expired"]):
+                    results.append(f"├── Deleting message {message_xid} ...")
+                    if not await safe_delete_message(post):
+                        results.append("├── Bot does not have permission")
+                else:
+                    results.append(f"├── Updating message {message_xid} ...")
+                    if not await safe_update_embed(
+                        post,
+                        content="Sorry, this game was expired due to inactivity.",
+                        embed=None,
+                        view=None,
+                    ):
+                        results.append("├── Bot does not have permission")
+                results.append("└── Done")
+
+            batch += 1
+            if batch >= 5:  # pragma: no cover
+                await asyncio.sleep(5)
+                batch = 0
+            else:
+                await asyncio.sleep(1)
+
+        message = "\n".join(results)
+        if message:
+            await safe_send_channel(self.interaction, f"```\n{message}\n```", ephemeral=True)
+        else:
+            await safe_send_channel(self.interaction, "No games to expire.", ephemeral=True)
