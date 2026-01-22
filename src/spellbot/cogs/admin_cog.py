@@ -344,6 +344,17 @@ class AdminCog(commands.Cog):
                 to_user_xid=to_user_xid,
             )
 
+    @app_commands.command(
+        name="expire_games",
+        description="Expire all inactive games on your server.",
+    )
+    @tracer.wrap(name="interaction", resource="expire_games")
+    async def expire_games(self, interaction: discord.Interaction) -> None:  # pragma: no cover
+        add_span_context(interaction)
+        assert interaction.guild_id is not None
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.expire_games(guild_xid=interaction.guild_id)
+
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
     await bot.add_cog(AdminCog(bot), guild=settings.GUILD_OBJECT)

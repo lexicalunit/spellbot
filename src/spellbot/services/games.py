@@ -496,15 +496,18 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def inactive_games(self) -> list[GameDict]:
+    def inactive_games(self, guild_xid: int | None = None) -> list[GameDict]:
         limit = datetime.now(tz=UTC) - timedelta(minutes=settings.EXPIRE_TIME_M)
+        filters = [
+            Game.status == GameStatus.PENDING.value,
+            Game.deleted_at.is_(None),
+        ]
+        if guild_xid:
+            filters.append(Game.guild_xid == guild_xid)
         records = (
             DatabaseSession.query(Game)
             .join(Queue, isouter=True)
-            .filter(
-                Game.status == GameStatus.PENDING.value,
-                Game.deleted_at.is_(None),
-            )
+            .filter(*filters)
             .group_by(Game)
             .having(
                 or_(
