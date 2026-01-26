@@ -81,6 +81,7 @@ class UsersService:
                 and_(
                     Queue.user_xid == self.user.xid,
                     Post.channel_xid == channel_xid,
+                    Game.deleted_at.is_(None),
                 ),
             )
             .first()
@@ -98,6 +99,7 @@ class UsersService:
                 and_(
                     Queue.user_xid == self.user.xid,
                     Post.channel_xid == channel_xid,
+                    Game.deleted_at.is_(None),
                 ),
             )
         )
