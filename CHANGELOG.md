@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v17.10.1](https://github.com/lexicalunit/spellbot/releases/tag/v17.10.1) - 2026-01-25
+
 ### Fixed
 
 - Fixed some edge case bugs with deleted games and user queues.
