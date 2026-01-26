@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -20,6 +22,9 @@ from tests.factories import (
     UserFactory,
     WatchFactory,
 )
+
+if TYPE_CHECKING:
+    from tests.fixtures import Factories
 
 pytestmark = pytest.mark.use_db
 
@@ -209,6 +214,24 @@ class TestServiceGamesFilterPendingGames:
         with patch("spellbot.services.games.settings.MAX_PENDING_GAMES", 3):
             games = GamesService()
             assert await games.filter_pending_games([user1.xid, user2.xid]) == [user2.xid]
+
+    async def test_deleted_game(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        user = factories.user.create()
+        deleted_game = factories.game.create(
+            status=GameStatus.PENDING.value,
+            guild=guild,
+            channel=channel,
+            deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
+        )
+        # Orphaned queue entry for deleted game
+        QueueFactory.create(game_id=deleted_game.id, user_xid=user.xid)
+
+        with patch("spellbot.services.games.settings.MAX_PENDING_GAMES", 2):
+            games = GamesService()
+            # User should be allowed since deleted game doesn't count
+            assert await games.filter_pending_games([user.xid]) == [user.xid]
 
 
 @pytest.mark.asyncio

@@ -84,6 +84,7 @@ class User(Base):
             .filter(
                 Queue.user_xid == self.xid,
                 Post.channel_xid == channel_xid,
+                Game.deleted_at.is_(None),
             )
             .order_by(Game.updated_at.desc())
             .first()
@@ -104,10 +105,18 @@ class User(Base):
     def pending_games(self) -> int:
         from spellbot.database import DatabaseSession  # allow_inline
 
-        from . import Queue  # allow_inline
+        from . import Game, Queue  # allow_inline
 
         session = DatabaseSession.object_session(self)
-        return session.query(Queue).filter(Queue.user_xid == self.xid).count()
+        return (
+            session.query(Queue)
+            .join(Game)
+            .filter(
+                Queue.user_xid == self.xid,
+                Game.deleted_at.is_(None),
+            )
+            .count()
+        )
 
     def to_dict(self) -> UserDict:
         return {

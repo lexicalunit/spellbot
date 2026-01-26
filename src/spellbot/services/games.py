@@ -436,10 +436,15 @@ class GamesService:
     @sync_to_async()
     @tracer.wrap()
     def filter_pending_games(self, user_xids: list[int]) -> list[int]:
-        rows = DatabaseSession.query(
-            Queue.user_xid,
-            func.count(Queue.user_xid).label("pending"),
-        ).group_by(Queue.user_xid)
+        rows = (
+            DatabaseSession.query(
+                Queue.user_xid,
+                func.count(Queue.user_xid).label("pending"),
+            )
+            .join(Game)
+            .filter(Game.deleted_at.is_(None))
+            .group_by(Queue.user_xid)
+        )
         counts = {row[0]: row[1] for row in rows if row[0]}
 
         return [
