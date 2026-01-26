@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from unittest.mock import ANY, MagicMock
 
 import pytest
@@ -8,6 +10,9 @@ from spellbot.database import DatabaseSession
 from spellbot.models import Block, Game, Guild, Queue, User, Watch
 from spellbot.services import UsersService
 from tests.factories import UserFactory
+
+if TYPE_CHECKING:
+    from tests.fixtures import Factories
 
 pytestmark = pytest.mark.use_db
 
@@ -196,3 +201,53 @@ class TestServiceUsers:
         await users.leave_game(game.channel_xid)
 
         assert DatabaseSession.query(Queue).count() == 0
+
+    async def test_users_current_game_id_deleted_game(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
+        )
+        user = factories.user.create(game=game)
+
+        users = UsersService()
+        await users.select(user.xid)
+        assert await users.current_game_id(channel.xid) is None
+
+    async def test_users_is_waiting_deleted_game(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
+        )
+        user = factories.user.create(game=game)
+
+        users = UsersService()
+        await users.select(user.xid)
+        assert not await users.is_waiting(channel.xid)
+
+    async def test_users_leave_game_deleted_game(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
+        )
+        user = factories.user.create(game=game)
+
+        users = UsersService()
+        await users.select(user.xid)
+
+        # Queue entry still exists (game was soft-deleted but queue wasn't cleaned up)
+        assert DatabaseSession.query(Queue).count() == 1
+
+        # leave_game should not find the deleted game, so queue should remain
+        await users.leave_game(channel.xid)
+
+        # Queue entry should still exist since the game was deleted
+        assert DatabaseSession.query(Queue).count() == 1

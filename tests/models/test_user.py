@@ -54,6 +54,44 @@ class TestModelUser:
         user = factories.user.create(game=game)
         assert user.pending_games() == 1
 
+    def test_pending_games_deleted_game(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
+        )
+        user = factories.user.create(game=game)
+        # Orphaned queue entry for deleted game should not count
+        assert user.pending_games() == 0
+
+
+class TestModelUserGame:
+    def test_happy_path(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(guild=guild, channel=channel)
+        user = factories.user.create(game=game)
+        assert user.game(channel.xid) == game
+
+    def test_no_game(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        user = factories.user.create()
+        assert user.game(channel.xid) is None
+
+    def test_deleted_game(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
+        )
+        user = factories.user.create(game=game)
+        assert user.game(channel.xid) is None
+
 
 class TestModelUserWaiting:
     def test_happy_path(self, factories: Factories) -> None:

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed some edge case bugs with deleted games and user queues.
+
 ## [v17.10.0](https://github.com/lexicalunit/spellbot/releases/tag/v17.10.0) - 2026-01-22
 
 ### Added
