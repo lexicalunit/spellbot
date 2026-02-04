@@ -10,7 +10,7 @@
 <br />
 <br />
 <a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot">
-    <img
+<img
         align="center"
         alt="Add to Discord"
         src="https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png"
@@ -21,15 +21,15 @@ The Discord bot for <a href="https://convoke.games/">Convoke</a> and <a href="ht
 <br />
 <br />
 
-| <!-- --> | <!-- --> |
-| ---: | :---: |
-| **Deployment**    | [![build][build-badge]][build] [![aws][aws-badge]][aws] [![status][status-badge]][status] |
-| **Dependencies**  | [![python][python-badge]][python] [![discord.py][discord-py-badge]][discord-py] |
-| **Distribution**  | [![pypi][pypi-badge]][pypi] [![docker][docker-badge]][docker-hub] [![mit][mit-badge]][mit] |
-| **Quality**       | [![codecov][codecov-badge]][codecov] [![ruff][ruff-badge]][ruff] [![pyright][pyright-badge]][pyright] |
-| **Observability** | [![uptime][uptime-badge]][uptime] [![metrics][metrics-badge]][metrics] [![datadog][datadog-badge]][datadog] |
-| **Socials**       | [![discord][discord-badge]][discord-invite] [![follow][follow-badge]][follow] |
-| **Funding**       | [![patreon][patreon-button]][patreon] [![kofi][kofi-button]][kofi] |
+|          <!-- --> |                                                                           <!-- -->                                                                            |
+| ----------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|    **Deployment** |                                   [![build][build-badge]][build] [![aws][aws-badge]][aws] [![status][status-badge]][status]                                   |
+|  **Dependencies** |                                        [![python][python-badge]][python] [![discord.py][discord-py-badge]][discord-py]                                        |
+|  **Distribution** |                                  [![pypi][pypi-badge]][pypi] [![docker][docker-badge]][docker-hub] [![mit][mit-badge]][mit]                                   |
+|       **Quality** |                             [![codecov][codecov-badge]][codecov] [![ruff][ruff-badge]][ruff] [![pyright][pyright-badge]][pyright]                             |
+| **Observability** | [![uptime][uptime-badge]][uptime] [![metrics][metrics-badge]][metrics]<br/>[![datadog][datadog-badge]][datadog] [![ganalytics][ganalytics-badge]][ganalytics] |
+|       **Socials** |                                         [![discord][discord-badge]][discord-invite] [![follow][follow-badge]][follow]                                         |
+|       **Funding** |                                              [![patreon][patreon-button]][patreon] [![kofi][kofi-button]][kofi]                                               |
 
 </div>
 
@@ -96,6 +96,7 @@ Want your community to be featured here as well? Please contact me at [spellbot@
 ## 📊 Mythic Track
 
 SpellBot integrates seamlessly with [Mythic Track](https://www.mythictrack.com/spellbot) which allows you to track games within your Discord server. Visualize and explore your data to reveal interesting trends. To get started run the `/setup_mythic_track` command on your server. Please also consider [supporting Mythic Track](https://www.patreon.com/MythicTrack)!
+
 <p align="center">
     <img
         src="https://github.com/user-attachments/assets/07dacc71-baa6-4605-a44b-bacf8dc23076"
@@ -175,6 +176,8 @@ Any usage of SpellBot implies that you accept the following policies.
 [docker-hub]: https://hub.docker.com/r/lexicalunit/spellbot
 [follow-badge]: https://img.shields.io/badge/Bluesky-1185FE?style=flat&logo=bluesky&logoColor=white
 [follow]: https://bsky.app/profile/spellbot.io
+[ganalytics-badge]: https://img.shields.io/badge/analytics-google-orange.svg
+[ganalytics]: https://analytics.google.com/analytics/web/
 [girudo]: https://www.girudo.com/
 [issues]: https://github.com/lexicalunit/spellbot/issues
 [kofi-button]: https://img.shields.io/badge/Ko--fi-F16061?style=flat&logo=ko-fi&logoColor=white
