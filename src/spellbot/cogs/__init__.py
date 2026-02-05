@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from discord.ext.commands import AutoShardedBot
 
 logger = logging.getLogger(__name__)
+package_dir = str(Path(__file__).resolve().parent)
 
 # Only exported cogs will be loaded into the bot at runtime.
 __all__ = [
@@ -44,8 +45,7 @@ __all__ = [
 
 async def load_all_cogs(bot: AutoShardedBot) -> AutoShardedBot:  # pragma: no cover
     # iterate through the modules in the current package
-    package_dir = Path(__file__).resolve().parent
-    for info in iter_modules([str(package_dir)]):
+    for info in iter_modules([package_dir]):
         # import the module and iterate through its attributes
         module = import_module(f"{__name__}.{info.name}")
         for attribute_name in dir(module):
