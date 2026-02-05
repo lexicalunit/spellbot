@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated dependencies.
+- Adds google analytics to the website.
+- Updates gunicorn workers to 4 for prod and 1 for other environments.
+
 ## [v17.10.1](https://github.com/lexicalunit/spellbot/releases/tag/v17.10.1) - 2026-01-25
 
 ### Fixed
