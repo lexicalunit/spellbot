@@ -283,8 +283,16 @@ class Game(Base):
         effective_service: GameService,
         dm: bool,
         rematch: bool,
+        emojis: list[discord.Emoji | discord.PartialEmoji] | None = None,
     ) -> str:
         if self.status != GameStatus.STARTED.value:
+            if "{emoji}" in effective_service.pending_msg:
+                emoji_str = ""
+                if emojis:
+                    emoji_name = effective_service.name.lower().replace("-", "_").replace(" ", "_")
+                    if emoji := next((e for e in emojis if e.name == emoji_name), None):
+                        emoji_str = f"{emoji} "
+                return effective_service.pending_msg.format(emoji=emoji_str)
             return effective_service.pending_msg
         if not self.show_links(dm):
             return "Please check your Direct Messages for your game details."
@@ -347,6 +355,7 @@ class Game(Base):
         dm: bool = False,
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
+        emojis: list[discord.Emoji | discord.PartialEmoji] | None = None,
     ) -> str:
         if span := tracer.current_span():  # pragma: no cover
             span.set_tags(
@@ -362,7 +371,7 @@ class Game(Base):
         parts: list[str] = []
         if self.guild.notice:
             parts.append(f"{self.guild.notice}")
-        parts.append(self.embed_description_link_info(effective_service, dm, rematch))
+        parts.append(self.embed_description_link_info(effective_service, dm, rematch, emojis))
         parts.extend(self.embed_description_extras(dm, suggested_vc))
         parts.extend(self.embed_motd())
         return "\n\n".join(parts)
@@ -462,6 +471,7 @@ class Game(Base):
             dm=dm,
             suggested_vc=suggested_vc,
             rematch=rematch,
+            emojis=emojis,
         )
         if self.rules:
             embed.add_field(name="⚠️ Additional Rules:", value=self.rules, inline=False)
