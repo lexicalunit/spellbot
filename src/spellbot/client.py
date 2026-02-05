@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -22,6 +23,8 @@ from .operations import safe_delete_message
 from .services import ServicesRegistry
 from .settings import settings
 from .utils import user_can_moderate
+
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -96,13 +99,9 @@ class SpellBot(AutoShardedBot):
     async def _create_application_emoji(
         self,
         name: str,
-        image_url: str,
+        image_bytes: bytes,
     ) -> discord.Emoji | None:
         try:
-            async with httpx.AsyncClient(follow_redirects=True) as client:
-                response = await client.get(image_url)
-                response.raise_for_status()
-                image_bytes = response.content
             return await self.create_application_emoji(name=name, image=image_bytes)
         except Exception:
             logger.exception("warning: could not create application emoji %s", name)
@@ -128,21 +127,23 @@ class SpellBot(AutoShardedBot):
         async def ensure(
             emojis: list[discord.PartialEmoji | discord.Emoji],
             name: str,
-            image_url: str,
+            image_bytes: bytes,
         ) -> discord.PartialEmoji | discord.Emoji | None:
             for emoji in emojis:
                 if emoji.name == name:
                     return emoji
-            return await self._create_application_emoji(name, image_url)
+            return await self._create_application_emoji(name, image_bytes)
 
         try:
             emojis = await fetch()
-            created = await ensure(emojis, "spellbot_creator", settings.EMOJI_SPELLBOT_CREATOR)
-            if created and created not in emojis:
-                emojis.append(created)
-            created = await ensure(emojis, "spellbot_supporter", settings.EMOJI_SPELLBOT_SUPPORTER)
-            if created and created not in emojis:
-                emojis.append(created)
+            emoji_dir = ASSETS_DIR / "emoji"
+            emoji_files = list(emoji_dir.glob("*.png"))
+            for image_path in emoji_files:
+                name = image_path.stem
+                image_bytes = image_path.read_bytes()
+                created = await ensure(emojis, name, image_bytes)
+                if created and created not in emojis:
+                    emojis.append(created)
             self.emojis_cache = emojis
             logger.info("cached %d application emojis", len(self.emojis_cache))
         except Exception:
