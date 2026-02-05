@@ -29,8 +29,6 @@ class Settings:
         "DD_TRACE_ENABLED",
         "DEBUG_GUILD",
         "DONATE_LINK",
-        "EMOJI_SPELLBOT_CREATOR",
-        "EMOJI_SPELLBOT_SUPPORTER",
         "EMPTY_EMBED_COLOR",
         "EXPIRE_GAMES_LOOP_M",
         "EXPIRE_TIME_M",
@@ -96,14 +94,6 @@ class Settings:
         self.DEBUG_GUILD = getenv("DEBUG_GUILD")
         self.API_BASE_URL = getenv("API_BASE_URL", "https://bot.spellbot.io")
         self.OWNER_XID = getenv("OWNER_XID")
-        self.EMOJI_SPELLBOT_CREATOR = getenv(
-            "EMOJI_SPELLBOT_CREATOR",
-            "https://github.com/user-attachments/assets/beaabff5-dc19-40ee-a86e-40cd4b387fc4",
-        )
-        self.EMOJI_SPELLBOT_SUPPORTER = getenv(
-            "EMOJI_SPELLBOT_SUPPORTER",
-            "https://github.com/user-attachments/assets/ec1045a4-4d81-412b-81fe-ea1f414a5e32",
-        )
 
         # datadog
         self.DD_API_KEY = getenv("DD_API_KEY")

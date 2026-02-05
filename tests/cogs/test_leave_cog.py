@@ -23,6 +23,11 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.use_db
 
+SPELLTABLE_PENDING_MSG = (
+    "_A [SpellTable](https://spelltable.wizards.com/) link will "
+    "be created when all players have joined._"
+)
+
 
 @pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> LeaveGameCog:
@@ -62,11 +67,7 @@ class TestCogLeaveGame:
             safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
             assert safe_update_embed_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
-                "description": (
-                    "_A SpellTable link will be created when all players have joined._\n"
-                    "\n"
-                    f"{guild.motd}\n\n{channel.motd}"
-                ),
+                "description": (f"{SPELLTABLE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},
@@ -133,11 +134,7 @@ class TestCogLeaveGame:
             safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
             assert safe_update_embed_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
-                "description": (
-                    "_A SpellTable link will be created when all players have joined._\n"
-                    "\n"
-                    f"{guild.motd}\n\n{channel.motd}"
-                ),
+                "description": (f"{SPELLTABLE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},
@@ -340,11 +337,7 @@ class TestCogLeaveGame:
             safe_update_embed_origin_call = leave_action.safe_update_embed_origin.call_args_list[0]
             assert safe_update_embed_origin_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
-                "description": (
-                    "_A SpellTable link will be created when all players have joined._\n"
-                    "\n"
-                    f"{guild.motd}\n\n{channel.motd}"
-                ),
+                "description": (f"{SPELLTABLE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},
@@ -406,11 +399,7 @@ class TestCogLeaveGame:
             safe_update_embed_origin_call = leave_action.safe_update_embed_origin.call_args_list[0]
             assert safe_update_embed_origin_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
-                "description": (
-                    "_A SpellTable link will be created when all players have joined._\n"
-                    "\n"
-                    f"{guild.motd}\n\n{channel.motd}"
-                ),
+                "description": (f"{SPELLTABLE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},

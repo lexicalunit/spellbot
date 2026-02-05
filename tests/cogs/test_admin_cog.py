@@ -29,6 +29,11 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.use_db
 
+SPELLTABLE_PENDING_MSG = (
+    "_A [SpellTable](https://spelltable.wizards.com/) link will "
+    "be created when all players have joined._"
+)
+
 
 @pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> AdminCog:
@@ -355,8 +360,7 @@ class TestCogAdminInfo:
         assert get_last_send_message(interaction, "embed") == {
             "color": settings.EMPTY_EMBED_COLOR,
             "description": (
-                "_A SpellTable link will be created when all players have joined._\n\n"
-                f"{game.guild.motd}\n\n{game.channel.motd}"
+                f"{SPELLTABLE_PENDING_MSG}\n\n{game.guild.motd}\n\n{game.channel.motd}"
             ),
             "fields": [
                 {"inline": True, "name": "Format", "value": "Commander"},

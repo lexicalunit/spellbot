@@ -633,9 +633,13 @@ class LookingForGameAction(BaseAction):
         async def notify_player(player_xid: int) -> None:
             embed = base_embed.copy()
             if pin := player_pins[player_xid]:
+                mt_emoji = ""
+                emojis = self.bot.emojis_cache
+                if emoji := next((e for e in emojis if e.name == "mythic_track"), None):
+                    mt_emoji = f"{emoji} "
                 embed.description = (
                     f"{embed.description}\n\n"
-                    f"Track your game on [Mythic Track]({mythic_track_link(player_xid)}) "
+                    f"Track your game on {mt_emoji}[Mythic Track]({mythic_track_link(player_xid)}) "
                     f"with PIN code: `{pin}`"
                 )
             if player := await safe_fetch_user(self.bot, player_xid):

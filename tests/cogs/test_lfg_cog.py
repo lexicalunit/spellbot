@@ -24,6 +24,11 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.use_db
 
+SPELLTABLE_PENDING_MSG = (
+    "_A [SpellTable](https://spelltable.wizards.com/) link will "
+    "be created when all players have joined._"
+)
+
 
 @pytest.fixture
 def cog(bot: SpellBot) -> LookingForGameCog:
@@ -393,11 +398,7 @@ class TestCogLookingForGameJoinButton:
             mock_call.assert_called_once()
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
-                "description": (
-                    "_A SpellTable link will be created when all players have joined._\n"
-                    f"\n{guild.motd}\n"
-                    f"\n{channel.motd}"
-                ),
+                "description": (f"{SPELLTABLE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
                 "fields": [
                     {
                         "inline": False,
