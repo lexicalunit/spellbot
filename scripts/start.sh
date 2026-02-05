@@ -19,7 +19,12 @@ fi
 if [[ $SPELL_APP == "spellbot" ]]; then
     CMD="$CMD spellbot"
 elif [[ $SPELL_APP == "spellapi" ]]; then
-    CMD="$CMD gunicorn --workers 4 spellbot.web.server:app --worker-class aiohttp.worker.GunicornWebWorker --bind $HOST:$PORT --access-logfile -"
+    if [[ $ENVIRONMENT == "stage" ]]; then
+        WORKERS=1
+    else
+        WORKERS=4
+    fi
+    CMD="$CMD gunicorn --workers $WORKERS spellbot.web.server:app --worker-class aiohttp.worker.GunicornWebWorker --bind $HOST:$PORT --access-logfile -"
 else
     exit 1
 fi
