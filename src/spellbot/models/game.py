@@ -434,8 +434,7 @@ class Game(Base):
 
     @property
     def bracket_icon(self) -> str | None:
-        icon = GameBracket(self.bracket).icon
-        return icon if icon else None
+        return GameBracket(self.bracket).icon
 
     @property
     def bracket_title(self) -> str:

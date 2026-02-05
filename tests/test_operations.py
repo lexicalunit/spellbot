@@ -56,14 +56,14 @@ class TestOperationsRetry:
         async def func() -> int:
             return 1
 
-        assert await retry(lambda: func()) == 1
+        assert await retry(func) == 1
 
     async def test_failure(self) -> None:
         async def func() -> int:
             raise ClientOSError
 
         with pytest.raises(ClientOSError):
-            await retry(lambda: func())
+            await retry(func)
 
     async def test_retries(self) -> None:
         tried_once = False
@@ -75,7 +75,7 @@ class TestOperationsRetry:
                 raise ClientOSError
             return 1
 
-        assert await retry(lambda: func()) == 1
+        assert await retry(func) == 1
         assert tried_once
 
 
