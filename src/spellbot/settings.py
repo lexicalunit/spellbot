@@ -229,7 +229,7 @@ class Settings:
             guild_xid
             in [
                 757455940009328670,  # Oath of the Gaywatch
-                # 699775410082414733,  # Development
+                699775410082414733,  # Development
             ]
             or datetime.now(tz=UTC).month == 6
         )
