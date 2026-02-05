@@ -19,6 +19,11 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.use_db
 
+SPELLTABLE_PENDING_MSG = (
+    "_A [SpellTable](https://spelltable.wizards.com/) link will "
+    "be created when all players have joined._"
+)
+
 
 class TestModelGame:
     def test_game_to_dict(self, factories: Factories) -> None:
@@ -67,7 +72,10 @@ class TestModelGame:
         [
             pytest.param(
                 GameService.SPELLTABLE,
-                "_A SpellTable link will be created when all players have joined._",
+                (
+                    "_A [SpellTable](https://spelltable.wizards.com/) link will "
+                    "be created when all players have joined._"
+                ),
                 id="spelltable",
             ),
             pytest.param(
@@ -77,12 +85,18 @@ class TestModelGame:
             ),
             pytest.param(
                 GameService.TABLE_STREAM,
-                "_A Table Stream link will be created when all players have joined._",
+                (
+                    "_A [Table Stream](https://table-stream.com/) link will "
+                    "be created when all players have joined._"
+                ),
                 id="table-stream",
             ),
             pytest.param(
                 GameService.CONVOKE,
-                "_A Convoke link will be created when all players have joined._",
+                (
+                    "_A [Convoke](https://www.convoke.games/) link will "
+                    "be created when all players have joined._"
+                ),
                 id="convoke",
             ),
             pytest.param(
@@ -138,7 +152,7 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": ("_A SpellTable link will be created when all players have joined._"),
+            "description": SPELLTABLE_PENDING_MSG,
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -154,6 +168,44 @@ class TestModelGame:
             "flags": 0,
         }
 
+    def test_game_embed_pending_with_emoji(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(guild=guild, channel=channel)
+        factories.user.create(game=game)
+
+        spelltable_emoji = MagicMock(spec=discord.Emoji)
+        spelltable_emoji.name = "spelltable"
+        emojis = [spelltable_emoji]
+
+        embed = game.to_embed(emojis=emojis)
+        assert f"{spelltable_emoji}" in embed.description
+        assert "[SpellTable](https://spelltable.wizards.com/)" in embed.description
+
+    def test_game_embed_pending_with_emoji_no_match(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(guild=guild, channel=channel)
+        factories.user.create(game=game)
+
+        # Emoji with a name that doesn't match the service
+        other_emoji = MagicMock(spec=discord.Emoji)
+        other_emoji.name = "some_other_emoji"
+        emojis = [other_emoji]
+
+        embed = game.to_embed(emojis=emojis)
+        # Should not contain the emoji since it doesn't match
+        assert f"{other_emoji}" not in embed.description
+        assert "[SpellTable](https://spelltable.wizards.com/)" in embed.description
+
     def test_game_embed_pending_with_blind(self, settings: Settings, factories: Factories) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
@@ -162,7 +214,7 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": ("_A SpellTable link will be created when all players have joined._"),
+            "description": SPELLTABLE_PENDING_MSG,
             "fields": [
                 {"inline": False, "name": "Players", "value": "**1 player name is hidden**"},
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -191,7 +243,7 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": ("_A SpellTable link will be created when all players have joined._"),
+            "description": SPELLTABLE_PENDING_MSG,
             "fields": [
                 {"inline": False, "name": "Players", "value": "**2 player names are hidden**"},
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -219,7 +271,7 @@ class TestModelGame:
 
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": ("_A SpellTable link will be created when all players have joined._"),
+            "description": SPELLTABLE_PENDING_MSG,
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
                 {"inline": True, "name": "Format", "value": "Commander"},
@@ -243,7 +295,7 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": ("_A SpellTable link will be created when all players have joined._"),
+            "description": SPELLTABLE_PENDING_MSG,
             "fields": [
                 {"inline": False, "name": "⚠️ Additional Rules:", "value": "test rules"},
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
@@ -269,9 +321,7 @@ class TestModelGame:
         assert game.to_embed().to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
             "description": (
-                "_A SpellTable link will be created when all players have joined._\n\n"
-                f"player 1: {player.name}\n\n"
-                f"game id: {game.id}"
+                f"{SPELLTABLE_PENDING_MSG}\n\nplayer 1: {player.name}\n\ngame id: {game.id}"
             ),
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},

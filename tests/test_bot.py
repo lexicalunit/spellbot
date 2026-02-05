@@ -10,6 +10,7 @@ from discord import app_commands
 from discord.ext.commands import AutoShardedBot, CommandNotFound, Context, UserInputError
 
 from spellbot import SpellBot
+from spellbot.client import ASSETS_DIR
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameService
 from spellbot.errors import (
@@ -584,17 +585,6 @@ class TestSpellBotEmojis:
         mocker: MockerFixture,
     ) -> None:
         """Test successful creation of application emoji."""
-        mock_response = MagicMock()
-        mock_response.content = b"fake_image_bytes"
-        mock_response.raise_for_status = MagicMock()
-
-        mock_client = AsyncMock()
-        mock_client.get = AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-
-        mocker.patch("spellbot.client.httpx.AsyncClient", return_value=mock_client)
-
         mock_emoji = MagicMock(spec=discord.Emoji)
         create_emoji_stub = mocker.patch.object(
             bot,
@@ -602,7 +592,7 @@ class TestSpellBotEmojis:
             AsyncMock(return_value=mock_emoji),
         )
 
-        result = await bot._create_application_emoji("test_emoji", "https://example.com/emoji.png")
+        result = await bot._create_application_emoji("test_emoji", b"fake_image_bytes")
 
         assert result == mock_emoji
         create_emoji_stub.assert_called_once_with(
@@ -616,14 +606,13 @@ class TestSpellBotEmojis:
         mocker: MockerFixture,
     ) -> None:
         """Test exception handling in create_application_emoji."""
-        mock_client = AsyncMock()
-        mock_client.get = AsyncMock(side_effect=Exception("Network error"))
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mocker.patch.object(
+            bot,
+            "create_application_emoji",
+            AsyncMock(side_effect=Exception("Discord API error")),
+        )
 
-        mocker.patch("spellbot.client.httpx.AsyncClient", return_value=mock_client)
-
-        result = await bot._create_application_emoji("test_emoji", "https://example.com/emoji.png")
+        result = await bot._create_application_emoji("test_emoji", b"fake_image_bytes")
 
         assert result is None
 
@@ -632,15 +621,16 @@ class TestSpellBotEmojis:
         bot: SpellBot,
         mocker: MockerFixture,
     ) -> None:
-        """Test successful fetching and caching of application emojis."""
+        """Test successful fetching and caching of application emojis when all emojis exist."""
+        emoji_dir = ASSETS_DIR / "emoji"
+        emoji_files = list(emoji_dir.glob("*.png"))
+        emoji_names = [f.stem for f in emoji_files]
+
         mock_response = MagicMock()
         mock_response.raise_for_status = MagicMock()
         mock_response.json = MagicMock(
             return_value={
-                "items": [
-                    {"name": "spellbot_creator", "id": "123456"},
-                    {"name": "spellbot_supporter", "id": "789012"},
-                ],
+                "items": [{"name": name, "id": str(i)} for i, name in enumerate(emoji_names)],
             },
         )
 
@@ -653,9 +643,7 @@ class TestSpellBotEmojis:
 
         await bot._ensure_application_emojis()
 
-        assert len(bot.emojis_cache) == 2
-        assert bot.emojis_cache[0].name == "spellbot_creator"
-        assert bot.emojis_cache[1].name == "spellbot_supporter"
+        assert len(bot.emojis_cache) == len(emoji_names)
 
     async def test_ensure_application_emojis_creates_missing(
         self,
@@ -663,6 +651,10 @@ class TestSpellBotEmojis:
         mocker: MockerFixture,
     ) -> None:
         """Test that missing emojis are created."""
+        emoji_dir = ASSETS_DIR / "emoji"
+        emoji_files = list(emoji_dir.glob("*.png"))
+        num_emojis = len(emoji_files)
+
         mock_response = MagicMock()
         mock_response.raise_for_status = MagicMock()
         mock_response.json = MagicMock(return_value={"items": []})  # No existing emojis
@@ -674,24 +666,25 @@ class TestSpellBotEmojis:
 
         mocker.patch("spellbot.client.httpx.AsyncClient", return_value=mock_client)
 
-        # Create two different emoji objects so both append() lines are executed
-        mock_creator_emoji = MagicMock(spec=discord.Emoji)
-        mock_creator_emoji.name = "spellbot_creator"
-        mock_supporter_emoji = MagicMock(spec=discord.Emoji)
-        mock_supporter_emoji.name = "spellbot_supporter"
+        # Create mock emoji objects for each file
+        mock_emojis = []
+        for f in emoji_files:
+            mock_emoji = MagicMock(spec=discord.Emoji)
+            mock_emoji.name = f.stem
+            mock_emojis.append(mock_emoji)
 
         create_stub = mocker.patch.object(
             bot,
             "_create_application_emoji",
-            AsyncMock(side_effect=[mock_creator_emoji, mock_supporter_emoji]),
+            AsyncMock(side_effect=mock_emojis),
         )
 
         await bot._ensure_application_emojis()
 
-        # Should have called _create_application_emoji twice (for creator and supporter)
-        assert create_stub.call_count == 2
-        # Both emojis should be in the cache
-        assert len(bot.emojis_cache) == 2
+        # Should have called _create_application_emoji for each emoji file
+        assert create_stub.call_count == num_emojis
+        # All emojis should be in the cache
+        assert len(bot.emojis_cache) == num_emojis
 
     async def test_ensure_application_emojis_exception(
         self,

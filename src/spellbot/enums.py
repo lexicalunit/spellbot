@@ -45,7 +45,10 @@ class GameService(Enum):
     NOT_ANY = "Not any", "_Please contact the players in your game to organize this game._", None, 8
     SPELLTABLE = (
         "SpellTable",
-        "_A SpellTable link will be created when all players have joined._",
+        (
+            "_A {emoji}[SpellTable](https://spelltable.wizards.com/) link will "
+            "be created when all players have joined._"
+        ),
         "https://spelltable.wizards.com/",
         4,
     )
@@ -56,19 +59,28 @@ class GameService(Enum):
     TTS = "TabletopSim", "_Please use TabletopSim for this game._", None, 10
     TABLE_STREAM = (
         "Table Stream",
-        "_A Table Stream link will be created when all players have joined._",
+        (
+            "_A {emoji}[Table Stream](https://table-stream.com/) link will "
+            "be created when all players have joined._"
+        ),
         "https://table-stream.com/",
         6,
     )
     CONVOKE = (
         "Convoke",
-        "_A Convoke link will be created when all players have joined._",
+        (
+            "_A {emoji}[Convoke](https://www.convoke.games/) link will "
+            "be created when all players have joined._"
+        ),
         "https://www.convoke.games/",
         8,
     )
     GIRUDO = (
         "Girudo",
-        "_A Girudo link will be created when all players have joined._",
+        (
+            "_A {emoji}[Girudo](https://www.girudo.com/) link will "
+            "be created when all players have joined._"
+        ),
         "https://www.girudo.com/",
         4,
     )
