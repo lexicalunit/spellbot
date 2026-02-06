@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v17.10.4](https://github.com/lexicalunit/spellbot/releases/tag/v17.10.4) - 2026-02-05
+
 ## Changed
 
 - Fixed the ECS deployment script when desired task count is 0.
