@@ -27,7 +27,7 @@ from .play import Play, PlayDict  # noqa: E402
 from .post import Post, PostDict  # noqa: E402
 from .queue import Queue, QueueDict  # noqa: E402
 from .token import Token, TokenDict  # noqa: E402
-from .user import User, UserDict  # noqa: E402
+from .user import PlayerDataDict, User, UserDict  # noqa: E402
 from .verify import Verify, VerifyDict  # noqa: E402
 from .watch import Watch, WatchDict  # noqa: E402
 
@@ -51,6 +51,7 @@ __all__ = [
     "NotificationDict",
     "Play",
     "PlayDict",
+    "PlayerDataDict",
     "Post",
     "PostDict",
     "Queue",
