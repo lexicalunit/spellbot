@@ -116,18 +116,18 @@ async def fetch_convoke_link(
     sb_game_format = GameFormat(game["format"])
     format = convoke_game_format(sb_game_format).value
     players = await services.games.player_data(game["id"])
+    pins = [p["pin"] for p in players if p["pin"] is not None]
     payload = {
         "apiKey": settings.CONVOKE_API_KEY,
         "isPublic": False,
         "name": name,
-        "spellbotGameId": game["id"],
+        "spellbotGameId": str(game["id"]),
+        "spellbotGamePins": pins,
         "seatLimit": game["seats"],
         "format": format,
         "discordGuild": str(game["guild_xid"]),
         "discordChannel": str(game["channel_xid"]),
-        "discordPlayers": [
-            {"id": str(p["xid"]), "name": p["name"], "pin": p["pin"]} for p in players
-        ],
+        "discordPlayers": [{"id": str(p["xid"]), "name": p["name"]} for p in players],
     }
     if game["bracket"] != GameBracket.NONE.value:
         payload["bracketLevel"] = f"B{game['bracket'] - 1}"

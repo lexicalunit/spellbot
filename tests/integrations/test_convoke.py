@@ -110,10 +110,11 @@ class TestFetchConvokeLink:
         mock_client.post.assert_called_once()
         call_args = mock_client.post.call_args
         payload = call_args.kwargs["json"]
-        assert payload["spellbotGameId"] == 42
+        assert payload["spellbotGameId"] == "42"
+        assert payload["spellbotGamePins"] == ["123456"]
         assert payload["discordPlayers"] == [
-            {"id": "100", "name": "Player1", "pin": "123456"},
-            {"id": "200", "name": "Player2", "pin": None},
+            {"id": "100", "name": "Player1"},
+            {"id": "200", "name": "Player2"},
         ]
 
     @pytest.mark.asyncio
