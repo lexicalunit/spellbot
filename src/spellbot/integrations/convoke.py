@@ -75,7 +75,7 @@ class ConvokeGameTypes(Enum):
     Other = "other"
 
 
-def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:  # pragma: no cover
+def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:
     match format:
         case (
             GameFormat.COMMANDER
@@ -101,13 +101,13 @@ def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:  # pragma: no c
             return ConvokeGameTypes.Other
 
 
-def passphrase() -> str | None:  # pragma: no cover
+def passphrase() -> str | None:
     if USE_PASSWORD:
         return f"{random.choice(ADJECTIVES)} {random.choice(NOUNS)}"  # noqa: S311
     return None
 
 
-async def fetch_convoke_link(  # pragma: no cover
+async def fetch_convoke_link(
     client: httpx.AsyncClient,
     game: GameDict,
     key: str | None,
@@ -120,11 +120,14 @@ async def fetch_convoke_link(  # pragma: no cover
         "apiKey": settings.CONVOKE_API_KEY,
         "isPublic": False,
         "name": name,
+        "spellbotGameId": game["id"],
         "seatLimit": game["seats"],
         "format": format,
         "discordGuild": str(game["guild_xid"]),
         "discordChannel": str(game["channel_xid"]),
-        "discordPlayers": [{"id": str(p["xid"]), "name": p["name"]} for p in players],
+        "discordPlayers": [
+            {"id": str(p["xid"]), "name": p["name"], "pin": p["pin"]} for p in players
+        ],
     }
     if game["bracket"] != GameBracket.NONE.value:
         payload["bracketLevel"] = f"B{game['bracket'] - 1}"
@@ -137,9 +140,7 @@ async def fetch_convoke_link(  # pragma: no cover
     return resp.json()
 
 
-async def generate_link(
-    game: GameDict,
-) -> tuple[str | None, str | None]:  # pragma: no cover
+async def generate_link(game: GameDict) -> tuple[str | None, str | None]:
     if not settings.CONVOKE_API_KEY:
         return None, None
 
@@ -160,6 +161,7 @@ async def generate_link(
                     attempt + 1,
                     exc_info=True,
                 )
+                continue
 
             if not data:
                 return None, None
