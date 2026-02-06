@@ -21,6 +21,12 @@ class UserDict(TypedDict):
     banned: bool
 
 
+class PlayerDataDict(TypedDict):
+    xid: int
+    name: str
+    pin: str | None
+
+
 class User(Base):
     """Represents a Discord user."""
 

@@ -19,12 +19,12 @@ from spellbot.models import (
     GameDict,
     GameStatus,
     Play,
+    PlayerDataDict,
     Post,
     Queue,
     QueueDict,
     User,
     UserAward,
-    UserDict,
     Watch,
 )
 from spellbot.settings import settings
@@ -579,10 +579,11 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def player_data(self, game_id: int) -> list[UserDict]:
+    def player_data(self, game_id: int) -> list[PlayerDataDict]:
         game = DatabaseSession.query(Game).filter(Game.id == game_id).first()
         if not game:
             return []
-        player_xids = game.player_xids
-        players = DatabaseSession.query(User).filter(User.xid.in_(player_xids)).all()
-        return [p.to_dict() for p in players]
+
+        player_pins = game.player_pins
+        players = DatabaseSession.query(User).filter(User.xid.in_(game.player_xids)).all()
+        return [PlayerDataDict(xid=p.xid, name=p.name, pin=player_pins.get(p.xid)) for p in players]

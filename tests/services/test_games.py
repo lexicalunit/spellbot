@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.models import Channel, Game, GameStatus, Guild, Post, Queue, User
+from spellbot.models import Channel, Game, GameStatus, Guild, Play, Post, Queue, User
 from spellbot.services import GamesService
 from tests.factories import (
     BlockFactory,
@@ -177,7 +177,56 @@ class TestServiceGames:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
         games = GamesService()
-        assert await games.player_data(game.id) == [user1.to_dict(), user2.to_dict()]
+        result = await games.player_data(game.id)
+        # Pending game (no plays) returns empty pins
+        expected = [
+            {"xid": user1.xid, "name": user1.name, "pin": None},
+            {"xid": user2.xid, "name": user2.name, "pin": None},
+        ]
+        assert result == expected
+
+    async def test_player_data_with_pins(self) -> None:
+        # Create a guild with mythic track enabled
+        guild = GuildFactory.create(enable_mythic_track=True)
+        channel = ChannelFactory.create(guild=guild)
+
+        # Create a started game with plays (which have pins)
+        game = GameFactory.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            started_at=datetime.now(UTC),
+        )
+        user1 = UserFactory.create(game=game)
+        user2 = UserFactory.create(game=game)
+
+        # UserFactory.create(game=game) automatically creates Play records for started games
+        # Query for the Play records that were automatically created
+        play1 = (
+            DatabaseSession.query(Play)
+            .filter(
+                Play.user_xid == user1.xid,
+                Play.game_id == game.id,
+            )
+            .first()
+        )
+        play2 = (
+            DatabaseSession.query(Play)
+            .filter(
+                Play.user_xid == user2.xid,
+                Play.game_id == game.id,
+            )
+            .first()
+        )
+
+        games = GamesService()
+        result = await games.player_data(game.id)
+        # Started game with mythic track returns pins
+        expected = [
+            {"xid": user1.xid, "name": user1.name, "pin": play1.pin},
+            {"xid": user2.xid, "name": user2.name, "pin": play2.pin},
+        ]
+        assert result == expected
 
     async def test_player_data_when_game_not_found(self) -> None:
         games = GamesService()
