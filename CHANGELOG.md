@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Changed
 
 - Fixed the ECS deployment script when desired task count is 0.
+- Adjust how pins are sent to Convoke.
 
 ## [v17.10.3](https://github.com/lexicalunit/spellbot/releases/tag/v17.10.3) - 2026-02-05
 
