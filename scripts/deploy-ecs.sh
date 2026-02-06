@@ -173,16 +173,30 @@ if [[ $? -ne 0 ]]; then
 fi
 success "ECS service update initiated"
 
-# Wait for deployment to complete
-log "Waiting for deployment to complete (this may take several minutes)..."
-if aws ecs wait services-stable \
+# Check desired count before waiting
+log "Checking service desired count..."
+DESIRED_COUNT=$(aws ecs describe-services \
     --cluster "$ECS_CLUSTER" \
     --services "$ECS_SERVICE" \
-    --region "$AWS_REGION"; then
-    success "Deployment completed successfully!"
+    --region "$AWS_REGION" \
+    --query 'services[0].desiredCount' \
+    --output text)
+
+if [[ "$DESIRED_COUNT" == "0" ]]; then
+    warning "Service desired count is 0 - skipping deployment wait"
+    warning "Task definition updated but no tasks will be started"
 else
-    error "Deployment failed or timed out"
-    exit 1
+    # Wait for deployment to complete
+    log "Waiting for deployment to complete (this may take several minutes)..."
+    if aws ecs wait services-stable \
+        --cluster "$ECS_CLUSTER" \
+        --services "$ECS_SERVICE" \
+        --region "$AWS_REGION"; then
+        success "Deployment completed successfully!"
+    else
+        error "Deployment failed or timed out"
+        exit 1
+    fi
 fi
 
 # Get final service status
