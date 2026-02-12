@@ -89,9 +89,11 @@ class TestServiceUsers:
 
         users = UsersService()
         await users.select(user1.xid)
-        assert await users.is_waiting(game.channel_xid)
+        result = await users.is_waiting(game.channel_xid)
+        assert result is not None
+        assert result["id"] == game.id
         await users.select(user2.xid)
-        assert not await users.is_waiting(game.channel_xid)
+        assert await users.is_waiting(game.channel_xid) is None
 
     async def test_users_block(self) -> None:
         user1 = UserFactory.create()
@@ -228,7 +230,7 @@ class TestServiceUsers:
 
         users = UsersService()
         await users.select(user.xid)
-        assert not await users.is_waiting(channel.xid)
+        assert await users.is_waiting(channel.xid) is None
 
     async def test_users_leave_game_deleted_game(self, factories: Factories) -> None:
         guild = factories.guild.create()

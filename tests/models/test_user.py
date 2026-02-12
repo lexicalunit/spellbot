@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -99,13 +100,15 @@ class TestModelUserWaiting:
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create(game=game)
-        assert user.waiting(channel.xid)
+        result = user.waiting(channel.xid)
+        assert result is not None
+        assert result["id"] == game.id
 
     def test_no_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         user = factories.user.create()
-        assert not user.waiting(channel.xid)
+        assert user.waiting(channel.xid) is None
 
     def test_no_pending_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -118,7 +121,7 @@ class TestModelUserWaiting:
         )
         user = factories.user.create(game=game)
         factories.queue.create(user_xid=user.xid, game_id=game.id)
-        assert not user.waiting(channel.xid)
+        assert user.waiting(channel.xid) is None
 
     def test_game_is_deleted(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -129,7 +132,20 @@ class TestModelUserWaiting:
             deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
         )
         user = factories.user.create(game=game)
-        assert not user.waiting(channel.xid)
+        assert user.waiting(channel.xid) is None
+
+    def test_game_is_deleted_defensive(self, factories: Factories) -> None:
+        """Test the defensive deleted_at check when game() bypasses SQL filter."""
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(guild=guild, channel=channel)
+        user = factories.user.create(game=game)
+        # Mock game() to return a game with deleted_at set (bypassing SQL filter)
+        mock_game = MagicMock()
+        mock_game.status = GameStatus.PENDING.value
+        mock_game.deleted_at = datetime(2021, 11, 1, tzinfo=UTC)
+        user.game = MagicMock(return_value=mock_game)
+        assert user.waiting(channel.xid) is None
 
     def test_no_post(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -137,4 +153,4 @@ class TestModelUserWaiting:
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create(game=game)
         DatabaseSession.query(Post).delete(synchronize_session=False)
-        assert not user.waiting(channel.xid)
+        assert user.waiting(channel.xid) is None
