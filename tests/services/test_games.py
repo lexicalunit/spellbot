@@ -100,7 +100,7 @@ class TestServiceGames:
     async def test_games_make_ready(self, game: Game) -> None:
         games = GamesService()
         await games.select(game.id)
-        await games.make_ready("http://link", "whatever")
+        await games.make_ready("http://link", "whatever", pins=[])
 
         DatabaseSession.expire_all()
         found = DatabaseSession.get(Game, game.id)
@@ -191,10 +191,9 @@ class TestServiceGames:
         user2 = UserFactory.create(game=game)
         games = GamesService()
         result = await games.player_data(game.id)
-        # Pending game (no plays) returns empty pins
         expected = [
-            {"xid": user1.xid, "name": user1.name, "pin": None},
-            {"xid": user2.xid, "name": user2.name, "pin": None},
+            {"xid": user1.xid, "name": user1.name},
+            {"xid": user2.xid, "name": user2.name},
         ]
         assert result == expected
 
@@ -215,7 +214,7 @@ class TestServiceGames:
 
         # UserFactory.create(game=game) automatically creates Play records for started games
         # Query for the Play records that were automatically created
-        play1 = (
+        _play1 = (
             DatabaseSession.query(Play)
             .filter(
                 Play.user_xid == user1.xid,
@@ -223,7 +222,7 @@ class TestServiceGames:
             )
             .first()
         )
-        play2 = (
+        _play2 = (
             DatabaseSession.query(Play)
             .filter(
                 Play.user_xid == user2.xid,
@@ -234,10 +233,9 @@ class TestServiceGames:
 
         games = GamesService()
         result = await games.player_data(game.id)
-        # Started game with mythic track returns pins
         expected = [
-            {"xid": user1.xid, "name": user1.name, "pin": play1.pin},
-            {"xid": user2.xid, "name": user2.name, "pin": play2.pin},
+            {"xid": user1.xid, "name": user1.name},
+            {"xid": user2.xid, "name": user2.name},
         ]
         assert result == expected
 

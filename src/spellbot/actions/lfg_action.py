@@ -11,7 +11,7 @@ import discord
 from ddtrace.trace import tracer
 
 from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.models import MAX_RULES_LENGTH, GameStatus
+from spellbot.models import MAX_RULES_LENGTH, GameStatus, generate_pin
 from spellbot.operations import (
     VoiceChannelSuggestion,
     safe_add_role,
@@ -423,7 +423,14 @@ class LookingForGameAction(BaseAction):
         game: GameDict,
         player_xids: list[int],
     ) -> tuple[int, VoiceChannelSuggestion | None]:
-        details = await self.bot.create_game_link(game)
+        # Convoke needs player pins, so we have to generate them before creating the game link.
+        # Initially the design was to let the DB do this later, in the `make_ready()` method.
+        # This could be revisited later to better factor this code. Note that we always generate
+        # pin for a player, even if Mythic Track is not enabled for the guild. The `player_pins()`
+        # method of the Game object will return None for players if MT is not enabled.
+        pins = [generate_pin() for _ in player_xids]
+
+        details = await self.bot.create_game_link(game, pins)
 
         suggested_vc = None
         if (
@@ -451,7 +458,10 @@ class LookingForGameAction(BaseAction):
                 },
             )
 
-        return await self.services.games.make_ready(details.link, details.password), suggested_vc
+        return (
+            await self.services.games.make_ready(details.link, details.password, pins),
+            suggested_vc,
+        )
 
     @tracer.wrap()
     async def _handle_voice_creation(self, guild_xid: int) -> None:
