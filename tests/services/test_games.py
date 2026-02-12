@@ -109,6 +109,19 @@ class TestServiceGames:
         assert found.password == "whatever"
         assert found.status == GameStatus.STARTED.value
 
+    async def test_games_shrink_game(self, game: Game) -> None:
+        UserFactory.create(game=game)
+        UserFactory.create(game=game)
+        assert game.seats == 4
+
+        games = GamesService()
+        await games.select(game.id)
+        await games.shrink_game()
+
+        DatabaseSession.expire_all()
+        updated = DatabaseSession.query(Game).one()
+        assert updated.seats == 2
+
     async def test_games_player_xids(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)

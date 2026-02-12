@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, TypedDict
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
 from sqlalchemy.orm import relationship
 
-from . import Base, GameStatus, now
+from . import Base, GameDict, GameStatus, now
 
 if TYPE_CHECKING:
     from . import Game
@@ -97,16 +97,18 @@ class User(Base):
         )
         return session.get(Game, queue.game_id) if queue else None
 
-    def waiting(self, channel_xid: int) -> bool:
+    def waiting(self, channel_xid: int) -> GameDict | None:
         game = self.game(channel_xid)
         if game is None:
-            return False
+            return None
         if game.status != GameStatus.PENDING.value:
-            return False
-        # Not required because self.game() already filters by posts + channel.
+            return None
+        if game.deleted_at:
+            return None
+        # Note: Check not required because self.game() already filters by posts + channel.
         # if not any(post.channel_xid == channel_xid for post in game.posts):
-        #     return False
-        return game.deleted_at is None
+        #     return None
+        return game.to_dict()
 
     def pending_games(self) -> int:
         from spellbot.database import DatabaseSession  # allow_inline

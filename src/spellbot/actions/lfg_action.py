@@ -198,6 +198,40 @@ class LookingForGameAction(BaseAction):
         )
 
     @tracer.wrap()
+    async def execute_start(self) -> None:
+        if not self.guild or not self.channel:
+            await safe_send_user(
+                self.interaction.user,
+                "Please run this command in the same channel as your game.",
+                ephemeral=True,
+            )
+            return
+
+        game_data = await self.services.users.is_waiting(self.channel.id)
+        if not game_data:
+            await safe_followup_channel(
+                self.interaction,
+                "You're not in a pending game in this channel.",
+                ephemeral=True,
+            )
+            return
+
+        await self.services.games.select(game_data["id"])
+        await self.services.games.shrink_game()
+        player_xids = await self.services.games.player_xids()
+        _, suggested_vc = await self.make_game_ready(game_data, player_xids)
+        assert self.interaction.guild_id
+        await self._handle_voice_creation(self.interaction.guild_id)
+        await self._handle_embed_creation(
+            new=True,
+            origin=False,
+            fully_seated=True,
+            suggested_vc=suggested_vc,
+            rematch=False,
+        )
+        await self._handle_direct_messages(suggested_vc=suggested_vc, rematch=False)
+
+    @tracer.wrap()
     async def execute(
         self,
         friends: str | None = None,

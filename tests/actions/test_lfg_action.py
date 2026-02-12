@@ -193,7 +193,11 @@ class TestLookingForGameAction:
         """Test execute when user is already waiting from button (origin=True)."""
         discord_user = mock_discord_object(user)
         mocker.patch.object(action.interaction, "user", discord_user)
-        mocker.patch.object(action.services.users, "is_waiting", AsyncMock(return_value=True))
+        mocker.patch.object(
+            action.services.users,
+            "is_waiting",
+            AsyncMock(return_value=cast("GameDict", {"id": 1})),
+        )
         stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
 
         # message_xid makes origin=True
@@ -213,7 +217,7 @@ class TestLookingForGameAction:
         """Test execute when user has too many pending games (from button)."""
         discord_user = mock_discord_object(user)
         mocker.patch.object(action.interaction, "user", discord_user)
-        mocker.patch.object(action.services.users, "is_waiting", AsyncMock(return_value=False))
+        mocker.patch.object(action.services.users, "is_waiting", AsyncMock(return_value=None))
         mocker.patch.object(
             action.services.users,
             "pending_games",
@@ -235,7 +239,7 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test execute when user has too many pending games (from slash command)."""
-        mocker.patch.object(action.services.users, "is_waiting", AsyncMock(return_value=False))
+        mocker.patch.object(action.services.users, "is_waiting", AsyncMock(return_value=None))
         mocker.patch.object(
             action.services.users,
             "pending_games",
@@ -966,6 +970,11 @@ class TestLookingForGameAction:
             "jump_links": {},
         }
 
+        # Set up mythic_track emoji in bot's emojis_cache
+        mt_emoji = MagicMock(spec=discord.Emoji)
+        mt_emoji.name = "mythic_track"
+        action.bot.emojis_cache = [mt_emoji]
+
         # Player has a PIN
         mocker.patch.object(
             action.services.games,
@@ -991,6 +1000,8 @@ class TestLookingForGameAction:
         send_stub.assert_called_once()
         # Verify Mythic Track link was added to description
         assert "Mythic Track" in mock_embed.description
+        # Verify the mythic_track emoji was included
+        assert f"{mt_emoji}" in mock_embed.description
 
     async def test_handle_direct_messages_award_to_unfetched_player(
         self,
@@ -1099,6 +1110,116 @@ class TestLookingForGameAction:
         add_role_stub.assert_called_once()
         # Should send award message
         assert send_stub.call_count >= 2  # One for game DM, one for award message
+
+    async def test_execute_start_no_guild(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+        user: User,
+    ) -> None:
+        """Test execute_start when guild is None."""
+        discord_user = mock_discord_object(user)
+        mocker.patch.object(action, "guild", None)
+        mocker.patch.object(action.interaction, "user", discord_user)
+        stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
+
+        await action.execute_start()
+
+        stub.assert_called_once_with(
+            discord_user,
+            "Please run this command in the same channel as your game.",
+            ephemeral=True,
+        )
+
+    async def test_execute_start_no_channel(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+        user: User,
+    ) -> None:
+        """Test execute_start when channel is None."""
+        discord_user = mock_discord_object(user)
+        mocker.patch.object(action, "channel", None)
+        mocker.patch.object(action.interaction, "user", discord_user)
+        stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
+
+        await action.execute_start()
+
+        stub.assert_called_once_with(
+            discord_user,
+            "Please run this command in the same channel as your game.",
+            ephemeral=True,
+        )
+
+    async def test_execute_start_not_waiting(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test execute_start when user is not in a pending game."""
+        mocker.patch.object(action.services.users, "is_waiting", AsyncMock(return_value=None))
+        stub = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+
+        await action.execute_start()
+
+        stub.assert_called_once_with(
+            action.interaction,
+            "You're not in a pending game in this channel.",
+            ephemeral=True,
+        )
+
+    async def test_execute_start_happy_path(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test execute_start when user is in a pending game (success path)."""
+        game_data = cast(
+            "GameDict",
+            {
+                "id": 42,
+                "voice_xid": None,
+                "voice_invite_link": None,
+            },
+        )
+        mocker.patch.object(
+            action.services.users,
+            "is_waiting",
+            AsyncMock(return_value=game_data),
+        )
+        mocker.patch.object(action.services.games, "select", AsyncMock(return_value=game_data))
+        mocker.patch.object(action.services.games, "shrink_game", AsyncMock())
+        mocker.patch.object(
+            action.services.games,
+            "player_xids",
+            AsyncMock(return_value=[100, 200]),
+        )
+
+        mock_suggestion = VoiceChannelSuggestion(already_picked=None, random_empty=None)
+        mocker.patch.object(
+            action,
+            "make_game_ready",
+            AsyncMock(return_value=(42, mock_suggestion)),
+        )
+        voice_stub = mocker.patch.object(action, "_handle_voice_creation", AsyncMock())
+        embed_stub = mocker.patch.object(action, "_handle_embed_creation", AsyncMock())
+        dm_stub = mocker.patch.object(action, "_handle_direct_messages", AsyncMock())
+
+        await action.execute_start()
+
+        action.services.games.select.assert_called_once_with(42)  # type: ignore
+        action.services.games.shrink_game.assert_called_once()  # type: ignore
+        action.services.games.player_xids.assert_called_once()  # type: ignore
+        action.make_game_ready.assert_called_once_with(game_data, [100, 200])  # type: ignore
+        voice_stub.assert_called_once_with(action.interaction.guild_id)
+        embed_stub.assert_called_once_with(
+            new=True,
+            origin=False,
+            fully_seated=True,
+            suggested_vc=mock_suggestion,
+            rematch=False,
+        )
+        dm_stub.assert_called_once_with(suggested_vc=mock_suggestion, rematch=False)
 
     async def test_get_bracket_when_no_format_no_bracket_no_default(
         self,

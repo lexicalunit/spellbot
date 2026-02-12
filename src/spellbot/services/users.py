@@ -10,7 +10,19 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Block, Game, Play, Post, Queue, User, UserAward, UserDict, Verify, Watch
+from spellbot.models import (
+    Block,
+    Game,
+    GameDict,
+    Play,
+    Post,
+    Queue,
+    User,
+    UserAward,
+    UserDict,
+    Verify,
+    Watch,
+)
 
 if TYPE_CHECKING:
     import discord
@@ -123,7 +135,7 @@ class UsersService:
         DatabaseSession.commit()
 
     @sync_to_async()
-    def is_waiting(self, channel_xid: int) -> bool:
+    def is_waiting(self, channel_xid: int) -> GameDict | None:
         assert self.user
         return self.user.waiting(channel_xid)
 
