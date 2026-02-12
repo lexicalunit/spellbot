@@ -89,7 +89,10 @@ class TestSpellBot:
             mock = mocker.patch(f"spellbot.client.{factory}", AsyncMock())
         response = await bot.create_game_link(game)
         if factory:
-            mock.assert_called_once_with(game)
+            if factory == "convoke.generate_link":
+                mock.assert_called_once_with(game, None)
+            else:
+                mock.assert_called_once_with(game)
         if mock_games:
             assert response.link is not None
             assert response.link.startswith("http://exmaple.com/game/")

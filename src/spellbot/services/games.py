@@ -320,7 +320,17 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def make_ready(self, game_link: str | None, password: str | None) -> int:
+    def create_plays(self) -> None:
+        assert self.game
+
+    @sync_to_async()
+    @tracer.wrap()
+    def make_ready(
+        self,
+        game_link: str | None,
+        password: str | None,
+        pins: list[str],
+    ) -> int:
         assert self.game
         assert len(game_link or "") <= MAX_GAME_LINK_LEN
         queues: list[QueueDict] = [
@@ -347,8 +357,9 @@ class GamesService:
                         "user_xid": queue["user_xid"],
                         "game_id": self.game.id,
                         "og_guild_xid": queue["og_guild_xid"],
+                        "pin": pins[i],
                     }
-                    for queue in queues
+                    for i, queue in enumerate(queues)
                 ],
             )
             .on_conflict_do_nothing(),
@@ -591,7 +602,5 @@ class GamesService:
         game = DatabaseSession.query(Game).filter(Game.id == game_id).first()
         if not game:
             return []
-
-        player_pins = game.player_pins
         players = DatabaseSession.query(User).filter(User.xid.in_(game.player_xids)).all()
-        return [PlayerDataDict(xid=p.xid, name=p.name, pin=player_pins.get(p.xid)) for p in players]
+        return [PlayerDataDict(xid=p.xid, name=p.name) for p in players]
