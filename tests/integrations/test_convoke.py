@@ -401,3 +401,26 @@ class TestGenerateLink:
 
         # Empty dict is falsy, so returns None
         assert result == (None, None)
+
+    @pytest.mark.asyncio
+    async def test_generate_link_zero_retry_attempts(self) -> None:
+        """Test that generate_link returns None when RETRY_ATTEMPTS is 0 (loop never executes)."""
+        game = cast(
+            "GameDict",
+            {
+                "id": 1,
+                "format": GameFormat.COMMANDER.value,
+                "seats": 4,
+                "guild_xid": 12345,
+                "channel_xid": 67890,
+                "bracket": GameBracket.NONE.value,
+            },
+        )
+
+        with (
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
+            patch.object(convoke_module, "RETRY_ATTEMPTS", 0),
+        ):
+            result = await generate_link(game)
+
+        assert result == (None, None)
