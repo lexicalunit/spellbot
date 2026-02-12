@@ -1003,6 +1003,56 @@ class TestLookingForGameAction:
         # Verify the mythic_track emoji was included
         assert f"{mt_emoji}" in mock_embed.description
 
+    async def test_handle_direct_messages_with_pin_no_mythic_track_emoji(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test _handle_direct_messages sends DMs with mythic track link but no emoji prefix."""
+        mock_user = MagicMock(spec=discord.User)
+        mock_embed = MagicMock(spec=discord.Embed)
+        mock_embed.description = "Game started!"
+        mock_embed.copy = MagicMock(return_value=mock_embed)
+
+        game_data = {
+            "id": 1,
+            "format": 1,
+            "service": 1,
+            "bracket": 2,
+            "jump_links": {},
+        }
+
+        # No mythic_track emoji in bot's emojis_cache
+        action.bot.emojis_cache = []
+
+        # Player has a PIN
+        mocker.patch.object(
+            action.services.games,
+            "player_pins",
+            AsyncMock(return_value={123: "ABC123"}),
+        )
+        mocker.patch.object(
+            action.services.games,
+            "player_names",
+            AsyncMock(return_value={123: "TestPlayer"}),
+        )
+        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
+        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
+        mocker.patch(
+            "spellbot.actions.lfg_action.safe_fetch_user",
+            AsyncMock(return_value=mock_user),
+        )
+        send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
+        mocker.patch.object(action.services.awards, "give_awards", AsyncMock(return_value={}))
+
+        await action._handle_direct_messages()
+
+        send_stub.assert_called_once()
+        # Verify Mythic Track link was added to description
+        assert "Mythic Track" in mock_embed.description
+        # Verify the description starts with "[Mythic Track]" (no emoji prefix)
+        assert "[Mythic Track]" in mock_embed.description
+
     async def test_handle_direct_messages_award_to_unfetched_player(
         self,
         action: LookingForGameAction,

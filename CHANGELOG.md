@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added a `/start` command to start a pending game immediately.
 
+### Fixed
+
+- Fixed an issue with Mythic Track pins not being sent to Convoke properly.
+
 ## [v17.10.4](https://github.com/lexicalunit/spellbot/releases/tag/v17.10.4) - 2026-02-05
 
 ## Changed

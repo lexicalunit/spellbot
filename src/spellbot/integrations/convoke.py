@@ -111,24 +111,25 @@ async def fetch_convoke_link(
     client: httpx.AsyncClient,
     game: GameDict,
     key: str | None,
+    pins: list[str] | None,
 ) -> dict[str, Any]:
     name = f"SB{game['id']}"
     sb_game_format = GameFormat(game["format"])
     format = convoke_game_format(sb_game_format).value
     players = await services.games.player_data(game["id"])
-    pins = [p["pin"] for p in players if p["pin"] is not None]
     payload = {
         "apiKey": settings.CONVOKE_API_KEY,
         "isPublic": False,
         "name": name,
         "spellbotGameId": str(game["id"]),
-        "spellbotGamePins": pins,
         "seatLimit": game["seats"],
         "format": format,
         "discordGuild": str(game["guild_xid"]),
         "discordChannel": str(game["channel_xid"]),
         "discordPlayers": [{"id": str(p["xid"]), "name": p["name"]} for p in players],
     }
+    if pins:
+        payload["spellbotGamePins"] = pins
     if game["bracket"] != GameBracket.NONE.value:
         payload["bracketLevel"] = f"B{game['bracket'] - 1}"
     if key:
@@ -140,7 +141,10 @@ async def fetch_convoke_link(
     return resp.json()
 
 
-async def generate_link(game: GameDict) -> tuple[str | None, str | None]:
+async def generate_link(
+    game: GameDict,
+    pins: list[str] | None,
+) -> tuple[str | None, str | None]:
     if not settings.CONVOKE_API_KEY:
         return None, None
 
@@ -150,7 +154,7 @@ async def generate_link(game: GameDict) -> tuple[str | None, str | None]:
     async with httpx.AsyncClient(timeout=timeout) as client:
         for attempt in range(RETRY_ATTEMPTS):
             try:
-                data = await fetch_convoke_link(client, game, key)
+                data = await fetch_convoke_link(client, game, key, pins)
             except Exception as ex:
                 add_span_error(ex)
                 if attempt == RETRY_ATTEMPTS - 1:

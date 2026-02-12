@@ -23,7 +23,7 @@ from .channel import Channel, ChannelDict  # noqa: E402
 from .game import Game, GameStatus, GameDict, GameLinkDetails, MAX_RULES_LENGTH  # noqa: E402
 from .guild import Guild, GuildDict  # noqa: E402
 from .notification import Notification, NotificationDict  # noqa: E402
-from .play import Play, PlayDict  # noqa: E402
+from .play import Play, PlayDict, generate_pin  # noqa: E402
 from .post import Post, PostDict  # noqa: E402
 from .queue import Queue, QueueDict  # noqa: E402
 from .token import Token, TokenDict  # noqa: E402
@@ -67,6 +67,7 @@ __all__ = [
     "Watch",
     "WatchDict",
     "create_all",
+    "generate_pin",
     "import_models",
     "literalquery",
     "now",

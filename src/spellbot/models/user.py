@@ -24,7 +24,6 @@ class UserDict(TypedDict):
 class PlayerDataDict(TypedDict):
     xid: int
     name: str
-    pin: str | None
 
 
 class User(Base):
