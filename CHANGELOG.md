@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v17.11.0](https://github.com/lexicalunit/spellbot/releases/tag/v17.11.0) - 2026-02-11
+
 ### Added
 
 - Added a `/start` command to start a pending game immediately.
