@@ -157,7 +157,11 @@ class SpellBot(AutoShardedBot):
             yield
 
     @tracer.wrap()
-    async def create_game_link(self, game: GameDict) -> GameLinkDetails:
+    async def create_game_link(
+        self,
+        game: GameDict,
+        pins: list[str] | None = None,
+    ) -> GameLinkDetails:
         if self.mock_games:
             return GameLinkDetails(f"http://exmaple.com/game/{uuid4()}")
         service = game.get("service")
@@ -168,7 +172,7 @@ class SpellBot(AutoShardedBot):
                 link = await spelltable.generate_link(game)
                 return GameLinkDetails(link)
             case GameService.CONVOKE.value:
-                details = await convoke.generate_link(game)
+                details = await convoke.generate_link(game, pins)
                 return GameLinkDetails(*details)
             case GameService.TABLE_STREAM.value:
                 details = await tablestream.generate_link(game)

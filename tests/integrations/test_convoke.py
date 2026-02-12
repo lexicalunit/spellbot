@@ -92,7 +92,7 @@ class TestFetchConvokeLink:
 
         players = [
             {"xid": 100, "name": "Player1", "pin": "123456"},
-            {"xid": 200, "name": "Player2", "pin": None},
+            {"xid": 200, "name": "Player2", "pin": "654321"},
         ]
 
         with (
@@ -104,7 +104,7 @@ class TestFetchConvokeLink:
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
             patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
         ):
-            result = await fetch_convoke_link(mock_client, game, None)
+            result = await fetch_convoke_link(mock_client, game, None, pins=["123456"])
 
         assert result == {"url": "https://convoke.gg/game/123"}
         mock_client.post.assert_called_once()
@@ -146,7 +146,7 @@ class TestFetchConvokeLink:
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
             patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
         ):
-            result = await fetch_convoke_link(mock_client, game, None)
+            result = await fetch_convoke_link(mock_client, game, None, pins=None)
 
         assert result == {"url": "https://convoke.gg/game/456"}
         payload = mock_client.post.call_args.kwargs["json"]
@@ -181,7 +181,7 @@ class TestFetchConvokeLink:
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
             patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
         ):
-            result = await fetch_convoke_link(mock_client, game, "secret_pass")
+            result = await fetch_convoke_link(mock_client, game, "secret_pass", pins=None)
 
         assert result == {"url": "https://convoke.gg/game/789"}
         payload = mock_client.post.call_args.kwargs["json"]
@@ -197,7 +197,7 @@ class TestGenerateLink:
         )
 
         with patch.object(convoke_module.settings, "CONVOKE_API_KEY", ""):
-            result = await generate_link(game)
+            result = await generate_link(game, pins=None)
 
         assert result == (None, None)
 
@@ -224,7 +224,7 @@ class TestGenerateLink:
                 AsyncMock(return_value={"url": "https://convoke.gg/game/123"}),
             ),
         ):
-            result = await generate_link(game)
+            result = await generate_link(game, pins=None)
 
         assert result == ("https://convoke.gg/game/123", None)
 
@@ -253,7 +253,7 @@ class TestGenerateLink:
                 ),
             ),
         ):
-            result = await generate_link(game)
+            result = await generate_link(game, pins=None)
 
         assert result == ("https://convoke.gg/game/123", "resp_pass")
 
@@ -280,7 +280,7 @@ class TestGenerateLink:
                 AsyncMock(return_value={"url": "https://convoke.gg/game/456"}),
             ),
         ):
-            result = await generate_link(game)
+            result = await generate_link(game, pins=None)
 
         assert result == ("https://convoke.gg/game/456", "ancient dragon")
 
@@ -321,7 +321,7 @@ class TestGenerateLink:
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
-            result = await generate_link(game)
+            result = await generate_link(game, pins=None)
 
         # First attempt fails, second succeeds
         assert result == ("https://convoke.gg/game/789", None)
@@ -357,7 +357,7 @@ class TestGenerateLink:
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
-            result = await generate_link(game)
+            result = await generate_link(game, pins=None)
 
         # All attempts fail, returns None
         assert result == (None, None)
@@ -397,7 +397,7 @@ class TestGenerateLink:
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
-            result = await generate_link(game)
+            result = await generate_link(game, pins=None)
 
         # Empty dict is falsy, so returns None
         assert result == (None, None)
@@ -421,6 +421,6 @@ class TestGenerateLink:
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
             patch.object(convoke_module, "RETRY_ATTEMPTS", 0),
         ):
-            result = await generate_link(game)
+            result = await generate_link(game, pins=None)
 
         assert result == (None, None)
