@@ -312,6 +312,14 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
+    def shrink_game(self) -> None:
+        """Shrink the number of seats in a game to the current number of players."""
+        assert self.game
+        self.game.seats = self.game.player_count
+        DatabaseSession.commit()
+
+    @sync_to_async()
+    @tracer.wrap()
     def make_ready(self, game_link: str | None, password: str | None) -> int:
         assert self.game
         assert len(game_link or "") <= MAX_GAME_LINK_LEN

@@ -54,6 +54,14 @@ class TestModelGame:
             "blind": game.blind,
         }
 
+    def test_game_player_count(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game: Game = factories.game.create(guild=guild, channel=channel, seats=4)
+        factories.user.create(game=game)
+        factories.user.create(game=game)
+        assert game.player_count == 2
+
     def test_game_show_links(self, factories: Factories) -> None:
         guild1 = factories.guild.create()
         guild2 = factories.guild.create(show_links=True)

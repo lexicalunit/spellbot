@@ -367,6 +367,34 @@ class TestCogLookingForGame:
         DatabaseSession.expire_all()
         assert DatabaseSession.query(Game).count() == 2
 
+    async def test_start(
+        self,
+        cog: LookingForGameCog,
+        user: User,
+        channel: Channel,
+        interaction: discord.Interaction,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        game = factories.game.create(guild=guild, channel=channel, seats=4)
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=123)
+        factories.queue.create(user_xid=user.xid, game_id=game.id, og_guild_xid=guild.xid)
+        other_user = factories.user.create()
+        factories.queue.create(user_xid=other_user.xid, game_id=game.id, og_guild_xid=guild.xid)
+        players = [mock_discord_object(x) for x in (user, other_user)]
+
+        with mock_operations(lfg_action, users=players):
+            message = MagicMock(spec=discord.Message)
+            message.id = 456
+            lfg_action.safe_followup_channel.return_value = message
+
+            await run_command(cog.start, interaction)
+
+        DatabaseSession.expire_all()
+        game = DatabaseSession.query(Game).one()
+        assert game.status == GameStatus.STARTED.value
+        assert game.seats == 2
+
 
 @pytest.mark.asyncio
 class TestCogLookingForGameJoinButton:

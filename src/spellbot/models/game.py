@@ -225,6 +225,10 @@ class Game(Base):
         return [int(row[0]) for row in rows]
 
     @property
+    def player_count(self) -> int:
+        return len(self.player_xids)
+
+    @property
     def player_pins(self) -> dict[int, str | None]:
         from spellbot.database import DatabaseSession  # allow_inline
 
