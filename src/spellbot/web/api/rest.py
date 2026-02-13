@@ -8,12 +8,11 @@ from typing import TYPE_CHECKING, Any, cast
 import aiohttp
 import tenacity
 from aiohttp import web
-from dateutil import parser, tz
+from dateutil import tz
 from ddtrace.trace import tracer
 
 from spellbot.database import db_session_manager
-from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.services import NotificationData, ServicesRegistry
+from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.web.tools import rate_limited
 
@@ -251,157 +250,6 @@ async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
             logger.info("Not allowed to DM this user: %s", user_xid)
     except Exception as ex:
         logger.warning("Discord API failure: %s", ex, exc_info=True)
-
-
-@tracer.wrap(name="rest", resource="game_record_embed")
-def game_notification_message(notif: NotificationData) -> dict[str, Any]:
-    service = str(GameService(notif.service))
-    fields = [
-        {"name": "Players", "value": "\n".join(f"• {player}" for player in notif.players)},
-        {"name": "Format", "value": str(GameFormat(notif.format)), "inline": True},
-    ]
-    if notif.bracket != GameBracket.NONE.value:
-        bracket = GameBracket(notif.bracket)
-        bracket_title = str(bracket)
-        name = bracket_title[8:]
-        icon = bracket.icon
-        bracket_str = f"{icon} {name}" if icon else name
-        fields.append({"name": "Bracket", "value": bracket_str, "inline": True})
-    if notif.started_at:
-        started_ts = int(cast("datetime", notif.started_at).replace(tzinfo=tz.UTC).timestamp())
-        fields.append({"name": "Started at", "value": f"<t:{started_ts}>", "inline": True})
-        description = "Spectate the game by opening the game link in your browser."
-        title = f"**This game has begun on {service}.**"
-    else:
-        updated_ts = int(cast("datetime", notif.updated_at).replace(tzinfo=tz.UTC).timestamp())
-        fields.append({"name": "Updated at", "value": f"<t:{updated_ts}>", "inline": True})
-        description = "Join the game by opening the game link in your browser."
-        title = f"**There's a new public game on {service}!**"
-    message = {
-        "content": "",
-        "embeds": [
-            {
-                "title": title,
-                "description": description,
-                "fields": fields,
-                "color": (
-                    settings.STARTED_EMBED_COLOR
-                    if notif.started_at
-                    else settings.PENDING_EMBED_COLOR
-                ),
-                "thumbnail": {"url": settings.thumb(notif.guild)},
-                "footer": {
-                    "text": f"SpellBot Notification ID: #SN{notif.id} — Service: {service}",
-                },
-            },
-        ],
-        "components": [
-            {
-                "type": 1,
-                "components": [
-                    {
-                        "type": 2,
-                        "style": 5,
-                        "label": "Open Game Link",
-                        "url": notif.link,
-                    },
-                ],
-            },
-        ],
-    }
-    if notif.role:
-        message["content"] = f"<@&{notif.role}>"
-        message["allowed_mentions"] = {"roles": [notif.role]}
-    return message
-
-
-def parse_datetime_str(dt_str: str) -> datetime:
-    dt = parser.isoparse(dt_str)
-    return dt.replace(tzinfo=tz.UTC) if dt.tzinfo is None else dt.astimezone(tz.UTC)
-
-
-@tracer.wrap(name="rest", resource="create_notification_endpoint")
-async def create_notification_endpoint(request: web.Request) -> WebResponse:
-    async with db_session_manager():
-        services = ServicesRegistry()
-        payload = await request.json()
-        link = payload["link"]
-        guild = int(payload["guild"])
-        channel = int(payload["channel"])
-        players = payload["players"]
-        format = payload["format"]
-        bracket = payload["bracket"]
-        service = payload["service"]
-        started_at = payload.get("started_at")
-        role = payload.get("role")
-        notif = NotificationData(
-            link=link,
-            guild=guild,
-            channel=channel,
-            players=players,
-            format=format,
-            bracket=bracket,
-            service=service,
-            started_at=parse_datetime_str(started_at) if started_at else None,
-            role=role,
-        )
-        notif = await services.notifications.create(notif)
-        message = game_notification_message(notif)
-        message_id: int | None = None
-        if (
-            (resp := await send_message(channel, message))
-            and (message_id := resp.get("id"))
-            and (notif_id := notif.id)
-        ):
-            await services.notifications.set_message(notif_id, message_id)
-        return reply({"success": bool(resp and message_id), "notification": notif.id}, status=201)
-
-
-@tracer.wrap(name="rest", resource="update_notification_endpoint")
-async def update_notification_endpoint(request: web.Request) -> WebResponse:
-    try:
-        async with db_session_manager():
-            services = ServicesRegistry()
-            payload = await request.json()
-            notif_id = int(request.match_info["notif"])
-            players = payload["players"]
-            started_at = payload.get("started_at")
-            notif = await services.notifications.update(
-                notif_id,
-                players=players,
-                started_at=started_at,
-            )
-            if not notif:
-                return reply(error="Notification not found", status=404)
-            message = game_notification_message(notif)
-            message_id: int | None = None
-            if notif.message:
-                resp = await update_message(notif.channel, notif.message, message)
-                message_id = notif.message
-            else:
-                resp = await send_message(notif.channel, message)
-                message_id = resp.get("id") if resp else None
-            if not notif.message and message_id:
-                await services.notifications.set_message(notif_id, message_id)
-            return reply({"success": bool(resp and "id" in resp)})
-    except Exception as e:
-        return reply(error=str(e))
-
-
-@tracer.wrap(name="rest", resource="delete_notification_endpoint")
-async def delete_notification_endpoint(request: web.Request) -> WebResponse:
-    try:
-        async with db_session_manager():
-            services = ServicesRegistry()
-            notif_id = int(request.match_info["notif"])
-            notif = await services.notifications.delete(notif_id)
-            if not notif:
-                return reply(error="Notification not found", status=404)
-            if notif.message:
-                await delete_message(notif.channel, notif.message)
-            return reply({"success": True})
-    except Exception as e:
-        return reply(error=str(e))
 
 
 @tracer.wrap(name="rest", resource="game_record_endpoint")

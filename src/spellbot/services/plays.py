@@ -9,7 +9,7 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy.sql.expression import and_, extract, func, text
 
 from spellbot.database import DatabaseSession
-from spellbot.enums import GameFormat
+from spellbot.enums import GameFormat, GameService
 from spellbot.models import Channel, Game, Guild, Play
 
 USER_PAGE_SIZE = 25
@@ -23,7 +23,8 @@ USER_RECORDS_SQL = r"""
             games.channel_xid,
             posts.message_xid,
             games.game_link,
-            games.format
+            games.format,
+            games.service
         FROM games
         JOIN plays ON plays.game_id = games.id
         JOIN posts ON posts.game_id = games.id
@@ -43,6 +44,7 @@ USER_RECORDS_SQL = r"""
         game_plays.message_xid,
         game_plays.game_link,
         game_plays.format,
+        game_plays.service,
         channels.name,
         STRING_AGG(
             CONCAT(
@@ -64,6 +66,7 @@ USER_RECORDS_SQL = r"""
         game_plays.message_xid,
         game_plays.game_link,
         game_plays.format,
+        game_plays.service,
         channels.name
     ORDER BY game_plays.updated_at DESC
     ;
@@ -76,6 +79,7 @@ CHANNEL_RECORDS_SQL = r"""
         posts.message_xid,
         games.game_link,
         games.format,
+        games.service,
         STRING_AGG(
             CONCAT(
                 REPLACE(REPLACE(users.name, ':', ''), '@', ''),
@@ -99,7 +103,8 @@ CHANNEL_RECORDS_SQL = r"""
         games.updated_at,
         posts.message_xid,
         games.game_link,
-        games.format
+        games.format,
+        games.service
     ORDER BY games.updated_at DESC
     OFFSET :offset
     LIMIT :page_size
@@ -200,9 +205,10 @@ class PlaysService:
                 "message": row[3],
                 "link": row[4],
                 "format": str(GameFormat(row[5])),
+                "service": str(GameService(row[6])),
                 "guild_name": guild.name,
-                "channel_name": row[6],
-                "scores": make_scores(row[7]),
+                "channel_name": row[7],
+                "scores": make_scores(row[8]),
             }
             for row in rows
         ]
@@ -239,9 +245,10 @@ class PlaysService:
                 "message": row[2],
                 "link": row[3],
                 "format": str(GameFormat(row[4])),
+                "service": str(GameService(row[5])),
                 "guild_name": guild.name,
                 "channel_name": channel.name,
-                "scores": make_scores(row[5]),
+                "scores": make_scores(row[6]),
             }
             for row in rows
         ]

@@ -61,7 +61,7 @@ class GameLinkDetails:
 
 
 class Game(Base):
-    """Represents a pending or started SpellTable game."""
+    """Represents a pending or started game."""
 
     __tablename__ = "games"
 
@@ -168,8 +168,8 @@ class Game(Base):
         "int",
         Column(
             Integer(),
-            default=GameService.SPELLTABLE.value,
-            server_default=text(str(GameService.SPELLTABLE.value)),
+            default=GameService.CONVOKE.value,
+            server_default=text(str(GameService.CONVOKE.value)),
             index=True,
             nullable=False,
             doc="The service that will be used to create this game",

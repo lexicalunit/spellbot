@@ -73,9 +73,6 @@ def build_web_app() -> web.Application:
             web.get(r"/g/{guild}/u/{user}", record.user_endpoint),
             web.post(r"/api/game/{game}/verify", rest.game_verify_endpoint),
             web.post(r"/api/game/{game}/record", rest.game_record_endpoint),
-            web.post(r"/api/notification", rest.create_notification_endpoint),
-            web.patch(r"/api/notification/{notif}", rest.update_notification_endpoint),
-            web.delete(r"/api/notification/{notif}", rest.delete_notification_endpoint),
         ],
     )
     return app
