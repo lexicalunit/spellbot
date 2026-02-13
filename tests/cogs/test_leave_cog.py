@@ -23,9 +23,8 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.use_db
 
-SPELLTABLE_PENDING_MSG = (
-    "_A [SpellTable](https://spelltable.wizards.com/) link will "
-    "be created when all players have joined._"
+CONVOKE_PENDING_MSG = (
+    "_A [Convoke](https://www.convoke.games/) link will be created when all players have joined._"
 )
 
 
@@ -67,14 +66,14 @@ class TestCogLeaveGame:
             safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
             assert safe_update_embed_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
-                "description": (f"{SPELLTABLE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
+                "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
                     {"inline": False, "name": "Support SpellBot", "value": ANY},
                 ],
-                "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
                 "thumbnail": {"url": settings.THUMB_URL},
                 "title": "**Waiting for 3 more players to join...**",
                 "type": "rich",
@@ -134,14 +133,14 @@ class TestCogLeaveGame:
             safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
             assert safe_update_embed_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
-                "description": (f"{SPELLTABLE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
+                "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
                     {"inline": False, "name": "Support SpellBot", "value": ANY},
                 ],
-                "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
                 "thumbnail": {"url": settings.THUMB_URL},
                 "title": "**Waiting for 3 more players to join...**",
                 "type": "rich",
@@ -337,14 +336,14 @@ class TestCogLeaveGame:
             safe_update_embed_origin_call = leave_action.safe_update_embed_origin.call_args_list[0]
             assert safe_update_embed_origin_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
-                "description": (f"{SPELLTABLE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
+                "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
                     {"inline": False, "name": "Support SpellBot", "value": ANY},
                 ],
-                "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
                 "thumbnail": {"url": settings.THUMB_URL},
                 "title": "**Waiting for 3 more players to join...**",
                 "type": "rich",
@@ -399,14 +398,14 @@ class TestCogLeaveGame:
             safe_update_embed_origin_call = leave_action.safe_update_embed_origin.call_args_list[0]
             assert safe_update_embed_origin_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
-                "description": (f"{SPELLTABLE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
+                "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
                     {"inline": False, "name": "Support SpellBot", "value": ANY},
                 ],
-                "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
                 "thumbnail": {"url": settings.THUMB_URL},
                 "title": "**Waiting for 3 more players to join...**",
                 "type": "rich",

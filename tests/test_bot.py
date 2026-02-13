@@ -46,12 +46,6 @@ class TestSpellBot:
             ),
             pytest.param(
                 False,
-                {"service": GameService.SPELLTABLE.value},
-                "spelltable.generate_link",
-                id="spellbot",
-            ),
-            pytest.param(
-                False,
                 {"service": GameService.TABLE_STREAM.value},
                 "tablestream.generate_link",
                 id="tablestream",

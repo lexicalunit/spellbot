@@ -369,7 +369,7 @@ class TestServiceGamesUpsert:
             rules=None,
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
-            service=GameService.SPELLTABLE.value,
+            service=GameService.CONVOKE.value,
         )
         assert not new
 
@@ -401,7 +401,7 @@ class TestServiceGamesUpsert:
             rules=None,
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
-            service=GameService.SPELLTABLE.value,
+            service=GameService.CONVOKE.value,
         )
         assert not new
 
@@ -420,7 +420,7 @@ class TestServiceGamesUpsert:
             rules=None,
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
-            service=GameService.SPELLTABLE.value,
+            service=GameService.CONVOKE.value,
         )
         assert new
 
@@ -447,7 +447,7 @@ class TestServiceGamesUpsert:
             rules="some additional rules",
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
-            service=GameService.SPELLTABLE.value,
+            service=GameService.CONVOKE.value,
         )
         assert new
 
@@ -475,7 +475,7 @@ class TestServiceGamesUpsert:
             rules=None,
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
-            service=GameService.SPELLTABLE.value,
+            service=GameService.CONVOKE.value,
         )
         assert new
 
@@ -511,7 +511,7 @@ class TestServiceGamesUpsert:
             rules=None,
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
-            service=GameService.SPELLTABLE.value,
+            service=GameService.CONVOKE.value,
         )
         assert new
 
@@ -537,7 +537,7 @@ class TestServiceGamesUpsert:
             rules=None,
             format=game.format,
             bracket=game.bracket,
-            service=GameService.SPELLTABLE.value,
+            service=GameService.CONVOKE.value,
         )
 
         DatabaseSession.expire_all()
@@ -561,7 +561,7 @@ class TestServiceGamesUpsert:
             rules=None,
             format=game.format,
             bracket=game.bracket,
-            service=GameService.SPELLTABLE.value,
+            service=GameService.CONVOKE.value,
         )
 
         DatabaseSession.expire_all()

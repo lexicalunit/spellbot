@@ -21,7 +21,6 @@ author: "Amy Troschinetz"
 
 navbar-links:
   Convoke: "https://convoke.games/"
-  SpellTable: "https://spelltable.wizards.com/"
   Patreon: "https://www.patreon.com/lexicalunit"
   Dev: "https://github.com/lexicalunit/spellbot"
   Status: "https://prod.app.spellbot.io/status"
@@ -75,7 +74,7 @@ social-network-links:
 
 # If you want to show a link to an RSS in the footer, add the site description here.
 # If you don't want to show an RSS link, remove the following line.
-# rss-description: The Discord bot for SpellTable
+# rss-description: The Discord bot for Webcam Magic
 
 # --- General options --- #
 
@@ -114,7 +113,7 @@ edit_page_button: false
 navbar-var-length: false
 
 # The keywords to associate with your website, for SEO purposes
-keywords: "magic: the gathering, magic, mtg, edh, commander, spelltable, discord bot, discord, bot"
+keywords: "magic: the gathering, magic, mtg, edh, commander, discord bot, discord, bot"
 
 ######################################
 # --- Colours / background image --- #

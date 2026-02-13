@@ -64,11 +64,18 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def get_service(self, service: int | None = None) -> int:
-        if service is not None:
-            return service
-        if self.channel_data["default_service"] is not None:
-            return self.channel_data["default_service"].value
-        return GameService.CONVOKE.value
+        def getter() -> int:
+            if service is not None:
+                return service
+            if self.channel_data["default_service"] is not None:
+                return self.channel_data["default_service"].value
+            return GameService.CONVOKE.value
+
+        # SpellTable is no longer supported, fallback on Convoke.
+        result = getter()
+        if result == GameService.SPELLTABLE.value:  # pragma: no cover
+            result = GameService.CONVOKE.value
+        return result
 
     @tracer.wrap()
     async def get_format(self, format: int | None = None) -> int:
@@ -366,7 +373,7 @@ class LookingForGameAction(BaseAction):
 
         game_format = GameFormat(format or GameFormat.COMMANDER.value)
         game_bracket = GameBracket(bracket or GameBracket.NONE.value)
-        game_service = GameService(service or GameService.SPELLTABLE.value)
+        game_service = GameService(service or GameService.CONVOKE.value)
         player_xids = list(map(int, re.findall(r"<@!?(\d+)>", players)))
         requested_seats = len(player_xids)
         if requested_seats < 2 or requested_seats > game_format.players:
