@@ -45,10 +45,7 @@ class GameService(Enum):
     NOT_ANY = "Not any", "_Please contact the players in your game to organize this game._", None, 8
     SPELLTABLE = (
         "SpellTable",
-        (
-            "_A {emoji}[SpellTable](https://spelltable.wizards.com/) link will "
-            "be created when all players have joined._"
-        ),
+        "_SpellTable is no longer supported._",
         "https://spelltable.wizards.com/",
         4,
     )
@@ -88,7 +85,7 @@ class GameService(Enum):
 
 GAME_SERVICE_ORDER = [
     GameService.NOT_ANY,
-    GameService.SPELLTABLE,
+    # GameService.SPELLTABLE,  # SpellTable is no longer supported.
     GameService.CONVOKE,
     GameService.TABLE_STREAM,
     GameService.COCKATRICE,

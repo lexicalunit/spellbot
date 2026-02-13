@@ -35,7 +35,7 @@ class AboutCog(commands.Cog):
         author = "[@lexicalunit](https://github.com/lexicalunit)"
         embed.add_field(name="Author", value=author)
         embed.description = (
-            "_The Discord bot for [SpellTable](https://spelltable.wizards.com/)._\n"
+            "_The Discord bot for Webcam Magic._\n"
             "\n"
             f"Having issues with SpellBot? Please [report bugs]({ISSUES})!\n"
             "\n"

@@ -44,8 +44,8 @@ dependencies = [
   "uvloop>=0.19",
   "wrapt>=1,<2",
 ]
-description = "The Discord bot for SpellTable"
-keywords = ["discord", "magic", "bot", "mtg", "SpellTable"]
+description = "The Discord bot for Webcam Magic"
+keywords = ["discord", "magic", "bot", "mtg", "webcam"]
 license = {text = "MIT"}
 name = "spellbot"
 readme = "README.md"

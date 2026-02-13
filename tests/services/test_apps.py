@@ -32,15 +32,14 @@ class TestServiceApps:
         apps = AppsService()
         token = factories.token.create(key="wildcard_key", scopes="*")
         assert await apps.verify_token(token.key, "/api/game/1/verify") is True
-        assert await apps.verify_token(token.key, "/api/notification/1") is True
         assert await apps.verify_token(token.key, "/api/anything/else") is True
 
     async def test_verify_token_specific_scope(self, factories: Factories) -> None:
         """Test that specific scopes only grant access to matching paths."""
         apps = AppsService()
-        token = factories.token.create(key="specific_key", scopes="game,notification")
+        token = factories.token.create(key="specific_key", scopes="game,play")
         assert await apps.verify_token(token.key, "/api/game/1/verify") is True
-        assert await apps.verify_token(token.key, "/api/notification/1") is True
+        assert await apps.verify_token(token.key, "/api/play/1") is True
         assert await apps.verify_token(token.key, "/api/other/1") is False
 
     async def test_verify_token_empty_required_scope(self, factories: Factories) -> None:

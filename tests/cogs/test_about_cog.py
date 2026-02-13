@@ -35,7 +35,7 @@ class TestCogAbout:
         assert get_last_send_message(interaction, "embed") == {
             "color": settings.INFO_EMBED_COLOR,
             "description": (
-                "_The Discord bot for [SpellTable](https://spelltable.wizards.com/)._\n"
+                "_The Discord bot for Webcam Magic._\n"
                 "\n"
                 "Having issues with SpellBot? Please [report bugs]"
                 "(https://github.com/lexicalunit/spellbot/issues)!\n"

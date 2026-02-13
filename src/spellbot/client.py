@@ -16,7 +16,7 @@ from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, 
 
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
-from .integrations import convoke, girudo, spelltable, tablestream
+from .integrations import convoke, girudo, tablestream
 from .metrics import setup_ignored_errors, setup_metrics
 from .models import GameLinkDetails
 from .operations import safe_delete_message
@@ -168,9 +168,6 @@ class SpellBot(AutoShardedBot):
         if span := tracer.current_span():  # pragma: no cover
             span.set_tag("link_service", GameService(service).name)
         match service:
-            case GameService.SPELLTABLE.value:
-                link = await spelltable.generate_link(game)
-                return GameLinkDetails(link)
             case GameService.CONVOKE.value:
                 details = await convoke.generate_link(game, pins)
                 return GameLinkDetails(*details)

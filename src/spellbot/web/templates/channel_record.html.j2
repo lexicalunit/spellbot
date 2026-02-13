@@ -26,7 +26,7 @@
                 <td><a href="https://discordapp.com/channels/{{record.guild}}/{{record.channel}}">#{{record.channel_name}}</a></td>
                 <td>{{record.format}}</td>
                 {% if record.link %}
-                    <td><a href="{{record.link}}">Open in SpellTable</a><span class="data">{{record.link}}</span></td>
+                    <td><a href="{{record.link}}">Open in {{record.service}}</a><span class="data">{{record.link}}</span></td>
                 {% else %}
                     <td>&nbsp;</td>
                 {% endif %}

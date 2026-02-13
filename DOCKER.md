@@ -45,10 +45,7 @@ docker run -it --rm \
     -e API_BASE_URL="http://localhost:8080" \
     -e DD_TRACE_ENABLED="false" \
     -e BOT_TOKEN="<Your Discord provided bot token>" \
-    -e SPELLTABLE_API_KEY="<Your SpellTable API key>" \
-    -e SPELLTABLE_CLIENT_ID="<Your SpellTable client ID>" \
-    -e SPELLTABLE_AUTH_KEY="<Your SpellTable API auth token>" \
-    -e TABLESTREAM_AUTH_KEY="<Your TableStream auth key>" \
+    -e CONVOKE_API_KEY="<Your Convoke API key>" \
     lexicalunit/spellbot
 ```
 

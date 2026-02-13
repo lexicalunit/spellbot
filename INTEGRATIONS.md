@@ -1,6 +1,6 @@
 # Integrations with external services
 
-At the time of this writing SpellBot can create games on [SpellTable][spelltable], Convoke[convoke], Girudo[girudo], and [TableStream][tablestream]. This document explains how to add support for additional services.
+At the time of this writing SpellBot can create games on Convoke[convoke], Girudo[girudo], and [TableStream][tablestream]. This document explains how to add support for additional services.
 
 ## Update the GameService enum
 
@@ -60,5 +60,4 @@ There are a number of tests that you will need to either extend or create. Pleas
 
 [convoke]: https://www.convoke.games/
 [girudo]: https://www.girudo.com/
-[spelltable]: https://spelltable.wizards.com/
 [tablestream]: https://table-stream.com/

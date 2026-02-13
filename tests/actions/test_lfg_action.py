@@ -570,12 +570,12 @@ class TestLookingForGameAction:
 
         send_stub.assert_not_called()
 
-    async def test_handle_watched_players_sends_notification(
+    async def test_handle_watched_players_sends_dm_to_moderators(
         self,
         action: LookingForGameAction,
         mocker: MockerFixture,
     ) -> None:
-        """Test _handle_watched_players sends notification to moderators."""
+        """Test _handle_watched_players sends DM to moderators."""
         mock_member = MagicMock(spec=discord.Member)
 
         # Create guild with mod role that has members
