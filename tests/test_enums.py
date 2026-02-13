@@ -16,7 +16,7 @@ def test_game_format_ordering() -> None:
 
 
 def test_game_service_ordering() -> None:
-    assert all(f in GAME_SERVICE_ORDER for f in GameService)
+    assert all(f in GAME_SERVICE_ORDER for f in GameService if f != GameService.SPELLTABLE)
     assert len(GAME_SERVICE_ORDER) == len(set(GAME_SERVICE_ORDER))
 
 

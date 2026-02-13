@@ -5,7 +5,6 @@ from .awards import AwardsService, NewAward
 from .channels import ChannelsService
 from .games import GamesService
 from .guilds import GuildsService
-from .notifications import NotificationData, NotificationsService
 from .patreon import PatreonService
 from .plays import PlaysService
 from .users import UsersService
@@ -20,7 +19,6 @@ class ServicesRegistry:
         self.channels = ChannelsService()
         self.games = GamesService()
         self.guilds = GuildsService()
-        self.notifications = NotificationsService()
         self.patreon = PatreonService()
         self.plays = PlaysService()
         self.users = UsersService()
@@ -35,8 +33,6 @@ __all__ = [
     "GamesService",
     "GuildsService",
     "NewAward",
-    "NotificationData",
-    "NotificationsService",
     "PatreonService",
     "PlaysService",
     "ServicesRegistry",

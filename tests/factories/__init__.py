@@ -5,7 +5,6 @@ from .block import BlockFactory
 from .channel import ChannelFactory
 from .game import GameFactory
 from .guild import GuildFactory
-from .notification import NotificationFactory
 from .play import PlayFactory
 from .post import PostFactory
 from .queue import QueueFactory
@@ -20,7 +19,6 @@ __all__ = [
     "GameFactory",
     "GuildAwardFactory",
     "GuildFactory",
-    "NotificationFactory",
     "PlayFactory",
     "PostFactory",
     "QueueFactory",

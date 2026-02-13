@@ -19,9 +19,8 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.use_db
 
-SPELLTABLE_PENDING_MSG = (
-    "_A [SpellTable](https://spelltable.wizards.com/) link will "
-    "be created when all players have joined._"
+CONVOKE_PENDING_MSG = (
+    "_A [Convoke](https://www.convoke.games/) link will be created when all players have joined._"
 )
 
 
@@ -78,14 +77,6 @@ class TestModelGame:
     @pytest.mark.parametrize(
         ("service", "description"),
         [
-            pytest.param(
-                GameService.SPELLTABLE,
-                (
-                    "_A [SpellTable](https://spelltable.wizards.com/) link will "
-                    "be created when all players have joined._"
-                ),
-                id="spelltable",
-            ),
             pytest.param(
                 GameService.COCKATRICE,
                 "_Please use Cockatrice for this game._",
@@ -160,14 +151,14 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": SPELLTABLE_PENDING_MSG,
+            "description": CONVOKE_PENDING_MSG,
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
                 "url": settings.THUMB_URL,
             },
@@ -186,13 +177,13 @@ class TestModelGame:
         game = factories.game.create(guild=guild, channel=channel)
         factories.user.create(game=game)
 
-        spelltable_emoji = MagicMock(spec=discord.Emoji)
-        spelltable_emoji.name = "spelltable"
-        emojis = [spelltable_emoji]
+        convoke_emoji = MagicMock(spec=discord.Emoji)
+        convoke_emoji.name = "convoke"
+        emojis = [convoke_emoji]
 
         embed = game.to_embed(emojis=emojis)
-        assert f"{spelltable_emoji}" in embed.description
-        assert "[SpellTable](https://spelltable.wizards.com/)" in embed.description
+        assert f"{convoke_emoji}" in embed.description
+        assert "[Convoke](https://www.convoke.games/)" in embed.description
 
     def test_game_embed_pending_with_emoji_no_match(
         self,
@@ -212,7 +203,7 @@ class TestModelGame:
         embed = game.to_embed(emojis=emojis)
         # Should not contain the emoji since it doesn't match
         assert f"{other_emoji}" not in embed.description
-        assert "[SpellTable](https://spelltable.wizards.com/)" in embed.description
+        assert "[Convoke](https://www.convoke.games/)" in embed.description
 
     def test_game_embed_pending_with_blind(self, settings: Settings, factories: Factories) -> None:
         guild = factories.guild.create(motd=None)
@@ -222,14 +213,14 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": SPELLTABLE_PENDING_MSG,
+            "description": CONVOKE_PENDING_MSG,
             "fields": [
                 {"inline": False, "name": "Players", "value": "**1 player name is hidden**"},
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
                 "url": settings.THUMB_URL,
             },
@@ -251,14 +242,14 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": SPELLTABLE_PENDING_MSG,
+            "description": CONVOKE_PENDING_MSG,
             "fields": [
                 {"inline": False, "name": "Players", "value": "**2 player names are hidden**"},
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
                 "url": settings.THUMB_URL,
             },
@@ -279,14 +270,14 @@ class TestModelGame:
 
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": SPELLTABLE_PENDING_MSG,
+            "description": CONVOKE_PENDING_MSG,
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
                 "url": settings.THUMB_URL,
             },
@@ -303,7 +294,7 @@ class TestModelGame:
 
         assert game.to_embed().to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": SPELLTABLE_PENDING_MSG,
+            "description": CONVOKE_PENDING_MSG,
             "fields": [
                 {"inline": False, "name": "⚠️ Additional Rules:", "value": "test rules"},
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
@@ -311,7 +302,7 @@ class TestModelGame:
                 {"inline": True, "name": "Updated at", "value": ANY},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
                 "url": settings.THUMB_URL,
             },
@@ -329,7 +320,7 @@ class TestModelGame:
         assert game.to_embed().to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
             "description": (
-                f"{SPELLTABLE_PENDING_MSG}\n\nplayer 1: {player.name}\n\ngame id: {game.id}"
+                f"{CONVOKE_PENDING_MSG}\n\nplayer 1: {player.name}\n\ngame id: {game.id}"
             ),
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
@@ -337,7 +328,7 @@ class TestModelGame:
                 {"inline": True, "name": "Updated at", "value": ANY},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
                 "url": settings.THUMB_URL,
             },
@@ -357,7 +348,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            game_link="https://spelltable/link",
+            game_link="https://convoke.games/link",
             guild=guild,
             channel=channel,
         )
@@ -380,7 +371,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -389,7 +380,7 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                f"# [Join your SpellTable game now!]({game.game_link})"
+                f"# [Join your Convoke game now!]({game.game_link})"
                 "\n\n"
                 "You can also [jump to the original game post]"
                 "(https://discordapp.com/channels/"
@@ -407,7 +398,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -599,7 +590,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -609,8 +600,8 @@ class TestModelGame:
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "Sorry but SpellBot was unable to create a link for "
-                "this game. Please go to [SpellTable]"
-                "(https://spelltable.wizards.com/) to create one."
+                "this game. Please go to [Convoke]"
+                "(https://www.convoke.games/) to create one."
                 "\n\n"
                 "You can also [jump to the original game post](https://discordapp.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
@@ -627,7 +618,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -717,7 +708,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            game_link="https://spelltable/link",
+            game_link="https://convoke.games/link",
             voice_xid=501,
             guild=guild,
             channel=channel,
@@ -741,7 +732,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -750,7 +741,7 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                f"# [Join your SpellTable game now!]({game.game_link})"
+                f"# [Join your Convoke game now!]({game.game_link})"
                 "\n\n"
                 f"## Join your voice chat now: <#{game.voice_xid}>"
                 "\n\n"
@@ -769,7 +760,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -787,7 +778,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            game_link="https://spelltable/link",
+            game_link="https://convoke.games/link",
             voice_xid=501,
             voice_invite_link="https://voice/invite",
             guild=guild,
@@ -812,7 +803,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -821,7 +812,7 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                "# [Join your SpellTable game now!]"
+                "# [Join your Convoke game now!]"
                 f"({game.game_link})\n\n"
                 f"## Join your voice chat now: <#{game.voice_xid}>\n\n"
                 f"Or use this voice channel invite: {game.voice_invite_link}\n\n"
@@ -841,7 +832,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -855,7 +846,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            game_link="https://spelltable/link",
+            game_link="https://convoke.games/link",
             guild=guild,
             channel=channel,
         )
@@ -881,7 +872,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -890,7 +881,7 @@ class TestModelGame:
         assert game.to_embed(dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                f"# [Join your SpellTable game now!]({game.game_link})"
+                f"# [Join your Convoke game now!]({game.game_link})"
                 "\n\n"
                 "You can also [jump to the original game post](https://discordapp.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) "
@@ -909,7 +900,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -927,7 +918,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            game_link="https://spelltable/link",
+            game_link="https://convoke.games/link",
             guild=guild,
             channel=channel,
         )
@@ -963,7 +954,7 @@ class TestModelGame:
                 },
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -972,7 +963,7 @@ class TestModelGame:
         assert game.to_embed(guild=dg, dm=True, suggested_vc=suggested_vc).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                f"# [Join your SpellTable game now!]({game.game_link})"
+                f"# [Join your Convoke game now!]({game.game_link})"
                 "\n\n"
                 f"## Please consider using this available voice channel: <#{dc.id}>.\n"
                 "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
@@ -997,7 +988,7 @@ class TestModelGame:
                 },
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -1009,7 +1000,7 @@ class TestModelGame:
         assert game.to_embed(guild=dg, dm=True, suggested_vc=suggested_vc).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
-                f"# [Join your SpellTable game now!]({game.game_link})"
+                f"# [Join your Convoke game now!]({game.game_link})"
                 "\n\n"
                 f"## Your pod is already using a voice channel, join them now: "
                 f"<#{suggested_vc.already_picked}>!\n"
@@ -1035,7 +1026,7 @@ class TestModelGame:
                 },
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -1049,7 +1040,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            game_link="https://spelltable/link",
+            game_link="https://convoke.games/link",
             guild=guild,
             channel=channel,
         )
@@ -1082,7 +1073,7 @@ class TestModelGame:
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
             "flags": 0,
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Rematch Game!**",
             "type": "rich",
@@ -1141,7 +1132,7 @@ class TestModelGame:
             seats=2,
             status=GameStatus.STARTED.value,
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
-            game_link="https://spelltable/link",
+            game_link="https://convoke.games/link",
             guild=guild,
             channel=channel,
         )

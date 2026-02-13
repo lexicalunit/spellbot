@@ -17,7 +17,7 @@
     />
 </a>
 <br />
-The Discord bot for <a href="https://convoke.games/">Convoke</a> and <a href="https://spelltable.wizards.com/">SpellTable</a>
+The Discord bot for <a href="https://convoke.games/">Convoke</a>
 <br />
 <br />
 
@@ -35,7 +35,7 @@ The Discord bot for <a href="https://convoke.games/">Convoke</a> and <a href="ht
 
 ## 🤖 Using SpellBot
 
-SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [SpellTable][spelltable], [Girudo][girudo], and [Table Stream][tablestream]. Just looking to play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
+SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [Girudo][girudo], and [Table Stream][tablestream]. Just looking to play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
 
 <p align="center">
     <img
@@ -198,7 +198,6 @@ Any usage of SpellBot implies that you accept the following policies.
 [ruff-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [ruff]: https://github.com/astral-sh/ruff
 [slash]: https://discord.com/blog/slash-commands-are-here
-[spelltable]: https://spelltable.wizards.com/
 [status-badge]: https://img.shields.io/badge/bot-status-green
 [status]: https://spellbot.io/status
 [tablestream]: https://table-stream.com/

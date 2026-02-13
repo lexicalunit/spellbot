@@ -29,9 +29,8 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.use_db
 
-SPELLTABLE_PENDING_MSG = (
-    "_A [SpellTable](https://spelltable.wizards.com/) link will "
-    "be created when all players have joined._"
+CONVOKE_PENDING_MSG = (
+    "_A [Convoke](https://www.convoke.games/) link will be created when all players have joined._"
 )
 
 
@@ -359,15 +358,13 @@ class TestCogAdminInfo:
         await run_command(cog.info, interaction, game_id=f"SB#{game.id}")
         assert get_last_send_message(interaction, "embed") == {
             "color": settings.EMPTY_EMBED_COLOR,
-            "description": (
-                f"{SPELLTABLE_PENDING_MSG}\n\n{game.guild.motd}\n\n{game.channel.motd}"
-            ),
+            "description": (f"{CONVOKE_PENDING_MSG}\n\n{game.guild.motd}\n\n{game.channel.motd}"),
             "fields": [
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
                 {"inline": False, "name": "Support SpellBot", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Waiting for 4 more players to join...**",
             "type": "rich",

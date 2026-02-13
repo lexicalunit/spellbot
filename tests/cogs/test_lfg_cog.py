@@ -24,9 +24,8 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.use_db
 
-SPELLTABLE_PENDING_MSG = (
-    "_A [SpellTable](https://spelltable.wizards.com/) link will "
-    "be created when all players have joined._"
+CONVOKE_PENDING_MSG = (
+    "_A [Convoke](https://www.convoke.games/) link will be created when all players have joined._"
 )
 
 
@@ -426,7 +425,7 @@ class TestCogLookingForGameJoinButton:
             mock_call.assert_called_once()
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
-                "description": (f"{SPELLTABLE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
+                "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}"),
                 "fields": [
                     {
                         "inline": False,
@@ -437,7 +436,7 @@ class TestCogLookingForGameJoinButton:
                     {"inline": True, "name": "Updated at", "value": ANY},
                     {"inline": False, "name": "Support SpellBot", "value": ANY},
                 ],
-                "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: SpellTable"},
+                "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
                 "thumbnail": {"url": settings.THUMB_URL},
                 "title": "**Waiting for 3 more players to join...**",
                 "type": "rich",

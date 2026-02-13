@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Removed SpellTable support.
+- Removed unused "notifications" support.
+
 ## [v17.11.0](https://github.com/lexicalunit/spellbot/releases/tag/v17.11.0) - 2026-02-11
 
 ### Added
