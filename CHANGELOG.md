@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a SpellTable option, but this works like other game services that require players to create the game themselves.
+
 ## [v18.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v18.0.0) - 2026-02-12
 
 ### Removed

@@ -45,8 +45,11 @@ class GameService(Enum):
     NOT_ANY = "Not any", "_Please contact the players in your game to organize this game._", None, 8
     SPELLTABLE = (
         "SpellTable",
-        "_SpellTable is no longer supported._",
-        "https://spelltable.wizards.com/",
+        (
+            "_Please go create a game on {emoji}[SpellTable](https://spelltable.wizards.com/) "
+            "for this game._"
+        ),
+        None,
         4,
     )
     COCKATRICE = "Cockatrice", "_Please use Cockatrice for this game._", None, 5
@@ -84,16 +87,16 @@ class GameService(Enum):
 
 
 GAME_SERVICE_ORDER = [
-    GameService.NOT_ANY,
-    # GameService.SPELLTABLE,  # SpellTable is no longer supported.
     GameService.CONVOKE,
     GameService.TABLE_STREAM,
+    GameService.GIRUDO,
+    GameService.SPELLTABLE,
     GameService.COCKATRICE,
     GameService.X_MAGE,
     GameService.MTG_ARENA,
     GameService.MTG_ONLINE,
     GameService.TTS,
-    GameService.GIRUDO,
+    GameService.NOT_ANY,
 ]
 
 
