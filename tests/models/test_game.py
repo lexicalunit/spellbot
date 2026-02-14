@@ -99,6 +99,14 @@ class TestModelGame:
                 id="convoke",
             ),
             pytest.param(
+                GameService.SPELLTABLE,
+                (
+                    "_Please go create a game on [SpellTable](https://spelltable.wizards.com/) "
+                    "for this game._"
+                ),
+                id="convoke",
+            ),
+            pytest.param(
                 GameService.NOT_ANY,
                 "_Please contact the players in your game to organize this game._",
                 id="not_any",
