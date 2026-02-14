@@ -64,18 +64,11 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def get_service(self, service: int | None = None) -> int:
-        def getter() -> int:
-            if service is not None:
-                return service
-            if self.channel_data["default_service"] is not None:
-                return self.channel_data["default_service"].value
-            return GameService.CONVOKE.value
-
-        # SpellTable is no longer supported, fallback on Convoke.
-        result = getter()
-        if result == GameService.SPELLTABLE.value:  # pragma: no cover
-            result = GameService.CONVOKE.value
-        return result
+        if service is not None:
+            return service
+        if self.channel_data["default_service"] is not None:
+            return self.channel_data["default_service"].value
+        return GameService.CONVOKE.value
 
     @tracer.wrap()
     async def get_format(self, format: int | None = None) -> int:
