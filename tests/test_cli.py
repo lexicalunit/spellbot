@@ -53,7 +53,7 @@ class TestCLI:
         assert result.output == ""
         cli.hupper.start_reloader.assert_not_called()
         cli.configure_logging.assert_called_once_with("INFO")
-        cli.build_bot.assert_called_once_with(mock_games=False)
+        cli.build_bot.assert_called_once_with(mock_games=False, disable_tasks=False)
         cli.bot.run.assert_called_once_with("facedeadbeef", log_handler=None)
 
     def test_run_bot_with_log_level(
@@ -80,7 +80,7 @@ class TestCLI:
 
     def test_run_bot_with_mock_games(self, cli: MagicMock, runner: CliRunner) -> None:
         runner.invoke(main, ["--mock-games"])
-        cli.build_bot.assert_called_once_with(mock_games=True)
+        cli.build_bot.assert_called_once_with(mock_games=True, disable_tasks=False)
 
     def test_run_bot_with_dev(self, cli: MagicMock, runner: CliRunner) -> None:
         runner.invoke(main, ["--dev"])

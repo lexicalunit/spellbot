@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock
+from urllib.parse import parse_qs, urlparse
 
 import discord
 import pytest
@@ -15,12 +16,14 @@ from spellbot.utils import (
     bot_can_reply_to,
     bot_can_role,
     bot_can_send_messages,
+    generate_signed_url,
     is_admin,
     is_guild,
     is_mod,
     log_warning,
     safe_permissions_for,
     user_can_moderate,
+    validate_signature,
 )
 
 if TYPE_CHECKING:
@@ -549,3 +552,31 @@ class TestUtilsUserCanModerate:
         user.id = 1
         user.roles = [role]
         assert not user_can_moderate(user, guild, channel)
+
+
+class TestGenerateSignedUrl:
+    def test_generates_url_with_signature(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        url = generate_signed_url(12345, expires_in_minutes=10)
+        assert "/g/12345/analytics?" in url
+        assert "expires=1600" in url
+        assert "sig=" in url
+
+    def test_valid_signature_roundtrip(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        url = generate_signed_url(12345, expires_in_minutes=10)
+        # Extract expires and sig from the URL
+        parsed = urlparse(url)
+        params = parse_qs(parsed.query)
+        expires = int(params["expires"][0])
+        sig = params["sig"][0]
+        assert validate_signature(12345, expires, sig)
+
+    def test_validate_expired_signature(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.utils.time.time", return_value=2000.0)
+        # Expired in the past
+        assert not validate_signature(12345, 1000, "anything")
+
+    def test_validate_wrong_signature(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        assert not validate_signature(12345, 2000, "bad-sig")

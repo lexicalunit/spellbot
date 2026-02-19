@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>SpellBot Analytics – {{ guild_name }}</title>
+    <meta name="author" content="Amy Troschinetz">
+    <meta name="description" content="Server analytics for {{ guild_name }}">
+    <meta name="theme-color" content="#5A3EFD">
+    <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0; min-height: 100vh; padding: 2rem;
+        }
+        a, a:visited, a:active { color: rgba(246, 173, 75); text-decoration: none; }
+        a:hover { filter: brightness(150%); }
+        .container { max-width: 960px; margin: 0 auto; display: none; }
+        .container.loaded { display: block; }
+        .header {
+            display: flex; align-items: center; gap: 1rem;
+            margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #333;
+        }
+        .header img { width: 64px; height: 64px; border-radius: 50%; }
+        .header h1 { font-size: 1.75rem; font-weight: 600; }
+        .expires {
+            margin-left: auto; font-size: 0.8rem; color: #9ca3af;
+            background: #252545; border-radius: 8px; padding: 0.4rem 0.75rem;
+        }
+        .expires span { color: #f59e0b; font-weight: 600; }
+        .summary {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem; margin-bottom: 2rem;
+        }
+        .stat {
+            background: #252545; border-radius: 12px; padding: 1.25rem;
+            text-align: center;
+        }
+        .stat-value { font-size: 1.75rem; font-weight: 700; color: #818cf8; }
+        .stat-label { font-size: 0.8rem; color: #9ca3af; margin-top: 0.25rem; }
+        .section { margin-bottom: 2rem; }
+        .section-head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+        .section-head h2 { font-size: 1.25rem; font-weight: 600; color: #c4b5fd; margin: 0; }
+        .toggle-group { display: inline-flex; background: #1e1e3f; border-radius: 6px; overflow: hidden; }
+        .toggle-btn {
+            padding: 0.3rem 0.75rem; font-size: 0.75rem; border: none; cursor: pointer;
+            background: transparent; color: #9ca3af; transition: all 0.15s;
+        }
+        .toggle-btn.active { background: #818cf8; color: #fff; }
+        .chart-box {
+            background: #252545; border-radius: 12px; padding: 1.25rem;
+            position: relative;
+        }
+        .chart-view { display: none; }
+        .chart-view.visible { display: block; }
+        table { width: 100%; border-collapse: collapse; background: #252545; border-radius: 8px; overflow: hidden; }
+        th { background: #1e1e3f; padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.05em; }
+        td { padding: 0.6rem 1rem; border-top: 1px solid #333; font-size: 0.9rem; }
+        tr:hover td { background: #2a2a50; }
+        .count { font-weight: 600; color: #818cf8; text-align: right; }
+        .footer {
+            margin-top: 2rem; padding-top: 1rem;
+            border-top: 1px solid #333; text-align: center;
+            font-size: 0.875rem; color: #6b7280;
+        }
+        .no-data { text-align: center; padding: 2rem; background: #252545; border-radius: 12px; color: #9ca3af; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+        @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 1.25rem; transition: opacity 0.3s ease;
+        }
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .spinner {
+            width: 48px; height: 48px;
+            border: 4px solid rgba(129,140,248,0.2);
+            border-top-color: #818cf8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: #9ca3af; font-size: 0.9rem; }
+        .error-box { background: #3b1f1f; border: 1px solid #7f1d1d; border-radius: 12px; padding: 2rem; text-align: center; }
+        .error-box h2 { color: #fca5a5; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading analytics…</div>
+    </div>
+    <div id="mainContainer" class="container">
+        <div class="header">
+            <a href="https://spellbot.io/">
+                <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+            </a>
+            <h1>{{ guild_name }} – Analytics</h1>
+            <div class="expires">Expires in <span id="countdown"></span></div>
+        </div>
+
+        <div class="summary">
+            <div class="stat"><div id="statFillRate" class="stat-value">—</div><div class="stat-label">Game Fill Rate</div></div>
+            <div class="stat"><div id="statTotalGames" class="stat-value">—</div><div class="stat-label">Total Games</div></div>
+            <div class="stat"><div id="statUniquePlayers" class="stat-value">—</div><div class="stat-label">Unique Players</div></div>
+            <div class="stat"><div id="statMAU" class="stat-value">—</div><div class="stat-label">Monthly Active Users</div></div>
+            <div class="stat"><div id="statRepeatRate" class="stat-value">—</div><div class="stat-label">Repeat Player Rate</div></div>
+        </div>
+
+        <div class="section">
+            <h2>Game Activity (Last 30 Days)</h2>
+            <div class="chart-box">
+                <canvas id="chartDaily"></canvas>
+                <div id="activityNoData" class="no-data" style="display:none">No data yet.</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Games by Bracket (Last 30 Days)</h2>
+            <div class="chart-box"><canvas id="chartBrackets"></canvas></div>
+        </div>
+
+        <div class="section">
+            <h2>Average Wait Time (Last 30 Days)</h2>
+            <div id="waitTimeSection" class="chart-box"><canvas id="chartWaitTime"></canvas></div>
+        </div>
+
+        <div class="section">
+            <h2>Player Retention (Last 12 Weeks)</h2>
+            <div id="retentionSection" class="chart-box"><canvas id="chartRetention"></canvas></div>
+        </div>
+
+        <div class="section">
+            <h2>Cumulative Player Growth (All Time)</h2>
+            <div id="growthSection" class="chart-box"><canvas id="chartGrowth"></canvas></div>
+        </div>
+
+        <div class="section">
+            <h2 id="histogramTitle">Games per Player</h2>
+            <div id="histogramSection" class="chart-box"><canvas id="chartHistogram"></canvas></div>
+        </div>
+
+        <div class="row">
+            <div class="section">
+                <h2>Popular Formats (All Time)</h2>
+                <div id="formatsSection" class="chart-box"><canvas id="chartFormats"></canvas></div>
+            </div>
+            <div class="section">
+                <h2>Busiest Channels (All Time)</h2>
+                <div id="channelsSection" class="chart-box"><canvas id="chartChannels"></canvas></div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="section">
+                <div class="section-head">
+                    <h2>Popular Services</h2>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-view="services-all" onclick="toggleServices('all')">All Time</button>
+                        <button class="toggle-btn" data-view="services-30d" onclick="toggleServices('30d')">Last 30 Days</button>
+                    </div>
+                </div>
+                <div id="servicesSection" class="chart-box">
+                    <div id="viewServicesAll" class="chart-view visible"><canvas id="chartServices"></canvas></div>
+                    <div id="viewServices30d" class="chart-view"><canvas id="chartServices30d"></canvas></div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-head">
+                    <h2>Top Players</h2>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-view="players-all" onclick="togglePlayers('all')">All Time</button>
+                        <button class="toggle-btn" data-view="players-30d" onclick="togglePlayers('30d')">Last 30 Days</button>
+                    </div>
+                </div>
+                <div id="viewPlayersAll" class="chart-view visible"></div>
+                <div id="viewPlayers30d" class="chart-view"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Generated by <a href="https://spellbot.io/">SpellBot</a></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+    <script>
+    /* ── Config from server ── */
+    const DATA_URL = "/g/{{ guild_xid }}/analytics/data?expires={{ expires }}&sig={{ sig }}";
+    const EXPIRES = {{ expires }};
+
+    /* ── Countdown timer ── */
+    (function() {
+        const el = document.getElementById("countdown");
+        function tick() {
+            const left = Math.max(0, EXPIRES - Math.floor(Date.now() / 1000));
+            const m = Math.floor(left / 60);
+            const s = left % 60;
+            el.textContent = m + ":" + (s < 10 ? "0" : "") + s;
+            if (left <= 0) { el.textContent = "expired"; return; }
+            requestAnimationFrame(tick);
+        }
+        tick(); setInterval(tick, 1000);
+    })();
+
+    /* ── Chart.js defaults ── */
+    const GRID = "rgba(255,255,255,0.08)";
+    const TICK = "#9ca3af";
+    Chart.defaults.color = TICK;
+    Chart.defaults.borderColor = GRID;
+
+    function lineOpts(xLabel) {
+        return {
+            responsive: true, maintainAspectRatio: true,
+            interaction: { mode: "index", intersect: false },
+            plugins: { legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } } },
+            scales: {
+                x: { grid: { color: GRID }, ticks: { color: TICK, maxRotation: 45 }, title: { display: !!xLabel, text: xLabel || "", color: TICK } },
+                y: { grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true },
+            },
+        };
+    }
+    function barOpts(indexAxis) {
+        return {
+            indexAxis: indexAxis || "x", responsive: true, maintainAspectRatio: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: GRID }, ticks: { color: TICK } },
+                y: { grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true },
+            },
+        };
+    }
+
+    /* ── Timezone helpers ── */
+    const dateFmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+    const monthYearFmt = new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric" });
+
+    function fmtDay(iso) { const [y, m, d] = iso.split("-").map(Number); return dateFmt.format(new Date(y, m - 1, d)); }
+    function fmtMonthYear(iso) { const [y, m, d] = iso.split("-").map(Number); return monthYearFmt.format(new Date(y, m - 1, d)); }
+    function toDayMap(arr) { const m = {}; arr.forEach(d => m[d.day] = d.count); return m; }
+    function fmt(n) { return n.toLocaleString(); }
+
+    /* ── Toggle functions ── */
+    let dailyChart, services30dChart;
+
+    function toggleServices(view) {
+        document.querySelectorAll("[data-view^='services-']").forEach(b => b.classList.toggle("active", b.dataset.view === "services-" + view));
+        document.getElementById("viewServicesAll").classList.toggle("visible", view === "all");
+        document.getElementById("viewServices30d").classList.toggle("visible", view === "30d");
+        if (view === "30d" && !services30dChart && storedServices30d?.length) {
+            services30dChart = new Chart(document.getElementById("chartServices30d"), { type: "doughnut", data: { labels: storedServices30d.map(d => d.service), datasets: [{ data: storedServices30d.map(d => d.count), backgroundColor: svcColors }] }, options: svcDoughnutOpts });
+        }
+    }
+    function togglePlayers(view) {
+        document.querySelectorAll("[data-view^='players-']").forEach(b => b.classList.toggle("active", b.dataset.view === "players-" + view));
+        document.getElementById("viewPlayersAll").classList.toggle("visible", view === "all");
+        document.getElementById("viewPlayers30d").classList.toggle("visible", view === "30d");
+    }
+
+    /* ── Render all charts from data ── */
+    const svcColors = ["#818cf8","#a78bfa","#c084fc","#e879f9","#f472b6","#fb7185","#f97316","#facc15","#4ade80","#22d3ee"];
+    const svcDoughnutOpts = { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } } } };
+    const stackedOpts = { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } } }, scales: { x: { stacked: true, grid: { color: GRID }, ticks: { color: TICK, maxRotation: 45 } }, y: { stacked: true, grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true } } };
+    let storedServices30d = null;
+
+    function renderCharts(data) {
+        /* Summary stats */
+        document.getElementById("statFillRate").textContent = data.fill_rate + "%";
+        document.getElementById("statTotalGames").textContent = fmt(data.total_games);
+        document.getElementById("statUniquePlayers").textContent = fmt(data.unique_players);
+        document.getElementById("statMAU").textContent = fmt(data.monthly_active_users);
+        document.getElementById("statRepeatRate").textContent = data.repeat_player_rate + "%";
+
+        /* Daily activity */
+        const gamesPerDay = data.games_per_day || [];
+        const expiredPerDay = data.expired_per_day || [];
+        const dailyNewUsers = data.daily_new_users || [];
+        const allDays = [...new Set([...gamesPerDay.map(d=>d.day), ...expiredPerDay.map(d=>d.day), ...dailyNewUsers.map(d=>d.day)])].sort();
+        if (allDays.length) {
+            const gMap = toDayMap(gamesPerDay), eMap = toDayMap(expiredPerDay), nMap = toDayMap(dailyNewUsers);
+            dailyChart = new Chart(document.getElementById("chartDaily"), {
+                type: "line", data: { labels: allDays.map(fmtDay), datasets: [
+                    { label: "Games Started", data: allDays.map(d => gMap[d] || 0), borderColor: "#818cf8", backgroundColor: "rgba(129,140,248,0.1)", fill: true, tension: 0.3 },
+                    { label: "Games Expired", data: allDays.map(d => eMap[d] || 0), borderColor: "#f472b6", backgroundColor: "rgba(244,114,182,0.1)", fill: true, tension: 0.3 },
+                    { label: "New Users", data: allDays.map(d => nMap[d] || 0), borderColor: "#4ade80", backgroundColor: "rgba(74,222,128,0.1)", fill: true, tension: 0.3 },
+                ]}, options: lineOpts("Date"),
+            });
+        } else {
+            document.getElementById("activityNoData").style.display = "";
+        }
+
+        /* Wait time */
+        if (data.avg_wait_per_day && data.avg_wait_per_day.length) {
+            new Chart(document.getElementById("chartWaitTime"), { type: "line", data: { labels: data.avg_wait_per_day.map(d => fmtDay(d.day)), datasets: [{ label: "Avg Wait (minutes)", data: data.avg_wait_per_day.map(d => d.minutes), borderColor: "#fbbf24", backgroundColor: "rgba(251,191,36,0.1)", fill: true, tension: 0.3 }] }, options: lineOpts("Date") });
+        } else { document.getElementById("waitTimeSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+
+        /* Brackets */
+        const bracketData = data.games_by_bracket_per_day || [];
+        if (bracketData.length) {
+            const bracketDays = [...new Set(bracketData.map(d => d.day))].sort();
+            const bracketColorMap = { "None": "#6b7280", "Bracket 1: Exhibition": "#22c55e", "Bracket 2: Core": "#eab308", "Bracket 3: Upgraded": "#3b82f6", "Bracket 4: Optimized": "#f97316", "Bracket 5: Competitive": "#ef4444" };
+            const bracketOrder = ["None", "Bracket 1: Exhibition", "Bracket 2: Core", "Bracket 3: Upgraded", "Bracket 4: Optimized", "Bracket 5: Competitive"];
+            const brackets = bracketOrder.filter(b => bracketData.some(d => d.bracket === b));
+            const bracketMap = {}; bracketData.forEach(d => { bracketMap[d.day + "|" + d.bracket] = d.count; });
+            new Chart(document.getElementById("chartBrackets"), { type: "bar", data: { labels: bracketDays.map(fmtDay), datasets: brackets.map(b => ({ label: b === "None" ? "No Bracket" : b, data: bracketDays.map(d => bracketMap[d + "|" + b] || 0), backgroundColor: bracketColorMap[b] || "#6b7280", borderRadius: 2 })) }, options: stackedOpts });
+        }
+
+        /* Retention */
+        if (data.player_retention && data.player_retention.length) {
+            new Chart(document.getElementById("chartRetention"), { type: "bar", data: { labels: data.player_retention.map(d => fmtDay(d.week)), datasets: [{ label: "Returning Players", data: data.player_retention.map(d => d.returning), backgroundColor: "#3b82f6", borderRadius: 2 }, { label: "New Players", data: data.player_retention.map(d => d.new), backgroundColor: "#22c55e", borderRadius: 2 }] }, options: stackedOpts });
+        } else { document.getElementById("retentionSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+
+        /* Cumulative growth */
+        if (data.cumulative_players && data.cumulative_players.length) {
+            new Chart(document.getElementById("chartGrowth"), { type: "line", data: { labels: data.cumulative_players.map(d => fmtMonthYear(d.day)), datasets: [{ label: "Total Unique Players", data: data.cumulative_players.map(d => d.total), borderColor: "#8b5cf6", backgroundColor: "rgba(139,92,246,0.1)", fill: true, tension: 0.3, pointRadius: 0 }] }, options: lineOpts("") });
+        } else { document.getElementById("growthSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+
+        /* Histogram */
+        document.getElementById("histogramTitle").textContent = "Games per Player (Median: " + data.median_games + ")";
+        if (data.games_histogram && data.games_histogram.length) {
+            const medianVal = data.median_games;
+            new Chart(document.getElementById("chartHistogram"), { type: "bar", data: { labels: data.games_histogram.map(d => d.bucket), datasets: [{ label: "Players", data: data.games_histogram.map(d => d.players), backgroundColor: data.games_histogram.map(d => { const b = parseFloat(d.bucket); return (!isNaN(b) && b === Math.ceil(medianVal)) ? "#f59e0b" : "#60a5fa"; }), borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: true, indexAxis: "x", plugins: { legend: { display: false }, annotation: { annotations: { medianLine: { type: "line", xMin: medianVal - 1, xMax: medianVal - 1, borderColor: "#f59e0b", borderWidth: 2, borderDash: [6, 3], label: { display: true, content: "Median: " + medianVal, position: "start", color: "#fbbf24", backgroundColor: "rgba(0,0,0,0.6)" } } } } }, scales: { x: { grid: { color: GRID }, ticks: { color: TICK }, title: { display: true, text: "Games Played", color: TICK } }, y: { grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true, title: { display: true, text: "Players", color: TICK } } } } });
+        } else { document.getElementById("histogramSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+
+        /* Formats */
+        if (data.popular_formats && data.popular_formats.length) {
+            new Chart(document.getElementById("chartFormats"), { type: "bar", data: { labels: data.popular_formats.map(d => d.format), datasets: [{ label: "Games", data: data.popular_formats.map(d => d.count), backgroundColor: "#a78bfa", borderRadius: 3 }] }, options: barOpts("y") });
+        } else { document.getElementById("formatsSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+
+        /* Channels */
+        if (data.busiest_channels && data.busiest_channels.length) {
+            new Chart(document.getElementById("chartChannels"), { type: "bar", data: { labels: data.busiest_channels.map(d => d.name), datasets: [{ label: "Games", data: data.busiest_channels.map(d => d.count), backgroundColor: "#67e8f9", borderRadius: 3 }] }, options: barOpts("y") });
+        } else { document.getElementById("channelsSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+
+        /* Services */
+        if (data.popular_services && data.popular_services.length) {
+            new Chart(document.getElementById("chartServices"), { type: "doughnut", data: { labels: data.popular_services.map(d => d.service), datasets: [{ data: data.popular_services.map(d => d.count), backgroundColor: svcColors }] }, options: svcDoughnutOpts });
+        }
+        storedServices30d = data.popular_services_30d;
+        if (!data.popular_services?.length && !storedServices30d?.length) {
+            document.getElementById("servicesSection").innerHTML = '<div class="no-data">No data yet.</div>';
+        }
+
+        /* Players table */
+        function playersTable(players) {
+            if (!players || !players.length) return '<div class="no-data">No data yet.</div>';
+            return '<table><thead><tr><th>Player</th><th>Discord ID</th><th style="text-align:right">Games</th></tr></thead><tbody>' + players.map(p => '<tr><td>' + p.name + '</td><td style="color:#9ca3af;font-size:0.8rem">' + p.user_xid + '</td><td class="count">' + fmt(p.count) + '</td></tr>').join('') + '</tbody></table>';
+        }
+        document.getElementById("viewPlayersAll").innerHTML = playersTable(data.top_players);
+        document.getElementById("viewPlayers30d").innerHTML = playersTable(data.top_players_30d);
+    }
+
+    /* ── Fetch data via AJAX ── */
+    fetch(DATA_URL)
+        .then(r => { if (!r.ok) throw new Error("Failed to load data"); return r.json(); })
+        .then(data => {
+            renderCharts(data);
+            document.getElementById("mainContainer").classList.add("loaded");
+            document.getElementById("loadingOverlay").classList.add("hidden");
+        })
+        .catch(err => {
+            document.getElementById("loadingOverlay").innerHTML = '<div class="error-box"><h2>Error Loading Data</h2><p>' + err.message + '</p></div>';
+        });
+    </script>
+</body>
+</html>
