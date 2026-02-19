@@ -256,6 +256,11 @@ class TestServiceGamesPlays:
         assert await games.players_included(user1.xid)
         assert not await games.players_included(user2.xid)
 
+    async def test_create_plays(self, game: Game) -> None:
+        games = GamesService()
+        await games.select(game.id)
+        await games.create_plays()
+
 
 @pytest.mark.asyncio
 class TestServiceGamesFilterPendingGames:

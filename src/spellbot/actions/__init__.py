@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .admin_action import AdminAction
+from .analytics_action import AnalyticsAction
 from .block_action import BlockAction
 from .leave_action import LeaveAction
 from .lfg_action import LookingForGameAction
@@ -11,6 +12,7 @@ from .watch_action import WatchAction
 
 __all__ = [
     "AdminAction",
+    "AnalyticsAction",
     "BlockAction",
     "LeaveAction",
     "LookingForGameAction",

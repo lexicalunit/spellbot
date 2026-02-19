@@ -43,6 +43,7 @@ class SpellBot(AutoShardedBot):
     def __init__(
         self,
         mock_games: bool = False,
+        disable_tasks: bool = False,
         create_connection: bool = True,
     ) -> None:
         intents = discord.Intents().default()
@@ -55,6 +56,7 @@ class SpellBot(AutoShardedBot):
             kwargs["application_id"] = int(settings.BOT_APPLICATION_ID)
         super().__init__(command_prefix="!", help_command=None, intents=intents, **kwargs)
         self.mock_games = mock_games
+        self.disable_tasks = disable_tasks
         self.create_connection = create_connection
         self.guild_locks = TTLCache[int, asyncio.Lock](maxsize=100, ttl=3600)  # 1 hr
         self.supporters: set[int] = set()
@@ -272,10 +274,12 @@ class SpellBot(AutoShardedBot):
 
 def build_bot(
     mock_games: bool = False,
+    disable_tasks: bool = False,
     create_connection: bool = True,
 ) -> SpellBot:
     bot = SpellBot(
         mock_games=mock_games,
+        disable_tasks=disable_tasks,
         create_connection=create_connection,
     )
     bot.fetch_application_emojis = AsyncMock(return_value=[])
