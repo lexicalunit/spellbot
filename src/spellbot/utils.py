@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
 import logging
+import time
 import traceback
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, cast
@@ -367,3 +370,22 @@ async def load_extensions(bot: AutoShardedBot, do_sync: bool = False) -> None:  
         await bot.tree.sync(guild=guild)
 
     bot.tree.on_error = handle_command_errors
+
+
+def generate_signed_url(guild_xid: int, expires_in_minutes: int = 10) -> str:
+    """Generate an HMAC-signed analytics URL for a guild."""
+    expires = int(time.time()) + (expires_in_minutes * 60)
+    message = f"{guild_xid}:{expires}"
+    secret = (settings.SECRET_TOKEN or "").encode()
+    sig = hmac.new(secret, message.encode(), hashlib.sha256).hexdigest()
+    return f"{settings.API_BASE_URL}/g/{guild_xid}/analytics?expires={expires}&sig={sig}"
+
+
+def validate_signature(guild_xid: int, expires: int, sig: str) -> bool:
+    """Validate an HMAC-signed analytics URL."""
+    if time.time() > expires:
+        return False
+    message = f"{guild_xid}:{expires}"
+    secret = (settings.SECRET_TOKEN or "").encode()
+    expected = hmac.new(secret, message.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(sig, expected)

@@ -58,6 +58,7 @@ class Settings:
         "PENDING_EMBED_COLOR",
         "PORT",
         "REDIS_URL",
+        "SECRET_TOKEN",
         "SHARD_STATUS_UPDATE_INTERVAL_S",
         "SPELLTABLE_API_KEY",
         "SPELLTABLE_AUTH_REDIRECT",
@@ -94,6 +95,7 @@ class Settings:
         self.DEBUG_GUILD = getenv("DEBUG_GUILD")
         self.API_BASE_URL = getenv("API_BASE_URL", "https://bot.spellbot.io")
         self.OWNER_XID = getenv("OWNER_XID")
+        self.SECRET_TOKEN = getenv("SECRET_TOKEN")
 
         # datadog
         self.DD_API_KEY = getenv("DD_API_KEY")

@@ -11,6 +11,7 @@
                                     when source changes
     -g, --debug                     Enable detailed asyncio debugging
     -m, --mock-games                Produce mock game urls instead of real ones
+    -t, --disable-tasks             Don't run background tasks
     -a, --api                       Start the API web server instead of the bot
     -p, --port INTEGER              Use the given port number to serve the API
     --version                       Show the version and exit.

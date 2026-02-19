@@ -82,7 +82,7 @@ class TasksCog(commands.Cog):  # pragma: no cover
         self._shard_status_task: asyncio.Task[None] | None = None
         self._patreon_sync_task: asyncio.Task[None] | None = None
 
-        if not running_in_pytest():
+        if not running_in_pytest() and not bot.disable_tasks:
             self.cleanup_old_voice_channels.start()
             self.expire_inactive_games.start()
 

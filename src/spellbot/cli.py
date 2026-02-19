@@ -55,6 +55,13 @@ if not getenv("DISABLE_UVLOOP", ""):  # pragma: no cover
     help="Produce mock game urls instead of real ones",
 )
 @click.option(
+    "-t",
+    "--disable-tasks",
+    default=False,
+    is_flag=True,
+    help="Don't run background tasks",
+)
+@click.option(
     "-a",
     "--api",
     default=False,
@@ -74,6 +81,7 @@ def main(
     dev: bool,
     debug: bool,
     mock_games: bool,
+    disable_tasks: bool,
     api: bool,
     port: int | None = None,
 ) -> None:
@@ -124,5 +132,5 @@ def main(
         from .client import build_bot  # allow_inline
 
         assert settings.BOT_TOKEN is not None
-        bot = build_bot(mock_games=mock_games)
+        bot = build_bot(mock_games=mock_games, disable_tasks=disable_tasks)
         bot.run(settings.BOT_TOKEN, log_handler=None)

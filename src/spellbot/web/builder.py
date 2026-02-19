@@ -16,7 +16,7 @@ from spellbot.database import db_session_manager, initialize_connection
 from spellbot.models import import_models
 from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
-from spellbot.web.api import ping, record, rest, status
+from spellbot.web.api import analytics, ping, record, rest, status
 from spellbot.web.tools import rate_limited
 
 if TYPE_CHECKING:
@@ -69,6 +69,8 @@ def build_web_app() -> web.Application:
         [
             web.get(r"/", ping.endpoint),
             web.get(r"/status", status.endpoint),
+            web.get(r"/g/{guild}/analytics", analytics.analytics_endpoint),
+            web.get(r"/g/{guild}/analytics/data", analytics.analytics_data_endpoint),
             web.get(r"/g/{guild}/c/{channel}", record.channel_endpoint),
             web.get(r"/g/{guild}/u/{user}", record.user_endpoint),
             web.post(r"/api/game/{game}/verify", rest.game_verify_endpoint),
