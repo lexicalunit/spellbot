@@ -94,7 +94,8 @@ class Settings:
         self.HOST = getenv("HOST") or "localhost"
         self.DEBUG_GUILD = getenv("DEBUG_GUILD")
         self.API_BASE_URL = getenv("API_BASE_URL", "https://bot.spellbot.io")
-        self.OWNER_XID = getenv("OWNER_XID")
+        owner_xid = getenv("OWNER_XID")
+        self.OWNER_XID = int(owner_xid) if owner_xid else None
         self.SECRET_TOKEN = getenv("SECRET_TOKEN")
 
         # datadog

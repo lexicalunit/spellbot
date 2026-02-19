@@ -1118,7 +1118,7 @@ class TestModelGame:
         game = factories.game.create(guild=guild, channel=channel)
         player = factories.user.create(game=game, xid=12345)
 
-        mocker.patch("spellbot.models.game.settings.OWNER_XID", "12345")
+        mocker.patch("spellbot.models.game.settings.OWNER_XID", 12345)
 
         owner_emoji = MagicMock(spec=discord.Emoji)
         owner_emoji.name = "spellbot_creator"

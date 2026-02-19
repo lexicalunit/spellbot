@@ -412,7 +412,7 @@ class Game(Base):
         def emoji(xid: int) -> str:
             if supporter_emoji and xid in supporters:
                 return f"{supporter_emoji} "
-            if owner_emoji and settings.OWNER_XID and xid == int(settings.OWNER_XID):
+            if owner_emoji and settings.OWNER_XID and xid == settings.OWNER_XID:
                 return f"{owner_emoji} "
             return ""
 
