@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed bot owner override str vs int comparison.
+
 ## [v18.2.2](https://github.com/lexicalunit/spellbot/releases/tag/v18.2.2) - 2026-02-19
 
 ### Changed
