@@ -148,6 +148,10 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
           valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:BOT_TOKEN::"
         },
         {
+          name      = "SECRET_TOKEN"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SECRET_TOKEN::"
+        },
+        {
           name      = "SPELLTABLE_USERS"
           valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SPELLTABLE_USERS::"
         },
@@ -272,6 +276,10 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         {
           name      = "BOT_TOKEN"
           valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:BOT_TOKEN::"
+        },
+        {
+          name      = "SECRET_TOKEN"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SECRET_TOKEN::"
         },
       ]
 

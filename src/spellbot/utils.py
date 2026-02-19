@@ -372,7 +372,7 @@ async def load_extensions(bot: AutoShardedBot, do_sync: bool = False) -> None:  
     bot.tree.on_error = handle_command_errors
 
 
-def generate_signed_url(guild_xid: int, expires_in_minutes: int = 10) -> str:
+def generate_signed_url(guild_xid: int, expires_in_minutes: int = 15) -> str:
     """Generate an HMAC-signed analytics URL for a guild."""
     expires = int(time.time()) + (expires_in_minutes * 60)
     message = f"{guild_xid}:{expires}"
