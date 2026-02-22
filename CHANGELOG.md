@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v18.2.4](https://github.com/lexicalunit/spellbot/releases/tag/v18.2.4) - 2026-02-21
+
 ### Fixed
 
 - Fixes memory leaks in redis related code.
