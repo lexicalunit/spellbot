@@ -57,6 +57,7 @@ async def update_shard_status(bot: SpellBot) -> None:
         logger.debug("REDIS_URL not configured, skipping shard status update")
         return
 
+    redis = None
     try:
         redis = await aioredis.from_url(settings.REDIS_URL)
 
@@ -135,11 +136,13 @@ async def update_shard_status(bot: SpellBot) -> None:
         }
         await redis.set(metadata_key, json.dumps(metadata), ex=SHARD_STATUS_TTL)
 
-        await redis.aclose()
         logger.debug("Updated shard status for %d shards", shard_count)
 
     except Exception:
         logger.warning("Failed to update shard status in Redis", exc_info=True)
+    finally:
+        if redis is not None:
+            await redis.aclose()
 
 
 async def get_all_shard_statuses() -> tuple[list[ShardStatus], dict[str, object] | None]:
@@ -151,6 +154,7 @@ async def get_all_shard_statuses() -> tuple[list[ShardStatus], dict[str, object]
     if not settings.REDIS_URL:
         return [], None
 
+    redis = None
     try:
         redis = await aioredis.from_url(settings.REDIS_URL)
 
@@ -167,8 +171,6 @@ async def get_all_shard_statuses() -> tuple[list[ShardStatus], dict[str, object]
             if data:
                 statuses.append(ShardStatus.from_dict(json.loads(data)))
 
-        await redis.aclose()
-
         # Sort by shard_id, then by version (newest first)
         statuses.sort(
             key=lambda s: (
@@ -182,3 +184,6 @@ async def get_all_shard_statuses() -> tuple[list[ShardStatus], dict[str, object]
         return [], None
     else:
         return statuses, metadata
+    finally:
+        if redis is not None:
+            await redis.aclose()

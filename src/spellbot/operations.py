@@ -11,10 +11,8 @@ from aiohttp.client_exceptions import ClientOSError
 from ddtrace.trace import tracer
 from discord.errors import DiscordException, NotFound
 from discord.utils import MISSING
-from redis import asyncio as aioredis
 
 from .metrics import add_span_error
-from .settings import settings
 from .utils import (
     CANT_SEND_CODE,
     bot_can_delete_channel,
@@ -40,43 +38,6 @@ if TYPE_CHECKING:
     GetChannelReturnType = GuildChannel | Thread | PrivateChannel | None
 
 logger = logging.getLogger(__name__)
-BAD_USER_EXPIRATION = 60 * 60 * 24  # 1 day
-
-
-@tracer.wrap()
-async def mark_bad_user(user_xid: int) -> None:
-    if not settings.REDIS_URL:
-        return
-
-    redis = await aioredis.from_url(settings.REDIS_URL)
-    key = f"bad_user:{user_xid}"
-
-    try:
-        redis.set(key, 1, ex=BAD_USER_EXPIRATION)
-    except Exception:
-        logger.warning("redis error bad user cache", exc_info=True)
-
-
-@tracer.wrap()
-async def is_bad_user(user_xid: int | str | None) -> bool:
-    if not settings.REDIS_URL:
-        return False
-    if not user_xid:
-        return False
-    if isinstance(user_xid, str):
-        try:
-            user_xid = int(user_xid)
-        except ValueError:
-            return False
-
-    redis = await aioredis.from_url(settings.REDIS_URL)
-    key = f"bad_user:{user_xid}"
-
-    try:
-        return await redis.exists(key)
-    except Exception:
-        logger.warning("redis error bad user cache", exc_info=True)
-    return False
 
 
 @tracer.wrap()
@@ -603,9 +564,6 @@ async def safe_send_user(
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"user_xid": str(user_xid)})
 
-    if await is_bad_user(user_xid):
-        return log_warning("not sending to bad user %(user)s %(xid)s", user=user, xid=user_xid)
-
     if not hasattr(user, "send"):
         return log_warning("no send method on user %(user)s %(xid)s", user=user, xid=user_xid)
 
@@ -623,12 +581,6 @@ async def safe_send_user(
         add_span_error(ex)
         if isinstance(ex, discord.errors.Forbidden) or ex.code == CANT_SEND_CODE:
             # User may have the bot blocked or they may have DMs only allowed for friends.
-            # Generally speaking, we can safely ignore this sort of error. However, too
-            # many failed API requests can cause our bot to be flagged and rate limited.
-            # It's not clear what can be done to avoid this, but we can maybe mitigate
-            # by flagging the user until the next time we restart.
-            if user_xid is not None:
-                await mark_bad_user(user_xid)
             return log_info(
                 "not allowed to send message to %(user)s %(xid)s",
                 user=user,
