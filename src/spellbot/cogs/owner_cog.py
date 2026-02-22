@@ -10,7 +10,7 @@ from discord.ext import commands
 from spellbot.actions.base_action import handle_exception
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_context
-from spellbot.operations import is_bad_user, safe_send_user
+from spellbot.operations import safe_send_user
 from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, load_extensions
@@ -143,13 +143,6 @@ class OwnerCog(commands.Cog):
                 """,
             ),
         )
-
-    @commands.command(name="is_bad")
-    @tracer.wrap(name="interaction", resource="is_bad")
-    async def is_bad(self, ctx: commands.Context[SpellBot], arg: str | None) -> None:
-        add_span_context(ctx)
-        result = await is_bad_user(arg)
-        await safe_send_user(ctx.message.author, "Yes" if result else "No")
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
