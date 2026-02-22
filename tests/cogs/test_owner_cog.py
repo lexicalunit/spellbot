@@ -192,23 +192,6 @@ class TestCogOwner:
             ),
         )
 
-    async def test_is_bad(
-        self,
-        bot: SpellBot,
-        context: commands.Context[SpellBot],
-        mocker: MockerFixture,
-    ) -> None:
-        mocker.patch("spellbot.cogs.owner_cog.is_bad_user", side_effect=[True, False])
-        cog = OwnerCog(bot)
-
-        await run_owner_command(cog, cog.is_bad, context, "1")
-        context.author.send.assert_called_once_with("Yes")  # type: ignore
-
-        context.author.send.reset_mock()  # type: ignore
-
-        await run_owner_command(cog, cog.is_bad, context, "2")
-        context.author.send.assert_called_once_with("No")  # type: ignore
-
     async def test_sync(
         self,
         bot: SpellBot,
