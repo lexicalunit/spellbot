@@ -43,5 +43,7 @@ async def rate_limited(request: web.Request, key: str | None = None) -> bool:
     except Exception:
         logger.warning("redis error in rate limiter", exc_info=True)
         return False
-
-    return count > RATE_LIMIT
+    else:
+        return count > RATE_LIMIT
+    finally:
+        await redis.aclose()
