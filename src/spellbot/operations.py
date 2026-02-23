@@ -708,5 +708,5 @@ def safe_suggest_voice_channel(
             break
         if not member_xids:
             empty_channels.append(vc.id)
-    random_empty = random.choice(empty_channels) if empty_channels else None  # noqa: S311
+    random_empty = random.choice(empty_channels) if empty_channels else None
     return VoiceChannelSuggestion(already_picked, random_empty)
