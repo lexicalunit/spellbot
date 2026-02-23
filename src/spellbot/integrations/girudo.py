@@ -267,7 +267,7 @@ async def pick_account(accounts: list[tuple[str, str]]) -> tuple[str, str]:
     global ROUND_ROBIN  # noqa: PLW0603
     async with ROUND_ROBIN_LOCK:
         if ROUND_ROBIN is None:
-            ROUND_ROBIN = randint(0, len(accounts) - 1)  # noqa: S311
+            ROUND_ROBIN = randint(0, len(accounts) - 1)
         email, password = accounts[ROUND_ROBIN % len(accounts)]
         ROUND_ROBIN += 1
         return email, password

@@ -103,7 +103,7 @@ def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:
 
 def passphrase() -> str | None:
     if USE_PASSWORD:
-        return f"{random.choice(ADJECTIVES)} {random.choice(NOUNS)}"  # noqa: S311
+        return f"{random.choice(ADJECTIVES)} {random.choice(NOUNS)}"
     return None
 
 

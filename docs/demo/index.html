@@ -1,0 +1,3163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>SpellBot Analytics – Planeswalker's Guild</title>
+    <meta name="author" content="SpellBot" />
+    <meta
+      name="description"
+      content="Server analytics for Planeswalker's Guild"
+    />
+    <meta name="theme-color" content="#5A3EFD" />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://spellbot.io/favicon.ico"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: #e0e0e0;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+      a,
+      a:visited,
+      a:active {
+        color: rgba(246, 173, 75);
+        text-decoration: none;
+      }
+      a:hover {
+        filter: brightness(150%);
+      }
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        display: none;
+      }
+      .container.loaded {
+        display: block;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #333;
+      }
+      .header img {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+      }
+      .header h1 {
+        font-size: 1.75rem;
+        font-weight: 600;
+      }
+      .expires {
+        margin-left: auto;
+        font-size: 0.8rem;
+        color: #9ca3af;
+        background: #252545;
+        border-radius: 8px;
+        padding: 0.4rem 0.75rem;
+      }
+      .expires span {
+        color: #f59e0b;
+        font-weight: 600;
+      }
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+      .stat {
+        background: #252545;
+        border-radius: 12px;
+        padding: 1.25rem;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #818cf8;
+      }
+      .stat-label {
+        font-size: 0.8rem;
+        color: #9ca3af;
+        margin-top: 0.25rem;
+      }
+      .section {
+        margin-bottom: 2rem;
+      }
+      .section-head {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+      .section-head h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #c4b5fd;
+        margin: 0;
+      }
+      .toggle-group {
+        display: inline-flex;
+        background: #1e1e3f;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .toggle-btn {
+        padding: 0.3rem 0.75rem;
+        font-size: 0.75rem;
+        border: none;
+        cursor: pointer;
+        background: transparent;
+        color: #9ca3af;
+        transition: all 0.15s;
+      }
+      .toggle-btn.active {
+        background: #818cf8;
+        color: #fff;
+      }
+      .chart-box {
+        background: #252545;
+        border-radius: 12px;
+        padding: 1.25rem;
+        position: relative;
+      }
+      .chart-view {
+        display: none;
+      }
+      .chart-view.visible {
+        display: block;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #252545;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      th {
+        background: #1e1e3f;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #9ca3af;
+        letter-spacing: 0.05em;
+      }
+      td {
+        padding: 0.6rem 1rem;
+        border-top: 1px solid #333;
+        font-size: 0.9rem;
+      }
+      tr:hover td {
+        background: #2a2a50;
+      }
+      .count {
+        font-weight: 600;
+        color: #818cf8;
+        text-align: right;
+      }
+      .footer {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+        text-align: center;
+        font-size: 0.875rem;
+        color: #6b7280;
+      }
+      .no-data {
+        text-align: center;
+        padding: 2rem;
+        background: #252545;
+        border-radius: 12px;
+        color: #9ca3af;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+      @media (max-width: 640px) {
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+      /* Loading overlay */
+      .loading-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.25rem;
+        transition: opacity 0.3s ease;
+      }
+      .loading-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid rgba(129, 140, 248, 0.2);
+        border-top-color: #818cf8;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .loading-text {
+        color: #9ca3af;
+        font-size: 0.9rem;
+      }
+      .error-box {
+        background: #3b1f1f;
+        border: 1px solid #7f1d1d;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+      }
+      .error-box h2 {
+        color: #fca5a5;
+        margin-bottom: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading analytics…</div>
+    </div>
+    <div id="mainContainer" class="container">
+      <div class="header">
+        <a href="https://spellbot.io/">
+          <img
+            alt="SpellBot"
+            src="https://spellbot.io/assets/img/avatar-icon.png"
+          />
+        </a>
+        <h1>Planeswalker's Guild – Analytics</h1>
+        <div class="expires" style="background: #1e3a5f">
+          <span style="color: #60a5fa">Demo Mode</span>
+        </div>
+      </div>
+
+      <div class="summary">
+        <div class="stat">
+          <div id="statFillRate" class="stat-value">—</div>
+          <div class="stat-label">Game Fill Rate</div>
+        </div>
+        <div class="stat">
+          <div id="statTotalGames" class="stat-value">—</div>
+          <div class="stat-label">Total Games</div>
+        </div>
+        <div class="stat">
+          <div id="statUniquePlayers" class="stat-value">—</div>
+          <div class="stat-label">Unique Players</div>
+        </div>
+        <div class="stat">
+          <div id="statMAU" class="stat-value">—</div>
+          <div class="stat-label">Monthly Active Users</div>
+        </div>
+        <div class="stat">
+          <div id="statRepeatRate" class="stat-value">—</div>
+          <div class="stat-label">Repeat Player Rate</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Game Activity (Last 30 Days)</h2>
+        <div class="chart-box">
+          <canvas id="chartDaily"></canvas>
+          <div id="activityNoData" class="no-data" style="display: none">
+            No data yet.
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Games by Bracket (Last 30 Days)</h2>
+        <div class="chart-box"><canvas id="chartBrackets"></canvas></div>
+      </div>
+
+      <div class="section">
+        <h2>Average Wait Time (Last 30 Days)</h2>
+        <div id="waitTimeSection" class="chart-box">
+          <canvas id="chartWaitTime"></canvas>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Player Retention (Last 12 Weeks)</h2>
+        <div id="retentionSection" class="chart-box">
+          <canvas id="chartRetention"></canvas>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Cumulative Player Growth (All Time)</h2>
+        <div id="growthSection" class="chart-box">
+          <canvas id="chartGrowth"></canvas>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 id="histogramTitle">Games per Player</h2>
+        <div id="histogramSection" class="chart-box">
+          <canvas id="chartHistogram"></canvas>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="section">
+          <h2>Popular Formats (All Time)</h2>
+          <div id="formatsSection" class="chart-box">
+            <canvas id="chartFormats"></canvas>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Busiest Channels (All Time)</h2>
+          <div id="channelsSection" class="chart-box">
+            <canvas id="chartChannels"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="section">
+          <div class="section-head">
+            <h2>Popular Services</h2>
+            <div class="toggle-group">
+              <button
+                class="toggle-btn active"
+                data-view="services-all"
+                onclick="toggleServices('all')"
+              >
+                All Time
+              </button>
+              <button
+                class="toggle-btn"
+                data-view="services-30d"
+                onclick="toggleServices('30d')"
+              >
+                Last 30 Days
+              </button>
+            </div>
+          </div>
+          <div id="servicesSection" class="chart-box">
+            <div id="viewServicesAll" class="chart-view visible">
+              <canvas id="chartServices"></canvas>
+            </div>
+            <div id="viewServices30d" class="chart-view">
+              <canvas id="chartServices30d"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-head">
+            <h2>Top Players</h2>
+            <div class="toggle-group">
+              <button
+                class="toggle-btn active"
+                data-view="players-all"
+                onclick="togglePlayers('all')"
+              >
+                All Time
+              </button>
+              <button
+                class="toggle-btn"
+                data-view="players-30d"
+                onclick="togglePlayers('30d')"
+              >
+                Last 30 Days
+              </button>
+            </div>
+          </div>
+          <div id="viewPlayersAll" class="chart-view visible"></div>
+          <div id="viewPlayers30d" class="chart-view"></div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>Generated by <a href="https://spellbot.io/">SpellBot</a></p>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+    <script>
+      /* ── Demo mode - data embedded inline ── */
+
+      /* Countdown disabled for demo */
+
+      /* ── Chart.js defaults ── */
+      const GRID = "rgba(255,255,255,0.08)";
+      const TICK = "#9ca3af";
+      Chart.defaults.color = TICK;
+      Chart.defaults.borderColor = GRID;
+
+      function lineOpts(xLabel) {
+        return {
+          responsive: true,
+          maintainAspectRatio: true,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: {
+              display: true,
+              labels: { color: "#e0e0e0", boxWidth: 12 },
+            },
+          },
+          scales: {
+            x: {
+              grid: { color: GRID },
+              ticks: { color: TICK, maxRotation: 45 },
+              title: { display: !!xLabel, text: xLabel || "", color: TICK },
+            },
+            y: {
+              grid: { color: GRID },
+              ticks: { color: TICK },
+              beginAtZero: true,
+            },
+          },
+        };
+      }
+      function barOpts(indexAxis) {
+        return {
+          indexAxis: indexAxis || "x",
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: GRID }, ticks: { color: TICK } },
+            y: {
+              grid: { color: GRID },
+              ticks: { color: TICK },
+              beginAtZero: true,
+            },
+          },
+        };
+      }
+
+      /* ── Timezone helpers ── */
+      const dateFmt = new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+      });
+      const monthYearFmt = new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        year: "numeric",
+      });
+
+      function fmtDay(iso) {
+        const [y, m, d] = iso.split("-").map(Number);
+        return dateFmt.format(new Date(y, m - 1, d));
+      }
+      function fmtMonthYear(iso) {
+        const [y, m, d] = iso.split("-").map(Number);
+        return monthYearFmt.format(new Date(y, m - 1, d));
+      }
+      function toDayMap(arr) {
+        const m = {};
+        arr.forEach((d) => (m[d.day] = d.count));
+        return m;
+      }
+      function fmt(n) {
+        return n.toLocaleString();
+      }
+
+      /* ── Toggle functions ── */
+      let dailyChart, services30dChart;
+
+      function toggleServices(view) {
+        document
+          .querySelectorAll("[data-view^='services-']")
+          .forEach((b) =>
+            b.classList.toggle("active", b.dataset.view === "services-" + view),
+          );
+        document
+          .getElementById("viewServicesAll")
+          .classList.toggle("visible", view === "all");
+        document
+          .getElementById("viewServices30d")
+          .classList.toggle("visible", view === "30d");
+        if (view === "30d" && !services30dChart && storedServices30d?.length) {
+          services30dChart = new Chart(
+            document.getElementById("chartServices30d"),
+            {
+              type: "doughnut",
+              data: {
+                labels: storedServices30d.map((d) => d.service),
+                datasets: [
+                  {
+                    data: storedServices30d.map((d) => d.count),
+                    backgroundColor: svcColors,
+                  },
+                ],
+              },
+              options: svcDoughnutOpts,
+            },
+          );
+        }
+      }
+      function togglePlayers(view) {
+        document
+          .querySelectorAll("[data-view^='players-']")
+          .forEach((b) =>
+            b.classList.toggle("active", b.dataset.view === "players-" + view),
+          );
+        document
+          .getElementById("viewPlayersAll")
+          .classList.toggle("visible", view === "all");
+        document
+          .getElementById("viewPlayers30d")
+          .classList.toggle("visible", view === "30d");
+      }
+
+      /* ── Render all charts from data ── */
+      const svcColors = [
+        "#818cf8",
+        "#a78bfa",
+        "#c084fc",
+        "#e879f9",
+        "#f472b6",
+        "#fb7185",
+        "#f97316",
+        "#facc15",
+        "#4ade80",
+        "#22d3ee",
+      ];
+      const svcDoughnutOpts = {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } },
+        },
+      };
+      const stackedOpts = {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } },
+        },
+        scales: {
+          x: {
+            stacked: true,
+            grid: { color: GRID },
+            ticks: { color: TICK, maxRotation: 45 },
+          },
+          y: {
+            stacked: true,
+            grid: { color: GRID },
+            ticks: { color: TICK },
+            beginAtZero: true,
+          },
+        },
+      };
+      let storedServices30d = null;
+
+      function renderCharts(data) {
+        /* Summary stats */
+        document.getElementById("statFillRate").textContent =
+          data.fill_rate + "%";
+        document.getElementById("statTotalGames").textContent = fmt(
+          data.total_games,
+        );
+        document.getElementById("statUniquePlayers").textContent = fmt(
+          data.unique_players,
+        );
+        document.getElementById("statMAU").textContent = fmt(
+          data.monthly_active_users,
+        );
+        document.getElementById("statRepeatRate").textContent =
+          data.repeat_player_rate + "%";
+
+        /* Daily activity */
+        const gamesPerDay = data.games_per_day || [];
+        const expiredPerDay = data.expired_per_day || [];
+        const dailyNewUsers = data.daily_new_users || [];
+        const allDays = [
+          ...new Set([
+            ...gamesPerDay.map((d) => d.day),
+            ...expiredPerDay.map((d) => d.day),
+            ...dailyNewUsers.map((d) => d.day),
+          ]),
+        ].sort();
+        if (allDays.length) {
+          const gMap = toDayMap(gamesPerDay),
+            eMap = toDayMap(expiredPerDay),
+            nMap = toDayMap(dailyNewUsers);
+          dailyChart = new Chart(document.getElementById("chartDaily"), {
+            type: "line",
+            data: {
+              labels: allDays.map(fmtDay),
+              datasets: [
+                {
+                  label: "Games Started",
+                  data: allDays.map((d) => gMap[d] || 0),
+                  borderColor: "#818cf8",
+                  backgroundColor: "rgba(129,140,248,0.1)",
+                  fill: true,
+                  tension: 0.3,
+                },
+                {
+                  label: "Games Expired",
+                  data: allDays.map((d) => eMap[d] || 0),
+                  borderColor: "#f472b6",
+                  backgroundColor: "rgba(244,114,182,0.1)",
+                  fill: true,
+                  tension: 0.3,
+                },
+                {
+                  label: "New Users",
+                  data: allDays.map((d) => nMap[d] || 0),
+                  borderColor: "#4ade80",
+                  backgroundColor: "rgba(74,222,128,0.1)",
+                  fill: true,
+                  tension: 0.3,
+                },
+              ],
+            },
+            options: lineOpts("Date"),
+          });
+        } else {
+          document.getElementById("activityNoData").style.display = "";
+        }
+
+        /* Wait time */
+        if (data.avg_wait_per_day && data.avg_wait_per_day.length) {
+          new Chart(document.getElementById("chartWaitTime"), {
+            type: "line",
+            data: {
+              labels: data.avg_wait_per_day.map((d) => fmtDay(d.day)),
+              datasets: [
+                {
+                  label: "Avg Wait (minutes)",
+                  data: data.avg_wait_per_day.map((d) => d.minutes),
+                  borderColor: "#fbbf24",
+                  backgroundColor: "rgba(251,191,36,0.1)",
+                  fill: true,
+                  tension: 0.3,
+                },
+              ],
+            },
+            options: lineOpts("Date"),
+          });
+        } else {
+          document.getElementById("waitTimeSection").innerHTML =
+            '<div class="no-data">No data yet.</div>';
+        }
+
+        /* Brackets */
+        const bracketData = data.games_by_bracket_per_day || [];
+        if (bracketData.length) {
+          const bracketDays = [
+            ...new Set(bracketData.map((d) => d.day)),
+          ].sort();
+          const bracketColorMap = {
+            None: "#6b7280",
+            "Bracket 1: Exhibition": "#22c55e",
+            "Bracket 2: Core": "#eab308",
+            "Bracket 3: Upgraded": "#3b82f6",
+            "Bracket 4: Optimized": "#f97316",
+            "Bracket 5: Competitive": "#ef4444",
+          };
+          const bracketOrder = [
+            "None",
+            "Bracket 1: Exhibition",
+            "Bracket 2: Core",
+            "Bracket 3: Upgraded",
+            "Bracket 4: Optimized",
+            "Bracket 5: Competitive",
+          ];
+          const brackets = bracketOrder.filter((b) =>
+            bracketData.some((d) => d.bracket === b),
+          );
+          const bracketMap = {};
+          bracketData.forEach((d) => {
+            bracketMap[d.day + "|" + d.bracket] = d.count;
+          });
+          new Chart(document.getElementById("chartBrackets"), {
+            type: "bar",
+            data: {
+              labels: bracketDays.map(fmtDay),
+              datasets: brackets.map((b) => ({
+                label: b === "None" ? "No Bracket" : b,
+                data: bracketDays.map((d) => bracketMap[d + "|" + b] || 0),
+                backgroundColor: bracketColorMap[b] || "#6b7280",
+                borderRadius: 2,
+              })),
+            },
+            options: stackedOpts,
+          });
+        }
+
+        /* Retention */
+        if (data.player_retention && data.player_retention.length) {
+          new Chart(document.getElementById("chartRetention"), {
+            type: "bar",
+            data: {
+              labels: data.player_retention.map((d) => fmtDay(d.week)),
+              datasets: [
+                {
+                  label: "Returning Players",
+                  data: data.player_retention.map((d) => d.returning),
+                  backgroundColor: "#3b82f6",
+                  borderRadius: 2,
+                },
+                {
+                  label: "New Players",
+                  data: data.player_retention.map((d) => d.new),
+                  backgroundColor: "#22c55e",
+                  borderRadius: 2,
+                },
+              ],
+            },
+            options: stackedOpts,
+          });
+        } else {
+          document.getElementById("retentionSection").innerHTML =
+            '<div class="no-data">No data yet.</div>';
+        }
+
+        /* Cumulative growth */
+        if (data.cumulative_players && data.cumulative_players.length) {
+          new Chart(document.getElementById("chartGrowth"), {
+            type: "line",
+            data: {
+              labels: data.cumulative_players.map((d) => fmtMonthYear(d.day)),
+              datasets: [
+                {
+                  label: "Total Unique Players",
+                  data: data.cumulative_players.map((d) => d.total),
+                  borderColor: "#8b5cf6",
+                  backgroundColor: "rgba(139,92,246,0.1)",
+                  fill: true,
+                  tension: 0.3,
+                  pointRadius: 0,
+                },
+              ],
+            },
+            options: lineOpts(""),
+          });
+        } else {
+          document.getElementById("growthSection").innerHTML =
+            '<div class="no-data">No data yet.</div>';
+        }
+
+        /* Histogram */
+        document.getElementById("histogramTitle").textContent =
+          "Games per Player (Median: " + data.median_games + ")";
+        if (data.games_histogram && data.games_histogram.length) {
+          const medianVal = data.median_games;
+          new Chart(document.getElementById("chartHistogram"), {
+            type: "bar",
+            data: {
+              labels: data.games_histogram.map((d) => d.bucket),
+              datasets: [
+                {
+                  label: "Players",
+                  data: data.games_histogram.map((d) => d.players),
+                  backgroundColor: data.games_histogram.map((d) => {
+                    const b = parseFloat(d.bucket);
+                    return !isNaN(b) && b === Math.ceil(medianVal)
+                      ? "#f59e0b"
+                      : "#60a5fa";
+                  }),
+                  borderRadius: 3,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              indexAxis: "x",
+              plugins: {
+                legend: { display: false },
+                annotation: {
+                  annotations: {
+                    medianLine: {
+                      type: "line",
+                      xMin: medianVal - 1,
+                      xMax: medianVal - 1,
+                      borderColor: "#f59e0b",
+                      borderWidth: 2,
+                      borderDash: [6, 3],
+                      label: {
+                        display: true,
+                        content: "Median: " + medianVal,
+                        position: "start",
+                        color: "#fbbf24",
+                        backgroundColor: "rgba(0,0,0,0.6)",
+                      },
+                    },
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  grid: { color: GRID },
+                  ticks: { color: TICK },
+                  title: { display: true, text: "Games Played", color: TICK },
+                },
+                y: {
+                  grid: { color: GRID },
+                  ticks: { color: TICK },
+                  beginAtZero: true,
+                  title: { display: true, text: "Players", color: TICK },
+                },
+              },
+            },
+          });
+        } else {
+          document.getElementById("histogramSection").innerHTML =
+            '<div class="no-data">No data yet.</div>';
+        }
+
+        /* Formats */
+        if (data.popular_formats && data.popular_formats.length) {
+          new Chart(document.getElementById("chartFormats"), {
+            type: "bar",
+            data: {
+              labels: data.popular_formats.map((d) => d.format),
+              datasets: [
+                {
+                  label: "Games",
+                  data: data.popular_formats.map((d) => d.count),
+                  backgroundColor: "#a78bfa",
+                  borderRadius: 3,
+                },
+              ],
+            },
+            options: barOpts("y"),
+          });
+        } else {
+          document.getElementById("formatsSection").innerHTML =
+            '<div class="no-data">No data yet.</div>';
+        }
+
+        /* Channels */
+        if (data.busiest_channels && data.busiest_channels.length) {
+          new Chart(document.getElementById("chartChannels"), {
+            type: "bar",
+            data: {
+              labels: data.busiest_channels.map((d) => d.name),
+              datasets: [
+                {
+                  label: "Games",
+                  data: data.busiest_channels.map((d) => d.count),
+                  backgroundColor: "#67e8f9",
+                  borderRadius: 3,
+                },
+              ],
+            },
+            options: barOpts("y"),
+          });
+        } else {
+          document.getElementById("channelsSection").innerHTML =
+            '<div class="no-data">No data yet.</div>';
+        }
+
+        /* Services */
+        if (data.popular_services && data.popular_services.length) {
+          new Chart(document.getElementById("chartServices"), {
+            type: "doughnut",
+            data: {
+              labels: data.popular_services.map((d) => d.service),
+              datasets: [
+                {
+                  data: data.popular_services.map((d) => d.count),
+                  backgroundColor: svcColors,
+                },
+              ],
+            },
+            options: svcDoughnutOpts,
+          });
+        }
+        storedServices30d = data.popular_services_30d;
+        if (!data.popular_services?.length && !storedServices30d?.length) {
+          document.getElementById("servicesSection").innerHTML =
+            '<div class="no-data">No data yet.</div>';
+        }
+
+        /* Players table */
+        function playersTable(players) {
+          if (!players || !players.length)
+            return '<div class="no-data">No data yet.</div>';
+          return (
+            '<table><thead><tr><th>Player</th><th>Discord ID</th><th style="text-align:right">Games</th></tr></thead><tbody>' +
+            players
+              .map(
+                (p) =>
+                  "<tr><td>" +
+                  p.name +
+                  '</td><td style="color:#9ca3af;font-size:0.8rem">' +
+                  p.user_xid +
+                  '</td><td class="count">' +
+                  fmt(p.count) +
+                  "</td></tr>",
+              )
+              .join("") +
+            "</tbody></table>"
+          );
+        }
+        document.getElementById("viewPlayersAll").innerHTML = playersTable(
+          data.top_players,
+        );
+        document.getElementById("viewPlayers30d").innerHTML = playersTable(
+          data.top_players_30d,
+        );
+      }
+
+      /* ── Demo data loaded inline ── */
+      (function () {
+        const data = {
+          guild_name: "Planeswalker's Guild",
+          total_games: 10926,
+          fill_rate: 84.0,
+          unique_players: 4940,
+          monthly_active_users: 561,
+          repeat_player_rate: 51.4,
+          games_per_day: [
+            {
+              day: "2026-01-24",
+              count: 94,
+            },
+            {
+              day: "2026-01-25",
+              count: 111,
+            },
+            {
+              day: "2026-01-26",
+              count: 87,
+            },
+            {
+              day: "2026-01-27",
+              count: 45,
+            },
+            {
+              day: "2026-01-28",
+              count: 42,
+            },
+            {
+              day: "2026-01-29",
+              count: 53,
+            },
+            {
+              day: "2026-01-30",
+              count: 78,
+            },
+            {
+              day: "2026-01-31",
+              count: 105,
+            },
+            {
+              day: "2026-02-01",
+              count: 133,
+            },
+            {
+              day: "2026-02-02",
+              count: 77,
+            },
+            {
+              day: "2026-02-03",
+              count: 88,
+            },
+            {
+              day: "2026-02-04",
+              count: 61,
+            },
+            {
+              day: "2026-02-05",
+              count: 53,
+            },
+            {
+              day: "2026-02-06",
+              count: 45,
+            },
+            {
+              day: "2026-02-07",
+              count: 125,
+            },
+            {
+              day: "2026-02-08",
+              count: 85,
+            },
+            {
+              day: "2026-02-09",
+              count: 47,
+            },
+            {
+              day: "2026-02-10",
+              count: 75,
+            },
+            {
+              day: "2026-02-11",
+              count: 76,
+            },
+            {
+              day: "2026-02-12",
+              count: 42,
+            },
+            {
+              day: "2026-02-13",
+              count: 45,
+            },
+            {
+              day: "2026-02-14",
+              count: 128,
+            },
+            {
+              day: "2026-02-15",
+              count: 126,
+            },
+            {
+              day: "2026-02-16",
+              count: 62,
+            },
+            {
+              day: "2026-02-17",
+              count: 84,
+            },
+            {
+              day: "2026-02-18",
+              count: 78,
+            },
+            {
+              day: "2026-02-19",
+              count: 74,
+            },
+            {
+              day: "2026-02-20",
+              count: 69,
+            },
+            {
+              day: "2026-02-21",
+              count: 108,
+            },
+            {
+              day: "2026-02-22",
+              count: 109,
+            },
+            {
+              day: "2026-02-23",
+              count: 65,
+            },
+          ],
+          avg_wait_per_day: [
+            {
+              day: "2026-01-24",
+              minutes: 8.5,
+            },
+            {
+              day: "2026-01-25",
+              minutes: 13.5,
+            },
+            {
+              day: "2026-01-26",
+              minutes: 10.4,
+            },
+            {
+              day: "2026-01-27",
+              minutes: 3.9,
+            },
+            {
+              day: "2026-01-28",
+              minutes: 3.8,
+            },
+            {
+              day: "2026-01-29",
+              minutes: 11.7,
+            },
+            {
+              day: "2026-01-30",
+              minutes: 9.0,
+            },
+            {
+              day: "2026-01-31",
+              minutes: 11.7,
+            },
+            {
+              day: "2026-02-01",
+              minutes: 7.6,
+            },
+            {
+              day: "2026-02-02",
+              minutes: 9.6,
+            },
+            {
+              day: "2026-02-03",
+              minutes: 6.7,
+            },
+            {
+              day: "2026-02-04",
+              minutes: 15.0,
+            },
+            {
+              day: "2026-02-05",
+              minutes: 3.8,
+            },
+            {
+              day: "2026-02-06",
+              minutes: 8.4,
+            },
+            {
+              day: "2026-02-07",
+              minutes: 11.8,
+            },
+            {
+              day: "2026-02-08",
+              minutes: 13.2,
+            },
+            {
+              day: "2026-02-09",
+              minutes: 4.0,
+            },
+            {
+              day: "2026-02-10",
+              minutes: 4.1,
+            },
+            {
+              day: "2026-02-11",
+              minutes: 10.8,
+            },
+            {
+              day: "2026-02-12",
+              minutes: 9.8,
+            },
+            {
+              day: "2026-02-13",
+              minutes: 7.0,
+            },
+            {
+              day: "2026-02-14",
+              minutes: 9.7,
+            },
+            {
+              day: "2026-02-15",
+              minutes: 8.1,
+            },
+            {
+              day: "2026-02-16",
+              minutes: 5.3,
+            },
+            {
+              day: "2026-02-17",
+              minutes: 9.2,
+            },
+            {
+              day: "2026-02-18",
+              minutes: 14.3,
+            },
+            {
+              day: "2026-02-19",
+              minutes: 10.8,
+            },
+            {
+              day: "2026-02-20",
+              minutes: 3.5,
+            },
+            {
+              day: "2026-02-21",
+              minutes: 13.5,
+            },
+            {
+              day: "2026-02-22",
+              minutes: 11.8,
+            },
+            {
+              day: "2026-02-23",
+              minutes: 12.0,
+            },
+          ],
+          expired_per_day: [
+            {
+              day: "2026-01-24",
+              count: 5,
+            },
+            {
+              day: "2026-01-25",
+              count: 12,
+            },
+            {
+              day: "2026-01-26",
+              count: 8,
+            },
+            {
+              day: "2026-01-27",
+              count: 23,
+            },
+            {
+              day: "2026-01-28",
+              count: 5,
+            },
+            {
+              day: "2026-01-29",
+              count: 12,
+            },
+            {
+              day: "2026-01-30",
+              count: 5,
+            },
+            {
+              day: "2026-01-31",
+              count: 25,
+            },
+            {
+              day: "2026-02-01",
+              count: 12,
+            },
+            {
+              day: "2026-02-02",
+              count: 13,
+            },
+            {
+              day: "2026-02-03",
+              count: 10,
+            },
+            {
+              day: "2026-02-04",
+              count: 13,
+            },
+            {
+              day: "2026-02-05",
+              count: 15,
+            },
+            {
+              day: "2026-02-06",
+              count: 17,
+            },
+            {
+              day: "2026-02-07",
+              count: 16,
+            },
+            {
+              day: "2026-02-08",
+              count: 19,
+            },
+            {
+              day: "2026-02-09",
+              count: 17,
+            },
+            {
+              day: "2026-02-10",
+              count: 14,
+            },
+            {
+              day: "2026-02-11",
+              count: 11,
+            },
+            {
+              day: "2026-02-12",
+              count: 12,
+            },
+            {
+              day: "2026-02-13",
+              count: 12,
+            },
+            {
+              day: "2026-02-14",
+              count: 13,
+            },
+            {
+              day: "2026-02-15",
+              count: 10,
+            },
+            {
+              day: "2026-02-16",
+              count: 11,
+            },
+            {
+              day: "2026-02-17",
+              count: 25,
+            },
+            {
+              day: "2026-02-18",
+              count: 25,
+            },
+            {
+              day: "2026-02-19",
+              count: 12,
+            },
+            {
+              day: "2026-02-20",
+              count: 17,
+            },
+            {
+              day: "2026-02-21",
+              count: 15,
+            },
+            {
+              day: "2026-02-22",
+              count: 6,
+            },
+            {
+              day: "2026-02-23",
+              count: 13,
+            },
+          ],
+          daily_new_users: [
+            {
+              day: "2026-01-24",
+              count: 11,
+            },
+            {
+              day: "2026-01-25",
+              count: 7,
+            },
+            {
+              day: "2026-01-26",
+              count: 20,
+            },
+            {
+              day: "2026-01-27",
+              count: 16,
+            },
+            {
+              day: "2026-01-28",
+              count: 5,
+            },
+            {
+              day: "2026-01-29",
+              count: 19,
+            },
+            {
+              day: "2026-01-30",
+              count: 20,
+            },
+            {
+              day: "2026-01-31",
+              count: 20,
+            },
+            {
+              day: "2026-02-01",
+              count: 17,
+            },
+            {
+              day: "2026-02-02",
+              count: 3,
+            },
+            {
+              day: "2026-02-03",
+              count: 16,
+            },
+            {
+              day: "2026-02-04",
+              count: 7,
+            },
+            {
+              day: "2026-02-05",
+              count: 6,
+            },
+            {
+              day: "2026-02-06",
+              count: 6,
+            },
+            {
+              day: "2026-02-07",
+              count: 11,
+            },
+            {
+              day: "2026-02-08",
+              count: 20,
+            },
+            {
+              day: "2026-02-09",
+              count: 5,
+            },
+            {
+              day: "2026-02-10",
+              count: 14,
+            },
+            {
+              day: "2026-02-11",
+              count: 5,
+            },
+            {
+              day: "2026-02-12",
+              count: 12,
+            },
+            {
+              day: "2026-02-13",
+              count: 6,
+            },
+            {
+              day: "2026-02-14",
+              count: 17,
+            },
+            {
+              day: "2026-02-15",
+              count: 14,
+            },
+            {
+              day: "2026-02-16",
+              count: 11,
+            },
+            {
+              day: "2026-02-17",
+              count: 5,
+            },
+            {
+              day: "2026-02-18",
+              count: 8,
+            },
+            {
+              day: "2026-02-19",
+              count: 8,
+            },
+            {
+              day: "2026-02-20",
+              count: 11,
+            },
+            {
+              day: "2026-02-21",
+              count: 4,
+            },
+            {
+              day: "2026-02-22",
+              count: 13,
+            },
+            {
+              day: "2026-02-23",
+              count: 5,
+            },
+          ],
+          games_by_hour: [],
+          expired_by_hour: [],
+          new_users_by_hour: [],
+          games_by_bracket_per_day: [
+            {
+              day: "2026-01-24",
+              bracket: "None",
+              count: 30,
+            },
+            {
+              day: "2026-01-24",
+              bracket: "Bracket 1: Exhibition",
+              count: 3,
+            },
+            {
+              day: "2026-01-24",
+              bracket: "Bracket 2: Core",
+              count: 19,
+            },
+            {
+              day: "2026-01-24",
+              bracket: "Bracket 3: Upgraded",
+              count: 23,
+            },
+            {
+              day: "2026-01-24",
+              bracket: "Bracket 4: Optimized",
+              count: 4,
+            },
+            {
+              day: "2026-01-24",
+              bracket: "Bracket 5: Competitive",
+              count: 9,
+            },
+            {
+              day: "2026-01-25",
+              bracket: "None",
+              count: 20,
+            },
+            {
+              day: "2026-01-25",
+              bracket: "Bracket 1: Exhibition",
+              count: 13,
+            },
+            {
+              day: "2026-01-25",
+              bracket: "Bracket 2: Core",
+              count: 18,
+            },
+            {
+              day: "2026-01-25",
+              bracket: "Bracket 3: Upgraded",
+              count: 26,
+            },
+            {
+              day: "2026-01-25",
+              bracket: "Bracket 4: Optimized",
+              count: 14,
+            },
+            {
+              day: "2026-01-25",
+              bracket: "Bracket 5: Competitive",
+              count: 4,
+            },
+            {
+              day: "2026-01-26",
+              bracket: "None",
+              count: 36,
+            },
+            {
+              day: "2026-01-26",
+              bracket: "Bracket 1: Exhibition",
+              count: 3,
+            },
+            {
+              day: "2026-01-26",
+              bracket: "Bracket 2: Core",
+              count: 30,
+            },
+            {
+              day: "2026-01-26",
+              bracket: "Bracket 3: Upgraded",
+              count: 19,
+            },
+            {
+              day: "2026-01-26",
+              bracket: "Bracket 4: Optimized",
+              count: 15,
+            },
+            {
+              day: "2026-01-26",
+              bracket: "Bracket 5: Competitive",
+              count: 12,
+            },
+            {
+              day: "2026-01-27",
+              bracket: "None",
+              count: 36,
+            },
+            {
+              day: "2026-01-27",
+              bracket: "Bracket 1: Exhibition",
+              count: 11,
+            },
+            {
+              day: "2026-01-27",
+              bracket: "Bracket 2: Core",
+              count: 16,
+            },
+            {
+              day: "2026-01-27",
+              bracket: "Bracket 3: Upgraded",
+              count: 14,
+            },
+            {
+              day: "2026-01-27",
+              bracket: "Bracket 4: Optimized",
+              count: 7,
+            },
+            {
+              day: "2026-01-27",
+              bracket: "Bracket 5: Competitive",
+              count: 14,
+            },
+            {
+              day: "2026-01-28",
+              bracket: "None",
+              count: 25,
+            },
+            {
+              day: "2026-01-28",
+              bracket: "Bracket 1: Exhibition",
+              count: 10,
+            },
+            {
+              day: "2026-01-28",
+              bracket: "Bracket 2: Core",
+              count: 26,
+            },
+            {
+              day: "2026-01-28",
+              bracket: "Bracket 3: Upgraded",
+              count: 10,
+            },
+            {
+              day: "2026-01-28",
+              bracket: "Bracket 4: Optimized",
+              count: 11,
+            },
+            {
+              day: "2026-01-28",
+              bracket: "Bracket 5: Competitive",
+              count: 7,
+            },
+            {
+              day: "2026-01-29",
+              bracket: "None",
+              count: 35,
+            },
+            {
+              day: "2026-01-29",
+              bracket: "Bracket 1: Exhibition",
+              count: 2,
+            },
+            {
+              day: "2026-01-29",
+              bracket: "Bracket 2: Core",
+              count: 13,
+            },
+            {
+              day: "2026-01-29",
+              bracket: "Bracket 3: Upgraded",
+              count: 21,
+            },
+            {
+              day: "2026-01-29",
+              bracket: "Bracket 4: Optimized",
+              count: 15,
+            },
+            {
+              day: "2026-01-29",
+              bracket: "Bracket 5: Competitive",
+              count: 14,
+            },
+            {
+              day: "2026-01-30",
+              bracket: "None",
+              count: 29,
+            },
+            {
+              day: "2026-01-30",
+              bracket: "Bracket 1: Exhibition",
+              count: 5,
+            },
+            {
+              day: "2026-01-30",
+              bracket: "Bracket 2: Core",
+              count: 11,
+            },
+            {
+              day: "2026-01-30",
+              bracket: "Bracket 3: Upgraded",
+              count: 17,
+            },
+            {
+              day: "2026-01-30",
+              bracket: "Bracket 4: Optimized",
+              count: 11,
+            },
+            {
+              day: "2026-01-30",
+              bracket: "Bracket 5: Competitive",
+              count: 3,
+            },
+            {
+              day: "2026-01-31",
+              bracket: "None",
+              count: 22,
+            },
+            {
+              day: "2026-01-31",
+              bracket: "Bracket 1: Exhibition",
+              count: 13,
+            },
+            {
+              day: "2026-01-31",
+              bracket: "Bracket 2: Core",
+              count: 25,
+            },
+            {
+              day: "2026-01-31",
+              bracket: "Bracket 3: Upgraded",
+              count: 12,
+            },
+            {
+              day: "2026-01-31",
+              bracket: "Bracket 4: Optimized",
+              count: 14,
+            },
+            {
+              day: "2026-01-31",
+              bracket: "Bracket 5: Competitive",
+              count: 10,
+            },
+            {
+              day: "2026-02-01",
+              bracket: "None",
+              count: 44,
+            },
+            {
+              day: "2026-02-01",
+              bracket: "Bracket 1: Exhibition",
+              count: 4,
+            },
+            {
+              day: "2026-02-01",
+              bracket: "Bracket 2: Core",
+              count: 14,
+            },
+            {
+              day: "2026-02-01",
+              bracket: "Bracket 3: Upgraded",
+              count: 25,
+            },
+            {
+              day: "2026-02-01",
+              bracket: "Bracket 4: Optimized",
+              count: 10,
+            },
+            {
+              day: "2026-02-01",
+              bracket: "Bracket 5: Competitive",
+              count: 4,
+            },
+            {
+              day: "2026-02-02",
+              bracket: "None",
+              count: 28,
+            },
+            {
+              day: "2026-02-02",
+              bracket: "Bracket 1: Exhibition",
+              count: 10,
+            },
+            {
+              day: "2026-02-02",
+              bracket: "Bracket 2: Core",
+              count: 29,
+            },
+            {
+              day: "2026-02-02",
+              bracket: "Bracket 3: Upgraded",
+              count: 23,
+            },
+            {
+              day: "2026-02-02",
+              bracket: "Bracket 4: Optimized",
+              count: 5,
+            },
+            {
+              day: "2026-02-02",
+              bracket: "Bracket 5: Competitive",
+              count: 10,
+            },
+            {
+              day: "2026-02-03",
+              bracket: "None",
+              count: 44,
+            },
+            {
+              day: "2026-02-03",
+              bracket: "Bracket 1: Exhibition",
+              count: 13,
+            },
+            {
+              day: "2026-02-03",
+              bracket: "Bracket 2: Core",
+              count: 16,
+            },
+            {
+              day: "2026-02-03",
+              bracket: "Bracket 3: Upgraded",
+              count: 19,
+            },
+            {
+              day: "2026-02-03",
+              bracket: "Bracket 4: Optimized",
+              count: 8,
+            },
+            {
+              day: "2026-02-03",
+              bracket: "Bracket 5: Competitive",
+              count: 12,
+            },
+            {
+              day: "2026-02-04",
+              bracket: "None",
+              count: 40,
+            },
+            {
+              day: "2026-02-04",
+              bracket: "Bracket 1: Exhibition",
+              count: 7,
+            },
+            {
+              day: "2026-02-04",
+              bracket: "Bracket 2: Core",
+              count: 24,
+            },
+            {
+              day: "2026-02-04",
+              bracket: "Bracket 3: Upgraded",
+              count: 26,
+            },
+            {
+              day: "2026-02-04",
+              bracket: "Bracket 4: Optimized",
+              count: 9,
+            },
+            {
+              day: "2026-02-04",
+              bracket: "Bracket 5: Competitive",
+              count: 3,
+            },
+            {
+              day: "2026-02-05",
+              bracket: "None",
+              count: 27,
+            },
+            {
+              day: "2026-02-05",
+              bracket: "Bracket 1: Exhibition",
+              count: 5,
+            },
+            {
+              day: "2026-02-05",
+              bracket: "Bracket 2: Core",
+              count: 12,
+            },
+            {
+              day: "2026-02-05",
+              bracket: "Bracket 3: Upgraded",
+              count: 20,
+            },
+            {
+              day: "2026-02-05",
+              bracket: "Bracket 4: Optimized",
+              count: 2,
+            },
+            {
+              day: "2026-02-05",
+              bracket: "Bracket 5: Competitive",
+              count: 11,
+            },
+            {
+              day: "2026-02-06",
+              bracket: "None",
+              count: 37,
+            },
+            {
+              day: "2026-02-06",
+              bracket: "Bracket 1: Exhibition",
+              count: 5,
+            },
+            {
+              day: "2026-02-06",
+              bracket: "Bracket 2: Core",
+              count: 28,
+            },
+            {
+              day: "2026-02-06",
+              bracket: "Bracket 3: Upgraded",
+              count: 17,
+            },
+            {
+              day: "2026-02-06",
+              bracket: "Bracket 4: Optimized",
+              count: 2,
+            },
+            {
+              day: "2026-02-06",
+              bracket: "Bracket 5: Competitive",
+              count: 3,
+            },
+            {
+              day: "2026-02-07",
+              bracket: "None",
+              count: 42,
+            },
+            {
+              day: "2026-02-07",
+              bracket: "Bracket 1: Exhibition",
+              count: 12,
+            },
+            {
+              day: "2026-02-07",
+              bracket: "Bracket 2: Core",
+              count: 11,
+            },
+            {
+              day: "2026-02-07",
+              bracket: "Bracket 3: Upgraded",
+              count: 17,
+            },
+            {
+              day: "2026-02-07",
+              bracket: "Bracket 4: Optimized",
+              count: 3,
+            },
+            {
+              day: "2026-02-07",
+              bracket: "Bracket 5: Competitive",
+              count: 2,
+            },
+            {
+              day: "2026-02-08",
+              bracket: "None",
+              count: 47,
+            },
+            {
+              day: "2026-02-08",
+              bracket: "Bracket 1: Exhibition",
+              count: 7,
+            },
+            {
+              day: "2026-02-08",
+              bracket: "Bracket 2: Core",
+              count: 12,
+            },
+            {
+              day: "2026-02-08",
+              bracket: "Bracket 3: Upgraded",
+              count: 26,
+            },
+            {
+              day: "2026-02-08",
+              bracket: "Bracket 4: Optimized",
+              count: 5,
+            },
+            {
+              day: "2026-02-08",
+              bracket: "Bracket 5: Competitive",
+              count: 6,
+            },
+            {
+              day: "2026-02-09",
+              bracket: "None",
+              count: 41,
+            },
+            {
+              day: "2026-02-09",
+              bracket: "Bracket 1: Exhibition",
+              count: 9,
+            },
+            {
+              day: "2026-02-09",
+              bracket: "Bracket 2: Core",
+              count: 16,
+            },
+            {
+              day: "2026-02-09",
+              bracket: "Bracket 3: Upgraded",
+              count: 27,
+            },
+            {
+              day: "2026-02-09",
+              bracket: "Bracket 4: Optimized",
+              count: 4,
+            },
+            {
+              day: "2026-02-09",
+              bracket: "Bracket 5: Competitive",
+              count: 13,
+            },
+            {
+              day: "2026-02-10",
+              bracket: "None",
+              count: 49,
+            },
+            {
+              day: "2026-02-10",
+              bracket: "Bracket 1: Exhibition",
+              count: 11,
+            },
+            {
+              day: "2026-02-10",
+              bracket: "Bracket 2: Core",
+              count: 28,
+            },
+            {
+              day: "2026-02-10",
+              bracket: "Bracket 3: Upgraded",
+              count: 25,
+            },
+            {
+              day: "2026-02-10",
+              bracket: "Bracket 4: Optimized",
+              count: 5,
+            },
+            {
+              day: "2026-02-10",
+              bracket: "Bracket 5: Competitive",
+              count: 14,
+            },
+            {
+              day: "2026-02-11",
+              bracket: "None",
+              count: 35,
+            },
+            {
+              day: "2026-02-11",
+              bracket: "Bracket 1: Exhibition",
+              count: 14,
+            },
+            {
+              day: "2026-02-11",
+              bracket: "Bracket 2: Core",
+              count: 23,
+            },
+            {
+              day: "2026-02-11",
+              bracket: "Bracket 3: Upgraded",
+              count: 16,
+            },
+            {
+              day: "2026-02-11",
+              bracket: "Bracket 4: Optimized",
+              count: 3,
+            },
+            {
+              day: "2026-02-11",
+              bracket: "Bracket 5: Competitive",
+              count: 3,
+            },
+            {
+              day: "2026-02-12",
+              bracket: "None",
+              count: 41,
+            },
+            {
+              day: "2026-02-12",
+              bracket: "Bracket 1: Exhibition",
+              count: 8,
+            },
+            {
+              day: "2026-02-12",
+              bracket: "Bracket 2: Core",
+              count: 21,
+            },
+            {
+              day: "2026-02-12",
+              bracket: "Bracket 3: Upgraded",
+              count: 23,
+            },
+            {
+              day: "2026-02-12",
+              bracket: "Bracket 4: Optimized",
+              count: 8,
+            },
+            {
+              day: "2026-02-12",
+              bracket: "Bracket 5: Competitive",
+              count: 9,
+            },
+            {
+              day: "2026-02-13",
+              bracket: "None",
+              count: 47,
+            },
+            {
+              day: "2026-02-13",
+              bracket: "Bracket 1: Exhibition",
+              count: 13,
+            },
+            {
+              day: "2026-02-13",
+              bracket: "Bracket 2: Core",
+              count: 11,
+            },
+            {
+              day: "2026-02-13",
+              bracket: "Bracket 3: Upgraded",
+              count: 30,
+            },
+            {
+              day: "2026-02-13",
+              bracket: "Bracket 4: Optimized",
+              count: 12,
+            },
+            {
+              day: "2026-02-13",
+              bracket: "Bracket 5: Competitive",
+              count: 3,
+            },
+            {
+              day: "2026-02-14",
+              bracket: "None",
+              count: 21,
+            },
+            {
+              day: "2026-02-14",
+              bracket: "Bracket 1: Exhibition",
+              count: 8,
+            },
+            {
+              day: "2026-02-14",
+              bracket: "Bracket 2: Core",
+              count: 20,
+            },
+            {
+              day: "2026-02-14",
+              bracket: "Bracket 3: Upgraded",
+              count: 13,
+            },
+            {
+              day: "2026-02-14",
+              bracket: "Bracket 4: Optimized",
+              count: 5,
+            },
+            {
+              day: "2026-02-14",
+              bracket: "Bracket 5: Competitive",
+              count: 5,
+            },
+            {
+              day: "2026-02-15",
+              bracket: "None",
+              count: 26,
+            },
+            {
+              day: "2026-02-15",
+              bracket: "Bracket 1: Exhibition",
+              count: 10,
+            },
+            {
+              day: "2026-02-15",
+              bracket: "Bracket 2: Core",
+              count: 24,
+            },
+            {
+              day: "2026-02-15",
+              bracket: "Bracket 3: Upgraded",
+              count: 14,
+            },
+            {
+              day: "2026-02-15",
+              bracket: "Bracket 4: Optimized",
+              count: 8,
+            },
+            {
+              day: "2026-02-15",
+              bracket: "Bracket 5: Competitive",
+              count: 4,
+            },
+            {
+              day: "2026-02-16",
+              bracket: "None",
+              count: 28,
+            },
+            {
+              day: "2026-02-16",
+              bracket: "Bracket 1: Exhibition",
+              count: 9,
+            },
+            {
+              day: "2026-02-16",
+              bracket: "Bracket 2: Core",
+              count: 17,
+            },
+            {
+              day: "2026-02-16",
+              bracket: "Bracket 3: Upgraded",
+              count: 12,
+            },
+            {
+              day: "2026-02-16",
+              bracket: "Bracket 4: Optimized",
+              count: 9,
+            },
+            {
+              day: "2026-02-16",
+              bracket: "Bracket 5: Competitive",
+              count: 14,
+            },
+            {
+              day: "2026-02-17",
+              bracket: "None",
+              count: 47,
+            },
+            {
+              day: "2026-02-17",
+              bracket: "Bracket 1: Exhibition",
+              count: 15,
+            },
+            {
+              day: "2026-02-17",
+              bracket: "Bracket 2: Core",
+              count: 27,
+            },
+            {
+              day: "2026-02-17",
+              bracket: "Bracket 3: Upgraded",
+              count: 13,
+            },
+            {
+              day: "2026-02-17",
+              bracket: "Bracket 4: Optimized",
+              count: 2,
+            },
+            {
+              day: "2026-02-17",
+              bracket: "Bracket 5: Competitive",
+              count: 12,
+            },
+            {
+              day: "2026-02-18",
+              bracket: "None",
+              count: 37,
+            },
+            {
+              day: "2026-02-18",
+              bracket: "Bracket 1: Exhibition",
+              count: 15,
+            },
+            {
+              day: "2026-02-18",
+              bracket: "Bracket 2: Core",
+              count: 10,
+            },
+            {
+              day: "2026-02-18",
+              bracket: "Bracket 3: Upgraded",
+              count: 12,
+            },
+            {
+              day: "2026-02-18",
+              bracket: "Bracket 4: Optimized",
+              count: 14,
+            },
+            {
+              day: "2026-02-18",
+              bracket: "Bracket 5: Competitive",
+              count: 15,
+            },
+            {
+              day: "2026-02-19",
+              bracket: "None",
+              count: 27,
+            },
+            {
+              day: "2026-02-19",
+              bracket: "Bracket 1: Exhibition",
+              count: 4,
+            },
+            {
+              day: "2026-02-19",
+              bracket: "Bracket 2: Core",
+              count: 23,
+            },
+            {
+              day: "2026-02-19",
+              bracket: "Bracket 3: Upgraded",
+              count: 25,
+            },
+            {
+              day: "2026-02-19",
+              bracket: "Bracket 4: Optimized",
+              count: 9,
+            },
+            {
+              day: "2026-02-19",
+              bracket: "Bracket 5: Competitive",
+              count: 5,
+            },
+            {
+              day: "2026-02-20",
+              bracket: "None",
+              count: 47,
+            },
+            {
+              day: "2026-02-20",
+              bracket: "Bracket 1: Exhibition",
+              count: 8,
+            },
+            {
+              day: "2026-02-20",
+              bracket: "Bracket 2: Core",
+              count: 11,
+            },
+            {
+              day: "2026-02-20",
+              bracket: "Bracket 3: Upgraded",
+              count: 15,
+            },
+            {
+              day: "2026-02-20",
+              bracket: "Bracket 4: Optimized",
+              count: 8,
+            },
+            {
+              day: "2026-02-20",
+              bracket: "Bracket 5: Competitive",
+              count: 2,
+            },
+            {
+              day: "2026-02-21",
+              bracket: "None",
+              count: 32,
+            },
+            {
+              day: "2026-02-21",
+              bracket: "Bracket 1: Exhibition",
+              count: 6,
+            },
+            {
+              day: "2026-02-21",
+              bracket: "Bracket 2: Core",
+              count: 24,
+            },
+            {
+              day: "2026-02-21",
+              bracket: "Bracket 3: Upgraded",
+              count: 19,
+            },
+            {
+              day: "2026-02-21",
+              bracket: "Bracket 4: Optimized",
+              count: 8,
+            },
+            {
+              day: "2026-02-21",
+              bracket: "Bracket 5: Competitive",
+              count: 13,
+            },
+            {
+              day: "2026-02-22",
+              bracket: "None",
+              count: 50,
+            },
+            {
+              day: "2026-02-22",
+              bracket: "Bracket 1: Exhibition",
+              count: 13,
+            },
+            {
+              day: "2026-02-22",
+              bracket: "Bracket 2: Core",
+              count: 27,
+            },
+            {
+              day: "2026-02-22",
+              bracket: "Bracket 3: Upgraded",
+              count: 25,
+            },
+            {
+              day: "2026-02-22",
+              bracket: "Bracket 4: Optimized",
+              count: 4,
+            },
+            {
+              day: "2026-02-22",
+              bracket: "Bracket 5: Competitive",
+              count: 5,
+            },
+            {
+              day: "2026-02-23",
+              bracket: "None",
+              count: 29,
+            },
+            {
+              day: "2026-02-23",
+              bracket: "Bracket 1: Exhibition",
+              count: 5,
+            },
+            {
+              day: "2026-02-23",
+              bracket: "Bracket 2: Core",
+              count: 11,
+            },
+            {
+              day: "2026-02-23",
+              bracket: "Bracket 3: Upgraded",
+              count: 28,
+            },
+            {
+              day: "2026-02-23",
+              bracket: "Bracket 4: Optimized",
+              count: 13,
+            },
+            {
+              day: "2026-02-23",
+              bracket: "Bracket 5: Competitive",
+              count: 10,
+            },
+          ],
+          player_retention: [
+            {
+              week: "2025-12-01",
+              new: 33,
+              returning: 341,
+            },
+            {
+              week: "2025-12-08",
+              new: 50,
+              returning: 164,
+            },
+            {
+              week: "2025-12-15",
+              new: 33,
+              returning: 299,
+            },
+            {
+              week: "2025-12-22",
+              new: 60,
+              returning: 278,
+            },
+            {
+              week: "2025-12-29",
+              new: 63,
+              returning: 190,
+            },
+            {
+              week: "2026-01-05",
+              new: 33,
+              returning: 280,
+            },
+            {
+              week: "2026-01-12",
+              new: 35,
+              returning: 197,
+            },
+            {
+              week: "2026-01-19",
+              new: 34,
+              returning: 302,
+            },
+            {
+              week: "2026-01-26",
+              new: 34,
+              returning: 322,
+            },
+            {
+              week: "2026-02-02",
+              new: 45,
+              returning: 253,
+            },
+            {
+              week: "2026-02-09",
+              new: 37,
+              returning: 295,
+            },
+            {
+              week: "2026-02-16",
+              new: 45,
+              returning: 298,
+            },
+          ],
+          cumulative_players: [
+            {
+              day: "2024-02-24",
+              total: 58,
+            },
+            {
+              day: "2024-03-02",
+              total: 80,
+            },
+            {
+              day: "2024-03-09",
+              total: 139,
+            },
+            {
+              day: "2024-03-16",
+              total: 164,
+            },
+            {
+              day: "2024-03-23",
+              total: 210,
+            },
+            {
+              day: "2024-03-30",
+              total: 267,
+            },
+            {
+              day: "2024-04-06",
+              total: 323,
+            },
+            {
+              day: "2024-04-13",
+              total: 376,
+            },
+            {
+              day: "2024-04-20",
+              total: 416,
+            },
+            {
+              day: "2024-04-27",
+              total: 452,
+            },
+            {
+              day: "2024-05-04",
+              total: 485,
+            },
+            {
+              day: "2024-05-11",
+              total: 525,
+            },
+            {
+              day: "2024-05-18",
+              total: 560,
+            },
+            {
+              day: "2024-05-25",
+              total: 596,
+            },
+            {
+              day: "2024-06-01",
+              total: 641,
+            },
+            {
+              day: "2024-06-08",
+              total: 669,
+            },
+            {
+              day: "2024-06-15",
+              total: 708,
+            },
+            {
+              day: "2024-06-22",
+              total: 757,
+            },
+            {
+              day: "2024-06-29",
+              total: 797,
+            },
+            {
+              day: "2024-07-06",
+              total: 821,
+            },
+            {
+              day: "2024-07-13",
+              total: 841,
+            },
+            {
+              day: "2024-07-20",
+              total: 890,
+            },
+            {
+              day: "2024-07-27",
+              total: 949,
+            },
+            {
+              day: "2024-08-03",
+              total: 1005,
+            },
+            {
+              day: "2024-08-10",
+              total: 1031,
+            },
+            {
+              day: "2024-08-17",
+              total: 1055,
+            },
+            {
+              day: "2024-08-24",
+              total: 1109,
+            },
+            {
+              day: "2024-08-31",
+              total: 1142,
+            },
+            {
+              day: "2024-09-07",
+              total: 1194,
+            },
+            {
+              day: "2024-09-14",
+              total: 1230,
+            },
+            {
+              day: "2024-09-21",
+              total: 1258,
+            },
+            {
+              day: "2024-09-28",
+              total: 1300,
+            },
+            {
+              day: "2024-10-05",
+              total: 1324,
+            },
+            {
+              day: "2024-10-12",
+              total: 1359,
+            },
+            {
+              day: "2024-10-19",
+              total: 1402,
+            },
+            {
+              day: "2024-10-26",
+              total: 1440,
+            },
+            {
+              day: "2024-11-02",
+              total: 1470,
+            },
+            {
+              day: "2024-11-09",
+              total: 1518,
+            },
+            {
+              day: "2024-11-16",
+              total: 1572,
+            },
+            {
+              day: "2024-11-23",
+              total: 1611,
+            },
+            {
+              day: "2024-11-30",
+              total: 1670,
+            },
+            {
+              day: "2024-12-07",
+              total: 1723,
+            },
+            {
+              day: "2024-12-14",
+              total: 1743,
+            },
+            {
+              day: "2024-12-21",
+              total: 1798,
+            },
+            {
+              day: "2024-12-28",
+              total: 1837,
+            },
+            {
+              day: "2025-01-04",
+              total: 1863,
+            },
+            {
+              day: "2025-01-11",
+              total: 1891,
+            },
+            {
+              day: "2025-01-18",
+              total: 1927,
+            },
+            {
+              day: "2025-01-25",
+              total: 1954,
+            },
+            {
+              day: "2025-02-01",
+              total: 1980,
+            },
+            {
+              day: "2025-02-08",
+              total: 2035,
+            },
+            {
+              day: "2025-02-15",
+              total: 2064,
+            },
+            {
+              day: "2025-02-22",
+              total: 2101,
+            },
+            {
+              day: "2025-03-01",
+              total: 2139,
+            },
+            {
+              day: "2025-03-08",
+              total: 2197,
+            },
+            {
+              day: "2025-03-15",
+              total: 2230,
+            },
+            {
+              day: "2025-03-22",
+              total: 2271,
+            },
+            {
+              day: "2025-03-29",
+              total: 2304,
+            },
+            {
+              day: "2025-04-05",
+              total: 2364,
+            },
+            {
+              day: "2025-04-12",
+              total: 2400,
+            },
+            {
+              day: "2025-04-19",
+              total: 2452,
+            },
+            {
+              day: "2025-04-26",
+              total: 2503,
+            },
+            {
+              day: "2025-05-03",
+              total: 2539,
+            },
+            {
+              day: "2025-05-10",
+              total: 2562,
+            },
+            {
+              day: "2025-05-17",
+              total: 2587,
+            },
+            {
+              day: "2025-05-24",
+              total: 2647,
+            },
+            {
+              day: "2025-05-31",
+              total: 2694,
+            },
+            {
+              day: "2025-06-07",
+              total: 2731,
+            },
+            {
+              day: "2025-06-14",
+              total: 2753,
+            },
+            {
+              day: "2025-06-21",
+              total: 2773,
+            },
+            {
+              day: "2025-06-28",
+              total: 2814,
+            },
+            {
+              day: "2025-07-05",
+              total: 2842,
+            },
+            {
+              day: "2025-07-12",
+              total: 2902,
+            },
+            {
+              day: "2025-07-19",
+              total: 2938,
+            },
+            {
+              day: "2025-07-26",
+              total: 2968,
+            },
+            {
+              day: "2025-08-02",
+              total: 3016,
+            },
+            {
+              day: "2025-08-09",
+              total: 3071,
+            },
+            {
+              day: "2025-08-16",
+              total: 3118,
+            },
+            {
+              day: "2025-08-23",
+              total: 3173,
+            },
+            {
+              day: "2025-08-30",
+              total: 3193,
+            },
+            {
+              day: "2025-09-06",
+              total: 3220,
+            },
+            {
+              day: "2025-09-13",
+              total: 3244,
+            },
+            {
+              day: "2025-09-20",
+              total: 3273,
+            },
+            {
+              day: "2025-09-27",
+              total: 3327,
+            },
+            {
+              day: "2025-10-04",
+              total: 3349,
+            },
+            {
+              day: "2025-10-11",
+              total: 3392,
+            },
+            {
+              day: "2025-10-18",
+              total: 3449,
+            },
+            {
+              day: "2025-10-25",
+              total: 3504,
+            },
+            {
+              day: "2025-11-01",
+              total: 3533,
+            },
+            {
+              day: "2025-11-08",
+              total: 3580,
+            },
+            {
+              day: "2025-11-15",
+              total: 3608,
+            },
+            {
+              day: "2025-11-22",
+              total: 3630,
+            },
+            {
+              day: "2025-11-29",
+              total: 3669,
+            },
+            {
+              day: "2025-12-06",
+              total: 3712,
+            },
+            {
+              day: "2025-12-13",
+              total: 3734,
+            },
+            {
+              day: "2025-12-20",
+              total: 3776,
+            },
+            {
+              day: "2025-12-27",
+              total: 3809,
+            },
+            {
+              day: "2026-01-03",
+              total: 3844,
+            },
+            {
+              day: "2026-01-10",
+              total: 3870,
+            },
+            {
+              day: "2026-01-17",
+              total: 3912,
+            },
+            {
+              day: "2026-01-24",
+              total: 3967,
+            },
+            {
+              day: "2026-01-31",
+              total: 4013,
+            },
+            {
+              day: "2026-02-07",
+              total: 4072,
+            },
+            {
+              day: "2026-02-14",
+              total: 4101,
+            },
+            {
+              day: "2026-02-21",
+              total: 4136,
+            },
+          ],
+          median_games: 3,
+          games_histogram: [
+            {
+              bucket: "1",
+              players: 1000,
+            },
+            {
+              bucket: "2",
+              players: 574,
+            },
+            {
+              bucket: "3",
+              players: 415,
+            },
+            {
+              bucket: "4",
+              players: 329,
+            },
+            {
+              bucket: "5",
+              players: 275,
+            },
+            {
+              bucket: "6",
+              players: 238,
+            },
+            {
+              bucket: "7",
+              players: 210,
+            },
+            {
+              bucket: "8",
+              players: 189,
+            },
+            {
+              bucket: "9",
+              players: 172,
+            },
+            {
+              bucket: "10",
+              players: 158,
+            },
+            {
+              bucket: "11",
+              players: 146,
+            },
+            {
+              bucket: "12",
+              players: 136,
+            },
+            {
+              bucket: "13",
+              players: 128,
+            },
+            {
+              bucket: "14",
+              players: 121,
+            },
+            {
+              bucket: "15",
+              players: 114,
+            },
+            {
+              bucket: "16",
+              players: 108,
+            },
+            {
+              bucket: "17",
+              players: 103,
+            },
+            {
+              bucket: "18",
+              players: 99,
+            },
+            {
+              bucket: "19",
+              players: 94,
+            },
+            {
+              bucket: "20",
+              players: 91,
+            },
+            {
+              bucket: "21+",
+              players: 45,
+            },
+          ],
+          popular_formats: [
+            {
+              format: "Commander",
+              count: 1431,
+            },
+            {
+              format: "Draft",
+              count: 735,
+            },
+            {
+              format: "Modern",
+              count: 472,
+            },
+            {
+              format: "Vintage",
+              count: 471,
+            },
+            {
+              format: "Pauper",
+              count: 390,
+            },
+            {
+              format: "Pioneer",
+              count: 233,
+            },
+            {
+              format: "Standard",
+              count: 231,
+            },
+            {
+              format: "Legacy",
+              count: 75,
+            },
+          ],
+          busiest_channels: [
+            {
+              name: "modern-games",
+              count: 2127,
+            },
+            {
+              name: "events",
+              count: 2085,
+            },
+            {
+              name: "casual-edh",
+              count: 1766,
+            },
+            {
+              name: "looking-for-game",
+              count: 1292,
+            },
+            {
+              name: "lfg-edh",
+              count: 1216,
+            },
+            {
+              name: "legacy-lfg",
+              count: 1111,
+            },
+            {
+              name: "pauper-games",
+              count: 1017,
+            },
+            {
+              name: "commander-games",
+              count: 852,
+            },
+            {
+              name: "cedh-queue",
+              count: 642,
+            },
+            {
+              name: "standard-queue",
+              count: 358,
+            },
+          ],
+          popular_services: [
+            {
+              service: "Convoke",
+              count: 9432,
+            },
+            {
+              service: "SpellTable",
+              count: 4250,
+            },
+          ],
+          popular_services_30d: [
+            {
+              service: "Convoke",
+              count: 916,
+            },
+            {
+              service: "SpellTable",
+              count: 314,
+            },
+          ],
+          top_players: [
+            {
+              user_xid: "939955266525918020",
+              name: "jamesmichael",
+              count: 452,
+            },
+            {
+              user_xid: "180036680618621961",
+              name: "garzaanthony",
+              count: 445,
+            },
+            {
+              user_xid: "560797804901067019",
+              name: "hoffmanjennifer",
+              count: 397,
+            },
+            {
+              user_xid: "504843923462470744",
+              name: "robinsonwilliam",
+              count: 378,
+            },
+            {
+              user_xid: "787799825638376700",
+              name: "susanrogers",
+              count: 272,
+            },
+            {
+              user_xid: "478460261998255568",
+              name: "donaldgarcia",
+              count: 192,
+            },
+            {
+              user_xid: "860966452882628443",
+              name: "johnsonjoshua",
+              count: 148,
+            },
+            {
+              user_xid: "401160619882327202",
+              name: "lisa02",
+              count: 141,
+            },
+            {
+              user_xid: "406061881998178426",
+              name: "jpeterson",
+              count: 69,
+            },
+            {
+              user_xid: "481789802842124071",
+              name: "lrobinson",
+              count: 64,
+            },
+          ],
+          top_players_30d: [
+            {
+              user_xid: "699427346896705251",
+              name: "janetwilliams",
+              count: 78,
+            },
+            {
+              user_xid: "603127893628233759",
+              name: "cassandra07",
+              count: 75,
+            },
+            {
+              user_xid: "151174184238546572",
+              name: "maria95",
+              count: 65,
+            },
+            {
+              user_xid: "865813911565463597",
+              name: "xreid",
+              count: 52,
+            },
+            {
+              user_xid: "570844971033394761",
+              name: "amandasanchez",
+              count: 51,
+            },
+            {
+              user_xid: "684672443300440976",
+              name: "jacqueline19",
+              count: 49,
+            },
+            {
+              user_xid: "929446316241575589",
+              name: "kendragalloway",
+              count: 35,
+            },
+            {
+              user_xid: "544100091349497433",
+              name: "dudleynicholas",
+              count: 34,
+            },
+            {
+              user_xid: "461920094798290151",
+              name: "mitchellclark",
+              count: 25,
+            },
+            {
+              user_xid: "597252047871909462",
+              name: "michellejames",
+              count: 18,
+            },
+          ],
+        };
+        renderCharts(data);
+        document.getElementById("mainContainer").classList.add("loaded");
+        document.getElementById("loadingOverlay").classList.add("hidden");
+      })();
+    </script>
+  </body>
+</html>

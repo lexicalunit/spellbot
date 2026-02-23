@@ -32,7 +32,7 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
                         game_id=game.id,
                         guild_xid=game.guild_xid,
                         channel_xid=game.channel_xid,
-                        message_xid=randint(1000, 9999),  # noqa: S311
+                        message_xid=randint(1000, 9999),
                     )
                     session.add(post)
                     game.posts = [post]  # type: ignore

@@ -12,6 +12,7 @@
 /sql/*.data
 /states
 /tmp
+demo_analytics.html
 
 ########################################################################
 # https://github.com/github/gitignore/blob/master/Global/Windows.gitignore
