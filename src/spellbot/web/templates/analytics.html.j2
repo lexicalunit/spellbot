@@ -51,10 +51,11 @@
         .toggle-btn.active { background: #818cf8; color: #fff; }
         .chart-box {
             background: #252545; border-radius: 12px; padding: 1.25rem;
-            position: relative;
+            position: relative; width: 100%; min-width: 0; height: 450px;
         }
-        .chart-view { display: none; }
-        .chart-view.visible { display: block; }
+        .chart-box canvas { display: block; width: 100% !important; height: 100% !important; }
+        .chart-view { display: none; width: 100%; height: 100%; }
+        .chart-view.visible { display: flex; align-items: center; justify-content: center; }
         table { width: 100%; border-collapse: collapse; background: #252545; border-radius: 8px; overflow: hidden; }
         th { background: #1e1e3f; padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.05em; }
         td { padding: 0.6rem 1rem; border-top: 1px solid #333; font-size: 0.9rem; }
@@ -216,7 +217,7 @@
 
     function lineOpts(xLabel) {
         return {
-            responsive: true, maintainAspectRatio: true,
+            responsive: true, maintainAspectRatio: false,
             interaction: { mode: "index", intersect: false },
             plugins: { legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } } },
             scales: {
@@ -227,7 +228,7 @@
     }
     function barOpts(indexAxis) {
         return {
-            indexAxis: indexAxis || "x", responsive: true, maintainAspectRatio: true,
+            indexAxis: indexAxis || "x", responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
                 x: { grid: { color: GRID }, ticks: { color: TICK } },
@@ -264,8 +265,8 @@
 
     /* ── Render all charts from data ── */
     const svcColors = ["#818cf8","#a78bfa","#c084fc","#e879f9","#f472b6","#fb7185","#f97316","#facc15","#4ade80","#22d3ee"];
-    const svcDoughnutOpts = { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } } } };
-    const stackedOpts = { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } } }, scales: { x: { stacked: true, grid: { color: GRID }, ticks: { color: TICK, maxRotation: 45 } }, y: { stacked: true, grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true } } };
+    const svcDoughnutOpts = { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: true, position: "right", labels: { color: "#e0e0e0", boxWidth: 12 } } } };
+    const stackedOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } } }, scales: { x: { stacked: true, grid: { color: GRID }, ticks: { color: TICK, maxRotation: 45 } }, y: { stacked: true, grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true } } };
     let storedServices30d = null;
 
     function renderCharts(data) {
@@ -324,7 +325,7 @@
         document.getElementById("histogramTitle").textContent = "Games per Player (Median: " + data.median_games + ")";
         if (data.games_histogram && data.games_histogram.length) {
             const medianVal = data.median_games;
-            new Chart(document.getElementById("chartHistogram"), { type: "bar", data: { labels: data.games_histogram.map(d => d.bucket), datasets: [{ label: "Players", data: data.games_histogram.map(d => d.players), backgroundColor: data.games_histogram.map(d => { const b = parseFloat(d.bucket); return (!isNaN(b) && b === Math.ceil(medianVal)) ? "#f59e0b" : "#60a5fa"; }), borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: true, indexAxis: "x", plugins: { legend: { display: false }, annotation: { annotations: { medianLine: { type: "line", xMin: medianVal - 1, xMax: medianVal - 1, borderColor: "#f59e0b", borderWidth: 2, borderDash: [6, 3], label: { display: true, content: "Median: " + medianVal, position: "start", color: "#fbbf24", backgroundColor: "rgba(0,0,0,0.6)" } } } } }, scales: { x: { grid: { color: GRID }, ticks: { color: TICK }, title: { display: true, text: "Games Played", color: TICK } }, y: { grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true, title: { display: true, text: "Players", color: TICK } } } } });
+            new Chart(document.getElementById("chartHistogram"), { type: "bar", data: { labels: data.games_histogram.map(d => d.bucket), datasets: [{ label: "Players", data: data.games_histogram.map(d => d.players), backgroundColor: data.games_histogram.map(d => { const b = parseFloat(d.bucket); return (!isNaN(b) && b === Math.ceil(medianVal)) ? "#f59e0b" : "#60a5fa"; }), borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: "x", plugins: { legend: { display: false }, annotation: { annotations: { medianLine: { type: "line", xMin: medianVal - 1, xMax: medianVal - 1, borderColor: "#f59e0b", borderWidth: 2, borderDash: [6, 3], label: { display: true, content: "Median: " + medianVal, position: "start", color: "#fbbf24", backgroundColor: "rgba(0,0,0,0.6)" } } } } }, scales: { x: { grid: { color: GRID }, ticks: { color: TICK }, title: { display: true, text: "Games Played", color: TICK } }, y: { grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true, title: { display: true, text: "Players", color: TICK } } } } });
         } else { document.getElementById("histogramSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
 
         /* Formats */
@@ -354,6 +355,22 @@
         document.getElementById("viewPlayersAll").innerHTML = playersTable(data.top_players);
         document.getElementById("viewPlayers30d").innerHTML = playersTable(data.top_players_30d);
     }
+
+    /* ── Handle window resize for charts ── */
+    let resizeTimeout;
+    window.addEventListener("resize", function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            Object.values(Chart.instances).forEach(chart => {
+                /* Clear the canvas size attributes so Chart.js recalculates */
+                chart.canvas.style.width = "";
+                chart.canvas.style.height = "";
+                chart.canvas.removeAttribute("width");
+                chart.canvas.removeAttribute("height");
+                chart.resize();
+            });
+        }, 100);
+    });
 
     /* ── Fetch data via AJAX ── */
     fetch(DATA_URL)
