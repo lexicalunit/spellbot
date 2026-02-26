@@ -17,7 +17,7 @@ from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, 
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
 from .integrations import convoke, girudo, tablestream
-from .metrics import add_span_request_id, generate_request_id, setup_ignored_errors, setup_metrics
+from .metrics import add_span_request_id, generate_request_id, setup_metrics
 from .models import GameLinkDetails
 from .operations import safe_delete_message
 from .services import ServicesRegistry
@@ -205,21 +205,9 @@ class SpellBot(AutoShardedBot):
         if self.user and message_author_xid == self.user.id:  # pragma: no cover
             return None
 
-        # Only trace interesting on_message events, otherwise it's too noisy.
-        with tracer.trace(service="discord", name="interaction", resource="on_message") as span:
-            setup_ignored_errors(span)
-            add_span_request_id(generate_request_id())
-            span.set_tags(
-                {
-                    "guild_xid": str(message.guild.id),
-                    "channel_xid": str(message.channel.id),
-                    "user_xid": str(message_author_xid),
-                },
-            )
-
-            async with db_session_manager():
-                await self.handle_verification(message)
-                return None
+        async with db_session_manager():
+            await self.handle_verification(message)
+            return None
 
     @tracer.wrap(name="interaction", resource="on_message_delete")
     async def on_message_delete(self, message: discord.Message) -> None:
@@ -242,7 +230,6 @@ class SpellBot(AutoShardedBot):
             return None
         return await super().on_command_error(context, exception)
 
-    @tracer.wrap()
     async def handle_verification(self, message: discord.Message) -> None:
         services = ServicesRegistry()
         message_author_xid = message.author.id
