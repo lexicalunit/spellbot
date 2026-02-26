@@ -57,6 +57,7 @@ class ChannelsService:
     @sync_to_async()
     def forget(self, xid: int) -> None:
         DatabaseSession.query(Channel).filter(Channel.xid == xid).delete(synchronize_session=False)
+        channel_cache.pop(xid, None)
 
     @sync_to_async()
     def select(self, xid: int) -> ChannelDict | None:

@@ -7,6 +7,7 @@ import pytest
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Guild
 from spellbot.services import ChannelsService
+from spellbot.services.channels import channel_cache
 from tests.factories import ChannelFactory
 
 pytestmark = pytest.mark.use_db
@@ -139,3 +140,33 @@ class TestServiceChannels:
         data = await channels.select(channel.xid)
         assert data is not None
         assert data["delete_expired"]
+
+    async def test_channels_forget(self, guild: Guild) -> None:
+        channels = ChannelsService()
+        discord_channel = MagicMock()
+        discord_channel.id = 999
+        discord_channel.name = "test-channel"
+        discord_guild = MagicMock()
+        discord_guild.id = guild.xid
+        discord_channel.guild = discord_guild
+
+        # First upsert the channel (this would cache it in production)
+        await channels.upsert(discord_channel)
+
+        # Verify it exists in the database
+        data = await channels.select(discord_channel.id)
+        assert data is not None
+        assert data["xid"] == discord_channel.id
+
+        # Manually add to cache to simulate production behavior
+        channel_cache[discord_channel.id] = "test-channel"
+
+        # Forget the channel
+        await channels.forget(discord_channel.id)
+
+        # Verify it's removed from the database
+        data = await channels.select(discord_channel.id)
+        assert data is None
+
+        # Verify it's also removed from the cache
+        assert discord_channel.id not in channel_cache
