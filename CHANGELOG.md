@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Removes trace spans from most on_message calls.
+
 ## [v18.2.8](https://github.com/lexicalunit/spellbot/releases/tag/v18.2.8) - 2026-02-26
 
 ### Changed
