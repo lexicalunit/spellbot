@@ -182,30 +182,14 @@ class SpellBot(AutoShardedBot):
             case _:
                 return GameLinkDetails()
 
-    @tracer.wrap(name="interaction", resource="on_message")
-    async def on_message(
-        self,
-        message: discord.Message,
-    ) -> None:
-        span = tracer.current_span()
-        if span:  # pragma: no cover
-            setup_ignored_errors(span)
-
-        # Generate request ID for message events (no interaction ID available)
-        request_id = generate_request_id()
-        add_span_request_id(request_id)
-
+    async def on_message(self, message: discord.Message) -> None:
         # handle DMs normally
         if not message.guild or not hasattr(message.guild, "id"):
             return await super().on_message(message)
-        if span:  # pragma: no cover
-            span.set_tag("guild_xid", str(message.guild.id))
 
         # ignore everything except messages in text channels
         if not hasattr(message.channel, "type") or message.channel.type != discord.ChannelType.text:
             return None
-        if span:  # pragma: no cover
-            span.set_tag("channel_xid", str(message.channel.id))
 
         # ignore hidden/ephemeral messages
         if message.flags.value & 64:
@@ -216,16 +200,26 @@ class SpellBot(AutoShardedBot):
             return None
 
         message_author_xid = message.author.id
-        if span:
-            span.set_tag("user_xid", str(message_author_xid))
 
         # don't try to verify the bot itself
         if self.user and message_author_xid == self.user.id:  # pragma: no cover
             return None
 
-        async with db_session_manager():
-            await self.handle_verification(message)
-            return None
+        # Only trace interesting on_message events, otherwise it's too noisy.
+        with tracer.trace(service="discord", name="interaction", resource="on_message") as span:
+            setup_ignored_errors(span)
+            add_span_request_id(generate_request_id())
+            span.set_tags(
+                {
+                    "guild_xid": str(message.guild.id),
+                    "channel_xid": str(message.channel.id),
+                    "user_xid": str(message_author_xid),
+                },
+            )
+
+            async with db_session_manager():
+                await self.handle_verification(message)
+                return None
 
     @tracer.wrap(name="interaction", resource="on_message_delete")
     async def on_message_delete(self, message: discord.Message) -> None:
