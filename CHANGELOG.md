@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v18.2.6](https://github.com/lexicalunit/spellbot/releases/tag/v18.2.6) - 2026-02-25
+
 ### Fixed
 
 - Fixed a race condition that can happen after running /forget_channel.
