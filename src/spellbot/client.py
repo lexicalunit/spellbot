@@ -17,7 +17,7 @@ from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, 
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
 from .integrations import convoke, girudo, tablestream
-from .metrics import setup_ignored_errors, setup_metrics
+from .metrics import add_span_request_id, generate_request_id, setup_ignored_errors, setup_metrics
 from .models import GameLinkDetails
 from .operations import safe_delete_message
 from .services import ServicesRegistry
@@ -191,17 +191,21 @@ class SpellBot(AutoShardedBot):
         if span:  # pragma: no cover
             setup_ignored_errors(span)
 
+        # Generate request ID for message events (no interaction ID available)
+        request_id = generate_request_id()
+        add_span_request_id(request_id)
+
         # handle DMs normally
         if not message.guild or not hasattr(message.guild, "id"):
             return await super().on_message(message)
         if span:  # pragma: no cover
-            span.set_tag("guild_id", str(message.guild.id))
+            span.set_tag("guild_xid", str(message.guild.id))
 
         # ignore everything except messages in text channels
         if not hasattr(message.channel, "type") or message.channel.type != discord.ChannelType.text:
             return None
         if span:  # pragma: no cover
-            span.set_tag("channel_id", str(message.channel.id))
+            span.set_tag("channel_xid", str(message.channel.id))
 
         # ignore hidden/ephemeral messages
         if message.flags.value & 64:
@@ -213,7 +217,7 @@ class SpellBot(AutoShardedBot):
 
         message_author_xid = message.author.id
         if span:
-            span.set_tag("author_id", str(message_author_xid))
+            span.set_tag("user_xid", str(message_author_xid))
 
         # don't try to verify the bot itself
         if self.user and message_author_xid == self.user.id:  # pragma: no cover
@@ -225,6 +229,10 @@ class SpellBot(AutoShardedBot):
 
     @tracer.wrap(name="interaction", resource="on_message_delete")
     async def on_message_delete(self, message: discord.Message) -> None:
+        # Generate request ID for message delete events (no interaction ID available)
+        request_id = generate_request_id()
+        add_span_request_id(request_id)
+
         message_xid: int | None = getattr(message, "id", None)
         if not message_xid:
             return

@@ -5,8 +5,10 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 import aiohttp_jinja2
+from ddtrace.trace import tracer
 from packaging.version import parse as parse_version
 
+from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.shard_status import get_all_shard_statuses
 
 if TYPE_CHECKING:
@@ -45,8 +47,10 @@ def _format_time_ago(iso_timestamp: str) -> str:
         return result
 
 
+@tracer.wrap(name="web", resource="status")
 async def endpoint(request: web.Request) -> WebResponse:
     """Render the shard status page."""
+    add_span_request_id(generate_request_id())
     statuses, metadata = await get_all_shard_statuses()
 
     # Calculate overall health

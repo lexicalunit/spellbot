@@ -15,7 +15,7 @@ from spellbot.errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
-from spellbot.metrics import setup_ignored_errors
+from spellbot.metrics import add_span_request_id, setup_ignored_errors
 from spellbot.services import ServicesRegistry
 from spellbot.utils import user_can_moderate
 
@@ -107,6 +107,7 @@ class BaseAction:
         action = cls(bot, interaction)
         with tracer.trace(name=f"spellbot.interactions.{cls.__name__}.create") as span:
             setup_ignored_errors(span)
+            add_span_request_id(str(interaction.id))
             async with db_session_manager():
                 try:
                     await action.upsert_request_objects()

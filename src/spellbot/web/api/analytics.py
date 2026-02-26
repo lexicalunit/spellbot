@@ -7,8 +7,10 @@ from typing import TYPE_CHECKING
 import aiohttp_jinja2
 from aiohttp.web_response import Response as WebResponse
 from asgiref.sync import sync_to_async
+from ddtrace.trace import tracer
 
 from spellbot.database import DatabaseSession, db_session_manager
+from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.models import Guild
 from spellbot.services import ServicesRegistry
 from spellbot.utils import validate_signature
@@ -19,8 +21,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@tracer.wrap(name="web", resource="analytics")
 async def analytics_endpoint(request: web.Request) -> WebResponse:
     """Shell page endpoint - returns HTML immediately with loading spinner."""
+    add_span_request_id(generate_request_id())
     try:
         guild_xid = int(request.match_info["guild"])
     except (KeyError, ValueError):
@@ -50,8 +54,10 @@ async def analytics_endpoint(request: web.Request) -> WebResponse:
     return aiohttp_jinja2.render_template("analytics.html.j2", request, context)
 
 
+@tracer.wrap(name="web", resource="analytics_data")
 async def analytics_data_endpoint(request: web.Request) -> WebResponse:
     """Return JSON with all analytics data."""
+    add_span_request_id(generate_request_id())
     try:
         guild_xid = int(request.match_info["guild"])
     except (KeyError, ValueError):

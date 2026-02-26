@@ -7,8 +7,10 @@ from typing import TYPE_CHECKING, NamedTuple
 
 import aiohttp_jinja2
 from aiohttp.web_response import Response as WebResponse
+from ddtrace.trace import tracer
 
 from spellbot.database import db_session_manager
+from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.services import ServicesRegistry
 
 if TYPE_CHECKING:
@@ -92,11 +94,15 @@ async def impl(request: web.Request, kind: RecordKind) -> WebResponse:
     return aiohttp_jinja2.render_template(path, request, context)
 
 
+@tracer.wrap(name="web", resource="channel_record")
 async def channel_endpoint(request: web.Request) -> WebResponse:
+    add_span_request_id(generate_request_id())
     async with db_session_manager():
         return await impl(request, RecordKind.CHANNEL)
 
 
+@tracer.wrap(name="web", resource="user_record")
 async def user_endpoint(request: web.Request) -> WebResponse:
+    add_span_request_id(generate_request_id())
     async with db_session_manager():
         return await impl(request, RecordKind.USER)
