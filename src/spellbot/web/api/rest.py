@@ -12,6 +12,7 @@ from dateutil import tz
 from ddtrace.trace import tracer
 
 from spellbot.database import db_session_manager
+from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.web.tools import rate_limited
@@ -43,6 +44,7 @@ def reply(
 
 @tracer.wrap(name="rest", resource="game_verify_endpoint")
 async def game_verify_endpoint(request: web.Request) -> WebResponse:
+    add_span_request_id(generate_request_id())
     try:
         async with db_session_manager():
             game_id = int(request.match_info["game"])
@@ -254,6 +256,7 @@ async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
 
 @tracer.wrap(name="rest", resource="game_record_endpoint")
 async def game_record_endpoint(request: web.Request) -> WebResponse:
+    add_span_request_id(generate_request_id())
     async with db_session_manager():
         services = ServicesRegistry()
         game_id = int(request.match_info["game"])

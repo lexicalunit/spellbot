@@ -59,3 +59,20 @@ docker run -it --rm -p 8080:80 \
     -e DD_TRACE_ENABLED="false" \
     lexicalunit/spellbot ./start.sh spellapi
 ```
+
+## Metrics
+
+To get datadog metrics working locally you will need to spin up a datadog agent. You can do this with the following command:
+
+```shell
+docker run --rm --name datadog-agent \
+    -e DD_API_KEY="<your-api-key>" \
+    -e DD_SITE="datadoghq.com" \
+    -e DD_HOSTNAME="local" \
+    -e DD_APM_ENABLED=true \
+    -e DD_APM_NON_LOCAL_TRAFFIC=true \
+    -e DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true \
+    -p 8125:8125/udp \
+    -p 8126:8126/tcp \
+    gcr.io/datadoghq/agent:latest
+```

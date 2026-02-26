@@ -11,5 +11,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+# Not traced because it's called often for health checks.
 async def endpoint(_: web.Request) -> WebResponse:
+    # add_span_request_id(generate_request_id())
     return web.Response(text="ok")

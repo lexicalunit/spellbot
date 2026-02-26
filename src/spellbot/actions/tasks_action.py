@@ -11,7 +11,12 @@ from dateutil import tz
 from ddtrace.trace import tracer
 
 from spellbot.database import db_session_manager, rollback_session
-from spellbot.metrics import add_span_error, setup_ignored_errors
+from spellbot.metrics import (
+    add_span_error,
+    add_span_request_id,
+    generate_request_id,
+    setup_ignored_errors,
+)
 from spellbot.operations import (
     bot_can_delete_channel,
     safe_delete_channel,
@@ -91,6 +96,7 @@ class TasksAction:
         action = cls(bot)
         with tracer.trace(name=f"spellbot.interactions.{cls.__name__}.create") as span:
             setup_ignored_errors(span)
+            add_span_request_id(generate_request_id())
             async with db_session_manager():
                 try:
                     yield action

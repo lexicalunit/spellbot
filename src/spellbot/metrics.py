@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import uuid
 from functools import wraps
 from typing import TYPE_CHECKING, Any
 
@@ -106,22 +107,39 @@ def alert_error(
     Event.create(alert_type="error", title=title, text=text, tags=tags)
 
 
+def generate_request_id() -> str:
+    """Generate a unique request ID for spans."""
+    return str(uuid.uuid4())
+
+
+@skip_if_no_metrics
+def add_span_request_id(request_id: str) -> None:  # pragma: no cover
+    """Add a request_id to the current span."""
+    if span := tracer.current_span():
+        span.set_tag("request_id", request_id)
+
+
 @skip_if_no_metrics
 def add_span_context(interaction: Any) -> None:  # pragma: no cover
     if span := tracer.current_span():
+        # Use interaction.id as the request ID for tracing
         if interaction_id := getattr(interaction, "id", None):
+            span.set_tag("request_id", str(interaction_id))
             span.set_tag("interaction_id", interaction_id)
+        # Standardize on user_xid for the user's Discord ID
         if (user := getattr(interaction, "user", None)) and (user_id := getattr(user, "id", None)):
-            span.set_tag("user_id", user_id)
-        for prop in (
-            "application_id",
-            "channel_id",
-            "component_id",
-            "data",
-            "guild_id",
-        ):
-            if value := getattr(interaction, prop, None):
-                span.set_tag(prop, value)
+            span.set_tag("user_xid", str(user_id))
+        if application_id := getattr(interaction, "application_id", None):
+            span.set_tag("application_id", application_id)
+        # Standardize on channel_xid and guild_xid
+        if channel_id := getattr(interaction, "channel_id", None):
+            span.set_tag("channel_xid", str(channel_id))
+        if component_id := getattr(interaction, "component_id", None):
+            span.set_tag("component_id", component_id)
+        if data := getattr(interaction, "data", None):
+            span.set_tag("data", data)
+        if guild_id := getattr(interaction, "guild_id", None):
+            span.set_tag("guild_xid", str(guild_id))
 
 
 @skip_if_no_metrics
