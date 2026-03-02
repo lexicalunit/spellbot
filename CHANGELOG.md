@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed whitespace issues in conf files.
+
 ## [v18.2.10](https://github.com/lexicalunit/spellbot/releases/tag/v18.2.10) - 2026-03-02
 
 ### Changed
