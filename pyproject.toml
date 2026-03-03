@@ -1,7 +1,7 @@
 [project]
 authors = [{name = "Amy Troschinetz", email = "spellbot@lexicalunit.com"}]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: End Users/Desktop",
   "Topic :: Communications :: Chat",
   "Topic :: Games/Entertainment :: Board Games",
@@ -20,7 +20,7 @@ dependencies = [
   "click>=8.1.7",
   "datadog>=0.49.1",
   "ddtrace>=3.16.2",
-  "discord-py>=2.3.2",
+  "discord-py>=2.7.1",
   "dunamai>=1.19.2",
   "greenlet>=3.2.2",
   "gunicorn>=21.2.0",
