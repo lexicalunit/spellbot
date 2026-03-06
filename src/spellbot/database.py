@@ -19,6 +19,16 @@ from .settings import settings
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
+    # For type checking, use the generic version from the stubs
+    _CallableObjectProxyBase = CallableObjectProxy
+else:
+    # At runtime, CallableObjectProxy is not subscriptable, so create a wrapper
+    # that allows subscripting but just returns itself
+    class _CallableObjectProxyBase(CallableObjectProxy):
+        def __class_getitem__(cls, item: object) -> type:
+            return cls
+
+
 logger = logging.getLogger(__name__)
 
 context_vars: dict[ContextLocal[Any], ContextVar[Any]] = {}
@@ -46,11 +56,11 @@ class ContextLocal[ProxiedObject]:
         raise NotImplementedError
 
 
-class TypedProxy[ProxiedObject](CallableObjectProxy):
+class TypedProxy[ProxiedObject](_CallableObjectProxyBase[ProxiedObject]):
     __wrapped__: ProxiedObject | None
 
     def __init__(self) -> None:
-        super().__init__(None)
+        super().__init__(None)  # type: ignore[arg-type]  # None is valid for lazy init
 
     @classmethod
     def of_type(cls, _: type[ProxiedObject]) -> TypedProxy[ProxiedObject]:
