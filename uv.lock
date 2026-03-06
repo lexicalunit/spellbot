@@ -412,6 +412,7 @@ dependencies = [
     { name = "opentelemetry-api" },
     { name = "wrapt" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/0f/04/e786bf822d059d3356c950b907957470ab7a4f2f99f000632781349ff26d/ddtrace-4.5.1.tar.gz", hash = "sha256:40a56a1a78371cbb469641f5b1038e77131b808e31a0e761697077de853b38c9", size = 7313312, upload-time = "2026-03-05T18:04:07.879Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b8/64/7fdbe6f771019aa84058acb61947dcdd9a3ecbac920476ac445e32484416/ddtrace-4.5.1-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:58a432105d45aee036c399f8099f07329e6e83bca92c87a104044bb45313e2bf", size = 6910933, upload-time = "2026-03-05T18:02:49.135Z" },
     { url = "https://files.pythonhosted.org/packages/1a/63/fe8d9237423d8f03f17416155615a2baf5c0739f1be8664cb5dfed0c905e/ddtrace-4.5.1-cp313-cp313-macosx_14_0_x86_64.whl", hash = "sha256:f89e2d9f7cedb838d91d364e60162ced6a31845c4b091ae06c33eb4ff951babf", size = 7323642, upload-time = "2026-03-05T18:02:51.451Z" },
@@ -1626,7 +1627,7 @@ wheels = [
 
 [[package]]
 name = "spellbot"
-version = "18.2.12"
+version = "18.2.13"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
