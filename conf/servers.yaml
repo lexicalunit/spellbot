@@ -22,6 +22,10 @@ servers:
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/a2117868-cd86-44a9-8e92-91e5b2d639c2
     url: https://disboard.org/server/757455940009328670
     small: true
+  - name: Women+ In Magic
+    logo: https://github.com/user-attachments/assets/515a4855-e927-4837-a38a-b484a261b79a
+    url: https://linktr.ee/women_in_magic
+    small: true
   - name: Comunidad Española de cEDH
     logo: https://github.com/lexicalunit/spellbot/assets/1903876/823a2ed7-c59a-47da-886c-5f468a3b3032
     url: https://linktr.ee/cedhspain
