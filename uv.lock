@@ -247,11 +247,11 @@ wheels = [
 
 [[package]]
 name = "cachetools"
-version = "7.0.4"
+version = "7.0.5"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a1/cc/eb3fd22f3b96b8b70ce456d0854ef08434e5ca79c02bf8db3fc07ccfca87/cachetools-7.0.4.tar.gz", hash = "sha256:7042c0e4eea87812f04744ce6ee9ed3de457875eb1f82d8a206c46d6e48b6734", size = 37379, upload-time = "2026-03-08T21:37:17.133Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/dd/57fe3fdb6e65b25a5987fd2cdc7e22db0aef508b91634d2e57d22928d41b/cachetools-7.0.5.tar.gz", hash = "sha256:0cd042c24377200c1dcd225f8b7b12b0ca53cc2c961b43757e774ebe190fd990", size = 37367, upload-time = "2026-03-09T20:51:29.451Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/83/bc/72adfb3f2ed19eb0317f89ea9b1eeccc670ae46bc394ec2c4ba1dd8c22b7/cachetools-7.0.4-py3-none-any.whl", hash = "sha256:0c8bb1b9ec8194fa4d764accfde602dfe52f70d0f311e62792d4c3f8c051b1e9", size = 13900, upload-time = "2026-03-08T21:37:15.805Z" },
+    { url = "https://files.pythonhosted.org/packages/06/f3/39cf3367b8107baa44f861dc802cbf16263c945b62d8265d36034fc07bea/cachetools-7.0.5-py3-none-any.whl", hash = "sha256:46bc8ebefbe485407621d0a4264b23c080cedd913921bad7ac3ed2f26c183114", size = 13918, upload-time = "2026-03-09T20:51:27.33Z" },
 ]
 
 [[package]]
@@ -412,6 +412,7 @@ dependencies = [
     { name = "opentelemetry-api" },
     { name = "wrapt" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/cb/21/902b196d08e085b3844e65d2d0b88e3ce91e6e48985883699010fd673686/ddtrace-4.5.2.tar.gz", hash = "sha256:91327e27582a96737082bf59bd63f45a3635e3f24ab998d8058bda626ffdcdf7", size = 7316355, upload-time = "2026-03-09T13:36:16.668Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5c/8b/6946b78ec5feb68686469e4f548e31de942ee7661e9b1519b10d91f67c05/ddtrace-4.5.2-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:c1b6cac609a01527594f7c1ddd27e6d42359a8a0834c3d96d9f628beaede044b", size = 6911058, upload-time = "2026-03-09T13:34:48.68Z" },
     { url = "https://files.pythonhosted.org/packages/71/bf/dda2ca7b9d92c2ac2b1bc8af8c2544de3ca0a19bcf566d19711fbde66862/ddtrace-4.5.2-cp313-cp313-macosx_14_0_x86_64.whl", hash = "sha256:9b3316ed444aeb38de24ca918d369ba7daa3700992b6d1e5531f33b906076048", size = 7323768, upload-time = "2026-03-09T13:34:51.299Z" },
