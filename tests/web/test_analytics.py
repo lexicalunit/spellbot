@@ -128,7 +128,7 @@ class TestWebAnalyticsSummary:
         assert resp.status == 200
         data = await resp.json()
         assert data["total_games"] == 1
-        assert data["unique_players"] == 1
+        assert data["active_players"] == 1
 
     async def test_analytics_summary_invalid_guild(
         self,
@@ -179,3 +179,99 @@ class TestWebAnalyticsSummary:
     ) -> None:
         resp = await client.get("/g/notanumber/analytics/summary?expires=9999999999&sig=bad")
         assert resp.status == 404
+
+
+@pytest.mark.asyncio
+class TestWebAnalyticsEndpoints:
+    """Tests for all analytics JSON endpoints."""
+
+    async def _get_analytics_endpoint(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+        endpoint: str,
+    ) -> dict[str, object]:
+        guild = factories.guild.create(xid=201, name="test-guild")
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        url = generate_signed_url(guild.xid, expires_in_minutes=10)
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        expires = query["expires"][0]
+        sig = query["sig"][0]
+        path = f"/g/{guild.xid}/analytics/{endpoint}?expires={expires}&sig={sig}"
+        resp = await client.get(path)
+        assert resp.status == 200
+        return await resp.json()
+
+    async def test_analytics_wait_time(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self._get_analytics_endpoint(client, factories, mocker, "wait-time")
+        assert "avg_wait_per_day" in data
+
+    async def test_analytics_brackets(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self._get_analytics_endpoint(client, factories, mocker, "brackets")
+        assert "games_by_bracket_per_day" in data
+
+    async def test_analytics_retention(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self._get_analytics_endpoint(client, factories, mocker, "retention")
+        assert "player_retention" in data
+
+    async def test_analytics_growth(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self._get_analytics_endpoint(client, factories, mocker, "growth")
+        assert "cumulative_players" in data
+
+    async def test_analytics_formats(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self._get_analytics_endpoint(client, factories, mocker, "formats")
+        assert "popular_formats" in data
+
+    async def test_analytics_services(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self._get_analytics_endpoint(client, factories, mocker, "services")
+        assert "popular_services" in data
+
+    async def test_analytics_players(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self._get_analytics_endpoint(client, factories, mocker, "players")
+        assert "top_players" in data
+
+    async def test_analytics_blocked(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self._get_analytics_endpoint(client, factories, mocker, "blocked")
+        assert "top_blocked" in data

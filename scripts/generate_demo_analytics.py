@@ -86,8 +86,7 @@ def generate_endpoint_data(period: str) -> dict[str, Any]:
     total_games = sum(d["count"] for d in games_per_day)
     total_expired = sum(d["count"] for d in expired_per_day)
     fill_rate = round(100 * total_games / (total_games + total_expired), 1)
-    unique_players = random.randint(2000, 5000) if period == "30d" else random.randint(15000, 25000)
-    monthly_active_users = random.randint(400, 800)
+    active_players = random.randint(400, 800) if period == "30d" else random.randint(2000, 5000)
     repeat_player_rate = round(random.uniform(45, 75), 1)
 
     # Wait time
@@ -187,8 +186,7 @@ def generate_endpoint_data(period: str) -> dict[str, Any]:
         "summary": {
             "total_games": total_games,
             "fill_rate": fill_rate,
-            "unique_players": unique_players,
-            "monthly_active_users": monthly_active_users,
+            "active_players": active_players,
             "repeat_player_rate": repeat_player_rate,
         },
         "activity": {

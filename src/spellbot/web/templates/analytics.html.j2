@@ -121,8 +121,7 @@
         <div id="summarySection" class="summary">
             <div class="stat"><div id="statFillRate" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Game Fill Rate</div></div>
             <div class="stat"><div id="statTotalGames" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Total Games</div></div>
-            <div class="stat"><div id="statUniquePlayers" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Unique Players</div></div>
-            <div class="stat"><div id="statMAU" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Monthly Active Users</div></div>
+            <div class="stat"><div id="statActivePlayers" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Active Players</div></div>
             <div class="stat"><div id="statRepeatRate" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Repeat Player Rate</div></div>
         </div>
 
@@ -360,6 +359,7 @@
     /* ── Global period state and caching ── */
     let currentPeriod = "30d";
     const dataCache = { "30d": {}, "all": {} };
+    const pendingRequests = { "30d": new Set(), "all": new Set() };
 
     function periodLabel() {
         return currentPeriod === "all" ? "All Time" : "Last 30 Days";
@@ -383,7 +383,7 @@
     function showLoading(sectionId) {
         if (sectionId === "summarySection") {
             // For summary, show spinners in each stat-value
-            ["statFillRate", "statTotalGames", "statUniquePlayers", "statMAU", "statRepeatRate"].forEach(id => {
+            ["statFillRate", "statTotalGames", "statActivePlayers", "statRepeatRate"].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = '<div class="section-spinner"></div>';
             });
@@ -393,7 +393,7 @@
     }
 
     function showSummaryError() {
-        ["statFillRate", "statTotalGames", "statUniquePlayers", "statMAU", "statRepeatRate"].forEach(id => {
+        ["statFillRate", "statTotalGames", "statActivePlayers", "statRepeatRate"].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = '<span style="color:#f87171;font-size:0.8rem">Error</span>';
         });
@@ -412,8 +412,7 @@
     function renderSummary(data) {
         document.getElementById("statFillRate").textContent = data.fill_rate + "%";
         document.getElementById("statTotalGames").textContent = fmt(data.total_games);
-        document.getElementById("statUniquePlayers").textContent = fmt(data.unique_players);
-        document.getElementById("statMAU").textContent = fmt(data.monthly_active_users);
+        document.getElementById("statActivePlayers").textContent = fmt(data.active_players);
         document.getElementById("statRepeatRate").textContent = data.repeat_player_rate + "%";
     }
 
@@ -550,26 +549,40 @@
     ];
 
     function fetchEndpoint({ name, sectionId, render }) {
-        const cache = dataCache[currentPeriod];
+        const requestPeriod = currentPeriod;  // Capture period at request time
+        const cache = dataCache[requestPeriod];
         // If cached, render immediately
         if (cache[name]) {
             render(cache[name]);
             return;
         }
+        // Skip if a request for this endpoint+period is already in-flight
+        if (pendingRequests[requestPeriod].has(name)) {
+            return;
+        }
         // Otherwise fetch
         showLoading(sectionId);
-        const periodParam = "&period=" + currentPeriod;
+        pendingRequests[requestPeriod].add(name);
+        const periodParam = "&period=" + requestPeriod;
         fetch(BASE_URL + "/" + name + QUERY + periodParam)
             .then(r => { if (!r.ok) throw new Error("Failed"); return r.json(); })
             .then(data => {
-                dataCache[currentPeriod][name] = data;
-                render(data);
+                pendingRequests[requestPeriod].delete(name);
+                dataCache[requestPeriod][name] = data;
+                // Only render if we're still on the same period
+                if (currentPeriod === requestPeriod) {
+                    render(data);
+                }
             })
             .catch(() => {
-                if (sectionId === "summarySection") {
-                    showSummaryError();
-                } else {
-                    showError(sectionId, "Failed to load");
+                pendingRequests[requestPeriod].delete(name);
+                // Only show error if we're still on the same period
+                if (currentPeriod === requestPeriod) {
+                    if (sectionId === "summarySection") {
+                        showSummaryError();
+                    } else {
+                        showError(sectionId, "Failed to load");
+                    }
                 }
             });
     }
