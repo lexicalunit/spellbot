@@ -34,7 +34,7 @@ class MockClient:  # pragma: no cover
         self.channels = channels or []
         self.guilds = guilds or []
         self.users = users or []
-        self.categoies = categories or []
+        self.categories = categories or []
 
     def __get_user(self, xid: int) -> discord.User | None:
         for user in self.users:
@@ -202,13 +202,15 @@ def build_interaction(
 ) -> discord.Interaction:
     stub = AsyncMock(spec=discord.Interaction)
     stub.response = AsyncMock()
+    message = build_message(guild, channel, author)
     stub.followup = AsyncMock()
+    stub.followup.send = AsyncMock(return_value=message)
     stub.guild = guild
     stub.guild_id = guild.id
     stub.channel = channel
     stub.channel_id = channel.id
     stub.user = author
-    stub.original_response = AsyncMock(return_value=build_message(guild, channel, author))
+    stub.original_response = AsyncMock(return_value=message)
     return stub
 
 

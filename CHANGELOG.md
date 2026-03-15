@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Adds logo for Women+ In Magic.
 
+### Fixed
+
+- Fixed a bug in safe_followup_channel the bot could lose track of messages due to a 503 error,
+  thanks to @todolist411 for the bug report!
+
+### Changed
+
+- Updated dependencies.
+
 ## [v18.2.13](https://github.com/lexicalunit/spellbot/releases/tag/v18.2.13) - 2026-03-06
 
 ### Changed

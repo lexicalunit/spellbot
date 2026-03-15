@@ -399,10 +399,14 @@ class TestOperationsFollowupChannel:
         interaction.guild = guild
         interaction.guild_id = guild.id
 
-        await safe_followup_channel(interaction, "content")
+        message = MagicMock(spec=discord.Message)
+        interaction.followup.send.return_value = message
 
-        interaction.followup.send.assert_called_once_with("content")
-        interaction.original_response.assert_called_once_with()
+        result = await safe_followup_channel(interaction, "content")
+
+        interaction.followup.send.assert_called_once_with("content", wait=True)
+        interaction.original_response.assert_not_called()
+        assert result is message
 
     async def test_remove_view(self) -> None:
         guild = MagicMock(spec=discord.Guild)
@@ -419,10 +423,14 @@ class TestOperationsFollowupChannel:
         interaction.guild = guild
         interaction.guild_id = guild.id
 
-        await safe_followup_channel(interaction, "content", view=None)
+        message = MagicMock(spec=discord.Message)
+        interaction.followup.send.return_value = message
 
-        interaction.followup.send.assert_called_once_with("content", view=MISSING)
-        interaction.original_response.assert_called_once_with()
+        result = await safe_followup_channel(interaction, "content", view=None)
+
+        interaction.followup.send.assert_called_once_with("content", view=MISSING, wait=True)
+        interaction.original_response.assert_not_called()
+        assert result is message
 
 
 @pytest.mark.asyncio
