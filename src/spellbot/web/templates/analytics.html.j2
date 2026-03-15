@@ -17,16 +17,20 @@
         }
         a, a:visited, a:active { color: rgba(246, 173, 75); text-decoration: none; }
         a:hover { filter: brightness(150%); }
-        .container { max-width: 960px; margin: 0 auto; display: none; }
-        .container.loaded { display: block; }
+        .container { max-width: 960px; margin: 0 auto; }
         .header {
             display: flex; align-items: center; gap: 1rem;
             margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #333;
         }
         .header img { width: 64px; height: 64px; border-radius: 50%; }
-        .header h1 { font-size: 1.75rem; font-weight: 600; }
+        .header h1 { font-size: 1.75rem; font-weight: 600; flex: 1; }
+        .sticky-controls {
+            position: sticky; top: 0; background: #1a1a2e; z-index: 100;
+            display: flex; align-items: center; gap: 1rem;
+            padding: 0.75rem 0; margin: -0.5rem 0 1rem 0;
+        }
         .expires {
-            margin-left: auto; font-size: 0.8rem; color: #9ca3af;
+            font-size: 0.8rem; color: #9ca3af;
             background: #252545; border-radius: 8px; padding: 0.4rem 0.75rem;
         }
         .expires span { color: #f59e0b; font-weight: 600; }
@@ -36,7 +40,7 @@
         }
         .stat {
             background: #252545; border-radius: 12px; padding: 1.25rem;
-            text-align: center;
+            text-align: center; position: relative; min-height: 80px;
         }
         .stat-value { font-size: 1.75rem; font-weight: 700; color: #818cf8; }
         .stat-label { font-size: 0.8rem; color: #9ca3af; margin-top: 0.25rem; }
@@ -51,9 +55,16 @@
         .toggle-btn.active { background: #818cf8; color: #fff; }
         .chart-box {
             background: #252545; border-radius: 12px; padding: 1.25rem;
-            position: relative; width: 100%; min-width: 0; height: 450px;
+            position: relative; width: 100%; min-width: 0; min-height: 450px;
         }
         .chart-box canvas { display: block; width: 100% !important; height: 100% !important; }
+        .zoom-hint {
+            position: absolute; top: 0.5rem; right: 0.5rem;
+            background: rgba(129,140,248,0.9); color: #fff; font-size: 0.75rem;
+            padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer;
+            opacity: 0.9; transition: opacity 0.2s;
+        }
+        .zoom-hint:hover { opacity: 1; background: #818cf8; }
         .chart-view { display: none; width: 100%; height: 100%; }
         .chart-view.visible { display: flex; align-items: center; justify-content: center; }
         table { width: 100%; border-collapse: collapse; background: #252545; border-radius: 8px; overflow: hidden; }
@@ -69,117 +80,127 @@
         .no-data { text-align: center; padding: 2rem; background: #252545; border-radius: 12px; color: #9ca3af; }
         .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
         @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
-        /* Loading overlay */
-        .loading-overlay {
-            position: fixed; inset: 0; z-index: 9999;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        /* Section loading spinner */
+        .section-loading {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 1.25rem; transition: opacity 0.3s ease;
+            height: 100%; gap: 0.75rem;
         }
-        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-        .spinner {
-            width: 48px; height: 48px;
-            border: 4px solid rgba(129,140,248,0.2);
+        .section-spinner {
+            width: 32px; height: 32px;
+            border: 3px solid rgba(129,140,248,0.2);
             border-top-color: #818cf8;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
+        .section-loading-text { color: #9ca3af; font-size: 0.8rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { color: #9ca3af; font-size: 0.9rem; }
         .error-box { background: #3b1f1f; border: 1px solid #7f1d1d; border-radius: 12px; padding: 2rem; text-align: center; }
         .error-box h2 { color: #fca5a5; margin-bottom: 0.5rem; }
+        .section-error { color: #fca5a5; text-align: center; padding: 1rem; }
     </style>
 </head>
 <body>
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="spinner"></div>
-        <div class="loading-text">Loading analytics…</div>
-    </div>
+    <!-- Screen reader text for loading state -->
+    <span class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0">Loading analytics...</span>
     <div id="mainContainer" class="container">
         <div class="header">
             <a href="https://spellbot.io/">
                 <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
             </a>
             <h1>{{ guild_name }} – Analytics</h1>
+        </div>
+
+        <div class="sticky-controls">
+            <div class="toggle-group" id="globalPeriodToggle">
+                <button class="toggle-btn active" data-period="30d" onclick="switchPeriod('30d')">Last 30 Days</button>
+                <button class="toggle-btn" data-period="all" onclick="switchPeriod('all')">All Time</button>
+            </div>
             <div class="expires">Expires in <span id="countdown"></span></div>
         </div>
 
-        <div class="summary">
-            <div class="stat"><div id="statFillRate" class="stat-value">—</div><div class="stat-label">Game Fill Rate</div></div>
-            <div class="stat"><div id="statTotalGames" class="stat-value">—</div><div class="stat-label">Total Games</div></div>
-            <div class="stat"><div id="statUniquePlayers" class="stat-value">—</div><div class="stat-label">Unique Players</div></div>
-            <div class="stat"><div id="statMAU" class="stat-value">—</div><div class="stat-label">Monthly Active Users</div></div>
-            <div class="stat"><div id="statRepeatRate" class="stat-value">—</div><div class="stat-label">Repeat Player Rate</div></div>
+        <div id="summarySection" class="summary">
+            <div class="stat"><div id="statFillRate" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Game Fill Rate</div></div>
+            <div class="stat"><div id="statTotalGames" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Total Games</div></div>
+            <div class="stat"><div id="statUniquePlayers" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Unique Players</div></div>
+            <div class="stat"><div id="statMAU" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Monthly Active Users</div></div>
+            <div class="stat"><div id="statRepeatRate" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Repeat Player Rate</div></div>
         </div>
 
         <div class="section">
-            <h2>Game Activity (Last 30 Days)</h2>
-            <div class="chart-box">
-                <canvas id="chartDaily"></canvas>
-                <div id="activityNoData" class="no-data" style="display:none">No data yet.</div>
+            <h2 id="activityTitle">Game Activity</h2>
+            <div id="activitySection" class="chart-box">
+                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
             </div>
         </div>
 
         <div class="section">
-            <h2>Games by Bracket (Last 30 Days)</h2>
-            <div class="chart-box"><canvas id="chartBrackets"></canvas></div>
+            <h2 id="bracketsTitle">Games by Bracket</h2>
+            <div id="bracketsSection" class="chart-box">
+                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
+            </div>
         </div>
 
         <div class="section">
-            <h2>Average Wait Time (Last 30 Days)</h2>
-            <div id="waitTimeSection" class="chart-box"><canvas id="chartWaitTime"></canvas></div>
+            <h2 id="waitTimeTitle">Average Wait Time</h2>
+            <div id="waitTimeSection" class="chart-box">
+                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
+            </div>
         </div>
 
         <div class="section">
-            <h2>Player Retention (Last 12 Weeks)</h2>
-            <div id="retentionSection" class="chart-box"><canvas id="chartRetention"></canvas></div>
+            <h2 id="retentionTitle">Player Retention</h2>
+            <div id="retentionSection" class="chart-box">
+                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
+            </div>
         </div>
 
         <div class="section">
-            <h2>Cumulative Player Growth (All Time)</h2>
-            <div id="growthSection" class="chart-box"><canvas id="chartGrowth"></canvas></div>
+            <h2 id="growthTitle">Cumulative Player Growth</h2>
+            <div id="growthSection" class="chart-box">
+                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
+            </div>
         </div>
 
         <div class="section">
             <h2 id="histogramTitle">Games per Player</h2>
-            <div id="histogramSection" class="chart-box"><canvas id="chartHistogram"></canvas></div>
-        </div>
-
-        <div class="row">
-            <div class="section">
-                <h2>Popular Formats (All Time)</h2>
-                <div id="formatsSection" class="chart-box"><canvas id="chartFormats"></canvas></div>
-            </div>
-            <div class="section">
-                <h2>Busiest Channels (All Time)</h2>
-                <div id="channelsSection" class="chart-box"><canvas id="chartChannels"></canvas></div>
+            <div id="histogramSection" class="chart-box">
+                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
             </div>
         </div>
 
         <div class="row">
             <div class="section">
-                <div class="section-head">
-                    <h2>Popular Services</h2>
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-view="services-all" onclick="toggleServices('all')">All Time</button>
-                        <button class="toggle-btn" data-view="services-30d" onclick="toggleServices('30d')">Last 30 Days</button>
-                    </div>
+                <h2 id="formatsTitle">Popular Formats</h2>
+                <div id="formatsSection" class="chart-box">
+                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
                 </div>
+            </div>
+            <div class="section">
+                <h2 id="channelsTitle">Busiest Channels</h2>
+                <div id="channelsSection" class="chart-box">
+                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="section">
+                <h2 id="servicesTitle">Popular Services</h2>
                 <div id="servicesSection" class="chart-box">
-                    <div id="viewServicesAll" class="chart-view visible"><canvas id="chartServices"></canvas></div>
-                    <div id="viewServices30d" class="chart-view"><canvas id="chartServices30d"></canvas></div>
+                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
                 </div>
             </div>
             <div class="section">
-                <div class="section-head">
-                    <h2>Top Players</h2>
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-view="players-all" onclick="togglePlayers('all')">All Time</button>
-                        <button class="toggle-btn" data-view="players-30d" onclick="togglePlayers('30d')">Last 30 Days</button>
-                    </div>
+                <h2 id="playersTitle">Top Players</h2>
+                <div id="playersSection" class="chart-box">
+                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
                 </div>
-                <div id="viewPlayersAll" class="chart-view visible"></div>
-                <div id="viewPlayers30d" class="chart-view"></div>
+            </div>
+            <div class="section">
+                <h2 id="blockedTitle">Most Blocked Players</h2>
+                <div id="blockedSection" class="chart-box">
+                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
+                </div>
             </div>
         </div>
 
@@ -190,9 +211,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
     <script>
     /* ── Config from server ── */
-    const DATA_URL = "/g/{{ guild_xid }}/analytics/data?expires={{ expires }}&sig={{ sig }}";
+    const BASE_URL = "/g/{{ guild_xid }}/analytics";
+    const QUERY = "?expires={{ expires }}&sig={{ sig }}";
     const EXPIRES = {{ expires }};
 
     /* ── Countdown timer ── */
@@ -215,13 +239,49 @@
     Chart.defaults.color = TICK;
     Chart.defaults.borderColor = GRID;
 
-    function lineOpts(xLabel) {
+    const zoomOpts = {
+        zoom: {
+            drag: { enabled: true, backgroundColor: "rgba(129,140,248,0.2)", borderColor: "#818cf8", borderWidth: 1 },
+            mode: "x",
+            onZoomComplete: function({ chart }) {
+                // Show reset hint
+                const section = chart.canvas.closest(".chart-box");
+                if (section && !section.querySelector(".zoom-hint")) {
+                    const hint = document.createElement("div");
+                    hint.className = "zoom-hint";
+                    hint.textContent = "Double-click to reset";
+                    hint.onclick = function() { resetChartZoom(chart); };
+                    section.appendChild(hint);
+                }
+            }
+        }
+    };
+
+    function resetChartZoom(chart) {
+        chart.resetZoom();
+        const section = chart.canvas.closest(".chart-box");
+        const hint = section?.querySelector(".zoom-hint");
+        if (hint) hint.remove();
+    }
+
+    function setupZoomableChart(chart) {
+        chart.canvas.addEventListener("dblclick", function() { resetChartZoom(chart); });
+        return chart;
+    }
+
+    function lineOpts(xLabel, rawDates) {
+        const xTicks = rawDates
+            ? { color: TICK, maxRotation: 45, ...smartDateTicks(rawDates) }
+            : { color: TICK, maxRotation: 45 };
         return {
             responsive: true, maintainAspectRatio: false,
             interaction: { mode: "index", intersect: false },
-            plugins: { legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } } },
+            plugins: {
+                legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } },
+                zoom: zoomOpts
+            },
             scales: {
-                x: { grid: { color: GRID }, ticks: { color: TICK, maxRotation: 45 }, title: { display: !!xLabel, text: xLabel || "", color: TICK } },
+                x: { grid: { color: GRID }, ticks: xTicks, title: { display: !!xLabel, text: xLabel || "", color: TICK } },
                 y: { grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true },
             },
         };
@@ -236,6 +296,16 @@
             },
         };
     }
+    function stackedOptsWithDates(rawDates) {
+        const xTicks = rawDates
+            ? { color: TICK, maxRotation: 45, ...smartDateTicks(rawDates) }
+            : { color: TICK, maxRotation: 45 };
+        return {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } }, zoom: zoomOpts },
+            scales: { x: { stacked: true, grid: { color: GRID }, ticks: xTicks }, y: { stacked: true, grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true } }
+        };
+    }
 
     /* ── Timezone helpers ── */
     const dateFmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
@@ -246,61 +316,136 @@
     function toDayMap(arr) { const m = {}; arr.forEach(d => m[d.day] = d.count); return m; }
     function fmt(n) { return n.toLocaleString(); }
 
-    /* ── Toggle functions ── */
-    let dailyChart, services30dChart;
-
-    function toggleServices(view) {
-        document.querySelectorAll("[data-view^='services-']").forEach(b => b.classList.toggle("active", b.dataset.view === "services-" + view));
-        document.getElementById("viewServicesAll").classList.toggle("visible", view === "all");
-        document.getElementById("viewServices30d").classList.toggle("visible", view === "30d");
-        if (view === "30d" && !services30dChart && storedServices30d?.length) {
-            services30dChart = new Chart(document.getElementById("chartServices30d"), { type: "doughnut", data: { labels: storedServices30d.map(d => d.service), datasets: [{ data: storedServices30d.map(d => d.count), backgroundColor: svcColors }] }, options: svcDoughnutOpts });
-        }
+    /* Smart date formatting based on visible range */
+    function smartDateTicks(rawDates) {
+        return {
+            callback: function(value, index) {
+                const chart = this.chart;
+                const min = chart.scales.x.min;
+                const max = chart.scales.x.max;
+                const visibleCount = max - min + 1;
+                const iso = rawDates[index];
+                if (!iso) return "";
+                // Use day/month if showing <= 60 data points, otherwise month/year
+                return visibleCount <= 60 ? fmtDay(iso) : fmtMonthYear(iso);
+            }
+        };
     }
-    function togglePlayers(view) {
-        document.querySelectorAll("[data-view^='players-']").forEach(b => b.classList.toggle("active", b.dataset.view === "players-" + view));
-        document.getElementById("viewPlayersAll").classList.toggle("visible", view === "all");
-        document.getElementById("viewPlayers30d").classList.toggle("visible", view === "30d");
+
+    /* ── Helpers for section state ── */
+    function showError(sectionId, msg) {
+        document.getElementById(sectionId).innerHTML = '<div class="section-error">' + msg + '</div>';
+    }
+    function showNoData(sectionId) {
+        document.getElementById(sectionId).innerHTML = '<div class="no-data">No data yet.</div>';
+    }
+    function clearSection(sectionId) {
+        document.getElementById(sectionId).innerHTML = '';
+    }
+    function addCanvas(sectionId, canvasId) {
+        const el = document.getElementById(sectionId);
+        el.innerHTML = '<canvas id="' + canvasId + '"></canvas>';
+        return document.getElementById(canvasId);
     }
 
-    /* ── Render all charts from data ── */
+    /* ── Chart style constants ── */
     const svcColors = ["#818cf8","#a78bfa","#c084fc","#e879f9","#f472b6","#fb7185","#f97316","#facc15","#4ade80","#22d3ee"];
     const svcDoughnutOpts = { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: true, position: "right", labels: { color: "#e0e0e0", boxWidth: 12 } } } };
-    const stackedOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } } }, scales: { x: { stacked: true, grid: { color: GRID }, ticks: { color: TICK, maxRotation: 45 } }, y: { stacked: true, grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true } } };
-    let storedServices30d = null;
+    const stackedOpts = {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } }, zoom: zoomOpts },
+        scales: { x: { stacked: true, grid: { color: GRID }, ticks: { color: TICK, maxRotation: 45 } }, y: { stacked: true, grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true } }
+    };
 
-    function renderCharts(data) {
-        /* Summary stats */
+    /* ── Global period state and caching ── */
+    let currentPeriod = "30d";
+    const dataCache = { "30d": {}, "all": {} };
+
+    function periodLabel() {
+        return currentPeriod === "all" ? "All Time" : "Last 30 Days";
+    }
+
+    function updateTitles() {
+        const label = periodLabel();
+        const weeksLabel = currentPeriod === "all" ? "All Time" : "Last 12 Weeks";
+        document.getElementById("activityTitle").textContent = "Game Activity (" + label + ")";
+        document.getElementById("bracketsTitle").textContent = "Games by Bracket (" + label + ")";
+        document.getElementById("waitTimeTitle").textContent = "Average Wait Time (" + label + ")";
+        document.getElementById("retentionTitle").textContent = "Player Retention (" + weeksLabel + ")";
+        document.getElementById("growthTitle").textContent = "Cumulative Player Growth (" + label + ")";
+        document.getElementById("formatsTitle").textContent = "Popular Formats (" + label + ")";
+        document.getElementById("channelsTitle").textContent = "Busiest Channels (" + label + ")";
+        document.getElementById("servicesTitle").textContent = "Popular Services (" + label + ")";
+        document.getElementById("playersTitle").textContent = "Top Players (" + label + ")";
+        document.getElementById("blockedTitle").textContent = "Most Blocked Players (" + label + ")";
+    }
+
+    function showLoading(sectionId) {
+        if (sectionId === "summarySection") {
+            // For summary, show spinners in each stat-value
+            ["statFillRate", "statTotalGames", "statUniquePlayers", "statMAU", "statRepeatRate"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<div class="section-spinner"></div>';
+            });
+        } else {
+            document.getElementById(sectionId).innerHTML = '<div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>';
+        }
+    }
+
+    function showSummaryError() {
+        ["statFillRate", "statTotalGames", "statUniquePlayers", "statMAU", "statRepeatRate"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = '<span style="color:#f87171;font-size:0.8rem">Error</span>';
+        });
+    }
+
+    function switchPeriod(period) {
+        if (period === currentPeriod) return;
+        currentPeriod = period;
+        document.querySelectorAll("#globalPeriodToggle .toggle-btn").forEach(b => b.classList.toggle("active", b.dataset.period === period));
+        updateTitles();
+        refreshAll();
+    }
+
+    /* ── Individual render functions ── */
+
+    function renderSummary(data) {
         document.getElementById("statFillRate").textContent = data.fill_rate + "%";
         document.getElementById("statTotalGames").textContent = fmt(data.total_games);
         document.getElementById("statUniquePlayers").textContent = fmt(data.unique_players);
         document.getElementById("statMAU").textContent = fmt(data.monthly_active_users);
         document.getElementById("statRepeatRate").textContent = data.repeat_player_rate + "%";
+    }
 
-        /* Daily activity */
+    function renderActivity(data) {
         const gamesPerDay = data.games_per_day || [];
         const expiredPerDay = data.expired_per_day || [];
         const dailyNewUsers = data.daily_new_users || [];
         const allDays = [...new Set([...gamesPerDay.map(d=>d.day), ...expiredPerDay.map(d=>d.day), ...dailyNewUsers.map(d=>d.day)])].sort();
         if (allDays.length) {
             const gMap = toDayMap(gamesPerDay), eMap = toDayMap(expiredPerDay), nMap = toDayMap(dailyNewUsers);
-            dailyChart = new Chart(document.getElementById("chartDaily"), {
-                type: "line", data: { labels: allDays.map(fmtDay), datasets: [
+            const canvas = addCanvas("activitySection", "chartDaily");
+            setupZoomableChart(new Chart(canvas, {
+                type: "line", data: { labels: allDays, datasets: [
                     { label: "Games Started", data: allDays.map(d => gMap[d] || 0), borderColor: "#818cf8", backgroundColor: "rgba(129,140,248,0.1)", fill: true, tension: 0.3 },
                     { label: "Games Expired", data: allDays.map(d => eMap[d] || 0), borderColor: "#f472b6", backgroundColor: "rgba(244,114,182,0.1)", fill: true, tension: 0.3 },
                     { label: "New Users", data: allDays.map(d => nMap[d] || 0), borderColor: "#4ade80", backgroundColor: "rgba(74,222,128,0.1)", fill: true, tension: 0.3 },
-                ]}, options: lineOpts("Date"),
-            });
+                ]}, options: lineOpts("Date", allDays),
+            }));
         } else {
-            document.getElementById("activityNoData").style.display = "";
+            showNoData("activitySection");
         }
+    }
 
-        /* Wait time */
+    function renderWaitTime(data) {
         if (data.avg_wait_per_day && data.avg_wait_per_day.length) {
-            new Chart(document.getElementById("chartWaitTime"), { type: "line", data: { labels: data.avg_wait_per_day.map(d => fmtDay(d.day)), datasets: [{ label: "Avg Wait (minutes)", data: data.avg_wait_per_day.map(d => d.minutes), borderColor: "#fbbf24", backgroundColor: "rgba(251,191,36,0.1)", fill: true, tension: 0.3 }] }, options: lineOpts("Date") });
-        } else { document.getElementById("waitTimeSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+            const days = data.avg_wait_per_day.map(d => d.day);
+            const canvas = addCanvas("waitTimeSection", "chartWaitTime");
+            setupZoomableChart(new Chart(canvas, { type: "line", data: { labels: days, datasets: [{ label: "Avg Wait (minutes)", data: data.avg_wait_per_day.map(d => d.minutes), borderColor: "#fbbf24", backgroundColor: "rgba(251,191,36,0.1)", fill: true, tension: 0.3 }] }, options: lineOpts("Date", days) }));
+        } else { showNoData("waitTimeSection"); }
+    }
 
-        /* Brackets */
+    function renderBrackets(data) {
         const bracketData = data.games_by_bracket_per_day || [];
         if (bracketData.length) {
             const bracketDays = [...new Set(bracketData.map(d => d.day))].sort();
@@ -308,52 +453,69 @@
             const bracketOrder = ["None", "Bracket 1: Exhibition", "Bracket 2: Core", "Bracket 3: Upgraded", "Bracket 4: Optimized", "Bracket 5: Competitive"];
             const brackets = bracketOrder.filter(b => bracketData.some(d => d.bracket === b));
             const bracketMap = {}; bracketData.forEach(d => { bracketMap[d.day + "|" + d.bracket] = d.count; });
-            new Chart(document.getElementById("chartBrackets"), { type: "bar", data: { labels: bracketDays.map(fmtDay), datasets: brackets.map(b => ({ label: b === "None" ? "No Bracket" : b, data: bracketDays.map(d => bracketMap[d + "|" + b] || 0), backgroundColor: bracketColorMap[b] || "#6b7280", borderRadius: 2 })) }, options: stackedOpts });
-        }
+            const canvas = addCanvas("bracketsSection", "chartBrackets");
+            setupZoomableChart(new Chart(canvas, { type: "bar", data: { labels: bracketDays, datasets: brackets.map(b => ({ label: b === "None" ? "No Bracket" : b, data: bracketDays.map(d => bracketMap[d + "|" + b] || 0), backgroundColor: bracketColorMap[b] || "#6b7280", borderRadius: 2 })) }, options: stackedOptsWithDates(bracketDays) }));
+        } else { showNoData("bracketsSection"); }
+    }
 
-        /* Retention */
+    function renderRetention(data) {
         if (data.player_retention && data.player_retention.length) {
-            new Chart(document.getElementById("chartRetention"), { type: "bar", data: { labels: data.player_retention.map(d => fmtDay(d.week)), datasets: [{ label: "Returning Players", data: data.player_retention.map(d => d.returning), backgroundColor: "#3b82f6", borderRadius: 2 }, { label: "New Players", data: data.player_retention.map(d => d.new), backgroundColor: "#22c55e", borderRadius: 2 }] }, options: stackedOpts });
-        } else { document.getElementById("retentionSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+            const weeks = data.player_retention.map(d => d.week);
+            const canvas = addCanvas("retentionSection", "chartRetention");
+            setupZoomableChart(new Chart(canvas, { type: "bar", data: { labels: weeks, datasets: [{ label: "Returning Players", data: data.player_retention.map(d => d.returning), backgroundColor: "#3b82f6", borderRadius: 2 }, { label: "New Players", data: data.player_retention.map(d => d.new), backgroundColor: "#22c55e", borderRadius: 2 }] }, options: stackedOptsWithDates(weeks) }));
+        } else { showNoData("retentionSection"); }
+    }
 
-        /* Cumulative growth */
+    function renderGrowth(data) {
         if (data.cumulative_players && data.cumulative_players.length) {
-            new Chart(document.getElementById("chartGrowth"), { type: "line", data: { labels: data.cumulative_players.map(d => fmtMonthYear(d.day)), datasets: [{ label: "Total Unique Players", data: data.cumulative_players.map(d => d.total), borderColor: "#8b5cf6", backgroundColor: "rgba(139,92,246,0.1)", fill: true, tension: 0.3, pointRadius: 0 }] }, options: lineOpts("") });
-        } else { document.getElementById("growthSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+            const days = data.cumulative_players.map(d => d.day);
+            const canvas = addCanvas("growthSection", "chartGrowth");
+            setupZoomableChart(new Chart(canvas, { type: "line", data: { labels: days, datasets: [{ label: "Total Unique Players", data: data.cumulative_players.map(d => d.total), borderColor: "#8b5cf6", backgroundColor: "rgba(139,92,246,0.1)", fill: true, tension: 0.3, pointRadius: 0 }] }, options: lineOpts("", days) }));
+        } else { showNoData("growthSection"); }
+    }
 
-        /* Histogram */
+    function renderHistogram(data) {
         document.getElementById("histogramTitle").textContent = "Games per Player (Median: " + data.median_games + ")";
         if (data.games_histogram && data.games_histogram.length) {
             const medianVal = data.median_games;
-            new Chart(document.getElementById("chartHistogram"), { type: "bar", data: { labels: data.games_histogram.map(d => d.bucket), datasets: [{ label: "Players", data: data.games_histogram.map(d => d.players), backgroundColor: data.games_histogram.map(d => { const b = parseFloat(d.bucket); return (!isNaN(b) && b === Math.ceil(medianVal)) ? "#f59e0b" : "#60a5fa"; }), borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: "x", plugins: { legend: { display: false }, annotation: { annotations: { medianLine: { type: "line", xMin: medianVal - 1, xMax: medianVal - 1, borderColor: "#f59e0b", borderWidth: 2, borderDash: [6, 3], label: { display: true, content: "Median: " + medianVal, position: "start", color: "#fbbf24", backgroundColor: "rgba(0,0,0,0.6)" } } } } }, scales: { x: { grid: { color: GRID }, ticks: { color: TICK }, title: { display: true, text: "Games Played", color: TICK } }, y: { grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true, title: { display: true, text: "Players", color: TICK } } } } });
-        } else { document.getElementById("histogramSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+            const canvas = addCanvas("histogramSection", "chartHistogram");
+            new Chart(canvas, { type: "bar", data: { labels: data.games_histogram.map(d => d.bucket), datasets: [{ label: "Players", data: data.games_histogram.map(d => d.players), backgroundColor: data.games_histogram.map(d => { const b = parseFloat(d.bucket); return (!isNaN(b) && b === Math.ceil(medianVal)) ? "#f59e0b" : "#60a5fa"; }), borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: "x", plugins: { legend: { display: false }, annotation: { annotations: { medianLine: { type: "line", xMin: medianVal - 1, xMax: medianVal - 1, borderColor: "#f59e0b", borderWidth: 2, borderDash: [6, 3], label: { display: true, content: "Median: " + medianVal, position: "start", color: "#fbbf24", backgroundColor: "rgba(0,0,0,0.6)" } } } } }, scales: { x: { grid: { color: GRID }, ticks: { color: TICK }, title: { display: true, text: "Games Played", color: TICK } }, y: { grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true, title: { display: true, text: "Players", color: TICK } } } } });
+        } else { showNoData("histogramSection"); }
+    }
 
-        /* Formats */
+    function renderFormats(data) {
         if (data.popular_formats && data.popular_formats.length) {
-            new Chart(document.getElementById("chartFormats"), { type: "bar", data: { labels: data.popular_formats.map(d => d.format), datasets: [{ label: "Games", data: data.popular_formats.map(d => d.count), backgroundColor: "#a78bfa", borderRadius: 3 }] }, options: barOpts("y") });
-        } else { document.getElementById("formatsSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+            const canvas = addCanvas("formatsSection", "chartFormats");
+            new Chart(canvas, { type: "bar", data: { labels: data.popular_formats.map(d => d.format), datasets: [{ label: "Games", data: data.popular_formats.map(d => d.count), backgroundColor: "#a78bfa", borderRadius: 3 }] }, options: barOpts("y") });
+        } else { showNoData("formatsSection"); }
+    }
 
-        /* Channels */
+    function renderChannels(data) {
         if (data.busiest_channels && data.busiest_channels.length) {
-            new Chart(document.getElementById("chartChannels"), { type: "bar", data: { labels: data.busiest_channels.map(d => d.name), datasets: [{ label: "Games", data: data.busiest_channels.map(d => d.count), backgroundColor: "#67e8f9", borderRadius: 3 }] }, options: barOpts("y") });
-        } else { document.getElementById("channelsSection").innerHTML = '<div class="no-data">No data yet.</div>'; }
+            const canvas = addCanvas("channelsSection", "chartChannels");
+            new Chart(canvas, { type: "bar", data: { labels: data.busiest_channels.map(d => d.name), datasets: [{ label: "Games", data: data.busiest_channels.map(d => d.count), backgroundColor: "#67e8f9", borderRadius: 3 }] }, options: barOpts("y") });
+        } else { showNoData("channelsSection"); }
+    }
 
-        /* Services */
-        if (data.popular_services && data.popular_services.length) {
-            new Chart(document.getElementById("chartServices"), { type: "doughnut", data: { labels: data.popular_services.map(d => d.service), datasets: [{ data: data.popular_services.map(d => d.count), backgroundColor: svcColors }] }, options: svcDoughnutOpts });
-        }
-        storedServices30d = data.popular_services_30d;
-        if (!data.popular_services?.length && !storedServices30d?.length) {
-            document.getElementById("servicesSection").innerHTML = '<div class="no-data">No data yet.</div>';
-        }
+    function renderServices(data) {
+        if (data.popular_services?.length) {
+            const canvas = addCanvas("servicesSection", "chartServices");
+            new Chart(canvas, { type: "doughnut", data: { labels: data.popular_services.map(d => d.service), datasets: [{ data: data.popular_services.map(d => d.count), backgroundColor: svcColors }] }, options: svcDoughnutOpts });
+        } else { showNoData("servicesSection"); }
+    }
 
-        /* Players table */
-        function playersTable(players) {
-            if (!players || !players.length) return '<div class="no-data">No data yet.</div>';
-            return '<table><thead><tr><th>Player</th><th>Discord ID</th><th style="text-align:right">Games</th></tr></thead><tbody>' + players.map(p => '<tr><td>' + p.name + '</td><td style="color:#9ca3af;font-size:0.8rem">' + p.user_xid + '</td><td class="count">' + fmt(p.count) + '</td></tr>').join('') + '</tbody></table>';
-        }
-        document.getElementById("viewPlayersAll").innerHTML = playersTable(data.top_players);
-        document.getElementById("viewPlayers30d").innerHTML = playersTable(data.top_players_30d);
+    function renderPlayers(data) {
+        if (data.top_players?.length) {
+            const section = document.getElementById("playersSection");
+            section.innerHTML = '<table><thead><tr><th>Player</th><th>Discord ID</th><th style="text-align:right">Games</th></tr></thead><tbody>' + data.top_players.map(p => '<tr><td>' + p.name + '</td><td style="color:#9ca3af;font-size:0.8rem">' + p.user_xid + '</td><td class="count">' + fmt(p.count) + '</td></tr>').join('') + '</tbody></table>';
+        } else { showNoData("playersSection"); }
+    }
+
+    function renderBlocked(data) {
+        if (data.top_blocked?.length) {
+            const section = document.getElementById("blockedSection");
+            section.innerHTML = '<table><thead><tr><th>Player</th><th>Discord ID</th><th style="text-align:right">Times Blocked</th></tr></thead><tbody>' + data.top_blocked.map(p => '<tr><td>' + p.name + '</td><td style="color:#9ca3af;font-size:0.8rem">' + p.user_xid + '</td><td class="count">' + fmt(p.count) + '</td></tr>').join('') + '</tbody></table>';
+        } else { showNoData("blockedSection"); }
     }
 
     /* ── Handle window resize for charts ── */
@@ -362,7 +524,6 @@
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(function() {
             Object.values(Chart.instances).forEach(chart => {
-                /* Clear the canvas size attributes so Chart.js recalculates */
                 chart.canvas.style.width = "";
                 chart.canvas.style.height = "";
                 chart.canvas.removeAttribute("width");
@@ -372,17 +533,56 @@
         }, 100);
     });
 
-    /* ── Fetch data via AJAX ── */
-    fetch(DATA_URL)
-        .then(r => { if (!r.ok) throw new Error("Failed to load data"); return r.json(); })
-        .then(data => {
-            renderCharts(data);
-            document.getElementById("mainContainer").classList.add("loaded");
-            document.getElementById("loadingOverlay").classList.add("hidden");
-        })
-        .catch(err => {
-            document.getElementById("loadingOverlay").innerHTML = '<div class="error-box"><h2>Error Loading Data</h2><p>' + err.message + '</p></div>';
-        });
+    /* ── Endpoint config ── */
+    const endpoints = [
+        { name: "summary", sectionId: "summarySection", render: renderSummary },
+        { name: "activity", sectionId: "activitySection", render: renderActivity },
+        { name: "wait-time", sectionId: "waitTimeSection", render: renderWaitTime },
+        { name: "brackets", sectionId: "bracketsSection", render: renderBrackets },
+        { name: "retention", sectionId: "retentionSection", render: renderRetention },
+        { name: "growth", sectionId: "growthSection", render: renderGrowth },
+        { name: "histogram", sectionId: "histogramSection", render: renderHistogram },
+        { name: "formats", sectionId: "formatsSection", render: renderFormats },
+        { name: "channels", sectionId: "channelsSection", render: renderChannels },
+        { name: "services", sectionId: "servicesSection", render: renderServices },
+        { name: "players", sectionId: "playersSection", render: renderPlayers },
+        { name: "blocked", sectionId: "blockedSection", render: renderBlocked },
+    ];
+
+    function fetchEndpoint({ name, sectionId, render }) {
+        const cache = dataCache[currentPeriod];
+        // If cached, render immediately
+        if (cache[name]) {
+            render(cache[name]);
+            return;
+        }
+        // Otherwise fetch
+        showLoading(sectionId);
+        const periodParam = "&period=" + currentPeriod;
+        fetch(BASE_URL + "/" + name + QUERY + periodParam)
+            .then(r => { if (!r.ok) throw new Error("Failed"); return r.json(); })
+            .then(data => {
+                dataCache[currentPeriod][name] = data;
+                render(data);
+            })
+            .catch(() => {
+                if (sectionId === "summarySection") {
+                    showSummaryError();
+                } else {
+                    showError(sectionId, "Failed to load");
+                }
+            });
+    }
+
+    function refreshAll() {
+        // Destroy existing Chart.js instances to avoid canvas reuse issues
+        Object.values(Chart.instances).forEach(chart => chart.destroy());
+        endpoints.forEach(ep => fetchEndpoint(ep));
+    }
+
+    /* ── Initial load ── */
+    updateTitles();
+    refreshAll();
     </script>
 </body>
 </html>
