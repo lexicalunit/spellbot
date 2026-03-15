@@ -92,10 +92,10 @@ class TestWebAnalyticsShell:
 
 
 @pytest.mark.asyncio
-class TestWebAnalyticsData:
-    """Tests for the data endpoint (returns JSON with analytics)."""
+class TestWebAnalyticsSummary:
+    """Tests for the summary endpoint (returns JSON with summary stats)."""
 
-    async def test_analytics_data_happy_path(
+    async def test_analytics_summary_happy_path(
         self,
         client: ClientSession,
         factories: Factories,
@@ -121,17 +121,16 @@ class TestWebAnalyticsData:
         parsed = urlparse(url)
         query = parse_qs(parsed.query)
         data_path = (
-            f"/g/{guild.xid}/analytics/data?expires={query['expires'][0]}&sig={query['sig'][0]}"
+            f"/g/{guild.xid}/analytics/summary?expires={query['expires'][0]}&sig={query['sig'][0]}"
         )
 
         resp = await client.get(data_path)
         assert resp.status == 200
         data = await resp.json()
-        assert data["guild_name"] == "test-guild"
         assert data["total_games"] == 1
         assert data["unique_players"] == 1
 
-    async def test_analytics_data_invalid_guild(
+    async def test_analytics_summary_invalid_guild(
         self,
         client: ClientSession,
         mocker: MockerFixture,
@@ -140,19 +139,19 @@ class TestWebAnalyticsData:
         url = generate_signed_url(99999, expires_in_minutes=10)
         parsed = urlparse(url)
         query = parse_qs(parsed.query)
-        data_path = f"/g/99999/analytics/data?expires={query['expires'][0]}&sig={query['sig'][0]}"
+        path = f"/g/99999/analytics/summary?expires={query['expires'][0]}&sig={query['sig'][0]}"
 
-        resp = await client.get(data_path)
+        resp = await client.get(path)
         assert resp.status == 404
 
-    async def test_analytics_data_missing_signature(
+    async def test_analytics_summary_missing_signature(
         self,
         client: ClientSession,
     ) -> None:
-        resp = await client.get("/g/201/analytics/data")
+        resp = await client.get("/g/201/analytics/summary")
         assert resp.status == 403
 
-    async def test_analytics_data_expired_signature(
+    async def test_analytics_summary_expired_signature(
         self,
         client: ClientSession,
         mocker: MockerFixture,
@@ -161,22 +160,22 @@ class TestWebAnalyticsData:
         url = generate_signed_url(201, expires_in_minutes=10)
         parsed = urlparse(url)
         query = parse_qs(parsed.query)
-        data_path = f"/g/201/analytics/data?expires={query['expires'][0]}&sig={query['sig'][0]}"
+        path = f"/g/201/analytics/summary?expires={query['expires'][0]}&sig={query['sig'][0]}"
 
         mocker.patch("spellbot.utils.time.time", return_value=2000.0)
-        resp = await client.get(data_path)
+        resp = await client.get(path)
         assert resp.status == 403
 
-    async def test_analytics_data_invalid_signature(
+    async def test_analytics_summary_invalid_signature(
         self,
         client: ClientSession,
     ) -> None:
-        resp = await client.get("/g/201/analytics/data?expires=9999999999&sig=bad")
+        resp = await client.get("/g/201/analytics/summary?expires=9999999999&sig=bad")
         assert resp.status == 403
 
-    async def test_analytics_data_bad_guild_in_url(
+    async def test_analytics_summary_bad_guild_in_url(
         self,
         client: ClientSession,
     ) -> None:
-        resp = await client.get("/g/notanumber/analytics/data?expires=9999999999&sig=bad")
+        resp = await client.get("/g/notanumber/analytics/summary?expires=9999999999&sig=bad")
         assert resp.status == 404

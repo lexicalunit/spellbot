@@ -385,6 +385,8 @@ def generate_signed_url(guild_xid: int, expires_in_minutes: int = 15) -> str:
 
 def validate_signature(guild_xid: int, expires: int, sig: str) -> bool:
     """Validate an HMAC-signed analytics URL."""
+    if not settings.CHECK_SIGNATURE:
+        return True
     if time.time() > expires:
         return False
     message = f"{guild_xid}:{expires}"

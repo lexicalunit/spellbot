@@ -19,6 +19,7 @@ class Settings:
         "BOT_APPLICATION_ID",
         "BOT_INVITE_LINK",
         "BOT_TOKEN",
+        "CHECK_SIGNATURE",
         "CONTENT_ROOT",
         "CONVOKE_API_KEY",
         "CONVOKE_ROOT",
@@ -97,6 +98,7 @@ class Settings:
         owner_xid = getenv("OWNER_XID")
         self.OWNER_XID = int(owner_xid) if owner_xid else None
         self.SECRET_TOKEN = getenv("SECRET_TOKEN")
+        self.CHECK_SIGNATURE = getenv("CHECK_SIGNATURE", "true").lower() == "true"
 
         # datadog
         self.DD_API_KEY = getenv("DD_API_KEY")
