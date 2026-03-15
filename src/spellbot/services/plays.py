@@ -11,7 +11,7 @@ from sqlalchemy.sql.expression import and_, extract, func, text
 
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.models import Channel, Game, Guild, Play, User
+from spellbot.models import Block, Channel, Game, Guild, Play, User
 
 USER_PAGE_SIZE = 25
 CHANNEL_PAGE_SIZE = 10
@@ -285,80 +285,67 @@ class PlaysService:
         return result.all()
 
     @sync_to_async()
-    def guild_analytics(self, guild_xid: int) -> dict[str, Any] | None:  # noqa: PLR0915
-        guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
-        if not guild:
-            return None
+    def guild_exists(self, guild_xid: int) -> bool:
+        """Check if a guild exists."""
+        return DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none() is not None
+
+    @sync_to_async()
+    def analytics_summary(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return summary stats for the analytics dashboard."""
+        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+        # Base filters for started games
+        base_filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            base_filters.append(Game.started_at >= thirty_days_ago)
+
+        # Base filters for expired games
+        expired_filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.is_(None),
+            Game.deleted_at.isnot(None),
+        ]
+        if not all_time:
+            expired_filters.append(Game.deleted_at >= thirty_days_ago)
 
         # Total started games
         total_games = int(
-            DatabaseSession.query(func.count(Game.id))
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.deleted_at.is_(None),
-            )
-            .scalar()
-            or 0,
+            DatabaseSession.query(func.count(Game.id)).filter(*base_filters).scalar() or 0,
         )
 
         # Expired games (deleted before starting)
         expired_games = int(
-            DatabaseSession.query(func.count(Game.id))
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.is_(None),
-                Game.deleted_at.isnot(None),
-            )
-            .scalar()
-            or 0,
+            DatabaseSession.query(func.count(Game.id)).filter(*expired_filters).scalar() or 0,
         )
 
         # Fill rate
         total_attempted = total_games + expired_games
         fill_rate = round(100 * total_games / total_attempted, 1) if total_attempted else 0.0
 
-        # Unique players (all time)
+        # Unique players
         unique_players = int(
             DatabaseSession.query(func.count(func.distinct(Play.user_xid)))
             .join(Game, Play.game_id == Game.id)
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.deleted_at.is_(None),
-            )
+            .filter(*base_filters)
             .scalar()
             or 0,
         )
 
-        # Monthly active users (unique players in last 30 days)
-        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
-        monthly_active_users = int(
-            DatabaseSession.query(func.count(func.distinct(Play.user_xid)))
-            .join(Game, Play.game_id == Game.id)
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.started_at >= thirty_days_ago,
-                Game.deleted_at.is_(None),
-            )
-            .scalar()
-            or 0,
-        )
+        # Active users (unique players in the period)
+        monthly_active_users = unique_players  # Same for the selected period
 
-        # Repeat player rate (% of monthly players who played more than once)
+        # Repeat player rate (% of players who played more than once)
         repeat_subq = (
             DatabaseSession.query(
                 Play.user_xid,
                 func.count(func.distinct(Game.id)).label("game_count"),
             )
             .join(Game, Play.game_id == Game.id)
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.started_at >= thirty_days_ago,
-                Game.deleted_at.is_(None),
-            )
+            .filter(*base_filters)
             .group_by(Play.user_xid)
             .subquery()
         )
@@ -373,25 +360,103 @@ class PlaysService:
             round(100 * repeat_players / monthly_active_users, 1) if monthly_active_users else 0.0
         )
 
-        # Games per day (last 30 days)
+        return {
+            "fill_rate": fill_rate,
+            "total_games": total_games,
+            "unique_players": unique_players,
+            "monthly_active_users": monthly_active_users,
+            "repeat_player_rate": repeat_player_rate,
+        }
+
+    @sync_to_async()
+    def analytics_activity(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return daily activity data."""
+        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+        # Games per day
+        game_filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            game_filters.append(Game.started_at >= thirty_days_ago)
+
         daily_rows = (
             DatabaseSession.query(
                 func.date(Game.started_at).label("day"),
                 func.count(Game.id).label("count"),
             )
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.started_at >= thirty_days_ago,
-                Game.deleted_at.is_(None),
-            )
+            .filter(*game_filters)
             .group_by(func.date(Game.started_at))
             .order_by(text("day"))
             .all()
         )
         games_per_day = [{"day": str(row[0]), "count": row[1]} for row in daily_rows]
 
-        # Average wait time per day (last 30 days) — minutes from created_at to started_at
+        # Expired games per day
+        expired_filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.is_(None),
+            Game.deleted_at.isnot(None),
+        ]
+        if not all_time:
+            expired_filters.append(Game.deleted_at >= thirty_days_ago)
+
+        expired_daily_rows = (
+            DatabaseSession.query(
+                func.date(Game.deleted_at).label("day"),
+                func.count(Game.id).label("count"),
+            )
+            .filter(*expired_filters)
+            .group_by(func.date(Game.deleted_at))
+            .order_by(text("day"))
+            .all()
+        )
+        expired_per_day = [{"day": str(row[0]), "count": row[1]} for row in expired_daily_rows]
+
+        # Daily new users
+        new_user_filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            new_user_filters.append(User.created_at >= thirty_days_ago)
+
+        new_user_rows = (
+            DatabaseSession.query(
+                func.date(User.created_at).label("day"),
+                func.count(func.distinct(User.xid)).label("count"),
+            )
+            .join(Play, Play.user_xid == User.xid)
+            .join(Game, Play.game_id == Game.id)
+            .filter(*new_user_filters)
+            .group_by(func.date(User.created_at))
+            .order_by(text("day"))
+            .all()
+        )
+        daily_new_users = [{"day": str(row[0]), "count": row[1]} for row in new_user_rows]
+
+        return {
+            "games_per_day": games_per_day,
+            "expired_per_day": expired_per_day,
+            "daily_new_users": daily_new_users,
+        }
+
+    @sync_to_async()
+    def analytics_wait_time(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return average wait time per day."""
+        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+        filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            filters.append(Game.started_at >= thirty_days_ago)
+
         wait_rows = (
             DatabaseSession.query(
                 func.date(Game.started_at).label("day"),
@@ -399,12 +464,7 @@ class PlaysService:
                     extract("epoch", Game.started_at) - extract("epoch", Game.created_at),
                 ).label("avg_seconds"),
             )
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.started_at >= thirty_days_ago,
-                Game.deleted_at.is_(None),
-            )
+            .filter(*filters)
             .group_by(func.date(Game.started_at))
             .order_by(text("day"))
             .all()
@@ -413,133 +473,28 @@ class PlaysService:
             {"day": str(row[0]), "minutes": round(float(row[1] or 0) / 60, 1)} for row in wait_rows
         ]
 
-        # Expired games per day (last 30 days)
-        expired_daily_rows = (
-            DatabaseSession.query(
-                func.date(Game.deleted_at).label("day"),
-                func.count(Game.id).label("count"),
-            )
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.is_(None),
-                Game.deleted_at.isnot(None),
-                Game.deleted_at >= thirty_days_ago,
-            )
-            .group_by(func.date(Game.deleted_at))
-            .order_by(text("day"))
-            .all()
-        )
-        expired_per_day = [{"day": str(row[0]), "count": row[1]} for row in expired_daily_rows]
+        return {"avg_wait_per_day": avg_wait_per_day}
 
-        # Daily new users (users whose created_at falls on that day and who played in this guild)
-        new_user_rows = (
-            DatabaseSession.query(
-                func.date(User.created_at).label("day"),
-                func.count(func.distinct(User.xid)).label("count"),
-            )
-            .join(Play, Play.user_xid == User.xid)
-            .join(Game, Play.game_id == Game.id)
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.deleted_at.is_(None),
-                User.created_at >= thirty_days_ago,
-            )
-            .group_by(func.date(User.created_at))
-            .order_by(text("day"))
-            .all()
-        )
-        daily_new_users = [{"day": str(row[0]), "count": row[1]} for row in new_user_rows]
+    @sync_to_async()
+    def analytics_brackets(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return games by bracket per day."""
+        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
 
-        # Most popular formats
-        format_rows = (
-            DatabaseSession.query(
-                Game.format,
-                func.count(Game.id).label("count"),
-            )
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.deleted_at.is_(None),
-            )
-            .group_by(Game.format)
-            .order_by(text("count DESC"))
-            .limit(10)
-            .all()
-        )
-        popular_formats = [
-            {"format": str(GameFormat(row[0])), "count": row[1]} for row in format_rows
+        filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
         ]
+        if not all_time:
+            filters.append(Game.started_at >= thirty_days_ago)
 
-        # Games by hour of day (UTC, last 30 days)
-        hourly_rows = (
-            DatabaseSession.query(
-                extract("hour", Game.started_at).label("hour"),
-                func.count(Game.id).label("count"),
-            )
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.started_at >= thirty_days_ago,
-                Game.deleted_at.is_(None),
-            )
-            .group_by(extract("hour", Game.started_at))
-            .order_by(text("hour"))
-            .all()
-        )
-        games_by_hour = [{"hour": int(row[0]), "count": row[1]} for row in hourly_rows]
-
-        # Expired games by hour of day (UTC, last 30 days)
-        expired_hourly_rows = (
-            DatabaseSession.query(
-                extract("hour", Game.deleted_at).label("hour"),
-                func.count(Game.id).label("count"),
-            )
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.is_(None),
-                Game.deleted_at.isnot(None),
-                Game.deleted_at >= thirty_days_ago,
-            )
-            .group_by(extract("hour", Game.deleted_at))
-            .order_by(text("hour"))
-            .all()
-        )
-        expired_by_hour = [{"hour": int(row[0]), "count": row[1]} for row in expired_hourly_rows]
-
-        # New users by hour of day (UTC, last 30 days)
-        new_user_hourly_rows = (
-            DatabaseSession.query(
-                extract("hour", User.created_at).label("hour"),
-                func.count(func.distinct(User.xid)).label("count"),
-            )
-            .join(Play, Play.user_xid == User.xid)
-            .join(Game, Play.game_id == Game.id)
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.deleted_at.is_(None),
-                User.created_at >= thirty_days_ago,
-            )
-            .group_by(extract("hour", User.created_at))
-            .order_by(text("hour"))
-            .all()
-        )
-        new_users_by_hour = [{"hour": int(row[0]), "count": row[1]} for row in new_user_hourly_rows]
-
-        # Games by bracket per day (last 30 days)
         bracket_daily_rows = (
             DatabaseSession.query(
                 func.date(Game.started_at).label("day"),
                 Game.bracket,
                 func.count(Game.id).label("count"),
             )
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.started_at >= thirty_days_ago,
-                Game.deleted_at.is_(None),
-            )
+            .filter(*filters)
             .group_by(func.date(Game.started_at), Game.bracket)
             .order_by(text("day"))
             .all()
@@ -553,7 +508,11 @@ class PlaysService:
             for row in bracket_daily_rows
         ]
 
-        # Player retention by week (last 12 weeks)
+        return {"games_by_bracket_per_day": games_by_bracket_per_day}
+
+    @sync_to_async()
+    def analytics_retention(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return player retention data."""
         twelve_weeks_ago = datetime.now(tz=UTC) + relativedelta(weeks=-12)
 
         # Each player's first started game in this guild
@@ -573,20 +532,23 @@ class PlaysService:
         )
         first_game_map = {row[0]: row[1] for row in first_game_rows}
 
-        # Players active per week (last 12 weeks)
+        # Players active per week
         week_expr = func.date_trunc("week", Game.started_at)
+        filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            filters.append(Game.started_at >= twelve_weeks_ago)
+
         weekly_player_rows = (
             DatabaseSession.query(
                 week_expr.label("week"),
                 Play.user_xid,
             )
             .join(Game, Play.game_id == Game.id)
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.started_at >= twelve_weeks_ago,
-                Game.deleted_at.is_(None),
-            )
+            .filter(*filters)
             .group_by(week_expr, Play.user_xid)
             .all()
         )
@@ -614,18 +576,28 @@ class PlaysService:
                 },
             )
 
-        # Cumulative player growth (all time, by day)
+        return {"player_retention": player_retention}
+
+    @sync_to_async()
+    def analytics_growth(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return cumulative player growth data."""
+        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+        filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            filters.append(Game.started_at >= thirty_days_ago)
+
         growth_rows = (
             DatabaseSession.query(
                 func.date(func.min(Game.started_at)).label("day"),
                 func.count(Play.user_xid.distinct()).label("count"),
             )
             .join(Game, Play.game_id == Game.id)
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.deleted_at.is_(None),
-            )
+            .filter(*filters)
             .group_by(Play.user_xid)
             .subquery()
         )
@@ -644,18 +616,28 @@ class PlaysService:
             running_total += row[1]
             cumulative_players.append({"day": str(row[0]), "total": running_total})
 
-        # Median games per player (distribution histogram)
+        return {"cumulative_players": cumulative_players}
+
+    @sync_to_async()
+    def analytics_histogram(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return games per player histogram data."""
+        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+        filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            filters.append(Game.started_at >= thirty_days_ago)
+
         games_per_player_rows = (
             DatabaseSession.query(
                 Play.user_xid,
                 func.count(Game.id).label("game_count"),
             )
             .join(Game, Play.game_id == Game.id)
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.deleted_at.is_(None),
-            )
+            .filter(*filters)
             .group_by(Play.user_xid)
             .all()
         )
@@ -679,7 +661,51 @@ class PlaysService:
             overflow = sum(v for k, v in count_freq.items() if k > cap)
             games_histogram.append({"bucket": f"{cap + 1}+", "players": overflow})
 
-        # Busiest channels (top 10)
+        return {"median_games": median_games, "games_histogram": games_histogram}
+
+    @sync_to_async()
+    def analytics_formats(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return popular formats data."""
+        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+        filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            filters.append(Game.started_at >= thirty_days_ago)
+
+        format_rows = (
+            DatabaseSession.query(
+                Game.format,
+                func.count(Game.id).label("count"),
+            )
+            .filter(*filters)
+            .group_by(Game.format)
+            .order_by(text("count DESC"))
+            .limit(10)
+            .all()
+        )
+        popular_formats = [
+            {"format": str(GameFormat(row[0])), "count": row[1]} for row in format_rows
+        ]
+
+        return {"popular_formats": popular_formats}
+
+    @sync_to_async()
+    def analytics_channels(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return busiest channels data."""
+        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+        filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            filters.append(Game.started_at >= thirty_days_ago)
+
         channel_rows = (
             DatabaseSession.query(
                 Channel.xid,
@@ -687,11 +713,7 @@ class PlaysService:
                 func.count(Game.id).label("count"),
             )
             .join(Game, Game.channel_xid == Channel.xid)
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.deleted_at.is_(None),
-            )
+            .filter(*filters)
             .group_by(Channel.xid, Channel.name)
             .order_by(text("count DESC"))
             .limit(10)
@@ -701,17 +723,27 @@ class PlaysService:
             {"name": row[1] or str(row[0]), "count": row[2]} for row in channel_rows
         ]
 
-        # Most popular services (all time)
+        return {"busiest_channels": busiest_channels}
+
+    @sync_to_async()
+    def analytics_services(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return popular services data."""
+        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+        filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            filters.append(Game.started_at >= thirty_days_ago)
+
         service_rows = (
             DatabaseSession.query(
                 Game.service,
                 func.count(Game.id).label("count"),
             )
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.deleted_at.is_(None),
-            )
+            .filter(*filters)
             .group_by(Game.service)
             .order_by(text("count DESC"))
             .limit(10)
@@ -721,28 +753,21 @@ class PlaysService:
             {"service": str(GameService(row[0])), "count": row[1]} for row in service_rows
         ]
 
-        # Most popular services (last 30 days)
-        service_rows_30d = (
-            DatabaseSession.query(
-                Game.service,
-                func.count(Game.id).label("count"),
-            )
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.started_at >= thirty_days_ago,
-                Game.deleted_at.is_(None),
-            )
-            .group_by(Game.service)
-            .order_by(text("count DESC"))
-            .limit(10)
-            .all()
-        )
-        popular_services_30d = [
-            {"service": str(GameService(row[0])), "count": row[1]} for row in service_rows_30d
-        ]
+        return {"popular_services": popular_services}
 
-        # Top players (top 10) with user names (all time)
+    @sync_to_async()
+    def analytics_players(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return top players data."""
+        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+        filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            filters.append(Game.started_at >= thirty_days_ago)
+
         player_rows = (
             DatabaseSession.query(
                 Play.user_xid,
@@ -751,11 +776,7 @@ class PlaysService:
             )
             .join(Game, Play.game_id == Game.id)
             .join(User, User.xid == Play.user_xid)
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.deleted_at.is_(None),
-            )
+            .filter(*filters)
             .group_by(Play.user_xid, User.name)
             .order_by(text("count DESC"))
             .limit(10)
@@ -765,53 +786,48 @@ class PlaysService:
             {"user_xid": str(row[0]), "name": row[1], "count": row[2]} for row in player_rows
         ]
 
-        # Top players (top 10) with user names (last 30 days)
-        player_rows_30d = (
-            DatabaseSession.query(
-                Play.user_xid,
-                User.name,
-                func.count(Play.game_id).label("count"),
-            )
+        return {"top_players": top_players}
+
+    @sync_to_async()
+    def analytics_blocked(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+        """Return top blocked players data (only players who have played at least one game)."""
+        thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+        # Get users who have played at least one game in this guild
+        game_filters = [
+            Game.guild_xid == guild_xid,
+            Game.started_at.isnot(None),
+            Game.deleted_at.is_(None),
+        ]
+        if not all_time:
+            game_filters.append(Game.started_at >= thirty_days_ago)
+
+        players_in_guild = (
+            DatabaseSession.query(Play.user_xid.distinct())
             .join(Game, Play.game_id == Game.id)
-            .join(User, User.xid == Play.user_xid)
-            .filter(
-                Game.guild_xid == guild_xid,
-                Game.started_at.isnot(None),
-                Game.started_at >= thirty_days_ago,
-                Game.deleted_at.is_(None),
+            .filter(*game_filters)
+            .subquery()
+        )
+
+        # Count blocks for each blocked user, filtering to only those who played
+        block_filters = [Block.blocked_user_xid.in_(players_in_guild)]
+        if not all_time:
+            block_filters.append(Block.created_at >= thirty_days_ago)
+        blocked_rows = (
+            DatabaseSession.query(
+                Block.blocked_user_xid,
+                User.name,
+                func.count(Block.user_xid).label("count"),
             )
-            .group_by(Play.user_xid, User.name)
+            .join(User, User.xid == Block.blocked_user_xid)
+            .filter(*block_filters)
+            .group_by(Block.blocked_user_xid, User.name)
             .order_by(text("count DESC"))
             .limit(10)
             .all()
         )
-        top_players_30d = [
-            {"user_xid": str(row[0]), "name": row[1], "count": row[2]} for row in player_rows_30d
+        top_blocked = [
+            {"user_xid": str(row[0]), "name": row[1], "count": row[2]} for row in blocked_rows
         ]
 
-        return {
-            "guild_name": guild.name,
-            "total_games": total_games,
-            "fill_rate": fill_rate,
-            "unique_players": unique_players,
-            "monthly_active_users": monthly_active_users,
-            "repeat_player_rate": repeat_player_rate,
-            "games_per_day": games_per_day,
-            "avg_wait_per_day": avg_wait_per_day,
-            "expired_per_day": expired_per_day,
-            "daily_new_users": daily_new_users,
-            "games_by_hour": games_by_hour,
-            "expired_by_hour": expired_by_hour,
-            "new_users_by_hour": new_users_by_hour,
-            "games_by_bracket_per_day": games_by_bracket_per_day,
-            "player_retention": player_retention,
-            "cumulative_players": cumulative_players,
-            "median_games": median_games,
-            "games_histogram": games_histogram,
-            "popular_formats": popular_formats,
-            "busiest_channels": busiest_channels,
-            "popular_services": popular_services,
-            "popular_services_30d": popular_services_30d,
-            "top_players": top_players,
-            "top_players_30d": top_players_30d,
-        }
+        return {"top_blocked": top_blocked}
