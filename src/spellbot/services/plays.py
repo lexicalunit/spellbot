@@ -326,17 +326,14 @@ class PlaysService:
         total_attempted = total_games + expired_games
         fill_rate = round(100 * total_games / total_attempted, 1) if total_attempted else 0.0
 
-        # Unique players
-        unique_players = int(
+        # Active players (unique players in the period)
+        active_players = int(
             DatabaseSession.query(func.count(func.distinct(Play.user_xid)))
             .join(Game, Play.game_id == Game.id)
             .filter(*base_filters)
             .scalar()
             or 0,
         )
-
-        # Active users (unique players in the period)
-        monthly_active_users = unique_players  # Same for the selected period
 
         # Repeat player rate (% of players who played more than once)
         repeat_subq = (
@@ -357,14 +354,13 @@ class PlaysService:
             or 0,
         )
         repeat_player_rate = (
-            round(100 * repeat_players / monthly_active_users, 1) if monthly_active_users else 0.0
+            round(100 * repeat_players / active_players, 1) if active_players else 0.0
         )
 
         return {
             "fill_rate": fill_rate,
             "total_games": total_games,
-            "unique_players": unique_players,
-            "monthly_active_users": monthly_active_users,
+            "active_players": active_players,
             "repeat_player_rate": repeat_player_rate,
         }
 

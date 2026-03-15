@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Deduplicated analytics API calls.
+- Merged unique players and monthly active users into active players.
+- Updated test coverage to 100%.
+
 ## [v18.2.15](https://github.com/lexicalunit/spellbot/releases/tag/v18.2.15) - 2026-03-15
 
 ### Changed
