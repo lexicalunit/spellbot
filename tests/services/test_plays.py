@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
+import pytest_asyncio
 
 from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
@@ -15,6 +16,11 @@ if TYPE_CHECKING:
     from tests.fixtures import Factories
 
 pytestmark = pytest.mark.use_db
+
+
+@pytest_asyncio.fixture(params=[True, False])
+async def all_time(request: pytest.FixtureRequest) -> bool:
+    return request.param
 
 
 @pytest.mark.asyncio
@@ -33,8 +39,7 @@ class TestPlaysServiceAnalyticsSummary:
         result = await plays.analytics_summary(guild.xid)
         assert result["total_games"] == 0
         assert result["fill_rate"] == 0.0
-        assert result["unique_players"] == 0
-        assert result["monthly_active_users"] == 0
+        assert result["active_players"] == 0
         assert result["repeat_player_rate"] == 0.0
 
     async def test_guild_with_games(
@@ -65,8 +70,7 @@ class TestPlaysServiceAnalyticsSummary:
         result = await plays.analytics_summary(guild.xid)
 
         assert result["total_games"] == 1
-        assert result["unique_players"] == 2
-        assert result["monthly_active_users"] == 2
+        assert result["active_players"] == 2
         assert result["fill_rate"] == 100.0
 
     async def test_repeat_player_rate(
@@ -105,6 +109,115 @@ class TestPlaysServiceAnalyticsSummary:
         plays = PlaysService()
         result = await plays.analytics_summary(guild.xid)
 
-        assert result["monthly_active_users"] == 2
+        assert result["active_players"] == 2
         # user1 played 2 games, user2 played 1 => 1 repeat out of 2 = 50%
         assert result["repeat_player_rate"] == 50.0
+
+    async def test_all_analytics_branches(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+        all_time: bool,
+    ) -> None:
+        freezer.move_to(datetime(2020, 6, 15, 12, 0, tzinfo=UTC))
+        now = datetime.now(tz=UTC)
+
+        guild = factories.guild.create(xid=5007, name="branch-guild")
+        channel = factories.channel.create(xid=6006, name="ch", guild=guild)
+        user1 = factories.user.create(xid=7030, name="player1")
+        user2 = factories.user.create(xid=7031, name="player2")
+
+        game1 = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.COMMANDER.value,
+            started_at=now,
+            created_at=now - timedelta(minutes=5),
+        )
+        factories.play.create(game_id=game1.id, user_xid=user1.xid, og_guild_xid=guild.xid)
+        factories.play.create(game_id=game1.id, user_xid=user2.xid, og_guild_xid=guild.xid)
+
+        factories.block.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
+
+        plays = PlaysService()
+
+        summary = await plays.analytics_summary(guild.xid, all_time=all_time)
+        assert "total_games" in summary
+
+        activity = await plays.analytics_activity(guild.xid, all_time=all_time)
+        assert "games_per_day" in activity
+
+        histogram = await plays.analytics_histogram(guild.xid, all_time=all_time)
+        assert "games_histogram" in histogram
+
+        channels = await plays.analytics_channels(guild.xid, all_time=all_time)
+        assert "busiest_channels" in channels
+
+        wt = await plays.analytics_wait_time(guild.xid, all_time=all_time)
+        assert "avg_wait_per_day" in wt
+
+        br = await plays.analytics_brackets(guild.xid, all_time=all_time)
+        assert "games_by_bracket_per_day" in br
+
+        ret = await plays.analytics_retention(guild.xid, all_time=all_time)
+        assert "player_retention" in ret
+
+        gr = await plays.analytics_growth(guild.xid, all_time=all_time)
+        assert "cumulative_players" in gr
+
+        fmt = await plays.analytics_formats(guild.xid, all_time=all_time)
+        assert "popular_formats" in fmt
+
+        svc = await plays.analytics_services(guild.xid, all_time=all_time)
+        assert "popular_services" in svc
+
+        blk = await plays.analytics_blocked(guild.xid, all_time=all_time)
+        assert "top_blocked" in blk
+
+    async def test_histogram_empty_guild(self, factories: Factories) -> None:
+        guild = factories.guild.create(xid=5008, name="empty-histogram-guild")
+        plays = PlaysService()
+        result = await plays.analytics_histogram(guild.xid)
+        assert result["median_games"] == 0
+        assert result["games_histogram"] == []
+
+    async def test_retention_returning_player(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(datetime(2020, 6, 15, 12, 0, tzinfo=UTC))
+        now = datetime.now(tz=UTC)
+
+        guild = factories.guild.create(xid=5009, name="retention-guild")
+        channel = factories.channel.create(xid=6007, name="ch", guild=guild)
+        user = factories.user.create(xid=7040, name="returning-player")
+
+        # First game two weeks ago (user's first game)
+        game1 = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.COMMANDER.value,
+            started_at=now - timedelta(weeks=2),
+            created_at=now - timedelta(weeks=2, minutes=5),
+        )
+        factories.play.create(game_id=game1.id, user_xid=user.xid, og_guild_xid=guild.xid)
+
+        # Second game this week (user is returning, not new)
+        game2 = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.COMMANDER.value,
+            started_at=now,
+            created_at=now - timedelta(minutes=5),
+        )
+        factories.play.create(game_id=game2.id, user_xid=user.xid, og_guild_xid=guild.xid)
+
+        plays = PlaysService()
+        result = await plays.analytics_retention(guild.xid, all_time=True)
+        assert "player_retention" in result
+        weeks_with_returning = [w for w in result["player_retention"] if w["returning"] > 0]
+        assert len(weeks_with_returning) > 0
