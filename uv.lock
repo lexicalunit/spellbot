@@ -412,6 +412,7 @@ dependencies = [
     { name = "opentelemetry-api" },
     { name = "wrapt" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/a9/c3/20f9e1429dd0e590e76c18f390ffdb737c4048fcdcebb5b102890150785e/ddtrace-4.6.1.tar.gz", hash = "sha256:b5df636b04696f69fa755f1930cecd41d9ad53e1aad97347ff98f502995cdc48", size = 7573556, upload-time = "2026-03-19T17:21:42.859Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ca/71/bdb61750615ec5451b7c446a96156a4ef2cc7fe13fd9df54813c3d935cdc/ddtrace-4.6.1-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:6143e93ed5d95eaedc4059b916c3d0dc6e297e194be13f1b3e461859efd2c496", size = 8602829, upload-time = "2026-03-19T17:20:14.755Z" },
     { url = "https://files.pythonhosted.org/packages/2b/59/1cc8dd977d8b0faf4d9d18ee575483434101f19fcb4f038e1b3a8ee76573/ddtrace-4.6.1-cp313-cp313-macosx_14_0_x86_64.whl", hash = "sha256:401c67e3be614a5f7075eeec4d691a24ca7bbbdd580e74e5e4840cc10e98d8d6", size = 8283109, upload-time = "2026-03-19T17:20:17.779Z" },
@@ -1385,16 +1386,16 @@ wheels = [
 
 [[package]]
 name = "pytest-cov"
-version = "7.0.0"
+version = "7.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "coverage" },
     { name = "pluggy" },
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5e/f7/c933acc76f5208b3b00089573cf6a2bc26dc80a8aece8f52bb7d6b1855ca/pytest_cov-7.0.0.tar.gz", hash = "sha256:33c97eda2e049a0c5298e91f519302a1334c26ac65c1a483d6206fd458361af1", size = 54328, upload-time = "2025-09-09T10:57:02.113Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b1/51/a849f96e117386044471c8ec2bd6cfebacda285da9525c9106aeb28da671/pytest_cov-7.1.0.tar.gz", hash = "sha256:30674f2b5f6351aa09702a9c8c364f6a01c27aae0c1366ae8016160d1efc56b2", size = 55592, upload-time = "2026-03-21T20:11:16.284Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ee/49/1377b49de7d0c1ce41292161ea0f721913fa8722c19fb9c1e3aa0367eecb/pytest_cov-7.0.0-py3-none-any.whl", hash = "sha256:3b8e9558b16cc1479da72058bdecf8073661c7f57f7d3c5f22a1c23507f2d861", size = 22424, upload-time = "2025-09-09T10:57:00.695Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/7a/d968e294073affff457b041c2be9868a40c1c71f4a35fcc1e45e5493067b/pytest_cov-7.1.0-py3-none-any.whl", hash = "sha256:a0461110b7865f9a271aa1b51e516c9a95de9d696734a2f71e3e78f46e1d4678", size = 22876, upload-time = "2026-03-21T20:11:14.438Z" },
 ]
 
 [[package]]
