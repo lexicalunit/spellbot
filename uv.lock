@@ -412,6 +412,7 @@ dependencies = [
     { name = "opentelemetry-api" },
     { name = "wrapt" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/a9/c3/20f9e1429dd0e590e76c18f390ffdb737c4048fcdcebb5b102890150785e/ddtrace-4.6.1.tar.gz", hash = "sha256:b5df636b04696f69fa755f1930cecd41d9ad53e1aad97347ff98f502995cdc48", size = 7573556, upload-time = "2026-03-19T17:21:42.859Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ca/71/bdb61750615ec5451b7c446a96156a4ef2cc7fe13fd9df54813c3d935cdc/ddtrace-4.6.1-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:6143e93ed5d95eaedc4059b916c3d0dc6e297e194be13f1b3e461859efd2c496", size = 8602829, upload-time = "2026-03-19T17:20:14.755Z" },
     { url = "https://files.pythonhosted.org/packages/2b/59/1cc8dd977d8b0faf4d9d18ee575483434101f19fcb4f038e1b3a8ee76573/ddtrace-4.6.1-cp313-cp313-macosx_14_0_x86_64.whl", hash = "sha256:401c67e3be614a5f7075eeec4d691a24ca7bbbdd580e74e5e4840cc10e98d8d6", size = 8283109, upload-time = "2026-03-19T17:20:17.779Z" },
@@ -526,14 +527,14 @@ wheels = [
 
 [[package]]
 name = "faker"
-version = "40.11.0"
+version = "40.11.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/94/dc/b68e5378e5a7db0ab776efcdd53b6fe374b29d703e156fd5bb4c5437069e/faker-40.11.0.tar.gz", hash = "sha256:7c419299103b13126bd02ec14bd2b47b946edb5a5eedf305e66a193b25f9a734", size = 1957570, upload-time = "2026-03-13T14:36:11.844Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/e5/b16bf568a2f20fe7423282db4a4059dbcadef70e9029c1c106836f8edd84/faker-40.11.1.tar.gz", hash = "sha256:61965046e79e8cfde4337d243eac04c0d31481a7c010033141103b43f603100c", size = 1957415, upload-time = "2026-03-23T14:05:50.233Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b1/fa/a86c6ba66f0308c95b9288b1e3eaccd934b545646f63494a86f1ec2f8c8e/faker-40.11.0-py3-none-any.whl", hash = "sha256:0e9816c950528d2a37d74863f3ef389ea9a3a936cbcde0b11b8499942e25bf90", size = 1989457, upload-time = "2026-03-13T14:36:09.792Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/ec/3c4b78eb0d2f6a81fb8cc9286745845bff661e6815741eff7a6ac5fcc9ea/faker-40.11.1-py3-none-any.whl", hash = "sha256:3af3a213ba8fb33ce6ba2af7aef2ac91363dae35d0cec0b2b0337d189e5bee2a", size = 1989484, upload-time = "2026-03-23T14:05:48.793Z" },
 ]
 
 [[package]]
