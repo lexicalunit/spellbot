@@ -412,6 +412,7 @@ dependencies = [
     { name = "opentelemetry-api" },
     { name = "wrapt" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/a9/c3/20f9e1429dd0e590e76c18f390ffdb737c4048fcdcebb5b102890150785e/ddtrace-4.6.1.tar.gz", hash = "sha256:b5df636b04696f69fa755f1930cecd41d9ad53e1aad97347ff98f502995cdc48", size = 7573556, upload-time = "2026-03-19T17:21:42.859Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ca/71/bdb61750615ec5451b7c446a96156a4ef2cc7fe13fd9df54813c3d935cdc/ddtrace-4.6.1-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:6143e93ed5d95eaedc4059b916c3d0dc6e297e194be13f1b3e461859efd2c496", size = 8602829, upload-time = "2026-03-19T17:20:14.755Z" },
     { url = "https://files.pythonhosted.org/packages/2b/59/1cc8dd977d8b0faf4d9d18ee575483434101f19fcb4f038e1b3a8ee76573/ddtrace-4.6.1-cp313-cp313-macosx_14_0_x86_64.whl", hash = "sha256:401c67e3be614a5f7075eeec4d691a24ca7bbbdd580e74e5e4840cc10e98d8d6", size = 8283109, upload-time = "2026-03-19T17:20:17.779Z" },
@@ -1970,11 +1971,11 @@ wheels = [
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.9.0.20260305"
+version = "2.9.0.20260323"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1d/c7/025c624f347e10476b439a6619a95f1d200250ea88e7ccea6e09e48a7544/types_python_dateutil-2.9.0.20260305.tar.gz", hash = "sha256:389717c9f64d8f769f36d55a01873915b37e97e52ce21928198d210fbd393c8b", size = 16885, upload-time = "2026-03-05T04:00:47.409Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e9/02/f72df9ef5ffc4f959b83cb80c8aa03eb8718a43e563ecd99ccffe265fa89/types_python_dateutil-2.9.0.20260323.tar.gz", hash = "sha256:a107aef5841db41ace381dbbbd7e4945220fc940f7a72172a0be5a92d9ab7164", size = 16897, upload-time = "2026-03-23T04:15:14.829Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0a/77/8c0d1ec97f0d9707ad3d8fa270ab8964e7b31b076d2f641c94987395cc75/types_python_dateutil-2.9.0.20260305-py3-none-any.whl", hash = "sha256:a3be9ca444d38cadabd756cfbb29780d8b338ae2a3020e73c266a83cc3025dd7", size = 18419, upload-time = "2026-03-05T04:00:46.392Z" },
+    { url = "https://files.pythonhosted.org/packages/92/c1/b661838b97453e699a215451f2e22cee750eaaf4ea4619b34bdaf01221a4/types_python_dateutil-2.9.0.20260323-py3-none-any.whl", hash = "sha256:a23a50a07f6eb87e729d4cb0c2eb511c81761eeb3f505db2c1413be94aae8335", size = 18433, upload-time = "2026-03-23T04:15:13.683Z" },
 ]
 
 [[package]]
