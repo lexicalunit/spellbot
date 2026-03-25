@@ -412,6 +412,7 @@ dependencies = [
     { name = "opentelemetry-api" },
     { name = "wrapt" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/df/1c/1f65e5f0170226209c62b0fc450965502d6aa8717d12323306e791610f6e/ddtrace-4.6.3.tar.gz", hash = "sha256:2a6502eb8d97f8fba08e245d5ab7ac3b8068df49020577651a1f5e67c873d98b", size = 7579409, upload-time = "2026-03-24T12:23:13.995Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f9/cb/0ca6c95622c035ed0286a1af5a837e6ef038f169ffa1395c34dd246e7680/ddtrace-4.6.3-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:5bfb481d82cbc6fb055d20ec4f485625a4c391b225da5c30f891f47e5862377f", size = 8605474, upload-time = "2026-03-24T12:21:50.738Z" },
     { url = "https://files.pythonhosted.org/packages/aa/ee/1ac2d31fed5ec3157c790f0c704d67078bcb777a8a3f4e21370cb10d0a77/ddtrace-4.6.3-cp313-cp313-macosx_14_0_x86_64.whl", hash = "sha256:10c22da489ad3d89fe94a6ccddc28d061608d25e80fccf6f9f3f6a9eccd62516", size = 8286190, upload-time = "2026-03-24T12:21:53.887Z" },
@@ -690,14 +691,14 @@ wheels = [
 
 [[package]]
 name = "gunicorn"
-version = "25.1.0"
+version = "25.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/66/13/ef67f59f6a7896fdc2c1d62b5665c5219d6b0a9a1784938eb9a28e55e128/gunicorn-25.1.0.tar.gz", hash = "sha256:1426611d959fa77e7de89f8c0f32eed6aa03ee735f98c01efba3e281b1c47616", size = 594377, upload-time = "2026-02-13T11:09:58.989Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/13/dd3f8e40ea3ee907a6cbf3d1f1f81afcc3ecd0087d313baabfe95372f15c/gunicorn-25.2.0.tar.gz", hash = "sha256:10bd7adb36d44945d97d0a1fdf9a0fb086ae9c7b39e56b4dece8555a6bf4a09c", size = 632709, upload-time = "2026-03-24T22:49:54.433Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/da/73/4ad5b1f6a2e21cf1e85afdaad2b7b1a933985e2f5d679147a1953aaa192c/gunicorn-25.1.0-py3-none-any.whl", hash = "sha256:d0b1236ccf27f72cfe14bce7caadf467186f19e865094ca84221424e839b8b8b", size = 197067, upload-time = "2026-02-13T11:09:57.146Z" },
+    { url = "https://files.pythonhosted.org/packages/11/53/fb024445837e02cd5cf989cf349bfac6f3f433c05184ea5d49c8ade751c6/gunicorn-25.2.0-py3-none-any.whl", hash = "sha256:88f5b444d0055bf298435384af7294f325e2273fd37ba9f9ff7b98e0a1e5dfdc", size = 211659, upload-time = "2026-03-24T22:49:52.528Z" },
 ]
 
 [[package]]
