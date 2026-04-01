@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated dependencies.
+- Cleaning up .env.example, DOCKER.md, and adding a docker-compose.yml.
+
 ## [v18.2.16](https://github.com/lexicalunit/spellbot/releases/tag/v18.2.16) - 2026-03-15
 
 ### Changed
