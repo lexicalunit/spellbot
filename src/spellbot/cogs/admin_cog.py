@@ -13,7 +13,7 @@ from spellbot.actions import AdminAction
 from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
 from spellbot.metrics import add_span_context
 from spellbot.settings import settings
-from spellbot.utils import for_all_callbacks, is_admin, is_guild
+from spellbot.utils import for_all_callbacks, is_admin, is_guild, is_mod
 
 if TYPE_CHECKING:
     from spellbot import SpellBot
@@ -21,12 +21,12 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@for_all_callbacks(app_commands.check(is_admin))
 @for_all_callbacks(app_commands.check(is_guild))
 class AdminCog(commands.Cog):
     def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
+    @app_commands.check(is_admin)
     @app_commands.command(name="setup", description="Setup SpellBot on your server.")
     @tracer.wrap(name="interaction", resource="setup")
     async def setup(self, interaction: discord.Interaction) -> None:
@@ -34,6 +34,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.setup()
 
+    @app_commands.check(is_admin)
     @app_commands.command(
         name="setup_mythic_track",
         description="Setup Mythic Track on your server.",
@@ -44,6 +45,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.setup_mythic_track()
 
+    @app_commands.check(is_admin)
     @app_commands.command(name="forget_channel", description="Forget settings for a channel.")
     @app_commands.describe(channel="What is the Discord ID of the channel?")
     @tracer.wrap(name="interaction", resource="forget_channel")
@@ -54,6 +56,7 @@ class AdminCog(commands.Cog):
 
     set_group = app_commands.Group(name="set", description="...")
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="suggest_vc_category",
         description="Set the category prefix to use for suggested voice channels.",
@@ -69,6 +72,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_suggest_vc_category(category)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="motd",
         description="Set your server's message of the day. Leave blank to unset.",
@@ -80,6 +84,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_motd(message)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="channel_motd",
         description="Set this channel's message of the day. Leave blank to unset.",
@@ -94,6 +99,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_channel_motd(message)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="channel_extra",
         description="Set this channel's extra message. Leave blank to unset.",
@@ -108,6 +114,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_channel_extra(message)
 
+    @app_commands.check(is_admin)
     @app_commands.command(
         name="channels",
         description="Show the current configurations for channels on your server.",
@@ -120,6 +127,7 @@ class AdminCog(commands.Cog):
             page = page or 1
             await action.channels(page=page)
 
+    @app_commands.check(is_admin)
     @app_commands.command(name="awards", description="Setup player awards on your server.")
     @app_commands.describe(page="If there are multiple pages of output, which one?")
     @tracer.wrap(name="interaction", resource="awards")
@@ -131,6 +139,7 @@ class AdminCog(commands.Cog):
 
     award_group = app_commands.Group(name="award", description="...")
 
+    @app_commands.check(is_admin)
     @award_group.command(name="add", description="Add a new award level to the list of awards.")
     @app_commands.describe(count="The number of games needed for this award")
     @app_commands.describe(role="The role to assign when a player gets this award")
@@ -166,6 +175,7 @@ class AdminCog(commands.Cog):
                     unverified_only=unverified_only,
                 )
 
+    @app_commands.check(is_admin)
     @award_group.command(
         name="delete",
         description="Delete an existing award level from the server.",
@@ -177,6 +187,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.award_delete(id)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="default_seats",
         description="Set the default number of seats for new games in this channel.",
@@ -195,6 +206,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_default_seats(seats)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="default_format",
         description="Set the default game format for new games in this channel.",
@@ -209,6 +221,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_default_format(format)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="default_bracket",
         description="Set the default commander bracket for new games in this channel.",
@@ -223,6 +236,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_default_bracket(bracket)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="default_service",
         description="Set the default game service for new games in this channel.",
@@ -237,6 +251,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_default_service(service)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="auto_verify",
         description="Should posting in this channel automatically verify users?",
@@ -248,6 +263,8 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_auto_verify(setting)
 
+    @app_commands.check(is_admin)
+    @app_commands.check(is_admin)
     @set_group.command(
         name="verified_only",
         description="Should only verified users be allowed to post in this channel?",
@@ -259,6 +276,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_verified_only(setting)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="unverified_only",
         description="Should only unverified users be allowed to post in this channel?",
@@ -270,6 +288,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_unverified_only(setting)
 
+    @app_commands.check(is_admin)
     @app_commands.command(name="info", description="Request a DM with full game information.")
     @app_commands.describe(game_id="SpellBot ID of the game")
     @tracer.wrap(name="interaction", resource="info")
@@ -278,6 +297,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.info(game_id)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="voice_category",
         description="Set the voice category prefix for games in this channel.",
@@ -289,6 +309,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_voice_category(prefix)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="delete_expired",
         description="Set the option for deleting expired games in this channel.",
@@ -300,6 +321,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_delete_expired(setting)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="blind_games",
         description="Should player names be hidden in public game posts?",
@@ -311,6 +333,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_blind_games(setting)
 
+    @app_commands.check(is_admin)
     @set_group.command(
         name="voice_invite",
         description="Set the option for voice invite creation on games in this channel.",
@@ -322,6 +345,7 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.set_voice_invite(setting)
 
+    @app_commands.check(is_admin)
     @app_commands.command(name="move_user", description="Move one user's data to another user.")
     @tracer.wrap(name="interaction", resource="move_user")
     @app_commands.describe(from_user_id="User ID of the old user")
@@ -344,6 +368,7 @@ class AdminCog(commands.Cog):
                 to_user_xid=to_user_xid,
             )
 
+    @app_commands.check(is_mod)
     @app_commands.command(
         name="expire_games",
         description="Expire all inactive games on your server.",
@@ -354,6 +379,36 @@ class AdminCog(commands.Cog):
         assert interaction.guild_id is not None
         async with AdminAction.create(self.bot, interaction) as action:
             await action.expire_games(guild_xid=interaction.guild_id)
+
+    @app_commands.check(is_admin)
+    @app_commands.command(
+        name="analytics",
+        description="View server analytics dashboard (admin only).",
+    )
+    @tracer.wrap(name="interaction", resource="analytics")
+    async def analytics(self, interaction: discord.Interaction) -> None:
+        add_span_context(interaction)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.analytics()
+
+    @app_commands.check(is_mod)
+    @app_commands.command(
+        name="user_info",
+        description="Get detailed information about a user (games played, blocks, etc.).",
+    )
+    @app_commands.describe(target="User to get info about")
+    # @tracer.wrap(name="interaction", resource="user_info")
+    # There's a bug when combining `@tracer.wrap`, `@app_commands.describe` and discord.User.
+    # See: https://github.com/Rapptz/discord.py/issues/10317.
+    async def user_info(
+        self,
+        interaction: discord.Interaction,
+        target: discord.User | discord.Member,
+    ) -> None:
+        with tracer.trace("interaction", resource="user_info"):
+            add_span_context(interaction)
+            async with AdminAction.create(self.bot, interaction) as action:
+                await action.user_info(target=target)
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover

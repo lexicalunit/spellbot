@@ -17,6 +17,7 @@ from .errors import (
     AdminOnlyError,
     GuildBannedError,
     GuildOnlyError,
+    ModOnlyError,
     UserBannedError,
     UserUnverifiedError,
     UserVerifiedError,
@@ -166,8 +167,9 @@ def add_span_error(ex: BaseException) -> None:  # pragma: no cover
 @skip_if_no_metrics
 def setup_ignored_errors(span: Span) -> None:  # pragma: no cover
     span._ignore_exception(AdminOnlyError)  # noqa: SLF001
-    span._ignore_exception(GuildOnlyError)  # noqa: SLF001
-    span._ignore_exception(UserBannedError)  # noqa: SLF001
     span._ignore_exception(GuildBannedError)  # noqa: SLF001
+    span._ignore_exception(GuildOnlyError)  # noqa: SLF001
+    span._ignore_exception(ModOnlyError)  # noqa: SLF001
+    span._ignore_exception(UserBannedError)  # noqa: SLF001
     span._ignore_exception(UserUnverifiedError)  # noqa: SLF001
     span._ignore_exception(UserVerifiedError)  # noqa: SLF001

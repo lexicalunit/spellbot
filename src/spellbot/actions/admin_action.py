@@ -18,7 +18,7 @@ from spellbot.operations import (
     safe_update_embed_origin,
 )
 from spellbot.settings import settings
-from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
+from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT, generate_signed_url
 from spellbot.views import SetupView
 
 from .base_action import BaseAction
@@ -577,3 +577,86 @@ class AdminAction(BaseAction):
             await safe_send_channel(self.interaction, f"```\n{message}\n```", ephemeral=True)
         else:
             await safe_send_channel(self.interaction, "No games to expire.", ephemeral=True)
+
+    async def user_info(self, target: discord.Member | discord.User) -> None:
+        assert self.interaction.guild
+        assert self.interaction.guild_id is not None
+        guild_name = self.interaction.guild.name
+        target_xid = target.id
+
+        # Fetch all user stats
+        games_count = await self.services.users.games_played_count(
+            target_xid,
+            self.interaction.guild_id,
+        )
+        blocked_by_count = await self.services.users.blocked_by_count(target_xid)
+        watch_note = await self.services.users.is_watched(target_xid, self.interaction.guild_id)
+        verified_status = await self.services.users.is_verified(
+            target_xid,
+            self.interaction.guild_id,
+        )
+        first_play, last_play = await self.services.users.play_date_range(
+            target_xid,
+            self.interaction.guild_id,
+        )
+
+        embed = Embed()
+        embed.set_thumbnail(url=settings.ICO_URL)
+        embed.set_author(name=f"User info for {target.display_name}")
+        embed.color = settings.INFO_EMBED_COLOR
+
+        link = f"{settings.API_BASE_URL}/g/{self.interaction.guild_id}/u/{target_xid}"
+        games_text = f"{games_count} game{'s' if games_count != 1 else ''} on {guild_name}"
+        embed.add_field(name="Games Played", value=games_text, inline=True)
+
+        block_text = f"Blocked by {blocked_by_count} user{'s' if blocked_by_count != 1 else ''}"
+        embed.add_field(name="Block Status", value=block_text, inline=True)
+
+        if verified_status is None:
+            verified_text = "Not set"
+        elif verified_status:
+            verified_text = "✅ Verified"
+        else:
+            verified_text = "❌ Unverified"
+        embed.add_field(name="Verified", value=verified_text, inline=True)
+
+        if watch_note is not None:
+            watch_text = f"⚠️ Watched: {watch_note}" if watch_note else "⚠️ Watched"
+        else:
+            watch_text = "Not watched"
+        embed.add_field(name="Watch Status", value=watch_text, inline=True)
+
+        if first_play and last_play:
+            first_str = first_play.strftime("%Y-%m-%d")
+            last_str = last_play.strftime("%Y-%m-%d")
+            range_text = first_str if first_str == last_str else f"{first_str} to {last_str}"
+        else:
+            range_text = "No games played"
+        embed.add_field(name="Play Range", value=range_text, inline=True)
+
+        embed.add_field(
+            name="Game History",
+            value=f"[View on spellbot.io]({link})",
+            inline=False,
+        )
+
+        embed.set_footer(text=f"User ID: {target_xid}")
+
+        await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
+
+    async def analytics(self) -> None:
+        assert self.interaction.guild
+        assert self.interaction.guild_id is not None
+
+        url = generate_signed_url(self.interaction.guild_id)
+
+        embed = Embed()
+        embed.set_thumbnail(url=settings.ICO_URL)
+        embed.set_author(name=f"Server Analytics for {self.interaction.guild.name}")
+        embed.description = (
+            f"View your server's analytics dashboard:\n"
+            f"📊 [Open Analytics]({url})\n\n"
+            f"_This link expires in 10 minutes._"
+        )
+        embed.color = settings.INFO_EMBED_COLOR
+        await safe_send_channel(self.interaction, embed=embed, ephemeral=True)

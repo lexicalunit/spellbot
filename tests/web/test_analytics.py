@@ -8,9 +8,12 @@ import pytest
 
 from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
+from spellbot.settings import settings
 from spellbot.utils import generate_signed_url
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from aiohttp.client import ClientSession
     from freezegun.api import FrozenDateTimeFactory
     from pytest_mock import MockerFixture
@@ -275,3 +278,63 @@ class TestWebAnalyticsEndpoints:
     ) -> None:
         data = await self._get_analytics_endpoint(client, factories, mocker, "blocked")
         assert "top_blocked" in data
+
+    async def test_analytics_activity(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self._get_analytics_endpoint(client, factories, mocker, "activity")
+        assert "games_per_day" in data
+
+    async def test_analytics_histogram(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self._get_analytics_endpoint(client, factories, mocker, "histogram")
+        assert "games_histogram" in data
+
+    async def test_analytics_channels(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self._get_analytics_endpoint(client, factories, mocker, "channels")
+        assert "busiest_channels" in data
+
+
+@pytest.mark.asyncio
+class TestWebAnalyticsSignatureBypass:
+    """Tests for CHECK_SIGNATURE=False bypass."""
+
+    async def test_analytics_summary_without_signature_when_check_disabled(
+        self,
+        aiohttp_client: Callable[..., Awaitable[ClientSession]],
+        factories: Factories,
+    ) -> None:
+        """When CHECK_SIGNATURE is False, requests without sig params should succeed."""
+        from spellbot.web import build_web_app  # allow_inline
+
+        guild = factories.guild.create(xid=202, name="bypass-guild")
+
+        # Temporarily disable signature checking BEFORE creating the app/client
+        original_value = settings.CHECK_SIGNATURE
+        object.__setattr__(settings, "CHECK_SIGNATURE", False)
+
+        try:
+            # Create a new client with settings already disabled
+            app = build_web_app()
+            test_client = await aiohttp_client(app)
+
+            # Request the summary JSON endpoint without any signature parameters
+            path = f"/g/{guild.xid}/analytics/summary"
+            resp = await test_client.get(path)
+            assert resp.status == 200
+            data = await resp.json()
+            assert "total_games" in data
+        finally:
+            object.__setattr__(settings, "CHECK_SIGNATURE", original_value)

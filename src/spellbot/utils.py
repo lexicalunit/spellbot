@@ -21,6 +21,7 @@ from .errors import (
     AdminOnlyError,
     GuildBannedError,
     GuildOnlyError,
+    ModOnlyError,
     UserBannedError,
     UserUnverifiedError,
     UserVerifiedError,
@@ -208,9 +209,13 @@ def is_guild(interaction: discord.Interaction) -> bool:
 
 
 def is_mod(interaction: discord.Interaction) -> bool:
+    if interaction.user.id == settings.OWNER_XID:  # pragma: no cover
+        return True
     guild = getattr(interaction, "guild", None)
     channel = getattr(interaction, "channel", None)
-    return user_can_moderate(interaction.user, guild, channel)
+    if not user_can_moderate(interaction.user, guild, channel):
+        raise ModOnlyError
+    return True
 
 
 def user_can_moderate(
@@ -302,6 +307,8 @@ async def handle_interaction_errors(interaction: discord.Interaction, error: Exc
     from .operations import safe_send_user  # allow_inline: circular import
 
     if isinstance(error, AdminOnlyError):
+        return await safe_send_user(interaction.user, "You do not have permission to do that.")
+    if isinstance(error, ModOnlyError):
         return await safe_send_user(interaction.user, "You do not have permission to do that.")
     if isinstance(error, GuildOnlyError):
         return await safe_send_user(interaction.user, "This command only works in a guild.")
