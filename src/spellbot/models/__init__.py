@@ -22,6 +22,7 @@ from .block import Block, BlockDict  # noqa: E402
 from .channel import Channel, ChannelDict  # noqa: E402
 from .game import Game, GameStatus, GameDict, GameLinkDetails, MAX_RULES_LENGTH  # noqa: E402
 from .guild import Guild, GuildDict  # noqa: E402
+from .guild_member import GuildMember, GuildMemberDict  # noqa: E402
 from .play import Play, PlayDict, generate_pin  # noqa: E402
 from .post import Post, PostDict  # noqa: E402
 from .queue import Queue, QueueDict  # noqa: E402
@@ -46,6 +47,8 @@ __all__ = [
     "GuildAward",
     "GuildAwardDict",
     "GuildDict",
+    "GuildMember",
+    "GuildMemberDict",
     "Play",
     "PlayDict",
     "PlayerDataDict",

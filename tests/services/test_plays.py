@@ -271,6 +271,9 @@ class TestPlaysServiceAnalyticsSummary:
         channel = factories.channel.create(xid=6009, name="ch", guild=guild)
         user = factories.user.create(xid=7042, name="all-time-player")
 
+        # Create GuildMember record for the user
+        factories.guild_member.create(user_xid=user.xid, guild_xid=guild.xid)
+
         # Create a game from 60 days ago (outside 30-day window)
         game = factories.game.create(
             guild=guild,
