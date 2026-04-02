@@ -5,13 +5,14 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import aiohttp_jinja2
+import httpx
 from aiohttp.web_response import Response as WebResponse
 from asgiref.sync import sync_to_async
 from ddtrace.trace import tracer
 
 from spellbot.database import DatabaseSession, db_session_manager
 from spellbot.metrics import add_span_request_id, generate_request_id
-from spellbot.models import Guild
+from spellbot.models import Guild, GuildMember
 from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.utils import validate_signature
@@ -214,21 +215,115 @@ async def analytics_services_endpoint(request: web.Request) -> WebResponse:
     )
 
 
+@sync_to_async()
+def _delete_guild_member(guild_xid: int, user_xid: int) -> None:
+    """Delete a GuildMember record when the user is no longer in the guild."""
+    DatabaseSession.query(GuildMember).filter(
+        GuildMember.guild_xid == guild_xid,
+        GuildMember.user_xid == user_xid,
+    ).delete()
+
+
+async def _check_guild_member(guild_xid: int, user_xid: int) -> bool:
+    """Check if a user is a member of a guild via the Discord REST API."""
+    headers = {"Authorization": f"Bot {settings.BOT_TOKEN}"}
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"https://discord.com/api/v10/guilds/{guild_xid}/members/{user_xid}",
+                headers=headers,
+            )
+            return response.status_code == 200
+    except Exception as ex:
+        logger.warning("check_guild_member failure for %s/%s: %s", guild_xid, user_xid, ex)
+        return False
+
+
+async def _check_membership_and_update(
+    guild_xid: int,
+    players: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """
+    Check membership for each player and mark those who have left.
+
+    Deletes GuildMember records for users who are no longer in the guild.
+    """
+    results = []
+    for player in players:
+        user_xid = int(player["user_xid"])
+        is_member = await _check_guild_member(guild_xid, user_xid)
+        player_copy = dict(player)
+        if not is_member:
+            player_copy["left_server"] = True
+            # Delete the stale GuildMember record
+            await _delete_guild_member(guild_xid, user_xid)
+        else:
+            player_copy["left_server"] = False
+        results.append(player_copy)
+    return results
+
+
 @tracer.wrap(name="web", resource="analytics_players")
 async def analytics_players_endpoint(request: web.Request) -> WebResponse:
-    """Return top players data."""
+    """Return top players data with membership status."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
-        request,
-        lambda p, g, a: p.analytics_players(g, all_time=a),
+
+    guild_xid, error = await _validate_analytics_request(request)
+    if error:
+        return error
+    assert guild_xid is not None
+
+    period = request.query.get("period", "30d")
+    all_time = period == "all"
+
+    async with db_session_manager():
+        services = ServicesRegistry()
+        if not await services.plays.guild_exists(guild_xid):
+            return WebResponse(status=404, text="Guild not found.")
+        data = await services.plays.analytics_players(guild_xid, all_time=all_time)
+
+        # Check membership status for each player
+        if data.get("top_players"):
+            data["top_players"] = await _check_membership_and_update(
+                guild_xid,
+                data["top_players"],
+            )
+
+    return WebResponse(
+        status=200,
+        content_type="application/json",
+        text=json.dumps(data),
     )
 
 
 @tracer.wrap(name="web", resource="analytics_blocked")
 async def analytics_blocked_endpoint(request: web.Request) -> WebResponse:
-    """Return top blocked players data."""
+    """Return top blocked players data with membership status."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
-        request,
-        lambda p, g, a: p.analytics_blocked(g, all_time=a),
+
+    guild_xid, error = await _validate_analytics_request(request)
+    if error:
+        return error
+    assert guild_xid is not None
+
+    period = request.query.get("period", "30d")
+    all_time = period == "all"
+
+    async with db_session_manager():
+        services = ServicesRegistry()
+        if not await services.plays.guild_exists(guild_xid):
+            return WebResponse(status=404, text="Guild not found.")
+        data = await services.plays.analytics_blocked(guild_xid, all_time=all_time)
+
+        # Check membership status for each blocked user
+        if data.get("top_blocked"):
+            data["top_blocked"] = await _check_membership_and_update(
+                guild_xid,
+                data["top_blocked"],
+            )
+
+    return WebResponse(
+        status=200,
+        content_type="application/json",
+        text=json.dumps(data),
     )

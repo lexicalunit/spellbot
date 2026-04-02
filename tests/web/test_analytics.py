@@ -10,6 +10,7 @@ from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
 from spellbot.settings import settings
 from spellbot.utils import generate_signed_url
+from spellbot.web.api.analytics import _check_guild_member
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -267,8 +268,38 @@ class TestWebAnalyticsEndpoints:
         factories: Factories,
         mocker: MockerFixture,
     ) -> None:
-        data = await self._get_analytics_endpoint(client, factories, mocker, "players")
+        # Create a guild and player data
+        guild = factories.guild.create(xid=201, name="test-guild")
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2026, 4, 1, tzinfo=UTC),
+        )
+        user = factories.user.create(xid=5001, name="active-user", game=game)
+        factories.guild_member.create(guild_xid=guild.xid, user_xid=user.xid)
+
+        # Mock _check_guild_member to return True (user is still a member)
+        mocker.patch(
+            "spellbot.web.api.analytics._check_guild_member",
+            return_value=True,
+        )
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+
+        url = generate_signed_url(guild.xid, expires_in_minutes=10)
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        expires = query["expires"][0]
+        sig = query["sig"][0]
+        path = f"/g/{guild.xid}/analytics/players?expires={expires}&sig={sig}"
+
+        resp = await client.get(path)
+        assert resp.status == 200
+        data = await resp.json()
         assert "top_players" in data
+        assert len(data["top_players"]) == 1
+        assert data["top_players"][0]["left_server"] is False
 
     async def test_analytics_blocked(
         self,
@@ -276,8 +307,33 @@ class TestWebAnalyticsEndpoints:
         factories: Factories,
         mocker: MockerFixture,
     ) -> None:
-        data = await self._get_analytics_endpoint(client, factories, mocker, "blocked")
+        # Create a guild and blocked user data
+        guild = factories.guild.create(xid=202, name="test-guild")
+        blocker = factories.user.create(xid=6001, name="blocker")
+        blocked = factories.user.create(xid=6002, name="blocked-user")
+        factories.guild_member.create(guild_xid=guild.xid, user_xid=blocked.xid)
+        factories.block.create(user_xid=blocker.xid, blocked_user_xid=blocked.xid)
+
+        # Mock _check_guild_member to return True (user is still a member)
+        mocker.patch(
+            "spellbot.web.api.analytics._check_guild_member",
+            return_value=True,
+        )
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+
+        url = generate_signed_url(guild.xid, expires_in_minutes=10)
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        expires = query["expires"][0]
+        sig = query["sig"][0]
+        path = f"/g/{guild.xid}/analytics/blocked?expires={expires}&sig={sig}"
+
+        resp = await client.get(path)
+        assert resp.status == 200
+        data = await resp.json()
         assert "top_blocked" in data
+        assert len(data["top_blocked"]) == 1
+        assert data["top_blocked"][0]["left_server"] is False
 
     async def test_analytics_activity(
         self,
@@ -338,3 +394,197 @@ class TestWebAnalyticsSignatureBypass:
             assert "total_games" in data
         finally:
             object.__setattr__(settings, "CHECK_SIGNATURE", original_value)
+
+
+@pytest.mark.asyncio
+class TestWebAnalyticsMembershipChecks:
+    """Tests for guild membership checking in analytics endpoints."""
+
+    async def test_analytics_players_with_left_server(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test that players who left the server are marked with left_server=True."""
+        guild = factories.guild.create(xid=301, name="test-guild")
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2026, 4, 1, tzinfo=UTC),
+        )
+        # Create user associated with the game (this creates the Play record)
+        user = factories.user.create(xid=1001, name="left-user", game=game)
+        factories.guild_member.create(guild_xid=guild.xid, user_xid=user.xid)
+
+        # Mock _check_guild_member to return False (user has left)
+        mocker.patch(
+            "spellbot.web.api.analytics._check_guild_member",
+            return_value=False,
+        )
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+
+        url = generate_signed_url(guild.xid, expires_in_minutes=10)
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        expires = query["expires"][0]
+        sig = query["sig"][0]
+        path = f"/g/{guild.xid}/analytics/players?expires={expires}&sig={sig}"
+
+        resp = await client.get(path)
+        assert resp.status == 200
+        data = await resp.json()
+        assert "top_players" in data
+        assert len(data["top_players"]) == 1
+        assert data["top_players"][0]["left_server"] is True
+
+    async def test_analytics_blocked_with_left_server(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test that blocked users who left the server are marked with left_server=True."""
+        guild = factories.guild.create(xid=302, name="test-guild")
+        blocker = factories.user.create(xid=2001, name="blocker")
+        blocked = factories.user.create(xid=2002, name="blocked-user")
+        factories.guild_member.create(guild_xid=guild.xid, user_xid=blocked.xid)
+        factories.block.create(user_xid=blocker.xid, blocked_user_xid=blocked.xid)
+
+        # Mock _check_guild_member to return False (user has left)
+        mocker.patch(
+            "spellbot.web.api.analytics._check_guild_member",
+            return_value=False,
+        )
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+
+        url = generate_signed_url(guild.xid, expires_in_minutes=10)
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        expires = query["expires"][0]
+        sig = query["sig"][0]
+        path = f"/g/{guild.xid}/analytics/blocked?expires={expires}&sig={sig}"
+
+        resp = await client.get(path)
+        assert resp.status == 200
+        data = await resp.json()
+        assert "top_blocked" in data
+        assert len(data["top_blocked"]) == 1
+        assert data["top_blocked"][0]["left_server"] is True
+
+    async def test_check_guild_member_api_error(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test that _check_guild_member returns False on API errors."""
+        # Mock httpx to raise an exception
+        mock_client = mocker.MagicMock()
+        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = mocker.AsyncMock(return_value=None)
+        mock_client.get = mocker.AsyncMock(side_effect=Exception("Network error"))
+        mocker.patch("httpx.AsyncClient", return_value=mock_client)
+
+        result = await _check_guild_member(12345, 67890)
+        assert result is False
+
+    async def test_check_guild_member_success(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test that _check_guild_member returns True when user is a member."""
+        mock_response = mocker.MagicMock()
+        mock_response.status_code = 200
+        mock_client = mocker.MagicMock()
+        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = mocker.AsyncMock(return_value=None)
+        mock_client.get = mocker.AsyncMock(return_value=mock_response)
+        mocker.patch("httpx.AsyncClient", return_value=mock_client)
+
+        result = await _check_guild_member(12345, 67890)
+        assert result is True
+
+    async def test_check_guild_member_not_found(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test that _check_guild_member returns False when user is not a member."""
+        mock_response = mocker.MagicMock()
+        mock_response.status_code = 404
+        mock_client = mocker.MagicMock()
+        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = mocker.AsyncMock(return_value=None)
+        mock_client.get = mocker.AsyncMock(return_value=mock_response)
+        mocker.patch("httpx.AsyncClient", return_value=mock_client)
+
+        result = await _check_guild_member(12345, 67890)
+        assert result is False
+
+    async def test_analytics_players_invalid_signature(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test that analytics_players returns error for invalid signature."""
+        guild = factories.guild.create(xid=401, name="test-guild")
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+
+        # Use invalid signature
+        path = f"/g/{guild.xid}/analytics/players?expires=2000&sig=invalid"
+        resp = await client.get(path)
+        assert resp.status == 403
+
+    async def test_analytics_players_guild_not_found(
+        self,
+        client: ClientSession,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test that analytics_players returns 404 for non-existent guild."""
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+
+        # Use a guild xid that doesn't exist in the database
+        url = generate_signed_url(99999, expires_in_minutes=10)
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        expires = query["expires"][0]
+        sig = query["sig"][0]
+        path = f"/g/99999/analytics/players?expires={expires}&sig={sig}"
+
+        resp = await client.get(path)
+        assert resp.status == 404
+
+    async def test_analytics_blocked_invalid_signature(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test that analytics_blocked returns error for invalid signature."""
+        guild = factories.guild.create(xid=402, name="test-guild")
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+
+        # Use invalid signature
+        path = f"/g/{guild.xid}/analytics/blocked?expires=2000&sig=invalid"
+        resp = await client.get(path)
+        assert resp.status == 403
+
+    async def test_analytics_blocked_guild_not_found(
+        self,
+        client: ClientSession,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test that analytics_blocked returns 404 for non-existent guild."""
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+
+        # Use a guild xid that doesn't exist in the database
+        url = generate_signed_url(99998, expires_in_minutes=10)
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        expires = query["expires"][0]
+        sig = query["sig"][0]
+        path = f"/g/99998/analytics/blocked?expires={expires}&sig={sig}"
+
+        resp = await client.get(path)
+        assert resp.status == 404

@@ -11,7 +11,7 @@ from sqlalchemy.sql.expression import and_, extract, func, text
 
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.models import Block, Channel, Game, Guild, Play, User
+from spellbot.models import Block, Channel, Game, Guild, GuildMember, Play, User
 
 USER_PAGE_SIZE = 25
 CHANNEL_PAGE_SIZE = 10
@@ -753,13 +753,14 @@ class PlaysService:
 
     @sync_to_async()
     def analytics_players(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
-        """Return top players data."""
+        """Return top players data (only players with GuildMember records)."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
 
         filters = [
             Game.guild_xid == guild_xid,
             Game.started_at.isnot(None),
             Game.deleted_at.is_(None),
+            GuildMember.guild_xid == guild_xid,
         ]
         if not all_time:
             filters.append(Game.started_at >= thirty_days_ago)
@@ -772,6 +773,13 @@ class PlaysService:
             )
             .join(Game, Play.game_id == Game.id)
             .join(User, User.xid == Play.user_xid)
+            .join(
+                GuildMember,
+                and_(
+                    GuildMember.user_xid == Play.user_xid,
+                    GuildMember.guild_xid == guild_xid,
+                ),
+            )
             .filter(*filters)
             .group_by(Play.user_xid, User.name)
             .order_by(text("count DESC"))
@@ -786,27 +794,18 @@ class PlaysService:
 
     @sync_to_async()
     def analytics_blocked(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
-        """Return top blocked players data (only players who have played at least one game)."""
+        """Return top blocked players data (only players with GuildMember records)."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
 
-        # Get users who have played at least one game in this guild
-        game_filters = [
-            Game.guild_xid == guild_xid,
-            Game.started_at.isnot(None),
-            Game.deleted_at.is_(None),
-        ]
-        if not all_time:
-            game_filters.append(Game.started_at >= thirty_days_ago)
-
-        players_in_guild = (
-            DatabaseSession.query(Play.user_xid.distinct())
-            .join(Game, Play.game_id == Game.id)
-            .filter(*game_filters)
+        # Get users who are members of this guild
+        members_in_guild = (
+            DatabaseSession.query(GuildMember.user_xid)
+            .filter(GuildMember.guild_xid == guild_xid)
             .scalar_subquery()
         )
 
-        # Count blocks for each blocked user, filtering to only those who played
-        block_filters = [Block.blocked_user_xid.in_(players_in_guild)]
+        # Count blocks for each blocked user, filtering to only guild members
+        block_filters = [Block.blocked_user_xid.in_(members_in_guild)]
         if not all_time:
             block_filters.append(Block.created_at >= thirty_days_ago)
         blocked_rows = (
