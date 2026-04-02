@@ -5,7 +5,7 @@ from unittest.mock import ANY
 
 import pytest
 
-from spellbot.cogs import AnalyticsCog
+from spellbot.cogs import AdminCog
 from tests.fixtures import get_last_send_message, run_command
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ class TestCogAnalytics:
         interaction: discord.Interaction,
         settings: Settings,
     ) -> None:
-        cog = AnalyticsCog(bot)
+        cog = AdminCog(bot)
         await run_command(cog.analytics, interaction)
 
         interaction.response.send_message.assert_called_once_with(  # type: ignore

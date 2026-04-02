@@ -11,7 +11,6 @@ from discord.ext import commands
 
 from .about_cog import AboutCog
 from .admin_cog import AdminCog
-from .analytics_cog import AnalyticsCog
 from .block_cog import BlockCog
 from .events_cog import EventsCog
 from .leave_cog import LeaveGameCog
@@ -32,7 +31,6 @@ package_dir = str(Path(__file__).resolve().parent)
 __all__ = [
     "AboutCog",
     "AdminCog",
-    "AnalyticsCog",
     "BlockCog",
     "EventsCog",
     "LeaveGameCog",

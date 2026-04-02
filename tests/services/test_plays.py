@@ -221,3 +221,74 @@ class TestPlaysServiceAnalyticsSummary:
         assert "player_retention" in result
         weeks_with_returning = [w for w in result["player_retention"] if w["returning"] > 0]
         assert len(weeks_with_returning) > 0
+
+    async def test_histogram_overflow_bucket(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        """Test histogram overflow bucket for players with >20 games."""
+        freezer.move_to(datetime(2020, 6, 15, 12, 0, tzinfo=UTC))
+        now = datetime.now(tz=UTC)
+
+        guild = factories.guild.create(xid=5010, name="overflow-histogram-guild")
+        channel = factories.channel.create(xid=6008, name="ch", guild=guild)
+        user = factories.user.create(xid=7041, name="power-player")
+
+        # Create 25 games for the same user to trigger the overflow bucket
+        for i in range(25):
+            game = factories.game.create(
+                guild=guild,
+                channel=channel,
+                status=GameStatus.STARTED.value,
+                format=GameFormat.COMMANDER.value,
+                started_at=now - timedelta(days=i % 29),
+                created_at=now - timedelta(days=i % 29, minutes=5),
+            )
+            factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
+
+        plays = PlaysService()
+        result = await plays.analytics_histogram(guild.xid)
+
+        # Should have overflow bucket "21+"
+        buckets = [b["bucket"] for b in result["games_histogram"]]
+        assert "21+" in buckets
+
+        # The overflow bucket should have 1 player (the power player)
+        overflow_bucket = next(b for b in result["games_histogram"] if b["bucket"] == "21+")
+        assert overflow_bucket["players"] == 1
+
+    async def test_analytics_players_all_time(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        """Test analytics_players with all_time=True parameter."""
+        freezer.move_to(datetime(2020, 6, 15, 12, 0, tzinfo=UTC))
+        now = datetime.now(tz=UTC)
+
+        guild = factories.guild.create(xid=5011, name="all-time-players-guild")
+        channel = factories.channel.create(xid=6009, name="ch", guild=guild)
+        user = factories.user.create(xid=7042, name="all-time-player")
+
+        # Create a game from 60 days ago (outside 30-day window)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.COMMANDER.value,
+            started_at=now - timedelta(days=60),
+            created_at=now - timedelta(days=60, minutes=5),
+        )
+        factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
+
+        plays = PlaysService()
+
+        # Without all_time, the old game should not appear
+        result_30_days = await plays.analytics_players(guild.xid, all_time=False)
+        assert result_30_days["top_players"] == []
+
+        # With all_time=True, the old game should appear
+        result_all_time = await plays.analytics_players(guild.xid, all_time=True)
+        assert len(result_all_time["top_players"]) == 1
+        assert result_all_time["top_players"][0]["user_xid"] == str(user.xid)

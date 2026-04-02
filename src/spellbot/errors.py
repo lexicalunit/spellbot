@@ -8,7 +8,12 @@ class SpellBotError(AppCommandError): ...
 
 class AdminOnlyError(SpellBotError):
     def __init__(self, message: str | None = None) -> None:
-        super().__init__(message or "This command is only available to SpellBot admins.")
+        super().__init__(message or "This command is only available to admins.")
+
+
+class ModOnlyError(SpellBotError):
+    def __init__(self, message: str | None = None) -> None:
+        super().__init__(message or "This command is only available to moderators.")
 
 
 class GuildOnlyError(SpellBotError):

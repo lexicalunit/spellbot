@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
 from asgiref.sync import sync_to_async
-from sqlalchemy import update
+from sqlalchemy import func, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
@@ -391,3 +391,80 @@ class UsersService:
     @sync_to_async()
     def get_players_by_xid(self, xids: list[int]) -> list[UserDict]:
         return [u.to_dict() for u in DatabaseSession.query(User).filter(User.xid.in_(xids)).all()]
+
+    @sync_to_async()
+    def blocked_by_count(self, user_xid: int) -> int:
+        """Count how many users have blocked this user."""
+        return int(
+            DatabaseSession.query(Block).filter(Block.blocked_user_xid == user_xid).count() or 0,
+        )
+
+    @sync_to_async()
+    def games_played_count(self, user_xid: int, guild_xid: int) -> int:
+        """Count how many games this user has played in the given guild."""
+        return int(
+            DatabaseSession.query(Play)
+            .join(Game)
+            .filter(
+                and_(
+                    Play.user_xid == user_xid,
+                    Game.guild_xid == guild_xid,
+                ),
+            )
+            .count()
+            or 0,
+        )
+
+    @sync_to_async()
+    def is_watched(self, user_xid: int, guild_xid: int) -> str | None:
+        """Check if user is being watched in this guild, return note if so."""
+        watch = (
+            DatabaseSession.query(Watch)
+            .filter(
+                and_(
+                    Watch.user_xid == user_xid,
+                    Watch.guild_xid == guild_xid,
+                ),
+            )
+            .one_or_none()
+        )
+        return watch.note if watch else None
+
+    @sync_to_async()
+    def is_verified(self, user_xid: int, guild_xid: int) -> bool | None:
+        """Check if user is verified in this guild. Returns None if no record exists."""
+        verify = (
+            DatabaseSession.query(Verify)
+            .filter(
+                and_(
+                    Verify.user_xid == user_xid,
+                    Verify.guild_xid == guild_xid,
+                ),
+            )
+            .one_or_none()
+        )
+        return verify.verified if verify else None
+
+    @sync_to_async()
+    def play_date_range(
+        self,
+        user_xid: int,
+        guild_xid: int,
+    ) -> tuple[datetime | None, datetime | None]:
+        """Get the earliest and most recent game start dates for a user in a guild."""
+        result = (
+            DatabaseSession.query(
+                func.min(Game.started_at),
+                func.max(Game.started_at),
+            )
+            .join(Play, Play.game_id == Game.id)
+            .filter(
+                and_(
+                    Play.user_xid == user_xid,
+                    Game.guild_xid == guild_xid,
+                    Game.started_at.isnot(None),
+                ),
+            )
+            .one()
+        )
+        return result[0], result[1]
