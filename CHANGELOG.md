@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v18.3.1](https://github.com/lexicalunit/spellbot/releases/tag/v18.3.1) - 2026-04-02
+
 ### Changed
 
 - Use guild membership information to filter analytics user lists.
