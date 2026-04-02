@@ -802,7 +802,7 @@ class PlaysService:
             DatabaseSession.query(Play.user_xid.distinct())
             .join(Game, Play.game_id == Game.id)
             .filter(*game_filters)
-            .subquery()
+            .scalar_subquery()
         )
 
         # Count blocks for each blocked user, filtering to only those who played

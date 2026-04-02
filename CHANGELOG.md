@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v18.2.17](https://github.com/lexicalunit/spellbot/releases/tag/v18.2.17) - 2026-04-01
 
+### Added
+
+- Adds a `/user_info` command for moderators and admins.
+
 ### Changed
 
 - Updated dependencies.
