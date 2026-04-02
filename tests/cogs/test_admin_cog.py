@@ -1242,3 +1242,237 @@ class TestCogAdminExpireGames:
             admin_action.safe_delete_message.assert_called_once()
             call_args = admin_action.safe_send_channel.call_args
             assert "Deleting message 3333" in call_args[0][1]
+
+
+@pytest.mark.asyncio
+class TestCogAdminUserInfo:
+    async def test_user_info_happy_path(
+        self,
+        cog: AdminCog,
+        interaction: discord.Interaction,
+        guild: Guild,
+        channel: Channel,
+        factories: Factories,
+        settings: Settings,
+    ) -> None:
+        """Test basic user info with games, blocks, and various states."""
+        # Create target user
+        target_user = factories.user.create(xid=9001, name="TargetUser")
+
+        # Create some games with plays
+        game1 = factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=datetime(2025, 1, 15, 12, 0, 0, tzinfo=UTC),
+        )
+        game2 = factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=datetime(2026, 3, 20, 14, 0, 0, tzinfo=UTC),
+        )
+        factories.play.create(
+            user_xid=target_user.xid,
+            game_id=game1.id,
+            og_guild_xid=guild.xid,
+        )
+        factories.play.create(
+            user_xid=target_user.xid,
+            game_id=game2.id,
+            og_guild_xid=guild.xid,
+        )
+
+        # Create blocks against the target
+        blocker1 = factories.user.create()
+        blocker2 = factories.user.create()
+        factories.block.create(user_xid=blocker1.xid, blocked_user_xid=target_user.xid)
+        factories.block.create(user_xid=blocker2.xid, blocked_user_xid=target_user.xid)
+
+        # Create verification and watch
+        factories.verify.create(user_xid=target_user.xid, guild_xid=guild.xid, verified=True)
+        factories.watch.create(user_xid=target_user.xid, guild_xid=guild.xid, note="Suspicious")
+
+        # Mock the discord user
+        mock_target = MagicMock(spec=discord.User)
+        mock_target.id = target_user.xid
+        mock_target.display_name = "TargetUser"
+
+        await run_command(cog.user_info, interaction, target=mock_target)
+
+        embed = get_last_send_message(interaction, "embed")
+        assert embed["author"]["name"] == "User info for TargetUser"
+        assert embed["color"] == settings.INFO_EMBED_COLOR
+        assert embed["footer"]["text"] == f"User ID: {target_user.xid}"
+
+        # Check fields
+        fields = {f["name"]: f["value"] for f in embed["fields"]}
+        assert f"2 games on {guild.name}" in fields["Games Played"]
+        assert "Blocked by 2 users" in fields["Block Status"]
+        assert "✅ Verified" in fields["Verified"]
+        assert "⚠️ Watched: Suspicious" in fields["Watch Status"]
+        assert "2025-01-15 to 2026-03-20" in fields["Play Range"]
+        assert fields["Game History"] == (
+            f"[View on spellbot.io](https://bot.spellbot.io/g/{guild.xid}/u/{target_user.xid})"
+        )
+
+    async def test_user_info_no_games(
+        self,
+        cog: AdminCog,
+        interaction: discord.Interaction,
+        guild: Guild,
+        factories: Factories,
+        settings: Settings,
+    ) -> None:
+        """Test user info when user has no games."""
+        target_user = factories.user.create(xid=9002, name="NoGamesUser")
+
+        mock_target = MagicMock(spec=discord.User)
+        mock_target.id = target_user.xid
+        mock_target.display_name = "NoGamesUser"
+
+        await run_command(cog.user_info, interaction, target=mock_target)
+
+        embed = get_last_send_message(interaction, "embed")
+        fields = {f["name"]: f["value"] for f in embed["fields"]}
+        assert f"0 games on {guild.name}" in fields["Games Played"]
+        assert "Blocked by 0 users" in fields["Block Status"]
+        assert "No games played" in fields["Play Range"]
+
+    async def test_user_info_single_game(
+        self,
+        cog: AdminCog,
+        interaction: discord.Interaction,
+        guild: Guild,
+        channel: Channel,
+        factories: Factories,
+    ) -> None:
+        """Test user info with a single game (same date range)."""
+        target_user = factories.user.create(xid=9003)
+
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=datetime(2025, 6, 1, 12, 0, 0, tzinfo=UTC),
+        )
+        factories.play.create(
+            user_xid=target_user.xid,
+            game_id=game.id,
+            og_guild_xid=guild.xid,
+        )
+
+        mock_target = MagicMock(spec=discord.User)
+        mock_target.id = target_user.xid
+        mock_target.display_name = "SingleGameUser"
+
+        await run_command(cog.user_info, interaction, target=mock_target)
+
+        embed = get_last_send_message(interaction, "embed")
+        fields = {f["name"]: f["value"] for f in embed["fields"]}
+        assert "1 game on" in fields["Games Played"]  # singular
+        assert "2025-06-01" in fields["Play Range"]
+        assert "to" not in fields["Play Range"]  # same day, no range
+
+    async def test_user_info_single_block(
+        self,
+        cog: AdminCog,
+        interaction: discord.Interaction,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        """Test user info with exactly 1 block (singular)."""
+        target_user = factories.user.create(xid=9004)
+        blocker = factories.user.create()
+        factories.block.create(user_xid=blocker.xid, blocked_user_xid=target_user.xid)
+
+        mock_target = MagicMock(spec=discord.User)
+        mock_target.id = target_user.xid
+        mock_target.display_name = "SingleBlockUser"
+
+        await run_command(cog.user_info, interaction, target=mock_target)
+
+        embed = get_last_send_message(interaction, "embed")
+        fields = {f["name"]: f["value"] for f in embed["fields"]}
+        assert "Blocked by 1 user" in fields["Block Status"]  # singular
+
+    async def test_user_info_verified_false(
+        self,
+        cog: AdminCog,
+        interaction: discord.Interaction,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        """Test user info when user is explicitly unverified."""
+        target_user = factories.user.create(xid=9005)
+        factories.verify.create(user_xid=target_user.xid, guild_xid=guild.xid, verified=False)
+
+        mock_target = MagicMock(spec=discord.User)
+        mock_target.id = target_user.xid
+        mock_target.display_name = "UnverifiedUser"
+
+        await run_command(cog.user_info, interaction, target=mock_target)
+
+        embed = get_last_send_message(interaction, "embed")
+        fields = {f["name"]: f["value"] for f in embed["fields"]}
+        assert "❌ Unverified" in fields["Verified"]
+
+    async def test_user_info_verified_not_set(
+        self,
+        cog: AdminCog,
+        interaction: discord.Interaction,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        """Test user info when user has no verification record."""
+        target_user = factories.user.create(xid=9006)
+        # No verify record created
+
+        mock_target = MagicMock(spec=discord.User)
+        mock_target.id = target_user.xid
+        mock_target.display_name = "NoVerifyUser"
+
+        await run_command(cog.user_info, interaction, target=mock_target)
+
+        embed = get_last_send_message(interaction, "embed")
+        fields = {f["name"]: f["value"] for f in embed["fields"]}
+        assert "Not set" in fields["Verified"]
+
+    async def test_user_info_watched_no_note(
+        self,
+        cog: AdminCog,
+        interaction: discord.Interaction,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        """Test user info when user is watched without a note."""
+        target_user = factories.user.create(xid=9007)
+        factories.watch.create(user_xid=target_user.xid, guild_xid=guild.xid, note="")
+
+        mock_target = MagicMock(spec=discord.User)
+        mock_target.id = target_user.xid
+        mock_target.display_name = "WatchedNoNoteUser"
+
+        await run_command(cog.user_info, interaction, target=mock_target)
+
+        embed = get_last_send_message(interaction, "embed")
+        fields = {f["name"]: f["value"] for f in embed["fields"]}
+        assert fields["Watch Status"] == "⚠️ Watched"
+
+    async def test_user_info_not_watched(
+        self,
+        cog: AdminCog,
+        interaction: discord.Interaction,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        """Test user info when user is not watched."""
+        target_user = factories.user.create(xid=9008)
+        # No watch record created
+
+        mock_target = MagicMock(spec=discord.User)
+        mock_target.id = target_user.xid
+        mock_target.display_name = "NotWatchedUser"
+
+        await run_command(cog.user_info, interaction, target=mock_target)
+
+        embed = get_last_send_message(interaction, "embed")
+        fields = {f["name"]: f["value"] for f in embed["fields"]}
+        assert "Not watched" in fields["Watch Status"]

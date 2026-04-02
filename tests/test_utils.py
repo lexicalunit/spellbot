@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlparse
 import discord
 import pytest
 
-from spellbot.errors import AdminOnlyError, GuildOnlyError
+from spellbot.errors import AdminOnlyError, GuildOnlyError, ModOnlyError
 from spellbot.utils import (
     bot_can_delete_channel,
     bot_can_delete_message,
@@ -446,6 +446,16 @@ class TestUtilsIsMod:
 
         stub.assert_called_once_with(interaction.user, interaction.guild, interaction.channel)
 
+    def test_raises_when_user_cannot_moderate(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.utils.user_can_moderate", return_value=False)
+        interaction = MagicMock(spec=discord.Interaction)
+        interaction.guild = MagicMock(spec=discord.Guild)
+        interaction.channel = MagicMock(spec=discord.TextChannel)
+        interaction.user = MagicMock()
+
+        with pytest.raises(ModOnlyError):
+            is_mod(interaction)
+
 
 class TestUtilsIsGuild:
     def test_happy_path(self) -> None:
@@ -580,3 +590,9 @@ class TestGenerateSignedUrl:
     def test_validate_wrong_signature(self, mocker: MockerFixture) -> None:
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
         assert not validate_signature(12345, 2000, "bad-sig")
+
+    def test_validate_signature_bypass_when_check_disabled(self, mocker: MockerFixture) -> None:
+        """When CHECK_SIGNATURE is False, validate_signature should always return True."""
+        mocker.patch("spellbot.utils.settings.CHECK_SIGNATURE", False)
+        # Even with bad/expired signature, should return True
+        assert validate_signature(12345, 0, "invalid-sig")

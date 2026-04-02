@@ -17,6 +17,7 @@ from spellbot.errors import (
     AdminOnlyError,
     GuildBannedError,
     GuildOnlyError,
+    ModOnlyError,
     UserBannedError,
     UserUnverifiedError,
     UserVerifiedError,
@@ -105,6 +106,11 @@ class TestSpellBot:
                 AdminOnlyError(),
                 "You do not have permission to do that.",
                 id="admin-only",
+            ),
+            pytest.param(
+                ModOnlyError(),
+                "You do not have permission to do that.",
+                id="mod-only",
             ),
             pytest.param(
                 GuildOnlyError(),
