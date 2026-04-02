@@ -97,6 +97,20 @@
         .error-box { background: #3b1f1f; border: 1px solid #7f1d1d; border-radius: 12px; padding: 2rem; text-align: center; }
         .error-box h2 { color: #fca5a5; margin-bottom: 0.5rem; }
         .section-error { color: #fca5a5; text-align: center; padding: 1rem; }
+        /* Left server indicator */
+        .left-badge {
+            display: inline-block; margin-left: 0.5rem; padding: 0.15rem 0.4rem;
+            font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+            background: #7f1d1d; color: #fca5a5; border-radius: 4px;
+            vertical-align: middle;
+        }
+        tr.left-server td { opacity: 0.6; }
+        .left-server-note {
+            margin-top: 0.75rem; padding: 0.5rem 0.75rem;
+            background: #2a2a50; border-radius: 6px;
+            font-size: 0.75rem; color: #9ca3af;
+        }
+        .left-server-note .left-badge { margin-left: 0; margin-right: 0.25rem; }
     </style>
 </head>
 <body>
@@ -503,17 +517,29 @@
         } else { showNoData("servicesSection"); }
     }
 
+    function renderPlayerRow(p, countLabel) {
+        const leftBadge = p.left_server ? '<span class="left-badge" title="User has left the server and will be removed on next refresh">left</span>' : '';
+        const rowClass = p.left_server ? ' class="left-server"' : '';
+        return '<tr' + rowClass + '><td>' + p.name + leftBadge + '</td><td style="color:#9ca3af;font-size:0.8rem">' + p.user_xid + '</td><td class="count">' + fmt(p.count) + '</td></tr>';
+    }
+
+    function renderLeftServerNote(players) {
+        const hasLeftServer = players.some(p => p.left_server);
+        if (!hasLeftServer) return '';
+        return '<div class="left-server-note"><span class="left-badge">left</span> = User has left the server. They will not appear on the next page load.</div>';
+    }
+
     function renderPlayers(data) {
         if (data.top_players?.length) {
             const section = document.getElementById("playersSection");
-            section.innerHTML = '<table><thead><tr><th>Player</th><th>Discord ID</th><th style="text-align:right">Games</th></tr></thead><tbody>' + data.top_players.map(p => '<tr><td>' + p.name + '</td><td style="color:#9ca3af;font-size:0.8rem">' + p.user_xid + '</td><td class="count">' + fmt(p.count) + '</td></tr>').join('') + '</tbody></table>';
+            section.innerHTML = '<table><thead><tr><th>Player</th><th>Discord ID</th><th style="text-align:right">Games</th></tr></thead><tbody>' + data.top_players.map(p => renderPlayerRow(p, "Games")).join('') + '</tbody></table>' + renderLeftServerNote(data.top_players);
         } else { showNoData("playersSection"); }
     }
 
     function renderBlocked(data) {
         if (data.top_blocked?.length) {
             const section = document.getElementById("blockedSection");
-            section.innerHTML = '<table><thead><tr><th>Player</th><th>Discord ID</th><th style="text-align:right">Times Blocked</th></tr></thead><tbody>' + data.top_blocked.map(p => '<tr><td>' + p.name + '</td><td style="color:#9ca3af;font-size:0.8rem">' + p.user_xid + '</td><td class="count">' + fmt(p.count) + '</td></tr>').join('') + '</tbody></table>';
+            section.innerHTML = '<table><thead><tr><th>Player</th><th>Discord ID</th><th style="text-align:right">Times Blocked</th></tr></thead><tbody>' + data.top_blocked.map(p => renderPlayerRow(p, "Times Blocked")).join('') + '</tbody></table>' + renderLeftServerNote(data.top_blocked);
         } else { showNoData("blockedSection"); }
     }
 

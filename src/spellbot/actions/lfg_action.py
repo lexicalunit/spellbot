@@ -778,13 +778,14 @@ class LookingForGameAction(BaseAction):
         When exclude_self is True, don't create a user for IDs matching the author's.
         """
         found_users: list[int] = []
+        guild_xid = self.interaction.guild_id
         for user_xid in user_xids:
             if exclude_self and user_xid == self.interaction.user.id:
                 continue
             user = await safe_fetch_user(self.bot, user_xid)
             if not user:
                 continue
-            data = await self.services.users.upsert(user)
+            data = await self.services.users.upsert(user, guild_xid=guild_xid)
             if data["banned"]:
                 continue
             found_users.append(user_xid)

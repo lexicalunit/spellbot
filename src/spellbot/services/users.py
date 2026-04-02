@@ -14,6 +14,7 @@ from spellbot.models import (
     Block,
     Game,
     GameDict,
+    GuildMember,
     Play,
     Post,
     Queue,
@@ -34,7 +35,11 @@ class UsersService:
     user: User | None = None
 
     @sync_to_async()
-    def upsert(self, target: discord.User | discord.Member) -> UserDict:
+    def upsert(
+        self,
+        target: discord.User | discord.Member,
+        guild_xid: int | None = None,
+    ) -> UserDict:
         assert hasattr(target, "id")
         xid = target.id
         max_name_len = User.name.property.columns[0].type.length  # type: ignore
@@ -51,6 +56,27 @@ class UsersService:
             },
         )
         DatabaseSession.execute(upsert, values)
+
+        # Upsert GuildMember record if guild_xid is provided
+        if guild_xid is not None:
+            member_values = {
+                "user_xid": xid,
+                "guild_xid": guild_xid,
+                "updated_at": datetime.now(tz=UTC),
+            }
+            member_upsert = insert(GuildMember).values(**member_values)
+            member_upsert = member_upsert.on_conflict_do_update(
+                index_elements=[GuildMember.user_xid, GuildMember.guild_xid],
+                index_where=and_(
+                    GuildMember.user_xid == member_values["user_xid"],
+                    GuildMember.guild_xid == member_values["guild_xid"],
+                ),
+                set_={
+                    "updated_at": member_upsert.excluded.updated_at,
+                },
+            )
+            DatabaseSession.execute(member_upsert, member_values)
+
         DatabaseSession.commit()
         self.user = DatabaseSession.get(User, xid)
         assert self.user

@@ -72,7 +72,8 @@ class BaseAction:
         if self.guild and self.channel:
             self.channel_data = await self.services.channels.upsert(self.channel)
 
-        await self.services.users.upsert(self.member)
+        guild_xid = self.guild.id if self.guild else None
+        await self.services.users.upsert(self.member, guild_xid=guild_xid)
 
         if await self.services.users.is_banned(self.member.id):
             raise UserBannedError

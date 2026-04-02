@@ -32,6 +32,7 @@ from tests.factories import (
     GameFactory,
     GuildAwardFactory,
     GuildFactory,
+    GuildMemberFactory,
     PlayFactory,
     PostFactory,
     QueueFactory,
@@ -149,6 +150,7 @@ class Factories:
     game = GameFactory
     guild = GuildFactory
     guild_award = GuildAwardFactory
+    guild_member = GuildMemberFactory
     play = PlayFactory
     post = PostFactory
     queue = QueueFactory
@@ -182,6 +184,7 @@ async def session_context(
         GameFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         GuildAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         GuildFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        GuildMemberFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         PlayFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         PostFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
         QueueFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
