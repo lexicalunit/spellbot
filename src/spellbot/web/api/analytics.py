@@ -224,8 +224,16 @@ def _delete_guild_member(guild_xid: int, user_xid: int) -> None:
     ).delete()
 
 
-async def _check_guild_member(guild_xid: int, user_xid: int) -> bool:
-    """Check if a user is a member of a guild via the Discord REST API."""
+async def _check_guild_member(guild_xid: int, user_xid: int) -> bool | None:
+    """
+    Check if a user is a member of a guild via the Discord REST API.
+
+    Returns:
+        True if the user is confirmed to be a member.
+        False if the user is confirmed to NOT be a member (404 response).
+        None if we couldn't determine membership status (errors, rate limits, etc).
+
+    """
     headers = {"Authorization": f"Bot {settings.BOT_TOKEN}"}
     try:
         async with httpx.AsyncClient() as client:
@@ -233,10 +241,21 @@ async def _check_guild_member(guild_xid: int, user_xid: int) -> bool:
                 f"https://discord.com/api/v10/guilds/{guild_xid}/members/{user_xid}",
                 headers=headers,
             )
-            return response.status_code == 200
+            if response.status_code == 200:
+                return True
+            if response.status_code == 404:
+                return False
+            # Any other status code (rate limit, server error, etc) - we can't be sure
+            logger.warning(
+                "check_guild_member unexpected status %s for %s/%s",
+                response.status_code,
+                guild_xid,
+                user_xid,
+            )
+            return None
     except Exception as ex:
         logger.warning("check_guild_member failure for %s/%s: %s", guild_xid, user_xid, ex)
-        return False
+        return None
 
 
 async def _check_membership_and_update(
@@ -246,18 +265,21 @@ async def _check_membership_and_update(
     """
     Check membership for each player and mark those who have left.
 
-    Deletes GuildMember records for users who are no longer in the guild.
+    Deletes GuildMember records for users who are confirmed to no longer be in the guild.
+    Only marks users as left when we get a definitive 404 from Discord API.
     """
     results = []
     for player in players:
         user_xid = int(player["user_xid"])
         is_member = await _check_guild_member(guild_xid, user_xid)
         player_copy = dict(player)
-        if not is_member:
+        if is_member is False:
+            # Only mark as left when we get a definitive 404
             player_copy["left_server"] = True
             # Delete the stale GuildMember record
             await _delete_guild_member(guild_xid, user_xid)
         else:
+            # User is confirmed member (True) or status unknown (None)
             player_copy["left_server"] = False
         results.append(player_copy)
     return results

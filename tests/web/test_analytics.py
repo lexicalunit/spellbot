@@ -478,7 +478,7 @@ class TestWebAnalyticsMembershipChecks:
         self,
         mocker: MockerFixture,
     ) -> None:
-        """Test that _check_guild_member returns False on API errors."""
+        """Test that _check_guild_member returns None on API errors."""
         # Mock httpx to raise an exception
         mock_client = mocker.MagicMock()
         mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
@@ -487,7 +487,7 @@ class TestWebAnalyticsMembershipChecks:
         mocker.patch("httpx.AsyncClient", return_value=mock_client)
 
         result = await _check_guild_member(12345, 67890)
-        assert result is False
+        assert result is None
 
     async def test_check_guild_member_success(
         self,
@@ -520,6 +520,22 @@ class TestWebAnalyticsMembershipChecks:
 
         result = await _check_guild_member(12345, 67890)
         assert result is False
+
+    async def test_check_guild_member_rate_limited(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test that _check_guild_member returns None on rate limit (429)."""
+        mock_response = mocker.MagicMock()
+        mock_response.status_code = 429
+        mock_client = mocker.MagicMock()
+        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = mocker.AsyncMock(return_value=None)
+        mock_client.get = mocker.AsyncMock(return_value=mock_response)
+        mocker.patch("httpx.AsyncClient", return_value=mock_client)
+
+        result = await _check_guild_member(12345, 67890)
+        assert result is None
 
     async def test_analytics_players_invalid_signature(
         self,
@@ -588,3 +604,47 @@ class TestWebAnalyticsMembershipChecks:
 
         resp = await client.get(path)
         assert resp.status == 404
+
+    async def test_analytics_players_empty_results(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test analytics_players with no player data (empty top_players)."""
+        guild = factories.guild.create(xid=403, name="empty-guild")
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+
+        url = generate_signed_url(guild.xid, expires_in_minutes=10)
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        expires = query["expires"][0]
+        sig = query["sig"][0]
+        path = f"/g/{guild.xid}/analytics/players?expires={expires}&sig={sig}"
+
+        resp = await client.get(path)
+        assert resp.status == 200
+        data = await resp.json()
+        assert data["top_players"] == []
+
+    async def test_analytics_blocked_empty_results(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test analytics_blocked with no blocked user data (empty top_blocked)."""
+        guild = factories.guild.create(xid=404, name="empty-guild")
+        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+
+        url = generate_signed_url(guild.xid, expires_in_minutes=10)
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        expires = query["expires"][0]
+        sig = query["sig"][0]
+        path = f"/g/{guild.xid}/analytics/blocked?expires={expires}&sig={sig}"
+
+        resp = await client.get(path)
+        assert resp.status == 200
+        data = await resp.json()
+        assert data["top_blocked"] == []
