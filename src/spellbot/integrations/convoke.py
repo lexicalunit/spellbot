@@ -133,7 +133,7 @@ async def fetch_convoke_link(
     if game["bracket"] != GameBracket.NONE.value:
         payload["bracketLevel"] = f"B{game['bracket'] - 1}"
     if game["format"] == GameFormat.PRE_CONS.value:
-        payload["bracketLevel"] = "Precon"  # Convoke uses Bracket to indicate "pre-cons"
+        payload["bracketLevel"] = "PRECON"  # Convoke uses Bracket to indicate "pre-cons"
     if key:
         payload["password"] = key
     headers = {"user-agent": f"spellbot/{__version__}"}
