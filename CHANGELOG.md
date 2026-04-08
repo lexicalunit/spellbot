@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v18.4.1](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.1) - 2026-04-08
+
 ### Fixed
 
 - Fix handing of "PRECON" enum for Convoke API.
