@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Support for Convoke's "Precon" bracket level.
+
+### Changed
+
+- Updated dependencies.
+
 ## [v18.3.2](https://github.com/lexicalunit/spellbot/releases/tag/v18.3.2) - 2026-04-02
 
 ### Changed

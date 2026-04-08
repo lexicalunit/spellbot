@@ -153,6 +153,41 @@ class TestFetchConvokeLink:
         assert payload["bracketLevel"] == "B2"  # BRACKET_2.value (3) -> B{3-1} = B2
 
     @pytest.mark.asyncio
+    async def test_fetch_convoke_link_with_precons(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"url": "https://convoke.gg/game/456"}
+        mock_client.post = AsyncMock(return_value=mock_response)
+
+        game = cast(
+            "GameDict",
+            {
+                "id": 99,
+                "format": GameFormat.PRE_CONS.value,
+                "seats": 4,
+                "guild_xid": 12345,
+                "channel_xid": 67890,
+                "bracket": GameBracket.NONE.value,
+            },
+        )
+
+        with (
+            patch.object(
+                convoke_module.services.games,
+                "player_data",
+                AsyncMock(return_value=[]),
+            ),
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
+            patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
+        ):
+            result = await fetch_convoke_link(mock_client, game, None, pins=None)
+
+        assert result == {"url": "https://convoke.gg/game/456"}
+        payload = mock_client.post.call_args.kwargs["json"]
+        assert payload["bracketLevel"] == "Precon"
+
+    @pytest.mark.asyncio
     async def test_fetch_convoke_link_with_password(self) -> None:
         mock_client = MagicMock(spec=httpx.AsyncClient)
         mock_response = MagicMock()
