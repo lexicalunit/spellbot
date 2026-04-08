@@ -185,7 +185,7 @@ class TestFetchConvokeLink:
 
         assert result == {"url": "https://convoke.gg/game/456"}
         payload = mock_client.post.call_args.kwargs["json"]
-        assert payload["bracketLevel"] == "Precon"
+        assert payload["bracketLevel"] == "PRECON"
 
     @pytest.mark.asyncio
     async def test_fetch_convoke_link_with_password(self) -> None:
