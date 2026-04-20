@@ -159,7 +159,7 @@ class TestServiceChannels:
         assert data["xid"] == discord_channel.id
 
         # Manually add to cache to simulate production behavior
-        channel_cache[discord_channel.id] = ("test-channel", data)
+        channel_cache[discord_channel.id] = "test-channel"
 
         # Forget the channel
         await channels.forget(discord_channel.id)
