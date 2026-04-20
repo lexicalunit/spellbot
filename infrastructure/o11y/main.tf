@@ -32,7 +32,11 @@ resource "datadog_monitor" "spellbot_tasks_not_running" {
   query   = <<-EOT
     logs("environment:prod "starting task expire_inactive_games"").index("*").rollup("count").last("2h") < 1
   EOT
-  message = "@${var.alert_email}"
+  message = <<-EOT
+    {{#is_alert}}
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
 }
 
 resource "datadog_monitor" "spellbot_application_error" {
@@ -49,7 +53,11 @@ resource "datadog_monitor" "spellbot_application_error" {
   query   = <<-EOT
     logs("environment:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -404 -\"ELB-HealthChecker\" -\"Error handling request from\" -\"raise ex\" -\"raise LineTooLong\" (env:error OR status:error OR raise)").index("*").rollup("count").last("5m") > 1
   EOT
-  message = "@${var.alert_email}"
+  message = <<-EOT
+    {{#is_alert}}
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
 }
 
 resource "datadog_monitor" "spellbot_no_data_prod" {
@@ -63,7 +71,11 @@ resource "datadog_monitor" "spellbot_no_data_prod" {
   query   = <<-EOT
     sum(last_15m):sum:trace.postgres.query.hits{env:prod,service:postgres,span.kind:client}.as_rate() <= 0
   EOT
-  message = "@${var.alert_email}"
+  message = <<-EOT
+    {{#is_alert}}
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
 }
 
 resource "datadog_monitor" "SpellBot_SpellTable_create_game_issues" {
@@ -79,7 +91,11 @@ resource "datadog_monitor" "SpellBot_SpellTable_create_game_issues" {
   query   = <<-EOT
     trace-analytics("env:prod service:spellbot operation_name:spellbot.client.create_game_link @link_service:SPELLTABLE").index("trace-search", "djm-search").rollup("avg", "@duration").last("5m") > 8000000000
   EOT
-  message = "@${var.alert_email}"
+  message = <<-EOT
+    {{#is_alert}}
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
 }
 
 resource "datadog_monitor" "spellbot_apm_trace_errors" {
@@ -97,9 +113,9 @@ resource "datadog_monitor" "spellbot_apm_trace_errors" {
   message = <<-EOT
     {{#is_alert}}
     SpellBot is experiencing an elevated number of APM trace errors in the last 5 minutes.
-    {{/is_alert}}
 
     @${var.alert_email}
+    {{/is_alert}}
   EOT
 }
 
@@ -122,11 +138,11 @@ resource "datadog_monitor" "SpellBot_ECS_Tasks_Failed_to_Start_Successfully" {
   message = <<-EOT
     {{#is_alert}}
     ECS service:{{servicename.name}} (cluster:{{clustername.name}}) was unable to start successfully.
-    {{/is_alert}}
 
     To investigate further, view the affected service in the [ECS Explorer](/orchestration/explorer/ecsService?query=ecs_service:{{servicename.name}}+ecs_cluster:{{clustername.name}}+aws_account:{{aws_account.name}}+region:{{region.name}})
 
     @${var.alert_email}
+    {{/is_alert}}
   EOT
 }
 
@@ -152,15 +168,18 @@ resource "datadog_monitor" "AWS_ECS_Memory_Reservation_Exceeds_Threshold" {
   message = <<-EOT
     {{#is_warning}}
     Memory Reservation for ECS cluster {{clustername.name}} is approaching the threshold of {{threshold}}%
-    {{/is_warning}}
-
-    {{#is_alert}}
-    Memory Reservation for ECS cluster {{clustername.name}} has exceeded the threshold of {{threshold}}%
-    {{/is_alert}}
 
     To investigate further, view the affected cluster in the [ECS Explorer](/orchestration/explorer/ecsCluster?query=ecs_cluster:{{clustername.name}}+aws_account:{{aws_account.name}}+region:{{region.name}})
 
     @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    Memory Reservation for ECS cluster {{clustername.name}} has exceeded the threshold of {{threshold}}%
+
+    To investigate further, view the affected cluster in the [ECS Explorer](/orchestration/explorer/ecsCluster?query=ecs_cluster:{{clustername.name}}+aws_account:{{aws_account.name}}+region:{{region.name}})
+
+    @${var.alert_email}
+    {{/is_alert}}
   EOT
 }
 
@@ -180,15 +199,18 @@ resource "datadog_monitor" "ECS_Fargate_AWS_ECS_Task_CPU_utilization_is_high" {
   message = <<-EOT
     {{#is_warning}}
     AWS ECS Task {{task_arn.name}} in service {{ecs_service.name}} (cluster {{ecs_cluster.name}}) is approaching CPU Utilization threshold
-    {{/is_warning}}
-
-    {{#is_alert}}
-    AWS ECS Task {{task_arn.name}} in service {{ecs_service.name}} (cluster {{ecs_cluster.name}}) has crossed CPU Utilization threshold
-    {{/is_alert}}
 
     To investigate further, view the affected task in the [ECS Explorer](/orchestration/explorer/ecsTask?inspect={{task_arn.name}})
 
     @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    AWS ECS Task {{task_arn.name}} in service {{ecs_service.name}} (cluster {{ecs_cluster.name}}) has crossed CPU Utilization threshold
+
+    To investigate further, view the affected task in the [ECS Explorer](/orchestration/explorer/ecsTask?inspect={{task_arn.name}})
+
+    @${var.alert_email}
+    {{/is_alert}}
   EOT
 }
 
@@ -208,11 +230,11 @@ resource "datadog_monitor" "AWS_ECS_Running_Task_Count_differs_from_Desired_Coun
   message = <<-EOT
     {{#is_alert}}
     ECS Running Task Count is not equal to Desired Task Count for {{servicename.name}} in cluster {{clustername.name}}.
-    {{/is_alert}}
 
     To investigate further, view the affected service in the [ECS Explorer](/orchestration/explorer/ecsService?query=ecs_service:{{servicename.name}}+ecs_cluster:{{clustername.name}}+aws_account:{{aws_account.name}}+region:{{region.name}})
 
     @${var.alert_email}
+    {{/is_alert}}
   EOT
 }
 
@@ -228,7 +250,11 @@ resource "datadog_monitor" "SpellBot_No_traces" {
   query   = <<-EOT
     sum(last_5m):sum:trace.interaction.hits{env:prod,service:spellbot,span.kind:internal}.as_rate() <= 0
   EOT
-  message = "@${var.alert_email}"
+  message = <<-EOT
+    {{#is_alert}}
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
 }
 
 # Dashboards
