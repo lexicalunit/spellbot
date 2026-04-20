@@ -14,16 +14,13 @@ from spellbot.models import Channel, ChannelDict
 if TYPE_CHECKING:
     from discord.abc import MessageableChannel
 
-channel_cache: dict[int, tuple[str, ChannelDict]] = {}
+channel_cache: dict[int, str] = {}
 
 
-def is_cached(xid: int, name: str) -> tuple[bool, ChannelDict | None]:  # pragma: no cover
+def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
     if running_in_pytest():
-        return False, None
-    cached = channel_cache.get(xid)
-    if cached and cached[0] == name:
-        return True, cached[1]
-    return False, None
+        return False
+    return bool((cached_name := channel_cache.get(xid)) and cached_name == name)
 
 
 class ChannelsService:
@@ -33,33 +30,29 @@ class ChannelsService:
         name_max_len = Channel.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(channel, "name", "")
         name = raw_name[:name_max_len]
-        cached, cached_dict = is_cached(channel.id, name)
-        if cached and cached_dict:  # pragma: no cover (caching disabled in tests)
-            return cached_dict
-
-        values = {
-            "xid": channel.id,
-            "guild_xid": channel.guild.id,
-            "name": name,
-            "updated_at": datetime.now(tz=UTC),
-        }
-        upsert = insert(Channel).values(**values)
-        upsert = upsert.on_conflict_do_update(
-            index_elements=[Channel.xid],
-            index_where=Channel.xid == values["xid"],
-            set_={
-                "name": upsert.excluded.name,
-                "updated_at": upsert.excluded.updated_at,
-            },
-            where=upsert.excluded.name != Channel.name,
-        )
-        DatabaseSession.execute(upsert, values)
-        DatabaseSession.commit()
+        if not is_cached(channel.id, name):  # pragma: no branch (caching disabled in tests)
+            values = {
+                "xid": channel.id,
+                "guild_xid": channel.guild.id,
+                "name": name,
+                "updated_at": datetime.now(tz=UTC),
+            }
+            upsert = insert(Channel).values(**values)
+            upsert = upsert.on_conflict_do_update(
+                index_elements=[Channel.xid],
+                index_where=Channel.xid == values["xid"],
+                set_={
+                    "name": upsert.excluded.name,
+                    "updated_at": upsert.excluded.updated_at,
+                },
+                where=upsert.excluded.name != Channel.name,
+            )
+            DatabaseSession.execute(upsert, values)
+            DatabaseSession.commit()
+            channel_cache[channel.id] = name
 
         db_channel = DatabaseSession.query(Channel).filter(Channel.xid == channel.id).one()
-        result = db_channel.to_dict()
-        channel_cache[channel.id] = (name, result)
-        return result
+        return db_channel.to_dict()
 
     @sync_to_async()
     def forget(self, xid: int) -> None:
@@ -81,7 +74,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
 
     @sync_to_async()
     def set_default_format(self, xid: int, format: int) -> None:
@@ -93,7 +85,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
 
     @sync_to_async()
     def set_default_bracket(self, xid: int, bracket: int) -> None:
@@ -105,7 +96,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
 
     @sync_to_async()
     def set_default_service(self, xid: int, service: int) -> None:
@@ -117,7 +107,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
 
     @sync_to_async()
     def set_auto_verify(self, xid: int, setting: bool) -> None:
@@ -129,7 +118,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
 
     @sync_to_async()
     def set_verified_only(self, xid: int, setting: bool) -> None:
@@ -141,7 +129,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
 
     @sync_to_async()
     def set_unverified_only(self, xid: int, setting: bool) -> None:
@@ -153,7 +140,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
 
     @sync_to_async()
     def set_motd(self, xid: int, message: str | None = None) -> str:
@@ -170,7 +156,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
         return motd
 
     @sync_to_async()
@@ -188,7 +173,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
         return extra
 
     @sync_to_async()
@@ -203,7 +187,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
         return name
 
     @sync_to_async()
@@ -216,7 +199,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
         return value
 
     @sync_to_async()
@@ -229,7 +211,6 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
         return value
 
     @sync_to_async()
@@ -242,5 +223,4 @@ class ChannelsService:
         )
         DatabaseSession.execute(query)
         DatabaseSession.commit()
-        channel_cache.pop(xid, None)
         return value
