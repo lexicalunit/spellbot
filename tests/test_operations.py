@@ -37,7 +37,7 @@ from spellbot.operations import (
     safe_update_embed,
     safe_update_embed_origin,
 )
-from spellbot.utils import CANT_SEND_CODE
+from spellbot.utils import CANT_SEND_CODE, NO_MUTUAL_GUILDS_CODE
 from tests.mocks import build_message, mock_client
 
 if TYPE_CHECKING:
@@ -547,18 +547,28 @@ class TestOperationsSendUser:
         assert "no send method on user user#1234 1234" in caplog.text
 
     @pytest.mark.parametrize("user_xid", [1234, None])
-    async def test_forbidden(
+    async def test_forbidden_no_mutual_guilds(
         self,
         caplog: pytest.LogCaptureFixture,
         user_xid: int | None,
     ) -> None:
         caplog.set_level(logging.INFO)
+        exception = discord.errors.Forbidden(MagicMock(), "msg")
+        exception.code = NO_MUTUAL_GUILDS_CODE
         user = MagicMock(spec=discord.User | discord.Member)
         user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = user_xid
-        user.send = AsyncMock(side_effect=discord.errors.Forbidden(MagicMock(), "msg"))
+        user.send = AsyncMock(side_effect=exception)
         await safe_send_user(user, "content")
         assert "not allowed to send message to" in caplog.text
+
+    async def test_forbidden_other_code(self, caplog: pytest.LogCaptureFixture) -> None:
+        user = MagicMock(spec=discord.User | discord.Member)
+        user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.id = 1234
+        user.send = AsyncMock(side_effect=discord.errors.Forbidden(MagicMock(), "msg"))
+        await safe_send_user(user, "content")
+        assert "failed to send message to user user#1234 1234" in caplog.text
 
     async def test_cant_send(self, caplog: pytest.LogCaptureFixture) -> None:
         caplog.set_level(logging.INFO)

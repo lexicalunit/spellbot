@@ -41,6 +41,12 @@ logger = logging.getLogger(__name__)
 # Discord API error code indicating that we can not send messages to this user.
 CANT_SEND_CODE = 50007
 
+# Discord API error code indicating that the user's privacy settings prevent DMs
+# from the bot (commonly reported by Discord as "no mutual guilds" even when the
+# bot and user are in the same server, if the user has disabled DMs from server
+# members, blocked the bot, or restricted DMs to friends).
+NO_MUTUAL_GUILDS_CODE = 50278
+
 EMBED_DESCRIPTION_SIZE_LIMIT = 4096
 
 

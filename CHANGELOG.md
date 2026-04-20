@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Adds monitoring for APM trace errors.
 
+### Changed
+
+- Updated dependencies.
+- Ignore NO_MUTUAL_GUILDS error code for user DMs.
+
 ## [v18.4.2](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.2) - 2026-04-20
 
 ### Changed

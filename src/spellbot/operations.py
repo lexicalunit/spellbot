@@ -15,6 +15,7 @@ from discord.utils import MISSING
 from .metrics import add_span_error
 from .utils import (
     CANT_SEND_CODE,
+    NO_MUTUAL_GUILDS_CODE,
     bot_can_delete_channel,
     bot_can_delete_message,
     bot_can_manage_channels,
@@ -27,6 +28,9 @@ from .utils import (
     log_warning,
     suppress,
 )
+
+# Error code that are due to user configuration issues that we can't work around.
+EXPECTED_DM_FAILURE_CODES = frozenset({CANT_SEND_CODE, NO_MUTUAL_GUILDS_CODE})
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -41,7 +45,10 @@ logger = logging.getLogger(__name__)
 
 
 @tracer.wrap()
-async def retry(func: Callable[[], Awaitable[Any]]) -> Any:
+async def retry(
+    func: Callable[[], Awaitable[Any]],
+    ignore_error: Callable[[BaseException], bool] | None = None,
+) -> Any:
     times = 0
     while True:
         try:
@@ -51,6 +58,10 @@ async def retry(func: Callable[[], Awaitable[Any]]) -> Any:
             if times > 3:
                 raise
             await sleep(times / 100)  # 10ms, 20ms, 30ms, etc.
+        except Exception as ex:
+            if ignore_error is not None and ignore_error(ex) and (span := tracer.current_span()):
+                span._ignore_exception(type(ex))  # noqa: SLF001
+            raise
 
 
 @tracer.wrap()
@@ -554,6 +565,13 @@ async def safe_message_reply(message: discord.Message, *args: Any, **kwargs: Any
         logger.debug("debug: %s", ex, exc_info=True)
 
 
+def _is_expected_dm_failure(ex: BaseException) -> bool:
+    return (
+        isinstance(ex, discord.errors.HTTPException)
+        and getattr(ex, "code", None) in EXPECTED_DM_FAILURE_CODES
+    )
+
+
 @tracer.wrap()
 async def safe_send_user(
     user: discord.User | discord.Member,
@@ -568,7 +586,10 @@ async def safe_send_user(
         return log_warning("no send method on user %(user)s %(xid)s", user=user, xid=user_xid)
 
     try:
-        await retry(lambda: user.send(*args, **kwargs))
+        await retry(
+            lambda: user.send(*args, **kwargs),
+            ignore_error=_is_expected_dm_failure,
+        )
     except discord.errors.DiscordServerError as ex:
         add_span_error(ex)
         log_warning(
@@ -578,14 +599,23 @@ async def safe_send_user(
             exec_info=True,
         )
     except (discord.errors.Forbidden, discord.errors.HTTPException) as ex:
-        add_span_error(ex)
-        if isinstance(ex, discord.errors.Forbidden) or ex.code == CANT_SEND_CODE:
-            # User may have the bot blocked or they may have DMs only allowed for friends.
+        if _is_expected_dm_failure(ex):
+            # User may have the bot blocked, DMs allowed only for friends, or
+            # no mutual-guild visibility per their privacy settings.
+            if span := tracer.current_span():  # pragma: no cover
+                span.set_tags(
+                    {
+                        "warning": "true",
+                        "warning.type": "dm_delivery_blocked",
+                        "warning.code": str(getattr(ex, "code", "")),
+                    },
+                )
             return log_info(
                 "not allowed to send message to %(user)s %(xid)s",
                 user=user,
                 xid=user_xid,
             )
+        add_span_error(ex)
         log_warning(
             "failed to send message to user %(user)s %(xid)s",
             user=user,
