@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Less noisy datadog monitors.
+- Updated dependencies.
+- Stronger caching for guilds and channels.
 
 ## [v18.4.3](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.3) - 2026-04-20
 
