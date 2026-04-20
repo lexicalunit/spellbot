@@ -14,13 +14,16 @@ from spellbot.models import Channel, Guild, GuildAward, GuildAwardDict, GuildDic
 if TYPE_CHECKING:
     import discord
 
-guild_cache: dict[int, str] = {}
+guild_cache: dict[int, tuple[str, GuildDict]] = {}
 
 
-def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
+def is_cached(xid: int, name: str) -> tuple[bool, GuildDict | None]:  # pragma: no cover
     if running_in_pytest():
-        return False
-    return bool((cached_name := guild_cache.get(xid)) and cached_name == name)
+        return False, None
+    cached = guild_cache.get(xid)
+    if cached and cached[0] == name:
+        return True, cached[1]
+    return False, None
 
 
 class GuildsService:
@@ -31,28 +34,33 @@ class GuildsService:
         name_max_len = Guild.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(guild, "name", "")
         name = raw_name[:name_max_len]
-        if not is_cached(guild.id, name):  # pragma: no branch (caching disabled in tests)
-            values = {
-                "xid": guild.id,
-                "name": name,
-                "updated_at": datetime.now(tz=UTC),
-            }
-            upsert = insert(Guild).values(**values)
-            upsert = upsert.on_conflict_do_update(
-                index_elements=[Guild.xid],
-                index_where=Guild.xid == values["xid"],
-                set_={
-                    "name": upsert.excluded.name,
-                    "updated_at": upsert.excluded.updated_at,
-                },
-                where=upsert.excluded.name != Guild.name,
-            )
-            DatabaseSession.execute(upsert, values)
-            DatabaseSession.commit()
-            guild_cache[guild.id] = name
+        cached, cached_dict = is_cached(guild.id, name)
+        if cached:  # pragma: no cover (caching disabled in tests)
+            return cached_dict
+
+        values = {
+            "xid": guild.id,
+            "name": name,
+            "updated_at": datetime.now(tz=UTC),
+        }
+        upsert = insert(Guild).values(**values)
+        upsert = upsert.on_conflict_do_update(
+            index_elements=[Guild.xid],
+            index_where=Guild.xid == values["xid"],
+            set_={
+                "name": upsert.excluded.name,
+                "updated_at": upsert.excluded.updated_at,
+            },
+            where=upsert.excluded.name != Guild.name,
+        )
+        DatabaseSession.execute(upsert, values)
+        DatabaseSession.commit()
 
         self.guild = DatabaseSession.query(Guild).filter(Guild.xid == guild.id).one_or_none()
-        return self.guild.to_dict() if self.guild else None
+        result = self.guild.to_dict() if self.guild else None
+        if result:
+            guild_cache[guild.id] = (name, result)
+        return result
 
     @sync_to_async()
     def set_banned(self, banned: bool, xid: int) -> None:
