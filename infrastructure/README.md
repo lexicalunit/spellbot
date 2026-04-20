@@ -2,6 +2,10 @@
 
 Infrastructure for SpellBot is managed by Terraform. Changes to the infrastructure are deployed manually by running `terraform apply` commands locally. Changes to the source code are deployed automatically by GitHub Actions.
 
+## Prerequisites
+
+Make sure that you've run `aws configure` first.
+
 ## Verifying changes
 
 Please verify changes using [`tflint`][tflint] before committing.
