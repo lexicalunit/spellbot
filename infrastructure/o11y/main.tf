@@ -47,7 +47,7 @@ resource "datadog_monitor" "spellbot_application_error" {
   type    = "log alert"
   tags    = ["service:spellbot", "env:prod"]
   query   = <<-EOT
-    logs("environment:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -404 -"ELB-HealthChecker" -"Error handling request from" (error OR status:error OR raise)").index("*").rollup("count").last("5m") > 1
+    logs("environment:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -404 -\"ELB-HealthChecker\" -\"Error handling request from\" -\"raise ex\" -\"raise LineTooLong\" (env:error OR status:error OR raise)").index("*").rollup("count").last("5m") > 1
   EOT
   message = "@${var.alert_email}"
 }
@@ -80,6 +80,27 @@ resource "datadog_monitor" "SpellBot_SpellTable_create_game_issues" {
     trace-analytics("env:prod service:spellbot operation_name:spellbot.client.create_game_link @link_service:SPELLTABLE").index("trace-search", "djm-search").rollup("avg", "@duration").last("5m") > 8000000000
   EOT
   message = "@${var.alert_email}"
+}
+
+resource "datadog_monitor" "spellbot_apm_trace_errors" {
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 5
+  }
+  name    = "SpellBot: APM Trace Errors"
+  type    = "trace-analytics alert"
+  tags    = ["env:prod", "service:spellbot"]
+  query   = <<-EOT
+    trace-analytics("env:prod service:spellbot -status:ok").index("trace-search", "djm-search").rollup("count").last("5m") > 5
+  EOT
+  message = <<-EOT
+    {{#is_alert}}
+    SpellBot is experiencing an elevated number of APM trace errors in the last 5 minutes.
+    {{/is_alert}}
+
+    @${var.alert_email}
+  EOT
 }
 
 # ECS Alerts
