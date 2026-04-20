@@ -218,3 +218,22 @@ class TestServiceGuilds:
         setting = await guilds.setup_mythic_track()
 
         assert setting
+
+    async def test_guilds_upsert_returns_none_when_guild_not_found(
+        self,
+        mocker: MagicMock,
+    ) -> None:
+        """Test edge case where guild query returns None after upsert."""
+        discord_guild = MagicMock()
+        discord_guild.id = 999
+        discord_guild.name = "test-guild"
+
+        guilds = GuildsService()
+
+        # Mock the query to return None after upsert
+        mock_query = mocker.patch.object(DatabaseSession, "query")
+        mock_query.return_value.filter.return_value.one_or_none.return_value = None
+
+        result = await guilds.upsert(discord_guild)
+
+        assert result is None
