@@ -96,6 +96,8 @@ Records the given game as played by the given users and their commanders. This w
 }
 ```
 
+> Note: for compatibility reasons, you can also pass a user name instead of an xid. If the user can be matched to a user in the SpellBot database by that name, processing will continue without error.
+
 #### Response
 
 ```json

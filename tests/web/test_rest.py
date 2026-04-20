@@ -596,3 +596,182 @@ class TestGameRecordEndpoint:
         assert resp.status == 400
         data = await resp.json()
         assert data["error"] == "Mismatched player count"
+
+    async def test_game_record_with_username_tracker(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test that usernames can be used instead of xids for tracker."""
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
+        mocker.patch("spellbot.web.api.rest.send_dm", return_value=None)
+
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        user1 = factories.user.create(xid=101, name="PlayerOne")
+        user2 = factories.user.create(xid=102, name="PlayerTwo")
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+            started_at=datetime.now(tz=UTC),
+        )
+        factories.play.create(user_xid=user1.xid, game_id=game.id)
+        factories.play.create(user_xid=user2.xid, game_id=game.id)
+        token = factories.token.create(key="RECORD5")
+
+        # Use username instead of xid for tracker
+        resp = await client.post(
+            f"/api/game/{game.id}/record",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={
+                "winner": user1.xid,
+                "tracker": "PlayerTwo",  # Username instead of xid
+                "players": [
+                    {"xid": user1.xid, "commander": "Atraxa"},
+                    {"xid": user2.xid, "commander": "Kenrith"},
+                ],
+            },
+        )
+        assert resp.status == 200
+
+    async def test_game_record_tracker_not_found(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        """Test that invalid tracker username returns error."""
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
+
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+        )
+        token = factories.token.create(key="RECORD6")
+
+        resp = await client.post(
+            f"/api/game/{game.id}/record",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={
+                "tracker": "NonExistentUser",
+                "players": [{"xid": 101, "commander": "Atraxa"}],
+            },
+        )
+        assert resp.status == 400
+        data = await resp.json()
+        assert data["error"] == "Tracker not found"
+
+    async def test_game_record_invalid_player_data(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        """Test that missing xid or commander in player data returns error."""
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
+
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        user1 = factories.user.create(xid=101, name="PlayerOne")
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+        )
+        token = factories.token.create(key="RECORD7")
+
+        # Missing "commander" field
+        resp = await client.post(
+            f"/api/game/{game.id}/record",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={
+                "tracker": user1.xid,
+                "players": [{"xid": user1.xid}],  # Missing commander
+            },
+        )
+        assert resp.status == 400
+        data = await resp.json()
+        assert data["error"] == "Invalid player data"
+
+    async def test_game_record_player_not_found(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        """Test that invalid player username returns error."""
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
+
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        user1 = factories.user.create(xid=101, name="PlayerOne")
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+        )
+        token = factories.token.create(key="RECORD8")
+
+        resp = await client.post(
+            f"/api/game/{game.id}/record",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={
+                "tracker": user1.xid,
+                "players": [{"xid": "NonExistentPlayer", "commander": "Atraxa"}],
+            },
+        )
+        assert resp.status == 400
+        data = await resp.json()
+        assert data["error"] == "Player not found: NonExistentPlayer"
+
+    async def test_game_record_invalid_tracker_type(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        """Test that non-string, non-int tracker returns error."""
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
+
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+        )
+        token = factories.token.create(key="RECORD9")
+
+        # Use a list as tracker (not string or int)
+        resp = await client.post(
+            f"/api/game/{game.id}/record",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={
+                "tracker": ["invalid", "type"],
+                "players": [{"xid": 101, "commander": "Atraxa"}],
+            },
+        )
+        assert resp.status == 400
+        data = await resp.json()
+        assert data["error"] == "Tracker not found"

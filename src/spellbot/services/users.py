@@ -419,6 +419,12 @@ class UsersService:
         return [u.to_dict() for u in DatabaseSession.query(User).filter(User.xid.in_(xids)).all()]
 
     @sync_to_async()
+    def get_xid_by_name(self, name: str) -> int | None:
+        """Look up a user's xid by their name (case-insensitive)."""
+        user = DatabaseSession.query(User).filter(func.lower(User.name) == func.lower(name)).first()
+        return user.xid if user else None
+
+    @sync_to_async()
     def blocked_by_count(self, user_xid: int) -> int:
         """Count how many users have blocked this user."""
         return int(

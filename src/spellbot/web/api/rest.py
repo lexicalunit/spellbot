@@ -254,23 +254,62 @@ async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
         logger.warning("Discord API failure: %s", ex, exc_info=True)
 
 
+async def _resolve_user_xid(services: ServicesRegistry, value: Any) -> int | None:
+    """Resolve a user xid from either an int, string int, or username."""
+    if value is None:
+        return None
+    # Try to parse as int first
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        pass
+    # If it's a string, try to look up by name
+    if isinstance(value, str):
+        return await services.users.get_xid_by_name(value)
+    return None
+
+
 @tracer.wrap(name="rest", resource="game_record_endpoint")
 async def game_record_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     async with db_session_manager():
         services = ServicesRegistry()
-        game_id = int(request.match_info["game"])
+        try:
+            game_id = int(request.match_info["game"])
+        except ValueError:
+            return reply(error="Invalid game ID", status=400)
         if not (game := await services.games.select(game_id)):
             return reply(error="Game not found", status=404)
         payload = await request.json()
-        winner_xid = int(w) if (w := payload.get("winner")) else None
-        tracker_xid = int(payload.get("tracker"))
+
+        # Resolve tracker (required)
+        if not payload.get("tracker"):
+            return reply(error="Tracker ID is required", status=400)
+        tracker_xid = await _resolve_user_xid(services, payload.get("tracker"))
+        if tracker_xid is None:
+            return reply(error="Tracker not found", status=400)
+
+        # Resolve winner (optional)
+        winner_xid = await _resolve_user_xid(services, payload.get("winner"))
+
+        # Process players data
         players_data = payload.get("players", []) or []
-        commanders: dict[int | None, str] = {int(p["xid"]): p["commander"] for p in players_data}
         if not players_data:
             return reply(error="No players provided", status=400)
+
+        # Resolve player xids and build commanders dict
+        commanders: dict[int | None, str] = {}
+        player_xids: list[int] = []
+        for p in players_data:
+            if "xid" not in p or "commander" not in p:
+                return reply(error="Invalid player data", status=400)
+            xid = await _resolve_user_xid(services, p["xid"])
+            if xid is None:
+                return reply(error=f"Player not found: {p['xid']}", status=400)
+            player_xids.append(xid)
+            commanders[xid] = p["commander"]
+
         plays = await services.plays.get_plays_by_game_id(game_id)
-        player_xids = [int(p["xid"]) for p in players_data]
         players = await services.users.get_players_by_xid(player_xids)
         if len(plays) != len(players) or len(players) != len(players_data):
             return reply(error="Mismatched player count", status=400)
