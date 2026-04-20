@@ -86,13 +86,13 @@ resource "datadog_monitor" "spellbot_apm_trace_errors" {
   on_missing_data     = "default"
   require_full_window = false
   monitor_thresholds {
-    critical = 5
+    critical = 1
   }
   name    = "SpellBot: APM Trace Errors"
   type    = "trace-analytics alert"
   tags    = ["env:prod", "service:spellbot"]
   query   = <<-EOT
-    trace-analytics("env:prod service:spellbot -status:ok").index("trace-search", "djm-search").rollup("count").last("5m") > 5
+    trace-analytics("env:prod service:spellbot -status:ok").index("trace-search", "djm-search").rollup("count").last("5m") > 1
   EOT
   message = <<-EOT
     {{#is_alert}}
