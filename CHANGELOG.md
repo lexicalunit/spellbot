@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v18.4.2](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.2) - 2026-04-20
+
 ### Changed
 
 - Allow `/api/game/{game}/record` to accept user ids or user names in the payload.
