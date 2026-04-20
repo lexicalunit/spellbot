@@ -257,6 +257,262 @@ resource "datadog_monitor" "SpellBot_No_traces" {
   EOT
 }
 
+# RDS Database Alerts
+resource "datadog_monitor" "rds_cpu_utilization" {
+  evaluation_delay    = 900
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 90
+    warning  = 80
+  }
+  name    = "[RDS] CPU Utilization High"
+  type    = "query alert"
+  tags    = ["integration:amazon_rds", "env:prod"]
+  query   = <<-EOT
+    avg(last_15m):avg:aws.rds.cpuutilization{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} > 90
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    RDS instance {{dbinstanceidentifier.name}} CPU utilization is approaching {{threshold}}%.
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    RDS instance {{dbinstanceidentifier.name}} CPU utilization has exceeded {{threshold}}%.
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+resource "datadog_monitor" "rds_write_latency" {
+  evaluation_delay    = 900
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 0.1
+    warning  = 0.05
+  }
+  name    = "[RDS] Write Latency High"
+  type    = "query alert"
+  tags    = ["integration:amazon_rds", "env:prod"]
+  query   = <<-EOT
+    avg(last_15m):avg:aws.rds.write_latency{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} > 0.1
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    RDS instance {{dbinstanceidentifier.name}} write latency is elevated ({{value}}s).
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    RDS instance {{dbinstanceidentifier.name}} write latency is critically high ({{value}}s).
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+resource "datadog_monitor" "rds_read_latency" {
+  evaluation_delay    = 900
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 0.1
+    warning  = 0.05
+  }
+  name    = "[RDS] Read Latency High"
+  type    = "query alert"
+  tags    = ["integration:amazon_rds", "env:prod"]
+  query   = <<-EOT
+    avg(last_15m):avg:aws.rds.read_latency{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} > 0.1
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    RDS instance {{dbinstanceidentifier.name}} read latency is elevated ({{value}}s).
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    RDS instance {{dbinstanceidentifier.name}} read latency is critically high ({{value}}s).
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+resource "datadog_monitor" "rds_database_connections" {
+  evaluation_delay    = 900
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 100
+    warning  = 80
+  }
+  name    = "[RDS] Database Connections High"
+  type    = "query alert"
+  tags    = ["integration:amazon_rds", "env:prod"]
+  query   = <<-EOT
+    avg(last_15m):avg:aws.rds.database_connections{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} > 100
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    RDS instance {{dbinstanceidentifier.name}} has {{value}} database connections (approaching limit).
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    RDS instance {{dbinstanceidentifier.name}} has {{value}} database connections (critically high).
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+resource "datadog_monitor" "rds_swap_usage" {
+  evaluation_delay    = 900
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 524288000
+    warning  = 314572800
+  }
+  name    = "[RDS] Swap Usage High"
+  type    = "query alert"
+  tags    = ["integration:amazon_rds", "env:prod"]
+  query   = <<-EOT
+    avg(last_15m):avg:aws.rds.swap_usage{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} > 524288000
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    RDS instance {{dbinstanceidentifier.name}} swap usage is elevated (300MB+). This may indicate memory pressure.
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    RDS instance {{dbinstanceidentifier.name}} swap usage is critically high (500MB+). Performance may be degraded.
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+resource "datadog_monitor" "rds_deadlocks" {
+  evaluation_delay    = 900
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 1
+  }
+  name    = "[RDS] Deadlocks Detected"
+  type    = "query alert"
+  tags    = ["integration:amazon_rds", "env:prod"]
+  query   = <<-EOT
+    sum(last_5m):sum:aws.rds.deadlocks{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} > 1
+  EOT
+  message = <<-EOT
+    {{#is_alert}}
+    RDS instance {{dbinstanceidentifier.name}} has detected {{value}} deadlocks in the last 5 minutes.
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+resource "datadog_monitor" "rds_free_local_storage" {
+  evaluation_delay    = 900
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 4294967296
+    warning  = 5368709120
+  }
+  name    = "[RDS] Free Local Storage Low"
+  type    = "query alert"
+  tags    = ["integration:amazon_rds", "env:prod"]
+  query   = <<-EOT
+    avg(last_15m):avg:aws.rds.free_local_storage{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} < 4294967296
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    RDS instance {{dbinstanceidentifier.name}} has less than 5GB of free local storage.
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    RDS instance {{dbinstanceidentifier.name}} has less than 4GB of free local storage. Immediate attention required.
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+resource "datadog_monitor" "rds_dbload" {
+  evaluation_delay    = 900
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 4
+    warning  = 2
+  }
+  name    = "[RDS] Database Load High"
+  type    = "query alert"
+  tags    = ["integration:amazon_rds", "env:prod"]
+  query   = <<-EOT
+    avg(last_15m):avg:aws.rds.dbload{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} > 4
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    RDS instance {{dbinstanceidentifier.name}} database load is elevated ({{value}} active sessions).
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    RDS instance {{dbinstanceidentifier.name}} database load is critically high ({{value}} active sessions).
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+resource "datadog_monitor" "rds_freeable_memory" {
+  evaluation_delay    = 900
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 268435456
+    warning  = 536870912
+  }
+  name    = "[RDS] Freeable Memory Low"
+  type    = "query alert"
+  tags    = ["integration:amazon_rds", "env:prod"]
+  query   = <<-EOT
+    avg(last_15m):avg:aws.rds.freeable_memory{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} < 268435456
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    RDS instance {{dbinstanceidentifier.name}} has less than 512MB of freeable memory.
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    RDS instance {{dbinstanceidentifier.name}} has less than 256MB of freeable memory. Performance may be severely impacted.
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+resource "datadog_monitor" "rds_disk_queue_depth" {
+  evaluation_delay    = 900
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 64
+    warning  = 32
+  }
+  name    = "[RDS] Disk Queue Depth High"
+  type    = "query alert"
+  tags    = ["integration:amazon_rds", "env:prod"]
+  query   = <<-EOT
+    avg(last_15m):avg:aws.rds.disk_queue_depth{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} > 64
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    RDS instance {{dbinstanceidentifier.name}} disk queue depth is elevated ({{value}}). I/O operations may be queuing up.
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    RDS instance {{dbinstanceidentifier.name}} disk queue depth is critically high ({{value}}). I/O bottleneck detected.
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
 # Dashboards
 resource "datadog_dashboard" "spellbot_create_game_link_dashboard" {
   title       = "Avg of duration of create_game_link"
@@ -277,5 +533,32 @@ resource "datadog_dashboard" "spellbot_create_game_link_dashboard" {
       }
       live_span = "1w"
     }
+  }
+}
+
+# Queries
+resource "datadog_monitor" "Abnormal_change_in_p75_latency_for_postgres" {
+  name                = "Abnormal change in p75 latency for postgres"
+  type                = "query alert"
+  query               = <<EOT
+avg(last_12h):anomalies(p75:trace.postgres.query{env:prod,service:postgres,span.kind:client}, 'agile', 2, direction='both', interval=120, alert_window='last_30m', count_default_zero='true', seasonality='hourly') >= 1
+EOT
+  message             = <<-EOT
+    {{#is_alert}}
+    service:postgres has an abnormal change in latency. The 75th percentile latency has deviated significantly.
+
+    @amy@lexicalunit.com
+    {{/is_alert}}
+  EOT
+  tags                = ["service:postgres", "env:prod"]
+  include_tags        = false
+  on_missing_data     = "show_no_data"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 1
+  }
+  monitor_threshold_windows {
+    recovery_window = "last_15m"
+    trigger_window  = "last_30m"
   }
 }
