@@ -47,6 +47,14 @@ CANT_SEND_CODE = 50007
 # members, blocked the bot, or restricted DMs to friends).
 NO_MUTUAL_GUILDS_CODE = 50278
 
+# Discord API error code indicating that the bot lacks access to the resource.
+# This can happen when the bot no longer has permissions to a channel or message.
+MISSING_ACCESS_CODE = 50001
+
+# Discord API error code indicating that the interaction token has expired.
+# This can happen when the bot takes too long to respond to an interaction.
+UNKNOWN_INTERACTION_CODE = 10062
+
 EMBED_DESCRIPTION_SIZE_LIMIT = 4096
 
 

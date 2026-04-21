@@ -15,7 +15,9 @@ from discord.utils import MISSING
 from .metrics import add_span_error
 from .utils import (
     CANT_SEND_CODE,
+    MISSING_ACCESS_CODE,
     NO_MUTUAL_GUILDS_CODE,
+    UNKNOWN_INTERACTION_CODE,
     bot_can_delete_channel,
     bot_can_delete_message,
     bot_can_manage_channels,
@@ -80,19 +82,45 @@ async def safe_original_response(
     return response
 
 
+def _is_unknown_interaction(ex: BaseException) -> bool:
+    return isinstance(ex, NotFound) and getattr(ex, "code", None) == UNKNOWN_INTERACTION_CODE
+
+
 @tracer.wrap()
 async def safe_defer_interaction(interaction: discord.Interaction) -> bool:
-    rvalue = False
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="could not defer interaction for user %(user_xid)s",
-        user_xid=interaction.user.id,
-    ):
+    try:
         await retry(interaction.response.defer)
-        rvalue = True
-    return rvalue
+    except NotFound as ex:
+        if _is_unknown_interaction(ex):
+            # Interaction token has expired (usually >3 seconds elapsed)
+            if span := tracer.current_span():  # pragma: no cover
+                span.set_tags(
+                    {
+                        "warning": "true",
+                        "warning.type": "unknown_interaction",
+                        "warning.code": str(getattr(ex, "code", "")),
+                    },
+                )
+            log_info(
+                "unknown interaction for user %(user_xid)s (token expired)",
+                user_xid=interaction.user.id,
+            )
+            return False
+        add_span_error(ex)
+        log_warning(
+            "could not defer interaction for user %(user_xid)s",
+            user_xid=interaction.user.id,
+        )
+        return False
+    except (DiscordException, ClientOSError) as ex:
+        add_span_error(ex)
+        log_warning(
+            "could not defer interaction for user %(user_xid)s",
+            user_xid=interaction.user.id,
+        )
+        return False
+    else:
+        return True
 
 
 @tracer.wrap()
@@ -228,6 +256,13 @@ async def safe_update_embed(
     return updated_message
 
 
+def _is_missing_access(ex: BaseException) -> bool:
+    return (
+        isinstance(ex, discord.errors.Forbidden)
+        and getattr(ex, "code", None) == MISSING_ACCESS_CODE
+    )
+
+
 @tracer.wrap()
 async def safe_delete_message(message: discord.Message | discord.PartialMessage) -> bool:
     if span := tracer.current_span():  # pragma: no cover
@@ -247,17 +282,33 @@ async def safe_delete_message(message: discord.Message | discord.PartialMessage)
         )
         return False
 
-    success: bool = False
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="could not delete message %(message_xid)s",
-        message_xid=message.id,
-    ):
+    try:
         await retry(message.delete)
-        success = True
-    return success
+    except discord.errors.Forbidden as ex:
+        if _is_missing_access(ex):
+            # Bot may have lost access to the channel or message was already deleted
+            if span := tracer.current_span():  # pragma: no cover
+                span.set_tags(
+                    {
+                        "warning": "true",
+                        "warning.type": "missing_access",
+                        "warning.code": str(getattr(ex, "code", "")),
+                    },
+                )
+            log_info(
+                "missing access to delete message %(message_xid)s",
+                message_xid=message.id,
+            )
+            return False
+        add_span_error(ex)
+        log_warning("could not delete message %(message_xid)s", message_xid=message.id)
+        return False
+    except (DiscordException, ClientOSError, NotFound) as ex:
+        add_span_error(ex)
+        log_warning("could not delete message %(message_xid)s", message_xid=message.id)
+        return False
+    else:
+        return True
 
 
 @tracer.wrap()
