@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Don't treat 404 on defer interaction or 403 on delete message as errors in traces.
+
 ## [v18.4.5](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.5) - 2026-04-20
 
 ### Fixed
