@@ -89,7 +89,7 @@ def _is_unknown_interaction(ex: BaseException) -> bool:
 @tracer.wrap()
 async def safe_defer_interaction(interaction: discord.Interaction) -> bool:
     try:
-        await retry(interaction.response.defer)
+        await retry(interaction.response.defer, ignore_error=_is_unknown_interaction)
     except NotFound as ex:
         if _is_unknown_interaction(ex):
             # Interaction token has expired (usually >3 seconds elapsed)
@@ -283,7 +283,7 @@ async def safe_delete_message(message: discord.Message | discord.PartialMessage)
         return False
 
     try:
-        await retry(message.delete)
+        await retry(message.delete, ignore_error=_is_missing_access)
     except discord.errors.Forbidden as ex:
         if _is_missing_access(ex):
             # Bot may have lost access to the channel or message was already deleted

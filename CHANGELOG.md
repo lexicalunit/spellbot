@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Handle trace errors in the operations retry() function too.
+
 ## [v18.4.6](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.6) - 2026-04-20
 
 ### Changed
