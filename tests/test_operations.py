@@ -110,6 +110,24 @@ class TestOperationsDeferInteraction:
         result = await safe_defer_interaction(interaction)
         assert result is False
 
+    async def test_already_acknowledged(self) -> None:
+        interaction = AsyncMock()
+        interaction.user = MagicMock()
+        interaction.user.id = 123
+        error = discord.errors.HTTPException(MagicMock(), {"code": 40060})
+        interaction.response.defer.side_effect = error
+        result = await safe_defer_interaction(interaction)
+        assert result is False
+
+    async def test_http_exception_other_code(self) -> None:
+        interaction = AsyncMock()
+        interaction.user = MagicMock()
+        interaction.user.id = 123
+        error = discord.errors.HTTPException(MagicMock(), {"code": 99999})
+        interaction.response.defer.side_effect = error
+        result = await safe_defer_interaction(interaction)
+        assert result is False
+
 
 @pytest.mark.asyncio
 class TestOperationsOriginalResponse:

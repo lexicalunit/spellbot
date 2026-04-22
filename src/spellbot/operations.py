@@ -14,6 +14,7 @@ from discord.utils import MISSING
 
 from .metrics import add_span_error
 from .utils import (
+    ALREADY_ACKNOWLEDGED_CODE,
     CANT_SEND_CODE,
     MISSING_ACCESS_CODE,
     NO_MUTUAL_GUILDS_CODE,
@@ -87,23 +88,54 @@ def is_unknown_interaction(ex: BaseException) -> bool:
     return isinstance(ex, NotFound) and getattr(ex, "code", None) == UNKNOWN_INTERACTION_CODE
 
 
+def is_already_acknowledged(ex: BaseException) -> bool:
+    return (
+        isinstance(ex, discord.errors.HTTPException)
+        and getattr(ex, "code", None) == ALREADY_ACKNOWLEDGED_CODE
+    )
+
+
+def is_expected_defer_error(ex: BaseException) -> bool:
+    return is_unknown_interaction(ex) or is_already_acknowledged(ex)
+
+
+def set_warning_tags(warning_type: str, ex: BaseException) -> None:
+    """Set warning tags on the current span for expected errors."""
+    if span := tracer.current_span():  # pragma: no cover
+        span.set_tags(
+            {
+                "warning": "true",
+                "warning.type": warning_type,
+                "warning.code": str(getattr(ex, "code", "")),
+            },
+        )
+
+
 @tracer.wrap()
 async def safe_defer_interaction(interaction: discord.Interaction) -> bool:
     try:
-        await retry(interaction.response.defer, ignore_error=is_unknown_interaction)
+        await retry(interaction.response.defer, ignore_error=is_expected_defer_error)
     except NotFound as ex:
         if is_unknown_interaction(ex):
             # Interaction token has expired (usually >3 seconds elapsed)
-            if span := tracer.current_span():  # pragma: no cover
-                span.set_tags(
-                    {
-                        "warning": "true",
-                        "warning.type": "unknown_interaction",
-                        "warning.code": str(getattr(ex, "code", "")),
-                    },
-                )
+            set_warning_tags("unknown_interaction", ex)
             log_info(
                 "unknown interaction for user %(user_xid)s (token expired)",
+                user_xid=interaction.user.id,
+            )
+            return False
+        add_span_error(ex)
+        log_warning(
+            "could not defer interaction for user %(user_xid)s",
+            user_xid=interaction.user.id,
+        )
+        return False
+    except discord.errors.HTTPException as ex:
+        if is_already_acknowledged(ex):
+            # Interaction was already responded to
+            set_warning_tags("already_acknowledged", ex)
+            log_info(
+                "interaction already acknowledged for user %(user_xid)s",
                 user_xid=interaction.user.id,
             )
             return False
@@ -286,18 +318,6 @@ def is_missing_access(ex: BaseException) -> bool:
 def is_expected_delete_error(ex: BaseException) -> bool:
     """Check if this is an expected error when deleting a message."""
     return is_missing_access(ex) or is_unknown_message(ex)
-
-
-def set_warning_tags(warning_type: str, ex: BaseException) -> None:
-    """Set warning tags on the current span for expected errors."""
-    if span := tracer.current_span():  # pragma: no cover
-        span.set_tags(
-            {
-                "warning": "true",
-                "warning.type": warning_type,
-                "warning.code": str(getattr(ex, "code", "")),
-            },
-        )
 
 
 @tracer.wrap()
