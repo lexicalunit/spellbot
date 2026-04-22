@@ -526,7 +526,7 @@ resource "datadog_dashboard" "spellbot_dashboard" {
       request {
         apm_query {
           index        = "*"
-          search_query = "env:prod service:spellbot resource_name:spellbot.interactions.* retained_by:*"
+          search_query = "env:prod service:spellbot resource_name:spellbot.interactions.*"
           group_by {
             facet = "resource_name"
             limit = 10
@@ -552,7 +552,7 @@ resource "datadog_dashboard" "spellbot_dashboard" {
       request {
         apm_query {
           index        = "*"
-          search_query = "env:prod service:spellbot resource_name:spellbot.interactions.* retained_by:*"
+          search_query = "env:prod service:spellbot resource_name:spellbot.interactions.*"
           group_by {
             facet = "resource_name"
             limit = 10
@@ -577,7 +577,7 @@ resource "datadog_dashboard" "spellbot_dashboard" {
       request {
         apm_query {
           index        = "*"
-          search_query = "env:prod service:discord retained_by:*"
+          search_query = "env:prod service:discord"
           group_by {
             facet = "status"
             limit = 10
@@ -601,7 +601,7 @@ resource "datadog_dashboard" "spellbot_dashboard" {
       request {
         apm_query {
           index        = "*"
-          search_query = "env:prod service:discord retained_by:*"
+          search_query = "env:prod service:discord"
           group_by {
             facet = "resource_name"
             limit = 10
@@ -695,20 +695,94 @@ resource "datadog_dashboard" "spellbot_dashboard" {
     timeseries_definition {
       title = "Errors by Service"
       request {
-        apm_query {
-          index        = "*"
-          search_query = "env:prod status:error retained_by:*"
-          group_by {
-            facet = "service"
-            limit = 10
-            sort_query {
+        formula {
+          formula_expression = "spellbot"
+          alias              = "spellbot"
+        }
+        formula {
+          formula_expression = "spellapi"
+          alias              = "spellapi"
+        }
+        formula {
+          formula_expression = "postgres"
+          alias              = "postgres"
+        }
+        formula {
+          formula_expression = "redis"
+          alias              = "redis"
+        }
+        formula {
+          formula_expression = "discord"
+          alias              = "discord"
+        }
+        query {
+          event_query {
+            name        = "spellbot"
+            data_source = "spans"
+            search {
+              query = "env:prod service:spellbot status:error -@db.system:postgresql -@base:*discord*"
+            }
+            indexes = ["*"]
+            compute {
               aggregation = "count"
-              order       = "desc"
+              interval    = 3600000
             }
           }
-          compute_query {
-            aggregation = "count"
-            interval    = 3600000
+        }
+        query {
+          event_query {
+            name        = "spellapi"
+            data_source = "spans"
+            search {
+              query = "env:prod service:spellapi status:error"
+            }
+            indexes = ["*"]
+            compute {
+              aggregation = "count"
+              interval    = 3600000
+            }
+          }
+        }
+        query {
+          event_query {
+            name        = "postgres"
+            data_source = "spans"
+            search {
+              query = "env:prod @db.system:postgresql status:error"
+            }
+            indexes = ["*"]
+            compute {
+              aggregation = "count"
+              interval    = 3600000
+            }
+          }
+        }
+        query {
+          event_query {
+            name        = "redis"
+            data_source = "spans"
+            search {
+              query = "env:prod operation_name:redis.command status:error"
+            }
+            indexes = ["*"]
+            compute {
+              aggregation = "count"
+              interval    = 3600000
+            }
+          }
+        }
+        query {
+          event_query {
+            name        = "discord"
+            data_source = "spans"
+            search {
+              query = "env:prod @base:*discord* status:error"
+            }
+            indexes = ["*"]
+            compute {
+              aggregation = "count"
+              interval    = 3600000
+            }
           }
         }
       }
@@ -755,7 +829,7 @@ resource "datadog_dashboard" "spellbot_dashboard" {
       request {
         apm_query {
           index        = "*"
-          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link retained_by:*"
+          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link"
           group_by {
             facet = "@link_service"
             limit = 10
@@ -779,7 +853,7 @@ resource "datadog_dashboard" "spellbot_dashboard" {
       request {
         apm_query {
           index        = "*"
-          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link retained_by:*"
+          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link"
           group_by {
             facet = "@link_service"
           }
