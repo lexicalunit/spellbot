@@ -519,302 +519,117 @@ resource "datadog_dashboard" "spellbot_dashboard" {
   description = "Metrics and performance dashboard for SpellBot"
   layout_type = "ordered"
 
-  # --- Interaction Performance ---
+  # ==================== INTERACTION PERFORMANCE ====================
   widget {
-    timeseries_definition {
-      title = "Interaction Latency by Command (avg)"
-      request {
-        apm_query {
-          index        = "*"
-          search_query = "env:prod service:spellbot resource_name:spellbot.interactions.*"
-          group_by {
-            facet = "resource_name"
-            limit = 10
-            sort_query {
-              aggregation = "avg"
-              facet       = "@duration"
-              order       = "desc"
-            }
-          }
-          compute_query {
-            aggregation = "avg"
-            facet       = "@duration"
-            interval    = 3600000
-          }
-        }
-      }
-    }
-  }
+    group_definition {
+      title            = "🎮 Interaction Performance"
+      layout_type      = "ordered"
+      background_color = "vivid_blue"
 
-  widget {
-    timeseries_definition {
-      title = "Interactions per Hour by Type"
-      request {
-        apm_query {
-          index        = "*"
-          search_query = "env:prod service:spellbot resource_name:spellbot.interactions.*"
-          group_by {
-            facet = "resource_name"
-            limit = 10
-            sort_query {
-              aggregation = "count"
-              order       = "desc"
-            }
-          }
-          compute_query {
-            aggregation = "count"
-            interval    = 3600000
-          }
-        }
-      }
-    }
-  }
-
-  # --- Discord API Performance ---
-  widget {
-    timeseries_definition {
-      title = "Discord API Calls by Status"
-      request {
-        apm_query {
-          index        = "*"
-          search_query = "env:prod service:discord"
-          group_by {
-            facet = "status"
-            limit = 10
-            sort_query {
-              aggregation = "count"
-              order       = "desc"
-            }
-          }
-          compute_query {
-            aggregation = "count"
-            interval    = 3600000
-          }
-        }
-      }
-    }
-  }
-
-  widget {
-    timeseries_definition {
-      title = "Discord API Latency (avg)"
-      request {
-        apm_query {
-          index        = "*"
-          search_query = "env:prod service:discord"
-          group_by {
-            facet = "resource_name"
-            limit = 10
-            sort_query {
-              aggregation = "avg"
-              facet       = "@duration"
-              order       = "desc"
-            }
-          }
-          compute_query {
-            aggregation = "avg"
-            facet       = "@duration"
-            interval    = 3600000
-          }
-        }
-      }
-    }
-  }
-
-  # --- Database Performance ---
-  widget {
-    timeseries_definition {
-      title = "Postgres Query Latency (avg)"
-      request {
-        formula {
-          formula_expression = "query1"
-        }
-        query {
-          event_query {
-            name        = "query1"
-            data_source = "spans"
-            search {
-              query = "env:prod @base_service:spellbot @db.system:postgresql"
-            }
-            indexes = ["*"]
-            group_by {
-              facet = "resource_name"
-              limit = 10
-              sort {
+      widget {
+        timeseries_definition {
+          title = "Interaction Latency by Command (avg)"
+          request {
+            apm_query {
+              index        = "*"
+              search_query = "env:prod service:spellbot resource_name:spellbot.interactions.*"
+              group_by {
+                facet = "resource_name"
+                limit = 10
+                sort_query {
+                  aggregation = "avg"
+                  facet       = "@duration"
+                  order       = "desc"
+                }
+              }
+              compute_query {
                 aggregation = "avg"
-                metric      = "@duration"
-                order       = "desc"
+                facet       = "@duration"
+                interval    = 3600000
               }
-            }
-            compute {
-              aggregation = "avg"
-              metric      = "@duration"
-              interval    = 3600000
             }
           }
         }
       }
-    }
-  }
 
-  widget {
-    timeseries_definition {
-      title = "Postgres Queries per Hour"
-      request {
-        formula {
-          formula_expression = "query1"
-        }
-        query {
-          event_query {
-            name        = "query1"
-            data_source = "spans"
-            search {
-              query = "env:prod @base_service:spellbot @db.system:postgresql"
-            }
-            indexes = ["*"]
-            group_by {
-              facet = "resource_name"
-              limit = 10
-              sort {
+      widget {
+        timeseries_definition {
+          title = "Interactions per Hour by Type"
+          request {
+            apm_query {
+              index        = "*"
+              search_query = "env:prod service:spellbot resource_name:spellbot.interactions.*"
+              group_by {
+                facet = "resource_name"
+                limit = 10
+                sort_query {
+                  aggregation = "count"
+                  order       = "desc"
+                }
+              }
+              compute_query {
                 aggregation = "count"
-                order       = "desc"
+                interval    = 3600000
               }
             }
-            compute {
-              aggregation = "count"
-              interval    = 3600000
-            }
           }
         }
       }
     }
   }
 
-  # --- Error Tracking ---
+  # ==================== DISCORD API PERFORMANCE ====================
   widget {
-    timeseries_definition {
-      title = "Errors by System Service"
-      request {
-        formula {
-          formula_expression = "spellbot"
-          alias              = "spellbot"
-        }
-        formula {
-          formula_expression = "spellapi"
-          alias              = "spellapi"
-        }
-        formula {
-          formula_expression = "postgres"
-          alias              = "postgres"
-        }
-        formula {
-          formula_expression = "redis"
-          alias              = "redis"
-        }
-        formula {
-          formula_expression = "discord"
-          alias              = "discord"
-        }
-        query {
-          event_query {
-            name        = "spellbot"
-            data_source = "spans"
-            search {
-              query = "env:prod service:spellbot status:error -@db.system:postgresql -@base:*discord*"
-            }
-            indexes = ["*"]
-            compute {
-              aggregation = "count"
-              interval    = 3600000
-            }
-          }
-        }
-        query {
-          event_query {
-            name        = "spellapi"
-            data_source = "spans"
-            search {
-              query = "env:prod service:spellapi status:error"
-            }
-            indexes = ["*"]
-            compute {
-              aggregation = "count"
-              interval    = 3600000
-            }
-          }
-        }
-        query {
-          event_query {
-            name        = "postgres"
-            data_source = "spans"
-            search {
-              query = "env:prod @db.system:postgresql status:error"
-            }
-            indexes = ["*"]
-            compute {
-              aggregation = "count"
-              interval    = 3600000
-            }
-          }
-        }
-        query {
-          event_query {
-            name        = "redis"
-            data_source = "spans"
-            search {
-              query = "env:prod operation_name:redis.command status:error"
-            }
-            indexes = ["*"]
-            compute {
-              aggregation = "count"
-              interval    = 3600000
-            }
-          }
-        }
-        query {
-          event_query {
-            name        = "discord"
-            data_source = "spans"
-            search {
-              query = "env:prod @base:*discord* status:error"
-            }
-            indexes = ["*"]
-            compute {
-              aggregation = "count"
-              interval    = 3600000
-            }
-          }
-        }
-      }
-    }
-  }
+    group_definition {
+      title            = "💬 Discord API Performance"
+      layout_type      = "ordered"
+      background_color = "vivid_purple"
 
-  widget {
-    timeseries_definition {
-      title = "Warnings (Expected Errors)"
-      request {
-        formula {
-          formula_expression = "query1"
-        }
-        query {
-          event_query {
-            name        = "query1"
-            data_source = "spans"
-            search {
-              query = "env:prod service:spellbot"
-            }
-            indexes = ["*"]
-            group_by {
-              facet = "@warning.type"
-              limit = 10
-              sort {
+      widget {
+        timeseries_definition {
+          title = "Discord API Calls by Status"
+          request {
+            apm_query {
+              index        = "*"
+              search_query = "env:prod service:discord"
+              group_by {
+                facet = "status"
+                limit = 10
+                sort_query {
+                  aggregation = "count"
+                  order       = "desc"
+                }
+              }
+              compute_query {
                 aggregation = "count"
-                order       = "desc"
+                interval    = 3600000
               }
             }
-            compute {
-              aggregation = "count"
-              interval    = 3600000
+          }
+        }
+      }
+
+      widget {
+        timeseries_definition {
+          title = "Discord API Latency (avg)"
+          request {
+            apm_query {
+              index        = "*"
+              search_query = "env:prod service:discord"
+              group_by {
+                facet = "resource_name"
+                limit = 10
+                sort_query {
+                  aggregation = "avg"
+                  facet       = "@duration"
+                  order       = "desc"
+                }
+              }
+              compute_query {
+                aggregation = "avg"
+                facet       = "@duration"
+                interval    = 3600000
+              }
             }
           }
         }
@@ -822,78 +637,311 @@ resource "datadog_dashboard" "spellbot_dashboard" {
     }
   }
 
-  # --- Game Link Services ---
+  # ==================== DATABASE PERFORMANCE ====================
   widget {
-    timeseries_definition {
-      title = "Game Link Creation by Platform"
-      request {
-        apm_query {
-          index        = "*"
-          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link"
-          group_by {
-            facet = "@link_service"
-            limit = 10
-            sort_query {
-              aggregation = "count"
-              order       = "desc"
+    group_definition {
+      title            = "🗄️ Database Performance"
+      layout_type      = "ordered"
+      background_color = "vivid_green"
+
+      widget {
+        timeseries_definition {
+          title = "Postgres Query Latency (avg)"
+          request {
+            formula {
+              formula_expression = "query1"
+            }
+            query {
+              event_query {
+                name        = "query1"
+                data_source = "spans"
+                search {
+                  query = "env:prod @base_service:spellbot @db.system:postgresql"
+                }
+                indexes = ["*"]
+                group_by {
+                  facet = "resource_name"
+                  limit = 10
+                  sort {
+                    aggregation = "avg"
+                    metric      = "@duration"
+                    order       = "desc"
+                  }
+                }
+                compute {
+                  aggregation = "avg"
+                  metric      = "@duration"
+                  interval    = 3600000
+                }
+              }
             }
           }
-          compute_query {
-            aggregation = "count"
-            interval    = 3600000
+        }
+      }
+
+      widget {
+        timeseries_definition {
+          title = "Postgres Queries per Hour"
+          request {
+            formula {
+              formula_expression = "query1"
+            }
+            query {
+              event_query {
+                name        = "query1"
+                data_source = "spans"
+                search {
+                  query = "env:prod @base_service:spellbot @db.system:postgresql"
+                }
+                indexes = ["*"]
+                group_by {
+                  facet = "resource_name"
+                  limit = 10
+                  sort {
+                    aggregation = "count"
+                    order       = "desc"
+                  }
+                }
+                compute {
+                  aggregation = "count"
+                  interval    = 3600000
+                }
+              }
+            }
           }
         }
       }
     }
   }
 
+  # ==================== ERROR TRACKING ====================
   widget {
-    timeseries_definition {
-      title = "Game Link Creation Latency by Service (avg)"
-      request {
-        apm_query {
-          index        = "*"
-          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link"
-          group_by {
-            facet = "@link_service"
+    group_definition {
+      title            = "🚨 Error Tracking"
+      layout_type      = "ordered"
+      background_color = "vivid_orange"
+
+      widget {
+        timeseries_definition {
+          title = "Errors by System Service"
+          request {
+            formula {
+              formula_expression = "spellbot"
+              alias              = "spellbot"
+            }
+            formula {
+              formula_expression = "spellapi"
+              alias              = "spellapi"
+            }
+            formula {
+              formula_expression = "postgres"
+              alias              = "postgres"
+            }
+            formula {
+              formula_expression = "redis"
+              alias              = "redis"
+            }
+            formula {
+              formula_expression = "discord"
+              alias              = "discord"
+            }
+            query {
+              event_query {
+                name        = "spellbot"
+                data_source = "spans"
+                search {
+                  query = "env:prod service:spellbot status:error -@db.system:postgresql -@base:*discord*"
+                }
+                indexes = ["*"]
+                compute {
+                  aggregation = "count"
+                  interval    = 3600000
+                }
+              }
+            }
+            query {
+              event_query {
+                name        = "spellapi"
+                data_source = "spans"
+                search {
+                  query = "env:prod service:spellapi status:error"
+                }
+                indexes = ["*"]
+                compute {
+                  aggregation = "count"
+                  interval    = 3600000
+                }
+              }
+            }
+            query {
+              event_query {
+                name        = "postgres"
+                data_source = "spans"
+                search {
+                  query = "env:prod @db.system:postgresql status:error"
+                }
+                indexes = ["*"]
+                compute {
+                  aggregation = "count"
+                  interval    = 3600000
+                }
+              }
+            }
+            query {
+              event_query {
+                name        = "redis"
+                data_source = "spans"
+                search {
+                  query = "env:prod operation_name:redis.command status:error"
+                }
+                indexes = ["*"]
+                compute {
+                  aggregation = "count"
+                  interval    = 3600000
+                }
+              }
+            }
+            query {
+              event_query {
+                name        = "discord"
+                data_source = "spans"
+                search {
+                  query = "env:prod @base:*discord* status:error"
+                }
+                indexes = ["*"]
+                compute {
+                  aggregation = "count"
+                  interval    = 3600000
+                }
+              }
+            }
           }
-          compute_query {
-            aggregation = "avg"
-            facet       = "@duration"
-            interval    = 1800000
+        }
+      }
+
+      widget {
+        timeseries_definition {
+          title = "Warnings (Expected Errors)"
+          request {
+            formula {
+              formula_expression = "query1"
+            }
+            query {
+              event_query {
+                name        = "query1"
+                data_source = "spans"
+                search {
+                  query = "env:prod service:spellbot"
+                }
+                indexes = ["*"]
+                group_by {
+                  facet = "@warning.type"
+                  limit = 10
+                  sort {
+                    aggregation = "count"
+                    order       = "desc"
+                  }
+                }
+                compute {
+                  aggregation = "count"
+                  interval    = 3600000
+                }
+              }
+            }
           }
         }
       }
     }
   }
 
-  # --- Web API ---
+  # ==================== GAME LINK SERVICES ====================
   widget {
-    timeseries_definition {
-      title = "Web API Requests by Endpoint"
-      request {
-        formula {
-          formula_expression = "query1"
-        }
-        query {
-          event_query {
-            name        = "query1"
-            data_source = "spans"
-            search {
-              query = "env:prod service:spellapi"
-            }
-            indexes = ["*"]
-            group_by {
-              facet = "resource_name"
-              limit = 10
-              sort {
+    group_definition {
+      title            = "🎲 Game Link Services"
+      layout_type      = "ordered"
+      background_color = "vivid_yellow"
+
+      widget {
+        timeseries_definition {
+          title = "Game Link Creation by Platform"
+          request {
+            apm_query {
+              index        = "*"
+              search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link"
+              group_by {
+                facet = "@link_service"
+                limit = 10
+                sort_query {
+                  aggregation = "count"
+                  order       = "desc"
+                }
+              }
+              compute_query {
                 aggregation = "count"
-                order       = "desc"
+                interval    = 3600000
               }
             }
-            compute {
-              aggregation = "count"
-              interval    = 3600000
+          }
+        }
+      }
+
+      widget {
+        timeseries_definition {
+          title = "Game Link Creation Latency by Service (avg)"
+          request {
+            apm_query {
+              index        = "*"
+              search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link"
+              group_by {
+                facet = "@link_service"
+              }
+              compute_query {
+                aggregation = "avg"
+                facet       = "@duration"
+                interval    = 1800000
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  # ==================== WEB API ====================
+  widget {
+    group_definition {
+      title            = "🌐 Web API"
+      layout_type      = "ordered"
+      background_color = "vivid_pink"
+
+      widget {
+        timeseries_definition {
+          title = "Web API Requests by Endpoint"
+          request {
+            formula {
+              formula_expression = "query1"
+            }
+            query {
+              event_query {
+                name        = "query1"
+                data_source = "spans"
+                search {
+                  query = "env:prod service:spellapi"
+                }
+                indexes = ["*"]
+                group_by {
+                  facet = "resource_name"
+                  limit = 10
+                  sort {
+                    aggregation = "count"
+                    order       = "desc"
+                  }
+                }
+                compute {
+                  aggregation = "count"
+                  interval    = 3600000
+                }
+              }
             }
           }
         }
