@@ -84,6 +84,32 @@ class TestOperationsDeferInteraction:
         await safe_defer_interaction(interaction)
         interaction.response.defer.assert_called_once_with()
 
+    async def test_unknown_interaction(self) -> None:
+        interaction = AsyncMock()
+        interaction.user = MagicMock()
+        interaction.user.id = 123
+        error = discord.errors.NotFound(MagicMock(), {"code": 10062})
+        interaction.response.defer.side_effect = error
+        result = await safe_defer_interaction(interaction)
+        assert result is False
+
+    async def test_not_found_other_code(self) -> None:
+        interaction = AsyncMock()
+        interaction.user = MagicMock()
+        interaction.user.id = 123
+        error = discord.errors.NotFound(MagicMock(), {"code": 99999})
+        interaction.response.defer.side_effect = error
+        result = await safe_defer_interaction(interaction)
+        assert result is False
+
+    async def test_discord_exception(self) -> None:
+        interaction = AsyncMock()
+        interaction.user = MagicMock()
+        interaction.user.id = 123
+        interaction.response.defer.side_effect = DiscordException
+        result = await safe_defer_interaction(interaction)
+        assert result is False
+
 
 @pytest.mark.asyncio
 class TestOperationsOriginalResponse:
@@ -253,6 +279,16 @@ class TestOperationsUpdateEmbed:
         success = await safe_update_embed(message, "content", flags=1)
         message.edit.assert_called_once_with("content", flags=1)
         assert not success
+
+    async def test_unknown_message(self) -> None:
+        message = MagicMock(spec=discord.Message)
+        message.id = 123
+        message.edit = AsyncMock()
+        error = discord.errors.NotFound(MagicMock(), {"code": 10008})
+        message.edit.side_effect = error
+        success = await safe_update_embed(message, "content", flags=1)
+        message.edit.assert_called_once_with("content", flags=1)
+        assert success is None
 
 
 @pytest.mark.asyncio
@@ -886,6 +922,26 @@ class TestOperationsDeleteMessage:
         message.id = 123
         error = discord.errors.NotFound(MagicMock(), {"code": 99999})
         message.delete = AsyncMock(side_effect=error)
+        assert not await safe_delete_message(message)
+
+    async def test_missing_access(self) -> None:
+        message = MagicMock(spec=discord.Message)
+        message.id = 123
+        error = discord.errors.Forbidden(MagicMock(), {"code": 50001})
+        message.delete = AsyncMock(side_effect=error)
+        assert not await safe_delete_message(message)
+
+    async def test_unknown_message(self) -> None:
+        message = MagicMock(spec=discord.Message)
+        message.id = 123
+        error = discord.errors.NotFound(MagicMock(), {"code": 10008})
+        message.delete = AsyncMock(side_effect=error)
+        assert not await safe_delete_message(message)
+
+    async def test_discord_exception(self) -> None:
+        message = MagicMock(spec=discord.Message)
+        message.id = 123
+        message.delete = AsyncMock(side_effect=DiscordException)
         assert not await safe_delete_message(message)
 
 

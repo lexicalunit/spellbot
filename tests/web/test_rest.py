@@ -517,6 +517,59 @@ class TestGameRecordEndpoint:
         data = await resp.json()
         assert data["error"] == "Game not found"
 
+    async def test_game_record_invalid_game_id(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        token = factories.token.create(key="RECORD_INVALID")
+
+        resp = await client.post(
+            "/api/game/not-a-number/record",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={
+                "winner": 101,
+                "tracker": 102,
+                "players": [{"xid": 101, "commander": "Atraxa"}],
+            },
+        )
+        assert resp.status == 400
+        data = await resp.json()
+        assert data["error"] == "Invalid game ID"
+
+    async def test_game_record_missing_tracker(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
+        guild = factories.guild.create(xid=2099, name="guild")
+        channel = factories.channel.create(xid=3099, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1099,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+            created_at=datetime.now(tz=UTC),
+            updated_at=datetime.now(tz=UTC),
+        )
+        token = factories.token.create(key="RECORD_NOTRACKER")
+
+        resp = await client.post(
+            f"/api/game/{game.id}/record",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={
+                "winner": 101,
+                "players": [{"xid": 101, "commander": "Atraxa"}],
+            },
+        )
+        assert resp.status == 400
+        data = await resp.json()
+        assert data["error"] == "Tracker ID is required"
+
     async def test_game_record_no_players(
         self,
         client: ClientSession,
