@@ -693,7 +693,7 @@ resource "datadog_dashboard" "spellbot_dashboard" {
   # --- Error Tracking ---
   widget {
     timeseries_definition {
-      title = "Errors by Service"
+      title = "Errors by System Service"
       request {
         formula {
           formula_expression = "spellbot"
@@ -825,7 +825,7 @@ resource "datadog_dashboard" "spellbot_dashboard" {
   # --- Game Link Services ---
   widget {
     timeseries_definition {
-      title = "Game Link Creation by Service"
+      title = "Game Link Creation by Platform"
       request {
         apm_query {
           index        = "*"
