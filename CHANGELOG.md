@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v18.4.10](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.10) - 2026-04-22
+
 ### Changed
 
 - Ignore ALREADY_ACKNOWLEDGED_CODE error spans.
