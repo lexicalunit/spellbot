@@ -948,6 +948,123 @@ resource "datadog_dashboard" "spellbot_dashboard" {
       }
     }
   }
+
+  # ==================== LOGS & TRACES ====================
+  widget {
+    group_definition {
+      title            = "📋 Logs & Traces"
+      layout_type      = "ordered"
+      background_color = "gray"
+
+      # Recent Error Spans
+      widget {
+        query_table_definition {
+          title = "Recent Error Spans"
+          request {
+            formula {
+              formula_expression = "query1"
+              limit {
+                count = 25
+                order = "desc"
+              }
+            }
+            query {
+              event_query {
+                name        = "query1"
+                data_source = "spans"
+                search {
+                  query = "env:prod status:error"
+                }
+                indexes = ["*"]
+                group_by {
+                  facet = "resource_name"
+                  limit = 25
+                  sort {
+                    aggregation = "count"
+                    order       = "desc"
+                  }
+                }
+                compute {
+                  aggregation = "count"
+                }
+              }
+            }
+          }
+        }
+      }
+
+      # Recent Warning Spans
+      widget {
+        query_table_definition {
+          title = "Recent Warning Spans"
+          request {
+            formula {
+              formula_expression = "query1"
+              limit {
+                count = 25
+                order = "desc"
+              }
+            }
+            query {
+              event_query {
+                name        = "query1"
+                data_source = "spans"
+                search {
+                  query = "env:prod @warning.type:*"
+                }
+                indexes = ["*"]
+                group_by {
+                  facet = "@warning.type"
+                  limit = 25
+                  sort {
+                    aggregation = "count"
+                    order       = "desc"
+                  }
+                }
+                compute {
+                  aggregation = "count"
+                }
+              }
+            }
+          }
+        }
+      }
+
+      # Live Log Stream - Errors
+      widget {
+        log_stream_definition {
+          title               = "Error Logs (Live)"
+          indexes             = ["*"]
+          query               = "environment:prod status:error"
+          columns             = ["host", "service", "status"]
+          show_date_column    = true
+          show_message_column = true
+          message_display     = "expanded-md"
+          sort {
+            column = "time"
+            order  = "desc"
+          }
+        }
+      }
+
+      # Live Log Stream - Warnings
+      widget {
+        log_stream_definition {
+          title               = "Warning Logs (Live)"
+          indexes             = ["*"]
+          query               = "environment:prod status:warn"
+          columns             = ["host", "service", "status"]
+          show_date_column    = true
+          show_message_column = true
+          message_display     = "expanded-md"
+          sort {
+            column = "time"
+            order  = "desc"
+          }
+        }
+      }
+    }
+  }
 }
 
 # Queries
