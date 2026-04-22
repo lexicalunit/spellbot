@@ -18,14 +18,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _format_latency(latency_ms: float | None) -> str:
+def format_latency(latency_ms: float | None) -> str:
     """Format latency for display."""
     if latency_ms is None:
         return "N/A"
     return f"{latency_ms:.1f}ms"
 
 
-def _format_time_ago(iso_timestamp: str) -> str:
+def format_time_ago(iso_timestamp: str) -> str:
     """Format a timestamp as 'X seconds/minutes ago'."""
     try:
         dt = datetime.fromisoformat(iso_timestamp)
@@ -98,13 +98,13 @@ async def endpoint(request: web.Request) -> WebResponse:
     shard_data = [
         {
             "shard_id": status.shard_id,
-            "latency": _format_latency(status.latency_ms),
-            "latency_class": _get_latency_class(status.latency_ms),
+            "latency": format_latency(status.latency_ms),
+            "latency_class": get_latency_class(status.latency_ms),
             "guild_count": status.guild_count,
             "is_ready": status.is_ready,
             "status_class": "status-healthy" if status.is_ready else "status-down",
             "status_text": "Ready" if status.is_ready else "Not Ready",
-            "last_updated": _format_time_ago(status.last_updated),
+            "last_updated": format_time_ago(status.last_updated),
             "version": status.version,
         }
         for status in statuses
@@ -131,14 +131,14 @@ async def endpoint(request: web.Request) -> WebResponse:
         "upgrade_in_progress": upgrade_in_progress,
         "version_groups": version_groups,
         "last_updated": (
-            _format_time_ago(str(metadata.get("last_updated", ""))) if metadata else "never"
+            format_time_ago(str(metadata.get("last_updated", ""))) if metadata else "never"
         ),
     }
 
     return aiohttp_jinja2.render_template("status.html.j2", request, context)
 
 
-def _get_latency_class(latency_ms: float | None) -> str:
+def get_latency_class(latency_ms: float | None) -> str:
     """Get CSS class based on latency value."""
     if latency_ms is None:
         return "latency-unknown"

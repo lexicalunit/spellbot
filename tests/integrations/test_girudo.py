@@ -80,7 +80,7 @@ class TestGirudoDefaults:
     def test_create_timeout(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(girudo.settings, "GIRUDO_TIMEOUT_S", 10)
 
-        timeout = girudo._create_timeout()
+        timeout = girudo.create_timeout()
         assert timeout.connect == 10
         assert timeout.read == 10
         assert timeout.write == 10

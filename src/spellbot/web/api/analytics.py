@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-async def _validate_analytics_request(
+async def validate_analytics_request(
     request: web.Request,
 ) -> tuple[int, None] | tuple[None, WebResponse]:
     """
@@ -55,12 +55,12 @@ async def _validate_analytics_request(
     return guild_xid, None
 
 
-async def _analytics_json_endpoint(
+async def analytics_json_endpoint(
     request: web.Request,
     fetch_fn: Callable[[PlaysService, int, bool], Awaitable[dict[str, Any]]],
 ) -> WebResponse:
     """Return analytics JSON data using the provided fetch function."""
-    guild_xid, error = await _validate_analytics_request(request)
+    guild_xid, error = await validate_analytics_request(request)
     if error:
         return error
     assert guild_xid is not None
@@ -119,7 +119,7 @@ async def analytics_endpoint(request: web.Request) -> WebResponse:
 async def analytics_summary_endpoint(request: web.Request) -> WebResponse:
     """Return summary stats (fill rate, total games, unique players, etc.)."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
+    return await analytics_json_endpoint(
         request,
         lambda p, g, a: p.analytics_summary(g, all_time=a),
     )
@@ -129,7 +129,7 @@ async def analytics_summary_endpoint(request: web.Request) -> WebResponse:
 async def analytics_activity_endpoint(request: web.Request) -> WebResponse:
     """Return daily activity data (games per day, expired, new users)."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
+    return await analytics_json_endpoint(
         request,
         lambda p, g, a: p.analytics_activity(g, all_time=a),
     )
@@ -139,7 +139,7 @@ async def analytics_activity_endpoint(request: web.Request) -> WebResponse:
 async def analytics_wait_time_endpoint(request: web.Request) -> WebResponse:
     """Return average wait time per day data."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
+    return await analytics_json_endpoint(
         request,
         lambda p, g, a: p.analytics_wait_time(g, all_time=a),
     )
@@ -149,7 +149,7 @@ async def analytics_wait_time_endpoint(request: web.Request) -> WebResponse:
 async def analytics_brackets_endpoint(request: web.Request) -> WebResponse:
     """Return games by bracket per day data."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
+    return await analytics_json_endpoint(
         request,
         lambda p, g, a: p.analytics_brackets(g, all_time=a),
     )
@@ -159,7 +159,7 @@ async def analytics_brackets_endpoint(request: web.Request) -> WebResponse:
 async def analytics_retention_endpoint(request: web.Request) -> WebResponse:
     """Return player retention data."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
+    return await analytics_json_endpoint(
         request,
         lambda p, g, a: p.analytics_retention(g, all_time=a),
     )
@@ -169,7 +169,7 @@ async def analytics_retention_endpoint(request: web.Request) -> WebResponse:
 async def analytics_growth_endpoint(request: web.Request) -> WebResponse:
     """Return cumulative player growth data."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
+    return await analytics_json_endpoint(
         request,
         lambda p, g, a: p.analytics_growth(g, all_time=a),
     )
@@ -179,7 +179,7 @@ async def analytics_growth_endpoint(request: web.Request) -> WebResponse:
 async def analytics_histogram_endpoint(request: web.Request) -> WebResponse:
     """Return games per player histogram data."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
+    return await analytics_json_endpoint(
         request,
         lambda p, g, a: p.analytics_histogram(g, all_time=a),
     )
@@ -189,7 +189,7 @@ async def analytics_histogram_endpoint(request: web.Request) -> WebResponse:
 async def analytics_formats_endpoint(request: web.Request) -> WebResponse:
     """Return popular formats data."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
+    return await analytics_json_endpoint(
         request,
         lambda p, g, a: p.analytics_formats(g, all_time=a),
     )
@@ -199,7 +199,7 @@ async def analytics_formats_endpoint(request: web.Request) -> WebResponse:
 async def analytics_channels_endpoint(request: web.Request) -> WebResponse:
     """Return busiest channels data."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
+    return await analytics_json_endpoint(
         request,
         lambda p, g, a: p.analytics_channels(g, all_time=a),
     )
@@ -209,14 +209,14 @@ async def analytics_channels_endpoint(request: web.Request) -> WebResponse:
 async def analytics_services_endpoint(request: web.Request) -> WebResponse:
     """Return popular services data."""
     add_span_request_id(generate_request_id())
-    return await _analytics_json_endpoint(
+    return await analytics_json_endpoint(
         request,
         lambda p, g, a: p.analytics_services(g, all_time=a),
     )
 
 
 @sync_to_async()
-def _delete_guild_member(guild_xid: int, user_xid: int) -> None:
+def delete_guild_member(guild_xid: int, user_xid: int) -> None:
     """Delete a GuildMember record when the user is no longer in the guild."""
     DatabaseSession.query(GuildMember).filter(
         GuildMember.guild_xid == guild_xid,
@@ -224,7 +224,7 @@ def _delete_guild_member(guild_xid: int, user_xid: int) -> None:
     ).delete()
 
 
-async def _check_guild_member(guild_xid: int, user_xid: int) -> bool | None:
+async def check_guild_member(guild_xid: int, user_xid: int) -> bool | None:
     """
     Check if a user is a member of a guild via the Discord REST API.
 
@@ -258,7 +258,7 @@ async def _check_guild_member(guild_xid: int, user_xid: int) -> bool | None:
         return None
 
 
-async def _check_membership_and_update(
+async def check_membership_and_update(
     guild_xid: int,
     players: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -271,13 +271,13 @@ async def _check_membership_and_update(
     results = []
     for player in players:
         user_xid = int(player["user_xid"])
-        is_member = await _check_guild_member(guild_xid, user_xid)
+        is_member = await check_guild_member(guild_xid, user_xid)
         player_copy = dict(player)
         if is_member is False:
             # Only mark as left when we get a definitive 404
             player_copy["left_server"] = True
             # Delete the stale GuildMember record
-            await _delete_guild_member(guild_xid, user_xid)
+            await delete_guild_member(guild_xid, user_xid)
         else:
             # User is confirmed member (True) or status unknown (None)
             player_copy["left_server"] = False
@@ -290,7 +290,7 @@ async def analytics_players_endpoint(request: web.Request) -> WebResponse:
     """Return top players data with membership status."""
     add_span_request_id(generate_request_id())
 
-    guild_xid, error = await _validate_analytics_request(request)
+    guild_xid, error = await validate_analytics_request(request)
     if error:
         return error
     assert guild_xid is not None
@@ -306,7 +306,7 @@ async def analytics_players_endpoint(request: web.Request) -> WebResponse:
 
         # Check membership status for each player
         if data.get("top_players"):
-            data["top_players"] = await _check_membership_and_update(
+            data["top_players"] = await check_membership_and_update(
                 guild_xid,
                 data["top_players"],
             )
@@ -323,7 +323,7 @@ async def analytics_blocked_endpoint(request: web.Request) -> WebResponse:
     """Return top blocked players data with membership status."""
     add_span_request_id(generate_request_id())
 
-    guild_xid, error = await _validate_analytics_request(request)
+    guild_xid, error = await validate_analytics_request(request)
     if error:
         return error
     assert guild_xid is not None
@@ -339,7 +339,7 @@ async def analytics_blocked_endpoint(request: web.Request) -> WebResponse:
 
         # Check membership status for each blocked user
         if data.get("top_blocked"):
-            data["top_blocked"] = await _check_membership_and_update(
+            data["top_blocked"] = await check_membership_and_update(
                 guild_xid,
                 data["top_blocked"],
             )

@@ -874,6 +874,20 @@ class TestOperationsDeleteMessage:
         assert not await safe_delete_message(message)
         message.delete.assert_not_called()
 
+    async def test_forbidden_other_code(self) -> None:
+        message = MagicMock(spec=discord.Message)
+        message.id = 123
+        error = discord.errors.Forbidden(MagicMock(), {"code": 99999})
+        message.delete = AsyncMock(side_effect=error)
+        assert not await safe_delete_message(message)
+
+    async def test_not_found_other_code(self) -> None:
+        message = MagicMock(spec=discord.Message)
+        message.id = 123
+        error = discord.errors.NotFound(MagicMock(), {"code": 99999})
+        message.delete = AsyncMock(side_effect=error)
+        assert not await safe_delete_message(message)
+
 
 @pytest.mark.asyncio
 class TestEnsureVoiceCategory:

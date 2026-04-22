@@ -595,7 +595,7 @@ class TestSpellBotEmojis:
             AsyncMock(return_value=mock_emoji),
         )
 
-        result = await bot._create_application_emoji("test_emoji", b"fake_image_bytes")
+        result = await bot.ensure_application_emoji("test_emoji", b"fake_image_bytes")
 
         assert result == mock_emoji
         create_emoji_stub.assert_called_once_with(
@@ -615,7 +615,7 @@ class TestSpellBotEmojis:
             AsyncMock(side_effect=Exception("Discord API error")),
         )
 
-        result = await bot._create_application_emoji("test_emoji", b"fake_image_bytes")
+        result = await bot.ensure_application_emoji("test_emoji", b"fake_image_bytes")
 
         assert result is None
 
@@ -644,7 +644,7 @@ class TestSpellBotEmojis:
 
         mocker.patch("spellbot.client.httpx.AsyncClient", return_value=mock_client)
 
-        await bot._ensure_application_emojis()
+        await bot.ensure_application_emojis()
 
         assert len(bot.emojis_cache) == len(emoji_names)
 
@@ -678,13 +678,13 @@ class TestSpellBotEmojis:
 
         create_stub = mocker.patch.object(
             bot,
-            "_create_application_emoji",
+            "create_application_emoji",
             AsyncMock(side_effect=mock_emojis),
         )
 
-        await bot._ensure_application_emojis()
+        await bot.ensure_application_emojis()
 
-        # Should have called _create_application_emoji for each emoji file
+        # Should have called create_application_emoji for each emoji file
         assert create_stub.call_count == num_emojis
         # All emojis should be in the cache
         assert len(bot.emojis_cache) == num_emojis
@@ -703,4 +703,4 @@ class TestSpellBotEmojis:
         mocker.patch("spellbot.client.httpx.AsyncClient", return_value=mock_client)
 
         # Should not raise, just log the exception
-        await bot._ensure_application_emojis()
+        await bot.ensure_application_emojis()

@@ -18,6 +18,7 @@ from .utils import (
     MISSING_ACCESS_CODE,
     NO_MUTUAL_GUILDS_CODE,
     UNKNOWN_INTERACTION_CODE,
+    UNKNOWN_MESSAGE_CODE,
     bot_can_delete_channel,
     bot_can_delete_message,
     bot_can_manage_channels,
@@ -82,16 +83,16 @@ async def safe_original_response(
     return response
 
 
-def _is_unknown_interaction(ex: BaseException) -> bool:
+def is_unknown_interaction(ex: BaseException) -> bool:
     return isinstance(ex, NotFound) and getattr(ex, "code", None) == UNKNOWN_INTERACTION_CODE
 
 
 @tracer.wrap()
 async def safe_defer_interaction(interaction: discord.Interaction) -> bool:
     try:
-        await retry(interaction.response.defer, ignore_error=_is_unknown_interaction)
+        await retry(interaction.response.defer, ignore_error=is_unknown_interaction)
     except NotFound as ex:
-        if _is_unknown_interaction(ex):
+        if is_unknown_interaction(ex):
             # Interaction token has expired (usually >3 seconds elapsed)
             if span := tracer.current_span():  # pragma: no cover
                 span.set_tags(
@@ -235,6 +236,10 @@ def safe_get_partial_message(
     return message
 
 
+def is_unknown_message(ex: BaseException) -> bool:
+    return isinstance(ex, NotFound) and getattr(ex, "code", None) == UNKNOWN_MESSAGE_CODE
+
+
 @tracer.wrap()
 async def safe_update_embed(
     message: discord.Message | discord.PartialMessage,
@@ -244,23 +249,55 @@ async def safe_update_embed(
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"message_xid": str(message.id)})
 
-    updated_message: discord.Message | None = None
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="could not update embed in message %(message_xid)s",
-        message_xid=message.id,
-    ):
-        updated_message = await retry(lambda: message.edit(*args, **kwargs))
-    return updated_message
+    try:
+        return await retry(lambda: message.edit(*args, **kwargs), ignore_error=is_unknown_message)
+    except NotFound as ex:
+        if is_unknown_message(ex):
+            # Message was deleted before we could edit it
+            if span := tracer.current_span():  # pragma: no cover
+                span.set_tags(
+                    {
+                        "warning": "true",
+                        "warning.type": "unknown_message",
+                        "warning.code": str(getattr(ex, "code", "")),
+                    },
+                )
+            log_info(
+                "unknown message %(message_xid)s (already deleted)",
+                message_xid=message.id,
+            )
+            return None
+        add_span_error(ex)
+        log_warning("could not update embed in message %(message_xid)s", message_xid=message.id)
+        return None
+    except (DiscordException, ClientOSError) as ex:
+        add_span_error(ex)
+        log_warning("could not update embed in message %(message_xid)s", message_xid=message.id)
+        return None
 
 
-def _is_missing_access(ex: BaseException) -> bool:
+def is_missing_access(ex: BaseException) -> bool:
     return (
         isinstance(ex, discord.errors.Forbidden)
         and getattr(ex, "code", None) == MISSING_ACCESS_CODE
     )
+
+
+def is_expected_delete_error(ex: BaseException) -> bool:
+    """Check if this is an expected error when deleting a message."""
+    return is_missing_access(ex) or is_unknown_message(ex)
+
+
+def set_warning_tags(warning_type: str, ex: BaseException) -> None:
+    """Set warning tags on the current span for expected errors."""
+    if span := tracer.current_span():  # pragma: no cover
+        span.set_tags(
+            {
+                "warning": "true",
+                "warning.type": warning_type,
+                "warning.code": str(getattr(ex, "code", "")),
+            },
+        )
 
 
 @tracer.wrap()
@@ -272,10 +309,7 @@ async def safe_delete_message(message: discord.Message | discord.PartialMessage)
         maybe_guild = getattr(message, "guild", None)
         maybe_guild_xid = getattr(maybe_guild, "id", None)
         logger.warning(
-            (
-                "warning: in guild %s (%s), could not manage message:"
-                " no permissions to manage message: %s"
-            ),
+            "warning: in guild %s (%s), could not manage message: no permissions: %s",
             maybe_guild,
             maybe_guild_xid,
             str(message),
@@ -283,27 +317,24 @@ async def safe_delete_message(message: discord.Message | discord.PartialMessage)
         return False
 
     try:
-        await retry(message.delete, ignore_error=_is_missing_access)
+        await retry(message.delete, ignore_error=is_expected_delete_error)
     except discord.errors.Forbidden as ex:
-        if _is_missing_access(ex):
-            # Bot may have lost access to the channel or message was already deleted
-            if span := tracer.current_span():  # pragma: no cover
-                span.set_tags(
-                    {
-                        "warning": "true",
-                        "warning.type": "missing_access",
-                        "warning.code": str(getattr(ex, "code", "")),
-                    },
-                )
-            log_info(
-                "missing access to delete message %(message_xid)s",
-                message_xid=message.id,
-            )
+        if is_missing_access(ex):
+            set_warning_tags("missing_access", ex)
+            log_info("missing access to delete message %(message_xid)s", message_xid=message.id)
             return False
         add_span_error(ex)
         log_warning("could not delete message %(message_xid)s", message_xid=message.id)
         return False
-    except (DiscordException, ClientOSError, NotFound) as ex:
+    except NotFound as ex:
+        if is_unknown_message(ex):
+            set_warning_tags("unknown_message", ex)
+            log_info("unknown message %(message_xid)s (already deleted)", message_xid=message.id)
+            return False
+        add_span_error(ex)
+        log_warning("could not delete message %(message_xid)s", message_xid=message.id)
+        return False
+    except (DiscordException, ClientOSError) as ex:
         add_span_error(ex)
         log_warning("could not delete message %(message_xid)s", message_xid=message.id)
         return False
@@ -616,7 +647,7 @@ async def safe_message_reply(message: discord.Message, *args: Any, **kwargs: Any
         logger.debug("debug: %s", ex, exc_info=True)
 
 
-def _is_expected_dm_failure(ex: BaseException) -> bool:
+def is_expected_dm_failure(ex: BaseException) -> bool:
     return (
         isinstance(ex, discord.errors.HTTPException)
         and getattr(ex, "code", None) in EXPECTED_DM_FAILURE_CODES
@@ -639,7 +670,7 @@ async def safe_send_user(
     try:
         await retry(
             lambda: user.send(*args, **kwargs),
-            ignore_error=_is_expected_dm_failure,
+            ignore_error=is_expected_dm_failure,
         )
     except discord.errors.DiscordServerError as ex:
         add_span_error(ex)
@@ -650,7 +681,7 @@ async def safe_send_user(
             exec_info=True,
         )
     except (discord.errors.Forbidden, discord.errors.HTTPException) as ex:
-        if _is_expected_dm_failure(ex):
+        if is_expected_dm_failure(ex):
             # User may have the bot blocked, DMs allowed only for friends, or
             # no mutual-guild visibility per their privacy settings.
             if span := tracer.current_span():  # pragma: no cover

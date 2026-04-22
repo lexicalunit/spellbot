@@ -44,7 +44,7 @@ def get_default_tcg() -> tuple[str, str]:
     return uuid, name
 
 
-def _create_timeout() -> httpx.Timeout:
+def create_timeout() -> httpx.Timeout:
     timeout_s = settings.GIRUDO_TIMEOUT_S
     return httpx.Timeout(timeout_s, connect=timeout_s, read=timeout_s, write=timeout_s)
 
@@ -67,7 +67,7 @@ async def ensure_formats_loaded() -> dict[str, GirudoGameFormat]:
 
     try:
         email, password = await pick_account(accounts)
-        timeout = _create_timeout()
+        timeout = create_timeout()
         async with httpx.AsyncClient(timeout=timeout) as client:
             token = await authenticate(client, email=email, password=password)
             if not token:
@@ -425,7 +425,7 @@ async def generate_link(
         logger.error("No Girudo accounts configured (GIRUDO_EMAILS/GIRUDO_PASSWORDS)")
         return GirudoLinkDetails()
 
-    timeout = _create_timeout()
+    timeout = create_timeout()
     retry_attempts = settings.GIRUDO_RETRY_ATTEMPTS
 
     for attempt in range(retry_attempts):

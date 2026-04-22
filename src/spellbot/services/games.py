@@ -119,7 +119,7 @@ class GamesService:
     ) -> bool:
         existing: Game | None = None
         if not create_new:
-            existing = self._find_existing(
+            existing = self.find_existing(
                 guild_xid=guild_xid,
                 channel_xid=channel_xid,
                 author_xid=author_xid,
@@ -173,7 +173,7 @@ class GamesService:
         return new
 
     @tracer.wrap()
-    def _find_existing(
+    def find_existing(
         self,
         *,
         guild_xid: int,

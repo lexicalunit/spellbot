@@ -264,7 +264,7 @@ class TestLookingForGameAction:
         """Test _update_other_game_posts returns early when no other game IDs."""
         # Should return immediately without calling message_xids
         stub = mocker.patch.object(action.services.games, "message_xids", AsyncMock())
-        await action._update_other_game_posts([])
+        await action.update_other_game_posts([])
         stub.assert_not_called()
 
     async def test_update_other_game_posts_with_games(
@@ -302,7 +302,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=True),
         )
 
-        await action._update_other_game_posts([1])
+        await action.update_other_game_posts([1])
 
         update_stub.assert_called_once()
 
@@ -321,7 +321,7 @@ class TestLookingForGameAction:
 
         update_stub = mocker.patch("spellbot.actions.lfg_action.safe_update_embed", AsyncMock())
 
-        await action._update_other_game_posts([1])
+        await action.update_other_game_posts([1])
 
         update_stub.assert_not_called()
 
@@ -344,7 +344,7 @@ class TestLookingForGameAction:
 
         update_stub = mocker.patch("spellbot.actions.lfg_action.safe_update_embed", AsyncMock())
 
-        await action._update_other_game_posts([1])
+        await action.update_other_game_posts([1])
 
         update_stub.assert_not_called()
 
@@ -379,7 +379,7 @@ class TestLookingForGameAction:
         action: LookingForGameAction,
         mocker: MockerFixture,
     ) -> None:
-        """Test _handle_voice_creation returns when category not found."""
+        """Test handle_voice_creation returns when category not found."""
         mocker.patch.object(
             action.services.guilds,
             "should_voice_create",
@@ -399,7 +399,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action._handle_voice_creation(12345)
+        await action.handle_voice_creation(12345)
 
         voice_stub.assert_not_called()
 
@@ -408,7 +408,7 @@ class TestLookingForGameAction:
         action: LookingForGameAction,
         mocker: MockerFixture,
     ) -> None:
-        """Test _handle_voice_creation returns when voice channel creation fails."""
+        """Test handle_voice_creation returns when voice channel creation fails."""
         mock_category = MagicMock(spec=discord.CategoryChannel)
         mocker.patch.object(
             action.services.guilds,
@@ -432,7 +432,7 @@ class TestLookingForGameAction:
 
         set_voice_stub = mocker.patch.object(action.services.games, "set_voice", AsyncMock())
 
-        await action._handle_voice_creation(12345)
+        await action.handle_voice_creation(12345)
 
         set_voice_stub.assert_not_called()
 
@@ -441,7 +441,7 @@ class TestLookingForGameAction:
         action: LookingForGameAction,
         mocker: MockerFixture,
     ) -> None:
-        """Test _handle_voice_creation creates voice invite when configured."""
+        """Test handle_voice_creation creates voice invite when configured."""
         mock_category = MagicMock(spec=discord.CategoryChannel)
         mock_voice_channel = MagicMock(spec=discord.VoiceChannel)
         mock_voice_channel.id = 99999
@@ -477,7 +477,7 @@ class TestLookingForGameAction:
 
         set_voice_stub = mocker.patch.object(action.services.games, "set_voice", AsyncMock())
 
-        await action._handle_voice_creation(12345)
+        await action.handle_voice_creation(12345)
 
         set_voice_stub.assert_called_once_with(
             voice_xid=99999,
@@ -489,7 +489,7 @@ class TestLookingForGameAction:
         action: LookingForGameAction,
         mocker: MockerFixture,
     ) -> None:
-        """Test _handle_voice_creation without voice invite."""
+        """Test handle_voice_creation without voice invite."""
         mock_category = MagicMock(spec=discord.CategoryChannel)
         mock_voice_channel = MagicMock(spec=discord.VoiceChannel)
         mock_voice_channel.id = 99999
@@ -523,7 +523,7 @@ class TestLookingForGameAction:
 
         set_voice_stub = mocker.patch.object(action.services.games, "set_voice", AsyncMock())
 
-        await action._handle_voice_creation(12345)
+        await action.handle_voice_creation(12345)
 
         invite_stub.assert_not_called()
         set_voice_stub.assert_called_once_with(
@@ -546,7 +546,7 @@ class TestLookingForGameAction:
 
         watch_stub = mocker.patch.object(action.services.games, "watch_notes", AsyncMock())
 
-        await action._handle_watched_players([123])
+        await action.handle_watched_players([123])
 
         watch_stub.assert_not_called()
 
@@ -566,7 +566,7 @@ class TestLookingForGameAction:
 
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
 
-        await action._handle_watched_players([123])
+        await action.handle_watched_players([123])
 
         send_stub.assert_not_called()
 
@@ -599,7 +599,7 @@ class TestLookingForGameAction:
 
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
 
-        await action._handle_watched_players([123])
+        await action.handle_watched_players([123])
 
         send_stub.assert_called_once()
 
@@ -665,7 +665,7 @@ class TestLookingForGameAction:
         )
         add_post_stub = mocker.patch.object(action.services.games, "add_post", AsyncMock())
 
-        await action._create_initial_post(mock_embed)
+        await action.create_initial_post(mock_embed)
 
         add_post_stub.assert_called_once()
 
@@ -683,7 +683,7 @@ class TestLookingForGameAction:
         )
         add_post_stub = mocker.patch.object(action.services.games, "add_post", AsyncMock())
 
-        await action._create_initial_post(mock_embed)
+        await action.create_initial_post(mock_embed)
 
         add_post_stub.assert_not_called()
 
@@ -722,7 +722,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=True),
         )
 
-        await action._handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
 
         update_stub.assert_called_once()
 
@@ -765,7 +765,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action._handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
 
         origin_stub.assert_called_once()
         update_stub.assert_not_called()
@@ -814,7 +814,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=True),
         )
 
-        await action._handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
 
         update_stub.assert_called_once()
 
@@ -847,7 +847,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action._handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
 
         update_stub.assert_not_called()
 
@@ -882,7 +882,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action._handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
 
         update_stub.assert_not_called()
 
@@ -923,7 +923,7 @@ class TestLookingForGameAction:
         )
 
         # Should not raise an exception, just continue
-        await action._handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
 
     async def test_reply_found_embed_no_jump_link(
         self,
@@ -943,7 +943,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action._reply_found_embed()
+        await action.reply_found_embed()
 
         followup_stub.assert_called_once()
         # Check the embed description contains the game ID
@@ -995,7 +995,7 @@ class TestLookingForGameAction:
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
         mocker.patch.object(action.services.awards, "give_awards", AsyncMock(return_value={}))
 
-        await action._handle_direct_messages()
+        await action.handle_direct_messages()
 
         send_stub.assert_called_once()
         # Verify Mythic Track link was added to description
@@ -1045,7 +1045,7 @@ class TestLookingForGameAction:
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
         mocker.patch.object(action.services.awards, "give_awards", AsyncMock(return_value={}))
 
-        await action._handle_direct_messages()
+        await action.handle_direct_messages()
 
         send_stub.assert_called_once()
         # Verify Mythic Track link was added to description
@@ -1099,7 +1099,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action._handle_direct_messages()
+        await action.handle_direct_messages()
 
         # Should have 2 calls:
         # 1. "Unable to give role 999 to user <@123>"
@@ -1154,7 +1154,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value={123: [new_award]}),
         )
 
-        await action._handle_direct_messages()
+        await action.handle_direct_messages()
 
         # Should give role
         add_role_stub.assert_called_once()
@@ -1251,9 +1251,9 @@ class TestLookingForGameAction:
             "make_game_ready",
             AsyncMock(return_value=(42, mock_suggestion)),
         )
-        voice_stub = mocker.patch.object(action, "_handle_voice_creation", AsyncMock())
-        embed_stub = mocker.patch.object(action, "_handle_embed_creation", AsyncMock())
-        dm_stub = mocker.patch.object(action, "_handle_direct_messages", AsyncMock())
+        voice_stub = mocker.patch.object(action, "handle_voice_creation", AsyncMock())
+        embed_stub = mocker.patch.object(action, "handle_embed_creation", AsyncMock())
+        dm_stub = mocker.patch.object(action, "handle_direct_messages", AsyncMock())
 
         await action.execute_start()
 

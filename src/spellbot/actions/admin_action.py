@@ -52,14 +52,14 @@ class AdminAction(BaseAction):
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         super().__init__(bot, interaction)
 
-    async def _report_failure(self) -> None:
+    async def report_failure(self) -> None:
         await safe_send_channel(
             self.interaction,
             "There is no game with that ID.",
             ephemeral=True,
         )
 
-    async def _build_channels_embeds(self) -> list[Embed]:  # noqa: C901
+    async def build_channels_embeds(self) -> list[Embed]:  # noqa: C901
         guild = await self.services.guilds.to_dict()
         embeds: list[Embed] = []
 
@@ -128,7 +128,7 @@ class AdminAction(BaseAction):
 
         return embeds
 
-    async def _build_awards_embeds(self) -> list[Embed]:
+    async def build_awards_embeds(self) -> list[Embed]:
         guild = await self.services.guilds.to_dict()
         embeds: list[Embed] = []
 
@@ -167,7 +167,7 @@ class AdminAction(BaseAction):
 
         return embeds
 
-    async def _build_setup_embed(self) -> Embed:
+    async def build_setup_embed(self) -> Embed:
         guild = await self.services.guilds.to_dict()
         embed = Embed(title=f"SpellBot Setup for {guild['name']}")
         embed.set_thumbnail(url=settings.ICO_URL)
@@ -214,12 +214,12 @@ class AdminAction(BaseAction):
         numeric_filter = filter(str.isdigit, game_id)
         numeric_string = "".join(numeric_filter)
         if not numeric_string:
-            return await self._report_failure()
+            return await self.report_failure()
         game_id_int = int(numeric_string)
 
         found = await self.services.games.select(game_id_int)
         if not found:
-            return await self._report_failure()
+            return await self.report_failure()
 
         embed = await self.services.games.to_embed(
             guild=self.guild,
@@ -231,7 +231,7 @@ class AdminAction(BaseAction):
         return None
 
     async def setup(self) -> None:
-        embed = await self._build_setup_embed()
+        embed = await self.build_setup_embed()
         view = SetupView(self.bot)
         await safe_send_channel(self.interaction, embed=embed, view=view)
 
@@ -259,14 +259,14 @@ class AdminAction(BaseAction):
         await safe_send_channel(self.interaction, embed=embed)
 
     async def channels(self, page: int) -> None:
-        embeds = await self._build_channels_embeds()
+        embeds = await self.build_channels_embeds()
         try:
             await safe_send_channel(self.interaction, embed=embeds[page - 1])
         except IndexError:
             await safe_send_channel(self.interaction, "Invalid page.", ephemeral=True)
 
     async def awards(self, page: int) -> None:
-        embeds = await self._build_awards_embeds()
+        embeds = await self.build_awards_embeds()
         try:
             await safe_send_channel(self.interaction, embed=embeds[page - 1])
         except IndexError:
@@ -364,25 +364,25 @@ class AdminAction(BaseAction):
         await safe_send_channel(self.interaction, "Message of the day updated.", ephemeral=True)
 
     async def refresh_setup(self) -> None:
-        embed = await self._build_setup_embed()
+        embed = await self.build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_show_links(self) -> None:
         await self.services.guilds.toggle_show_links()
-        embed = await self._build_setup_embed()
+        embed = await self.build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_voice_create(self) -> None:
         await self.services.guilds.toggle_voice_create()
-        embed = await self._build_setup_embed()
+        embed = await self.build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_use_max_bitrate(self) -> None:
         await self.services.guilds.toggle_use_max_bitrate()
-        embed = await self._build_setup_embed()
+        embed = await self.build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 

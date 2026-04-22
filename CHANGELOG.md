@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Handle trace errors in update operations.
+- Some small refactoring of `_foo()` style functions.
+
 ## [v18.4.7](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.7) - 2026-04-21
 
 ### Changed

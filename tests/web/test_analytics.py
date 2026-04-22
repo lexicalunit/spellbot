@@ -10,7 +10,7 @@ from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
 from spellbot.settings import settings
 from spellbot.utils import generate_signed_url
-from spellbot.web.api.analytics import _check_guild_member
+from spellbot.web.api.analytics import check_guild_member
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -189,7 +189,7 @@ class TestWebAnalyticsSummary:
 class TestWebAnalyticsEndpoints:
     """Tests for all analytics JSON endpoints."""
 
-    async def _get_analytics_endpoint(
+    async def get_analytics_endpoint(
         self,
         client: ClientSession,
         factories: Factories,
@@ -214,7 +214,7 @@ class TestWebAnalyticsEndpoints:
         factories: Factories,
         mocker: MockerFixture,
     ) -> None:
-        data = await self._get_analytics_endpoint(client, factories, mocker, "wait-time")
+        data = await self.get_analytics_endpoint(client, factories, mocker, "wait-time")
         assert "avg_wait_per_day" in data
 
     async def test_analytics_brackets(
@@ -223,7 +223,7 @@ class TestWebAnalyticsEndpoints:
         factories: Factories,
         mocker: MockerFixture,
     ) -> None:
-        data = await self._get_analytics_endpoint(client, factories, mocker, "brackets")
+        data = await self.get_analytics_endpoint(client, factories, mocker, "brackets")
         assert "games_by_bracket_per_day" in data
 
     async def test_analytics_retention(
@@ -232,7 +232,7 @@ class TestWebAnalyticsEndpoints:
         factories: Factories,
         mocker: MockerFixture,
     ) -> None:
-        data = await self._get_analytics_endpoint(client, factories, mocker, "retention")
+        data = await self.get_analytics_endpoint(client, factories, mocker, "retention")
         assert "player_retention" in data
 
     async def test_analytics_growth(
@@ -241,7 +241,7 @@ class TestWebAnalyticsEndpoints:
         factories: Factories,
         mocker: MockerFixture,
     ) -> None:
-        data = await self._get_analytics_endpoint(client, factories, mocker, "growth")
+        data = await self.get_analytics_endpoint(client, factories, mocker, "growth")
         assert "cumulative_players" in data
 
     async def test_analytics_formats(
@@ -250,7 +250,7 @@ class TestWebAnalyticsEndpoints:
         factories: Factories,
         mocker: MockerFixture,
     ) -> None:
-        data = await self._get_analytics_endpoint(client, factories, mocker, "formats")
+        data = await self.get_analytics_endpoint(client, factories, mocker, "formats")
         assert "popular_formats" in data
 
     async def test_analytics_services(
@@ -259,7 +259,7 @@ class TestWebAnalyticsEndpoints:
         factories: Factories,
         mocker: MockerFixture,
     ) -> None:
-        data = await self._get_analytics_endpoint(client, factories, mocker, "services")
+        data = await self.get_analytics_endpoint(client, factories, mocker, "services")
         assert "popular_services" in data
 
     async def test_analytics_players(
@@ -280,9 +280,9 @@ class TestWebAnalyticsEndpoints:
         user = factories.user.create(xid=5001, name="active-user", game=game)
         factories.guild_member.create(guild_xid=guild.xid, user_xid=user.xid)
 
-        # Mock _check_guild_member to return True (user is still a member)
+        # Mock check_guild_member to return True (user is still a member)
         mocker.patch(
-            "spellbot.web.api.analytics._check_guild_member",
+            "spellbot.web.api.analytics.check_guild_member",
             return_value=True,
         )
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
@@ -314,9 +314,9 @@ class TestWebAnalyticsEndpoints:
         factories.guild_member.create(guild_xid=guild.xid, user_xid=blocked.xid)
         factories.block.create(user_xid=blocker.xid, blocked_user_xid=blocked.xid)
 
-        # Mock _check_guild_member to return True (user is still a member)
+        # Mock check_guild_member to return True (user is still a member)
         mocker.patch(
-            "spellbot.web.api.analytics._check_guild_member",
+            "spellbot.web.api.analytics.check_guild_member",
             return_value=True,
         )
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
@@ -341,7 +341,7 @@ class TestWebAnalyticsEndpoints:
         factories: Factories,
         mocker: MockerFixture,
     ) -> None:
-        data = await self._get_analytics_endpoint(client, factories, mocker, "activity")
+        data = await self.get_analytics_endpoint(client, factories, mocker, "activity")
         assert "games_per_day" in data
 
     async def test_analytics_histogram(
@@ -350,7 +350,7 @@ class TestWebAnalyticsEndpoints:
         factories: Factories,
         mocker: MockerFixture,
     ) -> None:
-        data = await self._get_analytics_endpoint(client, factories, mocker, "histogram")
+        data = await self.get_analytics_endpoint(client, factories, mocker, "histogram")
         assert "games_histogram" in data
 
     async def test_analytics_channels(
@@ -359,7 +359,7 @@ class TestWebAnalyticsEndpoints:
         factories: Factories,
         mocker: MockerFixture,
     ) -> None:
-        data = await self._get_analytics_endpoint(client, factories, mocker, "channels")
+        data = await self.get_analytics_endpoint(client, factories, mocker, "channels")
         assert "busiest_channels" in data
 
 
@@ -419,9 +419,9 @@ class TestWebAnalyticsMembershipChecks:
         user = factories.user.create(xid=1001, name="left-user", game=game)
         factories.guild_member.create(guild_xid=guild.xid, user_xid=user.xid)
 
-        # Mock _check_guild_member to return False (user has left)
+        # Mock check_guild_member to return False (user has left)
         mocker.patch(
-            "spellbot.web.api.analytics._check_guild_member",
+            "spellbot.web.api.analytics.check_guild_member",
             return_value=False,
         )
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
@@ -453,9 +453,9 @@ class TestWebAnalyticsMembershipChecks:
         factories.guild_member.create(guild_xid=guild.xid, user_xid=blocked.xid)
         factories.block.create(user_xid=blocker.xid, blocked_user_xid=blocked.xid)
 
-        # Mock _check_guild_member to return False (user has left)
+        # Mock check_guild_member to return False (user has left)
         mocker.patch(
-            "spellbot.web.api.analytics._check_guild_member",
+            "spellbot.web.api.analytics.check_guild_member",
             return_value=False,
         )
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
@@ -474,11 +474,11 @@ class TestWebAnalyticsMembershipChecks:
         assert len(data["top_blocked"]) == 1
         assert data["top_blocked"][0]["left_server"] is True
 
-    async def test_check_guild_member_api_error(
+    async def testcheck_guild_member_api_error(
         self,
         mocker: MockerFixture,
     ) -> None:
-        """Test that _check_guild_member returns None on API errors."""
+        """Test that check_guild_member returns None on API errors."""
         # Mock httpx to raise an exception
         mock_client = mocker.MagicMock()
         mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
@@ -486,14 +486,14 @@ class TestWebAnalyticsMembershipChecks:
         mock_client.get = mocker.AsyncMock(side_effect=Exception("Network error"))
         mocker.patch("httpx.AsyncClient", return_value=mock_client)
 
-        result = await _check_guild_member(12345, 67890)
+        result = await check_guild_member(12345, 67890)
         assert result is None
 
-    async def test_check_guild_member_success(
+    async def testcheck_guild_member_success(
         self,
         mocker: MockerFixture,
     ) -> None:
-        """Test that _check_guild_member returns True when user is a member."""
+        """Test that check_guild_member returns True when user is a member."""
         mock_response = mocker.MagicMock()
         mock_response.status_code = 200
         mock_client = mocker.MagicMock()
@@ -502,14 +502,14 @@ class TestWebAnalyticsMembershipChecks:
         mock_client.get = mocker.AsyncMock(return_value=mock_response)
         mocker.patch("httpx.AsyncClient", return_value=mock_client)
 
-        result = await _check_guild_member(12345, 67890)
+        result = await check_guild_member(12345, 67890)
         assert result is True
 
-    async def test_check_guild_member_not_found(
+    async def testcheck_guild_member_not_found(
         self,
         mocker: MockerFixture,
     ) -> None:
-        """Test that _check_guild_member returns False when user is not a member."""
+        """Test that check_guild_member returns False when user is not a member."""
         mock_response = mocker.MagicMock()
         mock_response.status_code = 404
         mock_client = mocker.MagicMock()
@@ -518,14 +518,14 @@ class TestWebAnalyticsMembershipChecks:
         mock_client.get = mocker.AsyncMock(return_value=mock_response)
         mocker.patch("httpx.AsyncClient", return_value=mock_client)
 
-        result = await _check_guild_member(12345, 67890)
+        result = await check_guild_member(12345, 67890)
         assert result is False
 
-    async def test_check_guild_member_rate_limited(
+    async def testcheck_guild_member_rate_limited(
         self,
         mocker: MockerFixture,
     ) -> None:
-        """Test that _check_guild_member returns None on rate limit (429)."""
+        """Test that check_guild_member returns None on rate limit (429)."""
         mock_response = mocker.MagicMock()
         mock_response.status_code = 429
         mock_client = mocker.MagicMock()
@@ -534,7 +534,7 @@ class TestWebAnalyticsMembershipChecks:
         mock_client.get = mocker.AsyncMock(return_value=mock_response)
         mocker.patch("httpx.AsyncClient", return_value=mock_client)
 
-        result = await _check_guild_member(12345, 67890)
+        result = await check_guild_member(12345, 67890)
         assert result is None
 
     async def test_analytics_players_invalid_signature(
