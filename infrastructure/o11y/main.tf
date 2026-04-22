@@ -515,15 +515,19 @@ resource "datadog_monitor" "rds_disk_queue_depth" {
 
 # Dashboards
 resource "datadog_dashboard" "spellbot_create_game_link_dashboard" {
-  title       = "Avg of duration of create_game_link"
-  description = "Average duration of create_game_link calls"
+  title       = "SpellBot Dashboard"
+  description = "Metrics and performance dashboard for SpellBot"
   layout_type = "ordered"
   widget {
     timeseries_definition {
+      title = "create_game_link performance"
       request {
         apm_query {
           index        = "*"
-          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link @link_service:SPELLTABLE"
+          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link"
+          group_by {
+            facet = "@link_service"
+          }
           compute_query {
             aggregation = "avg"
             facet       = "@duration"
@@ -531,7 +535,29 @@ resource "datadog_dashboard" "spellbot_create_game_link_dashboard" {
           }
         }
       }
-      live_span = "1w"
+    }
+  }
+  widget {
+    timeseries_definition {
+      title = "Discord performance"
+      request {
+        apm_query {
+          index        = "*"
+          search_query = "env:prod service:discord retained_by:retention_filter"
+          group_by {
+            facet = "status"
+            limit = 10
+            sort_query {
+              aggregation = "count"
+              order       = "desc"
+            }
+          }
+          compute_query {
+            aggregation = "count"
+            interval    = 3600000
+          }
+        }
+      }
     }
   }
 }
