@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated dependencies.
+- Building a useful performance dashboard on datadog.
+- Removed trace span from retry helper.
+
 ## [v18.4.8](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.8) - 2026-04-21
 
 ### Changed

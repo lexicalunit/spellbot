@@ -514,17 +514,272 @@ resource "datadog_monitor" "rds_disk_queue_depth" {
 }
 
 # Dashboards
-resource "datadog_dashboard" "spellbot_create_game_link_dashboard" {
+resource "datadog_dashboard" "spellbot_dashboard" {
   title       = "SpellBot Dashboard"
   description = "Metrics and performance dashboard for SpellBot"
   layout_type = "ordered"
+
+  # --- Interaction Performance ---
   widget {
     timeseries_definition {
-      title = "create_game_link performance"
+      title = "Interaction Latency by Command (avg)"
       request {
         apm_query {
           index        = "*"
-          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link"
+          search_query = "env:prod service:spellbot resource_name:spellbot.interactions.* retained_by:*"
+          group_by {
+            facet = "resource_name"
+            limit = 10
+            sort_query {
+              aggregation = "avg"
+              facet       = "@duration"
+              order       = "desc"
+            }
+          }
+          compute_query {
+            aggregation = "avg"
+            facet       = "@duration"
+            interval    = 3600000
+          }
+        }
+      }
+    }
+  }
+
+  widget {
+    timeseries_definition {
+      title = "Interactions per Hour by Type"
+      request {
+        apm_query {
+          index        = "*"
+          search_query = "env:prod service:spellbot resource_name:spellbot.interactions.* retained_by:*"
+          group_by {
+            facet = "resource_name"
+            limit = 10
+            sort_query {
+              aggregation = "count"
+              order       = "desc"
+            }
+          }
+          compute_query {
+            aggregation = "count"
+            interval    = 3600000
+          }
+        }
+      }
+    }
+  }
+
+  # --- Discord API Performance ---
+  widget {
+    timeseries_definition {
+      title = "Discord API Calls by Status"
+      request {
+        apm_query {
+          index        = "*"
+          search_query = "env:prod service:discord retained_by:*"
+          group_by {
+            facet = "status"
+            limit = 10
+            sort_query {
+              aggregation = "count"
+              order       = "desc"
+            }
+          }
+          compute_query {
+            aggregation = "count"
+            interval    = 3600000
+          }
+        }
+      }
+    }
+  }
+
+  widget {
+    timeseries_definition {
+      title = "Discord API Latency (avg)"
+      request {
+        apm_query {
+          index        = "*"
+          search_query = "env:prod service:discord retained_by:*"
+          group_by {
+            facet = "resource_name"
+            limit = 10
+            sort_query {
+              aggregation = "avg"
+              facet       = "@duration"
+              order       = "desc"
+            }
+          }
+          compute_query {
+            aggregation = "avg"
+            facet       = "@duration"
+            interval    = 3600000
+          }
+        }
+      }
+    }
+  }
+
+  # --- Database Performance ---
+  widget {
+    timeseries_definition {
+      title = "Postgres Query Latency (avg)"
+      request {
+        formula {
+          formula_expression = "query1"
+        }
+        query {
+          event_query {
+            name        = "query1"
+            data_source = "spans"
+            search {
+              query = "env:prod @base_service:spellbot @db.system:postgresql"
+            }
+            indexes = ["*"]
+            group_by {
+              facet = "resource_name"
+              limit = 10
+              sort {
+                aggregation = "avg"
+                metric      = "@duration"
+                order       = "desc"
+              }
+            }
+            compute {
+              aggregation = "avg"
+              metric      = "@duration"
+              interval    = 3600000
+            }
+          }
+        }
+      }
+    }
+  }
+
+  widget {
+    timeseries_definition {
+      title = "Postgres Queries per Hour"
+      request {
+        formula {
+          formula_expression = "query1"
+        }
+        query {
+          event_query {
+            name        = "query1"
+            data_source = "spans"
+            search {
+              query = "env:prod @base_service:spellbot @db.system:postgresql"
+            }
+            indexes = ["*"]
+            group_by {
+              facet = "resource_name"
+              limit = 10
+              sort {
+                aggregation = "count"
+                order       = "desc"
+              }
+            }
+            compute {
+              aggregation = "count"
+              interval    = 3600000
+            }
+          }
+        }
+      }
+    }
+  }
+
+  # --- Error Tracking ---
+  widget {
+    timeseries_definition {
+      title = "Errors by Service"
+      request {
+        apm_query {
+          index        = "*"
+          search_query = "env:prod status:error retained_by:*"
+          group_by {
+            facet = "service"
+            limit = 10
+            sort_query {
+              aggregation = "count"
+              order       = "desc"
+            }
+          }
+          compute_query {
+            aggregation = "count"
+            interval    = 3600000
+          }
+        }
+      }
+    }
+  }
+
+  widget {
+    timeseries_definition {
+      title = "Warnings (Expected Errors)"
+      request {
+        formula {
+          formula_expression = "query1"
+        }
+        query {
+          event_query {
+            name        = "query1"
+            data_source = "spans"
+            search {
+              query = "env:prod service:spellbot"
+            }
+            indexes = ["*"]
+            group_by {
+              facet = "@warning.type"
+              limit = 10
+              sort {
+                aggregation = "count"
+                order       = "desc"
+              }
+            }
+            compute {
+              aggregation = "count"
+              interval    = 3600000
+            }
+          }
+        }
+      }
+    }
+  }
+
+  # --- Game Link Services ---
+  widget {
+    timeseries_definition {
+      title = "Game Link Creation by Service"
+      request {
+        apm_query {
+          index        = "*"
+          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link retained_by:*"
+          group_by {
+            facet = "@link_service"
+            limit = 10
+            sort_query {
+              aggregation = "count"
+              order       = "desc"
+            }
+          }
+          compute_query {
+            aggregation = "count"
+            interval    = 3600000
+          }
+        }
+      }
+    }
+  }
+
+  widget {
+    timeseries_definition {
+      title = "Game Link Creation Latency by Service (avg)"
+      request {
+        apm_query {
+          index        = "*"
+          search_query = "env:prod service:spellbot operation_name:spellbot.client.create_game_link retained_by:*"
           group_by {
             facet = "@link_service"
           }
@@ -537,24 +792,35 @@ resource "datadog_dashboard" "spellbot_create_game_link_dashboard" {
       }
     }
   }
+
+  # --- Web API ---
   widget {
     timeseries_definition {
-      title = "Discord performance"
+      title = "Web API Requests by Endpoint"
       request {
-        apm_query {
-          index        = "*"
-          search_query = "env:prod service:discord retained_by:retention_filter"
-          group_by {
-            facet = "status"
-            limit = 10
-            sort_query {
-              aggregation = "count"
-              order       = "desc"
+        formula {
+          formula_expression = "query1"
+        }
+        query {
+          event_query {
+            name        = "query1"
+            data_source = "spans"
+            search {
+              query = "env:prod service:spellapi"
             }
-          }
-          compute_query {
-            aggregation = "count"
-            interval    = 3600000
+            indexes = ["*"]
+            group_by {
+              facet = "resource_name"
+              limit = 10
+              sort {
+                aggregation = "count"
+                order       = "desc"
+              }
+            }
+            compute {
+              aggregation = "count"
+              interval    = 3600000
+            }
           }
         }
       }

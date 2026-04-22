@@ -150,7 +150,6 @@ def retry_if_not_unrecoverable(exc: BaseException) -> bool:
     wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
     retry=tenacity.retry_if_exception(retry_if_not_unrecoverable),
 )
-@tracer.wrap(name="rest", resource="post_with_retry")
 async def post_with_retry(
     session: aiohttp.ClientSession,
     path: str,
