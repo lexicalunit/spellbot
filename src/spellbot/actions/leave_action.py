@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class LeaveAction(BaseAction):
     @tracer.wrap()
-    async def _handle_click(self) -> None:
+    async def handle_click(self) -> None:
         assert self.interaction.channel is not None
         channel_xid = self.interaction.channel.id
         if not (game_id := await self.services.users.current_game_id(channel_xid)):
@@ -80,7 +80,7 @@ class LeaveAction(BaseAction):
             await self.services.games.delete_games([game_data["id"]])
 
     @tracer.wrap()
-    async def _handle_command(self) -> None:
+    async def handle_command(self) -> None:
         assert self.interaction.channel is not None
         channel_xid = self.interaction.channel.id
         if not (game_id := await self.services.users.current_game_id(channel_xid)):
@@ -133,8 +133,8 @@ class LeaveAction(BaseAction):
     async def execute(self, origin: bool = False) -> None:
         """Leave a game in the channel or the game clicked on by the user."""
         if origin:
-            return await self._handle_click()
-        return await self._handle_command()
+            return await self.handle_click()
+        return await self.handle_command()
 
     @tracer.wrap()
     async def execute_all(self) -> None:

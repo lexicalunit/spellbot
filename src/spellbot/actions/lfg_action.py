@@ -221,15 +221,15 @@ class LookingForGameAction(BaseAction):
         player_xids = await self.services.games.player_xids()
         _, suggested_vc = await self.make_game_ready(game_data, player_xids)
         assert self.interaction.guild_id
-        await self._handle_voice_creation(self.interaction.guild_id)
-        await self._handle_embed_creation(
+        await self.handle_voice_creation(self.interaction.guild_id)
+        await self.handle_embed_creation(
             new=True,
             origin=False,
             fully_seated=True,
             suggested_vc=suggested_vc,
             rematch=False,
         )
-        await self._handle_direct_messages(suggested_vc=suggested_vc, rematch=False)
+        await self.handle_direct_messages(suggested_vc=suggested_vc, rematch=False)
 
     @tracer.wrap()
     async def execute(
@@ -307,9 +307,9 @@ class LookingForGameAction(BaseAction):
             game_data = await self.services.games.to_dict()
             player_xids = await self.services.games.player_xids()
             started_game_id, suggested_vc = await self.make_game_ready(game_data, player_xids)
-            await self._handle_voice_creation(self.guild.id)
+            await self.handle_voice_creation(self.guild.id)
 
-        await self._handle_embed_creation(
+        await self.handle_embed_creation(
             new=new,
             origin=origin,
             fully_seated=fully_seated,
@@ -318,13 +318,13 @@ class LookingForGameAction(BaseAction):
 
         if fully_seated:
             assert started_game_id is not None
-            await self._handle_direct_messages(suggested_vc=suggested_vc)
-            await self._update_other_game_posts(other_game_ids)
+            await self.handle_direct_messages(suggested_vc=suggested_vc)
+            await self.update_other_game_posts(other_game_ids)
             return None
         return None
 
     @tracer.wrap()
-    async def _update_other_game_posts(self, other_game_ids: list[int]) -> None:
+    async def update_other_game_posts(self, other_game_ids: list[int]) -> None:
         """Update any other pending games to show that some players are no longer available."""
         assert self.channel is not None
         assert self.guild is not None
@@ -407,15 +407,15 @@ class LookingForGameAction(BaseAction):
         )
         game_data = await self.services.games.to_dict()
         _, suggested_vc = await self.make_game_ready(game_data, player_xids)
-        await self._handle_voice_creation(self.interaction.guild_id)
-        await self._handle_embed_creation(
+        await self.handle_voice_creation(self.interaction.guild_id)
+        await self.handle_embed_creation(
             new=True,
             origin=False,
             fully_seated=True,
             suggested_vc=suggested_vc,
             rematch=rematch,
         )
-        await self._handle_direct_messages(suggested_vc=suggested_vc, rematch=rematch)
+        await self.handle_direct_messages(suggested_vc=suggested_vc, rematch=rematch)
 
     @tracer.wrap()
     async def make_game_ready(
@@ -464,7 +464,7 @@ class LookingForGameAction(BaseAction):
         )
 
     @tracer.wrap()
-    async def _handle_voice_creation(self, guild_xid: int) -> None:
+    async def handle_voice_creation(self, guild_xid: int) -> None:
         if not await self.services.guilds.should_voice_create():
             return
         use_max_bitrate = await self.services.guilds.get_use_max_bitrate()
@@ -507,7 +507,7 @@ class LookingForGameAction(BaseAction):
         )
 
     @tracer.wrap()
-    async def _create_initial_post(
+    async def create_initial_post(
         self,
         embed: discord.Embed,
         view: BaseView | None = None,
@@ -534,7 +534,7 @@ class LookingForGameAction(BaseAction):
             await self.services.games.add_post(self.guild.id, self.channel.id, message.id)
 
     @tracer.wrap()
-    async def _handle_embed_creation(
+    async def handle_embed_creation(
         self,
         *,
         new: bool,
@@ -559,7 +559,7 @@ class LookingForGameAction(BaseAction):
 
         view = None if fully_seated else GameView(bot=self.bot)
         if new:  # create the initial game post:
-            await self._create_initial_post(embed, view, content)
+            await self.create_initial_post(embed, view, content)
             return
 
         # update the game post(s) for this game, which should already exist
@@ -604,10 +604,10 @@ class LookingForGameAction(BaseAction):
                 continue
 
         if not origin:
-            await self._reply_found_embed()
+            await self.reply_found_embed()
 
     @tracer.wrap()
-    async def _reply_found_embed(self) -> None:
+    async def reply_found_embed(self) -> None:
         assert self.guild is not None
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
@@ -624,7 +624,7 @@ class LookingForGameAction(BaseAction):
         await safe_followup_channel(self.interaction, embed=embed)
 
     @tracer.wrap()
-    async def _handle_direct_messages(
+    async def handle_direct_messages(
         self,
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
@@ -728,10 +728,10 @@ class LookingForGameAction(BaseAction):
             warning = f"Unable to send Direct Messages to some players: {failures}"
             await safe_followup_channel(self.interaction, warning)
 
-        await self._handle_watched_players(player_xids)
+        await self.handle_watched_players(player_xids)
 
     @tracer.wrap()
-    async def _handle_watched_players(self, player_xids: list[int]) -> None:
+    async def handle_watched_players(self, player_xids: list[int]) -> None:
         """Notify moderators about watched players."""
         assert self.interaction.guild
         mod_role: discord.Role | None = None

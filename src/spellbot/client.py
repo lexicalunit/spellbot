@@ -96,9 +96,9 @@ class SpellBot(AutoShardedBot):
         await load_extensions(self)
 
         # ensure application emojis exist and cache them
-        await self._ensure_application_emojis()
+        await self.ensure_application_emojis()
 
-    async def _create_application_emoji(
+    async def ensure_application_emoji(
         self,
         name: str,
         image_bytes: bytes,
@@ -109,7 +109,7 @@ class SpellBot(AutoShardedBot):
             logger.exception("warning: could not create application emoji %s", name)
         return None
 
-    async def _ensure_application_emojis(self) -> None:
+    async def ensure_application_emojis(self) -> None:
         """Fetch all application emojis from Discord API, creating missing ones if needed."""
 
         async def fetch() -> list[discord.PartialEmoji | discord.Emoji]:
@@ -134,7 +134,7 @@ class SpellBot(AutoShardedBot):
             for emoji in emojis:
                 if emoji.name == name:
                     return emoji
-            return await self._create_application_emoji(name, image_bytes)
+            return await self.ensure_application_emoji(name, image_bytes)
 
         try:
             emojis = await fetch()

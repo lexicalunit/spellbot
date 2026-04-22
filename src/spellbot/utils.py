@@ -55,6 +55,10 @@ MISSING_ACCESS_CODE = 50001
 # This can happen when the bot takes too long to respond to an interaction.
 UNKNOWN_INTERACTION_CODE = 10062
 
+# Discord API error code indicating that the message no longer exists.
+# This can happen when the message was deleted before we could edit it.
+UNKNOWN_MESSAGE_CODE = 10008
+
 EMBED_DESCRIPTION_SIZE_LIMIT = 4096
 
 

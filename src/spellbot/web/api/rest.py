@@ -254,7 +254,7 @@ async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
         logger.warning("Discord API failure: %s", ex, exc_info=True)
 
 
-async def _resolve_user_xid(services: ServicesRegistry, value: Any) -> int | None:
+async def resolve_user_xid(services: ServicesRegistry, value: Any) -> int | None:
     """Resolve a user xid from either an int, string int, or username."""
     if value is None:
         return None
@@ -285,12 +285,12 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
         # Resolve tracker (required)
         if not payload.get("tracker"):
             return reply(error="Tracker ID is required", status=400)
-        tracker_xid = await _resolve_user_xid(services, payload.get("tracker"))
+        tracker_xid = await resolve_user_xid(services, payload.get("tracker"))
         if tracker_xid is None:
             return reply(error="Tracker not found", status=400)
 
         # Resolve winner (optional)
-        winner_xid = await _resolve_user_xid(services, payload.get("winner"))
+        winner_xid = await resolve_user_xid(services, payload.get("winner"))
 
         # Process players data
         players_data = payload.get("players", []) or []
@@ -303,7 +303,7 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
         for p in players_data:
             if "xid" not in p or "commander" not in p:
                 return reply(error="Invalid player data", status=400)
-            xid = await _resolve_user_xid(services, p["xid"])
+            xid = await resolve_user_xid(services, p["xid"])
             if xid is None:
                 return reply(error=f"Player not found: {p['xid']}", status=400)
             player_xids.append(xid)

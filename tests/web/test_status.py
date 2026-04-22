@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from spellbot.shard_status import ShardStatus
-from spellbot.web.api.status import _format_latency, _format_time_ago, _get_latency_class
+from spellbot.web.api.status import format_latency, format_time_ago, get_latency_class
 
 if TYPE_CHECKING:
     from aiohttp.client import ClientSession
@@ -22,31 +22,31 @@ class TestFormatLatency:
             pytest.param(100.0, "100.0ms", id="exact"),
         ],
     )
-    def test_format_latency(self, latency: float | None, expected: str) -> None:
-        assert _format_latency(latency) == expected
+    def testformat_latency(self, latency: float | None, expected: str) -> None:
+        assert format_latency(latency) == expected
 
 
 class TestFormatTimeAgo:
     def test_seconds_ago(self) -> None:
         now = datetime.now(tz=UTC)
         timestamp = (now - timedelta(seconds=30)).isoformat()
-        result = _format_time_ago(timestamp)
+        result = format_time_ago(timestamp)
         assert "s ago" in result
 
     def test_minutes_ago(self) -> None:
         now = datetime.now(tz=UTC)
         timestamp = (now - timedelta(minutes=5)).isoformat()
-        result = _format_time_ago(timestamp)
+        result = format_time_ago(timestamp)
         assert "m ago" in result
 
     def test_hours_ago(self) -> None:
         now = datetime.now(tz=UTC)
         timestamp = (now - timedelta(hours=2)).isoformat()
-        result = _format_time_ago(timestamp)
+        result = format_time_ago(timestamp)
         assert "h ago" in result
 
     def test_invalid_timestamp(self) -> None:
-        result = _format_time_ago("not a valid timestamp")
+        result = format_time_ago("not a valid timestamp")
         assert result == "unknown"
 
 
@@ -63,8 +63,8 @@ class TestGetLatencyClass:
             pytest.param(500.0, "latency-bad", id="bad_high"),
         ],
     )
-    def test_get_latency_class(self, latency: float | None, expected: str) -> None:
-        assert _get_latency_class(latency) == expected
+    def testget_latency_class(self, latency: float | None, expected: str) -> None:
+        assert get_latency_class(latency) == expected
 
 
 @pytest.mark.asyncio
