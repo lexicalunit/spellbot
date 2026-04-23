@@ -53,6 +53,28 @@ def is_discord_server_error(ex: BaseException) -> bool:
     return isinstance(ex, discord.errors.DiscordServerError)
 
 
+def ignore_exception_on_all_spans(ex: Exception, warning_type: str | None = None) -> None:
+    """
+    Ignore an exception on the current span and all parent spans.
+
+    This prevents the exception from being marked as an error in any span in the trace.
+    Optionally sets warning tags if warning_type is provided.
+    """
+    span = tracer.current_span()
+    exception_type = type(ex)
+    while span is not None:
+        span._ignore_exception(exception_type)  # noqa: SLF001
+        if warning_type is not None:
+            span.set_tags(
+                {
+                    "warning": "true",
+                    "warning.type": warning_type,
+                    "warning.code": str(getattr(ex, "code", getattr(ex, "status", ""))),
+                },
+            )
+        span = span._parent  # noqa: SLF001
+
+
 @tracer.wrap()
 async def retry(
     func: Callable[[], Awaitable[Any]],
@@ -68,20 +90,12 @@ async def retry(
                 raise
             await sleep(times / 100)  # 10ms, 20ms, 30ms, etc.
         except Exception as ex:
-            if span := tracer.current_span():  # pragma: no branch
-                # Always ignore Discord server errors (503s) - transient infrastructure issues
-                if is_discord_server_error(ex):
-                    span._ignore_exception(type(ex))  # noqa: SLF001
-                    span.set_tags(
-                        {
-                            "warning": "true",
-                            "warning.type": "discord_server_error",
-                            "warning.code": str(getattr(ex, "status", "")),
-                        },
-                    )
-                # Also ignore any caller-specified errors
-                elif ignore_error is not None and ignore_error(ex):
-                    span._ignore_exception(type(ex))  # noqa: SLF001
+            # Always ignore Discord server errors (503s) - transient infrastructure issues
+            if is_discord_server_error(ex):
+                ignore_exception_on_all_spans(ex, warning_type="discord_server_error")
+            # Also ignore any caller-specified errors
+            elif ignore_error is not None and ignore_error(ex):
+                ignore_exception_on_all_spans(ex)
             raise
 
 
