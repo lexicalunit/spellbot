@@ -48,6 +48,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def is_discord_server_error(ex: BaseException) -> bool:
+    """Check if this is a Discord server error (503, etc.) - transient infrastructure issue."""
+    return isinstance(ex, discord.errors.DiscordServerError)
+
+
 @tracer.wrap()
 async def retry(
     func: Callable[[], Awaitable[Any]],
@@ -63,8 +68,20 @@ async def retry(
                 raise
             await sleep(times / 100)  # 10ms, 20ms, 30ms, etc.
         except Exception as ex:
-            if ignore_error is not None and ignore_error(ex) and (span := tracer.current_span()):
-                span._ignore_exception(type(ex))  # noqa: SLF001
+            if span := tracer.current_span():  # pragma: no branch
+                # Always ignore Discord server errors (503s) - transient infrastructure issues
+                if is_discord_server_error(ex):
+                    span._ignore_exception(type(ex))  # noqa: SLF001
+                    span.set_tags(
+                        {
+                            "warning": "true",
+                            "warning.type": "discord_server_error",
+                            "warning.code": str(getattr(ex, "status", "")),
+                        },
+                    )
+                # Also ignore any caller-specified errors
+                elif ignore_error is not None and ignore_error(ex):
+                    span._ignore_exception(type(ex))  # noqa: SLF001
             raise
 
 

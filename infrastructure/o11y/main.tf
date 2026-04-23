@@ -119,6 +119,37 @@ resource "datadog_monitor" "spellbot_apm_trace_errors" {
   EOT
 }
 
+resource "datadog_monitor" "spellbot_discord_server_errors" {
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    warning  = 10
+    critical = 50
+  }
+  name    = "SpellBot: Discord Server Errors (503)"
+  type    = "trace-analytics alert"
+  tags    = ["env:prod", "service:spellbot"]
+  query   = <<-EOT
+    trace-analytics("env:prod service:spellbot @warning.type:discord_server_error").rollup("count").last("5m") > 50
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    SpellBot is experiencing Discord server errors (503s). This indicates Discord API instability.
+    Count: {{value}} errors in the last 5 minutes.
+
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    SpellBot is experiencing a HIGH number of Discord server errors (503s). Discord API may be having an outage.
+    Count: {{value}} errors in the last 5 minutes.
+
+    Check Discord status: https://discordstatus.com/
+
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
 # ECS Alerts
 resource "datadog_monitor" "SpellBot_ECS_Tasks_Failed_to_Start_Successfully" {
   evaluation_delay       = 900

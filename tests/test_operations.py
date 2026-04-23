@@ -76,6 +76,15 @@ class TestOperationsRetry:
         assert await retry(func) == 1
         assert tried_once
 
+    async def test_discord_server_error_marked_as_warning(self) -> None:
+        error = discord.errors.DiscordServerError(MagicMock(), "server error")
+
+        async def func() -> int:
+            raise error
+
+        with pytest.raises(discord.errors.DiscordServerError):
+            await retry(func)
+
 
 @pytest.mark.asyncio
 class TestOperationsDeferInteraction:
