@@ -108,7 +108,7 @@ resource "datadog_monitor" "spellbot_apm_trace_errors" {
   type    = "trace-analytics alert"
   tags    = ["env:prod", "service:spellbot"]
   query   = <<-EOT
-    trace-analytics("env:prod service:spellbot -status:ok").index("trace-search", "djm-search").rollup("count").last("5m") > 1
+    trace-analytics("env:prod service:spellbot -status:ok -(@http.status_code:503 @peer.hostname:discord.com)").index("trace-search", "djm-search").rollup("count").last("5m") > 1
   EOT
   message = <<-EOT
     {{#is_alert}}
