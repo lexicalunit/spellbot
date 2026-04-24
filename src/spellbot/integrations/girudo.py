@@ -13,7 +13,7 @@ from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
-    from spellbot.models import GameDict
+    from spellbot.data import GameData
 
 logger = logging.getLogger(__name__)
 
@@ -320,7 +320,7 @@ async def authenticate(
 async def create_game(
     client: httpx.AsyncClient,
     token: str,
-    game: GameDict,
+    game_data: GameData,
     *,
     game_title: str | None = None,
     trading_card_game_uuid: str | None = None,
@@ -333,17 +333,17 @@ async def create_game(
     if format_uuid and format_name:
         girudo_format = GirudoGameFormat(uuid=format_uuid, name=format_name)
     else:
-        sb_game_format = GameFormat(game["format"])
+        sb_game_format = GameFormat(game_data.format)
         girudo_format = girudo_game_format(sb_game_format)
 
     tcg_uuid = trading_card_game_uuid or settings.GIRUDO_DEFAULT_TCG_MAGIC_UUID or ""
     tcg_name = (TCG_NAMES_CACHE or {}).get(tcg_uuid, get_default_tcg()[1])
 
     payload: dict[str, Any] = {
-        "game_title": game_title or f"SB{game['id']}",
+        "game_title": game_title or f"SB{game_data.id}",
         "game_format_uuid": girudo_format.uuid,
         "game_format_name": girudo_format.name,
-        "player_count": player_count or GameFormat(game["format"]).players,
+        "player_count": player_count or GameFormat(game_data.format).players,
         "privacy": "public",
         "tagline": "game",
         "trading_card_game_uuid": tcg_uuid,
@@ -414,7 +414,7 @@ async def get_available_lobby(
 
 
 async def generate_link(
-    game: GameDict,
+    game_data: GameData,
     *,
     game_title: str | None = None,
     trading_card_game_uuid: str | None = None,
@@ -453,7 +453,7 @@ async def generate_link(
                 link = await create_game(
                     client,
                     auth_token,
-                    game,
+                    game_data,
                     game_title=game_title,
                     trading_card_game_uuid=trading_card_game_uuid,
                     player_count=player_count,

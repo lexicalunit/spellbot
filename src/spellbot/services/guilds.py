@@ -55,9 +55,9 @@ class GuildsService:
         return self.guild.to_dict() if self.guild else None
 
     @sync_to_async()
-    def set_banned(self, banned: bool, xid: int) -> None:
+    def set_banned(self, guild_xid: int, banned: bool) -> None:
         values = {
-            "xid": xid,
+            "xid": guild_xid,
             "name": "Unknown Guild",
             "updated_at": datetime.now(tz=UTC),
             "banned": banned,

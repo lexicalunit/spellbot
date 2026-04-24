@@ -105,6 +105,9 @@ class TestCogLookingForGame:
 
             DatabaseSession.expire_all()
             game = DatabaseSession.query(Game).one()
+            started_at_timestamp = int(
+                game.started_at.replace(tzinfo=UTC).timestamp(),
+            )
             mock_call = lfg_action.safe_update_embed
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.STARTED_EMBED_COLOR,
@@ -126,7 +129,7 @@ class TestCogLookingForGame:
                     {
                         "inline": True,
                         "name": "Started at",
-                        "value": f"<t:{game.started_at_timestamp}>",
+                        "value": f"<t:{started_at_timestamp}>",
                     },
                     {"inline": False, "name": "Support SpellBot", "value": ANY},
                 ],

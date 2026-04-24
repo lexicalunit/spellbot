@@ -44,56 +44,58 @@ class TestServiceUsers:
         assert user.xid == discord_user.id
         assert user.name == "new-name"
 
-    async def test_users_select(self) -> None:
+    async def test_users_get(self) -> None:
         users = UsersService()
-        assert not await users.select(201)
+        assert await users.get(201) is None
 
         UserFactory.create(xid=201)
 
         DatabaseSession.expire_all()
-        assert await users.select(201)
+        user_data = await users.get(201)
+        assert user_data is not None
+        assert user_data.xid == 201
 
     async def test_users_is_banned(self) -> None:
         user1 = UserFactory.create(banned=False)
         user2 = UserFactory.create(banned=True)
 
         users = UsersService()
-        assert not await users.is_banned(user1.xid)
-        assert await users.is_banned(user2.xid)
-
-        users = UsersService()
-        await users.select(user1.xid)
-        assert not await users.is_banned()
-
-        users = UsersService()
-        await users.select(user2.xid)
-        assert await users.is_banned()
+        user1_data = await users.get(user1.xid)
+        user2_data = await users.get(user2.xid)
+        assert user1_data is not None
+        assert user2_data is not None
+        assert not user1_data.banned
+        assert user2_data.banned
 
     async def test_users_set_banned(self) -> None:
         user = UserFactory.create(banned=False)
 
         users = UsersService()
-        await users.set_banned(True, user.xid)
-        assert await users.is_banned(user.xid)
+        updated = await users.set_banned(user.xid, banned=True)
+        assert updated.banned
 
     async def test_users_current_game_id(self, game: Game) -> None:
         user = UserFactory.create(game=game)
 
         users = UsersService()
-        await users.select(user.xid)
-        assert await users.current_game_id(game.channel_xid) == game.id
+        user_data = await users.get(user.xid)
+        assert user_data is not None
+        assert await users.current_game_id(user_data, game.channel_xid) == game.id
 
     async def test_users_is_waiting(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
 
         users = UsersService()
-        await users.select(user1.xid)
-        result = await users.is_waiting(game.channel_xid)
+        user1_data = await users.get(user1.xid)
+        assert user1_data is not None
+        result = await users.is_waiting(user1_data, game.channel_xid)
         assert result is not None
-        assert result["id"] == game.id
-        await users.select(user2.xid)
-        assert await users.is_waiting(game.channel_xid) is None
+        assert result.id == game.id
+
+        user2_data = await users.get(user2.xid)
+        assert user2_data is not None
+        assert await users.is_waiting(user2_data, game.channel_xid) is None
 
     async def test_users_block(self) -> None:
         user1 = UserFactory.create()
@@ -197,10 +199,13 @@ class TestServiceUsers:
 
         assert DatabaseSession.query(Queue).count() == 1
 
-        await users.select(user1.xid)
-        await users.leave_game(game.channel_xid)
-        await users.select(user2.xid)
-        await users.leave_game(game.channel_xid)
+        user1_data = await users.get(user1.xid)
+        assert user1_data is not None
+        await users.leave_game(user1_data, game.channel_xid)
+
+        user2_data = await users.get(user2.xid)
+        assert user2_data is not None
+        await users.leave_game(user2_data, game.channel_xid)
 
         assert DatabaseSession.query(Queue).count() == 0
 
@@ -215,8 +220,9 @@ class TestServiceUsers:
         user = factories.user.create(game=game)
 
         users = UsersService()
-        await users.select(user.xid)
-        assert await users.current_game_id(channel.xid) is None
+        user_data = await users.get(user.xid)
+        assert user_data is not None
+        assert await users.current_game_id(user_data, channel.xid) is None
 
     async def test_users_is_waiting_deleted_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -229,8 +235,9 @@ class TestServiceUsers:
         user = factories.user.create(game=game)
 
         users = UsersService()
-        await users.select(user.xid)
-        assert await users.is_waiting(channel.xid) is None
+        user_data = await users.get(user.xid)
+        assert user_data is not None
+        assert await users.is_waiting(user_data, channel.xid) is None
 
     async def test_users_leave_game_deleted_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -243,13 +250,14 @@ class TestServiceUsers:
         user = factories.user.create(game=game)
 
         users = UsersService()
-        await users.select(user.xid)
+        user_data = await users.get(user.xid)
+        assert user_data is not None
 
         # Queue entry still exists (game was soft-deleted but queue wasn't cleaned up)
         assert DatabaseSession.query(Queue).count() == 1
 
         # leave_game should not find the deleted game, so queue should remain
-        await users.leave_game(channel.xid)
+        await users.leave_game(user_data, channel.xid)
 
         # Queue entry should still exist since the game was deleted
         assert DatabaseSession.query(Queue).count() == 1

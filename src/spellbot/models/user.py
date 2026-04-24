@@ -2,28 +2,19 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
 from sqlalchemy.orm import relationship
 
-from . import Base, GameDict, GameStatus, now
+from spellbot.models import GameStatus
+
+from . import Base, now
 
 if TYPE_CHECKING:
+    from spellbot.data import GameData, UserData
+
     from . import Game
-
-
-class UserDict(TypedDict):
-    xid: int
-    created_at: datetime
-    updated_at: datetime
-    name: str
-    banned: bool
-
-
-class PlayerDataDict(TypedDict):
-    xid: int
-    name: str
 
 
 class User(Base):
@@ -96,7 +87,7 @@ class User(Base):
         )
         return session.get(Game, queue.game_id) if queue else None
 
-    def waiting(self, channel_xid: int) -> GameDict | None:
+    def waiting(self, channel_xid: int) -> GameData | None:
         game = self.game(channel_xid)
         if game is None:
             return None
@@ -125,11 +116,13 @@ class User(Base):
             .count()
         )
 
-    def to_dict(self) -> UserDict:
-        return {
-            "xid": self.xid,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
-            "name": self.name,
-            "banned": self.banned,
-        }
+    def to_dict(self) -> UserData:
+        from spellbot.data import UserData  # allow_inline
+
+        return UserData(
+            xid=self.xid,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            name=self.name,
+            banned=self.banned,
+        )

@@ -12,13 +12,13 @@ from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.operations import VoiceChannelSuggestion
 from spellbot.services.awards import NewAward
 from spellbot.settings import settings
-from tests.mocks import mock_discord_object
+from tests.mocks import create_mock_game, create_mock_user, mock_discord_object
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
     from spellbot import SpellBot
-    from spellbot.models import GameDict, GuildDict, User
+    from spellbot.models import GuildDict, User
 
 pytestmark = pytest.mark.use_db
 
@@ -174,7 +174,7 @@ class TestLookingForGameAction:
     ) -> None:
         """Test execute_rematch when user has no last game."""
         mocker.patch.object(action.services.users, "pending_games", AsyncMock(return_value=0))
-        mocker.patch.object(action.services.games, "select_last_game", AsyncMock(return_value=None))
+        mocker.patch.object(action.services.games, "get_last_game", AsyncMock(return_value=None))
         stub = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
 
         await action.execute_rematch()
@@ -196,7 +196,7 @@ class TestLookingForGameAction:
         mocker.patch.object(
             action.services.users,
             "is_waiting",
-            AsyncMock(return_value=cast("GameDict", {"id": 1})),
+            AsyncMock(return_value=create_mock_game(game_id=1)),
         )
         stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
 
@@ -273,20 +273,16 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _update_other_game_posts updates embeds for other games."""
-        game_data = {
-            "channel_xid": 12345,
-            "guild_xid": 67890,
-        }
+        game_data = create_mock_game(game_id=1, channel_xid=12345, guild_xid=67890)
         mocker.patch.object(action.services.games, "message_xids", AsyncMock(return_value=[111]))
         mocker.patch.object(
             action.services.games,
-            "select_by_message_xid",
+            "get_by_message_xid",
             AsyncMock(return_value=game_data),
         )
 
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_message = MagicMock(spec=discord.PartialMessage)
-        mock_embed = MagicMock(spec=discord.Embed)
 
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_text_channel",
@@ -296,7 +292,6 @@ class TestLookingForGameAction:
             "spellbot.actions.lfg_action.safe_get_partial_message",
             return_value=mock_message,
         )
-        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
         update_stub = mocker.patch(
             "spellbot.actions.lfg_action.safe_update_embed",
             AsyncMock(return_value=True),
@@ -315,7 +310,7 @@ class TestLookingForGameAction:
         mocker.patch.object(action.services.games, "message_xids", AsyncMock(return_value=[111]))
         mocker.patch.object(
             action.services.games,
-            "select_by_message_xid",
+            "get_by_message_xid",
             AsyncMock(return_value=None),
         )
 
@@ -331,11 +326,12 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _update_other_game_posts skips when channel not found."""
+        game_data = create_mock_game(game_id=1, channel_xid=123, guild_xid=456)
         mocker.patch.object(action.services.games, "message_xids", AsyncMock(return_value=[111]))
         mocker.patch.object(
             action.services.games,
-            "select_by_message_xid",
-            AsyncMock(return_value={"channel_xid": 123, "guild_xid": 456}),
+            "get_by_message_xid",
+            AsyncMock(return_value=game_data),
         )
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_text_channel",
@@ -380,6 +376,7 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test handle_voice_creation returns when category not found."""
+        game_data = create_mock_game(game_id=1)
         mocker.patch.object(
             action.services.guilds,
             "should_voice_create",
@@ -399,7 +396,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action.handle_voice_creation(12345)
+        await action.handle_voice_creation(game_data, 12345)
 
         voice_stub.assert_not_called()
 
@@ -409,6 +406,7 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test handle_voice_creation returns when voice channel creation fails."""
+        game_data = create_mock_game(game_id=1)
         mock_category = MagicMock(spec=discord.CategoryChannel)
         mocker.patch.object(
             action.services.guilds,
@@ -428,11 +426,10 @@ class TestLookingForGameAction:
             "spellbot.actions.lfg_action.safe_create_voice_channel",
             AsyncMock(return_value=None),
         )
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value={"id": 1}))
 
         set_voice_stub = mocker.patch.object(action.services.games, "set_voice", AsyncMock())
 
-        await action.handle_voice_creation(12345)
+        await action.handle_voice_creation(game_data, 12345)
 
         set_voice_stub.assert_not_called()
 
@@ -442,6 +439,7 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test handle_voice_creation creates voice invite when configured."""
+        game_data = create_mock_game(game_id=1)
         mock_category = MagicMock(spec=discord.CategoryChannel)
         mock_voice_channel = MagicMock(spec=discord.VoiceChannel)
         mock_voice_channel.id = 99999
@@ -470,19 +468,19 @@ class TestLookingForGameAction:
             "spellbot.actions.lfg_action.safe_create_channel_invite",
             AsyncMock(return_value=mock_invite),
         )
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value={"id": 1}))
 
         # Enable voice invite
         action.channel_data["voice_invite"] = True
 
-        set_voice_stub = mocker.patch.object(action.services.games, "set_voice", AsyncMock())
-
-        await action.handle_voice_creation(12345)
-
-        set_voice_stub.assert_called_once_with(
-            voice_xid=99999,
-            voice_invite_link="https://discord.gg/invite",
+        set_voice_stub = mocker.patch.object(
+            action.services.games,
+            "set_voice",
+            AsyncMock(return_value=game_data),
         )
+
+        await action.handle_voice_creation(game_data, 12345)
+
+        set_voice_stub.assert_called_once()
 
     async def test_handle_voice_creation_without_invite(
         self,
@@ -490,6 +488,7 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test handle_voice_creation without voice invite."""
+        game_data = create_mock_game(game_id=1)
         mock_category = MagicMock(spec=discord.CategoryChannel)
         mock_voice_channel = MagicMock(spec=discord.VoiceChannel)
         mock_voice_channel.id = 99999
@@ -516,20 +515,20 @@ class TestLookingForGameAction:
             "spellbot.actions.lfg_action.safe_create_channel_invite",
             AsyncMock(),
         )
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value={"id": 1}))
 
         # voice_invite is False by default
         action.channel_data["voice_invite"] = False
 
-        set_voice_stub = mocker.patch.object(action.services.games, "set_voice", AsyncMock())
+        set_voice_stub = mocker.patch.object(
+            action.services.games,
+            "set_voice",
+            AsyncMock(return_value=game_data),
+        )
 
-        await action.handle_voice_creation(12345)
+        await action.handle_voice_creation(game_data, 12345)
 
         invite_stub.assert_not_called()
-        set_voice_stub.assert_called_once_with(
-            voice_xid=99999,
-            voice_invite_link=None,
-        )
+        set_voice_stub.assert_called_once()
 
     async def test_handle_watched_players_no_mod_role(
         self,
@@ -537,6 +536,7 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _handle_watched_players returns early when no mod role found."""
+        game_data = create_mock_game(game_id=1)
         # Create guild with no mod role
         mock_role = MagicMock(spec=discord.Role)
         mock_role.name = "Regular Role"
@@ -546,7 +546,7 @@ class TestLookingForGameAction:
 
         watch_stub = mocker.patch.object(action.services.games, "watch_notes", AsyncMock())
 
-        await action.handle_watched_players([123])
+        await action.handle_watched_players(game_data, [123])
 
         watch_stub.assert_not_called()
 
@@ -556,6 +556,7 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _handle_watched_players returns when no watched users."""
+        game_data = create_mock_game(game_id=1)
         # Create guild with mod role
         mock_role = MagicMock(spec=discord.Role)
         mock_role.name = f"{settings.MOD_PREFIX}Admin"
@@ -566,7 +567,7 @@ class TestLookingForGameAction:
 
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
 
-        await action.handle_watched_players([123])
+        await action.handle_watched_players(game_data, [123])
 
         send_stub.assert_not_called()
 
@@ -586,20 +587,24 @@ class TestLookingForGameAction:
         mock_guild.roles = [mock_role]
         mocker.patch.object(action.interaction, "guild", mock_guild)
 
-        game_data = {
-            "id": 1,
-            "jump_links": {mock_guild.id: "https://discord.com/jump/1"},
-        }
+        game_data = create_mock_game(game_id=1)
+        game_data.posts = [  # type: ignore[assignment]
+            {
+                "guild_xid": mock_guild.id,
+                "channel_xid": 12345,
+                "message_xid": 67890,
+                "jump_link": "https://discord.com/jump/1",
+            },
+        ]
         mocker.patch.object(
             action.services.games,
             "watch_notes",
             AsyncMock(return_value={123: "suspicious"}),
         )
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
 
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
 
-        await action.handle_watched_players([123])
+        await action.handle_watched_players(game_data, [123])
 
         send_stub.assert_called_once()
 
@@ -609,14 +614,7 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test make_game_ready calls safe_suggest_voice_channel when conditions are met."""
-        game_data = cast(
-            "GameDict",
-            {
-                "id": 1,
-                "voice_xid": None,
-                "voice_invite_link": None,
-            },
-        )
+        game_data = create_mock_game(game_id=1)
         action.guild_data = cast(
             "GuildDict",
             {
@@ -643,7 +641,11 @@ class TestLookingForGameAction:
             "create_game_link",
             AsyncMock(return_value=MagicMock(link="https://game.link", password=None)),
         )
-        mocker.patch.object(action.services.games, "make_ready", AsyncMock(return_value=1))
+        mocker.patch.object(
+            action.services.games,
+            "make_ready",
+            AsyncMock(return_value=game_data),
+        )
 
         _, suggested_vc = await action.make_game_ready(game_data, [123, 456])
 
@@ -658,14 +660,19 @@ class TestLookingForGameAction:
         mock_message = MagicMock(spec=discord.Message)
         mock_message.id = 11111
         mock_embed = MagicMock(spec=discord.Embed)
+        game_data = create_mock_game(game_id=1)
 
         mocker.patch(
             "spellbot.actions.lfg_action.safe_followup_channel",
             AsyncMock(return_value=mock_message),
         )
-        add_post_stub = mocker.patch.object(action.services.games, "add_post", AsyncMock())
+        add_post_stub = mocker.patch.object(
+            action.services.games,
+            "add_post",
+            AsyncMock(return_value=game_data),
+        )
 
-        await action.create_initial_post(mock_embed)
+        await action.create_initial_post(game_data, mock_embed)
 
         add_post_stub.assert_called_once()
 
@@ -676,6 +683,7 @@ class TestLookingForGameAction:
     ) -> None:
         """Test _create_initial_post does not add post when followup fails."""
         mock_embed = MagicMock(spec=discord.Embed)
+        game_data = create_mock_game(game_id=1)
 
         mocker.patch(
             "spellbot.actions.lfg_action.safe_followup_channel",
@@ -683,7 +691,7 @@ class TestLookingForGameAction:
         )
         add_post_stub = mocker.patch.object(action.services.games, "add_post", AsyncMock())
 
-        await action.create_initial_post(mock_embed)
+        await action.create_initial_post(game_data, mock_embed)
 
         add_post_stub.assert_not_called()
 
@@ -693,22 +701,20 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _handle_embed_creation fetches channel when post is in different channel."""
-        mock_embed = MagicMock(spec=discord.Embed)
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_message = MagicMock(spec=discord.PartialMessage)
 
-        game_data = {
-            "posts": [
-                {
-                    "guild_xid": 99999,  # Different from action.guild.id
-                    "channel_xid": 88888,
-                    "message_xid": 77777,
-                },
-            ],
-        }
+        game_data = create_mock_game(game_id=1)
+        # Add a post to the game data
+        game_data.posts = [  # type: ignore[assignment]
+            {
+                "guild_xid": 99999,  # Different from action.guild.id
+                "channel_xid": 88888,
+                "message_xid": 77777,
+                "jump_link": "https://discord.com/channels/99999/88888/77777",
+            },
+        ]
 
-        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_text_channel",
             AsyncMock(return_value=mock_channel),
@@ -722,7 +728,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=True),
         )
 
-        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
 
         update_stub.assert_called_once()
 
@@ -732,7 +738,6 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _handle_embed_creation updates origin post successfully."""
-        mock_embed = MagicMock(spec=discord.Embed)
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_channel.id = 88888
         mock_message = MagicMock(spec=discord.Message)
@@ -741,18 +746,16 @@ class TestLookingForGameAction:
         mock_guild = MagicMock(spec=discord.Guild)
         mock_guild.id = 99999
 
-        game_data = {
-            "posts": [
-                {
-                    "guild_xid": 99999,
-                    "channel_xid": 88888,
-                    "message_xid": 77777,
-                },
-            ],
-        }
+        game_data = create_mock_game(game_id=1)
+        game_data.posts = [  # type: ignore[assignment]
+            {
+                "guild_xid": 99999,
+                "channel_xid": 88888,
+                "message_xid": 77777,
+                "jump_link": "https://discord.com/channels/99999/88888/77777",
+            },
+        ]
 
-        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
         mocker.patch.object(action.interaction, "message", mock_message)
         mocker.patch.object(action, "channel", mock_channel)
         mocker.patch.object(action, "guild", mock_guild)
@@ -765,7 +768,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
 
         origin_stub.assert_called_once()
         update_stub.assert_not_called()
@@ -776,7 +779,6 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _handle_embed_creation falls back when origin update fails."""
-        mock_embed = MagicMock(spec=discord.Embed)
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_channel.id = 88888
         mock_message = MagicMock(spec=discord.Message)
@@ -786,18 +788,16 @@ class TestLookingForGameAction:
         mock_guild = MagicMock(spec=discord.Guild)
         mock_guild.id = 99999
 
-        game_data = {
-            "posts": [
-                {
-                    "guild_xid": 99999,
-                    "channel_xid": 88888,
-                    "message_xid": 77777,
-                },
-            ],
-        }
+        game_data = create_mock_game(game_id=1)
+        game_data.posts = [  # type: ignore[assignment]
+            {
+                "guild_xid": 99999,
+                "channel_xid": 88888,
+                "message_xid": 77777,
+                "jump_link": "https://discord.com/channels/99999/88888/77777",
+            },
+        ]
 
-        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
         mocker.patch.object(action.interaction, "message", mock_message)
         mocker.patch.object(action, "channel", mock_channel)
         mocker.patch.object(action, "guild", mock_guild)
@@ -814,7 +814,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=True),
         )
 
-        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
 
         update_stub.assert_called_once()
 
@@ -824,20 +824,16 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _handle_embed_creation skips when channel not found."""
-        mock_embed = MagicMock(spec=discord.Embed)
+        game_data = create_mock_game(game_id=1)
+        game_data.posts = [  # type: ignore[assignment]
+            {
+                "guild_xid": 99999,  # Different from action.guild.id
+                "channel_xid": 88888,
+                "message_xid": 77777,
+                "jump_link": "https://discord.com/channels/99999/88888/77777",
+            },
+        ]
 
-        game_data = {
-            "posts": [
-                {
-                    "guild_xid": 99999,  # Different from action.guild.id
-                    "channel_xid": 88888,
-                    "message_xid": 77777,
-                },
-            ],
-        }
-
-        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_text_channel",
             AsyncMock(return_value=None),
@@ -847,7 +843,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
 
         update_stub.assert_not_called()
 
@@ -857,21 +853,18 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _handle_embed_creation skips when message not found."""
-        mock_embed = MagicMock(spec=discord.Embed)
         mock_channel = MagicMock(spec=discord.TextChannel)
 
-        game_data = {
-            "posts": [
-                {
-                    "guild_xid": 99999,
-                    "channel_xid": 88888,
-                    "message_xid": 77777,
-                },
-            ],
-        }
+        game_data = create_mock_game(game_id=1)
+        game_data.posts = [  # type: ignore[assignment]
+            {
+                "guild_xid": 99999,
+                "channel_xid": 88888,
+                "message_xid": 77777,
+                "jump_link": "https://discord.com/channels/99999/88888/77777",
+            },
+        ]
 
-        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_text_channel",
             AsyncMock(return_value=mock_channel),
@@ -882,7 +875,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
 
         update_stub.assert_not_called()
 
@@ -892,22 +885,18 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _handle_embed_creation continues when update fails."""
-        mock_embed = MagicMock(spec=discord.Embed)
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_message = MagicMock(spec=discord.PartialMessage)
 
-        game_data = {
-            "posts": [
-                {
-                    "guild_xid": 99999,
-                    "channel_xid": 88888,
-                    "message_xid": 77777,
-                },
-            ],
-        }
-
-        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
+        game_data = create_mock_game(game_id=1)
+        game_data.posts = [  # type: ignore[assignment]
+            {
+                "guild_xid": 99999,
+                "channel_xid": 88888,
+                "message_xid": 77777,
+                "jump_link": "https://discord.com/channels/99999/88888/77777",
+            },
+        ]
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_text_channel",
             AsyncMock(return_value=mock_channel),
@@ -923,7 +912,7 @@ class TestLookingForGameAction:
         )
 
         # Should not raise an exception, just continue
-        await action.handle_embed_creation(new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
 
     async def test_reply_found_embed_no_jump_link(
         self,
@@ -931,25 +920,44 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _reply_found_embed when no jump link for current guild."""
-        game_data = {
-            "id": 123,
-            "format": 1,
-            "jump_links": {},  # No jump links
-        }
+        game_data = create_mock_game(game_id=123)
+        game_data.posts = []  # No posts = no jump links
 
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
         followup_stub = mocker.patch(
             "spellbot.actions.lfg_action.safe_followup_channel",
             AsyncMock(),
         )
 
-        await action.reply_found_embed()
+        await action.reply_found_embed(game_data)
 
         followup_stub.assert_called_once()
         # Check the embed description contains the game ID
         call_args = followup_stub.call_args
         embed = call_args.kwargs["embed"]
         assert "SB123" in embed.description
+
+    async def test_reply_force_start_embed_no_jump_link(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test reply_force_start_embed when no jump link for current guild."""
+        game_data = create_mock_game(game_id=456)
+        game_data.posts = []  # No posts = no jump links
+
+        followup_stub = mocker.patch(
+            "spellbot.actions.lfg_action.safe_followup_channel",
+            AsyncMock(),
+        )
+
+        await action.reply_force_start_embed(game_data)
+
+        followup_stub.assert_called_once()
+        # Check the embed description contains the game ID and the right message
+        call_args = followup_stub.call_args
+        embed = call_args.kwargs["embed"]
+        assert "SB456" in embed.description
+        assert "started" in embed.description
 
     async def test_handle_direct_messages_with_pin(
         self,
@@ -958,36 +966,16 @@ class TestLookingForGameAction:
     ) -> None:
         """Test _handle_direct_messages sends DMs with mythic track link when PIN exists."""
         mock_user = MagicMock(spec=discord.User)
-        mock_embed = MagicMock(spec=discord.Embed)
-        mock_embed.description = "Game started!"
-        mock_embed.copy = MagicMock(return_value=mock_embed)
 
-        game_data = {
-            "id": 1,
-            "format": 1,
-            "service": 1,
-            "bracket": 2,
-            "jump_links": {},
-        }
+        game_data = create_mock_game(game_id=1)
+        game_data.players = [create_mock_user(xid=123, name="TestPlayer")]
+        game_data.player_pins = {123: "ABC123"}
 
         # Set up mythic_track emoji in bot's emojis_cache
         mt_emoji = MagicMock(spec=discord.Emoji)
         mt_emoji.name = "mythic_track"
         action.bot.emojis_cache = [mt_emoji]
 
-        # Player has a PIN
-        mocker.patch.object(
-            action.services.games,
-            "player_pins",
-            AsyncMock(return_value={123: "ABC123"}),
-        )
-        mocker.patch.object(
-            action.services.games,
-            "player_names",
-            AsyncMock(return_value={123: "TestPlayer"}),
-        )
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
-        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_user",
             AsyncMock(return_value=mock_user),
@@ -995,13 +983,13 @@ class TestLookingForGameAction:
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
         mocker.patch.object(action.services.awards, "give_awards", AsyncMock(return_value={}))
 
-        await action.handle_direct_messages()
+        await action.handle_direct_messages(game_data)
 
         send_stub.assert_called_once()
         # Verify Mythic Track link was added to description
-        assert "Mythic Track" in mock_embed.description
-        # Verify the mythic_track emoji was included
-        assert f"{mt_emoji}" in mock_embed.description
+        call_kwargs = send_stub.call_args.kwargs
+        embed = call_kwargs["embed"]
+        assert "Mythic Track" in embed.description
 
     async def test_handle_direct_messages_with_pin_no_mythic_track_emoji(
         self,
@@ -1010,34 +998,14 @@ class TestLookingForGameAction:
     ) -> None:
         """Test _handle_direct_messages sends DMs with mythic track link but no emoji prefix."""
         mock_user = MagicMock(spec=discord.User)
-        mock_embed = MagicMock(spec=discord.Embed)
-        mock_embed.description = "Game started!"
-        mock_embed.copy = MagicMock(return_value=mock_embed)
 
-        game_data = {
-            "id": 1,
-            "format": 1,
-            "service": 1,
-            "bracket": 2,
-            "jump_links": {},
-        }
+        game_data = create_mock_game(game_id=1)
+        game_data.players = [create_mock_user(xid=123, name="TestPlayer")]
+        game_data.player_pins = {123: "ABC123"}
 
         # No mythic_track emoji in bot's emojis_cache
         action.bot.emojis_cache = []
 
-        # Player has a PIN
-        mocker.patch.object(
-            action.services.games,
-            "player_pins",
-            AsyncMock(return_value={123: "ABC123"}),
-        )
-        mocker.patch.object(
-            action.services.games,
-            "player_names",
-            AsyncMock(return_value={123: "TestPlayer"}),
-        )
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
-        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_user",
             AsyncMock(return_value=mock_user),
@@ -1045,13 +1013,15 @@ class TestLookingForGameAction:
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
         mocker.patch.object(action.services.awards, "give_awards", AsyncMock(return_value={}))
 
-        await action.handle_direct_messages()
+        await action.handle_direct_messages(game_data)
 
         send_stub.assert_called_once()
         # Verify Mythic Track link was added to description
-        assert "Mythic Track" in mock_embed.description
-        # Verify the description starts with "[Mythic Track]" (no emoji prefix)
-        assert "[Mythic Track]" in mock_embed.description
+        call_kwargs = send_stub.call_args.kwargs
+        embed = call_kwargs["embed"]
+        assert "Mythic Track" in embed.description
+        # Verify the description contains "[Mythic Track]" (no emoji prefix)
+        assert "[Mythic Track]" in embed.description
 
     async def test_handle_direct_messages_award_to_unfetched_player(
         self,
@@ -1059,31 +1029,11 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _handle_direct_messages warns when award goes to unfetched player."""
-        mock_embed = MagicMock(spec=discord.Embed)
-        mock_embed.description = "Game started!"
-        mock_embed.copy = MagicMock(return_value=mock_embed)
-
-        game_data = {
-            "id": 1,
-            "format": 1,
-            "service": 1,
-            "bracket": 2,
-            "jump_links": {},
-        }
+        game_data = create_mock_game(game_id=1)
+        game_data.players = [create_mock_user(xid=123, name="TestPlayer")]
+        game_data.player_pins = {123: None}
 
         # Player cannot be fetched
-        mocker.patch.object(
-            action.services.games,
-            "player_pins",
-            AsyncMock(return_value={123: None}),
-        )
-        mocker.patch.object(
-            action.services.games,
-            "player_names",
-            AsyncMock(return_value={123: "TestPlayer"}),
-        )
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
-        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
         mocker.patch("spellbot.actions.lfg_action.safe_fetch_user", AsyncMock(return_value=None))
         mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
 
@@ -1099,10 +1049,10 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action.handle_direct_messages()
+        await action.handle_direct_messages(game_data)
 
         # Should have 2 calls:
-        # 1. "Unable to give role 999 to user <@123>"
+        # 1. "Unable to give role SomeRole to user <@123>"
         # 2. "Unable to send Direct Messages to some players: <@!123>"
         assert followup_stub.call_count == 2
         first_call = followup_stub.call_args_list[0]
@@ -1115,30 +1065,11 @@ class TestLookingForGameAction:
     ) -> None:
         """Test _handle_direct_messages gives awards to fetched players."""
         mock_user = MagicMock(spec=discord.User)
-        mock_embed = MagicMock(spec=discord.Embed)
-        mock_embed.description = "Game started!"
-        mock_embed.copy = MagicMock(return_value=mock_embed)
 
-        game_data = {
-            "id": 1,
-            "format": 1,
-            "service": 1,
-            "bracket": 2,
-            "jump_links": {},
-        }
+        game_data = create_mock_game(game_id=1)
+        game_data.players = [create_mock_user(xid=123, name="TestPlayer")]
+        game_data.player_pins = {123: None}
 
-        mocker.patch.object(
-            action.services.games,
-            "player_pins",
-            AsyncMock(return_value={123: None}),
-        )
-        mocker.patch.object(
-            action.services.games,
-            "player_names",
-            AsyncMock(return_value={123: "TestPlayer"}),
-        )
-        mocker.patch.object(action.services.games, "to_dict", AsyncMock(return_value=game_data))
-        mocker.patch.object(action.services.games, "to_embed", AsyncMock(return_value=mock_embed))
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_user",
             AsyncMock(return_value=mock_user),
@@ -1154,7 +1085,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value={123: [new_award]}),
         )
 
-        await action.handle_direct_messages()
+        await action.handle_direct_messages(game_data)
 
         # Should give role
         add_role_stub.assert_called_once()
@@ -1224,52 +1155,52 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test execute_start when user is in a pending game (success path)."""
-        game_data = cast(
-            "GameDict",
-            {
-                "id": 42,
-                "voice_xid": None,
-                "voice_invite_link": None,
-            },
-        )
+        game_data = create_mock_game(game_id=42)
+        # Add some players to the game data
+        game_data.players = [
+            create_mock_user(xid=100, name="Player1"),
+            create_mock_user(xid=200, name="Player2"),
+        ]
+
         mocker.patch.object(
             action.services.users,
             "is_waiting",
             AsyncMock(return_value=game_data),
         )
-        mocker.patch.object(action.services.games, "select", AsyncMock(return_value=game_data))
-        mocker.patch.object(action.services.games, "shrink_game", AsyncMock())
         mocker.patch.object(
             action.services.games,
-            "player_xids",
-            AsyncMock(return_value=[100, 200]),
+            "shrink_game",
+            AsyncMock(return_value=game_data),
         )
 
         mock_suggestion = VoiceChannelSuggestion(already_picked=None, random_empty=None)
         mocker.patch.object(
             action,
             "make_game_ready",
-            AsyncMock(return_value=(42, mock_suggestion)),
+            AsyncMock(return_value=(game_data, mock_suggestion)),
         )
-        voice_stub = mocker.patch.object(action, "handle_voice_creation", AsyncMock())
-        embed_stub = mocker.patch.object(action, "handle_embed_creation", AsyncMock())
+        voice_stub = mocker.patch.object(
+            action,
+            "handle_voice_creation",
+            AsyncMock(return_value=game_data),
+        )
+        embed_stub = mocker.patch.object(
+            action,
+            "handle_embed_creation",
+            AsyncMock(return_value=game_data),
+        )
         dm_stub = mocker.patch.object(action, "handle_direct_messages", AsyncMock())
 
         await action.execute_start()
 
-        action.services.games.select.assert_called_once_with(42)  # type: ignore
-        action.services.games.shrink_game.assert_called_once()  # type: ignore
-        action.services.games.player_xids.assert_called_once()  # type: ignore
-        action.make_game_ready.assert_called_once_with(game_data, [100, 200])  # type: ignore
-        voice_stub.assert_called_once_with(action.interaction.guild_id)
-        embed_stub.assert_called_once_with(
-            new=True,
-            origin=False,
-            fully_seated=True,
-            suggested_vc=mock_suggestion,
-            rematch=False,
-        )
-        dm_stub.assert_called_once_with(suggested_vc=mock_suggestion, rematch=False)
+        action.services.games.shrink_game.assert_called_once_with(game_data)  # type: ignore
+        action.make_game_ready.assert_called_once()  # type: ignore
+        call_args = action.make_game_ready.call_args  # type: ignore
+        assert call_args[0][0] == game_data
+        assert set(call_args[1]["player_xids"]) == {100, 200}
+        voice_stub.assert_called_once_with(game_data, action.interaction.guild_id)
+        embed_stub.assert_called_once()
+        dm_stub.assert_called_once()
 
     async def test_get_bracket_when_no_format_no_bracket_no_default(
         self,

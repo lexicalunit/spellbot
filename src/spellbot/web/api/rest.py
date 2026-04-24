@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from aiohttp.web_response import Response as WebResponse
 
-    from spellbot.models import GameDict, UserDict
+    from spellbot.data import GameData, UserData
 
 logger = logging.getLogger(__name__)
 
@@ -79,16 +79,16 @@ async def game_verify_endpoint(request: web.Request) -> WebResponse:
 @tracer.wrap(name="rest", resource="game_record_embed")
 def game_record_embed(
     *,
-    game: GameDict,
-    players: list[UserDict],
+    game_data: GameData,
+    players: list[UserData],
     commanders: dict[int | None, str],
     winner_xid: int | None,
     tracker_xid: int,
 ) -> dict[str, Any]:
     fields: list[dict[str, Any]] = []
-    winner_name = next((p["name"] for p in players if p["xid"] == winner_xid), None)
+    winner_name = next((p.name for p in players if p.xid == winner_xid), None)
     winner_commander = commanders.get(winner_xid)
-    tracker_name = next(p["name"] for p in players if p["xid"] == tracker_xid)
+    tracker_name = next(p.name for p in players if p.xid == tracker_xid)
     has_winner = winner_xid and winner_name and winner_commander
     if has_winner:
         value = f"<@{winner_xid}> ({winner_name}) - {winner_commander}"
@@ -98,9 +98,7 @@ def game_record_embed(
     fields.append(
         {
             "name": "Players",
-            "value": "\n".join(
-                f"• <@{p['xid']}> ({p['name']}) - {commanders[p['xid']]}" for p in players
-            ),
+            "value": "\n".join(f"• <@{p.xid}> ({p.name}) - {commanders[p.xid]}" for p in players),
         },
     )
     description = f"A game you played was tracked by <@{tracker_xid}> ({tracker_name})."
@@ -108,9 +106,9 @@ def game_record_embed(
         description += f" The winner was marked as <@{winner_xid}> ({winner_name})."
     else:
         description += " No winner was marked, the game ended in a draw."
-    jump_link = game["jump_links"].get(game["guild_xid"])
-    channel_xid = game["channel_xid"]
-    started_at = game["started_at"]
+    jump_link = game_data.jump_links.get(game_data.guild_xid)
+    channel_xid = game_data.channel_xid
+    started_at = game_data.started_at
     assert started_at is not None
     started_at_ts = int(cast("datetime", started_at).replace(tzinfo=tz.UTC).timestamp())
     game_start = f"<t:{started_at_ts}>"
@@ -130,7 +128,7 @@ def game_record_embed(
                 "description": description,
                 "fields": fields,
                 "color": settings.INFO_EMBED_COLOR,
-                "footer": {"text": f"SpellBot Game ID: #SB{game['id']}"},
+                "footer": {"text": f"SpellBot Game ID: #SB{game_data.id}"},
             },
         ],
     }
@@ -277,7 +275,7 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
             game_id = int(request.match_info["game"])
         except ValueError:
             return reply(error="Invalid game ID", status=400)
-        if not (game := await services.games.select(game_id)):
+        if not (game_data := await services.games.get(game_id)):
             return reply(error="Game not found", status=404)
         payload = await request.json()
 
@@ -313,7 +311,7 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
         if len(plays) != len(players) or len(players) != len(players_data):
             return reply(error="Mismatched player count", status=400)
         embed = game_record_embed(
-            game=game,
+            game_data=game_data,
             players=players,
             commanders=commanders,
             winner_xid=winner_xid,
