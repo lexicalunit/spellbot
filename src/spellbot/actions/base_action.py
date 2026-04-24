@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     import discord
 
     from spellbot import SpellBot
+    from spellbot.data import UserData
     from spellbot.models import ChannelDict, GuildDict
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ class BaseAction:
     channel: discord.TextChannel | None
     channel_data: ChannelDict
     guild_data: GuildDict | None
+    user_data: UserData | None
 
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         self.bot = bot
@@ -73,9 +75,9 @@ class BaseAction:
             self.channel_data = await self.services.channels.upsert(self.channel)
 
         guild_xid = self.guild.id if self.guild else None
-        await self.services.users.upsert(self.member, guild_xid=guild_xid)
+        self.user_data = await self.services.users.upsert(self.member, guild_xid=guild_xid)
 
-        if await self.services.users.is_banned(self.member.id):
+        if self.user_data.banned:
             raise UserBannedError
 
         if self.should_do_verification():

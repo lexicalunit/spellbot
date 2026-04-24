@@ -61,7 +61,7 @@ class BlockAction(BaseAction):
         pages = []
         cur_page = ""
         for user in blocklist:
-            next_user = f"<@{user['xid']}> ({user['name']})\n"
+            next_user = f"<@{user.xid}> ({user.name})\n"
             if len(cur_page) + len(next_user) > EMBED_DESCRIPTION_SIZE_LIMIT:
                 pages.append(cur_page)
                 cur_page = ""

@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from discord.channel import VoiceChannel
 
     from spellbot import SpellBot
-    from spellbot.models import GameDict
+    from spellbot.data import GameData
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ class VoiceChannelFilterer:
                 continue
 
             logger.info("looking for matching game in database")
-            found = await self.games.select_by_voice_xid(channel.id)
+            found = await self.games.get_by_voice_xid(channel.id)
             if found:
                 logger.info("matching game found, adding to delete list")
                 channels.append(channel)
@@ -166,13 +166,12 @@ class TasksAction:
             logger.exception("error: exception in background task")
             await rollback_session()
 
-    async def expire_games(self, games: list[GameDict]) -> None:
+    async def expire_games(self, game_data_list: list[GameData]) -> None:
         batch = 0
-        for game in games:
-            game_id = game["id"]
-            logger.info("expiring game %s...", game_id)
-            dequeued = await self.services.games.delete_games([game_id])
-            await self.expire_game(game, dequeued)
+        for game_data in game_data_list:
+            logger.info("expiring game %s...", game_data.id)
+            dequeued = await self.services.games.delete_games([game_data.id])
+            await self.expire_game(game_data, dequeued)
 
             batch += 1
             if batch >= 5:  # pragma: no cover
@@ -181,8 +180,8 @@ class TasksAction:
             else:
                 await asyncio.sleep(1)
 
-    async def expire_game(self, game: GameDict, dequeued: int) -> None:
-        for post in game.get("posts", []):
+    async def expire_game(self, game_data: GameData, dequeued: int) -> None:
+        for post in game_data.posts:
             guild_xid = post["guild_xid"]
             channel_xid = post["channel_xid"]
             message_xid = post["message_xid"]

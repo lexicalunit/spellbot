@@ -83,7 +83,7 @@ class TestServiceGuilds:
         guilds = GuildsService()
         guild = GuildFactory.create()
 
-        await guilds.set_banned(True, guild.xid)
+        await guilds.set_banned(guild.xid, banned=True)
 
         DatabaseSession.expire_all()
         guild = DatabaseSession.get(Guild, guild.xid)
