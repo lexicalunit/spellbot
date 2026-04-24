@@ -10,7 +10,13 @@ import pytest
 
 from spellbot import operations
 from spellbot.models import Channel, Guild, User
-from tests.mocks.girudo import GirudoTestData, MockHTTPClient, MockHTTPResponse, create_mock_game
+from tests.mocks.girudo import (
+    GirudoTestData,
+    MockHTTPClient,
+    MockHTTPResponse,
+    create_mock_game,
+    create_mock_user,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -291,6 +297,7 @@ __all__ = [
     "MockHTTPClient",
     "MockHTTPResponse",
     "create_mock_game",
+    "create_mock_user",
     "mock_discord_guild",
     "mock_discord_object",
     "mock_discord_user",

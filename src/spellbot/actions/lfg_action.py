@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 import discord
 from ddtrace.trace import tracer
 
+from spellbot.data import GameData
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import MAX_RULES_LENGTH, GameStatus, generate_pin
 from spellbot.operations import (
@@ -35,7 +36,7 @@ from .base_action import BaseAction
 
 if TYPE_CHECKING:
     from spellbot import SpellBot
-    from spellbot.models import GameDict
+    from spellbot.data import GameData
 
 logger = logging.getLogger(__name__)
 
@@ -96,12 +97,12 @@ class LookingForGameAction(BaseAction):
         if friend_xids:
             friend_xids = await self.ensure_users_exist(friend_xids)
         if friend_xids:
-            friend_xids = await self.services.games.filter_blocked_list(
+            friend_xids = await self.services.users.filter_blocked_list(
                 self.interaction.user.id,
                 friend_xids,
             )
         if friend_xids:
-            friend_xids = await self.services.games.filter_pending_games(friend_xids)
+            friend_xids = await self.services.users.filter_pending_games(friend_xids)
         return friend_xids
 
     @tracer.wrap()
@@ -114,7 +115,7 @@ class LookingForGameAction(BaseAction):
         bracket: int,
         service: int,
         message_xid: int | None,
-    ) -> bool | None:
+    ) -> tuple[bool | None, GameData | None]:
         """Return True if the game is new, False if existing, or None of user can not join."""
         assert self.guild
         assert self.channel
@@ -127,7 +128,7 @@ class LookingForGameAction(BaseAction):
 
         if not origin:
             assert self.interaction.guild_id is not None
-            return await self.services.games.upsert(
+            new, game = await self.services.games.upsert(
                 guild_xid=self.interaction.guild_id,
                 channel_xid=self.channel.id,
                 author_xid=self.interaction.user.id,
@@ -139,24 +140,25 @@ class LookingForGameAction(BaseAction):
                 service=service,
                 blind=bool(self.channel_data["blind_games"]),
             )
+            return new, game
 
         assert message_xid
-        found = await self.services.games.select_by_message_xid(message_xid)
-        if not found or await self.services.games.blocked(self.interaction.user.id):
+        found = await self.services.games.get_by_message_xid(message_xid)
+        if not found or await self.services.games.blocked(found, self.interaction.user.id):
             await safe_send_user(self.interaction.user, "You can not join this game.")
-            return None
+            return None, None
 
-        if found["status"] == GameStatus.STARTED.value:
+        if found.status == GameStatus.STARTED.value:
             logger.warning("User tried to join a game that has already started.")
             # inform the player that their interaction failed
             await safe_send_user(
                 self.interaction.user,
                 "Sorry, that game has already started.",
             )
-            return None
+            return None, None
 
-        await self.services.games.add_player(self.interaction.user.id)
-        return False
+        found = await self.services.games.add_player(found, self.interaction.user.id)
+        return False, found
 
     @tracer.wrap()
     async def execute_rematch(self) -> None:
@@ -168,14 +170,15 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        if await self.services.users.pending_games():
+        assert self.user_data is not None
+        if await self.services.users.pending_games(self.user_data):
             await safe_followup_channel(
                 self.interaction,
                 "You're already in a pending game, leave that one first.",
             )
             return
 
-        game_data = await self.services.games.select_last_game(
+        game_data = await self.services.games.get_last_game(
             user_xid=self.interaction.user.id,
             guild_xid=self.guild.id,
         )
@@ -186,13 +189,13 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        player_xids = await self.services.games.player_xids()
+        player_xids = [player.xid for player in game_data.players]
         players = " ".join(f"<@{xid}>" for xid in player_xids)
 
         await self.create_game(
             players=players,
-            format=game_data["format"],
-            bracket=game_data["bracket"],
+            format=game_data.format,
+            bracket=game_data.bracket,
             service=GameService.NOT_ANY.value,
             rematch=True,
         )
@@ -207,7 +210,8 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        game_data = await self.services.users.is_waiting(self.channel.id)
+        assert self.user_data
+        game_data = await self.services.users.is_waiting(self.user_data, self.channel.id)
         if not game_data:
             await safe_followup_channel(
                 self.interaction,
@@ -216,20 +220,21 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        await self.services.games.select(game_data["id"])
-        await self.services.games.shrink_game()
-        player_xids = await self.services.games.player_xids()
-        _, suggested_vc = await self.make_game_ready(game_data, player_xids)
+        game_data = await self.services.games.shrink_game(game_data)
+        player_xids = [player.xid for player in game_data.players]
+        game_data, suggested_vc = await self.make_game_ready(game_data, player_xids=player_xids)
         assert self.interaction.guild_id
-        await self.handle_voice_creation(self.interaction.guild_id)
-        await self.handle_embed_creation(
-            new=True,
+        game_data = await self.handle_voice_creation(game_data, self.interaction.guild_id)
+        game_data = await self.handle_embed_creation(
+            game_data,
+            new=False,
             origin=False,
             fully_seated=True,
             suggested_vc=suggested_vc,
             rematch=False,
+            force_start=True,
         )
-        await self.handle_direct_messages(suggested_vc=suggested_vc, rematch=False)
+        await self.handle_direct_messages(game_data, suggested_vc=suggested_vc, rematch=False)
 
     @tracer.wrap()
     async def execute(
@@ -261,14 +266,15 @@ class LookingForGameAction(BaseAction):
         actual_seats: int = await self.get_seats(actual_format, actual_service, seats)
         rules = None if not rules else rules[:MAX_RULES_LENGTH]
 
-        if await self.services.users.is_waiting(self.channel.id):
+        assert self.user_data
+        if await self.services.users.is_waiting(self.user_data, self.channel.id):
             msg = "You're already in a game in this channel."
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
             await safe_followup_channel(self.interaction, msg)
             return None
 
-        if await self.services.users.pending_games() + 1 > settings.MAX_PENDING_GAMES:
+        if await self.services.users.pending_games(self.user_data) + 1 > settings.MAX_PENDING_GAMES:
             msg = "You're in too many pending games to join another one at this time."
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
@@ -278,15 +284,12 @@ class LookingForGameAction(BaseAction):
         friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", actual_friends)))
 
         if len(friend_xids) + 1 > actual_seats:
-            await safe_send_user(
-                self.interaction.user,
-                "You mentioned too many players.",
-            )
+            await safe_send_user(self.interaction.user, "You mentioned too many players.")
             return None
 
         friend_xids = await self.filter_friend_xids(friend_xids)
 
-        new = await self.upsert_game(
+        new, game_data = await self.upsert_game(
             friend_xids,
             actual_seats,
             rules,
@@ -297,28 +300,26 @@ class LookingForGameAction(BaseAction):
         )
         if new is None:
             return None
+        assert game_data is not None
 
-        fully_seated = await self.services.games.fully_seated()
-        started_game_id: int | None = None
         other_game_ids: list[int] = []
         suggested_vc = None
-        if fully_seated:
-            other_game_ids = await self.services.games.other_game_ids()
-            game_data = await self.services.games.to_dict()
-            player_xids = await self.services.games.player_xids()
-            started_game_id, suggested_vc = await self.make_game_ready(game_data, player_xids)
-            await self.handle_voice_creation(self.guild.id)
+        if game_data.fully_seated:
+            other_game_ids = await self.services.games.other_game_ids(game_data)
+            player_xids = [player.xid for player in game_data.players]
+            game_data, suggested_vc = await self.make_game_ready(game_data, player_xids)
+            game_data = await self.handle_voice_creation(game_data, self.guild.id)
 
-        await self.handle_embed_creation(
+        game_data = await self.handle_embed_creation(
+            game_data,
             new=new,
             origin=origin,
-            fully_seated=fully_seated,
+            fully_seated=game_data.fully_seated,
             suggested_vc=suggested_vc,
         )
 
-        if fully_seated:
-            assert started_game_id is not None
-            await self.handle_direct_messages(suggested_vc=suggested_vc)
+        if game_data.fully_seated:
+            await self.handle_direct_messages(game_data, suggested_vc=suggested_vc)
             await self.update_other_game_posts(other_game_ids)
             return None
         return None
@@ -333,16 +334,16 @@ class LookingForGameAction(BaseAction):
 
         message_xids = await self.services.games.message_xids(other_game_ids)
         for message_xid in message_xids:
-            data = await self.services.games.select_by_message_xid(message_xid)
+            data = await self.services.games.get_by_message_xid(message_xid)
             if not data:
                 continue
 
-            channel_xid = data["channel_xid"]
-            guild_xid = data["guild_xid"]
+            channel_xid = data.channel_xid
+            guild_xid = data.guild_xid
             if (channel := await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)) and (
                 message := safe_get_partial_message(channel, guild_xid, message_xid)
             ):
-                embed = await self.services.games.to_embed(
+                embed = data.to_embed(
                     guild=self.guild,
                     emojis=self.bot.emojis_cache,
                     supporters=self.bot.supporters,
@@ -392,7 +393,7 @@ class LookingForGameAction(BaseAction):
             return
 
         assert self.interaction.guild_id
-        await self.services.games.upsert(
+        _, game_data = await self.services.games.upsert(
             guild_xid=self.interaction.guild_id,
             channel_xid=self.channel.id,
             author_xid=found_players[0],
@@ -405,24 +406,24 @@ class LookingForGameAction(BaseAction):
             create_new=True,
             blind=bool(self.channel_data["blind_games"]),
         )
-        game_data = await self.services.games.to_dict()
-        _, suggested_vc = await self.make_game_ready(game_data, player_xids)
-        await self.handle_voice_creation(self.interaction.guild_id)
-        await self.handle_embed_creation(
+        game_data, suggested_vc = await self.make_game_ready(game_data, player_xids)
+        game_data = await self.handle_voice_creation(game_data, self.interaction.guild_id)
+        game_data = await self.handle_embed_creation(
+            game_data,
             new=True,
             origin=False,
             fully_seated=True,
             suggested_vc=suggested_vc,
             rematch=rematch,
         )
-        await self.handle_direct_messages(suggested_vc=suggested_vc, rematch=rematch)
+        await self.handle_direct_messages(game_data, suggested_vc=suggested_vc, rematch=rematch)
 
     @tracer.wrap()
     async def make_game_ready(
         self,
-        game: GameDict,
+        game_data: GameData,
         player_xids: list[int],
-    ) -> tuple[int, VoiceChannelSuggestion | None]:
+    ) -> tuple[GameData, VoiceChannelSuggestion | None]:
         # Convoke needs player pins, so we have to generate them before creating the game link.
         # Initially the design was to let the DB do this later, in the `make_ready()` method.
         # This could be revisited later to better factor this code. Note that we always generate
@@ -430,12 +431,12 @@ class LookingForGameAction(BaseAction):
         # method of the Game object will return None for players if MT is not enabled.
         pins = [generate_pin() for _ in player_xids]
 
-        details = await self.bot.create_game_link(game, pins)
+        details = await self.bot.create_game_link(game_data, pins)
 
         suggested_vc = None
         if (
-            not game["voice_xid"]
-            and not game["voice_invite_link"]
+            not game_data.voice_xid
+            and not game_data.voice_invite_link
             and self.guild_data
             and (suggest_voice_category := self.guild_data["suggest_voice_category"])
             and self.guild is not None
@@ -449,46 +450,43 @@ class LookingForGameAction(BaseAction):
         if span := tracer.current_span():  # pragma: no cover
             span.set_tags(
                 {
-                    "game_id": str(game["id"]),
-                    "voice_xid": str(game["voice_xid"]),
-                    "voice_invite_link": str(game["voice_invite_link"]),
+                    "game_id": str(game_data),
+                    "voice_xid": str(game_data.voice_xid),
+                    "voice_invite_link": str(game_data.voice_invite_link),
                     "guild_data__isnull": str(bool(self.guild_data is None)),
                     "already_picked": str(suggested_vc.already_picked if suggested_vc else None),
                     "random_empty": str(suggested_vc.random_empty if suggested_vc else None),
                 },
             )
 
-        return (
-            await self.services.games.make_ready(details.link, details.password, pins),
-            suggested_vc,
+        ready_game = await self.services.games.make_ready(
+            game_data,
+            details.link,
+            details.password,
+            pins,
         )
+        return ready_game, suggested_vc
 
     @tracer.wrap()
-    async def handle_voice_creation(self, guild_xid: int) -> None:
+    async def handle_voice_creation(self, game_data: GameData, guild_xid: int) -> GameData:
         if not await self.services.guilds.should_voice_create():
-            return
+            return game_data
         use_max_bitrate = await self.services.guilds.get_use_max_bitrate()
 
         category_prefix = self.channel_data["voice_category"]
-        category = await safe_ensure_voice_category(
-            self.bot,
-            guild_xid,
-            category_prefix,
-        )
+        category = await safe_ensure_voice_category(self.bot, guild_xid, category_prefix)
         if not category:
-            return
+            return game_data
 
-        game_data = await self.services.games.to_dict()
-        game_id = game_data["id"]
         voice_channel = await safe_create_voice_channel(
             self.bot,
             guild_xid,
-            f"Game-SB{game_id}",
+            f"Game-SB{game_data.id}",
             category=category,
             use_max_bitrate=use_max_bitrate,
         )
         if not voice_channel:
-            return
+            return game_data
 
         should_create_invite = self.channel_data.get("voice_invite", False)
         invite: discord.Invite | None = None
@@ -498,10 +496,11 @@ class LookingForGameAction(BaseAction):
                 max_age=2 * 60 * 60,  # 2 hours
                 max_uses=0,  # unlimited uses
                 temporary=True,
-                reason=f"Creating temporary voice channel invite for Game-SB{game_id}",
+                reason=f"Creating temporary voice channel invite for Game-SB{game_data.id}",
             )
 
-        await self.services.games.set_voice(
+        return await self.services.games.set_voice(
+            game_data,
             voice_xid=voice_channel.id,
             voice_invite_link=invite.url if invite else None,
         )
@@ -509,10 +508,11 @@ class LookingForGameAction(BaseAction):
     @tracer.wrap()
     async def create_initial_post(
         self,
+        game_data: GameData,
         embed: discord.Embed,
         view: BaseView | None = None,
         content: str | None = None,
-    ) -> None:
+    ) -> GameData:
         assert self.guild
         assert self.channel
         allowed_mentions = discord.AllowedMentions(everyone=True, users=False, roles=True)
@@ -531,23 +531,31 @@ class LookingForGameAction(BaseAction):
                 allowed_mentions=allowed_mentions,
             )
         ):
-            await self.services.games.add_post(self.guild.id, self.channel.id, message.id)
+            return await self.services.games.add_post(
+                game_data,
+                self.guild.id,
+                self.channel.id,
+                message.id,
+            )
+        return game_data
 
     @tracer.wrap()
     async def handle_embed_creation(
         self,
+        game_data: GameData,
         *,
         new: bool,
         origin: bool,
         fully_seated: bool,
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
-    ) -> None:
+        force_start: bool = False,
+    ) -> GameData:
         assert self.guild
         assert self.channel
 
         # build the game post's embed and view:
-        embed: discord.Embed = await self.services.games.to_embed(
+        embed: discord.Embed = game_data.to_embed(
             guild=self.guild,
             suggested_vc=suggested_vc,
             rematch=rematch,
@@ -555,16 +563,34 @@ class LookingForGameAction(BaseAction):
             supporters=self.bot.supporters,
         )
         content = self.channel_data.get("extra", None)
-        game_data = await self.services.games.to_dict()
 
         view = None if fully_seated else GameView(bot=self.bot)
         if new:  # create the initial game post:
-            await self.create_initial_post(embed, view, content)
-            return
+            return await self.create_initial_post(game_data, embed, view, content)
 
         # update the game post(s) for this game, which should already exist
+        return await self.handle_embed_update(
+            game_data,
+            embed=embed,
+            view=view,
+            origin=origin,
+            force_start=force_start,
+        )
 
-        for post in game_data.get("posts", []):
+    @tracer.wrap()
+    async def handle_embed_update(
+        self,
+        game_data: GameData,
+        *,
+        embed: discord.Embed,
+        view: GameView | None,
+        origin: bool = False,
+        force_start: bool = False,
+    ) -> GameData:
+        assert self.guild
+        assert self.channel
+
+        for post in game_data.posts:
             message: discord.Message | discord.PartialMessage | None = None
             guild_xid = post["guild_xid"]
             channel_xid = post["channel_xid"]
@@ -603,37 +629,56 @@ class LookingForGameAction(BaseAction):
                 # failed to update the message for this post
                 continue
 
-        if not origin:
-            await self.reply_found_embed()
+        if force_start:
+            await self.reply_force_start_embed(game_data)
+        elif not origin:
+            await self.reply_found_embed(game_data)
+
+        return game_data
 
     @tracer.wrap()
-    async def reply_found_embed(self) -> None:
+    async def reply_found_embed(self, game_data: GameData) -> None:
         assert self.guild is not None
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
-        game_data = await self.services.games.to_dict()
-        links = game_data["jump_links"]
-        format = game_data["format"]
+        links = game_data.jump_links
+        format = game_data.format
         embed.set_author(name=f"I found a {GameFormat(format)} game for you!")
         embed.color = settings.INFO_EMBED_COLOR
         if link := links.get(self.guild.id):
             embed.description = f"You can [jump to the game post]({link}) to see it!"
         else:
-            game_id = game_data["id"]
+            game_id = game_data.id
             embed.description = f"You have joined the game SB{game_id}!"
+        await safe_followup_channel(self.interaction, embed=embed)
+
+    @tracer.wrap()
+    async def reply_force_start_embed(self, game_data: GameData) -> None:
+        assert self.guild is not None
+        embed = discord.Embed()
+        embed.set_thumbnail(url=settings.ICO_URL)
+        links = game_data.jump_links
+        format = game_data.format
+        embed.set_author(name=f"I started your {GameFormat(format)} game for you!")
+        embed.color = settings.INFO_EMBED_COLOR
+        if link := links.get(self.guild.id):
+            embed.description = f"You can [jump to the game post]({link}) to see it!"
+        else:
+            game_id = game_data.id
+            embed.description = f"The game SB{game_id} has been started!"
         await safe_followup_channel(self.interaction, embed=embed)
 
     @tracer.wrap()
     async def handle_direct_messages(
         self,
+        game_data: GameData,
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
     ) -> None:
-        player_pins = await self.services.games.player_pins()
-        player_names = await self.services.games.player_names()
+        player_pins = game_data.player_pins
+        player_names = {player.xid: player.name for player in game_data.players}
         player_xids = list(player_pins.keys())
-        game_data = await self.services.games.to_dict()
-        base_embed = await self.services.games.to_embed(
+        base_embed = game_data.to_embed(
             guild=self.guild,
             dm=True,
             suggested_vc=suggested_vc,
@@ -666,12 +711,12 @@ class LookingForGameAction(BaseAction):
             return (
                 "https://www.mythictrack.com/gamelobby"
                 f"/{self.guild.id}"
-                f"/{game_data['id']}"
-                f"/{game_data['format']}"
-                f"/{game_data['service']}"
+                f"/{game_data.id}"
+                f"/{game_data.format}"
+                f"/{game_data.service}"
                 f"/{player_xid}"
                 f"/{players_data}"
-                f"/{game_data['bracket'] - 1}"
+                f"/{game_data.bracket - 1}"
             )
 
         async def notify_player(player_xid: int) -> None:
@@ -728,10 +773,10 @@ class LookingForGameAction(BaseAction):
             warning = f"Unable to send Direct Messages to some players: {failures}"
             await safe_followup_channel(self.interaction, warning)
 
-        await self.handle_watched_players(player_xids)
+        await self.handle_watched_players(game_data, player_xids)
 
     @tracer.wrap()
-    async def handle_watched_players(self, player_xids: list[int]) -> None:
+    async def handle_watched_players(self, game_data: GameData, player_xids: list[int]) -> None:
         """Notify moderators about watched players."""
         assert self.interaction.guild
         mod_role: discord.Role | None = None
@@ -743,24 +788,22 @@ class LookingForGameAction(BaseAction):
         if not mod_role:
             return
 
-        watch_notes = await self.services.games.watch_notes(player_xids)
+        watch_notes = await self.services.games.watch_notes(game_data, player_xids)
         if not watch_notes:
             return
-
-        data = await self.services.games.to_dict()
 
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name="Watched user(s) joined a game")
         embed.color = settings.INFO_EMBED_COLOR
         description = ""
-        for jump_link in data["jump_links"].values():
+        for jump_link in game_data.jump_links.values():
             description += f"[⇤ Jump to the game post]({jump_link})\n"
         description += "\n\n**Users:**"
         for user_xid, note in watch_notes.items():
             description += f"\n• <@{user_xid}>: {note}"
         embed.description = description
-        embed.add_field(name="Game ID", value=f"SB{data['id']}", inline=False)
+        embed.add_field(name="Game ID", value=f"SB{game_data.id}", inline=False)
 
         for member in mod_role.members:
             await safe_send_user(member, embed=embed)
@@ -785,8 +828,8 @@ class LookingForGameAction(BaseAction):
             user = await safe_fetch_user(self.bot, user_xid)
             if not user:
                 continue
-            data = await self.services.users.upsert(user, guild_xid=guild_xid)
-            if data["banned"]:
+            user_data = await self.services.users.upsert(user, guild_xid=guild_xid)
+            if user_data.banned:
                 continue
             found_users.append(user_xid)
         return found_users

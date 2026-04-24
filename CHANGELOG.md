@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Refactored GameDict, Game, GamesService, and GameData.
+
 ## [v18.4.12](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.12) - 2026-04-22
 
 ### Changed

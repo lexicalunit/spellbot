@@ -14,7 +14,7 @@ from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
-    from spellbot.models import GameDict
+    from spellbot.data import GameData
 
 logger = logging.getLogger(__name__)
 services = ServicesRegistry()
@@ -109,30 +109,30 @@ def passphrase() -> str | None:
 
 async def fetch_convoke_link(
     client: httpx.AsyncClient,
-    game: GameDict,
+    game_data: GameData,
     key: str | None,
     pins: list[str] | None,
 ) -> dict[str, Any]:
-    name = f"SB{game['id']}"
-    sb_game_format = GameFormat(game["format"])
+    name = f"SB{game_data.id}"
+    sb_game_format = GameFormat(game_data.format)
     format = convoke_game_format(sb_game_format).value
-    players = await services.games.player_data(game["id"])
+    players = await services.games.player_convoke_data(game_data.id)
     payload = {
         "apiKey": settings.CONVOKE_API_KEY,
         "isPublic": False,
         "name": name,
-        "spellbotGameId": str(game["id"]),
-        "seatLimit": game["seats"],
+        "spellbotGameId": str(game_data.id),
+        "seatLimit": game_data.seats,
         "format": format,
-        "discordGuild": str(game["guild_xid"]),
-        "discordChannel": str(game["channel_xid"]),
+        "discordGuild": str(game_data.guild_xid),
+        "discordChannel": str(game_data.channel_xid),
         "discordPlayers": [{"id": str(p["xid"]), "name": p["name"]} for p in players],
     }
     if pins:
         payload["spellbotGamePins"] = pins
-    if game["bracket"] != GameBracket.NONE.value:
-        payload["bracketLevel"] = f"B{game['bracket'] - 1}"
-    if game["format"] == GameFormat.PRE_CONS.value:
+    if game_data.bracket != GameBracket.NONE.value:
+        payload["bracketLevel"] = f"B{game_data.bracket - 1}"
+    if game_data.format == GameFormat.PRE_CONS.value:
         payload["bracketLevel"] = "PRECON"  # Convoke uses Bracket to indicate "pre-cons"
     if key:
         payload["password"] = key
@@ -144,7 +144,7 @@ async def fetch_convoke_link(
 
 
 async def generate_link(
-    game: GameDict,
+    game_data: GameData,
     pins: list[str] | None,
 ) -> tuple[str | None, str | None]:
     if not settings.CONVOKE_API_KEY:
@@ -156,7 +156,7 @@ async def generate_link(
     async with httpx.AsyncClient(timeout=timeout) as client:
         for attempt in range(RETRY_ATTEMPTS):
             try:
-                data = await fetch_convoke_link(client, game, key, pins)
+                data = await fetch_convoke_link(client, game_data, key, pins)
             except Exception as ex:
                 add_span_error(ex)
                 if attempt == RETRY_ATTEMPTS - 1:

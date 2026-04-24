@@ -217,11 +217,11 @@ class AdminAction(BaseAction):
             return await self.report_failure()
         game_id_int = int(numeric_string)
 
-        found = await self.services.games.select(game_id_int)
+        found = await self.services.games.get(game_id_int)
         if not found:
             return await self.report_failure()
 
-        embed = await self.services.games.to_embed(
+        embed = found.to_embed(
             guild=self.guild,
             dm=True,
             emojis=self.bot.emojis_cache,
@@ -530,12 +530,12 @@ class AdminAction(BaseAction):
 
         batch = 0
         for game in games:
-            game_id = game["id"]
+            game_id = game.id
             results.append(f"Expiring game #SB{game_id} ...")
             dequeued = await self.services.games.delete_games([game_id])
             results.append(f"├── Dequeued {dequeued} players")
 
-            for post in game.get("posts", []):
+            for post in game.posts:
                 guild_xid = post["guild_xid"]
                 channel_xid = post["channel_xid"]
                 message_xid = post["message_xid"]

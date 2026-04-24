@@ -32,7 +32,7 @@ async def set_banned(banned: bool, ctx: commands.Context[SpellBot], arg: str | N
     except ValueError:
         return await safe_send_user(ctx.message.author, "Invalid user id.")
     services = ServicesRegistry()
-    await services.users.set_banned(banned, user_xid)
+    await services.users.set_banned(user_xid, banned)
     await safe_send_user(
         ctx.message.author,
         f"User <@{user_xid}> has been {'banned' if banned else 'unbanned'}.",
@@ -51,7 +51,7 @@ async def set_banned_guild(banned: bool, ctx: commands.Context[SpellBot], arg: s
     except ValueError:
         return await safe_send_user(ctx.message.author, "Invalid guild id.")
     services = ServicesRegistry()
-    await services.guilds.set_banned(banned, guild_xid)
+    await services.guilds.set_banned(guild_xid, banned)
     await safe_send_user(
         ctx.message.author,
         f"Guild {guild_xid} has been {'banned' if banned else 'unbanned'}.",

@@ -30,28 +30,28 @@ class TestModelGame:
         channel = factories.channel.create(guild=guild)
         game: Game = factories.game.create(guild=guild, channel=channel)
 
-        assert game.to_dict() == {
-            "id": game.id,
-            "created_at": game.created_at,
-            "updated_at": game.updated_at,
-            "deleted_at": game.deleted_at,
-            "started_at": game.started_at,
-            "guild_xid": game.guild_xid,
-            "channel_xid": game.channel_xid,
-            "posts": game.posts,
-            "voice_xid": game.voice_xid,
-            "voice_invite_link": game.voice_invite_link,
-            "seats": game.seats,
-            "status": game.status,
-            "format": game.format,
-            "bracket": game.bracket,
-            "service": game.service,
-            "game_link": game.game_link,
-            "jump_links": game.jump_links,
-            "password": game.password,
-            "rules": game.rules,
-            "blind": game.blind,
-        }
+        game_data = game.to_dict()
+        assert game_data.id == game.id
+        assert game_data.created_at == game.created_at
+        assert game_data.updated_at == game.updated_at
+        assert game_data.deleted_at == game.deleted_at
+        assert game_data.started_at == game.started_at
+        assert game_data.guild_xid == game.guild_xid
+        assert game_data.channel_xid == game.channel_xid
+        assert game_data.posts == [post.to_dict() for post in game.posts]
+        assert game_data.voice_xid == game.voice_xid
+        assert game_data.voice_invite_link == game.voice_invite_link
+        assert game_data.seats == game.seats
+        assert game_data.status == game.status
+        assert game_data.format == game.format
+        assert game_data.bracket == game.bracket
+        assert game_data.service == game.service
+        assert game_data.game_link == game.game_link
+        assert game_data.password == game.password
+        assert game_data.rules == game.rules
+        assert game_data.blind == game.blind
+        assert game_data.players == [player.to_dict() for player in game.players]
+        assert game_data.player_pins == game.player_pins
 
     def test_game_player_count(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -59,7 +59,7 @@ class TestModelGame:
         game: Game = factories.game.create(guild=guild, channel=channel, seats=4)
         factories.user.create(game=game)
         factories.user.create(game=game)
-        assert game.player_count == 2
+        assert len(game.players) == 2
 
     def test_game_show_links(self, factories: Factories) -> None:
         guild1 = factories.guild.create()
@@ -69,10 +69,12 @@ class TestModelGame:
         game1 = factories.game.create(guild=guild1, channel=channel1)
         game2 = factories.game.create(guild=guild2, channel=channel2)
 
-        assert not game1.show_links()
-        assert game1.show_links(True)
-        assert game2.show_links()
-        assert game2.show_links(True)
+        game_data1 = game1.to_dict()
+        game_data2 = game2.to_dict()
+        assert not game_data1.show_links()
+        assert game_data1.show_links(dm=True)
+        assert game_data2.show_links()
+        assert game_data2.show_links(dm=True)
 
     @pytest.mark.parametrize(
         ("service", "description"),
@@ -138,7 +140,7 @@ class TestModelGame:
         expected_fields.append(
             {"inline": False, "name": "Support SpellBot", "value": ANY},
         )
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.EMPTY_EMBED_COLOR,
             "description": description,
             "fields": expected_fields,
@@ -157,7 +159,7 @@ class TestModelGame:
         game = factories.game.create(guild=guild, channel=channel)
         player = factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
             "description": CONVOKE_PENDING_MSG,
             "fields": [
@@ -189,7 +191,7 @@ class TestModelGame:
         convoke_emoji.name = "convoke"
         emojis = [convoke_emoji]
 
-        embed = game.to_embed(emojis=emojis)
+        embed = game.to_dict().to_embed(guild=None, emojis=emojis)
         assert f"{convoke_emoji}" in embed.description
         assert "[Convoke](https://www.convoke.games/)" in embed.description
 
@@ -208,7 +210,7 @@ class TestModelGame:
         other_emoji.name = "some_other_emoji"
         emojis = [other_emoji]
 
-        embed = game.to_embed(emojis=emojis)
+        embed = game.to_dict().to_embed(guild=None, emojis=emojis)
         # Should not contain the emoji since it doesn't match
         assert f"{other_emoji}" not in embed.description
         assert "[Convoke](https://www.convoke.games/)" in embed.description
@@ -219,7 +221,7 @@ class TestModelGame:
         game = factories.game.create(guild=guild, channel=channel, blind=True)
         factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
             "description": CONVOKE_PENDING_MSG,
             "fields": [
@@ -248,7 +250,7 @@ class TestModelGame:
         factories.user.create(game=game)
         factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
             "description": CONVOKE_PENDING_MSG,
             "fields": [
@@ -276,7 +278,7 @@ class TestModelGame:
         game = factories.game.create(guild=guild, channel=channel, blind=True)
         player = factories.user.create(game=game)
 
-        assert game.to_embed(dm=True).to_dict() == {
+        assert game.to_dict().to_embed(guild=None, dm=True).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
             "description": CONVOKE_PENDING_MSG,
             "fields": [
@@ -300,7 +302,7 @@ class TestModelGame:
         game = factories.game.create(guild=guild, channel=channel, rules="test rules")
         player = factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
             "description": CONVOKE_PENDING_MSG,
             "fields": [
@@ -325,7 +327,7 @@ class TestModelGame:
         game = factories.game.create(guild=guild, channel=channel)
         player = factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
             "description": (
                 f"{CONVOKE_PENDING_MSG}\n\nplayer 1: {player.name}\n\ngame id: {game.id}"
@@ -364,7 +366,7 @@ class TestModelGame:
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your game details.",
             "fields": [
@@ -385,7 +387,7 @@ class TestModelGame:
             "type": "rich",
             "flags": 0,
         }
-        assert game.to_embed(dm=True).to_dict() == {
+        assert game.to_dict().to_embed(guild=None, dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 f"# [Join your Convoke game now!]({game.game_link})"
@@ -433,7 +435,7 @@ class TestModelGame:
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your game details.",
             "fields": [
@@ -454,7 +456,7 @@ class TestModelGame:
             "type": "rich",
             "flags": 0,
         }
-        assert game.to_embed(dm=True).to_dict() == {
+        assert game.to_dict().to_embed(guild=None, dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "Contact the other players in your game to organize this match."
@@ -501,7 +503,7 @@ class TestModelGame:
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your game details.",
             "fields": [
@@ -522,7 +524,7 @@ class TestModelGame:
             "type": "rich",
             "flags": 0,
         }
-        assert game.to_embed(dm=True).to_dict() == {
+        assert game.to_dict().to_embed(guild=None, dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "Please use MTG Arena to play this game."
@@ -561,7 +563,7 @@ class TestModelGame:
         )
         factories.user.create(game=game)
         factories.user.create(game=game)
-        assert game.to_embed().to_dict()["description"] == (
+        assert game.to_dict().to_embed(guild=None).to_dict()["description"] == (
             "this is a notice\n\nPlease check your Direct Messages for your game details."
         )
 
@@ -583,7 +585,7 @@ class TestModelGame:
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your game details.",
             "fields": [
@@ -604,7 +606,7 @@ class TestModelGame:
             "type": "rich",
             "flags": 0,
         }
-        assert game.to_embed(dm=True).to_dict() == {
+        assert game.to_dict().to_embed(guild=None, dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "Sorry but SpellBot was unable to create a link for "
@@ -653,7 +655,7 @@ class TestModelGame:
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your game details.",
             "fields": [
@@ -674,7 +676,7 @@ class TestModelGame:
             "type": "rich",
             "flags": 0,
         }
-        assert game.to_embed(dm=True).to_dict() == {
+        assert game.to_dict().to_embed(guild=None, dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "Sorry but SpellBot was unable to create a link for "
@@ -725,7 +727,7 @@ class TestModelGame:
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your game details.",
             "fields": [
@@ -746,7 +748,7 @@ class TestModelGame:
             "type": "rich",
             "flags": 0,
         }
-        assert game.to_embed(dm=True).to_dict() == {
+        assert game.to_dict().to_embed(guild=None, dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 f"# [Join your Convoke game now!]({game.game_link})"
@@ -796,7 +798,7 @@ class TestModelGame:
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your game details.",
             "fields": [
@@ -817,7 +819,7 @@ class TestModelGame:
             "type": "rich",
             "flags": 0,
         }
-        assert game.to_embed(dm=True).to_dict() == {
+        assert game.to_dict().to_embed(guild=None, dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "# [Join your Convoke game now!]"
@@ -862,7 +864,7 @@ class TestModelGame:
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
-        assert game.to_embed().to_dict() == {
+        assert game.to_dict().to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "Please check your Direct Messages for your game details.\n\n"
@@ -886,7 +888,7 @@ class TestModelGame:
             "type": "rich",
             "flags": 0,
         }
-        assert game.to_embed(dm=True).to_dict() == {
+        assert game.to_dict().to_embed(guild=None, dm=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 f"# [Join your Convoke game now!]({game.game_link})"
@@ -942,7 +944,7 @@ class TestModelGame:
         dg.voice_channels = [dc]
         suggested_vc = VoiceChannelSuggestion(random_empty=dc.id)
 
-        assert game.to_embed(guild=dg, suggested_vc=suggested_vc).to_dict() == {
+        assert game.to_dict().to_embed(guild=dg, suggested_vc=suggested_vc).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": "Please check your Direct Messages for your game details.",
             "fields": [
@@ -968,7 +970,7 @@ class TestModelGame:
             "type": "rich",
             "flags": 0,
         }
-        assert game.to_embed(guild=dg, dm=True, suggested_vc=suggested_vc).to_dict() == {
+        assert game.to_dict().to_embed(guild=dg, dm=True, suggested_vc=suggested_vc).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 f"# [Join your Convoke game now!]({game.game_link})"
@@ -1005,7 +1007,7 @@ class TestModelGame:
 
         # Setting already_picked to True will change the wording in the embed just a bit:
         suggested_vc.already_picked = 555
-        assert game.to_embed(guild=dg, dm=True, suggested_vc=suggested_vc).to_dict() == {
+        assert game.to_dict().to_embed(guild=dg, dm=True, suggested_vc=suggested_vc).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 f"# [Join your Convoke game now!]({game.game_link})"
@@ -1056,7 +1058,7 @@ class TestModelGame:
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
-        assert game.to_embed(dm=True, rematch=True).to_dict() == {
+        assert game.to_dict().to_embed(guild=None, dm=True, rematch=True).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "This is a rematch of a previous game. "
@@ -1091,7 +1093,7 @@ class TestModelGame:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(bracket=GameBracket.NONE.value, guild=guild, channel=channel)
-        assert game.bracket_title == ""
+        assert game.to_dict().bracket_title == ""
 
     def test_embed_players_with_supporter_emoji(self, factories: Factories) -> None:
         guild = factories.guild.create(motd=None)
@@ -1104,7 +1106,7 @@ class TestModelGame:
         emojis = [supporter_emoji]
         supporters = {player.xid}
 
-        result = game.embed_players(emojis=emojis, supporters=supporters)
+        result = game.to_dict().embed_players(emojis=emojis, supporters=supporters)
         assert f"{supporter_emoji}" in result
         assert f"<@{player.xid}>" in result
 
@@ -1118,13 +1120,13 @@ class TestModelGame:
         game = factories.game.create(guild=guild, channel=channel)
         player = factories.user.create(game=game, xid=12345)
 
-        mocker.patch("spellbot.models.game.settings.OWNER_XID", 12345)
+        mocker.patch("spellbot.data.game_data.settings.OWNER_XID", 12345)
 
         owner_emoji = MagicMock(spec=discord.Emoji)
         owner_emoji.name = "spellbot_creator"
         emojis = [owner_emoji]
 
-        result = game.embed_players(emojis=emojis, supporters=set())
+        result = game.to_dict().embed_players(emojis=emojis, supporters=set())
         assert f"{owner_emoji}" in result
         assert f"<@{player.xid}>" in result
 
@@ -1152,6 +1154,6 @@ class TestModelGame:
         dg.id = guild.xid
         suggested_vc = VoiceChannelSuggestion()  # Both already_picked and random_empty are None
 
-        embed = game.to_embed(guild=dg, dm=True, suggested_vc=suggested_vc)
+        embed = game.to_dict().to_embed(guild=dg, dm=True, suggested_vc=suggested_vc)
         # Should not include voice channel suggestion text
         assert "voice channel" not in embed.description.lower()

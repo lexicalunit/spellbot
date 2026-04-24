@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -14,8 +14,6 @@ from tests.mocks.girudo import GirudoTestData, MockHTTPClient, MockHTTPResponse,
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-
-    from spellbot.models import GameDict
 
 
 @pytest.fixture(autouse=True)
@@ -575,7 +573,7 @@ class TestGirudoGameCreation:
         response = MockHTTPResponse(201, GirudoTestData.create_game_response())
         client = MockHTTPClient(response)
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         link = await girudo.create_game(client, GirudoTestData.AUTH_TOKEN, game)
 
         assert link is not None
@@ -598,7 +596,7 @@ class TestGirudoGameCreation:
         response = MockHTTPResponse(201, {"data": {}})
         client = MockHTTPClient(response)
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         link = await girudo.create_game(client, GirudoTestData.AUTH_TOKEN, game)
         assert link is None
 
@@ -618,7 +616,7 @@ class TestGirudoGameCreation:
         response = MockHTTPResponse(400, {"message": "bad request"})
         client = MockHTTPClient(response)
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         link = await girudo.create_game(client, GirudoTestData.AUTH_TOKEN, game)
         assert link is None
 
@@ -641,7 +639,7 @@ class TestGirudoGameCreation:
         response = MockHTTPResponse(201, GirudoTestData.create_game_response())
         client = MockHTTPClient(response)
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         link = await girudo.create_game(
             client,
             GirudoTestData.AUTH_TOKEN,
@@ -656,7 +654,7 @@ class TestGirudoGameCreation:
         """Test create_game when GIRUDO_CREATE_URL not configured."""
         monkeypatch.setattr(girudo.settings, "GIRUDO_CREATE_URL", None)
         client = MockHTTPClient(MockHTTPResponse(200, {}))
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         link = await girudo.create_game(client, GirudoTestData.AUTH_TOKEN, game)
         assert link is None
 
@@ -670,7 +668,7 @@ class TestGirudoGameCreation:
         )
         client = MockHTTPClient(MockHTTPResponse(200, {}))
         client.post = AsyncMock(side_effect=RuntimeError("Network error"))
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         link = await girudo.create_game(client, GirudoTestData.AUTH_TOKEN, game)
         assert link is None
 
@@ -790,7 +788,7 @@ class TestGirudoGenerateLink:
     async def test_generate_link_no_accounts(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(girudo, "get_accounts", list)
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         result = await girudo.generate_link(game)
 
         assert result.link is None
@@ -825,7 +823,7 @@ class TestGirudoGenerateLink:
         monkeypatch.setattr(girudo, "fetch_and_cache_formats", mock_func_cahce_formats)
         monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", mock_func_cahce_tcg_names)
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         result = await girudo.generate_link(game)
 
         assert result.link is not None
@@ -861,7 +859,7 @@ class TestGirudoGenerateLink:
         monkeypatch.setattr(girudo, "fetch_and_cache_formats", lambda c, t: {})
         monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", lambda c, t: {})
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         result = await girudo.generate_link(game)
 
         assert result.link is not None
@@ -900,7 +898,7 @@ class TestGirudoGenerateLink:
         monkeypatch.setattr(girudo, "fetch_and_cache_formats", AsyncMock(return_value={}))
         monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", AsyncMock(return_value={}))
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         result = await girudo.generate_link(game)
 
         assert result.link is not None
@@ -925,7 +923,7 @@ class TestGirudoGenerateLink:
 
         monkeypatch.setattr(girudo, "authenticate", mock_auth)
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         result = await girudo.generate_link(game)
 
         assert result.link is None
@@ -956,7 +954,7 @@ class TestGirudoGenerateLink:
         monkeypatch.setattr(girudo, "fetch_and_cache_formats", AsyncMock(return_value={}))
         monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", AsyncMock(return_value={}))
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         result = await girudo.generate_link(game)
 
         assert result.link is None
@@ -1011,7 +1009,7 @@ class TestGirudoGenerateLink:
         monkeypatch.setattr(girudo, "fetch_and_cache_formats", mock_formats)
         monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", mock_tcg)
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         result = await girudo.generate_link(game)
 
         assert result.link is not None
@@ -1067,7 +1065,7 @@ class TestGirudoGenerateLink:
         monkeypatch.setattr(girudo, "fetch_and_cache_formats", mock_formats)
         monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", mock_tcg)
 
-        game = cast("GameDict", create_mock_game())
+        game = create_mock_game()
         result = await girudo.generate_link(game)
 
         assert result.link is not None

@@ -12,27 +12,23 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import and_, asc, column, or_
 from sqlalchemy.sql.functions import count
 
+from spellbot.data import PlayerDataDict
 from spellbot.database import DatabaseSession
 from spellbot.models import (
     Block,
     Game,
-    GameDict,
     GameStatus,
     Play,
-    PlayerDataDict,
     Post,
     Queue,
     QueueDict,
-    User,
     UserAward,
     Watch,
 )
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
-    import discord
-
-    from spellbot.operations import VoiceChannelSuggestion
+    from spellbot.data import GameData
 
 
 logger = logging.getLogger(__name__)
@@ -41,38 +37,42 @@ MAX_GAME_LINK_LEN = Game.game_link.property.columns[0].type.length  # type: igno
 
 
 class GamesService:
-    game: Game | None = None
+    @sync_to_async()
+    @tracer.wrap()
+    def get(self, game_id: int) -> GameData | None:
+        """Fetch the game data by game id."""
+        game: Game | None = DatabaseSession.get(Game, game_id)
+        return game.to_dict() if game else None
 
     @sync_to_async()
     @tracer.wrap()
-    def select(self, game_id: int) -> GameDict | None:
-        self.game = DatabaseSession.get(Game, game_id)
-        return self.game.to_dict() if self.game else None
+    def get_by_voice_xid(self, voice_xid: int) -> GameData | None:
+        """Fetch the game data by associated discord voice channel id."""
+        game: Game | None = (
+            DatabaseSession.query(Game).filter(Game.voice_xid == voice_xid).one_or_none()
+        )
+        return game.to_dict() if game else None
 
     @sync_to_async()
     @tracer.wrap()
-    def select_by_voice_xid(self, voice_xid: int) -> bool:
-        self.game = DatabaseSession.query(Game).filter(Game.voice_xid == voice_xid).one_or_none()
-        return bool(self.game)
-
-    @sync_to_async()
-    @tracer.wrap()
-    def select_by_message_xid(self, message_xid: int) -> GameDict | None:
-        self.game = (
+    def get_by_message_xid(self, message_xid: int) -> GameData | None:
+        """Fetch the game data by associated discord message id."""
+        game: Game | None = (
             DatabaseSession.query(Game)
             .join(Post)
             .filter(Post.message_xid == message_xid)
             .one_or_none()
         )
-        return self.game.to_dict() if self.game else None
+        return game.to_dict() if game else None
 
     @sync_to_async()
     @tracer.wrap()
-    def add_player(self, player_xid: int) -> None:
-        assert self.game
-
-        rows = DatabaseSession.query(Queue).filter(Queue.game_id == self.game.id).count()
-        assert rows + 1 <= self.game.seats
+    def add_player(self, game_data: GameData, player_xid: int) -> GameData:
+        """Add the player with the given id to the given game."""
+        # Double check that the number of players + 1 doesn't go over the seat limit,
+        # this should in theory never happen. If we see this assertion failing, investigate.
+        players: int = DatabaseSession.query(Queue).filter(Queue.game_id == game_data.id).count()
+        assert players + 1 <= game_data.seats
 
         # upsert into queues
         DatabaseSession.execute(
@@ -81,8 +81,8 @@ class GamesService:
                 [
                     {
                         "user_xid": player_xid,
-                        "game_id": self.game.id,
-                        "og_guild_xid": self.game.guild_xid,
+                        "game_id": game_data.id,
+                        "og_guild_xid": game_data.guild_xid,
                     },
                 ],
             )
@@ -93,12 +93,15 @@ class GamesService:
         # This operation should "dirty" the Game, so we need to update its updated_at.
         query = (
             update(Game)  # type: ignore
-            .where(Game.id == self.game.id)
+            .where(Game.id == game_data.id)
             .values(updated_at=datetime.now(tz=UTC))
-            .execution_options(synchronize_session=False)
+            .returning(Game)  # type: ignore
+            .execution_options(synchronize_session="fetch")
         )
-        DatabaseSession.execute(query)
+        result = DatabaseSession.scalars(query)
+        updated_game: Game = result.one()
         DatabaseSession.commit()
+        return updated_game.to_dict()
 
     @sync_to_async()
     @tracer.wrap()
@@ -116,10 +119,11 @@ class GamesService:
         service: int,
         create_new: bool = False,
         blind: bool = False,
-    ) -> bool:
-        existing: Game | None = None
+    ) -> tuple[bool, GameData]:
+        """Create or update a new game matching the given criteria."""
+        existing_game: Game | None = None
         if not create_new:
-            existing = self.find_existing(
+            existing_game = self._find_existing(
                 guild_xid=guild_xid,
                 channel_xid=channel_xid,
                 author_xid=author_xid,
@@ -133,8 +137,8 @@ class GamesService:
 
         new: bool
         game: Game
-        if existing:
-            game = existing
+        if existing_game:
+            game = existing_game
             new = False
         else:
             game = Game(
@@ -169,11 +173,10 @@ class GamesService:
         )
         DatabaseSession.commit()
 
-        self.game = game
-        return new
+        return new, game.to_dict()
 
     @tracer.wrap()
-    def find_existing(
+    def _find_existing(
         self,
         *,
         guild_xid: int,
@@ -186,6 +189,7 @@ class GamesService:
         bracket: int,
         service: int,
     ) -> Game | None:
+        """Find a suitable existing game with the given criteria if one exists."""
         required_seats = 1 + len(friends)
 
         player_count = count(Queue.user_xid).over(partition_by=Game.id)
@@ -214,7 +218,7 @@ class GamesService:
             .alias("inner")
         )
         outer = aliased(Game, inner)
-        found = DatabaseSession.query(outer).filter(
+        found_game = DatabaseSession.query(outer).filter(
             or_(
                 column("player_count") == 0,
                 and_(
@@ -230,8 +234,9 @@ class GamesService:
             for row in DatabaseSession.query(Block).filter(Block.user_xid.in_(joiners))
         ]
 
+        # Return the first game that doesn't match up players who have blocked each other
         game: Game
-        for game in found.all():
+        for game in found_game.all():
             players = [player.xid for player in game.players]
             if any(xid in players for xid in xids_blocked_by_joiners):
                 continue  # a joiner has blocked one of the players
@@ -251,102 +256,88 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def to_embed(
+    def add_post(
         self,
-        *,
-        guild: discord.Guild | None,
-        dm: bool = False,
-        suggested_vc: VoiceChannelSuggestion | None = None,
-        rematch: bool = False,
-        emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
-        supporters: set[int] | None = None,
-    ) -> discord.Embed:
-        assert self.game
-        return self.game.to_embed(
-            guild=guild,
-            dm=dm,
-            suggested_vc=suggested_vc,
-            rematch=rematch,
-            emojis=emojis,
-            supporters=supporters,
-        )
-
-    @sync_to_async()
-    @tracer.wrap()
-    def add_post(self, guild_xid: int, channel_xid: int, message_xid: int) -> None:
-        assert self.game
-        DatabaseSession.execute(
+        game_data: GameData,
+        guild_xid: int,
+        channel_xid: int,
+        message_xid: int,
+    ) -> GameData:
+        """Associate the given game with the given Discord post metadata."""
+        query = (
             insert(Post)
             .values(
                 [
                     {
-                        "game_id": self.game.id,
+                        "game_id": game_data.id,
                         "guild_xid": guild_xid,
                         "channel_xid": channel_xid,
                         "message_xid": message_xid,
                     },
                 ],
             )
-            .on_conflict_do_nothing(),
+            .on_conflict_do_nothing()
+            .returning(Post)
         )
+        result = DatabaseSession.scalars(query)
+        new_post: Post | None = result.one_or_none()
         DatabaseSession.commit()
-
-    @sync_to_async()
-    @tracer.wrap()
-    def fully_seated(self) -> bool:
-        assert self.game
-        rows = DatabaseSession.query(Queue).filter(Queue.game_id == self.game.id).count()
-        return rows == self.game.seats
+        if new_post is not None:
+            game_data.posts.append(new_post.to_dict())
+        return game_data
 
     @sync_to_async
     @tracer.wrap()
-    def other_game_ids(self) -> list[int]:
-        """Use the currently selected game, return any other games with overlapping players."""
-        assert self.game
-        player_xids = self.game.player_xids
+    def other_game_ids(self, game_data: GameData) -> list[int]:
+        """Return the id of any other games with overlapping players."""
+        player_xids = [player.xid for player in game_data.players]
         rows = DatabaseSession.query(Queue.game_id).filter(
             Queue.user_xid.in_(player_xids),
-            Queue.game_id != self.game.id,
+            Queue.game_id != game_data.id,
         )
         return [int(row[0]) for row in rows if row[0]]
 
     @sync_to_async()
     @tracer.wrap()
-    def shrink_game(self) -> None:
+    def shrink_game(self, game_data: GameData) -> GameData:
         """Shrink the number of seats in a game to the current number of players."""
-        assert self.game
-        self.game.seats = self.game.player_count
+        query = (
+            update(Game)  # type: ignore
+            .where(Game.id == game_data.id)
+            .values(seats=len(game_data.players))
+            .returning(Game)  # type: ignore
+        )
+        result = DatabaseSession.scalars(query)
+        updated_game: Game = result.one()
         DatabaseSession.commit()
-
-    @sync_to_async()
-    @tracer.wrap()
-    def create_plays(self) -> None:
-        assert self.game
+        return updated_game.to_dict()
 
     @sync_to_async()
     @tracer.wrap()
     def make_ready(
         self,
+        game_data: GameData,
         game_link: str | None,
         password: str | None,
         pins: list[str],
-    ) -> int:
-        assert self.game
+    ) -> GameData:
+        """Start the pending game."""
+        game: Game = DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
         assert len(game_link or "") <= MAX_GAME_LINK_LEN
         queues: list[QueueDict] = [
             queue.to_dict()
-            for queue in DatabaseSession.query(Queue).filter(Queue.game_id == self.game.id).all()
+            for queue in DatabaseSession.query(Queue).filter(Queue.game_id == game.id).all()
         ]
 
         # update game's state
-        self.game.game_link = game_link  # column is "game_link" for legacy reasons
-        self.game.password = password
-        self.game.status = GameStatus.STARTED.value
-        self.game.started_at = datetime.now(tz=UTC)
+        game.game_link = game_link  # column is "game_link" for legacy reasons  # type: ignore
+        game.password = password  # type: ignore
+        game.status = GameStatus.STARTED.value
+        game.started_at = datetime.now(tz=UTC)  # type: ignore
 
         if not queues:  # Not sure this is possible, but just in case.
             DatabaseSession.commit()
-            return cast("int", self.game.id)
+            return game.to_dict()
 
         # upsert into plays
         DatabaseSession.execute(
@@ -355,7 +346,7 @@ class GamesService:
                 [
                     {
                         "user_xid": queue["user_xid"],
-                        "game_id": self.game.id,
+                        "game_id": game.id,
                         "og_guild_xid": queue["og_guild_xid"],
                         "pin": pins[i],
                     }
@@ -371,7 +362,7 @@ class GamesService:
             .values(
                 [
                     {
-                        "guild_xid": self.game.guild_xid,
+                        "guild_xid": game.guild_xid,
                         "user_xid": queue["user_xid"],
                     }
                     for queue in queues
@@ -387,35 +378,17 @@ class GamesService:
         )
 
         DatabaseSession.commit()
-        return cast("int", self.game.id)
+        return game.to_dict()
 
     @sync_to_async()
     @tracer.wrap()
-    def player_xids(self) -> list[int]:
-        assert self.game
-        return self.game.player_xids
-
-    @sync_to_async()
-    @tracer.wrap()
-    def player_pins(self) -> dict[int, str | None]:
-        assert self.game
-        return self.game.player_pins
-
-    @sync_to_async()
-    @tracer.wrap()
-    def player_names(self) -> dict[int, str | None]:
-        assert self.game
-        return self.game.player_names
-
-    @sync_to_async()
-    @tracer.wrap()
-    def watch_notes(self, player_xids: list[int]) -> dict[int, str | None]:
-        assert self.game
+    def watch_notes(self, game_data: GameData, player_xids: list[int]) -> dict[int, str | None]:
+        """Return any moderator watch notes for the given game."""
         watched = (
             DatabaseSession.query(Watch)
             .filter(
                 and_(
-                    Watch.guild_xid == self.game.guild_xid,
+                    Watch.guild_xid == game_data.guild_xid,
                     Watch.user_xid.in_(player_xids),
                 ),
             )
@@ -425,102 +398,48 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def set_voice(self, *, voice_xid: int, voice_invite_link: str | None = None) -> None:
-        assert self.game
-        self.game.voice_xid = voice_xid
-        self.game.voice_invite_link = voice_invite_link
+    def set_voice(
+        self,
+        game_data: GameData,
+        *,
+        voice_xid: int,
+        voice_invite_link: str | None = None,
+    ) -> GameData:
+        """Assign the given voice channel information to the given game."""
+        query = (
+            update(Game)  # type: ignore
+            .where(Game.id == game_data.id)
+            .values(voice_xid=voice_xid, voice_invite_link=voice_invite_link)
+            .returning(Game)  # type: ignore
+        )
+        result = DatabaseSession.scalars(query)
+        updated_game: Game = result.one()
         DatabaseSession.commit()
+        return updated_game.to_dict()
 
     @sync_to_async()
     @tracer.wrap()
-    def filter_blocked_list(self, author_xid: int, other_xids: list[int]) -> list[int]:
-        """Given an author, filters out any blocked players from a list of others."""
-        users_author_has_blocked = [
-            cast("int", row.blocked_user_xid)
-            for row in DatabaseSession.query(Block).filter(Block.user_xid == author_xid)
-            if row
-        ]
-        users_who_blocked_author_or_other = [
-            cast("int", row.user_xid)
-            for row in DatabaseSession.query(Block).filter(
-                Block.blocked_user_xid.in_([author_xid, *other_xids]),
-            )
-        ]
-        return list(
-            set(other_xids)
-            - set(users_author_has_blocked)
-            - set(users_who_blocked_author_or_other),
-        )
-
-    @sync_to_async()
-    @tracer.wrap()
-    def filter_pending_games(self, user_xids: list[int]) -> list[int]:
-        rows = (
-            DatabaseSession.query(
-                Queue.user_xid,
-                func.count(Queue.user_xid).label("pending"),
-            )
-            .join(Game)
-            .filter(Game.deleted_at.is_(None))
-            .group_by(Queue.user_xid)
-        )
-        counts = {row[0]: row[1] for row in rows if row[0]}
-
-        return [
-            user_xid
-            for user_xid in user_xids
-            if counts.get(user_xid, 0) + 1 < settings.MAX_PENDING_GAMES
-        ]
-
-    @sync_to_async()
-    @tracer.wrap()
-    def blocked(self, author_xid: int) -> bool:
-        assert self.game
+    def blocked(self, game_data: GameData, user_xid: int) -> bool:
+        """Return True iff the given user should not be allowed in the given game."""
         users_author_has_blocked = [
             row.blocked_user_xid
-            for row in DatabaseSession.query(Block).filter(Block.user_xid == author_xid)
+            for row in DatabaseSession.query(Block).filter(Block.user_xid == user_xid)
         ]
         users_who_blocked_author = [
             row.user_xid
             for row in DatabaseSession.query(Block).filter(
-                Block.blocked_user_xid == author_xid,
+                Block.blocked_user_xid == user_xid,
             )
         ]
-        player_xids = self.game.player_xids
+        player_xids = [player.xid for player in game_data.players]
         if any(xid in player_xids for xid in users_author_has_blocked):
             return True
         return any(xid in player_xids for xid in users_who_blocked_author)
 
     @sync_to_async()
     @tracer.wrap()
-    def players_included(self, player_xid: int) -> bool:
-        """
-        Players that played this game.
-
-        For current players and pending games, use the players relationship instead.
-        """
-        assert self.game
-        record = (
-            DatabaseSession.query(Play)
-            .filter(
-                and_(
-                    Play.user_xid == player_xid,
-                    Play.game_id == self.game.id,
-                ),
-            )
-            .one_or_none()
-        )
-        return bool(record)
-
-    @sync_to_async()
-    @tracer.wrap()
-    def to_dict(self) -> GameDict:
-        assert self.game
-        return self.game.to_dict()
-
-    @sync_to_async()
-    @tracer.wrap()
-    def inactive_games(self, guild_xid: int | None = None) -> list[GameDict]:
+    def inactive_games(self, guild_xid: int | None = None) -> list[GameData]:
+        """Return any games that should be considered abandoned for inactivity."""
         limit = datetime.now(tz=UTC) - timedelta(minutes=settings.EXPIRE_TIME_M)
         filters = [
             Game.status == GameStatus.PENDING.value,
@@ -545,6 +464,7 @@ class GamesService:
     @sync_to_async()
     @tracer.wrap()
     def delete_games(self, game_ids: list[int]) -> int:
+        """Delete the games with the given ids."""
         query = (
             update(Game)  # type: ignore
             .where(Game.id.in_(game_ids))
@@ -563,6 +483,7 @@ class GamesService:
     @sync_to_async()
     @tracer.wrap()
     def message_xids(self, game_ids: list[int]) -> list[int]:
+        """Return the discord post message ids for the given game ids."""
         query = select(
             Post.message_xid,  # type: ignore
         ).where(Post.game_id.in_(game_ids))
@@ -581,8 +502,9 @@ class GamesService:
 
     @sync_to_async()
     @tracer.wrap()
-    def select_last_game(self, user_xid: int, guild_xid: int) -> GameDict | None:
-        self.game = (
+    def get_last_game(self, user_xid: int, guild_xid: int) -> GameData | None:
+        """Get the last game played by the given user in the given guild."""
+        last_game = (
             DatabaseSession.query(Game)
             .filter(
                 Game.guild_xid == guild_xid,
@@ -594,13 +516,14 @@ class GamesService:
             .order_by(Game.created_at.desc())
             .first()
         )
-        return self.game.to_dict() if self.game else None
+        return last_game.to_dict() if last_game else None
 
+    # A helper function for Convoke game creation. Would be nice to refactor to remove!
     @sync_to_async()
     @tracer.wrap()
-    def player_data(self, game_id: int) -> list[PlayerDataDict]:
+    def player_convoke_data(self, game_id: int) -> list[PlayerDataDict]:
+        """Return the player data for the given game id."""
         game = DatabaseSession.query(Game).filter(Game.id == game_id).first()
         if not game:
             return []
-        players = DatabaseSession.query(User).filter(User.xid.in_(game.player_xids)).all()
-        return [PlayerDataDict(xid=p.xid, name=p.name) for p in players]
+        return [PlayerDataDict(xid=p.xid, name=p.name) for p in game.players]

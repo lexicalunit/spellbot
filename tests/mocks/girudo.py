@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Self
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any, Self, cast
 
 from httpx import AsyncClient
+
+from spellbot.data import GameData, UserData
+from spellbot.enums import GameBracket, GameFormat, GameService
+from spellbot.models import ChannelDict, GameStatus
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -173,9 +178,70 @@ class GirudoTestData:
         }
 
 
-def create_mock_game(game_id: int = 42, game_format: int = 1) -> dict[str, Any]:
-    """Create a mock game dictionary for testing."""
-    return {
-        "id": game_id,
-        "format": game_format,
-    }
+def create_mock_game(
+    game_id: int = 42,
+    game_format: int | None = None,
+    service: int | None = None,
+    seats: int = 4,
+    guild_xid: int = 12345,
+    channel_xid: int = 67890,
+    bracket: int | None = None,
+    **kwargs: Any,
+) -> GameData:
+    """Create a mock GameData object for testing."""
+    now = datetime.now(tz=UTC)
+    return GameData(
+        id=game_id,
+        created_at=now,
+        updated_at=now,
+        started_at=None,
+        deleted_at=None,
+        guild_xid=guild_xid,
+        guild={  # type: ignore[arg-type]
+            "xid": guild_xid,
+            "name": "Test Guild",
+            "notice": None,
+            "motd": None,
+            "show_links": True,
+            "enable_mythic_track": True,
+        },
+        channel_xid=channel_xid,
+        channel=cast(
+            "ChannelDict",
+            {
+                "xid": channel_xid,
+                "name": "test-channel",
+                "motd": None,
+            },
+        ),
+        voice_xid=None,
+        voice_invite_link=None,
+        seats=seats,
+        status=GameStatus.PENDING.value,
+        format=game_format if game_format is not None else GameFormat.COMMANDER.value,
+        bracket=bracket if bracket is not None else GameBracket.NONE.value,
+        service=service if service is not None else GameService.CONVOKE.value,
+        game_link=None,
+        password=None,
+        rules=None,
+        blind=False,
+        players=[],
+        posts=[],
+        player_pins={},
+    )
+
+
+def create_mock_user(
+    xid: int = 123,
+    name: str = "TestPlayer",
+    banned: bool = False,
+) -> UserData:
+    """Create a mock UserData object for testing."""
+    now = datetime.now(tz=UTC)
+    return UserData(
+        xid=xid,
+        created_at=now,
+        updated_at=now,
+        name=name,
+        banned=banned,
+    )

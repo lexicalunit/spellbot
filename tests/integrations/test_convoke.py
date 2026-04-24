@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -15,9 +14,7 @@ from spellbot.integrations.convoke import (
     generate_link,
     passphrase,
 )
-
-if TYPE_CHECKING:
-    from spellbot.models import GameDict
+from tests.mocks import create_mock_game
 
 
 class TestConvokeGameFormat:
@@ -78,16 +75,13 @@ class TestFetchConvokeLink:
         mock_response.json.return_value = {"url": "https://convoke.gg/game/123"}
         mock_client.post = AsyncMock(return_value=mock_response)
 
-        game = cast(
-            "GameDict",
-            {
-                "id": 42,
-                "format": GameFormat.COMMANDER.value,
-                "seats": 4,
-                "guild_xid": 12345,
-                "channel_xid": 67890,
-                "bracket": GameBracket.NONE.value,
-            },
+        game = create_mock_game(
+            game_id=42,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
         )
 
         players = [
@@ -98,7 +92,7 @@ class TestFetchConvokeLink:
         with (
             patch.object(
                 convoke_module.services.games,
-                "player_data",
+                "player_convoke_data",
                 AsyncMock(return_value=players),
             ),
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
@@ -125,22 +119,19 @@ class TestFetchConvokeLink:
         mock_response.json.return_value = {"url": "https://convoke.gg/game/456"}
         mock_client.post = AsyncMock(return_value=mock_response)
 
-        game = cast(
-            "GameDict",
-            {
-                "id": 99,
-                "format": GameFormat.COMMANDER.value,
-                "seats": 4,
-                "guild_xid": 12345,
-                "channel_xid": 67890,
-                "bracket": GameBracket.BRACKET_2.value,
-            },
+        game = create_mock_game(
+            game_id=99,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.BRACKET_2.value,
         )
 
         with (
             patch.object(
                 convoke_module.services.games,
-                "player_data",
+                "player_convoke_data",
                 AsyncMock(return_value=[]),
             ),
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
@@ -160,22 +151,19 @@ class TestFetchConvokeLink:
         mock_response.json.return_value = {"url": "https://convoke.gg/game/456"}
         mock_client.post = AsyncMock(return_value=mock_response)
 
-        game = cast(
-            "GameDict",
-            {
-                "id": 99,
-                "format": GameFormat.PRE_CONS.value,
-                "seats": 4,
-                "guild_xid": 12345,
-                "channel_xid": 67890,
-                "bracket": GameBracket.NONE.value,
-            },
+        game = create_mock_game(
+            game_id=99,
+            game_format=GameFormat.PRE_CONS.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
         )
 
         with (
             patch.object(
                 convoke_module.services.games,
-                "player_data",
+                "player_convoke_data",
                 AsyncMock(return_value=[]),
             ),
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
@@ -195,22 +183,19 @@ class TestFetchConvokeLink:
         mock_response.json.return_value = {"url": "https://convoke.gg/game/789"}
         mock_client.post = AsyncMock(return_value=mock_response)
 
-        game = cast(
-            "GameDict",
-            {
-                "id": 101,
-                "format": GameFormat.COMMANDER.value,
-                "seats": 4,
-                "guild_xid": 12345,
-                "channel_xid": 67890,
-                "bracket": GameBracket.NONE.value,
-            },
+        game = create_mock_game(
+            game_id=101,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
         )
 
         with (
             patch.object(
                 convoke_module.services.games,
-                "player_data",
+                "player_convoke_data",
                 AsyncMock(return_value=[]),
             ),
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
@@ -226,10 +211,7 @@ class TestFetchConvokeLink:
 class TestGenerateLink:
     @pytest.mark.asyncio
     async def test_generate_link_no_api_key(self) -> None:
-        game = cast(
-            "GameDict",
-            {"id": 1, "format": GameFormat.COMMANDER.value},
-        )
+        game = create_mock_game(game_id=1, game_format=GameFormat.COMMANDER.value)
 
         with patch.object(convoke_module.settings, "CONVOKE_API_KEY", ""):
             result = await generate_link(game, pins=None)
@@ -238,16 +220,13 @@ class TestGenerateLink:
 
     @pytest.mark.asyncio
     async def test_generate_link_success(self) -> None:
-        game = cast(
-            "GameDict",
-            {
-                "id": 1,
-                "format": GameFormat.COMMANDER.value,
-                "seats": 4,
-                "guild_xid": 12345,
-                "channel_xid": 67890,
-                "bracket": GameBracket.NONE.value,
-            },
+        game = create_mock_game(
+            game_id=1,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
         )
 
         with (
@@ -265,16 +244,13 @@ class TestGenerateLink:
 
     @pytest.mark.asyncio
     async def test_generate_link_success_with_password_from_response(self) -> None:
-        game = cast(
-            "GameDict",
-            {
-                "id": 1,
-                "format": GameFormat.COMMANDER.value,
-                "seats": 4,
-                "guild_xid": 12345,
-                "channel_xid": 67890,
-                "bracket": GameBracket.NONE.value,
-            },
+        game = create_mock_game(
+            game_id=1,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
         )
 
         with (
@@ -294,16 +270,13 @@ class TestGenerateLink:
 
     @pytest.mark.asyncio
     async def test_generate_link_success_with_passphrase(self) -> None:
-        game = cast(
-            "GameDict",
-            {
-                "id": 1,
-                "format": GameFormat.COMMANDER.value,
-                "seats": 4,
-                "guild_xid": 12345,
-                "channel_xid": 67890,
-                "bracket": GameBracket.NONE.value,
-            },
+        game = create_mock_game(
+            game_id=1,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
         )
 
         with (
@@ -322,16 +295,13 @@ class TestGenerateLink:
     @pytest.mark.asyncio
     async def test_generate_link_retries_on_failure_then_succeeds(self) -> None:
         """Test that generate_link retries after failure and succeeds on second attempt."""
-        game = cast(
-            "GameDict",
-            {
-                "id": 1,
-                "format": GameFormat.COMMANDER.value,
-                "seats": 4,
-                "guild_xid": 12345,
-                "channel_xid": 67890,
-                "bracket": GameBracket.NONE.value,
-            },
+        game = create_mock_game(
+            game_id=1,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
         )
 
         # Create a mock that fails then succeeds (to test the retry path)
@@ -352,7 +322,7 @@ class TestGenerateLink:
             patch.object(convoke_module, "passphrase", return_value=None),
             patch("httpx.AsyncClient") as mock_client_class,
             patch.object(convoke_module, "add_span_error"),
-            patch.object(convoke_module.services.games, "player_data", mock_player_data),
+            patch.object(convoke_module.services.games, "player_convoke_data", mock_player_data),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -365,16 +335,13 @@ class TestGenerateLink:
     @pytest.mark.asyncio
     async def test_generate_link_fails_after_all_retries(self) -> None:
         """Test that generate_link returns None after exhausting all retry attempts."""
-        game = cast(
-            "GameDict",
-            {
-                "id": 1,
-                "format": GameFormat.COMMANDER.value,
-                "seats": 4,
-                "guild_xid": 12345,
-                "channel_xid": 67890,
-                "bracket": GameBracket.NONE.value,
-            },
+        game = create_mock_game(
+            game_id=1,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
         )
 
         mock_client = MagicMock(spec=httpx.AsyncClient)
@@ -388,7 +355,7 @@ class TestGenerateLink:
             patch.object(convoke_module, "passphrase", return_value=None),
             patch("httpx.AsyncClient") as mock_client_class,
             patch.object(convoke_module, "add_span_error"),
-            patch.object(convoke_module.services.games, "player_data", mock_player_data),
+            patch.object(convoke_module.services.games, "player_convoke_data", mock_player_data),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -402,16 +369,13 @@ class TestGenerateLink:
     @pytest.mark.asyncio
     async def test_generate_link_returns_none_when_data_is_empty(self) -> None:
         """Test that generate_link returns None when fetch_convoke_link returns empty dict."""
-        game = cast(
-            "GameDict",
-            {
-                "id": 1,
-                "format": GameFormat.COMMANDER.value,
-                "seats": 4,
-                "guild_xid": 12345,
-                "channel_xid": 67890,
-                "bracket": GameBracket.NONE.value,
-            },
+        game = create_mock_game(
+            game_id=1,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
         )
 
         # Mock the response to return an empty dict (falsy)
@@ -428,7 +392,7 @@ class TestGenerateLink:
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
             patch.object(convoke_module, "passphrase", return_value=None),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(convoke_module.services.games, "player_data", mock_player_data),
+            patch.object(convoke_module.services.games, "player_convoke_data", mock_player_data),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -440,16 +404,13 @@ class TestGenerateLink:
     @pytest.mark.asyncio
     async def test_generate_link_zero_retry_attempts(self) -> None:
         """Test that generate_link returns None when RETRY_ATTEMPTS is 0 (loop never executes)."""
-        game = cast(
-            "GameDict",
-            {
-                "id": 1,
-                "format": GameFormat.COMMANDER.value,
-                "seats": 4,
-                "guild_xid": 12345,
-                "channel_xid": 67890,
-                "bracket": GameBracket.NONE.value,
-            },
+        game = create_mock_game(
+            game_id=1,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
         )
 
         with (

@@ -12,7 +12,7 @@ from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
-    from spellbot.models import GameDict
+    from spellbot.data import GameData
 
 logger = logging.getLogger(__name__)
 
@@ -81,9 +81,9 @@ class TableStreamArgs(TypedDict):
     initialScheduleTTLInSeconds: NotRequired[int]
 
 
-def build_ts_args(game: GameDict) -> TableStreamArgs:  # pragma: no cover
-    room_name = f"SB{game['id']}"
-    sb_game_format = GameFormat(game["format"])
+def build_ts_args(game_data: GameData) -> TableStreamArgs:  # pragma: no cover
+    room_name = f"SB{game_data.id}"
+    sb_game_format = GameFormat(game_data.format)
     ts_game_type = table_stream_game_type(sb_game_format).value
     return TableStreamArgs(
         roomName=room_name,
@@ -126,11 +126,11 @@ async def fetch_table_stream_link(  # pragma: no cover
     return response.json()
 
 
-async def generate_link(game: GameDict) -> tuple[str | None, str | None]:  # pragma: no cover
+async def generate_link(game_data: GameData) -> tuple[str | None, str | None]:  # pragma: no cover
     if not settings.TABLESTREAM_AUTH_KEY:
         return None, None
 
-    ts_args = build_ts_args(game)
+    ts_args = build_ts_args(game_data)
     timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
 
     async with httpx.AsyncClient(timeout=timeout) as client:

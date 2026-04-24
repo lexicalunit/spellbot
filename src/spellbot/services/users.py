@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
 from asgiref.sync import sync_to_async
+from ddtrace.trace import tracer
 from sqlalchemy import func, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
@@ -13,33 +14,35 @@ from spellbot.database import DatabaseSession
 from spellbot.models import (
     Block,
     Game,
-    GameDict,
     GuildMember,
     Play,
     Post,
     Queue,
     User,
     UserAward,
-    UserDict,
     Verify,
     Watch,
 )
+from spellbot.settings import settings
 
 if TYPE_CHECKING:
     import discord
+
+    from spellbot.data import GameData, UserData
+
 
 logger = logging.getLogger(__name__)
 
 
 class UsersService:
-    user: User | None = None
-
     @sync_to_async()
+    @tracer.wrap()
     def upsert(
         self,
         target: discord.User | discord.Member,
         guild_xid: int | None = None,
-    ) -> UserDict:
+    ) -> UserData:
+        """Update or insert the user into the database."""
         assert hasattr(target, "id")
         xid = target.id
         max_name_len = User.name.property.columns[0].type.length  # type: ignore
@@ -78,46 +81,54 @@ class UsersService:
             DatabaseSession.execute(member_upsert, member_values)
 
         DatabaseSession.commit()
-        self.user = DatabaseSession.get(User, xid)
-        assert self.user
-        return self.user.to_dict()
+        user = DatabaseSession.get(User, xid)
+        return user.to_dict()
 
     @sync_to_async()
-    def select(self, user_xid: int) -> bool:
-        self.user = DatabaseSession.query(User).filter(User.xid == user_xid).one_or_none()
-        return bool(self.user)
+    @tracer.wrap()
+    def get(self, user_xid: int) -> UserData | None:
+        """Get the user data for the given user id."""
+        user: User | None = DatabaseSession.query(User).filter(User.xid == user_xid).one_or_none()
+        return user.to_dict() if user else None
 
     @sync_to_async()
-    def set_banned(self, banned: bool, xid: int) -> None:
+    @tracer.wrap()
+    def set_banned(self, user_xid: int, banned: bool) -> UserData:
+        """Mark the given user id as banned from using this bot."""
         values = {
-            "xid": xid,
+            "xid": user_xid,
             "name": "Unknown User",
             "updated_at": datetime.now(tz=UTC),
             "banned": banned,
         }
-        upsert = insert(User).values(**values)
-        upsert = upsert.on_conflict_do_update(
-            index_elements=[User.xid],
-            index_where=User.xid == values["xid"],
-            set_={
-                "updated_at": upsert.excluded.updated_at,
-                "banned": upsert.excluded.banned,
-            },
+        stmt = insert(User).values(**values)
+        stmt = (
+            stmt.on_conflict_do_update(
+                index_elements=[User.xid],
+                index_where=User.xid == values["xid"],
+                set_={
+                    "updated_at": stmt.excluded.updated_at,
+                    "banned": stmt.excluded.banned,
+                },
+            )
+            .values(values)
+            .returning(User)
         )
-        DatabaseSession.execute(upsert, values)
+        updated_user: User = DatabaseSession.scalars(stmt).one()
         DatabaseSession.commit()
+        return updated_user.to_dict()
 
     @sync_to_async()
-    def current_game_id(self, channel_xid: int) -> int | None:
-        """Get the current PENDING game ID for the user in the given channel."""
-        assert self.user
+    @tracer.wrap()
+    def current_game_id(self, user_data: UserData, channel_xid: int) -> int | None:
+        """Get the current PENDING game id for the user in the given channel."""
         queue = (
             DatabaseSession.query(Queue)
             .join(Game)
             .join(Post)
             .filter(
                 and_(
-                    Queue.user_xid == self.user.xid,
+                    Queue.user_xid == user_data.xid,
                     Post.channel_xid == channel_xid,
                     Game.deleted_at.is_(None),
                 ),
@@ -127,15 +138,16 @@ class UsersService:
         return queue.game_id if queue else None
 
     @sync_to_async()
-    def leave_game(self, channel_xid: int) -> None:
-        assert self.user
+    @tracer.wrap()
+    def leave_game(self, user_data: UserData, channel_xid: int) -> list[GameData]:
+        """Remove the given user from games in the given channel; Returns affected game data."""
         pending_games = (
             DatabaseSession.query(Queue)
             .join(Game)
             .join(Post)
             .filter(
                 and_(
-                    Queue.user_xid == self.user.xid,
+                    Queue.user_xid == user_data.xid,
                     Post.channel_xid == channel_xid,
                     Game.deleted_at.is_(None),
                 ),
@@ -144,7 +156,7 @@ class UsersService:
         left_game_ids = [game.game_id for game in pending_games]
 
         DatabaseSession.query(Queue).filter(
-            Queue.user_xid == self.user.xid,
+            Queue.user_xid == user_data.xid,
             Queue.game_id.in_(left_game_ids),
         ).delete()
         DatabaseSession.commit()
@@ -155,32 +167,32 @@ class UsersService:
             update(Game)  # type: ignore
             .where(Game.id.in_(left_game_ids))
             .values(updated_at=datetime.now(tz=UTC))
-            .execution_options(synchronize_session=False)
+            .returning(Game)  # type: ignore
+            .execution_options(synchronize_session="fetch")
         )
-        DatabaseSession.execute(query)
+        result = DatabaseSession.scalars(query)
+        updated_games: list[GameData] = [g.to_dict() for g in result.all()]
         DatabaseSession.commit()
+        return updated_games
 
     @sync_to_async()
-    def is_waiting(self, channel_xid: int) -> GameDict | None:
-        assert self.user
-        return self.user.waiting(channel_xid)
+    @tracer.wrap()
+    def is_waiting(self, user_data: UserData, channel_xid: int) -> GameData | None:
+        """Return pending game data for the given user in the given channel."""
+        user: User = DatabaseSession.get(User, user_data.xid)
+        return user.waiting(channel_xid)
 
     @sync_to_async()
-    def pending_games(self) -> int:
-        assert self.user
-        return self.user.pending_games()
+    @tracer.wrap()
+    def pending_games(self, user_data: UserData) -> int:
+        """Return the number of pending games the user is in."""
+        user: User = DatabaseSession.get(User, user_data.xid)
+        return user.pending_games()
 
     @sync_to_async()
-    def is_banned(self, target_xid: int | None = None) -> bool:
-        if target_xid is not None:
-            row = DatabaseSession.query(User.banned).filter(User.xid == target_xid).one_or_none()
-            return bool(row[0]) if row else False
-
-        assert self.user
-        return cast("bool", self.user.banned)
-
-    @sync_to_async()
+    @tracer.wrap()
     def block(self, author_xid: int, target_xid: int) -> None:
+        """Add a block for the given author, blocking the given target."""
         values = {
             "user_xid": author_xid,
             "blocked_user_xid": target_xid,
@@ -191,7 +203,9 @@ class UsersService:
         DatabaseSession.commit()
 
     @sync_to_async()
+    @tracer.wrap()
     def unblock(self, author_xid: int, target_xid: int) -> None:
+        """Remove a block for the given author, unblocking the given target."""
         DatabaseSession.query(Block).filter(
             and_(
                 Block.user_xid == author_xid,
@@ -201,7 +215,9 @@ class UsersService:
         DatabaseSession.commit()
 
     @sync_to_async()
+    @tracer.wrap()
     def watch(self, guild_xid: int, user_xid: int, note: str | None = None) -> None:
+        """Add the given user to the moderator watch list for a guild."""
         values: dict[str, Any] = {
             "guild_xid": guild_xid,
             "user_xid": user_xid,
@@ -224,7 +240,9 @@ class UsersService:
         DatabaseSession.commit()
 
     @sync_to_async()
+    @tracer.wrap()
     def unwatch(self, guild_xid: int, user_xid: int) -> None:
+        """Remove the given user from the moderator watch list for a guild."""
         DatabaseSession.query(Watch).filter(
             and_(
                 Watch.guild_xid == guild_xid,
@@ -234,7 +252,9 @@ class UsersService:
         DatabaseSession.commit()
 
     @sync_to_async()
-    def blocklist(self, user_xid: int) -> list[UserDict]:
+    @tracer.wrap()
+    def blocklist(self, user_xid: int) -> list[UserData]:
+        """Return the list of user ids that the given user has blocked."""
         return [
             u.to_dict()
             for u in DatabaseSession.query(User)
@@ -245,12 +265,14 @@ class UsersService:
         ]
 
     @sync_to_async()
+    @tracer.wrap()
     def move_user(  # pragma: no cover
         self,
         guild_xid: int,
         from_user_xid: int,
         to_user_xid: int,
     ) -> str | None:
+        """Move the data for a given user id to another user id."""
         from_user = DatabaseSession.query(User).filter(User.xid == from_user_xid).one_or_none()
         if not from_user:
             return "user not found"
@@ -415,7 +437,9 @@ class UsersService:
         return None
 
     @sync_to_async()
-    def get_players_by_xid(self, xids: list[int]) -> list[UserDict]:
+    @tracer.wrap()
+    def get_players_by_xid(self, xids: list[int]) -> list[UserData]:
+        """Fetch user data for the given list of user ids."""
         return [u.to_dict() for u in DatabaseSession.query(User).filter(User.xid.in_(xids)).all()]
 
     @sync_to_async()
@@ -425,6 +449,7 @@ class UsersService:
         return user.xid if user else None
 
     @sync_to_async()
+    @tracer.wrap()
     def blocked_by_count(self, user_xid: int) -> int:
         """Count how many users have blocked this user."""
         return int(
@@ -432,6 +457,7 @@ class UsersService:
         )
 
     @sync_to_async()
+    @tracer.wrap()
     def games_played_count(self, user_xid: int, guild_xid: int) -> int:
         """Count how many games this user has played in the given guild."""
         return int(
@@ -448,6 +474,7 @@ class UsersService:
         )
 
     @sync_to_async()
+    @tracer.wrap()
     def is_watched(self, user_xid: int, guild_xid: int) -> str | None:
         """Check if user is being watched in this guild, return note if so."""
         watch = (
@@ -463,6 +490,7 @@ class UsersService:
         return watch.note if watch else None
 
     @sync_to_async()
+    @tracer.wrap()
     def is_verified(self, user_xid: int, guild_xid: int) -> bool | None:
         """Check if user is verified in this guild. Returns None if no record exists."""
         verify = (
@@ -478,6 +506,7 @@ class UsersService:
         return verify.verified if verify else None
 
     @sync_to_async()
+    @tracer.wrap()
     def play_date_range(
         self,
         user_xid: int,
@@ -500,3 +529,45 @@ class UsersService:
             .one()
         )
         return result[0], result[1]
+
+    @sync_to_async()
+    @tracer.wrap()
+    def filter_blocked_list(self, author_xid: int, other_xids: list[int]) -> list[int]:
+        """Given an author, filters out any blocked players from a list of others."""
+        users_author_has_blocked = [
+            cast("int", row.blocked_user_xid)
+            for row in DatabaseSession.query(Block).filter(Block.user_xid == author_xid)
+            if row
+        ]
+        users_who_blocked_author_or_other = [
+            cast("int", row.user_xid)
+            for row in DatabaseSession.query(Block).filter(
+                Block.blocked_user_xid.in_([author_xid, *other_xids]),
+            )
+        ]
+        return list(
+            set(other_xids)
+            - set(users_author_has_blocked)
+            - set(users_who_blocked_author_or_other),
+        )
+
+    @sync_to_async()
+    @tracer.wrap()
+    def filter_pending_games(self, user_xids: list[int]) -> list[int]:
+        """Remove users from the list if they are already in the max number of pending queues."""
+        rows = (
+            DatabaseSession.query(
+                Queue.user_xid,
+                func.count(Queue.user_xid).label("pending"),
+            )
+            .join(Game)
+            .filter(Game.deleted_at.is_(None))
+            .group_by(Queue.user_xid)
+        )
+        counts = {row[0]: row[1] for row in rows if row[0]}
+
+        return [
+            user_xid
+            for user_xid in user_xids
+            if counts.get(user_xid, 0) + 1 < settings.MAX_PENDING_GAMES
+        ]

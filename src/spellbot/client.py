@@ -14,11 +14,11 @@ from cachetools import TTLCache
 from ddtrace.trace import tracer
 from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, Context
 
+from .data import GameLinkDetails
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
 from .integrations import convoke, girudo, tablestream
 from .metrics import add_span_request_id, generate_request_id, setup_metrics
-from .models import GameLinkDetails
 from .operations import safe_delete_message
 from .services import ServicesRegistry
 from .settings import settings
@@ -29,7 +29,7 @@ ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-    from .models import GameDict
+    from .data import GameData
 
 
 logger = logging.getLogger(__name__)
@@ -161,23 +161,23 @@ class SpellBot(AutoShardedBot):
     @tracer.wrap()
     async def create_game_link(
         self,
-        game: GameDict,
+        game_data: GameData,
         pins: list[str] | None = None,
     ) -> GameLinkDetails:
         if self.mock_games:
             return GameLinkDetails(f"http://exmaple.com/game/{uuid4()}")
-        service = game.get("service")
+        service = game_data.service
         if span := tracer.current_span():  # pragma: no cover
             span.set_tag("link_service", GameService(service).name)
         match service:
             case GameService.CONVOKE.value:
-                details = await convoke.generate_link(game, pins)
+                details = await convoke.generate_link(game_data, pins)
                 return GameLinkDetails(*details)
             case GameService.TABLE_STREAM.value:
-                details = await tablestream.generate_link(game)
+                details = await tablestream.generate_link(game_data)
                 return GameLinkDetails(*details)
             case GameService.GIRUDO.value:
-                details = await girudo.generate_link(game)
+                details = await girudo.generate_link(game_data)
                 return GameLinkDetails(details.link, details.password)
             case _:
                 return GameLinkDetails()
@@ -252,12 +252,12 @@ class SpellBot(AutoShardedBot):
     @tracer.wrap()
     async def handle_message_deleted(self, message: discord.Message) -> None:
         services = ServicesRegistry()
-        data = await services.games.select_by_message_xid(message.id)
+        data = await services.games.get_by_message_xid(message.id)
         if not data:
             return
-        game_id = data["id"]
+        game_id = data.id
         logger.info("Game %s was deleted manually.", game_id)
-        if not data["started_at"]:  # someone deleted a pending game
+        if not data.started_at:  # someone deleted a pending game
             await services.games.delete_games([game_id])
 
 

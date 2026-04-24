@@ -18,6 +18,7 @@ from spellbot.web.api.rest import (
     send_message,
     update_message,
 )
+from tests.mocks import create_mock_game, create_mock_user
 
 if TYPE_CHECKING:
     from aiohttp.client import ClientSession
@@ -299,21 +300,26 @@ class TestPostWithRetry:
 
 class TestGameRecordEmbed:
     def test_with_winner(self) -> None:
-        game = {
-            "id": 1,
-            "guild_xid": 123,
-            "channel_xid": 456,
-            "started_at": datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
-            "jump_links": {123: "https://discord.com/jump/123/456/789"},
-        }
+        game_data = create_mock_game(game_id=1)
+        game_data.guild_xid = 123
+        game_data.channel_xid = 456
+        game_data.started_at = datetime(2024, 1, 15, 10, 30, tzinfo=UTC)
+        game_data.posts = [  # type: ignore[assignment]
+            {
+                "guild_xid": 123,
+                "channel_xid": 456,
+                "message_xid": 789,
+                "jump_link": "https://discord.com/jump/123/456/789",
+            },
+        ]
         players = [
-            {"xid": 101, "name": "Player1"},
-            {"xid": 102, "name": "Player2"},
+            create_mock_user(xid=101, name="Player1"),
+            create_mock_user(xid=102, name="Player2"),
         ]
         commanders: dict[int | None, str] = {101: "Atraxa", 102: "Kenrith"}
         result = game_record_embed(
-            game=game,  # type: ignore[arg-type]
-            players=players,  # type: ignore[arg-type]
+            game_data=game_data,
+            players=players,
             commanders=commanders,
             winner_xid=101,
             tracker_xid=102,
@@ -323,21 +329,27 @@ class TestGameRecordEmbed:
         assert "Atraxa" in str(result)
 
     def test_without_winner(self) -> None:
-        game = {
-            "id": 1,
-            "guild_xid": 123,
-            "channel_xid": 456,
-            "started_at": datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
-            "jump_links": {123: "https://discord.com/jump/123/456/789"},
-        }
+
+        game_data = create_mock_game(game_id=1)
+        game_data.guild_xid = 123
+        game_data.channel_xid = 456
+        game_data.started_at = datetime(2024, 1, 15, 10, 30, tzinfo=UTC)
+        game_data.posts = [  # type: ignore[assignment]
+            {
+                "guild_xid": 123,
+                "channel_xid": 456,
+                "message_xid": 789,
+                "jump_link": "https://discord.com/jump/123/456/789",
+            },
+        ]
         players = [
-            {"xid": 101, "name": "Player1"},
-            {"xid": 102, "name": "Player2"},
+            create_mock_user(xid=101, name="Player1"),
+            create_mock_user(xid=102, name="Player2"),
         ]
         commanders: dict[int | None, str] = {101: "Atraxa", 102: "Kenrith"}
         result = game_record_embed(
-            game=game,  # type: ignore[arg-type]
-            players=players,  # type: ignore[arg-type]
+            game_data=game_data,
+            players=players,
             commanders=commanders,
             winner_xid=None,
             tracker_xid=102,

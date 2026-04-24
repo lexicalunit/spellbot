@@ -11,6 +11,7 @@ from discord.ext.commands import AutoShardedBot, CommandNotFound, Context, UserI
 
 from spellbot import SpellBot
 from spellbot.client import ASSETS_DIR
+from spellbot.data import GameLinkDetails
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameService
 from spellbot.errors import (
@@ -22,8 +23,9 @@ from spellbot.errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
-from spellbot.models import Channel, GameDict, GameLinkDetails, Guild, Verify
+from spellbot.models import Channel, Guild, Verify
 from spellbot.utils import handle_interaction_errors
+from tests.mocks import create_mock_game
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -37,35 +39,35 @@ pytestmark = pytest.mark.use_db
 @pytest.mark.asyncio
 class TestSpellBot:
     @pytest.mark.parametrize(
-        ("mock_games", "game", "factory"),
+        ("mock_games", "service", "factory"),
         [
             pytest.param(
                 True,
-                {},
+                GameService.CONVOKE.value,
                 None,
                 id="mock-games",
             ),
             pytest.param(
                 False,
-                {"service": GameService.TABLE_STREAM.value},
+                GameService.TABLE_STREAM.value,
                 "tablestream.generate_link",
                 id="tablestream",
             ),
             pytest.param(
                 False,
-                {"service": GameService.CONVOKE.value},
+                GameService.CONVOKE.value,
                 "convoke.generate_link",
                 id="convoke",
             ),
             pytest.param(
                 False,
-                {"service": GameService.GIRUDO.value},
+                GameService.GIRUDO.value,
                 "girudo.generate_link",
                 id="girudo",
             ),
             pytest.param(
                 False,
-                {"service": GameService.NOT_ANY.value},
+                GameService.NOT_ANY.value,
                 None,
                 id="no-service",
             ),
@@ -75,10 +77,11 @@ class TestSpellBot:
         self,
         bot: SpellBot,
         mock_games: bool,
-        game: GameDict,
+        service: int,
         factory: str | None,
         mocker: MockerFixture,
     ) -> None:
+        game = create_mock_game(service=service)
         bot.mock_games = mock_games
         if factory:
             mock = mocker.patch(f"spellbot.client.{factory}", AsyncMock())
@@ -91,7 +94,7 @@ class TestSpellBot:
         if mock_games:
             assert response.link is not None
             assert response.link.startswith("http://exmaple.com/game/")
-        if game.get("service") == GameService.NOT_ANY.value:
+        if service == GameService.NOT_ANY.value:
             assert response == GameLinkDetails()
 
     @pytest.mark.parametrize(
