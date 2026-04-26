@@ -301,7 +301,6 @@ class TestPostWithRetry:
 
 class TestGameRecordEmbed:
     def test_with_winner(self) -> None:
-
         game_data = create_mock_game(game_id=1)
         game_data.guild_xid = 123
         game_data.channel_xid = 456

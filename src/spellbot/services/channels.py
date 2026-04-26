@@ -28,6 +28,7 @@ def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
 class ChannelsService:
     @sync_to_async()
     def upsert(self, channel: MessageableChannel) -> ChannelData:
+        """Upsert the given Discord channel into the database."""
         assert channel.guild is not None
         name_max_len = Channel.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(channel, "name", "")
@@ -58,16 +59,19 @@ class ChannelsService:
 
     @sync_to_async()
     def forget(self, xid: int) -> None:
+        """Delete the channel with the given xid from the database."""
         DatabaseSession.query(Channel).filter(Channel.xid == xid).delete(synchronize_session=False)
         channel_cache.pop(xid, None)
 
     @sync_to_async()
     def select(self, xid: int) -> ChannelData | None:
+        """Fetch the channel data for the given xid."""
         channel = DatabaseSession.query(Channel).filter(Channel.xid == xid).one_or_none()
         return channel.to_data() if channel else None
 
     @sync_to_async()
     def set_default_seats(self, xid: int, seats: int) -> None:
+        """Set the default number of seats for games in this channel."""
         query = (
             update(Channel)  # type: ignore
             .where(Channel.xid == xid)
@@ -79,6 +83,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_default_format(self, xid: int, format: int) -> None:
+        """Set the default game format for this channel."""
         query = (
             update(Channel)  # type: ignore
             .where(Channel.xid == xid)
@@ -90,6 +95,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_default_bracket(self, xid: int, bracket: int) -> None:
+        """Set the default game bracket for this channel."""
         query = (
             update(Channel)  # type: ignore
             .where(Channel.xid == xid)
@@ -101,6 +107,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_default_service(self, xid: int, service: int) -> None:
+        """Set the default game service for this channel."""
         query = (
             update(Channel)  # type: ignore
             .where(Channel.xid == xid)
@@ -112,6 +119,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_auto_verify(self, xid: int, setting: bool) -> None:
+        """Set whether users are automatically verified in this channel."""
         query = (
             update(Channel)  # type: ignore
             .where(Channel.xid == xid)
@@ -123,6 +131,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_verified_only(self, xid: int, setting: bool) -> None:
+        """Set whether only verified users can use this channel."""
         query = (
             update(Channel)  # type: ignore
             .where(Channel.xid == xid)
@@ -134,6 +143,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_unverified_only(self, xid: int, setting: bool) -> None:
+        """Set whether only unverified users can use this channel."""
         query = (
             update(Channel)  # type: ignore
             .where(Channel.xid == xid)
@@ -145,6 +155,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_motd(self, xid: int, message: str | None = None) -> str:
+        """Set the message of the day for this channel."""
         if message:
             max_len = Channel.motd.property.columns[0].type.length  # type: ignore
             motd = message[:max_len]
@@ -162,6 +173,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_extra(self, xid: int, message: str | None = None) -> str:
+        """Set extra text to display in game posts for this channel."""
         if message:
             max_len = Channel.extra.property.columns[0].type.length  # type: ignore
             extra = message[:max_len]
@@ -179,6 +191,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_voice_category(self, xid: int, value: str) -> str:
+        """Set the voice channel category prefix for this channel."""
         max_len = Channel.voice_category.property.columns[0].type.length  # type: ignore
         name = value[:max_len]
         query = (
@@ -193,6 +206,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_delete_expired(self, xid: int, value: bool) -> bool:
+        """Set whether expired games should be deleted in this channel."""
         query = (
             update(Channel)  # type: ignore
             .where(Channel.xid == xid)
@@ -205,6 +219,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_blind_games(self, xid: int, value: bool) -> bool:
+        """Set whether games in this channel should be created in blind mode."""
         query = (
             update(Channel)  # type: ignore
             .where(Channel.xid == xid)
@@ -217,6 +232,7 @@ class ChannelsService:
 
     @sync_to_async()
     def set_voice_invite(self, xid: int, value: bool) -> bool:
+        """Set whether voice channel invites should be created for games."""
         query = (
             update(Channel)  # type: ignore
             .where(Channel.xid == xid)
