@@ -241,12 +241,11 @@ class SpellBot(AutoShardedBot):
             verified = True
         assert message.guild
         guild: discord.Guild = message.guild
-        await services.verifies.upsert(guild.id, message_author_xid, verified)
+        verify_data = await services.verifies.upsert(guild.id, message_author_xid, verified)
         if not user_can_moderate(message.author, guild, message.channel):
-            user_is_verified = await services.verifies.is_verified()
-            if user_is_verified and channel_data.unverified_only:
+            if verify_data.verified and channel_data.unverified_only:
                 await safe_delete_message(message)
-            if not user_is_verified and channel_data.verified_only:
+            if not verify_data.verified and channel_data.verified_only:
                 await safe_delete_message(message)
 
     @tracer.wrap()

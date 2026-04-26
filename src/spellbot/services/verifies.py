@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from asgiref.sync import sync_to_async
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
@@ -7,17 +9,18 @@ from sqlalchemy.sql.expression import and_
 from spellbot.database import DatabaseSession
 from spellbot.models import Verify
 
+if TYPE_CHECKING:
+    from spellbot.data import VerifyData
+
 
 class VerifiesService:
-    current: Verify | None = None
-
     @sync_to_async()
     def upsert(
         self,
         guild_xid: int,
         user_xid: int,
         verified: bool | None = None,
-    ) -> None:
+    ) -> VerifyData:
         values = {
             "user_xid": user_xid,
             "guild_xid": guild_xid,
@@ -38,7 +41,7 @@ class VerifiesService:
             )
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
-        self.current = (
+        record = (
             DatabaseSession.query(Verify)
             .filter(
                 and_(
@@ -48,8 +51,4 @@ class VerifiesService:
             )
             .one_or_none()
         )
-
-    @sync_to_async()
-    def is_verified(self) -> bool:
-        assert self.current
-        return bool(self.current.verified)
+        return record.to_data()

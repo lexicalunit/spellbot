@@ -88,12 +88,15 @@ class BaseAction:
         verified: bool | None = None
         if self.channel_data.auto_verify:
             verified = True
-        await self.services.verifies.upsert(self.guild.id, self.interaction.user.id, verified)
+        verify_data = await self.services.verifies.upsert(
+            self.guild.id,
+            self.interaction.user.id,
+            verified,
+        )
         if not user_can_moderate(self.interaction.user, self.guild, self.channel):
-            user_is_verified = await self.services.verifies.is_verified()
-            if user_is_verified and self.channel_data.unverified_only:
+            if verify_data.verified and self.channel_data.unverified_only:
                 raise UserVerifiedError
-            if not user_is_verified and self.channel_data.verified_only:
+            if not verify_data.verified and self.channel_data.verified_only:
                 raise UserUnverifiedError
 
     def should_do_verification(self) -> bool:
