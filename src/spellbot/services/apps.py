@@ -11,6 +11,7 @@ class AppsService:
     @sync_to_async()
     @tracer.wrap()
     def verify_token(self, key: str, path: str) -> bool:
+        """Verify that the given API key has access to the given path."""
         token = DatabaseSession.query(Token).filter(Token.key == key).one_or_none()
         if not token:
             return False

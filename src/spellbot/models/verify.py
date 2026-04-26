@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Boolean, Column, false
 
 from . import Base
 
-
-class VerifyDict(TypedDict):
-    guild_xid: int
-    user_xid: int
-    verified: bool
+if TYPE_CHECKING:
+    from spellbot.data import VerifyData
 
 
 class Verify(Base):
@@ -38,9 +35,11 @@ class Verify(Base):
         doc="If true, this user is considered verified for this guild",
     )
 
-    def to_dict(self) -> VerifyDict:
-        return {
-            "guild_xid": self.guild_xid,
-            "user_xid": self.user_xid,
-            "verified": self.verified,
-        }
+    def to_data(self) -> VerifyData:
+        from spellbot.data import VerifyData  # allow_inline
+
+        return VerifyData(
+            guild_xid=self.guild_xid,
+            user_xid=self.user_xid,
+            verified=self.verified,
+        )

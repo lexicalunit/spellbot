@@ -2,21 +2,16 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey
 
 from . import Base, now
 
 if TYPE_CHECKING:
+    from spellbot.data import BlockData
+
     from . import User  # noqa: F401
-
-
-class BlockDict(TypedDict):
-    created_at: datetime
-    updated_at: datetime
-    user_xid: int
-    blocked_user_xid: int
 
 
 class Block(Base):
@@ -56,10 +51,12 @@ class Block(Base):
         doc="The user who is being blocked by someone",
     )
 
-    def to_dict(self) -> BlockDict:
-        return {
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
-            "user_xid": self.user_xid,
-            "blocked_user_xid": self.blocked_user_xid,
-        }
+    def to_data(self) -> BlockData:
+        from spellbot.data import BlockData  # allow_inline
+
+        return BlockData(
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            user_xid=self.user_xid,
+            blocked_user_xid=self.blocked_user_xid,
+        )

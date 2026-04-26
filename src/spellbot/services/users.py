@@ -82,14 +82,14 @@ class UsersService:
 
         DatabaseSession.commit()
         user = DatabaseSession.get(User, xid)
-        return user.to_dict()
+        return user.to_data()
 
     @sync_to_async()
     @tracer.wrap()
     def get(self, user_xid: int) -> UserData | None:
         """Get the user data for the given user id."""
         user: User | None = DatabaseSession.query(User).filter(User.xid == user_xid).one_or_none()
-        return user.to_dict() if user else None
+        return user.to_data() if user else None
 
     @sync_to_async()
     @tracer.wrap()
@@ -116,7 +116,7 @@ class UsersService:
         )
         updated_user: User = DatabaseSession.scalars(stmt).one()
         DatabaseSession.commit()
-        return updated_user.to_dict()
+        return updated_user.to_data()
 
     @sync_to_async()
     @tracer.wrap()
@@ -171,7 +171,7 @@ class UsersService:
             .execution_options(synchronize_session="fetch")
         )
         result = DatabaseSession.scalars(query)
-        updated_games: list[GameData] = [g.to_dict() for g in result.all()]
+        updated_games: list[GameData] = [g.to_data() for g in result.all()]
         DatabaseSession.commit()
         return updated_games
 
@@ -256,7 +256,7 @@ class UsersService:
     def blocklist(self, user_xid: int) -> list[UserData]:
         """Return the list of user ids that the given user has blocked."""
         return [
-            u.to_dict()
+            u.to_data()
             for u in DatabaseSession.query(User)
             .join(Block, User.xid == Block.blocked_user_xid)
             .filter(Block.user_xid == user_xid)
@@ -440,7 +440,7 @@ class UsersService:
     @tracer.wrap()
     def get_players_by_xid(self, xids: list[int]) -> list[UserData]:
         """Fetch user data for the given list of user ids."""
-        return [u.to_dict() for u in DatabaseSession.query(User).filter(User.xid.in_(xids)).all()]
+        return [u.to_data() for u in DatabaseSession.query(User).filter(User.xid.in_(xids)).all()]
 
     @sync_to_async()
     def get_xid_by_name(self, name: str) -> int | None:

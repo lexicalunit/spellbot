@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import relationship
@@ -10,17 +10,9 @@ from sqlalchemy.orm import relationship
 from . import Base, now
 
 if TYPE_CHECKING:
+    from spellbot.data import PostData
+
     from . import Channel, Game, Guild  # noqa: F401
-
-
-class PostDict(TypedDict):
-    created_at: datetime
-    updated_at: datetime
-    game_id: int
-    guild_xid: int
-    channel_xid: int
-    message_xid: int
-    jump_link: str
 
 
 class Post(Base):
@@ -88,13 +80,15 @@ class Post(Base):
         message = self.message_xid
         return f"https://discordapp.com/channels/{guild}/{channel}/{message}"
 
-    def to_dict(self) -> PostDict:
-        return {
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
-            "game_id": self.game_id,
-            "guild_xid": self.guild_xid,
-            "channel_xid": self.channel_xid,
-            "message_xid": self.message_xid,
-            "jump_link": self.jump_link,
-        }
+    def to_data(self) -> PostData:
+        from spellbot.data import PostData  # allow_inline
+
+        return PostData(
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            game_id=self.game_id,
+            guild_xid=self.guild_xid,
+            channel_xid=self.channel_xid,
+            message_xid=self.message_xid,
+            jump_link=self.jump_link,
+        )

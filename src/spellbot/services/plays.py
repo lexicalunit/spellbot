@@ -146,10 +146,12 @@ def decomposed(combined_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
 class PlaysService:
     @sync_to_async()
     def get_plays_by_game_id(self, game_id: int) -> list[Play]:
+        """Fetch all plays for the given game id."""
         return DatabaseSession.query(Play).filter(Play.game_id == game_id).all()
 
     @sync_to_async()
     def verify_game_pin(self, *, game_id: int, user_xid: int, guild_xid: int, pin: str) -> bool:
+        """Verify that the given pin matches the user's play record for the game."""
         filters = [
             Play.game_id == game_id,
             Play.user_xid == user_xid,
@@ -164,6 +166,7 @@ class PlaysService:
 
     @sync_to_async()
     def count(self, user_xid: int, guild_xid: int) -> int:
+        """Count the number of games played by a user in a guild."""
         return int(
             DatabaseSession.query(Play)
             .join(Game)
@@ -184,6 +187,7 @@ class PlaysService:
         user_xid: int,
         page: int = 0,
     ) -> list[dict[str, Any]] | None:
+        """Fetch paginated game records for a user in a guild."""
         guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
         if not guild:
             return None
@@ -221,6 +225,7 @@ class PlaysService:
         channel_xid: int,
         page: int = 0,
     ) -> list[dict[str, Any]] | None:
+        """Fetch paginated game records for a channel."""
         guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
         if not guild:
             return None
@@ -263,6 +268,7 @@ class PlaysService:
         monthly: bool,
         ago: int,
     ) -> list[tuple[str, Any]]:
+        """Fetch top players by game count for a channel."""
         filters = [
             Play.game_id == Game.id,
             Game.guild_xid == guild_xid,

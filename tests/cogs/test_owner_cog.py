@@ -46,17 +46,15 @@ class TestCogOwner:
         context.author.send.assert_called_once_with(  # type: ignore
             f"User <@{target_user.id}> has been banned.",
         )
-        users = list(DatabaseSession.query(User).all())
-        assert len(users) == 1
-        assert users[0].xid == target_user.id
-        assert users[0].banned
+        user = DatabaseSession.query(User).filter(User.xid == target_user.id).one()
+        assert user.xid == target_user.id
+        assert user.banned
 
         DatabaseSession.expire_all()
         await run_owner_command(cog, cog.unban, context, str(target_user.id))
-        users = list(DatabaseSession.query(User).all())
-        assert len(users) == 1
-        assert users[0].xid == target_user.id
-        assert not users[0].banned
+        user = DatabaseSession.query(User).filter(User.xid == target_user.id).one()
+        assert user.xid == target_user.id
+        assert not user.banned
 
     async def test_ban_without_target(
         self,

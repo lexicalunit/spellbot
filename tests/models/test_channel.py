@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from typing import TYPE_CHECKING
 
 import pytest
 
+from spellbot.data import ChannelData
 from spellbot.enums import GameBracket, GameFormat, GameService
 
 if TYPE_CHECKING:
@@ -13,11 +15,13 @@ pytestmark = pytest.mark.use_db
 
 
 class TestModelChannel:
-    def test_channel(self, factories: Factories) -> None:
+    def test_channel_to_data(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
 
-        assert channel.to_dict() == {
+        channel_data = channel.to_data()
+        assert isinstance(channel_data, ChannelData)
+        assert asdict(channel_data) == {
             "xid": channel.xid,
             "created_at": channel.created_at,
             "updated_at": channel.updated_at,

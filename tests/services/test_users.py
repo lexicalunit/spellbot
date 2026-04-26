@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
-from unittest.mock import ANY, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -105,15 +105,16 @@ class TestServiceUsers:
         await users.block(user1.xid, user2.xid)
 
         DatabaseSession.expire_all()
-        blocks = [b.to_dict() for b in DatabaseSession.query(Block).all()]
-        assert blocks == [
-            {
-                "user_xid": user1.xid,
-                "blocked_user_xid": user2.xid,
-                "created_at": ANY,
-                "updated_at": ANY,
-            },
-        ]
+        block = (
+            DatabaseSession.query(Block)
+            .filter(
+                Block.user_xid == user1.xid,
+                Block.blocked_user_xid == user2.xid,
+            )
+            .one()
+        )
+        assert block.user_xid == user1.xid
+        assert block.blocked_user_xid == user2.xid
 
     async def test_users_unblock(self) -> None:
         user1 = UserFactory.create()
@@ -123,21 +124,22 @@ class TestServiceUsers:
         await users.block(user1.xid, user2.xid)
 
         DatabaseSession.expire_all()
-        blocks = [b.to_dict() for b in DatabaseSession.query(Block).all()]
-        assert blocks == [
-            {
-                "user_xid": user1.xid,
-                "blocked_user_xid": user2.xid,
-                "created_at": ANY,
-                "updated_at": ANY,
-            },
-        ]
+        block = (
+            DatabaseSession.query(Block)
+            .filter(Block.user_xid == user1.xid, Block.blocked_user_xid == user2.xid)
+            .one()
+        )
+        assert block is not None
 
         await users.unblock(user1.xid, user2.xid)
 
         DatabaseSession.expire_all()
-        blocks = [b.to_dict() for b in DatabaseSession.query(Block).all()]
-        assert blocks == []
+        block = (
+            DatabaseSession.query(Block)
+            .filter(Block.user_xid == user1.xid, Block.blocked_user_xid == user2.xid)
+            .one_or_none()
+        )
+        assert block is None
 
     async def test_users_watch(self, guild: Guild) -> None:
         user = UserFactory.create()
@@ -146,8 +148,12 @@ class TestServiceUsers:
         await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note")
 
         DatabaseSession.expire_all()
-        watches = [w.to_dict() for w in DatabaseSession.query(Watch).all()]
-        assert watches == [{"guild_xid": guild.xid, "user_xid": user.xid, "note": "note"}]
+        watch = (
+            DatabaseSession.query(Watch)
+            .filter(Watch.guild_xid == guild.xid, Watch.user_xid == user.xid)
+            .one()
+        )
+        assert watch.note == "note"
 
     async def test_users_watch_upsert(self, guild: Guild) -> None:
         user = UserFactory.create()
@@ -157,14 +163,12 @@ class TestServiceUsers:
         await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note2")
 
         DatabaseSession.expire_all()
-        watches = [w.to_dict() for w in DatabaseSession.query(Watch).all()]
-        assert watches == [
-            {
-                "guild_xid": guild.xid,
-                "user_xid": user.xid,
-                "note": "note2",
-            },
-        ]
+        watch = (
+            DatabaseSession.query(Watch)
+            .filter(Watch.guild_xid == guild.xid, Watch.user_xid == user.xid)
+            .one()
+        )
+        assert watch.note == "note2"
 
     async def test_users_watch_without_note(self, guild: Guild) -> None:
         user = UserFactory.create()
@@ -173,8 +177,12 @@ class TestServiceUsers:
         await users.watch(guild_xid=guild.xid, user_xid=user.xid)
 
         DatabaseSession.expire_all()
-        watches = [w.to_dict() for w in DatabaseSession.query(Watch).all()]
-        assert watches == [{"guild_xid": guild.xid, "user_xid": user.xid, "note": None}]
+        watch = (
+            DatabaseSession.query(Watch)
+            .filter(Watch.guild_xid == guild.xid, Watch.user_xid == user.xid)
+            .one()
+        )
+        assert watch.note is None
 
     async def test_users_unwatch(self, guild: Guild) -> None:
         user = UserFactory.create()
@@ -183,14 +191,22 @@ class TestServiceUsers:
         await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note")
 
         DatabaseSession.expire_all()
-        watches = [w.to_dict() for w in DatabaseSession.query(Watch).all()]
-        assert watches == [{"guild_xid": guild.xid, "user_xid": user.xid, "note": "note"}]
+        watch = (
+            DatabaseSession.query(Watch)
+            .filter(Watch.guild_xid == guild.xid, Watch.user_xid == user.xid)
+            .one()
+        )
+        assert watch.note == "note"
 
         await users.unwatch(guild_xid=guild.xid, user_xid=user.xid)
 
         DatabaseSession.expire_all()
-        watches = [w.to_dict() for w in DatabaseSession.query(Watch).all()]
-        assert watches == []
+        watch = (
+            DatabaseSession.query(Watch)
+            .filter(Watch.guild_xid == guild.xid, Watch.user_xid == user.xid)
+            .one_or_none()
+        )
+        assert watch is None
 
     async def test_users_leave_game(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)

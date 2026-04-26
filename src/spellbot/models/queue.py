@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Column, ForeignKey, Integer
 
 from . import Base
 
-
-class QueueDict(TypedDict):
-    user_xid: int
-    game_id: int
-    og_guild_xid: int
+if TYPE_CHECKING:
+    from spellbot.data import QueueData
 
 
 class Queue(Base):
@@ -39,9 +36,11 @@ class Queue(Base):
         doc="The external Discord ID of the guild where the user entered this game",
     )
 
-    def to_dict(self) -> QueueDict:
-        return {
-            "user_xid": self.user_xid,
-            "game_id": self.game_id,
-            "og_guild_xid": self.og_guild_xid,
-        }
+    def to_data(self) -> QueueData:
+        from spellbot.data import QueueData  # allow_inline
+
+        return QueueData(
+            user_xid=self.user_xid,
+            game_id=self.game_id,
+            og_guild_xid=self.og_guild_xid,
+        )

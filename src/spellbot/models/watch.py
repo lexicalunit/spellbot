@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Column, ForeignKey, String
 
 from . import Base
 
 if TYPE_CHECKING:
+    from spellbot.data import WatchData
+
     from . import Guild, User  # noqa: F401
-
-
-class WatchDict(TypedDict):
-    guild_xid: int
-    user_xid: int
-    note: str
 
 
 class Watch(Base):
@@ -40,9 +36,11 @@ class Watch(Base):
         doc="The note to DM to moderators when this user enters a game",
     )
 
-    def to_dict(self) -> WatchDict:
-        return {
-            "guild_xid": self.guild_xid,
-            "user_xid": self.user_xid,
-            "note": self.note,
-        }
+    def to_data(self) -> WatchData:
+        from spellbot.data import WatchData  # allow_inline
+
+        return WatchData(
+            guild_xid=self.guild_xid,
+            user_xid=self.user_xid,
+            note=self.note,
+        )
