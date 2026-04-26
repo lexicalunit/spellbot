@@ -123,7 +123,7 @@ class WatchAction(BaseAction):
         embed = new_embed()
         description = ""
         for entry in entries:
-            next_line = f"• <@{entry['user_xid']}> — {entry['note']}\n"
+            next_line = f"• <@{entry.user_xid}> — {entry.note}\n"
             if len(description) + len(next_line) >= EMBED_DESCRIPTION_SIZE_LIMIT:
                 embed.description = description
                 embeds.append(embed)

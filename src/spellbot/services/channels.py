@@ -9,10 +9,12 @@ from sqlalchemy.sql.expression import update
 
 from spellbot.database import DatabaseSession
 from spellbot.environment import running_in_pytest
-from spellbot.models import Channel, ChannelDict
+from spellbot.models import Channel
 
 if TYPE_CHECKING:
     from discord.abc import MessageableChannel
+
+    from spellbot.data import ChannelData
 
 channel_cache: dict[int, str] = {}
 
@@ -25,7 +27,7 @@ def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
 
 class ChannelsService:
     @sync_to_async()
-    def upsert(self, channel: MessageableChannel) -> ChannelDict:
+    def upsert(self, channel: MessageableChannel) -> ChannelData:
         assert channel.guild is not None
         name_max_len = Channel.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(channel, "name", "")
@@ -52,7 +54,7 @@ class ChannelsService:
             channel_cache[channel.id] = name
 
         db_channel = DatabaseSession.query(Channel).filter(Channel.xid == channel.id).one()
-        return db_channel.to_dict()
+        return db_channel.to_data()
 
     @sync_to_async()
     def forget(self, xid: int) -> None:
@@ -60,9 +62,9 @@ class ChannelsService:
         channel_cache.pop(xid, None)
 
     @sync_to_async()
-    def select(self, xid: int) -> ChannelDict | None:
+    def select(self, xid: int) -> ChannelData | None:
         channel = DatabaseSession.query(Channel).filter(Channel.xid == xid).one_or_none()
-        return channel.to_dict() if channel else None
+        return channel.to_data() if channel else None
 
     @sync_to_async()
     def set_default_seats(self, xid: int, seats: int) -> None:

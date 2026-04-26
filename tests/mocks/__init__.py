@@ -14,7 +14,9 @@ from tests.mocks.girudo import (
     GirudoTestData,
     MockHTTPClient,
     MockHTTPResponse,
+    create_mock_channel,
     create_mock_game,
+    create_mock_guild,
     create_mock_user,
 )
 
@@ -296,7 +298,9 @@ __all__ = [
     "MockClient",
     "MockHTTPClient",
     "MockHTTPResponse",
+    "create_mock_channel",
     "create_mock_game",
+    "create_mock_guild",
     "create_mock_user",
     "mock_discord_guild",
     "mock_discord_object",

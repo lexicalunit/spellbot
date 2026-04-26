@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
@@ -10,19 +10,9 @@ from sqlalchemy.sql.sqltypes import Boolean
 from . import Base
 
 if TYPE_CHECKING:
+    from spellbot.data import GuildAwardData, UserAwardData
+
     from . import Guild, User  # noqa: F401
-
-
-class GuildAwardDict(TypedDict):
-    id: int
-    guild_xid: int
-    count: int
-    repeating: bool
-    remove: bool
-    role: str
-    message: str
-    verified_only: bool
-    unverified_only: bool
 
 
 class GuildAward(Base):
@@ -95,24 +85,20 @@ class GuildAward(Base):
         doc="The guild where this award is available",
     )
 
-    def to_dict(self) -> GuildAwardDict:
-        return {
-            "id": self.id,
-            "guild_xid": self.guild_xid,
-            "count": self.count,
-            "repeating": self.repeating,
-            "remove": self.remove,
-            "role": self.role,
-            "message": self.message,
-            "verified_only": self.verified_only,
-            "unverified_only": self.unverified_only,
-        }
+    def to_data(self) -> GuildAwardData:
+        from spellbot.data import GuildAwardData  # allow_inline
 
-
-class UserAwardDict(TypedDict):
-    user_xid: int
-    guild_xid: int
-    guild_award_id: int
+        return GuildAwardData(
+            id=self.id,
+            guild_xid=self.guild_xid,
+            count=self.count,
+            repeating=self.repeating,
+            remove=self.remove,
+            role=self.role,
+            message=self.message,
+            verified_only=self.verified_only,
+            unverified_only=self.unverified_only,
+        )
 
 
 class UserAward(Base):
@@ -136,9 +122,11 @@ class UserAward(Base):
     )
     guild_award_id = Column(Integer, nullable=True)
 
-    def to_dict(self) -> UserAwardDict:
-        return {
-            "user_xid": self.user_xid,
-            "guild_xid": self.guild_xid,
-            "guild_award_id": self.guild_award_id,
-        }
+    def to_data(self) -> UserAwardData:
+        from spellbot.data import UserAwardData  # allow_inline
+
+        return UserAwardData(
+            user_xid=self.user_xid,
+            guild_xid=self.guild_xid,
+            guild_award_id=self.guild_award_id,
+        )

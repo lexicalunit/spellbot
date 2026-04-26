@@ -8,7 +8,7 @@ import discord
 from discord.embeds import Embed
 
 from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.models import Channel, ChannelDict, GuildAward, GuildAwardDict
+from spellbot.models import Channel, GuildAward
 from spellbot.operations import (
     safe_delete_message,
     safe_fetch_text_channel,
@@ -25,6 +25,7 @@ from .base_action import BaseAction
 
 if TYPE_CHECKING:
     from spellbot import SpellBot
+    from spellbot.data import ChannelData, GuildAwardData
 
 logger = logging.getLogger(__name__)
 
@@ -33,18 +34,18 @@ def humanize_bool(setting: bool) -> str:
     return "✅ On" if setting else "❌ Off"
 
 
-def award_line(award: GuildAwardDict) -> str:
-    kind = "every" if award["repeating"] else "after"
-    give_or_take = "take" if award["remove"] else "give"
-    verified_only = "verified only" if award["verified_only"] else ""
-    unverified_only = "unverified only" if award["unverified_only"] else ""
+def award_line(award: GuildAwardData) -> str:
+    kind = "every" if award.repeating else "after"
+    give_or_take = "take" if award.remove else "give"
+    verified_only = "verified only" if award.verified_only else ""
+    unverified_only = "unverified only" if award.unverified_only else ""
     verify_status = (
         f" ({verified_only}{unverified_only}) " if verified_only or unverified_only else " "
     )
     return (
-        f"• **ID {award['id']}** — _{kind} {award['count']} games_ "
-        f"— {give_or_take} `@{award['role']}`{verify_status}"
-        f"— {award['message']}"
+        f"• **ID {award.id}** — _{kind} {award.count} games_ "
+        f"— {give_or_take} `@{award.role}`{verify_status}"
+        f"— {award.message}"
     )
 
 
@@ -60,32 +61,32 @@ class AdminAction(BaseAction):
         )
 
     async def build_channels_embeds(self) -> list[Embed]:  # noqa: C901
-        guild = await self.services.guilds.to_dict()
+        guild = await self.services.guilds.to_data()
         embeds: list[Embed] = []
 
         def new_embed() -> Embed:
-            embed = Embed(title=f"Configuration for channels in {guild['name']}")
+            embed = Embed(title=f"Configuration for channels in {guild.name}")
             embed.set_thumbnail(url=settings.ICO_URL)
             embed.color = discord.Color(settings.INFO_EMBED_COLOR)
             return embed
 
         def update_channel_settings(
-            channel: ChannelDict,
+            channel: ChannelData,
             channel_settings: dict[str, Any],
             col: str,
         ) -> None:
             is_enum = col in ("default_format", "default_service")
-            value = channel[col].value if is_enum else channel[col]
+            value = getattr(channel, col).value if is_enum else getattr(channel, col)
             if value != getattr(Channel, col).default.arg:
-                channel_settings[col] = str(channel[col]) if is_enum else value
+                channel_settings[col] = str(getattr(channel, col)) if is_enum else value
 
         all_default = True
         embed = new_embed()
         description = ""
-        for channel in sorted(guild.get("channels", []), key=lambda g: g["xid"]):
-            discord_channel = await safe_fetch_text_channel(self.bot, guild["xid"], channel["xid"])
+        for channel in sorted(guild.channels, key=lambda c: c.xid):
+            discord_channel = await safe_fetch_text_channel(self.bot, guild.xid, channel.xid)
             if not discord_channel:
-                await self.services.channels.forget(channel["xid"])
+                await self.services.channels.forget(channel.xid)
                 continue
 
             channel_settings: dict[str, Any] = {}
@@ -99,11 +100,11 @@ class AdminAction(BaseAction):
             update_channel_settings(channel, channel_settings, "voice_invite")
             if channel_settings:
                 all_default = False
-                deets = ", ".join(
+                details = ", ".join(
                     (f"`{k}`" if isinstance(v, bool) and v else f"`{k}={v}`")
                     for k, v in channel_settings.items()
                 )
-                next_line = f"• <#{channel['xid']}> ({channel['xid']}) — {deets}\n"
+                next_line = f"• <#{channel.xid}> ({channel.xid}) — {details}\n"
                 if len(description) + len(next_line) >= EMBED_DESCRIPTION_SIZE_LIMIT:
                     embed.description = description
                     embeds.append(embed)
@@ -129,11 +130,11 @@ class AdminAction(BaseAction):
         return embeds
 
     async def build_awards_embeds(self) -> list[Embed]:
-        guild = await self.services.guilds.to_dict()
+        guild = await self.services.guilds.to_data()
         embeds: list[Embed] = []
 
         def new_embed() -> Embed:
-            embed = Embed(title=f"SpellBot Player Awards for {guild['name']}")
+            embed = Embed(title=f"SpellBot Player Awards for {guild.name}")
             embed.set_thumbnail(url=settings.ICO_URL)
             embed.color = discord.Color(settings.INFO_EMBED_COLOR)
             return embed
@@ -141,7 +142,7 @@ class AdminAction(BaseAction):
         has_at_least_one_award = False
         embed = new_embed()
         description = ""
-        for award in guild.get("awards", []):
+        for award in guild.awards:
             has_at_least_one_award = True
             next_line = f"{award_line(award)}\n"
             if len(description) + len(next_line) >= EMBED_DESCRIPTION_SIZE_LIMIT:
@@ -168,8 +169,8 @@ class AdminAction(BaseAction):
         return embeds
 
     async def build_setup_embed(self) -> Embed:
-        guild = await self.services.guilds.to_dict()
-        embed = Embed(title=f"SpellBot Setup for {guild['name']}")
+        guild = await self.services.guilds.to_data()
+        embed = Embed(title=f"SpellBot Setup for {guild.name}")
         embed.set_thumbnail(url=settings.ICO_URL)
         description = (
             "These are the current settings for SpellBot on this server."
@@ -182,20 +183,20 @@ class AdminAction(BaseAction):
         embed.description = description[:EMBED_DESCRIPTION_SIZE_LIMIT]
         embed.add_field(
             name="MOTD",
-            value=guild["motd"] or "None",
+            value=guild.motd or "None",
             inline=False,
         )
         embed.add_field(
             name="Public Links",
-            value=humanize_bool(guild["show_links"]),
+            value=humanize_bool(guild.show_links),
         )
         embed.add_field(
             name="Create Voice Channels",
-            value=humanize_bool(guild["voice_create"]),
+            value=humanize_bool(guild.voice_create),
         )
         embed.add_field(
             name="Use Max Bitrate",
-            value=humanize_bool(guild["use_max_bitrate"]),
+            value=humanize_bool(guild.use_max_bitrate),
         )
         embed.color = discord.Color(settings.INFO_EMBED_COLOR)
         return embed
@@ -339,8 +340,8 @@ class AdminAction(BaseAction):
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
     async def set_suggest_vc_category(self, category: str | None) -> None:
-        guild = await self.services.guilds.to_dict()
-        if guild["voice_create"]:
+        guild = await self.services.guilds.to_data()
+        if guild.voice_create:
             await safe_send_channel(
                 self.interaction,
                 (
@@ -535,22 +536,23 @@ class AdminAction(BaseAction):
             dequeued = await self.services.games.delete_games([game_id])
             results.append(f"├── Dequeued {dequeued} players")
 
-            for post in game.posts:
-                guild_xid = post["guild_xid"]
-                channel_xid = post["channel_xid"]
-                message_xid = post["message_xid"]
+            for post_data in game.posts:
+                guild_xid = post_data.guild_xid
+                channel_xid = post_data.channel_xid
+                message_xid = post_data.message_xid
 
                 chan = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
                 if not chan:
                     results.append(f"├── Could not find channel {channel_xid}")
                     continue
 
-                if not (post := safe_get_partial_message(chan, guild_xid, message_xid)):
+                post = safe_get_partial_message(chan, guild_xid, message_xid)
+                if not post:
                     results.append(f"├── Could not find message {message_xid}")
                     continue
 
                 channel_data = await self.services.channels.select(channel_xid)
-                if not dequeued or (channel_data and channel_data["delete_expired"]):
+                if not dequeued or (channel_data and channel_data.delete_expired):
                     results.append(f"├── Deleting message {message_xid} ...")
                     if not await safe_delete_message(post):
                         results.append("├── Bot does not have permission")

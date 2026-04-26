@@ -181,20 +181,21 @@ class TasksAction:
                 await asyncio.sleep(1)
 
     async def expire_game(self, game_data: GameData, dequeued: int) -> None:
-        for post in game_data.posts:
-            guild_xid = post["guild_xid"]
-            channel_xid = post["channel_xid"]
-            message_xid = post["message_xid"]
+        for post_data in game_data.posts:
+            guild_xid = post_data.guild_xid
+            channel_xid = post_data.channel_xid
+            message_xid = post_data.message_xid
 
             chan = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
             if not chan:
                 continue
 
-            if not (post := safe_get_partial_message(chan, guild_xid, message_xid)):
+            post = safe_get_partial_message(chan, guild_xid, message_xid)
+            if not post:
                 continue
 
             channel_data = await self.services.channels.select(channel_xid)
-            if not dequeued or (channel_data and channel_data["delete_expired"]):
+            if not dequeued or (channel_data and channel_data.delete_expired):
                 await safe_delete_message(post)
             else:
                 await safe_update_embed(

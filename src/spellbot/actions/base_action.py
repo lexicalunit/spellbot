@@ -25,8 +25,7 @@ if TYPE_CHECKING:
     import discord
 
     from spellbot import SpellBot
-    from spellbot.data import UserData
-    from spellbot.models import ChannelDict, GuildDict
+    from spellbot.data import ChannelData, GuildData, UserData
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +50,8 @@ class BaseAction:
     member: discord.Member
     guild: discord.Guild | None
     channel: discord.TextChannel | None
-    channel_data: ChannelDict
-    guild_data: GuildDict | None
+    channel_data: ChannelData
+    guild_data: GuildData | None
     user_data: UserData | None
 
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
@@ -64,11 +63,11 @@ class BaseAction:
         self.channel = cast("discord.TextChannel", self.interaction.channel)
 
     async def upsert_request_objects(self) -> None:  # pragma: no cover
-        self.guild_data: GuildDict | None = None
+        self.guild_data: GuildData | None = None
         if self.guild:
             self.guild_data = await self.services.guilds.upsert(self.guild)
 
-        if self.guild_data and self.guild_data["banned"]:
+        if self.guild_data and self.guild_data.banned:
             raise GuildBannedError
 
         if self.guild and self.channel:
@@ -87,14 +86,14 @@ class BaseAction:
         if not self.guild:
             return
         verified: bool | None = None
-        if self.channel_data["auto_verify"]:
+        if self.channel_data.auto_verify:
             verified = True
         await self.services.verifies.upsert(self.guild.id, self.interaction.user.id, verified)
         if not user_can_moderate(self.interaction.user, self.guild, self.channel):
             user_is_verified = await self.services.verifies.is_verified()
-            if user_is_verified and self.channel_data["unverified_only"]:
+            if user_is_verified and self.channel_data.unverified_only:
                 raise UserVerifiedError
-            if not user_is_verified and self.channel_data["verified_only"]:
+            if not user_is_verified and self.channel_data.verified_only:
                 raise UserUnverifiedError
 
     def should_do_verification(self) -> bool:

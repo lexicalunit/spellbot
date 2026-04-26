@@ -15,7 +15,7 @@ from spellbot.client import build_bot
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Game, Guild
 from spellbot.services import ChannelsService, GamesService, GuildsService, ServicesRegistry
-from tests.mocks import mock_discord_object
+from tests.mocks import create_mock_channel, mock_discord_object
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -256,9 +256,15 @@ class TestTaskExpireInactiveChannels:
             factories.post.create(guild=guild, channel=channel, game=game, message_xid=message_xid)
         factories.user.create(game=game)
         action.services = mock_services
-        action.services.games.inactive_games = AsyncMock(return_value=[game.to_dict()])
+        action.services.games.inactive_games = AsyncMock(return_value=[game.to_data()])
         action.services.games.delete_games = AsyncMock()
-        action.services.channels.select = AsyncMock(return_value={"delete_expired": delete_expired})
+
+        mock_channel_data = create_mock_channel(
+            xid=channel.xid,
+            guild_xid=guild.xid,
+            delete_expired=delete_expired,
+        )
+        action.services.channels.select = AsyncMock(return_value=mock_channel_data)
         mock_fetch_channel = AsyncMock(return_value=chan)
         mocker.patch("spellbot.actions.tasks_action.safe_fetch_text_channel", mock_fetch_channel)
         mock_get_partial = MagicMock(return_value=post)

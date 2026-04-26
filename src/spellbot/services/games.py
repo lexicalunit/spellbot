@@ -12,7 +12,7 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import and_, asc, column, or_
 from sqlalchemy.sql.functions import count
 
-from spellbot.data import PlayerDataDict
+from spellbot.data import PlayerDataDict, QueueData
 from spellbot.database import DatabaseSession
 from spellbot.models import (
     Block,
@@ -21,13 +21,14 @@ from spellbot.models import (
     Play,
     Post,
     Queue,
-    QueueDict,
     UserAward,
     Watch,
 )
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from spellbot.data import GameData
 
 
@@ -42,7 +43,7 @@ class GamesService:
     def get(self, game_id: int) -> GameData | None:
         """Fetch the game data by game id."""
         game: Game | None = DatabaseSession.get(Game, game_id)
-        return game.to_dict() if game else None
+        return game.to_data() if game else None
 
     @sync_to_async()
     @tracer.wrap()
@@ -51,7 +52,7 @@ class GamesService:
         game: Game | None = (
             DatabaseSession.query(Game).filter(Game.voice_xid == voice_xid).one_or_none()
         )
-        return game.to_dict() if game else None
+        return game.to_data() if game else None
 
     @sync_to_async()
     @tracer.wrap()
@@ -63,7 +64,7 @@ class GamesService:
             .filter(Post.message_xid == message_xid)
             .one_or_none()
         )
-        return game.to_dict() if game else None
+        return game.to_data() if game else None
 
     @sync_to_async()
     @tracer.wrap()
@@ -101,7 +102,7 @@ class GamesService:
         result = DatabaseSession.scalars(query)
         updated_game: Game = result.one()
         DatabaseSession.commit()
-        return updated_game.to_dict()
+        return updated_game.to_data()
 
     @sync_to_async()
     @tracer.wrap()
@@ -173,7 +174,7 @@ class GamesService:
         )
         DatabaseSession.commit()
 
-        return new, game.to_dict()
+        return new, game.to_data()
 
     @tracer.wrap()
     def _find_existing(
@@ -283,7 +284,7 @@ class GamesService:
         new_post: Post | None = result.one_or_none()
         DatabaseSession.commit()
         if new_post is not None:
-            game_data.posts.append(new_post.to_dict())
+            game_data.posts.append(new_post.to_data())
         return game_data
 
     @sync_to_async
@@ -310,7 +311,7 @@ class GamesService:
         result = DatabaseSession.scalars(query)
         updated_game: Game = result.one()
         DatabaseSession.commit()
-        return updated_game.to_dict()
+        return updated_game.to_data()
 
     @sync_to_async()
     @tracer.wrap()
@@ -324,8 +325,8 @@ class GamesService:
         """Start the pending game."""
         game: Game = DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
         assert len(game_link or "") <= MAX_GAME_LINK_LEN
-        queues: list[QueueDict] = [
-            queue.to_dict()
+        queues: list[QueueData] = [
+            queue.to_data()
             for queue in DatabaseSession.query(Queue).filter(Queue.game_id == game.id).all()
         ]
 
@@ -337,7 +338,7 @@ class GamesService:
 
         if not queues:  # Not sure this is possible, but just in case.
             DatabaseSession.commit()
-            return game.to_dict()
+            return game.to_data()
 
         # upsert into plays
         DatabaseSession.execute(
@@ -345,9 +346,9 @@ class GamesService:
             .values(
                 [
                     {
-                        "user_xid": queue["user_xid"],
+                        "user_xid": queue.user_xid,
                         "game_id": game.id,
-                        "og_guild_xid": queue["og_guild_xid"],
+                        "og_guild_xid": queue.og_guild_xid,
                         "pin": pins[i],
                     }
                     for i, queue in enumerate(queues)
@@ -363,7 +364,7 @@ class GamesService:
                 [
                     {
                         "guild_xid": game.guild_xid,
-                        "user_xid": queue["user_xid"],
+                        "user_xid": queue.user_xid,
                     }
                     for queue in queues
                 ],
@@ -372,13 +373,13 @@ class GamesService:
         )
 
         # drop the players from any other queues
-        player_xids = [queue["user_xid"] for queue in queues]
+        player_xids = [queue.user_xid for queue in queues]
         DatabaseSession.query(Queue).filter(Queue.user_xid.in_(player_xids)).delete(
             synchronize_session=False,
         )
 
         DatabaseSession.commit()
-        return game.to_dict()
+        return game.to_data()
 
     @sync_to_async()
     @tracer.wrap()
@@ -415,7 +416,7 @@ class GamesService:
         result = DatabaseSession.scalars(query)
         updated_game: Game = result.one()
         DatabaseSession.commit()
-        return updated_game.to_dict()
+        return updated_game.to_data()
 
     @sync_to_async()
     @tracer.wrap()
@@ -447,7 +448,7 @@ class GamesService:
         ]
         if guild_xid:
             filters.append(Game.guild_xid == guild_xid)
-        records = (
+        records: Sequence[Game] = (
             DatabaseSession.query(Game)
             .join(Queue, isouter=True)
             .filter(*filters)
@@ -459,7 +460,7 @@ class GamesService:
                 ),
             )
         )
-        return [record.to_dict() for record in records]
+        return [record.to_data() for record in records]
 
     @sync_to_async()
     @tracer.wrap()
@@ -516,7 +517,7 @@ class GamesService:
             .order_by(Game.created_at.desc())
             .first()
         )
-        return last_game.to_dict() if last_game else None
+        return last_game.to_data() if last_game else None
 
     # A helper function for Convoke game creation. Would be nice to refactor to remove!
     @sync_to_async()

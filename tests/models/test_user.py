@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
@@ -34,21 +35,25 @@ class TestModelUser:
         factories.play.create(user_xid=player1.xid, game_id=game2.id)
         factories.play.create(user_xid=player2.xid, game_id=game2.id)
 
-        user1_data = user1.to_dict()
+        user1_data = user1.to_data()
         assert isinstance(user1_data, UserData)
-        assert user1_data.xid == user1.xid
-        assert user1_data.created_at == user1.created_at
-        assert user1_data.updated_at == user1.updated_at
-        assert user1_data.name == user1.name
-        assert user1_data.banned == user1.banned
+        assert asdict(user1_data) == {
+            "xid": user1.xid,
+            "created_at": user1.created_at,
+            "updated_at": user1.updated_at,
+            "name": user1.name,
+            "banned": user1.banned,
+        }
 
-        user2_data = user2.to_dict()
+        user2_data = user2.to_data()
         assert isinstance(user2_data, UserData)
-        assert user2_data.xid == user2.xid
-        assert user2_data.created_at == user2.created_at
-        assert user2_data.updated_at == user2.updated_at
-        assert user2_data.name == user2.name
-        assert user2_data.banned == user2.banned
+        assert asdict(user2_data) == {
+            "xid": user2.xid,
+            "created_at": user2.created_at,
+            "updated_at": user2.updated_at,
+            "name": user2.name,
+            "banned": user2.banned,
+        }
 
     def test_pending_games(self, factories: Factories) -> None:
         guild = factories.guild.create()

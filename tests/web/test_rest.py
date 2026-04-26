@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import aiohttp
 import pytest
 
+from spellbot.data import PostData
 from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
 from spellbot.web.api.rest import (
@@ -300,17 +301,22 @@ class TestPostWithRetry:
 
 class TestGameRecordEmbed:
     def test_with_winner(self) -> None:
+
         game_data = create_mock_game(game_id=1)
         game_data.guild_xid = 123
         game_data.channel_xid = 456
         game_data.started_at = datetime(2024, 1, 15, 10, 30, tzinfo=UTC)
-        game_data.posts = [  # type: ignore[assignment]
-            {
-                "guild_xid": 123,
-                "channel_xid": 456,
-                "message_xid": 789,
-                "jump_link": "https://discord.com/jump/123/456/789",
-            },
+        now = datetime.now(tz=UTC)
+        game_data.posts = [
+            PostData(
+                created_at=now,
+                updated_at=now,
+                game_id=1,
+                guild_xid=123,
+                channel_xid=456,
+                message_xid=789,
+                jump_link="https://discord.com/jump/123/456/789",
+            ),
         ]
         players = [
             create_mock_user(xid=101, name="Player1"),
@@ -334,13 +340,17 @@ class TestGameRecordEmbed:
         game_data.guild_xid = 123
         game_data.channel_xid = 456
         game_data.started_at = datetime(2024, 1, 15, 10, 30, tzinfo=UTC)
-        game_data.posts = [  # type: ignore[assignment]
-            {
-                "guild_xid": 123,
-                "channel_xid": 456,
-                "message_xid": 789,
-                "jump_link": "https://discord.com/jump/123/456/789",
-            },
+        now = datetime.now(tz=UTC)
+        game_data.posts = [
+            PostData(
+                created_at=now,
+                updated_at=now,
+                game_id=1,
+                guild_xid=123,
+                channel_xid=456,
+                message_xid=789,
+                jump_link="https://discord.com/jump/123/456/789",
+            ),
         ]
         players = [
             create_mock_user(xid=101, name="Player1"),

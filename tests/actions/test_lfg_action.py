@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
@@ -8,19 +8,44 @@ import pytest
 import pytest_asyncio
 
 from spellbot.actions import LookingForGameAction
+from spellbot.data import PostData
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.operations import VoiceChannelSuggestion
 from spellbot.services.awards import NewAward
 from spellbot.settings import settings
-from tests.mocks import create_mock_game, create_mock_user, mock_discord_object
+from tests.mocks import create_mock_game, create_mock_guild, create_mock_user, mock_discord_object
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
     from spellbot import SpellBot
-    from spellbot.models import GuildDict, User
+    from spellbot.models import User
+
+from datetime import UTC, datetime
 
 pytestmark = pytest.mark.use_db
+
+
+def create_test_post(
+    game_id: int = 1,
+    guild_xid: int = 99999,
+    channel_xid: int = 88888,
+    message_xid: int = 77777,
+    jump_link: str | None = None,
+) -> PostData:
+    """Create a PostData object for tests."""
+    now = datetime.now(tz=UTC)
+    if jump_link is None:
+        jump_link = f"https://discord.com/channels/{guild_xid}/{channel_xid}/{message_xid}"
+    return PostData(
+        created_at=now,
+        updated_at=now,
+        game_id=game_id,
+        guild_xid=guild_xid,
+        channel_xid=channel_xid,
+        message_xid=message_xid,
+        jump_link=jump_link,
+    )
 
 
 @pytest_asyncio.fixture
@@ -35,22 +60,22 @@ class TestLookingForGameAction:
         assert await action.get_service(GameService.X_MAGE.value) == GameService.X_MAGE.value
 
     async def test_get_service_fallback_channel_data(self, action: LookingForGameAction) -> None:
-        action.channel_data["default_service"] = GameService.X_MAGE
+        action.channel_data.default_service = GameService.X_MAGE
         assert await action.get_service(None) == GameService.X_MAGE.value
 
     async def test_get_service_fallback_default(self, action: LookingForGameAction) -> None:
-        action.channel_data["default_service"] = None  # type: ignore
+        action.channel_data.default_service = None  # type: ignore[assignment]
         assert await action.get_service(None) == GameService.CONVOKE.value
 
     async def test_get_format(self, action: LookingForGameAction) -> None:
         assert await action.get_format(GameFormat.PAUPER.value) == GameFormat.PAUPER.value
 
     async def test_get_format_fallback_channel_data(self, action: LookingForGameAction) -> None:
-        action.channel_data["default_format"] = GameFormat.PAUPER
+        action.channel_data.default_format = GameFormat.PAUPER
         assert await action.get_format(None) == GameFormat.PAUPER.value
 
     async def test_get_format_fallback_default(self, action: LookingForGameAction) -> None:
-        action.channel_data["default_format"] = None  # type: ignore
+        action.channel_data.default_format = None  # type: ignore[assignment]
         assert await action.get_format(None) == GameFormat.COMMANDER.value
 
     @pytest.mark.parametrize(
@@ -91,7 +116,7 @@ class TestLookingForGameAction:
         self,
         action: LookingForGameAction,
     ) -> None:
-        action.channel_data["default_bracket"] = GameBracket.BRACKET_1
+        action.channel_data.default_bracket = GameBracket.BRACKET_1
         assert await action.get_bracket(None, None) == GameBracket.BRACKET_1.value
 
     async def test_execute_in_non_guild_channel(
@@ -470,7 +495,7 @@ class TestLookingForGameAction:
         )
 
         # Enable voice invite
-        action.channel_data["voice_invite"] = True
+        action.channel_data.voice_invite = True
 
         set_voice_stub = mocker.patch.object(
             action.services.games,
@@ -517,7 +542,7 @@ class TestLookingForGameAction:
         )
 
         # voice_invite is False by default
-        action.channel_data["voice_invite"] = False
+        action.channel_data.voice_invite = False
 
         set_voice_stub = mocker.patch.object(
             action.services.games,
@@ -588,13 +613,14 @@ class TestLookingForGameAction:
         mocker.patch.object(action.interaction, "guild", mock_guild)
 
         game_data = create_mock_game(game_id=1)
-        game_data.posts = [  # type: ignore[assignment]
-            {
-                "guild_xid": mock_guild.id,
-                "channel_xid": 12345,
-                "message_xid": 67890,
-                "jump_link": "https://discord.com/jump/1",
-            },
+        game_data.posts = [
+            create_test_post(
+                game_id=1,
+                guild_xid=mock_guild.id,
+                channel_xid=12345,
+                message_xid=67890,
+                jump_link="https://discord.com/jump/1",
+            ),
         ]
         mocker.patch.object(
             action.services.games,
@@ -615,20 +641,10 @@ class TestLookingForGameAction:
     ) -> None:
         """Test make_game_ready calls safe_suggest_voice_channel when conditions are met."""
         game_data = create_mock_game(game_id=1)
-        action.guild_data = cast(
-            "GuildDict",
-            {
-                "xid": 12345,
-                "name": "Test Guild",
-                "suggest_voice_category": "Voice Channels",
-                "created_at": None,
-                "updated_at": None,
-                "banned": False,
-                "motd": None,
-                "show_links": True,
-                "voice_create": False,
-                "use_max_bitrate": False,
-            },
+        action.guild_data = create_mock_guild(
+            xid=12345,
+            name="Test Guild",
+            suggest_voice_category="Voice Channels",
         )
 
         mock_suggestion = VoiceChannelSuggestion(already_picked=None, random_empty=None)
@@ -705,15 +721,8 @@ class TestLookingForGameAction:
         mock_message = MagicMock(spec=discord.PartialMessage)
 
         game_data = create_mock_game(game_id=1)
-        # Add a post to the game data
-        game_data.posts = [  # type: ignore[assignment]
-            {
-                "guild_xid": 99999,  # Different from action.guild.id
-                "channel_xid": 88888,
-                "message_xid": 77777,
-                "jump_link": "https://discord.com/channels/99999/88888/77777",
-            },
-        ]
+        # Add a post to the game data (different from action.guild.id)
+        game_data.posts = [create_test_post()]
 
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_text_channel",
@@ -747,14 +756,7 @@ class TestLookingForGameAction:
         mock_guild.id = 99999
 
         game_data = create_mock_game(game_id=1)
-        game_data.posts = [  # type: ignore[assignment]
-            {
-                "guild_xid": 99999,
-                "channel_xid": 88888,
-                "message_xid": 77777,
-                "jump_link": "https://discord.com/channels/99999/88888/77777",
-            },
-        ]
+        game_data.posts = [create_test_post()]
 
         mocker.patch.object(action.interaction, "message", mock_message)
         mocker.patch.object(action, "channel", mock_channel)
@@ -789,14 +791,7 @@ class TestLookingForGameAction:
         mock_guild.id = 99999
 
         game_data = create_mock_game(game_id=1)
-        game_data.posts = [  # type: ignore[assignment]
-            {
-                "guild_xid": 99999,
-                "channel_xid": 88888,
-                "message_xid": 77777,
-                "jump_link": "https://discord.com/channels/99999/88888/77777",
-            },
-        ]
+        game_data.posts = [create_test_post()]
 
         mocker.patch.object(action.interaction, "message", mock_message)
         mocker.patch.object(action, "channel", mock_channel)
@@ -825,14 +820,7 @@ class TestLookingForGameAction:
     ) -> None:
         """Test _handle_embed_creation skips when channel not found."""
         game_data = create_mock_game(game_id=1)
-        game_data.posts = [  # type: ignore[assignment]
-            {
-                "guild_xid": 99999,  # Different from action.guild.id
-                "channel_xid": 88888,
-                "message_xid": 77777,
-                "jump_link": "https://discord.com/channels/99999/88888/77777",
-            },
-        ]
+        game_data.posts = [create_test_post()]
 
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_text_channel",
@@ -856,14 +844,7 @@ class TestLookingForGameAction:
         mock_channel = MagicMock(spec=discord.TextChannel)
 
         game_data = create_mock_game(game_id=1)
-        game_data.posts = [  # type: ignore[assignment]
-            {
-                "guild_xid": 99999,
-                "channel_xid": 88888,
-                "message_xid": 77777,
-                "jump_link": "https://discord.com/channels/99999/88888/77777",
-            },
-        ]
+        game_data.posts = [create_test_post()]
 
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_text_channel",
@@ -889,14 +870,7 @@ class TestLookingForGameAction:
         mock_message = MagicMock(spec=discord.PartialMessage)
 
         game_data = create_mock_game(game_id=1)
-        game_data.posts = [  # type: ignore[assignment]
-            {
-                "guild_xid": 99999,
-                "channel_xid": 88888,
-                "message_xid": 77777,
-                "jump_link": "https://discord.com/channels/99999/88888/77777",
-            },
-        ]
+        game_data.posts = [create_test_post()]
         mocker.patch(
             "spellbot.actions.lfg_action.safe_fetch_text_channel",
             AsyncMock(return_value=mock_channel),
@@ -1206,5 +1180,5 @@ class TestLookingForGameAction:
         self,
         action: LookingForGameAction,
     ) -> None:
-        action.channel_data = {"default_bracket": None}  # type: ignore
+        action.channel_data.default_bracket = None  # type: ignore[assignment]
         assert await action.get_bracket(None, None) == GameBracket.NONE.value

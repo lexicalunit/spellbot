@@ -159,8 +159,8 @@ class TestServiceGuilds:
 
         guilds = GuildsService()
         await guilds.select(101)
-        service_dict = await guilds.to_dict()
-        assert guild.to_dict() == service_dict
+        service_data = await guilds.to_data()
+        assert guild.to_data() == service_data
 
     async def test_guilds_award_add(self) -> None:
         guilds = GuildsService()

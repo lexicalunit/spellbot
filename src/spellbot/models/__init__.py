@@ -17,50 +17,38 @@ def import_models() -> None:  # pragma: no cover
 
 from .base import Base, create_all, literalquery, now, reverse_all  # noqa: I001,E402
 
-from .award import GuildAward, UserAward, GuildAwardDict, UserAwardDict  # noqa: E402
-from .block import Block, BlockDict  # noqa: E402
-from .channel import Channel, ChannelDict  # noqa: E402
+from .award import GuildAward, UserAward  # noqa: E402
+from .block import Block  # noqa: E402
+from .channel import Channel  # noqa: E402
 from .game import Game, GameStatus, MAX_RULES_LENGTH  # noqa: E402
-from .guild import Guild, GuildDict  # noqa: E402
-from .guild_member import GuildMember, GuildMemberDict  # noqa: E402
-from .play import Play, PlayDict, generate_pin  # noqa: E402
-from .post import Post, PostDict  # noqa: E402
-from .queue import Queue, QueueDict  # noqa: E402
-from .token import Token, TokenDict  # noqa: E402
+from .guild import Guild  # noqa: E402
+from .guild_member import GuildMember  # noqa: E402
+from .play import Play, generate_pin  # noqa: E402
+from .post import Post  # noqa: E402
+from .queue import Queue  # noqa: E402
+from .token import Token  # noqa: E402
 from .user import User  # noqa: E402
-from .verify import Verify, VerifyDict  # noqa: E402
-from .watch import Watch, WatchDict  # noqa: E402
+from .verify import Verify  # noqa: E402
+from .watch import Watch  # noqa: E402
 
 __all__ = [
     "MAX_RULES_LENGTH",
     "Base",
     "Block",
-    "BlockDict",
     "Channel",
-    "ChannelDict",
     "Game",
     "GameStatus",
     "Guild",
     "GuildAward",
-    "GuildAwardDict",
-    "GuildDict",
     "GuildMember",
-    "GuildMemberDict",
     "Play",
-    "PlayDict",
     "Post",
-    "PostDict",
     "Queue",
-    "QueueDict",
     "Token",
-    "TokenDict",
     "User",
     "UserAward",
-    "UserAwardDict",
     "Verify",
-    "VerifyDict",
     "Watch",
-    "WatchDict",
     "create_all",
     "generate_pin",
     "import_models",

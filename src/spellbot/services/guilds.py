@@ -9,10 +9,13 @@ from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
 from spellbot.environment import running_in_pytest
-from spellbot.models import Channel, Guild, GuildAward, GuildAwardDict, GuildDict
+from spellbot.models import Channel, Guild, GuildAward
 
 if TYPE_CHECKING:
     import discord
+
+    from spellbot.data import GuildAwardData, GuildData
+
 
 guild_cache: dict[int, str] = {}
 
@@ -27,7 +30,7 @@ class GuildsService:
     guild: Guild | None = None
 
     @sync_to_async()
-    def upsert(self, guild: discord.Guild) -> GuildDict | None:
+    def upsert(self, guild: discord.Guild) -> GuildData | None:
         name_max_len = Guild.name.property.columns[0].type.length  # type: ignore
         raw_name = getattr(guild, "name", "")
         name = raw_name[:name_max_len]
@@ -52,7 +55,7 @@ class GuildsService:
             guild_cache[guild.id] = name
 
         self.guild = DatabaseSession.query(Guild).filter(Guild.xid == guild.id).one_or_none()
-        return self.guild.to_dict() if self.guild else None
+        return self.guild.to_data() if self.guild else None
 
     @sync_to_async()
     def set_banned(self, guild_xid: int, banned: bool) -> None:
@@ -154,9 +157,9 @@ class GuildsService:
         return [int(row[0]) for row in rows]
 
     @sync_to_async()
-    def to_dict(self) -> GuildDict:
+    def to_data(self) -> GuildData:
         assert self.guild
-        return self.guild.to_dict()
+        return self.guild.to_data()
 
     @sync_to_async()
     def has_award_with_count(self, count: int) -> bool:
@@ -179,7 +182,7 @@ class GuildsService:
         role: str,
         message: str,
         **options: bool | None,
-    ) -> GuildAwardDict:
+    ) -> GuildAwardData:
         assert self.guild
         repeating = bool(options.get("repeating", False))
         remove = bool(options.get("remove", False))
@@ -197,7 +200,7 @@ class GuildsService:
         )
         DatabaseSession.add(award)
         DatabaseSession.commit()
-        return award.to_dict()
+        return award.to_data()
 
     @sync_to_async()
     def award_delete(self, guild_award_id: int) -> None:

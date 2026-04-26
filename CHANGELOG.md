@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Refactored GameDict, Game, GamesService, and GameData.
+- Refactor all models to have dataclass views.
 
 ## [v18.4.12](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.12) - 2026-04-22
 

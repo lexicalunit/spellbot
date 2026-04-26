@@ -57,10 +57,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Counter for generating unique offsets in fixtures when running tests in parallel.
-# Each test gets a unique offset to avoid primary key conflicts within the same
-# transaction (which is shared across all tests in a worker).
-_fixture_offset_counter = itertools.count(1)
+# Counters for generating unique offsets in fixtures when running tests in parallel.
+# Each worker gets its own counter, and offsets are calculated to avoid collisions
+# across workers. Worker gw0 gets offsets 1, 2, 3...; gw1 gets 10001, 10002...; etc.
+_fixture_offset_counters: dict[str, itertools.count[int]] = {}
+_WORKER_OFFSET_MULTIPLIER = 10000
 
 
 @overload
@@ -333,9 +334,21 @@ def player(user: User, game: Game) -> User:
 
 
 @pytest.fixture
-def unique_offset() -> int:
-    """Generate a unique offset for each test to avoid primary key conflicts in parallel tests."""
-    return next(_fixture_offset_counter)
+def unique_offset(worker_id: str) -> int:
+    """
+    Generate a unique offset for each test to avoid primary key conflicts in parallel tests.
+
+    Each worker gets its own range of offsets to avoid collisions:
+    - master/gw0: 1, 2, 3, ...
+    - gw1: 10001, 10002, 10003, ...
+    - gw2: 20001, 20002, 20003, ...
+    """
+    if worker_id not in _fixture_offset_counters:
+        # Extract worker number from worker_id (e.g., "gw1" -> 1, "master" -> 0)
+        worker_num = 0 if worker_id == "master" else int(worker_id.replace("gw", ""))
+        start = worker_num * _WORKER_OFFSET_MULTIPLIER + 1
+        _fixture_offset_counters[worker_id] = itertools.count(start)
+    return next(_fixture_offset_counters[worker_id])
 
 
 @pytest.fixture
