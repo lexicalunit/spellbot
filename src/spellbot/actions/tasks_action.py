@@ -119,10 +119,10 @@ class TasksAction:
         channel_filterer = VoiceChannelFilterer(self.services.games)
 
         for guild_xid in await self.services.guilds.voiced():
-            await self.services.guilds.select(guild_xid)
-            guild_name = await self.services.guilds.current_name()
+            guild_data = await self.services.guilds.get(guild_xid)
+            guild_name = guild_data.name if guild_data else ""
             logger.info("looking in guild %s(%s)", guild_name, guild_xid)
-            prefixes = await self.services.guilds.voice_category_prefixes()
+            prefixes = await self.services.guilds.voice_category_prefixes(guild_xid)
 
             if guild_xid not in active_guild_xids:
                 logger.info("guild is not active")

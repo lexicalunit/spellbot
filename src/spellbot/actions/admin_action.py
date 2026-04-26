@@ -61,7 +61,8 @@ class AdminAction(BaseAction):
         )
 
     async def build_channels_embeds(self) -> list[Embed]:  # noqa: C901
-        guild = await self.services.guilds.to_data()
+        assert self.guild_data is not None
+        guild = self.guild_data
         embeds: list[Embed] = []
 
         def new_embed() -> Embed:
@@ -130,7 +131,8 @@ class AdminAction(BaseAction):
         return embeds
 
     async def build_awards_embeds(self) -> list[Embed]:
-        guild = await self.services.guilds.to_data()
+        assert self.guild_data is not None
+        guild = self.guild_data
         embeds: list[Embed] = []
 
         def new_embed() -> Embed:
@@ -169,7 +171,8 @@ class AdminAction(BaseAction):
         return embeds
 
     async def build_setup_embed(self) -> Embed:
-        guild = await self.services.guilds.to_data()
+        assert self.guild_data is not None
+        guild = self.guild_data
         embed = Embed(title=f"SpellBot Setup for {guild.name}")
         embed.set_thumbnail(url=settings.ICO_URL)
         description = (
@@ -238,11 +241,12 @@ class AdminAction(BaseAction):
 
     async def setup_mythic_track(self) -> None:
         assert self.guild is not None
-        enabled = await self.services.guilds.setup_mythic_track()
+        assert self.guild_data is not None
+        self.guild_data = await self.services.guilds.setup_mythic_track(self.guild_data)
         embed = Embed(title=f"Mythic Track Setup for {self.guild.name}")
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.color = discord.Color(settings.INFO_EMBED_COLOR)
-        if enabled:
+        if self.guild_data.enable_mythic_track:
             GUIDE = "https://www.mythictrack.com/spellbot"
             embed.description = (
                 "✅ Mythic Track has been turned **on** for this server!\n\n"
@@ -310,7 +314,9 @@ class AdminAction(BaseAction):
             )
             return
 
+        assert self.guild_data is not None
         award = await self.services.guilds.award_add(
+            self.guild_data.xid,
             count,
             role,
             message,
@@ -340,8 +346,8 @@ class AdminAction(BaseAction):
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
     async def set_suggest_vc_category(self, category: str | None) -> None:
-        guild = await self.services.guilds.to_data()
-        if guild.voice_create:
+        assert self.guild_data is not None
+        if self.guild_data.voice_create:
             await safe_send_channel(
                 self.interaction,
                 (
@@ -353,7 +359,10 @@ class AdminAction(BaseAction):
             )
             return
 
-        await self.services.guilds.set_suggest_vc_category(category)
+        self.guild_data = await self.services.guilds.set_suggest_vc_category(
+            self.guild_data,
+            category,
+        )
         if category:
             msg = f'Suggested voice channels category prefix set to "{category}".'
         else:
@@ -361,7 +370,8 @@ class AdminAction(BaseAction):
         await safe_send_channel(self.interaction, msg, ephemeral=True)
 
     async def set_motd(self, message: str | None = None) -> None:
-        await self.services.guilds.set_motd(message)
+        assert self.guild_data
+        await self.services.guilds.set_motd(self.guild_data, message)
         await safe_send_channel(self.interaction, "Message of the day updated.", ephemeral=True)
 
     async def refresh_setup(self) -> None:
@@ -370,19 +380,22 @@ class AdminAction(BaseAction):
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_show_links(self) -> None:
-        await self.services.guilds.toggle_show_links()
+        assert self.guild_data is not None
+        self.guild_data = await self.services.guilds.toggle_show_links(self.guild_data)
         embed = await self.build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_voice_create(self) -> None:
-        await self.services.guilds.toggle_voice_create()
+        assert self.guild_data is not None
+        self.guild_data = await self.services.guilds.toggle_voice_create(self.guild_data)
         embed = await self.build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_use_max_bitrate(self) -> None:
-        await self.services.guilds.toggle_use_max_bitrate()
+        assert self.guild_data is not None
+        self.guild_data = await self.services.guilds.toggle_use_max_bitrate(self.guild_data)
         embed = await self.build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)

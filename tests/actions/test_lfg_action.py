@@ -402,15 +402,9 @@ class TestLookingForGameAction:
     ) -> None:
         """Test handle_voice_creation returns when category not found."""
         game_data = create_mock_game(game_id=1)
-        mocker.patch.object(
-            action.services.guilds,
-            "should_voice_create",
-            AsyncMock(return_value=True),
-        )
-        mocker.patch.object(
-            action.services.guilds,
-            "get_use_max_bitrate",
-            AsyncMock(return_value=False),
+        action.guild_data = create_mock_guild(
+            voice_create=True,
+            use_max_bitrate=False,
         )
         mocker.patch(
             "spellbot.actions.lfg_action.safe_ensure_voice_category",
@@ -433,15 +427,9 @@ class TestLookingForGameAction:
         """Test handle_voice_creation returns when voice channel creation fails."""
         game_data = create_mock_game(game_id=1)
         mock_category = MagicMock(spec=discord.CategoryChannel)
-        mocker.patch.object(
-            action.services.guilds,
-            "should_voice_create",
-            AsyncMock(return_value=True),
-        )
-        mocker.patch.object(
-            action.services.guilds,
-            "get_use_max_bitrate",
-            AsyncMock(return_value=False),
+        action.guild_data = create_mock_guild(
+            voice_create=True,
+            use_max_bitrate=False,
         )
         mocker.patch(
             "spellbot.actions.lfg_action.safe_ensure_voice_category",
@@ -471,15 +459,9 @@ class TestLookingForGameAction:
         mock_invite = MagicMock(spec=discord.Invite)
         mock_invite.url = "https://discord.gg/invite"
 
-        mocker.patch.object(
-            action.services.guilds,
-            "should_voice_create",
-            AsyncMock(return_value=True),
-        )
-        mocker.patch.object(
-            action.services.guilds,
-            "get_use_max_bitrate",
-            AsyncMock(return_value=False),
+        action.guild_data = create_mock_guild(
+            voice_create=True,
+            use_max_bitrate=False,
         )
         mocker.patch(
             "spellbot.actions.lfg_action.safe_ensure_voice_category",
@@ -518,15 +500,9 @@ class TestLookingForGameAction:
         mock_voice_channel = MagicMock(spec=discord.VoiceChannel)
         mock_voice_channel.id = 99999
 
-        mocker.patch.object(
-            action.services.guilds,
-            "should_voice_create",
-            AsyncMock(return_value=True),
-        )
-        mocker.patch.object(
-            action.services.guilds,
-            "get_use_max_bitrate",
-            AsyncMock(return_value=False),
+        action.guild_data = create_mock_guild(
+            voice_create=True,
+            use_max_bitrate=False,
         )
         mocker.patch(
             "spellbot.actions.lfg_action.safe_ensure_voice_category",

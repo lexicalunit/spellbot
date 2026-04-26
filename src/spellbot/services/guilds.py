@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from asgiref.sync import sync_to_async
+from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
@@ -27,8 +28,6 @@ def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
 
 
 class GuildsService:
-    guild: Guild | None = None
-
     @sync_to_async()
     def upsert(self, guild: discord.Guild) -> GuildData | None:
         name_max_len = Guild.name.property.columns[0].type.length  # type: ignore
@@ -54,8 +53,8 @@ class GuildsService:
             DatabaseSession.commit()
             guild_cache[guild.id] = name
 
-        self.guild = DatabaseSession.query(Guild).filter(Guild.xid == guild.id).one_or_none()
-        return self.guild.to_data() if self.guild else None
+        result = DatabaseSession.query(Guild).filter(Guild.xid == guild.id).one_or_none()
+        return result.to_data() if guild else None
 
     @sync_to_async()
     def set_banned(self, guild_xid: int, banned: bool) -> None:
@@ -78,73 +77,87 @@ class GuildsService:
         DatabaseSession.commit()
 
     @sync_to_async()
-    def select(self, guild_xid: int) -> bool:
-        self.guild = (
-            DatabaseSession.query(Guild)
-            .filter(
-                Guild.xid == guild_xid,
-            )
-            .one_or_none()
+    def get(self, guild_xid: int) -> GuildData | None:
+        guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
+        return guild.to_data() if guild else None
+
+    @sync_to_async()
+    def set_suggest_vc_category(self, guild_data: GuildData, category: str | None) -> GuildData:
+        stmt = (
+            update(Guild)  # type: ignore
+            .where(Guild.xid == guild_data.xid)
+            .values(suggest_voice_category=category)
+            .returning(Guild)  # type: ignore
         )
-        return bool(self.guild)
-
-    @sync_to_async()
-    def should_voice_create(self) -> bool:
-        assert self.guild
-        return cast("bool", self.guild.voice_create)
-
-    @sync_to_async()
-    def get_use_max_bitrate(self) -> bool:
-        assert self.guild
-        return cast("bool", self.guild.use_max_bitrate)
-
-    @sync_to_async()
-    def set_suggest_vc_category(self, category: str | None) -> None:
-        assert self.guild
-        self.guild.suggest_voice_category = category
+        updated_guild: Guild = DatabaseSession.scalars(stmt).one()
         DatabaseSession.commit()
+        return updated_guild.to_data()
 
     @sync_to_async()
-    def set_motd(self, message: str | None = None) -> None:
-        if message:
-            motd = message[: Guild.motd.property.columns[0].type.length]  # type: ignore
-            self.guild.motd = motd  # type: ignore
-        else:
-            self.guild.motd = ""  # type: ignore
+    def set_motd(self, guild_data: GuildData, message: str | None = None) -> GuildData:
+        motd = (
+            message[: Guild.motd.property.columns[0].type.length]  # type: ignore
+            if message
+            else ""
+        )
+        stmt = (
+            update(Guild)  # type: ignore
+            .where(Guild.xid == guild_data.xid)
+            .values(motd=motd)
+            .returning(Guild)  # type: ignore
+        )
+        updated_guild: Guild = DatabaseSession.scalars(stmt).one()
         DatabaseSession.commit()
+        return updated_guild.to_data()
 
     @sync_to_async()
-    def toggle_show_links(self) -> None:
-        assert self.guild
-        self.guild.show_links = not self.guild.show_links
+    def toggle_show_links(self, guild_data: GuildData) -> GuildData:
+        new_value = not guild_data.show_links
+        stmt = (
+            update(Guild)  # type: ignore
+            .where(Guild.xid == guild_data.xid)
+            .values(show_links=new_value)
+            .returning(Guild)  # type: ignore
+        )
+        updated_guild: Guild = DatabaseSession.scalars(stmt).one()
         DatabaseSession.commit()
+        return updated_guild.to_data()
 
     @sync_to_async()
-    def toggle_voice_create(self) -> None:
-        assert self.guild
-        self.guild.voice_create = not self.guild.voice_create
-        if self.guild.voice_create:
-            self.guild.suggest_voice_category = None
+    def toggle_voice_create(self, guild_data: GuildData) -> GuildData:
+        new_value = not guild_data.voice_create
+        values: dict[str, bool | None] = {"voice_create": new_value}
+        if new_value:
+            values["suggest_voice_category"] = None
+        stmt = (
+            update(Guild)  # type: ignore
+            .where(Guild.xid == guild_data.xid)
+            .values(**values)
+            .returning(Guild)  # type: ignore
+        )
+        updated_guild: Guild = DatabaseSession.scalars(stmt).one()
         DatabaseSession.commit()
+        return updated_guild.to_data()
 
     @sync_to_async()
-    def toggle_use_max_bitrate(self) -> None:
-        assert self.guild
-        self.guild.use_max_bitrate = not self.guild.use_max_bitrate
+    def toggle_use_max_bitrate(self, guild_data: GuildData) -> GuildData:
+        new_value = not guild_data.use_max_bitrate
+        stmt = (
+            update(Guild)  # type: ignore
+            .where(Guild.xid == guild_data.xid)
+            .values(use_max_bitrate=new_value)
+            .returning(Guild)  # type: ignore
+        )
+        updated_guild: Guild = DatabaseSession.scalars(stmt).one()
         DatabaseSession.commit()
+        return updated_guild.to_data()
 
     @sync_to_async()
-    def current_name(self) -> str:
-        assert self.guild
-        return cast("str | None", self.guild.name) or ""
-
-    @sync_to_async()
-    def voice_category_prefixes(self) -> list[str]:
-        assert self.guild
+    def voice_category_prefixes(self, guild_xid: int) -> list[str]:
         return [
             str(row[0])
             for row in DatabaseSession.query(Channel.voice_category)
-            .filter(Channel.guild_xid == self.guild.xid)
+            .filter(Channel.guild_xid == guild_xid)
             .distinct()
             .all()
         ]
@@ -157,18 +170,12 @@ class GuildsService:
         return [int(row[0]) for row in rows]
 
     @sync_to_async()
-    def to_data(self) -> GuildData:
-        assert self.guild
-        return self.guild.to_data()
-
-    @sync_to_async()
-    def has_award_with_count(self, count: int) -> bool:
-        assert self.guild
+    def has_award_with_count(self, guild_xid: int, count: int) -> bool:
         return bool(
             DatabaseSession.query(GuildAward)
             .filter(
                 and_(
-                    GuildAward.guild_xid == self.guild.xid,
+                    GuildAward.guild_xid == guild_xid,
                     GuildAward.count == count,
                 ),
             )
@@ -178,18 +185,18 @@ class GuildsService:
     @sync_to_async()
     def award_add(
         self,
+        guild_xid: int,
         count: int,
         role: str,
         message: str,
         **options: bool | None,
     ) -> GuildAwardData:
-        assert self.guild
         repeating = bool(options.get("repeating", False))
         remove = bool(options.get("remove", False))
         verified_only = bool(options.get("verified_only", False))
         unverified_only = bool(options.get("unverified_only", False))
         award = GuildAward(
-            guild_xid=self.guild.xid,
+            guild_xid=guild_xid,
             count=count,
             role=role,
             message=message,
@@ -204,15 +211,20 @@ class GuildsService:
 
     @sync_to_async()
     def award_delete(self, guild_award_id: int) -> None:
-        assert self.guild
         award = DatabaseSession.get(GuildAward, guild_award_id)
         if award:
             DatabaseSession.delete(award)
         DatabaseSession.commit()
 
     @sync_to_async()
-    def setup_mythic_track(self) -> bool:
-        assert self.guild
-        self.guild.enable_mythic_track = not self.guild.enable_mythic_track
+    def setup_mythic_track(self, guild_data: GuildData) -> GuildData:
+        new_value = not guild_data.enable_mythic_track
+        stmt = (
+            update(Guild)  # type: ignore
+            .where(Guild.xid == guild_data.xid)
+            .values(enable_mythic_track=new_value)
+            .returning(Guild)  # type: ignore
+        )
+        updated_guild: Guild = DatabaseSession.scalars(stmt).one()
         DatabaseSession.commit()
-        return self.guild.enable_mythic_track
+        return updated_guild.to_data()

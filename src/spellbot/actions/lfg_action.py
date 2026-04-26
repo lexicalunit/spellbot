@@ -469,9 +469,9 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def handle_voice_creation(self, game_data: GameData, guild_xid: int) -> GameData:
-        if not await self.services.guilds.should_voice_create():
+        assert self.guild_data is not None
+        if not self.guild_data.voice_create:
             return game_data
-        use_max_bitrate = await self.services.guilds.get_use_max_bitrate()
 
         category_prefix = self.channel_data.voice_category
         if not category_prefix:
@@ -485,7 +485,7 @@ class LookingForGameAction(BaseAction):
             guild_xid,
             f"Game-SB{game_data.id}",
             category=category,
-            use_max_bitrate=use_max_bitrate,
+            use_max_bitrate=self.guild_data.use_max_bitrate,
         )
         if not voice_channel:
             return game_data
