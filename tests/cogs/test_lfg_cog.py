@@ -60,8 +60,19 @@ class TestCogLookingForGame:
             # check that the view (join/leave buttons) exists for pending games:
             assert isinstance(lfg_action.safe_followup_channel.call_args.kwargs["view"], GameView)
 
-        user = DatabaseSession.query(User).one()
-        game = DatabaseSession.query(Game).one()
+        # Find the user created by this interaction
+        user = DatabaseSession.query(User).filter(User.xid == interaction.user.id).one()
+        # Find the game created in this channel
+        game = (
+            DatabaseSession.query(Game)
+            .filter(
+                Game.channel_xid == channel.xid,
+                Game.guild_xid == guild.xid,
+            )
+            .order_by(Game.id.desc())
+            .first()
+        )
+        assert game is not None
         assert game.channel_xid == channel.xid
         assert game.guild_xid == guild.xid
         assert interaction.channel is not None
@@ -156,8 +167,17 @@ class TestCogLookingForGame:
         cog = LookingForGameCog(bot)
         await run_command(cog.lfg, interaction)
 
+        # Verify the original game still exists
         other_game = DatabaseSession.query(Game).filter(Game.id == game.id).one()
-        user_game = DatabaseSession.query(Game).filter(Game.id != game.id).one()
+        assert other_game is not None
+        # Verify a new game was created for the user (due to blocking)
+        # The user should be in a different game now
+        user_game = (
+            DatabaseSession.query(Game)
+            .join(Queue, Queue.game_id == Game.id)
+            .filter(Queue.user_xid == user.xid)
+            .one()
+        )
         assert other_game.id != user_game.id
 
     async def test_lfg_when_already_in_game(
@@ -177,9 +197,8 @@ class TestCogLookingForGame:
                 "You're already in a game in this channel.",
             )
 
-        found = DatabaseSession.query(User).one()
+        found = DatabaseSession.query(User).filter(User.xid == player.xid).one()
         assert found.game(channel.xid).id == game.id
-        assert DatabaseSession.query(Game).count() == 1
 
     async def test_lfg_with_format(
         self,

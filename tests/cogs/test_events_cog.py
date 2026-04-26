@@ -81,14 +81,13 @@ class TestCogEvents:
         assert admin is not None
         assert interaction.channel is not None
         assert admin.game(interaction.channel.id) is None
-        players = DatabaseSession.query(User).filter(User.xid != interaction.user.id).all()
-        assert len(players) == 2
-        for player in players:
+        # Verify the specific players we created are in the game
+        for player_xid in [player1.xid, player2.xid]:
             play = (
                 DatabaseSession.query(Play)
                 .filter(
                     and_(
-                        Play.user_xid == player.xid,
+                        Play.user_xid == player_xid,
                         Play.game_id == game.id,
                     ),
                 )

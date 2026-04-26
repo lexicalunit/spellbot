@@ -119,10 +119,10 @@ class TasksAction:
         channel_filterer = VoiceChannelFilterer(self.services.games)
 
         for guild_xid in await self.services.guilds.voiced():
-            await self.services.guilds.select(guild_xid)
-            guild_name = await self.services.guilds.current_name()
+            guild_data = await self.services.guilds.get(guild_xid)
+            guild_name = guild_data.name if guild_data else ""
             logger.info("looking in guild %s(%s)", guild_name, guild_xid)
-            prefixes = await self.services.guilds.voice_category_prefixes()
+            prefixes = await self.services.guilds.voice_category_prefixes(guild_xid)
 
             if guild_xid not in active_guild_xids:
                 logger.info("guild is not active")
@@ -181,20 +181,21 @@ class TasksAction:
                 await asyncio.sleep(1)
 
     async def expire_game(self, game_data: GameData, dequeued: int) -> None:
-        for post in game_data.posts:
-            guild_xid = post["guild_xid"]
-            channel_xid = post["channel_xid"]
-            message_xid = post["message_xid"]
+        for post_data in game_data.posts:
+            guild_xid = post_data.guild_xid
+            channel_xid = post_data.channel_xid
+            message_xid = post_data.message_xid
 
             chan = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
             if not chan:
                 continue
 
-            if not (post := safe_get_partial_message(chan, guild_xid, message_xid)):
+            post = safe_get_partial_message(chan, guild_xid, message_xid)
+            if not post:
                 continue
 
             channel_data = await self.services.channels.select(channel_xid)
-            if not dequeued or (channel_data and channel_data["delete_expired"]):
+            if not dequeued or (channel_data and channel_data.delete_expired):
                 await safe_delete_message(post)
             else:
                 await safe_update_embed(

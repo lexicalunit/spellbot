@@ -98,7 +98,7 @@ class User(Base):
         # Note: Check not required because self.game() already filters by posts + channel.
         # if not any(post.channel_xid == channel_xid for post in game.posts):
         #     return None
-        return game.to_dict()
+        return game.to_data()
 
     def pending_games(self) -> int:
         from spellbot.database import DatabaseSession  # allow_inline
@@ -116,7 +116,7 @@ class User(Base):
             .count()
         )
 
-    def to_dict(self) -> UserData:
+    def to_data(self) -> UserData:
         from spellbot.data import UserData  # allow_inline
 
         return UserData(

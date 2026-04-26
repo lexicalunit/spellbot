@@ -72,7 +72,7 @@ class TestServiceGames:
 
     async def test_games_to_embed(self, game: Game) -> None:
         # The to_embed method is now on GameData, not GamesService
-        game_data = game.to_dict()
+        game_data = game.to_data()
         public_embed = game_data.to_embed(guild=None).to_dict()
         private_embed = game_data.to_embed(guild=None, dm=True).to_dict()
 
@@ -87,7 +87,7 @@ class TestServiceGames:
         updated_data = await games.add_post(game_data, game.guild_xid, game.channel_xid, 12345)
 
         # Verify the post was added to game_data
-        assert any(p["message_xid"] == 12345 for p in updated_data.posts)
+        assert any(p.message_xid == 12345 for p in updated_data.posts)
 
         # Verify in database
         posts = DatabaseSession.query(Post).filter().all()

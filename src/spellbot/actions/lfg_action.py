@@ -60,23 +60,23 @@ class LookingForGameAction(BaseAction):
         if format and not seats:
             requested_seats = GameFormat(format).players
         else:
-            requested_seats = seats or self.channel_data["default_seats"]
+            requested_seats = seats or self.channel_data.default_seats
         return min(requested_seats, GameService(service).max_seats)
 
     @tracer.wrap()
     async def get_service(self, service: int | None = None) -> int:
         if service is not None:
             return service
-        if self.channel_data["default_service"] is not None:
-            return self.channel_data["default_service"].value
+        if self.channel_data.default_service is not None:
+            return self.channel_data.default_service.value
         return GameService.CONVOKE.value
 
     @tracer.wrap()
     async def get_format(self, format: int | None = None) -> int:
         if format is not None:
             return format
-        if self.channel_data["default_format"] is not None:
-            return self.channel_data["default_format"].value
+        if self.channel_data.default_format is not None:
+            return self.channel_data.default_format.value
         return GameFormat.COMMANDER.value
 
     @tracer.wrap()
@@ -87,8 +87,8 @@ class LookingForGameAction(BaseAction):
             return GameBracket.BRACKET_2.value
         if bracket is not None:
             return bracket
-        if self.channel_data["default_bracket"] is not None:
-            return self.channel_data["default_bracket"].value
+        if self.channel_data.default_bracket is not None:
+            return self.channel_data.default_bracket.value
         return GameBracket.NONE.value
 
     @tracer.wrap()
@@ -138,7 +138,7 @@ class LookingForGameAction(BaseAction):
                 format=format,
                 bracket=bracket,
                 service=service,
-                blind=bool(self.channel_data["blind_games"]),
+                blind=bool(self.channel_data.blind_games),
             )
             return new, game
 
@@ -404,7 +404,7 @@ class LookingForGameAction(BaseAction):
             bracket=game_bracket.value,
             service=game_service.value,
             create_new=True,
-            blind=bool(self.channel_data["blind_games"]),
+            blind=bool(self.channel_data.blind_games),
         )
         game_data, suggested_vc = await self.make_game_ready(game_data, player_xids)
         game_data = await self.handle_voice_creation(game_data, self.interaction.guild_id)
@@ -438,7 +438,7 @@ class LookingForGameAction(BaseAction):
             not game_data.voice_xid
             and not game_data.voice_invite_link
             and self.guild_data
-            and (suggest_voice_category := self.guild_data["suggest_voice_category"])
+            and (suggest_voice_category := self.guild_data.suggest_voice_category)
             and self.guild is not None
         ):
             suggested_vc = safe_suggest_voice_channel(
@@ -469,11 +469,13 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def handle_voice_creation(self, game_data: GameData, guild_xid: int) -> GameData:
-        if not await self.services.guilds.should_voice_create():
+        assert self.guild_data is not None
+        if not self.guild_data.voice_create:
             return game_data
-        use_max_bitrate = await self.services.guilds.get_use_max_bitrate()
 
-        category_prefix = self.channel_data["voice_category"]
+        category_prefix = self.channel_data.voice_category
+        if not category_prefix:
+            return game_data
         category = await safe_ensure_voice_category(self.bot, guild_xid, category_prefix)
         if not category:
             return game_data
@@ -483,12 +485,12 @@ class LookingForGameAction(BaseAction):
             guild_xid,
             f"Game-SB{game_data.id}",
             category=category,
-            use_max_bitrate=use_max_bitrate,
+            use_max_bitrate=self.guild_data.use_max_bitrate,
         )
         if not voice_channel:
             return game_data
 
-        should_create_invite = self.channel_data.get("voice_invite", False)
+        should_create_invite = self.channel_data.voice_invite
         invite: discord.Invite | None = None
         if should_create_invite:
             invite = await safe_create_channel_invite(
@@ -562,7 +564,7 @@ class LookingForGameAction(BaseAction):
             emojis=self.bot.emojis_cache,
             supporters=self.bot.supporters,
         )
-        content = self.channel_data.get("extra", None)
+        content = self.channel_data.extra
 
         view = None if fully_seated else GameView(bot=self.bot)
         if new:  # create the initial game post:
@@ -592,9 +594,9 @@ class LookingForGameAction(BaseAction):
 
         for post in game_data.posts:
             message: discord.Message | discord.PartialMessage | None = None
-            guild_xid = post["guild_xid"]
-            channel_xid = post["channel_xid"]
-            message_xid = post["message_xid"]
+            guild_xid = post.guild_xid
+            channel_xid = post.channel_xid
+            message_xid = post.message_xid
 
             channel: discord.TextChannel | None = None
             if self.guild.id == guild_xid and self.channel.id == channel_xid:
@@ -610,7 +612,7 @@ class LookingForGameAction(BaseAction):
 
             # The post we're going to update here is the origin post:
             if self.interaction.message and self.interaction.message.id == message_xid:
-                content = self.channel_data.get("extra", None)
+                content = self.channel_data.extra
                 if await safe_update_embed_origin(
                     self.interaction,
                     content=content,

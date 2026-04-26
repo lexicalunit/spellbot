@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING, TypedDict, cast
+from typing import TYPE_CHECKING, cast
 
 from sqlalchemy import BigInteger, Column, DateTime, String
 from sqlalchemy.orm import relationship
@@ -15,28 +15,9 @@ from spellbot.enums import GameBracket, GameFormat, GameService
 from . import Base, now
 
 if TYPE_CHECKING:
+    from spellbot.data import ChannelData
+
     from . import Game, Guild  # noqa: F401
-
-
-class ChannelDict(TypedDict):
-    xid: int
-    created_at: datetime
-    updated_at: datetime
-    guild_xid: int
-    name: str
-    default_seats: int
-    default_format: GameFormat
-    default_bracket: GameBracket
-    default_service: GameService
-    auto_verify: bool
-    unverified_only: bool
-    verified_only: bool
-    motd: str
-    extra: str
-    voice_category: str
-    voice_invite: bool
-    delete_expired: bool
-    blind_games: bool
 
 
 class Channel(Base):
@@ -180,24 +161,26 @@ class Channel(Base):
         doc="The games created in this channel",
     )
 
-    def to_dict(self) -> ChannelDict:
-        return {
-            "xid": self.xid,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
-            "guild_xid": self.guild_xid,
-            "name": self.name,
-            "default_seats": self.default_seats,
-            "default_format": GameFormat(cast("int", self.default_format)),
-            "default_bracket": GameBracket(cast("int", self.default_bracket)),
-            "default_service": GameService(cast("int", self.default_service)),
-            "auto_verify": self.auto_verify,
-            "unverified_only": self.unverified_only,
-            "verified_only": self.verified_only,
-            "motd": self.motd,
-            "extra": self.extra,
-            "voice_category": self.voice_category,
-            "voice_invite": self.voice_invite,
-            "delete_expired": self.delete_expired,
-            "blind_games": self.blind_games,
-        }
+    def to_data(self) -> ChannelData:
+        from spellbot.data import ChannelData  # allow_inline
+
+        return ChannelData(
+            xid=self.xid,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            guild_xid=self.guild_xid,
+            name=self.name,
+            default_seats=self.default_seats,
+            default_format=GameFormat(cast("int", self.default_format)),
+            default_bracket=GameBracket(cast("int", self.default_bracket)),
+            default_service=GameService(cast("int", self.default_service)),
+            auto_verify=self.auto_verify,
+            unverified_only=self.unverified_only,
+            verified_only=self.verified_only,
+            motd=self.motd,
+            extra=self.extra,
+            voice_category=self.voice_category,
+            voice_invite=self.voice_invite,
+            delete_expired=self.delete_expired,
+            blind_games=self.blind_games,
+        )

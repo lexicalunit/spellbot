@@ -45,11 +45,10 @@ class TestCogWatch:
         )
 
         watch = DatabaseSession.query(Watch).one()
-        assert watch.to_dict() == {
-            "guild_xid": guild.xid,
-            "user_xid": target_member.id,
-            "note": "note",
-        }
+        watch_data = watch.to_data()
+        assert watch_data.guild_xid == guild.xid
+        assert watch_data.user_xid == target_member.id
+        assert watch_data.note == "note"
 
         interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.unwatch, interaction, target=target_member)
@@ -78,11 +77,10 @@ class TestCogWatch:
         )
 
         watch = DatabaseSession.query(Watch).one()
-        assert watch.to_dict() == {
-            "guild_xid": guild.xid,
-            "user_xid": target_member.id,
-            "note": "note",
-        }
+        watch_data = watch.to_data()
+        assert watch_data.guild_xid == guild.xid
+        assert watch_data.user_xid == target_member.id
+        assert watch_data.note == "note"
 
         interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.unwatch, interaction, id=target_member.id)

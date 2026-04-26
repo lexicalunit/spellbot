@@ -192,7 +192,7 @@ class Game(Base):
             play.user_xid: play.pin if self.guild.enable_mythic_track else None for play in plays
         }
 
-    def to_dict(self) -> GameData:
+    def to_data(self) -> GameData:
         from spellbot.data.game_data import GameData  # allow_inline
 
         return GameData(
@@ -202,10 +202,10 @@ class Game(Base):
             started_at=self.started_at,
             deleted_at=self.deleted_at,
             guild_xid=self.guild_xid,
-            guild=self.guild.to_dict(),
+            guild=self.guild.to_data(),
             channel_xid=self.channel_xid,
-            channel=self.channel.to_dict(),
-            posts=[post.to_dict() for post in self.posts],
+            channel=self.channel.to_data(),
+            posts=[post.to_data() for post in self.posts],
             voice_xid=self.voice_xid,
             voice_invite_link=self.voice_invite_link,
             seats=self.seats,
@@ -217,7 +217,7 @@ class Game(Base):
             password=self.password,
             rules=self.rules,
             blind=self.blind,
-            players=[player.to_dict() for player in self.players],
+            players=[player.to_data() for player in self.players],
             player_pins=self.player_pins,
         )
 

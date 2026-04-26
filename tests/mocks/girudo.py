@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, Self
 
 from httpx import AsyncClient
 
-from spellbot.data import GameData, UserData
+from spellbot.data import ChannelData, GameData, GuildData, UserData
 from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.models import ChannelDict, GameStatus
+from spellbot.models import GameStatus
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -190,6 +190,42 @@ def create_mock_game(
 ) -> GameData:
     """Create a mock GameData object for testing."""
     now = datetime.now(tz=UTC)
+    mock_guild = GuildData(
+        xid=guild_xid,
+        created_at=now,
+        updated_at=now,
+        name="Test Guild",
+        motd=None,
+        show_links=True,
+        voice_create=False,
+        use_max_bitrate=False,
+        banned=False,
+        notice=None,
+        suggest_voice_category=None,
+        enable_mythic_track=True,
+        channels=[],
+        awards=[],
+    )
+    mock_channel = ChannelData(
+        xid=channel_xid,
+        created_at=now,
+        updated_at=now,
+        guild_xid=guild_xid,
+        name="test-channel",
+        default_seats=4,
+        default_format=GameFormat.COMMANDER,
+        default_bracket=GameBracket.NONE,
+        default_service=GameService.CONVOKE,
+        auto_verify=False,
+        unverified_only=False,
+        verified_only=False,
+        motd=None,
+        extra=None,
+        voice_category=None,
+        voice_invite=False,
+        delete_expired=False,
+        blind_games=False,
+    )
     return GameData(
         id=game_id,
         created_at=now,
@@ -197,23 +233,9 @@ def create_mock_game(
         started_at=None,
         deleted_at=None,
         guild_xid=guild_xid,
-        guild={  # type: ignore[arg-type]
-            "xid": guild_xid,
-            "name": "Test Guild",
-            "notice": None,
-            "motd": None,
-            "show_links": True,
-            "enable_mythic_track": True,
-        },
+        guild=mock_guild,
         channel_xid=channel_xid,
-        channel=cast(
-            "ChannelDict",
-            {
-                "xid": channel_xid,
-                "name": "test-channel",
-                "motd": None,
-            },
-        ),
+        channel=mock_channel,
         voice_xid=None,
         voice_invite_link=None,
         seats=seats,
@@ -244,4 +266,59 @@ def create_mock_user(
         updated_at=now,
         name=name,
         banned=banned,
+    )
+
+
+def create_mock_guild(
+    xid: int = 12345,
+    name: str = "Test Guild",
+    suggest_voice_category: str | None = None,
+    **kwargs: Any,
+) -> GuildData:
+    """Create a mock GuildData object for testing."""
+    now = datetime.now(tz=UTC)
+    return GuildData(
+        xid=xid,
+        created_at=now,
+        updated_at=now,
+        name=name,
+        motd=kwargs.get("motd"),
+        show_links=kwargs.get("show_links", True),
+        voice_create=kwargs.get("voice_create", False),
+        use_max_bitrate=kwargs.get("use_max_bitrate", False),
+        banned=kwargs.get("banned", False),
+        notice=kwargs.get("notice"),
+        suggest_voice_category=suggest_voice_category,
+        enable_mythic_track=kwargs.get("enable_mythic_track", True),
+        channels=[],
+        awards=[],
+    )
+
+
+def create_mock_channel(
+    xid: int = 12345,
+    guild_xid: int = 54321,
+    **kwargs: Any,
+) -> ChannelData:
+    """Create a mock ChannelData object for testing."""
+    now = datetime.now(tz=UTC)
+    return ChannelData(
+        xid=xid,
+        created_at=now,
+        updated_at=now,
+        guild_xid=guild_xid,
+        name=kwargs.get("name", "test-channel"),
+        default_seats=kwargs.get("default_seats", 4),
+        default_format=kwargs.get("default_format", GameFormat.COMMANDER),
+        default_bracket=kwargs.get("default_bracket", GameBracket.NONE),
+        default_service=kwargs.get("default_service", GameService.CONVOKE),
+        auto_verify=kwargs.get("auto_verify", False),
+        unverified_only=kwargs.get("unverified_only", False),
+        verified_only=kwargs.get("verified_only", False),
+        motd=kwargs.get("motd"),
+        extra=kwargs.get("extra"),
+        voice_category=kwargs.get("voice_category"),
+        voice_invite=kwargs.get("voice_invite", False),
+        delete_expired=kwargs.get("delete_expired", False),
+        blind_games=kwargs.get("blind_games", False),
     )

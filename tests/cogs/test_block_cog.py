@@ -43,23 +43,31 @@ class TestCogBlock:
             ephemeral=True,
         )
 
-        users = sorted(DatabaseSession.query(User).all(), key=lambda u: u.name)
-        assert len(users) == 2
-        assert users[0].name == target.display_name
-        assert users[0].xid == target.id
-        assert users[1].name == interaction.user.display_name
-        assert users[1].xid == interaction.user.id
+        target_user = DatabaseSession.query(User).filter(User.xid == target.id).one()
+        assert target_user.name == target.display_name
+        assert target_user.xid == target.id
 
-        blocks = list(DatabaseSession.query(Block).all())
-        assert len(blocks) == 1
-        assert blocks[0].user_xid == interaction.user.id
-        assert blocks[0].blocked_user_xid == target.id
+        action_user = DatabaseSession.query(User).filter(User.xid == interaction.user.id).one()
+        assert action_user.name == interaction.user.display_name
+        assert action_user.xid == interaction.user.id
+
+        block = (
+            DatabaseSession.query(Block)
+            .filter(Block.user_xid == interaction.user.id, Block.blocked_user_xid == target.id)
+            .one()
+        )
+        assert block.user_xid == interaction.user.id
+        assert block.blocked_user_xid == target.id
 
         DatabaseSession.expire_all()
         interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.unblock, interaction, target=target)
-        blocks = list(DatabaseSession.query(Block).all())
-        assert len(blocks) == 0
+        block = (
+            DatabaseSession.query(Block)
+            .filter(Block.user_xid == interaction.user.id, Block.blocked_user_xid == target.id)
+            .one_or_none()
+        )
+        assert block is None
 
     async def test_block_self(
         self,

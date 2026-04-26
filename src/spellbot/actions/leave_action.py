@@ -47,9 +47,9 @@ class LeaveAction(BaseAction):
             do_delete_game = player_count == 0
 
             for post in posts:
-                guild_xid = post["guild_xid"]
-                channel_xid = post["channel_xid"]
-                message_xid = post["message_xid"]
+                guild_xid = post.guild_xid
+                channel_xid = post.channel_xid
+                message_xid = post.message_xid
 
                 original_response = await safe_original_response(self.interaction)
                 if original_response and message_xid and original_response.id == message_xid:
@@ -108,9 +108,9 @@ class LeaveAction(BaseAction):
             do_delete_game = player_count == 0
 
             for post in game_data.posts:
-                chan_xid = post["channel_xid"]
-                guild_xid = post["guild_xid"]
-                message_xid = post["message_xid"]
+                chan_xid = post.channel_xid
+                guild_xid = post.guild_xid
+                message_xid = post.message_xid
 
                 if not (channel := await safe_fetch_text_channel(self.bot, guild_xid, chan_xid)):
                     continue
@@ -156,8 +156,8 @@ class LeaveAction(BaseAction):
             do_delete_game = player_count == 0
 
             for post in game_data.posts:
-                guild_xid = post["guild_xid"]
-                channel_xid = post["channel_xid"]
+                guild_xid = post.guild_xid
+                channel_xid = post.channel_xid
                 channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
                 if channel:
                     message = safe_get_partial_message(channel, guild_xid, message_xid)

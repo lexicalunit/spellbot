@@ -7,7 +7,7 @@ import pytest
 from spellbot.database import DatabaseSession
 from spellbot.models import Guild, GuildAward
 from spellbot.services import GuildsService
-from tests.factories import GuildAwardFactory, GuildFactory
+from tests.factories import ChannelFactory, GuildAwardFactory, GuildFactory
 
 pytestmark = pytest.mark.use_db
 
@@ -36,44 +36,26 @@ class TestServiceGuilds:
         assert guild.xid == discord_guild.id
         assert guild.name == "new-name"
 
-    async def test_guilds_select(self) -> None:
+    async def test_guilds_get(self) -> None:
         guilds = GuildsService()
-        assert not await guilds.select(404)
+        assert not await guilds.get(404)
 
         GuildFactory.create(xid=404)
 
-        assert await guilds.select(404)
-
-    async def test_guilds_should_voice_create(self) -> None:
-        guild1 = GuildFactory.create()
-        guild2 = GuildFactory.create(voice_create=True)
-
-        guilds = GuildsService()
-        await guilds.select(guild1.xid)
-        assert not await guilds.should_voice_create()
-        await guilds.select(guild2.xid)
-        assert await guilds.should_voice_create()
-
-    async def test_guilds_get_use_max_bitrate(self) -> None:
-        guild1 = GuildFactory.create()
-        guild2 = GuildFactory.create(use_max_bitrate=True)
-
-        guilds = GuildsService()
-        await guilds.select(guild1.xid)
-        assert not await guilds.get_use_max_bitrate()
-        await guilds.select(guild2.xid)
-        assert await guilds.get_use_max_bitrate()
+        guild_data = await guilds.get(404)
+        assert guild_data is not None
+        assert guild_data.xid == 404
 
     async def test_guilds_set_motd(self) -> None:
-        guilds = GuildsService()
-        assert not await guilds.select(101)
-
         guild = GuildFactory.create()
+        guilds = GuildsService()
+        guild_data = await guilds.get(guild.xid)
+        assert guild_data is not None
 
-        await guilds.select(guild.xid)
         message_of_the_day = "message of the day"
-        await guilds.set_motd(message_of_the_day)
+        updated_guild_data = await guilds.set_motd(guild_data, message_of_the_day)
 
+        assert updated_guild_data.motd == message_of_the_day
         DatabaseSession.expire_all()
         guild = DatabaseSession.get(Guild, guild.xid)
         assert guild
@@ -91,58 +73,50 @@ class TestServiceGuilds:
         assert guild.banned
 
     async def test_guilds_toggle_show_links(self) -> None:
+        guild = GuildFactory.create(xid=101, show_links=False)
         guilds = GuildsService()
-        assert not await guilds.select(101)
+        guild_data = await guilds.get(101)
+        assert guild_data is not None
+        assert not guild_data.show_links
 
-        guild = GuildFactory.create(xid=101)
-
-        await guilds.select(101)
-        await guilds.toggle_show_links()
+        guild_data = await guilds.toggle_show_links(guild_data)
 
         DatabaseSession.expire_all()
         guild = DatabaseSession.get(Guild, 101)
         assert guild
         assert guild.show_links
-        DatabaseSession.expire_all()
+        assert guild_data.show_links
 
-        await guilds.select(101)
-        await guilds.toggle_show_links()
-        DatabaseSession.expire_all()
+        guild_data = await guilds.toggle_show_links(guild_data)
 
         DatabaseSession.expire_all()
         guild = DatabaseSession.get(Guild, 101)
         assert guild
         assert not guild.show_links
+        assert not guild_data.show_links
 
     async def test_guilds_toggle_voice_create(self) -> None:
+        guild = GuildFactory.create(xid=101, voice_create=False)
         guilds = GuildsService()
-        assert not await guilds.select(101)
+        guild_data = await guilds.get(101)
+        assert guild_data is not None
+        assert not guild_data.voice_create
 
-        guild = GuildFactory.create(xid=101)
-
-        guilds = GuildsService()
-        await guilds.select(101)
-        await guilds.toggle_voice_create()
+        guild_data = await guilds.toggle_voice_create(guild_data)
 
         DatabaseSession.expire_all()
         guild = DatabaseSession.get(Guild, 101)
         assert guild
         assert guild.voice_create
+        assert guild_data.voice_create
 
-        await guilds.select(101)
-        await guilds.toggle_voice_create()
+        guild_data = await guilds.toggle_voice_create(guild_data)
 
         DatabaseSession.expire_all()
         guild = DatabaseSession.get(Guild, 101)
         assert guild
         assert not guild.voice_create
-
-    async def test_guilds_current_name(self) -> None:
-        guild = GuildFactory.create(xid=101)
-
-        guilds = GuildsService()
-        await guilds.select(101)
-        assert await guilds.current_name() == guild.name
+        assert not guild_data.voice_create
 
     async def test_guilds_voiced(self) -> None:
         guilds = GuildsService()
@@ -154,14 +128,6 @@ class TestServiceGuilds:
 
         assert set(await guilds.voiced()) == {guild1.xid, guild3.xid}
 
-    async def test_guilds_to_dict(self) -> None:
-        guild = GuildFactory.create(xid=101)
-
-        guilds = GuildsService()
-        await guilds.select(101)
-        service_dict = await guilds.to_dict()
-        assert guild.to_dict() == service_dict
-
     async def test_guilds_award_add(self) -> None:
         guilds = GuildsService()
         discord_guild = MagicMock()
@@ -169,6 +135,7 @@ class TestServiceGuilds:
         discord_guild.name = "guild-name"
         await guilds.upsert(discord_guild)
         await guilds.award_add(
+            guild_xid=discord_guild.id,
             count=5,
             role="a-role",
             message="a-message",
@@ -191,7 +158,6 @@ class TestServiceGuilds:
         award2 = GuildAwardFactory.create(guild=guild)
 
         guilds = GuildsService()
-        await guilds.select(guild.xid)
         award1_id = award1.id
         await guilds.award_delete(award1.id)
         await guilds.award_delete(404)
@@ -205,16 +171,56 @@ class TestServiceGuilds:
         award2 = GuildAwardFactory.create(guild=guild, count=20)
 
         guilds = GuildsService()
-        await guilds.select(guild.xid)
-        assert await guilds.has_award_with_count(award1.count)
-        assert await guilds.has_award_with_count(award2.count)
-        assert not await guilds.has_award_with_count(30)
+        assert await guilds.has_award_with_count(guild.xid, award1.count)
+        assert await guilds.has_award_with_count(guild.xid, award2.count)
+        assert not await guilds.has_award_with_count(guild.xid, 30)
 
     async def test_guilds_setup_mythic_track(self) -> None:
         guild = GuildFactory.create(xid=101, enable_mythic_track=False)
         guilds = GuildsService()
-        await guilds.select(guild.xid)
+        guild_data = await guilds.get(guild.xid)
+        assert guild_data is not None
+        assert not guild_data.enable_mythic_track
 
-        setting = await guilds.setup_mythic_track()
+        guild_data = await guilds.setup_mythic_track(guild_data)
 
-        assert setting
+        assert guild_data.enable_mythic_track
+        DatabaseSession.expire_all()
+        guild = DatabaseSession.get(Guild, 101)
+        assert guild
+        assert guild.enable_mythic_track
+
+    async def test_guilds_toggle_use_max_bitrate(self) -> None:
+        guild = GuildFactory.create(xid=101, use_max_bitrate=False)
+        guilds = GuildsService()
+        guild_data = await guilds.get(101)
+        assert guild_data is not None
+        assert not guild_data.use_max_bitrate
+
+        guild_data = await guilds.toggle_use_max_bitrate(guild_data)
+
+        DatabaseSession.expire_all()
+        guild = DatabaseSession.get(Guild, 101)
+        assert guild
+        assert guild.use_max_bitrate
+        assert guild_data.use_max_bitrate
+
+        guild_data = await guilds.toggle_use_max_bitrate(guild_data)
+
+        DatabaseSession.expire_all()
+        guild = DatabaseSession.get(Guild, 101)
+        assert guild
+        assert not guild.use_max_bitrate
+        assert not guild_data.use_max_bitrate
+
+    async def test_guilds_voice_category_prefixes(self) -> None:
+
+        guild = GuildFactory.create(xid=101)
+        ChannelFactory.create(guild=guild, voice_category="Voice Channels")
+        ChannelFactory.create(guild=guild, voice_category="Voice Channels")
+        ChannelFactory.create(guild=guild, voice_category="Other Category")
+
+        guilds = GuildsService()
+        prefixes = await guilds.voice_category_prefixes(guild.xid)
+
+        assert set(prefixes) == {"Voice Channels", "Other Category"}

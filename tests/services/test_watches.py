@@ -22,16 +22,12 @@ class TestServiceWatches:
         WatchFactory.create(guild_xid=guild2.xid, user_xid=user3.xid)
 
         DatabaseSession.expire_all()
-        watches = WatchesService()
-        assert await watches.fetch(guild1.xid) == [
-            {
-                "guild_xid": guild1.xid,
-                "note": watch1.note,
-                "user_xid": user1.xid,
-            },
-            {
-                "guild_xid": guild1.xid,
-                "note": watch2.note,
-                "user_xid": user2.xid,
-            },
-        ]
+        watches_service = WatchesService()
+        result = await watches_service.fetch(guild1.xid)
+        assert len(result) == 2
+        assert result[0].guild_xid == guild1.xid
+        assert result[0].user_xid == user1.xid
+        assert result[0].note == watch1.note
+        assert result[1].guild_xid == guild1.xid
+        assert result[1].user_xid == user2.xid
+        assert result[1].note == watch2.note

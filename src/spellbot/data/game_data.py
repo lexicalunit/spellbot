@@ -14,8 +14,7 @@ from spellbot.settings import settings
 if TYPE_CHECKING:
     from datetime import datetime
 
-    from spellbot.data import UserData
-    from spellbot.models import ChannelDict, GuildDict, PostDict
+    from spellbot.data import ChannelData, GuildData, PostData, UserData
     from spellbot.operations import VoiceChannelSuggestion
 
 HR = "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
@@ -29,9 +28,9 @@ class GameData:
     started_at: datetime | None
     deleted_at: datetime | None
     guild_xid: int
-    guild: GuildDict
+    guild: GuildData
     channel_xid: int
-    channel: ChannelDict
+    channel: ChannelData
     voice_xid: int | None
     voice_invite_link: str | None
     seats: int
@@ -44,7 +43,7 @@ class GameData:
     rules: str | None
     blind: bool
     players: list[UserData] = field(default_factory=list)
-    posts: list[PostDict] = field(default_factory=list)
+    posts: list[PostData] = field(default_factory=list)
     player_pins: dict[int, str | None] = field(default_factory=dict)
 
     @property
@@ -89,7 +88,7 @@ class GameData:
 
     @property
     def jump_links(self) -> dict[int, str]:
-        return {post["guild_xid"]: post["jump_link"] for post in self.posts}
+        return {post.guild_xid: post.jump_link for post in self.posts}
 
     @property
     def bracket_name(self) -> str:
@@ -132,8 +131,8 @@ class GameData:
 
         effective_service = GameService(int(self.service))
         parts: list[str] = []
-        if self.guild["notice"]:
-            parts.append(f"{self.guild['notice']}")
+        if self.guild.notice:
+            parts.append(f"{self.guild.notice}")
         parts.append(self.embed_description_link_info(effective_service, dm, rematch, emojis))
         parts.extend(self.embed_description_extras(dm, suggested_vc))
         parts.extend(self.embed_motd())
@@ -206,15 +205,15 @@ class GameData:
         return embed
 
     def show_links(self, dm: bool = False) -> bool:
-        return True if dm else self.guild["show_links"]
+        return True if dm else self.guild.show_links
 
     def embed_motd(self) -> list[str]:
         placeholders = self.placeholders
         parts: list[str] = []
-        if self.guild["motd"]:
-            parts.append(f"{self.apply_placeholders(placeholders, self.guild['motd'])}")
-        if self.channel["motd"]:
-            parts.append(f"{self.apply_placeholders(placeholders, self.channel['motd'])}")
+        if self.guild.motd:
+            parts.append(f"{self.apply_placeholders(placeholders, self.guild.motd)}")
+        if self.channel.motd:
+            parts.append(f"{self.apply_placeholders(placeholders, self.channel.motd)}")
         return parts
 
     def embed_description_link_info(

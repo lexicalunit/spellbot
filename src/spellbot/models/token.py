@@ -2,21 +2,14 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TypedDict
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, Integer, String, text
 
 from . import Base, now
 
-
-class TokenDict(TypedDict):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-    deleted_at: datetime | None
-    key: str
-    note: str | None
-    scopes: str
+if TYPE_CHECKING:
+    from spellbot.data import TokenData
 
 
 class Token(Base):
@@ -71,13 +64,15 @@ class Token(Base):
         doc="A comma-separated list of scopes for this token",
     )
 
-    def to_dict(self) -> TokenDict:
-        return {
-            "id": self.id,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
-            "deleted_at": self.deleted_at,
-            "key": self.key,
-            "note": self.note,
-            "scopes": self.scopes,
-        }
+    def to_data(self) -> TokenData:
+        from spellbot.data import TokenData  # allow_inline
+
+        return TokenData(
+            id=self.id,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            deleted_at=self.deleted_at,
+            key=self.key,
+            note=self.note,
+            scopes=self.scopes,
+        )
