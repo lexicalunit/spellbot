@@ -724,7 +724,15 @@ async def safe_send_user(
             ignore_error=is_expected_dm_failure,
         )
     except discord.errors.DiscordServerError as ex:
-        add_span_error(ex)
+        # Discord server errors (5xx) are transient issues, not bot errors.
+        if span := tracer.current_span():  # pragma: no cover
+            span.set_tags(
+                {
+                    "warning": "true",
+                    "warning.type": "discord_server_error",
+                    "warning.code": str(getattr(ex, "status", "")),
+                },
+            )
         log_warning(
             "discord server error sending to user %(user)s %(xid)s",
             user=user,
