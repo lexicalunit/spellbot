@@ -13,7 +13,7 @@
 <img
         align="center"
         alt="Add to Discord"
-        src="https://user-images.githubusercontent.com/1903876/88951823-5d6c9a00-d24b-11ea-8523-d256ccbf4a3c.png"
+        src="https://spellbot.io/assets/img/screenshots/spellbot-banner.png"
     />
 </a>
 <br />
@@ -39,7 +39,7 @@ SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [Gir
 
 <p align="center">
     <img
-        src="https://github.com/lexicalunit/spellbot/assets/1903876/39381709-8dfd-473e-8072-e7267c50b4ad"
+        src="https://spellbot.io/assets/img/screenshots/lfg.png"
         width="600"
         alt="/lfg"
     />
@@ -55,38 +55,38 @@ These communities are using SpellBot to play Magic! Maybe one of them is right f
 <!-- SERVERS BEGIN -->
 <table>
     <tr>
-        <td align="center"><a href="https://www.playedh.com/"><img width="200" height="200" src="https://user-images.githubusercontent.com/1903876/140843874-78510411-dcc8-4a26-a59a-0d6856698dcc.png" alt="PlayEDH" /><br />PlayEDH</a></td>
-        <td align="center"><a href="https://www.patreon.com/tolariancommunitycollege"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/92aa9c59-9f30-4f4e-83ab-fc86e72e8f40" alt="Tolarian Community College" /><br />Tolarian&nbsp;Community&nbsp;College</a></td>
-        <td align="center"><a href="https://discord.com/invite/cedh"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/32c324a3-b060-4bd2-8d8a-a72799acc0ff" alt="cEDH" /><br />cEDH</a></td>
+        <td align="center"><a href="https://www.playedh.com/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/playedh.png" alt="PlayEDH" /><br />PlayEDH</a></td>
+        <td align="center"><a href="https://www.patreon.com/tolariancommunitycollege"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/tolarian-community-college.png" alt="Tolarian Community College" /><br />Tolarian&nbsp;Community&nbsp;College</a></td>
+        <td align="center"><a href="https://discord.com/invite/cedh"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/cedh.png" alt="cEDH" /><br />cEDH</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://linktr.ee/CriticalEDH"><img width="200" height="200" src="https://github.com/user-attachments/assets/2ff3e55e-2efa-4f15-b0f8-402a3ec3ba37" alt="CriticalEDH" /><br />CriticalEDH</a></td>
-        <td align="center"><a href="https://www.convoke.games/"><img width="200" height="200" src="https://github.com/user-attachments/assets/16d4867b-4fe2-49be-b812-b169c347c6d4" alt="Convoke" /><br />Convoke</a></td>
-        <td align="center"><a href="https://discord.com/invite/9Z7x8dh6Tf"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/26b824c1-fa82-4b18-a47c-37114a0023b7" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
+        <td align="center"><a href="https://linktr.ee/CriticalEDH"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/criticaledh.png" alt="CriticalEDH" /><br />CriticalEDH</a></td>
+        <td align="center"><a href="https://www.convoke.games/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/convoke.png" alt="Convoke" /><br />Convoke</a></td>
+        <td align="center"><a href="https://discord.com/invite/9Z7x8dh6Tf"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/edh-fight-club.png" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://disboard.org/server/757455940009328670"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/a2117868-cd86-44a9-8e92-91e5b2d639c2" alt="Oath of the Gaywatch" /><br />Oath&nbsp;of&nbsp;the&nbsp;Gaywatch</a></td>
-        <td align="center"><a href="https://linktr.ee/women_in_magic"><img width="200" height="200" src="https://github.com/user-attachments/assets/515a4855-e927-4837-a38a-b484a261b79a" alt="Women+ In Magic" /><br />Women+&nbsp;In&nbsp;Magic</a></td>
-        <td align="center"><a href="https://linktr.ee/cedhspain"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/823a2ed7-c59a-47da-886c-5f468a3b3032" alt="Comunidad Española de cEDH" /><br />Comunidad&nbsp;Española&nbsp;de&nbsp;cEDH</a></td>
+        <td align="center"><a href="https://disboard.org/server/757455940009328670"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/oath-of-the-gaywatch.png" alt="Oath of the Gaywatch" /><br />Oath&nbsp;of&nbsp;the&nbsp;Gaywatch</a></td>
+        <td align="center"><a href="https://linktr.ee/women_in_magic"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/women-in-magic.png" alt="Women+ In Magic" /><br />Women+&nbsp;In&nbsp;Magic</a></td>
+        <td align="center"><a href="https://linktr.ee/cedhspain"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/comunidad-espanola-de-cedh.png" alt="Comunidad Española de cEDH" /><br />Comunidad&nbsp;Española&nbsp;de&nbsp;cEDH</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://discord.gg/CfCb9fmgCD"><img width="200" height="200" src="https://github.com/user-attachments/assets/86bb3488-fa03-4fb6-80c7-3ef929fb8076" alt="Top Tier Bangers" /><br />Top&nbsp;Tier&nbsp;Bangers</a></td>
-        <td align="center"><a href="https://www.playtowinmtg.com/"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/e04abae7-394e-4f89-94e9-edbdbfd411fb" alt="Play to Win" /><br />Play&nbsp;to&nbsp;Win</a></td>
-        <td align="center"><a href="https://www.facebook.com/EDHTambayan/"><img width="200" height="200" src="https://user-images.githubusercontent.com/1903876/161825614-64e432d4-85e8-481e-8f41-f66ab8c940cc.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></td>
+        <td align="center"><a href="https://discord.gg/CfCb9fmgCD"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/top-tier-bangers.png" alt="Top Tier Bangers" /><br />Top&nbsp;Tier&nbsp;Bangers</a></td>
+        <td align="center"><a href="https://www.playtowinmtg.com/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/play-to-win.png" alt="Play to Win" /><br />Play&nbsp;to&nbsp;Win</a></td>
+        <td align="center"><a href="https://www.facebook.com/EDHTambayan/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/edh-tambayan.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://www.patreon.com/PlayingWithPowerMTG"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/60a984e4-8fa1-4d8f-bf0d-2e391776b56d" alt="Playing with Power" /><br />Playing&nbsp;with&nbsp;Power</a></td>
-        <td align="center"><a href="https://discord.gg/commander"><img width="200" height="200" src="https://github.com/user-attachments/assets/6f4cf0de-ed31-4d19-b2c2-78fb9b544992" alt="The Commander Staple" /><br />The&nbsp;Commander&nbsp;Staple</a></td>
-        <td align="center"><a href="https://discord.gg/ZmPsjrxe4h"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/47d68a5b-fe08-497c-a76b-c8dde5f56af3" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
+        <td align="center"><a href="https://www.patreon.com/PlayingWithPowerMTG"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/playing-with-power.png" alt="Playing with Power" /><br />Playing&nbsp;with&nbsp;Power</a></td>
+        <td align="center"><a href="https://discord.gg/commander"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/the-commander-staple.png" alt="The Commander Staple" /><br />The&nbsp;Commander&nbsp;Staple</a></td>
+        <td align="center"><a href="https://discord.gg/ZmPsjrxe4h"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/command-the-cause.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://twitter.com/TurboDCommander"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/d7d6c867-c857-4760-8552-8b8e7b4a1bad" alt="Turbo Commander" /><br />Turbo&nbsp;Commander</a></td>
-        <td align="center"><a href="https://www.cedh.uk/"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/34bcb78c-60e2-495a-b919-873d0d331798" alt="cEDH UK" /><br />cEDH&nbsp;UK</a></td>
-        <td align="center"><a href="https://discord.com/invite/mtg-home-689674672240984067"><img width="200" height="200" src="https://github.com/lexicalunit/spellbot/assets/1903876/322d1bdf-6b32-45f5-93b2-8d4963075772" alt="MTG@Home" /><br />MTG@Home</a></td>
+        <td align="center"><a href="https://twitter.com/TurboDCommander"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/turbo-commander.png" alt="Turbo Commander" /><br />Turbo&nbsp;Commander</a></td>
+        <td align="center"><a href="https://www.cedh.uk/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/cedh-uk.png" alt="cEDH UK" /><br />cEDH&nbsp;UK</a></td>
+        <td align="center"><a href="https://discord.com/invite/mtg-home-689674672240984067"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/mtg-at-home.png" alt="MTG@Home" /><br />MTG@Home</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://www.mtgdc.info/"><img width="200" height="200" src="https://github.com/user-attachments/assets/d7dfa16c-8b65-40e4-b449-4758fd3c3807" alt="Duel Commander" /><br />Duel&nbsp;Commander</a></td>
-        <td align="center"><a href="https://discord.gg/bA5tf3Xc8M"><img width="200" height="200" src="https://github.com/user-attachments/assets/5a3dbc81-0867-4e86-8c9c-f3801f681f54" alt="Proxy Pirates" /><br />Proxy&nbsp;Pirates</a></td>
+        <td align="center"><a href="https://www.mtgdc.info/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/duel-commander.jpg" alt="Duel Commander" /><br />Duel&nbsp;Commander</a></td>
+        <td align="center"><a href="https://discord.gg/bA5tf3Xc8M"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/proxy-pirates.png" alt="Proxy Pirates" /><br />Proxy&nbsp;Pirates</a></td>
     </tr>
 </table>
 <!-- SERVERS END -->
@@ -100,7 +100,7 @@ SpellBot integrates seamlessly with [Mythic Track](https://www.mythictrack.com/s
 
 <p align="center">
     <img
-        src="https://github.com/user-attachments/assets/07dacc71-baa6-4605-a44b-bacf8dc23076"
+        src="https://spellbot.io/assets/img/screenshots/mythic-track-setup.png"
         width="617"
         alt="Mythic Track Setup"
     />
@@ -114,7 +114,7 @@ In your `Settings ► Chat` make sure that you have enabled **Embeds and link pr
 
 <p align="center">
     <img
-        src="https://github.com/lexicalunit/spellbot/assets/1903876/0d584532-0689-44b5-ba18-882d44b4b808"
+        src="https://spellbot.io/assets/img/screenshots/settings-chat.png"
         width="700"
         alt="Settings - Chat"
     />
@@ -124,7 +124,7 @@ And in your `Settings ► Privacy & Safety`, enable both **Allow direct message 
 
 <p align="center">
     <img
-        src="https://github.com/lexicalunit/spellbot/assets/1903876/f16c943b-5120-4def-a254-d7fd04af2689"
+        src="https://spellbot.io/assets/img/screenshots/settings-privacy.png"
         width="700"
         alt="Settings - Privacy & Safety"
     />
