@@ -31,12 +31,9 @@ def create_test_post(
     guild_xid: int = 99999,
     channel_xid: int = 88888,
     message_xid: int = 77777,
-    jump_link: str | None = None,
 ) -> PostData:
     """Create a PostData object for tests."""
     now = datetime.now(tz=UTC)
-    if jump_link is None:
-        jump_link = f"https://discord.com/channels/{guild_xid}/{channel_xid}/{message_xid}"
     return PostData(
         created_at=now,
         updated_at=now,
@@ -44,7 +41,6 @@ def create_test_post(
         guild_xid=guild_xid,
         channel_xid=channel_xid,
         message_xid=message_xid,
-        jump_link=jump_link,
     )
 
 
@@ -595,7 +591,6 @@ class TestLookingForGameAction:
                 guild_xid=mock_guild.id,
                 channel_xid=12345,
                 message_xid=67890,
-                jump_link="https://discord.com/jump/1",
             ),
         ]
         mocker.patch.object(

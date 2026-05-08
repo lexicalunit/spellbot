@@ -29,5 +29,8 @@ class TestModelPost:
             "guild_xid": post.guild_xid,
             "channel_xid": post.channel_xid,
             "message_xid": post.message_xid,
-            "jump_link": post.jump_link,
         }
+        assert post_data.jump_link == (
+            "https://discordapp.com/channels/"
+            f"{post.guild_xid}/{post.channel_xid}/{post.message_xid}"
+        )

@@ -314,7 +314,6 @@ class TestGameRecordEmbed:
                 guild_xid=123,
                 channel_xid=456,
                 message_xid=789,
-                jump_link="https://discord.com/jump/123/456/789",
             ),
         ]
         players = [
@@ -348,7 +347,6 @@ class TestGameRecordEmbed:
                 guild_xid=123,
                 channel_xid=456,
                 message_xid=789,
-                jump_link="https://discord.com/jump/123/456/789",
             ),
         ]
         players = [
