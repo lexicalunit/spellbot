@@ -7,10 +7,29 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from spellbot.shard_status import ShardStatus
-from spellbot.web.api.status import format_latency, format_time_ago, get_latency_class
+from spellbot.web.api.status import _get_int, format_latency, format_time_ago, get_latency_class
 
 if TYPE_CHECKING:
     from aiohttp.client import ClientSession
+
+
+class TestGetInt:
+    @pytest.mark.parametrize(
+        ("metadata", "key", "default", "expected"),
+        [
+            pytest.param({"count": 5}, "count", 0, 5, id="int_value"),
+            pytest.param({"count": "10"}, "count", 0, 10, id="string_value"),
+            pytest.param({}, "count", 42, 42, id="missing_key"),
+        ],
+    )
+    def test_get_int(
+        self,
+        metadata: dict[str, int | str],
+        key: str,
+        default: int,
+        expected: int,
+    ) -> None:
+        assert _get_int(metadata, key, default) == expected
 
 
 class TestFormatLatency:

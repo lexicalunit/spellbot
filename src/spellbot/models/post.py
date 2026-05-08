@@ -73,13 +73,6 @@ class Post(Base):
     guild = relationship("Guild", doc="The guild this post was created in")
     channel = relationship("Channel", doc="The channel post game was created in")
 
-    @property
-    def jump_link(self) -> str:
-        guild = self.guild_xid
-        channel = self.channel_xid
-        message = self.message_xid
-        return f"https://discordapp.com/channels/{guild}/{channel}/{message}"
-
     def to_data(self) -> PostData:
         from spellbot.data import PostData  # allow_inline
 
@@ -90,5 +83,4 @@ class Post(Base):
             guild_xid=self.guild_xid,
             channel_xid=self.channel_xid,
             message_xid=self.message_xid,
-            jump_link=self.jump_link,
         )

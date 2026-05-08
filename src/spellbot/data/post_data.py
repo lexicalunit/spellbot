@@ -15,4 +15,10 @@ class PostData:
     guild_xid: int
     channel_xid: int
     message_xid: int
-    jump_link: str
+
+    @property
+    def jump_link(self) -> str:
+        return (
+            "https://discordapp.com/channels/"
+            f"{self.guild_xid}/{self.channel_xid}/{self.message_xid}"
+        )
