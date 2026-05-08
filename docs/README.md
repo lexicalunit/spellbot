@@ -16,6 +16,8 @@ bundle install
 bundle exec jekyll serve
 ```
 
+Or just run `make` if you have it installed and it will do all of the above for you.
+
 ## Updating
 
 First check that `.ruby-version` has the version used by [GH Pages][gh-pages-versions]. If not, update that and re-install everything.

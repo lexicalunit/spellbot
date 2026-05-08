@@ -7,6 +7,7 @@ SpellBot has a public API that can be used to access game and user data. As well
 - [Public Endpoints](#public-endpoints)
   - [GET `/`](#get-)
   - [GET `/status`](#get-status)
+  - [GET `/status.json`](#get-statusjson)
   - [GET `/g/{guild}/c/{channel}`](#get-gguildcchannel)
   - [GET `/g/{guild}/u/{user}`](#get-gguilduuser)
 - [Authenticated Endpoints](#authenticated-endpoints)
@@ -22,6 +23,49 @@ Returns a 200 response with the text "ok" in the body.
 ### GET `/status`
 
 Returns a HTML page with the current status of the bot.
+
+### GET `/status.json`
+
+Returns the current status of the bot as JSON. This is similar to the [Discord Status API](https://discordstatus.com/api).
+
+#### Response
+
+```json
+{
+  "status": {
+    "indicator": "operational",
+    "description": "All Systems Operational"
+  },
+  "shards": {
+    "total": 2,
+    "ready": 2,
+    "data": [
+      {
+        "shard_id": 0,
+        "latency_ms": 45.5,
+        "guild_count": 100,
+        "is_ready": true,
+        "last_updated": "2026-05-08T12:00:00+00:00",
+        "version": "10.5.0"
+      }
+    ]
+  },
+  "guilds": 250,
+  "version": "10.5.0",
+  "upgrade_in_progress": false,
+  "last_updated": "2026-05-08T12:00:00+00:00"
+}
+```
+
+#### Status Indicators
+
+| Indicator              | Description                                      |
+| ---------------------- | ------------------------------------------------ |
+| `operational`          | All Systems Operational                          |
+| `degraded_performance` | Some shards are down                             |
+| `major_outage`         | All shards are down                              |
+| `maintenance`          | Upgrade in progress (multiple versions detected) |
+| `unknown`              | No status data available                         |
 
 ### GET `/g/{guild}/c/{channel}`
 
