@@ -232,7 +232,7 @@ class Settings:
     @property
     def QUEER_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://github.com/user-attachments/assets/06eef9cf-0957-49bf-9736-a1b0709646fd",
+            "https://spellbot.io/assets/img/logos/spellbot-lgbtq.png",
         )
 
     def black(self, guild_xid: int | None) -> bool:  # pragma: no cover
@@ -241,13 +241,13 @@ class Settings:
     @property
     def BLACK_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://github.com/user-attachments/assets/2b345405-c3cf-4623-b582-cf31fee73643",
+            "https://spellbot.io/assets/img/logos/spellbot-black.png",
         )
 
     @property
     def TRANS_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://github.com/user-attachments/assets/7d144a57-1a6a-49a7-9522-98032c05eeaa",
+            "https://spellbot.io/assets/img/logos/spellbot-trans.png",
         )
 
     def trans(self, guild_xid: int | None) -> bool:  # pragma: no cover
@@ -257,7 +257,7 @@ class Settings:
     @property
     def AUTISTIC_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://github.com/user-attachments/assets/1d521ac6-60b4-49b9-a882-48cf21a2ee34",
+            "https://spellbot.io/assets/img/logos/spellbot-autistic.png",
         )
 
     def autistic(self, guild_xid: int | None) -> bool:  # pragma: no cover
@@ -267,7 +267,7 @@ class Settings:
     @property
     def CONVOKE_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://github.com/user-attachments/assets/16d4867b-4fe2-49be-b812-b169c347c6d4",
+            "https://spellbot.io/assets/img/servers/convoke.png",
         )
 
     def convoke(self, guild_xid: int | None) -> bool:  # pragma: no cover
