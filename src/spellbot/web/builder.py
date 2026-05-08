@@ -69,6 +69,7 @@ def build_web_app() -> web.Application:
         [
             web.get(r"/", ping.endpoint),
             web.get(r"/status", status.endpoint),
+            web.get(r"/status.json", status.json_endpoint),
             web.get(r"/g/{guild}/analytics", analytics.analytics_endpoint),
             web.get(r"/g/{guild}/analytics/summary", analytics.analytics_summary_endpoint),
             web.get(r"/g/{guild}/analytics/activity", analytics.analytics_activity_endpoint),
