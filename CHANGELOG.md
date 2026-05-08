@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Show discord status in our status page.
+
 ### Changed
 
 - Refactor all models to have dataclass views.
 - Refactor all service layers to be stateless.
+- Updated dependencies.
+- Updated docs/ README for better ruby startup instructions.
 
 ## [v18.4.12](https://github.com/lexicalunit/spellbot/releases/tag/v18.4.12) - 2026-04-22
 
