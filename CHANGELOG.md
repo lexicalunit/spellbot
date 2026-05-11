@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Support for EDHLAB!
+
 ### Changed
 
 - Moved `jump_link()` into `PostData`.
