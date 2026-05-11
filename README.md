@@ -35,7 +35,7 @@ The Discord bot for <a href="https://convoke.games/">Convoke</a>
 
 ## 🤖 Using SpellBot
 
-SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [Girudo][girudo], and [Table Stream][tablestream]. Just looking to play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
+SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [Girudo][girudo], [EDHLAB][edhlab], and [Table Stream][tablestream]. Just looking to play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
 
 <p align="center">
     <img
@@ -175,6 +175,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [discord-py]: https://github.com/Rapptz/discord.py
 [docker-badge]: https://img.shields.io/docker/pulls/lexicalunit/spellbot.svg
 [docker-hub]: https://hub.docker.com/r/lexicalunit/spellbot
+[edhlab]: https://edhlab.gg/
 [follow-badge]: https://img.shields.io/badge/Bluesky-1185FE?style=flat&logo=bluesky&logoColor=white
 [follow]: https://bsky.app/profile/spellbot.io
 [ganalytics-badge]: https://img.shields.io/badge/analytics-google-orange.svg
