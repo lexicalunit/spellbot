@@ -30,6 +30,9 @@ class Settings:
         "DD_TRACE_ENABLED",
         "DEBUG_GUILD",
         "DONATE_LINK",
+        "EDHLAB_API_KEY",
+        "EDHLAB_CREATE",
+        "EDHLAB_ROOT",
         "EMPTY_EMBED_COLOR",
         "EXPIRE_GAMES_LOOP_M",
         "EXPIRE_TIME_M",
@@ -144,6 +147,11 @@ class Settings:
         # convoke
         self.CONVOKE_ROOT = getenv("CONVOKE_ROOT", "https://api.convoke.games/api")
         self.CONVOKE_API_KEY = getenv("CONVOKE_API_KEY")
+
+        # EDHLAB
+        self.EDHLAB_API_KEY = getenv("EDHLAB_API_KEY")
+        self.EDHLAB_ROOT = getenv("EDHLAB_ROOT", "https://wmlcambifdkwygvwnpas.supabase.co")
+        self.EDHLAB_CREATE = f"{self.EDHLAB_ROOT}/functions/v1/create-spellbot-game"
 
         # configuration
         self.BOT_INVITE_LINK = (

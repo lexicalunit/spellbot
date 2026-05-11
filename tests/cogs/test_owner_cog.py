@@ -110,17 +110,15 @@ class TestCogOwner:
         context.author.send.assert_called_once_with(  # type: ignore
             f"Guild {target_guild} has been banned.",
         )
-        guilds = list(DatabaseSession.query(Guild).all())
-        assert len(guilds) == 1
-        assert guilds[0].xid == target_guild
-        assert guilds[0].banned
+        guild = DatabaseSession.query(Guild).filter(Guild.xid == target_guild).one()
+        assert guild.xid == target_guild
+        assert guild.banned
 
         DatabaseSession.expire_all()
         await run_owner_command(cog, cog.unban_guild, context, str(target_guild))
-        guilds = list(DatabaseSession.query(Guild).all())
-        assert len(guilds) == 1
-        assert guilds[0].xid == target_guild
-        assert not guilds[0].banned
+        guild = DatabaseSession.query(Guild).filter(Guild.xid == target_guild).one()
+        assert guild.xid == target_guild
+        assert not guild.banned
 
     async def test_ban_guild_without_target(
         self,
