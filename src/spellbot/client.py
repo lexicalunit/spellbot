@@ -17,7 +17,7 @@ from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, 
 from .data import GameLinkDetails
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
-from .integrations import convoke, girudo, tablestream
+from .integrations import convoke, edhlab, girudo, tablestream
 from .metrics import add_span_request_id, generate_request_id, setup_metrics
 from .operations import safe_delete_message
 from .services import ServicesRegistry
@@ -179,6 +179,9 @@ class SpellBot(AutoShardedBot):
             case GameService.GIRUDO.value:
                 details = await girudo.generate_link(game_data)
                 return GameLinkDetails(details.link, details.password)
+            case GameService.EDHLAB.value:
+                details = await edhlab.generate_link(game_data)
+                return GameLinkDetails(*details)
             case _:
                 return GameLinkDetails()
 

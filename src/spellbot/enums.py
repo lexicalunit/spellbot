@@ -84,12 +84,22 @@ class GameService(Enum):
         "https://www.girudo.com/",
         4,
     )
+    EDHLAB = (
+        "EDHLAB",
+        (
+            "_A {emoji}[EDHLAB](https://edhlab.gg/) link will "
+            "be created when all players have joined._"
+        ),
+        "https://edhlab.gg/",
+        4,
+    )
 
 
 GAME_SERVICE_ORDER = [
     GameService.CONVOKE,
     GameService.TABLE_STREAM,
     GameService.GIRUDO,
+    GameService.EDHLAB,
     GameService.SPELLTABLE,
     GameService.COCKATRICE,
     GameService.X_MAGE,

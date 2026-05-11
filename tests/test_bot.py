@@ -67,6 +67,12 @@ class TestSpellBot:
             ),
             pytest.param(
                 False,
+                GameService.EDHLAB.value,
+                "edhlab.generate_link",
+                id="edhlab",
+            ),
+            pytest.param(
+                False,
                 GameService.NOT_ANY.value,
                 None,
                 id="no-service",
@@ -370,9 +376,18 @@ class TestSpellBotHandleVerification:
         await bot.handle_verification(dpy_message)
 
         DatabaseSession.expire_all()
-        assert DatabaseSession.query(Guild).one().xid == dpy_message.guild.id
-        assert DatabaseSession.query(Channel).one().xid == dpy_message.channel.id
-        found = DatabaseSession.query(Verify).one()
+        guild = DatabaseSession.query(Guild).filter(Guild.xid == dpy_message.guild.id).one()
+        assert guild.xid == dpy_message.guild.id
+        channel = DatabaseSession.query(Channel).filter(Channel.xid == dpy_message.channel.id).one()
+        assert channel.xid == dpy_message.channel.id
+        found = (
+            DatabaseSession.query(Verify)
+            .filter(
+                Verify.guild_xid == dpy_message.guild.id,
+                Verify.user_xid == dpy_message.author.id,
+            )
+            .one()
+        )
         assert found.guild_xid == dpy_message.guild.id
         assert found.user_xid == dpy_message.author.id
         assert not found.verified
@@ -397,9 +412,18 @@ class TestSpellBotHandleVerification:
         await bot.handle_verification(dpy_message)
 
         DatabaseSession.expire_all()
-        assert DatabaseSession.query(Guild).one().xid == dpy_message.guild.id
-        assert DatabaseSession.query(Channel).one().xid == dpy_message.channel.id
-        found = DatabaseSession.query(Verify).one()
+        guild = DatabaseSession.query(Guild).filter(Guild.xid == dpy_message.guild.id).one()
+        assert guild.xid == dpy_message.guild.id
+        channel = DatabaseSession.query(Channel).filter(Channel.xid == dpy_message.channel.id).one()
+        assert channel.xid == dpy_message.channel.id
+        found = (
+            DatabaseSession.query(Verify)
+            .filter(
+                Verify.guild_xid == dpy_message.guild.id,
+                Verify.user_xid == dpy_message.author.id,
+            )
+            .one()
+        )
         assert found.guild_xid == dpy_message.guild.id
         assert found.user_xid == dpy_message.author.id
         assert found.verified
