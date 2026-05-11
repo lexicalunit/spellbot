@@ -179,6 +179,10 @@ resource "aws_ecs_task_definition" "spellbot_stage" {
           valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:CONVOKE_API_KEY::"
         },
         {
+          name      = "EDHLAB_API_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:EDHLAB_API_KEY::"
+        },
+        {
           name      = "DATABASE_URL"
           valueFrom = "${data.aws_secretsmanager_secret.stage_db_password.arn}:DB_URL::"
         },
