@@ -400,7 +400,7 @@ class TestModelGame:
                 f"# [Join your Convoke game now!]({game.game_link})"
                 "\n\n"
                 "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
+                "(https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -468,7 +468,7 @@ class TestModelGame:
             "description": (
                 "Contact the other players in your game to organize this match."
                 "\n\n"
-                "You can also [jump to the original game post](https://discordapp.com/channels/"
+                "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -536,7 +536,7 @@ class TestModelGame:
             "description": (
                 "Please use MTG Arena to play this game."
                 "\n\n"
-                "You can also [jump to the original game post](https://discordapp.com/channels/"
+                "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -620,7 +620,7 @@ class TestModelGame:
                 "this game. Please go to [Convoke]"
                 "(https://www.convoke.games/) to create one."
                 "\n\n"
-                "You can also [jump to the original game post](https://discordapp.com/channels/"
+                "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -692,7 +692,7 @@ class TestModelGame:
                 "\n\n"
                 "Password: `fake`"
                 "\n\n"
-                "You can also [jump to the original game post](https://discordapp.com/channels/"
+                "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -762,7 +762,7 @@ class TestModelGame:
                 "\n\n"
                 f"## Join your voice chat now: <#{game.voice_xid}>"
                 "\n\n"
-                "You can also [jump to the original game post](https://discordapp.com/channels/"
+                "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -834,7 +834,7 @@ class TestModelGame:
                 f"## Join your voice chat now: <#{game.voice_xid}>\n\n"
                 f"Or use this voice channel invite: {game.voice_invite_link}\n\n"
                 "You can also [jump to the original game post]"
-                "(https://discordapp.com/channels/"
+                "(https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -900,7 +900,7 @@ class TestModelGame:
             "description": (
                 f"# [Join your Convoke game now!]({game.game_link})"
                 "\n\n"
-                "You can also [jump to the original game post](https://discordapp.com/channels/"
+                "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) "
                 f"in <#{channel.xid}>.\n\n"
                 "this is a message of the day"
@@ -985,7 +985,7 @@ class TestModelGame:
                 f"## Please consider using this available voice channel: <#{dc.id}>.\n"
                 "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
                 "\n\n"
-                "You can also [jump to the original game post](https://discordapp.com/channels/"
+                "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -1023,7 +1023,7 @@ class TestModelGame:
                 f"<#{suggested_vc.already_picked}>!\n"
                 "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
                 "\n\n"
-                "You can also [jump to the original game post](https://discordapp.com/channels/"
+                "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             ),
             "fields": [
@@ -1071,7 +1071,7 @@ class TestModelGame:
                 "This is a rematch of a previous game. "
                 "Please continue using the same game lobby and voice channel.\n\n"
                 "You can also [jump to the original game post]"
-                f"(https://discordapp.com/channels/{guild.xid}/{channel.xid}/{post.message_xid})"
+                f"(https://discord.com/channels/{guild.xid}/{channel.xid}/{post.message_xid})"
                 f" in <#{channel.xid}>."
             ),
             "fields": [

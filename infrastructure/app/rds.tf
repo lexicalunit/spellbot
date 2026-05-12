@@ -32,7 +32,7 @@ module "aurora_cluster" {
   # Monitoring
   monitoring_interval = 60
 
-  deletion_protection = false
+  deletion_protection = true
 
   # Performance Insights
   performance_insights_enabled = true

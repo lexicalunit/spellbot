@@ -30,8 +30,7 @@ class TestCLI:
     ) -> None:
         result = runner.invoke(main, ["--api"])
         assert result.exit_code == 0
-        cli.launch_web_server.assert_called_once_with(cli.loop, 404)
-        cli.loop.run_forever.assert_called_once_with()
+        cli.launch_dev_server.assert_called_once_with(False, 404)
 
     def test_run_api_with_port(
         self,
@@ -40,8 +39,7 @@ class TestCLI:
     ) -> None:
         result = runner.invoke(main, ["--api", "--port", "200"])
         assert result.exit_code == 0
-        cli.launch_web_server.assert_called_once_with(cli.loop, 200)
-        cli.loop.run_forever.assert_called_once_with()
+        cli.launch_dev_server.assert_called_once_with(False, 200)
 
     def test_run_bot(
         self,

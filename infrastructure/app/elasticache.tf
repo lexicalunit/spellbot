@@ -38,9 +38,10 @@ resource "aws_elasticache_replication_group" "main" {
   engine         = "valkey"
   engine_version = "7.2"
 
-  # Disable encryption for cost savings (not recommended for prod)
-  at_rest_encryption_enabled = false
-  transit_encryption_enabled = false
+  # Encryption at rest and in transit. Clients must connect with the
+  # rediss:// URL scheme so redis-py negotiates TLS automatically.
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
 
   tags = {
     Name = "spellbot-valkey"

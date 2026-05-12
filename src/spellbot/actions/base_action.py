@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@sync_to_async()
+@sync_to_async
 def handle_exception(ex: Exception) -> NoReturn:
     if isinstance(ex, SpellBotError):  # pragma: no cover
         raise ex
@@ -108,7 +108,7 @@ class BaseAction:
         cls,
         bot: SpellBot,
         interaction: discord.Interaction,
-    ) -> AsyncGenerator[Self, None]:
+    ) -> AsyncGenerator[Self]:
         action = cls(bot, interaction)
         with tracer.trace(name=f"spellbot.interactions.{cls.__name__}.create") as span:
             setup_ignored_errors(span)

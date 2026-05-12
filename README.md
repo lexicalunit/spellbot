@@ -9,7 +9,7 @@
 />
 <br />
 <br />
-<a href="https://discordapp.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot">
+<a href="https://discord.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot">
 <img
         align="center"
         alt="Add to Discord"

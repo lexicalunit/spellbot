@@ -99,7 +99,7 @@ class TestSpellBot:
                 mock.assert_called_once_with(game)
         if mock_games:
             assert response.link is not None
-            assert response.link.startswith("http://exmaple.com/game/")
+            assert response.link.startswith("http://example.com/game/")
         if service == GameService.NOT_ANY.value:
             assert response == GameLinkDetails()
 

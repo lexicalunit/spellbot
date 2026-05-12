@@ -89,7 +89,7 @@ def mock_client(*args: Any, **kwargs: Any) -> discord.Client:
 def mock_operations(
     module: ModuleType,
     users: list[discord.User] | None = None,
-) -> Generator[None, None, None]:
+) -> Generator[None]:
     """
     Mock out all operations.py functions found in a given module.
 

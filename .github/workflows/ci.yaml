@@ -29,7 +29,7 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: ["3.13"]
-        postgres-version: ["15"]
+        postgres-version: ["17"]
         database-url:
           ["postgresql+psycopg://postgres:postgres@localhost:5432/postgres"]
 

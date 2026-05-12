@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 import discord
 from ddtrace.trace import tracer
 
-from spellbot.data import GameData
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import MAX_RULES_LENGTH, GameStatus, generate_pin
 from spellbot.operations import (

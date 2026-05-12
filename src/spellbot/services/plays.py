@@ -144,12 +144,12 @@ def decomposed(combined_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 class PlaysService:
-    @sync_to_async()
+    @sync_to_async
     def get_plays_by_game_id(self, game_id: int) -> list[Play]:
         """Fetch all plays for the given game id."""
         return DatabaseSession.query(Play).filter(Play.game_id == game_id).all()
 
-    @sync_to_async()
+    @sync_to_async
     def verify_game_pin(self, *, game_id: int, user_xid: int, guild_xid: int, pin: str) -> bool:
         """Verify that the given pin matches the user's play record for the game."""
         filters = [
@@ -164,7 +164,7 @@ class PlaysService:
         DatabaseSession.commit()
         return True
 
-    @sync_to_async()
+    @sync_to_async
     def count(self, user_xid: int, guild_xid: int) -> int:
         """Count the number of games played by a user in a guild."""
         return int(
@@ -180,7 +180,7 @@ class PlaysService:
             or 0,
         )
 
-    @sync_to_async()
+    @sync_to_async
     def user_records(
         self,
         guild_xid: int,
@@ -218,7 +218,7 @@ class PlaysService:
             for row in rows
         ]
 
-    @sync_to_async()
+    @sync_to_async
     def channel_records(
         self,
         guild_xid: int,
@@ -260,7 +260,7 @@ class PlaysService:
         ]
         return decomposed(combined_data)
 
-    @sync_to_async()
+    @sync_to_async
     def top_records(
         self,
         guild_xid: int,
@@ -290,12 +290,12 @@ class PlaysService:
         )
         return result.all()
 
-    @sync_to_async()
+    @sync_to_async
     def guild_exists(self, guild_xid: int) -> bool:
         """Check if a guild exists."""
         return DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none() is not None
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_summary(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return summary stats for the analytics dashboard."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
@@ -370,7 +370,7 @@ class PlaysService:
             "repeat_player_rate": repeat_player_rate,
         }
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_activity(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return daily activity data."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
@@ -446,7 +446,7 @@ class PlaysService:
             "daily_new_users": daily_new_users,
         }
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_wait_time(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return average wait time per day."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
@@ -477,7 +477,7 @@ class PlaysService:
 
         return {"avg_wait_per_day": avg_wait_per_day}
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_brackets(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return games by bracket per day."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
@@ -512,7 +512,7 @@ class PlaysService:
 
         return {"games_by_bracket_per_day": games_by_bracket_per_day}
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_retention(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return player retention data."""
         twelve_weeks_ago = datetime.now(tz=UTC) + relativedelta(weeks=-12)
@@ -580,7 +580,7 @@ class PlaysService:
 
         return {"player_retention": player_retention}
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_growth(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return cumulative player growth data."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
@@ -620,7 +620,7 @@ class PlaysService:
 
         return {"cumulative_players": cumulative_players}
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_histogram(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return games per player histogram data."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
@@ -665,7 +665,7 @@ class PlaysService:
 
         return {"median_games": median_games, "games_histogram": games_histogram}
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_formats(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return popular formats data."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
@@ -695,7 +695,7 @@ class PlaysService:
 
         return {"popular_formats": popular_formats}
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_channels(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return busiest channels data."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
@@ -727,7 +727,7 @@ class PlaysService:
 
         return {"busiest_channels": busiest_channels}
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_services(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return popular services data."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
@@ -757,7 +757,7 @@ class PlaysService:
 
         return {"popular_services": popular_services}
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_players(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return top players data (only players with GuildMember records)."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
@@ -798,7 +798,7 @@ class PlaysService:
 
         return {"top_players": top_players}
 
-    @sync_to_async()
+    @sync_to_async
     def analytics_blocked(self, guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
         """Return top blocked players data (only players with GuildMember records)."""
         thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)

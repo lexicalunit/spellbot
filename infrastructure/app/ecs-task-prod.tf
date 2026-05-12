@@ -101,12 +101,16 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
           value = "prod"
         },
         {
+          name  = "DD_TRACE_WRAP_SPAN_NAME_INCLUDE_CLASS"
+          value = "true"
+        },
+        {
           name  = "ENVIRONMENT"
           value = "prod"
         },
         {
           name  = "REDIS_URL"
-          value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}/0"
+          value = "rediss://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}/0"
         },
         {
           name  = "API_BASE_URL"
@@ -122,7 +126,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         },
         {
           name  = "GIRUDO_DEFAULT_FORMAT_UUID"
-          value = "5d43935-9374-416f-8ddd-ef71ed50670e"
+          value = "15d43935-9374-416f-8ddd-ef71ed50670e"
         },
         {
           name  = "GIRUDO_DEFAULT_TCG_UUID"
@@ -152,28 +156,8 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
           valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SECRET_TOKEN::"
         },
         {
-          name      = "SPELLTABLE_USERS"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SPELLTABLE_USERS::"
-        },
-        {
-          name      = "SPELLTABLE_PASSES"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SPELLTABLE_PASSES::"
-        },
-        {
-          name      = "SPELLTABLE_AUTH_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SPELLTABLE_AUTH_KEY::"
-        },
-        {
           name      = "TABLESTREAM_AUTH_KEY"
           valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:TABLESTREAM_AUTH_KEY::"
-        },
-        {
-          name      = "SPELLTABLE_CLIENT_ID"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SPELLTABLE_CLIENT_ID::"
-        },
-        {
-          name      = "SPELLTABLE_API_KEY"
-          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:SPELLTABLE_API_KEY::"
         },
         {
           name      = "CONVOKE_API_KEY"
@@ -247,6 +231,10 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
           value = "prod"
         },
         {
+          name  = "DD_TRACE_WRAP_SPAN_NAME_INCLUDE_CLASS"
+          value = "true"
+        },
+        {
           name  = "ENVIRONMENT"
           value = "prod"
         },
@@ -260,7 +248,7 @@ resource "aws_ecs_task_definition" "spellbot_prod" {
         },
         {
           name  = "REDIS_URL"
-          value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}"
+          value = "rediss://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}"
         }
       ]
 

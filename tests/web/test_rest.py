@@ -5,11 +5,14 @@ from typing import TYPE_CHECKING
 
 import aiohttp
 import pytest
+import pytest_asyncio
 
 from spellbot.data import PostData
 from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
+from spellbot.web.api import rest
 from spellbot.web.api.rest import (
+    close_http_session,
     delete_message,
     game_record_embed,
     post_with_retry,
@@ -22,6 +25,8 @@ from spellbot.web.api.rest import (
 from tests.mocks import create_mock_game, create_mock_user
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
     from aiohttp.client import ClientSession
     from freezegun.api import FrozenDateTimeFactory
     from pytest_mock import MockerFixture
@@ -29,6 +34,12 @@ if TYPE_CHECKING:
     from tests.fixtures import Factories
 
 pytestmark = pytest.mark.use_db
+
+
+@pytest_asyncio.fixture
+async def reset_http_session() -> AsyncGenerator[None]:
+    yield
+    await close_http_session()
 
 
 @pytest.mark.asyncio
@@ -367,6 +378,7 @@ class TestGameRecordEmbed:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("reset_http_session")
 class TestSendMessage:
     async def test_send_message_success(self, mocker: MockerFixture) -> None:
         mock_post = mocker.patch(
@@ -385,8 +397,20 @@ class TestSendMessage:
         result = await send_message(123, {"content": "Hello"})
         assert result is None
 
+    async def test_session_is_reused(self, mocker: MockerFixture) -> None:
+        """Repeated calls share a single aiohttp ClientSession."""
+        mocker.patch(
+            "spellbot.web.api.rest.post_with_retry",
+            return_value={"id": "12345"},
+        )
+        await send_message(123, {"content": "Hello"})
+        first = rest._http_session
+        await send_message(123, {"content": "Hello"})
+        assert rest._http_session is first
+
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("reset_http_session")
 class TestSendDm:
     async def test_send_dm_success(self, mocker: MockerFixture) -> None:
         mock_post = mocker.patch(
@@ -419,6 +443,7 @@ class TestSendDm:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("reset_http_session")
 class TestUpdateMessage:
     async def test_update_message_success(self, mocker: MockerFixture) -> None:
         mock_post = mocker.patch(
@@ -439,6 +464,7 @@ class TestUpdateMessage:
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("reset_http_session")
 class TestDeleteMessage:
     async def test_delete_message_success(self, mocker: MockerFixture) -> None:
         mock_post = mocker.patch(

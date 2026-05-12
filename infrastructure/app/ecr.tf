@@ -1,7 +1,32 @@
 # ECR repository for SpellBot application
 resource "aws_ecr_repository" "spellbot" {
-  name                 = "spellbot-app"
-  image_tag_mutability = "MUTABLE"
+  name = "spellbot-app"
+
+  # SHA-tagged images (the artifacts ECS actually pulls) are immutable. The
+  # moving aliases below are rewritten by the deploy workflow on every push
+  # and so must remain mutable.
+  image_tag_mutability = "IMMUTABLE_WITH_EXCLUSION"
+
+  image_tag_mutability_exclusion_filter {
+    filter      = "stage"
+    filter_type = "WILDCARD"
+  }
+  image_tag_mutability_exclusion_filter {
+    filter      = "prod"
+    filter_type = "WILDCARD"
+  }
+  image_tag_mutability_exclusion_filter {
+    filter      = "latest"
+    filter_type = "WILDCARD"
+  }
+  image_tag_mutability_exclusion_filter {
+    filter      = "pr-*"
+    filter_type = "WILDCARD"
+  }
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
 
   tags = {
     Name = "spellbot-ecr"

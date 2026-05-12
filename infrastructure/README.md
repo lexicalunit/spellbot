@@ -67,7 +67,7 @@ This Terraform configuration sets up the database infrastructure for SpellBot, i
 
 ### Database setup
 
-Firs copy the example variables file:
+First copy the example variables file:
 
 ```sh
 cp infrastructure/db/terraform.tfvars.example infrastructure/db/terraform.tfvars

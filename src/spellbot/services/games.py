@@ -38,14 +38,14 @@ MAX_GAME_LINK_LEN = Game.game_link.property.columns[0].type.length  # type: igno
 
 
 class GamesService:
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def get(self, game_id: int) -> GameData | None:
         """Fetch the game data by game id."""
         game: Game | None = DatabaseSession.get(Game, game_id)
         return game.to_data() if game else None
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def get_by_voice_xid(self, voice_xid: int) -> GameData | None:
         """Fetch the game data by associated discord voice channel id."""
@@ -54,7 +54,7 @@ class GamesService:
         )
         return game.to_data() if game else None
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def get_by_message_xid(self, message_xid: int) -> GameData | None:
         """Fetch the game data by associated discord message id."""
@@ -66,7 +66,7 @@ class GamesService:
         )
         return game.to_data() if game else None
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def add_player(self, game_data: GameData, player_xid: int) -> GameData:
         """Add the player with the given id to the given game."""
@@ -104,7 +104,7 @@ class GamesService:
         DatabaseSession.commit()
         return updated_game.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def upsert(
         self,
@@ -255,7 +255,7 @@ class GamesService:
 
         return None
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def add_post(
         self,
@@ -298,7 +298,7 @@ class GamesService:
         )
         return [int(row[0]) for row in rows if row[0]]
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def shrink_game(self, game_data: GameData) -> GameData:
         """Shrink the number of seats in a game to the current number of players."""
@@ -313,7 +313,7 @@ class GamesService:
         DatabaseSession.commit()
         return updated_game.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def make_ready(
         self,
@@ -381,7 +381,7 @@ class GamesService:
         DatabaseSession.commit()
         return game.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def watch_notes(self, game_data: GameData, player_xids: list[int]) -> dict[int, str | None]:
         """Return any moderator watch notes for the given game."""
@@ -397,7 +397,7 @@ class GamesService:
         )
         return {cast("int", watch.user_xid): cast("str | None", watch.note) for watch in watched}
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def set_voice(
         self,
@@ -418,7 +418,7 @@ class GamesService:
         DatabaseSession.commit()
         return updated_game.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def blocked(self, game_data: GameData, user_xid: int) -> bool:
         """Return True iff the given user should not be allowed in the given game."""
@@ -437,7 +437,7 @@ class GamesService:
             return True
         return any(xid in player_xids for xid in users_who_blocked_author)
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def inactive_games(self, guild_xid: int | None = None) -> list[GameData]:
         """Return any games that should be considered abandoned for inactivity."""
@@ -462,7 +462,7 @@ class GamesService:
         )
         return [record.to_data() for record in records]
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def delete_games(self, game_ids: list[int]) -> int:
         """Delete the games with the given ids."""
@@ -481,7 +481,7 @@ class GamesService:
         DatabaseSession.commit()
         return dequeued
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def message_xids(self, game_ids: list[int]) -> list[int]:
         """Return the discord post message ids for the given game ids."""
@@ -490,7 +490,7 @@ class GamesService:
         ).where(Post.game_id.in_(game_ids))
         return [int(row[0]) for row in DatabaseSession.execute(query) if row[0]]
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def dequeue_players(self, player_xids: list[int]) -> list[int]:
         """Remove the given players from any queues that they're in; returns changed game ids."""
@@ -501,7 +501,7 @@ class GamesService:
         DatabaseSession.commit()
         return list(game_ids)
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def get_last_game(self, user_xid: int, guild_xid: int) -> GameData | None:
         """Get the last game played by the given user in the given guild."""
@@ -520,7 +520,7 @@ class GamesService:
         return last_game.to_data() if last_game else None
 
     # A helper function for Convoke game creation. Would be nice to refactor to remove!
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def player_convoke_data(self, game_id: int) -> list[PlayerDataDict]:
         """Return the player data for the given game id."""

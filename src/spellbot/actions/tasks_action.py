@@ -92,7 +92,7 @@ class TasksAction:
 
     @classmethod
     @asynccontextmanager
-    async def create(cls, bot: SpellBot) -> AsyncGenerator[TasksAction, None]:
+    async def create(cls, bot: SpellBot) -> AsyncGenerator[TasksAction]:
         action = cls(bot)
         with tracer.trace(name=f"spellbot.interactions.{cls.__name__}.create") as span:
             setup_ignored_errors(span)
