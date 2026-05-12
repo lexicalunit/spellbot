@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated dependencies.
+- Configure dependabot to avoid supply chain attacks.
+
 ## [v18.7.1](https://github.com/lexicalunit/spellbot/releases/tag/v18.7.1) - 2026-05-11
+
+### Changed
+
+- Add EDHLAB API Key to AWS Secrets Manager.
+- Update urllib3 to 2.7.0 to fix a security vulnerability.
 
 ## [v18.7.0](https://github.com/lexicalunit/spellbot/releases/tag/v18.7.0) - 2026-05-10
 
