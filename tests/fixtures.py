@@ -13,6 +13,8 @@ import pytest
 import pytest_asyncio
 from click.testing import CliRunner
 from discord.ext import commands
+from sqlalchemy import create_engine, select, text
+from sqlalchemy.orm import sessionmaker
 
 from spellbot.client import build_bot
 from spellbot.database import (
@@ -20,9 +22,11 @@ from spellbot.database import (
     db_session_maker,
     delete_test_database,
     initialize_connection,
-    rollback_transaction,
 )
-from spellbot.models import Queue
+from spellbot.database import (
+    engine as async_engine,
+)
+from spellbot.models import Base, Queue
 from spellbot.models import User as UserModel
 from spellbot.settings import Settings
 from spellbot.web import build_web_app
@@ -175,33 +179,51 @@ async def session_context(
     event_loop = asyncio.get_event_loop()
 
     if "use_db" in request.keywords:  # pragma: no cover
-        await initialize_connection("spellbot-test", use_transaction=True, worker_id=worker_id)
+        if async_engine.__wrapped__ is not None:
+            await async_engine.__wrapped__.dispose()
+        await initialize_connection("spellbot-test", worker_id=worker_id)
 
         test_session = db_session_maker()
         DatabaseSession.set(test_session)
 
-        BlockFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        ChannelFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        GameFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        GuildAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        GuildFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        GuildMemberFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        PlayFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        PostFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        QueueFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        TokenFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        UserAwardFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        UserFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        VerifyFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
-        WatchFactory._meta.sqlalchemy_session = DatabaseSession  # type: ignore
+        sync_db_url = Settings().DATABASE_URL + f"-{worker_id}"
+        sync_engine = create_engine(sync_db_url, isolation_level="AUTOCOMMIT")
+        sync_session_factory = sessionmaker(bind=sync_engine, expire_on_commit=False)
+        sync_session = sync_session_factory()
+
+        def _truncate_all() -> None:
+            tables = ",".join(f'"{t.name}"' for t in reversed(Base.metadata.sorted_tables))
+            with sync_engine.connect() as conn:
+                conn.execute(text(f"TRUNCATE TABLE {tables} RESTART IDENTITY CASCADE"))
+
+        _truncate_all()
+
+        BlockFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        ChannelFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        GameFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        GuildAwardFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        GuildFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        GuildMemberFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        PlayFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        PostFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        QueueFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        TokenFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        UserAwardFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        UserFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        VerifyFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        WatchFactory._meta.sqlalchemy_session = sync_session  # type: ignore
 
         def cleanup_session() -> None:
             async def finalizer() -> None:
                 try:
-                    test_session.close()
-                    await rollback_transaction()
+                    sync_session.close()
+                    await test_session.close()
+                    _truncate_all()
+                    sync_engine.dispose()
+                    if async_engine.__wrapped__ is not None:
+                        await async_engine.__wrapped__.dispose()
                 except Exception:  # pragma: no cover
-                    logger.exception("Error rolling back transaction")
+                    logger.exception("Error cleaning up test session")
 
             event_loop.run_until_complete(finalizer())
 
@@ -293,11 +315,13 @@ def add_user(factories: Factories) -> Callable[..., User]:
     return factories.user.create
 
 
-@pytest.fixture
-def user(interaction: discord.Interaction, add_user: Callable[..., User]) -> User:
+@pytest_asyncio.fixture
+async def user(interaction: discord.Interaction, add_user: Callable[..., User]) -> User:
     """Get or create a database User that matches the interaction's user."""
-    # Check if a user with this xid already exists (e.g., created by action fixtures)
-    existing = DatabaseSession.query(UserModel).filter_by(xid=interaction.user.id).first()
+    result = await DatabaseSession.execute(
+        select(UserModel).where(UserModel.xid == interaction.user.id),
+    )
+    existing = result.scalars().first()
     if existing:
         return existing
     return add_user(xid=interaction.user.id)
@@ -325,11 +349,11 @@ def game(
     return game
 
 
-@pytest.fixture
-def player(user: User, game: Game) -> User:
+@pytest_asyncio.fixture
+async def player(user: User, game: Game) -> User:
     """Put user into a game queue."""
     DatabaseSession.add(Queue(user_xid=user.xid, game_id=game.id, og_guild_xid=game.guild_xid))
-    DatabaseSession.commit()
+    await DatabaseSession.commit()
     return user
 
 

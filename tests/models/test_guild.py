@@ -13,15 +13,16 @@ if TYPE_CHECKING:
 pytestmark = pytest.mark.use_db
 
 
+@pytest.mark.asyncio
 class TestModelGuild:
-    def test_guild_to_data(self, factories: Factories) -> None:
+    async def test_guild_to_data(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel1 = factories.channel.create(guild=guild)
         channel2 = factories.channel.create(guild=guild)
         award1 = factories.guild_award.create(count=10, guild=guild)
         award2 = factories.guild_award.create(count=20, guild=guild)
 
-        guild_data = guild.to_data()
+        guild_data = await guild.to_data()
         assert isinstance(guild_data, GuildData)
         assert asdict(guild_data) == {
             "awards": [

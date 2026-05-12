@@ -8,6 +8,7 @@ import discord
 import pytest
 from discord import app_commands
 from discord.ext.commands import AutoShardedBot, CommandNotFound, Context, UserInputError
+from sqlalchemy import select
 
 from spellbot import SpellBot
 from spellbot.client import ASSETS_DIR
@@ -23,7 +24,7 @@ from spellbot.errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
-from spellbot.models import Channel, Guild, Verify
+from spellbot.models import Channel, Game, Guild, Verify
 from spellbot.utils import handle_interaction_errors
 from tests.mocks import create_mock_game
 
@@ -288,7 +289,9 @@ class TestSpellBot:
         await bot.handle_message_deleted(dpy_message)
 
         DatabaseSession.expire_all()
-        assert game.deleted_at is not None
+        refreshed = await DatabaseSession.get(Game, game.id)
+        assert refreshed is not None
+        assert refreshed.deleted_at is not None
 
     async def test_handle_message_deleted_when_game_is_started(
         self,
@@ -376,18 +379,24 @@ class TestSpellBotHandleVerification:
         await bot.handle_verification(dpy_message)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).filter(Guild.xid == dpy_message.guild.id).one()
+        guild = (
+            await DatabaseSession.execute(select(Guild).where(Guild.xid == dpy_message.guild.id))
+        ).scalar_one()
         assert guild.xid == dpy_message.guild.id
-        channel = DatabaseSession.query(Channel).filter(Channel.xid == dpy_message.channel.id).one()
+        channel = (
+            await DatabaseSession.execute(
+                select(Channel).where(Channel.xid == dpy_message.channel.id),
+            )
+        ).scalar_one()
         assert channel.xid == dpy_message.channel.id
         found = (
-            DatabaseSession.query(Verify)
-            .filter(
-                Verify.guild_xid == dpy_message.guild.id,
-                Verify.user_xid == dpy_message.author.id,
+            await DatabaseSession.execute(
+                select(Verify).where(
+                    Verify.guild_xid == dpy_message.guild.id,
+                    Verify.user_xid == dpy_message.author.id,
+                ),
             )
-            .one()
-        )
+        ).scalar_one()
         assert found.guild_xid == dpy_message.guild.id
         assert found.user_xid == dpy_message.author.id
         assert not found.verified
@@ -412,18 +421,24 @@ class TestSpellBotHandleVerification:
         await bot.handle_verification(dpy_message)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.query(Guild).filter(Guild.xid == dpy_message.guild.id).one()
+        guild = (
+            await DatabaseSession.execute(select(Guild).where(Guild.xid == dpy_message.guild.id))
+        ).scalar_one()
         assert guild.xid == dpy_message.guild.id
-        channel = DatabaseSession.query(Channel).filter(Channel.xid == dpy_message.channel.id).one()
+        channel = (
+            await DatabaseSession.execute(
+                select(Channel).where(Channel.xid == dpy_message.channel.id),
+            )
+        ).scalar_one()
         assert channel.xid == dpy_message.channel.id
         found = (
-            DatabaseSession.query(Verify)
-            .filter(
-                Verify.guild_xid == dpy_message.guild.id,
-                Verify.user_xid == dpy_message.author.id,
+            await DatabaseSession.execute(
+                select(Verify).where(
+                    Verify.guild_xid == dpy_message.guild.id,
+                    Verify.user_xid == dpy_message.author.id,
+                ),
             )
-            .one()
-        )
+        ).scalar_one()
         assert found.guild_xid == dpy_message.guild.id
         assert found.user_xid == dpy_message.author.id
         assert found.verified

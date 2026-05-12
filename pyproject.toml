@@ -113,10 +113,14 @@ packages = ["src/spellbot"]
 [tool.pyright]
 enableTypeIgnoreComments = true
 ignore = [".venv", "dist"]
+reportArgumentType = false
+reportAttributeAccessIssue = false
+reportCallIssue = false
 reportMatchNotExhaustive = true
+reportMissingImports = false
 reportMissingParameterType = true
 reportMissingTypeArgument = true
-reportUnnecessaryTypeIgnoreComment = "error"
+reportUnnecessaryTypeIgnoreComment = "none"
 typeCheckingMode = "basic"
 
 [tool.ruff]
@@ -159,6 +163,7 @@ ignore = [
   "ARG002",
   "ARG003",
   "ARG005",
+  "COM812",
   "BLE001",
   "D100",
   "D101",

@@ -3,9 +3,10 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from sqlalchemy import delete
 
 from spellbot.data import UserData
 from spellbot.database import DatabaseSession
@@ -17,8 +18,9 @@ if TYPE_CHECKING:
 pytestmark = pytest.mark.use_db
 
 
+@pytest.mark.asyncio
 class TestModelUser:
-    def test_user(self, factories: Factories) -> None:
+    async def test_user(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         game1 = factories.game.create(guild=guild, channel=channel)
@@ -55,14 +57,14 @@ class TestModelUser:
             "banned": user2.banned,
         }
 
-    def test_pending_games(self, factories: Factories) -> None:
+    async def test_pending_games(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create(game=game)
-        assert user.pending_games() == 1
+        assert await user.pending_games() == 1
 
-    def test_pending_games_deleted_game(self, factories: Factories) -> None:
+    async def test_pending_games_deleted_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(
@@ -71,53 +73,56 @@ class TestModelUser:
             deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
         )
         user = factories.user.create(game=game)
-        # Orphaned queue entry for deleted game should not count
-        assert user.pending_games() == 0
+        assert await user.pending_games() == 0
 
 
+@pytest.mark.asyncio
 class TestModelUserGame:
-    def test_happy_path(self, factories: Factories) -> None:
+    async def test_happy_path(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create(game=game)
-        assert user.game(channel.xid) == game
-
-    def test_no_game(self, factories: Factories) -> None:
-        guild = factories.guild.create()
-        channel = factories.channel.create(guild=guild)
-        user = factories.user.create()
-        assert user.game(channel.xid) is None
-
-    def test_deleted_game(self, factories: Factories) -> None:
-        guild = factories.guild.create()
-        channel = factories.channel.create(guild=guild)
-        game = factories.game.create(
-            guild=guild,
-            channel=channel,
-            deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
-        )
-        user = factories.user.create(game=game)
-        assert user.game(channel.xid) is None
-
-
-class TestModelUserWaiting:
-    def test_happy_path(self, factories: Factories) -> None:
-        guild = factories.guild.create()
-        channel = factories.channel.create(guild=guild)
-        game = factories.game.create(guild=guild, channel=channel)
-        user = factories.user.create(game=game)
-        result = user.waiting(channel.xid)
+        result = await user.game(channel.xid)
         assert result is not None
         assert result.id == game.id
 
-    def test_no_game(self, factories: Factories) -> None:
+    async def test_no_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         user = factories.user.create()
-        assert user.waiting(channel.xid) is None
+        assert await user.game(channel.xid) is None
 
-    def test_no_pending_game(self, factories: Factories) -> None:
+    async def test_deleted_game(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
+        )
+        user = factories.user.create(game=game)
+        assert await user.game(channel.xid) is None
+
+
+@pytest.mark.asyncio
+class TestModelUserWaiting:
+    async def test_happy_path(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(guild=guild, channel=channel)
+        user = factories.user.create(game=game)
+        result = await user.waiting(channel.xid)
+        assert result is not None
+        assert result.id == game.id
+
+    async def test_no_game(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        user = factories.user.create()
+        assert await user.waiting(channel.xid) is None
+
+    async def test_no_pending_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(
@@ -128,9 +133,9 @@ class TestModelUserWaiting:
         )
         user = factories.user.create(game=game)
         factories.queue.create(user_xid=user.xid, game_id=game.id)
-        assert user.waiting(channel.xid) is None
+        assert await user.waiting(channel.xid) is None
 
-    def test_game_is_deleted(self, factories: Factories) -> None:
+    async def test_game_is_deleted(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(
@@ -139,25 +144,24 @@ class TestModelUserWaiting:
             deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
         )
         user = factories.user.create(game=game)
-        assert user.waiting(channel.xid) is None
+        assert await user.waiting(channel.xid) is None
 
-    def test_game_is_deleted_defensive(self, factories: Factories) -> None:
+    async def test_game_is_deleted_defensive(self, factories: Factories) -> None:
         """Test the defensive deleted_at check when game() bypasses SQL filter."""
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create(game=game)
-        # Mock game() to return a game with deleted_at set (bypassing SQL filter)
         mock_game = MagicMock()
         mock_game.status = GameStatus.PENDING.value
         mock_game.deleted_at = datetime(2021, 11, 1, tzinfo=UTC)
-        user.game = MagicMock(return_value=mock_game)
-        assert user.waiting(channel.xid) is None
+        user.game = AsyncMock(return_value=mock_game)
+        assert await user.waiting(channel.xid) is None
 
-    def test_no_post(self, factories: Factories) -> None:
+    async def test_no_post(self, factories: Factories) -> None:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create(game=game)
-        DatabaseSession.query(Post).delete(synchronize_session=False)
-        assert user.waiting(channel.xid) is None
+        await DatabaseSession.execute(delete(Post))
+        assert await user.waiting(channel.xid) is None

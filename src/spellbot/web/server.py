@@ -18,6 +18,9 @@ from spellbot.environment import running_in_pytest  # noqa: E402
 
 from . import build_web_app  # noqa: E402
 
+if TYPE_CHECKING:
+    from aiohttp import web
+
 if not running_in_pytest():  # pragma: no cover
     load_dotenv()
 
@@ -33,4 +36,5 @@ async def on_startup(_app: web.Application) -> None:
 
 # gunicorn entrypoint, it needs a "app" object. See start.sh for detail.
 app = build_web_app()
-app.on_startup.append(on_startup)
+if not running_in_pytest():  # pragma: no cover
+    app.on_startup.append(on_startup)
