@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # hack: b/c playwright looks for exe in /.cache/ms-playwright/...
 ln -s root/.cache .

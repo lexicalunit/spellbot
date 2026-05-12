@@ -1,8 +1,7 @@
-FROM python:3.13-alpine
+FROM ghcr.io/astral-sh/uv:python3.13-alpine
 ARG DD_VERSION=dev
 
-RUN apk add --no-cache bash libpq libffi \
-  && pip install --no-cache-dir uv
+RUN apk add --no-cache libpq libffi
 
 COPY LICENSE.md README.md pyproject.toml uv.lock /spellbot/
 RUN uv sync --no-cache --frozen --no-dev --directory ./spellbot --no-install-project

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 SPELL_APP="$1"
 CMD=""
@@ -6,7 +6,7 @@ echo "will start $SPELL_APP..."
 
 export DD_LOG_LEVEL="CRITICAL"
 
-if [[ -n $DD_API_KEY ]] && [[ -n $DD_APP_KEY ]]; then
+if [ -n "$DD_API_KEY" ] && [ -n "$DD_APP_KEY" ]; then
     echo "running with ddtrace..."
     CMD="ddtrace-run "
 
@@ -16,10 +16,10 @@ else
     echo "running without ddtrace..."
 fi
 
-if [[ $SPELL_APP == "spellbot" ]]; then
+if [ "$SPELL_APP" = "spellbot" ]; then
     CMD="$CMD spellbot"
-elif [[ $SPELL_APP == "spellapi" ]]; then
-    if [[ $ENVIRONMENT == "prod" ]]; then
+elif [ "$SPELL_APP" = "spellapi" ]; then
+    if [ "$ENVIRONMENT" = "prod" ]; then
         WORKERS=4
     else
         WORKERS=1
