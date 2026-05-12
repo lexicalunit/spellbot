@@ -31,5 +31,6 @@ async def on_startup(_app: web.Application) -> None:
     )
 
 
+# gunicorn entrypoint, it needs a "app" object. See start.sh for detail.
 app = build_web_app()
 app.on_startup.append(on_startup)
