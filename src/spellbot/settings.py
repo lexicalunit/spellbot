@@ -24,6 +24,8 @@ class Settings:
         "CONVOKE_API_KEY",
         "CONVOKE_ROOT",
         "DATABASE_ECHO",
+        "DATABASE_MAX_OVERFLOW",
+        "DATABASE_POOL_SIZE",
         "DATABASE_URL",
         "DD_API_KEY",
         "DD_APP_KEY",
@@ -120,6 +122,10 @@ class Settings:
             # Ensure that we're asking for the psycopg3+ driver (and not psycopg2)
             database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
         self.DATABASE_URL = database_url
+        # See: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Managing.Performance.html
+        # db.t4g.medium max_connections is 90 at time of this writing
+        self.DATABASE_POOL_SIZE = int(getenv("DATABASE_POOL_SIZE", "20"))
+        self.DATABASE_MAX_OVERFLOW = int(getenv("DATABASE_MAX_OVERFLOW", "40"))
 
         # cache
         self.REDIS_URL = getenv("REDIS_URL")

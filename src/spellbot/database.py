@@ -121,6 +121,8 @@ def initialize_connection(
         echo=settings.DATABASE_ECHO,
         connect_args={"application_name": app},
         isolation_level=None if use_transaction else "AUTOCOMMIT",
+        pool_size=settings.DATABASE_POOL_SIZE,
+        max_overflow=settings.DATABASE_MAX_OVERFLOW,
     )
     connection_obj = engine_obj.connect()
 

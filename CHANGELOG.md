@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Updated dependencies.
 - Configure dependabot to avoid supply chain attacks.
+- Use Dockerfile base image with uv baked in.
+- Added database pool size configurations.
+- POSIX compliant changes for scripts used in docker images.
 
 ## [v18.7.1](https://github.com/lexicalunit/spellbot/releases/tag/v18.7.1) - 2026-05-11
 
