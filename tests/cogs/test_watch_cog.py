@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 import pytest
+from sqlalchemy import select
 
 from spellbot.cogs import WatchCog
 from spellbot.database import DatabaseSession
@@ -44,7 +45,7 @@ class TestCogWatch:
             ephemeral=True,
         )
 
-        watch = DatabaseSession.query(Watch).one()
+        watch = (await DatabaseSession.execute(select(Watch))).scalar_one()
         watch_data = watch.to_data()
         assert watch_data.guild_xid == guild.xid
         assert watch_data.user_xid == target_member.id
@@ -57,7 +58,7 @@ class TestCogWatch:
             ephemeral=True,
         )
 
-        watch = DatabaseSession.query(Watch).one_or_none()
+        watch = (await DatabaseSession.execute(select(Watch))).scalar_one_or_none()
         assert not watch
 
     async def test_watch_and_unwatch_by_id(
@@ -76,7 +77,7 @@ class TestCogWatch:
             ephemeral=True,
         )
 
-        watch = DatabaseSession.query(Watch).one()
+        watch = (await DatabaseSession.execute(select(Watch))).scalar_one()
         watch_data = watch.to_data()
         assert watch_data.guild_xid == guild.xid
         assert watch_data.user_xid == target_member.id
@@ -89,7 +90,7 @@ class TestCogWatch:
             ephemeral=True,
         )
 
-        watch = DatabaseSession.query(Watch).one_or_none()
+        watch = (await DatabaseSession.execute(select(Watch))).scalar_one_or_none()
         assert not watch
 
     async def test_watch_with_no_target(

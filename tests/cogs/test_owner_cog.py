@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from sqlalchemy import select
 
 from spellbot.cogs import OwnerCog
 from spellbot.database import DatabaseSession
@@ -46,13 +47,17 @@ class TestCogOwner:
         context.author.send.assert_called_once_with(  # type: ignore
             f"User <@{target_user.id}> has been banned.",
         )
-        user = DatabaseSession.query(User).filter(User.xid == target_user.id).one()
+        user = (
+            await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
+        ).scalar_one()
         assert user.xid == target_user.id
         assert user.banned
 
         DatabaseSession.expire_all()
         await run_owner_command(cog, cog.unban, context, str(target_user.id))
-        user = DatabaseSession.query(User).filter(User.xid == target_user.id).one()
+        user = (
+            await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
+        ).scalar_one()
         assert user.xid == target_user.id
         assert not user.banned
 
@@ -110,13 +115,17 @@ class TestCogOwner:
         context.author.send.assert_called_once_with(  # type: ignore
             f"Guild {target_guild} has been banned.",
         )
-        guild = DatabaseSession.query(Guild).filter(Guild.xid == target_guild).one()
+        guild = (
+            await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))
+        ).scalar_one()
         assert guild.xid == target_guild
         assert guild.banned
 
         DatabaseSession.expire_all()
         await run_owner_command(cog, cog.unban_guild, context, str(target_guild))
-        guild = DatabaseSession.query(Guild).filter(Guild.xid == target_guild).one()
+        guild = (
+            await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))
+        ).scalar_one()
         assert guild.xid == target_guild
         assert not guild.banned
 

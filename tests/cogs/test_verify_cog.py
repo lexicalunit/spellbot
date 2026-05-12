@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import select
 
 from spellbot.cogs import VerifyCog
 from spellbot.database import DatabaseSession
@@ -45,7 +46,9 @@ class TestCogVerify:
             f"Verified <@{target.id}>.",
             ephemeral=True,
         )
-        found = DatabaseSession.query(Verify).filter(Verify.user_xid == target.id).one()
+        found = (
+            await DatabaseSession.execute(select(Verify).where(Verify.user_xid == target.id))
+        ).scalar_one()
         assert found.guild_xid == guild.xid
         assert found.user_xid == target.id
         assert found.verified
@@ -57,5 +60,7 @@ class TestCogVerify:
             f"Unverified <@{target.id}>.",
             ephemeral=True,
         )
-        found = DatabaseSession.query(Verify).filter(Verify.user_xid == target.id).one()
+        found = (
+            await DatabaseSession.execute(select(Verify).where(Verify.user_xid == target.id))
+        ).scalar_one()
         assert not found.verified

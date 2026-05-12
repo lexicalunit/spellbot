@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy import func, select
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, Game, Guild, Queue, User, Watch
@@ -29,7 +30,7 @@ class TestServiceUsers:
         await users.upsert(discord_user)
 
         DatabaseSession.expire_all()
-        user = DatabaseSession.get(User, discord_user.id)
+        user = await DatabaseSession.get(User, discord_user.id)
         assert user
         assert user.xid == discord_user.id
         assert user.name == "user-name"
@@ -38,7 +39,7 @@ class TestServiceUsers:
         await users.upsert(discord_user)
 
         DatabaseSession.expire_all()
-        user = DatabaseSession.get(User, discord_user.id)
+        user = await DatabaseSession.get(User, discord_user.id)
         assert user
         assert user.xid == discord_user.id
         assert user.name == "new-name"
@@ -99,13 +100,13 @@ class TestServiceUsers:
 
         DatabaseSession.expire_all()
         block = (
-            DatabaseSession.query(Block)
-            .filter(
-                Block.user_xid == user1.xid,
-                Block.blocked_user_xid == user2.xid,
+            await DatabaseSession.execute(
+                select(Block).where(
+                    Block.user_xid == user1.xid,
+                    Block.blocked_user_xid == user2.xid,
+                ),
             )
-            .one()
-        )
+        ).scalar_one()
         assert block.user_xid == user1.xid
         assert block.blocked_user_xid == user2.xid
 
@@ -117,20 +118,26 @@ class TestServiceUsers:
 
         DatabaseSession.expire_all()
         block = (
-            DatabaseSession.query(Block)
-            .filter(Block.user_xid == user1.xid, Block.blocked_user_xid == user2.xid)
-            .one()
-        )
+            await DatabaseSession.execute(
+                select(Block).where(
+                    Block.user_xid == user1.xid,
+                    Block.blocked_user_xid == user2.xid,
+                ),
+            )
+        ).scalar_one()
         assert block is not None
 
         await users.unblock(user1.xid, user2.xid)
 
         DatabaseSession.expire_all()
         block = (
-            DatabaseSession.query(Block)
-            .filter(Block.user_xid == user1.xid, Block.blocked_user_xid == user2.xid)
-            .one_or_none()
-        )
+            await DatabaseSession.execute(
+                select(Block).where(
+                    Block.user_xid == user1.xid,
+                    Block.blocked_user_xid == user2.xid,
+                ),
+            )
+        ).scalar_one_or_none()
         assert block is None
 
     async def test_users_watch(self, guild: Guild) -> None:
@@ -140,10 +147,13 @@ class TestServiceUsers:
 
         DatabaseSession.expire_all()
         watch = (
-            DatabaseSession.query(Watch)
-            .filter(Watch.guild_xid == guild.xid, Watch.user_xid == user.xid)
-            .one()
-        )
+            await DatabaseSession.execute(
+                select(Watch).where(
+                    Watch.guild_xid == guild.xid,
+                    Watch.user_xid == user.xid,
+                ),
+            )
+        ).scalar_one()
         assert watch.note == "note"
 
     async def test_users_watch_upsert(self, guild: Guild) -> None:
@@ -154,10 +164,13 @@ class TestServiceUsers:
 
         DatabaseSession.expire_all()
         watch = (
-            DatabaseSession.query(Watch)
-            .filter(Watch.guild_xid == guild.xid, Watch.user_xid == user.xid)
-            .one()
-        )
+            await DatabaseSession.execute(
+                select(Watch).where(
+                    Watch.guild_xid == guild.xid,
+                    Watch.user_xid == user.xid,
+                ),
+            )
+        ).scalar_one()
         assert watch.note == "note2"
 
     async def test_users_watch_without_note(self, guild: Guild) -> None:
@@ -167,10 +180,13 @@ class TestServiceUsers:
 
         DatabaseSession.expire_all()
         watch = (
-            DatabaseSession.query(Watch)
-            .filter(Watch.guild_xid == guild.xid, Watch.user_xid == user.xid)
-            .one()
-        )
+            await DatabaseSession.execute(
+                select(Watch).where(
+                    Watch.guild_xid == guild.xid,
+                    Watch.user_xid == user.xid,
+                ),
+            )
+        ).scalar_one()
         assert watch.note is None
 
     async def test_users_unwatch(self, guild: Guild) -> None:
@@ -180,27 +196,35 @@ class TestServiceUsers:
 
         DatabaseSession.expire_all()
         watch = (
-            DatabaseSession.query(Watch)
-            .filter(Watch.guild_xid == guild.xid, Watch.user_xid == user.xid)
-            .one()
-        )
+            await DatabaseSession.execute(
+                select(Watch).where(
+                    Watch.guild_xid == guild.xid,
+                    Watch.user_xid == user.xid,
+                ),
+            )
+        ).scalar_one()
         assert watch.note == "note"
 
         await users.unwatch(guild_xid=guild.xid, user_xid=user.xid)
 
         DatabaseSession.expire_all()
         watch = (
-            DatabaseSession.query(Watch)
-            .filter(Watch.guild_xid == guild.xid, Watch.user_xid == user.xid)
-            .one_or_none()
-        )
+            await DatabaseSession.execute(
+                select(Watch).where(
+                    Watch.guild_xid == guild.xid,
+                    Watch.user_xid == user.xid,
+                ),
+            )
+        ).scalar_one_or_none()
         assert watch is None
 
     async def test_users_leave_game(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
 
-        assert DatabaseSession.query(Queue).count() == 1
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(Queue))).scalar() or 0
+        ) == 1
 
         user1_data = await users.get(user1.xid)
         assert user1_data is not None
@@ -210,7 +234,9 @@ class TestServiceUsers:
         assert user2_data is not None
         await users.leave_game(user2_data, game.channel_xid)
 
-        assert DatabaseSession.query(Queue).count() == 0
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(Queue))).scalar() or 0
+        ) == 0
 
     async def test_users_current_game_id_deleted_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -254,10 +280,14 @@ class TestServiceUsers:
         assert user_data is not None
 
         # Queue entry still exists (game was soft-deleted but queue wasn't cleaned up)
-        assert DatabaseSession.query(Queue).count() == 1
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(Queue))).scalar() or 0
+        ) == 1
 
         # leave_game should not find the deleted game, so queue should remain
         await users.leave_game(user_data, channel.xid)
 
         # Queue entry should still exist since the game was deleted
-        assert DatabaseSession.query(Queue).count() == 1
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(Queue))).scalar() or 0
+        ) == 1

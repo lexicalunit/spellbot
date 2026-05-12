@@ -116,9 +116,11 @@ class Guild(Base):
         doc="Awards available in this guild",
     )
 
-    def to_data(self) -> GuildData:
+    async def to_data(self) -> GuildData:
         from spellbot.data import GuildData  # allow_inline
 
+        channels = await self.awaitable_attrs.channels
+        awards = await self.awaitable_attrs.awards
         return GuildData(
             xid=self.xid,
             created_at=self.created_at,
@@ -129,11 +131,11 @@ class Guild(Base):
             voice_create=self.voice_create,
             use_max_bitrate=self.use_max_bitrate,
             channels=sorted(
-                [channel.to_data() for channel in cast("Iterable[Channel]", self.channels)],
+                [channel.to_data() for channel in cast("Iterable[Channel]", channels)],
                 key=lambda c: c.xid,
             ),
             awards=sorted(
-                [award.to_data() for award in cast("Iterable[GuildAward]", self.awards)],
+                [award.to_data() for award in cast("Iterable[GuildAward]", awards)],
                 key=lambda c: c.id,
             ),
             banned=self.banned,

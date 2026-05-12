@@ -24,7 +24,8 @@ class Settings:
         "CONVOKE_API_KEY",
         "CONVOKE_ROOT",
         "DATABASE_ECHO",
-        "DATABASE_MAX_OVERFLOW",
+        "DATABASE_POOL_MAX_OVERFLOW",
+        "DATABASE_POOL_RECYCLE_S",
         "DATABASE_POOL_SIZE",
         "DATABASE_URL",
         "DD_API_KEY",
@@ -118,7 +119,8 @@ class Settings:
         # See: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Managing.Performance.html
         # db.t4g.medium max_connections is 90 at time of this writing
         self.DATABASE_POOL_SIZE = int(getenv("DATABASE_POOL_SIZE", "20"))
-        self.DATABASE_MAX_OVERFLOW = int(getenv("DATABASE_MAX_OVERFLOW", "40"))
+        self.DATABASE_POOL_MAX_OVERFLOW = int(getenv("DATABASE_POOL_MAX_OVERFLOW", "40"))
+        self.DATABASE_POOL_RECYCLE_S = int(getenv("DATABASE_POOL_RECYCLE_S", "1800"))
 
         # cache
         self.REDIS_URL = getenv("REDIS_URL")

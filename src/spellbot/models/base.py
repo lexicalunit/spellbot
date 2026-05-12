@@ -8,6 +8,7 @@ import alembic
 import alembic.command
 import alembic.config
 from sqlalchemy import String, create_engine, text
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import declarative_base  # type: ignore (current type stubs are broken)
 from sqlalchemy_utils import create_database, database_exists
 
@@ -25,7 +26,7 @@ ALEMBIC_INI = MIGRATIONS_DIR / "alembic.ini"
 logger = logging.getLogger(__name__)
 
 now = text("(now() at time zone 'utc')")
-Base: DeclarativeMeta = declarative_base()
+Base: DeclarativeMeta = declarative_base(cls=AsyncAttrs)
 
 
 def create_all(database_url: str) -> None:
