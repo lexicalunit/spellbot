@@ -29,7 +29,7 @@ Or build it yourself:
 
 ```shell
 DD_VERSION="$(git rev-parse --short HEAD)"
-DOCKER_BUILDKIT=0 docker buildx build \
+DOCKER_BUILDKIT=1 docker buildx build \
     --build-arg DD_VERSION="$DD_VERSION" \
     --ulimit nofile=1024000:1024000 \
     --platform linux/arm64 \

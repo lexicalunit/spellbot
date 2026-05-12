@@ -94,7 +94,7 @@ def get_latency_class(latency_ms: float | None) -> str:
     return "latency-bad"
 
 
-def _get_int(metadata: dict[str, Any], key: str, default: int = 0) -> int:
+def get_int(metadata: dict[str, Any], key: str, default: int = 0) -> int:
     """Safely extract an int from metadata."""
     val = metadata.get(key, default)
     if isinstance(val, int):
@@ -102,7 +102,7 @@ def _get_int(metadata: dict[str, Any], key: str, default: int = 0) -> int:
     return int(str(val)) if val is not None else default
 
 
-def _get_str(metadata: dict[str, Any], key: str) -> str | None:
+def get_str(metadata: dict[str, Any], key: str) -> str | None:
     """Safely extract a string from metadata."""
     val = metadata.get(key)
     return str(val) if val is not None else None
@@ -113,11 +113,11 @@ def compute_status(
     metadata: dict[str, Any] | None,
 ) -> StatusData:
     """Compute overall status and shard data."""
-    total_shards = _get_int(metadata, "shard_count") if metadata else 0
+    total_shards = get_int(metadata, "shard_count") if metadata else 0
     ready_shards = sum(1 for s in statuses if s.is_ready)
-    total_guilds = _get_int(metadata, "total_guilds") if metadata else 0
-    version = _get_str(metadata, "version") if metadata else None
-    last_updated = _get_str(metadata, "last_updated") if metadata else None
+    total_guilds = get_int(metadata, "total_guilds") if metadata else 0
+    version = get_str(metadata, "version") if metadata else None
+    last_updated = get_str(metadata, "last_updated") if metadata else None
 
     # Detect if upgrade is in progress
     shard_versions = {s.version for s in statuses if s.version != "unknown"}

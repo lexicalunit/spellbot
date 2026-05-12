@@ -5,12 +5,18 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from spellbot.services import patreon as mod
 from spellbot.services.patreon import (
     PatreonService,
     get_patreon_campaign_url,
     get_patron_ids,
     get_supporters,
 )
+
+
+@pytest.fixture(autouse=True)
+def use_fake_patreon_campaign(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(mod.settings, "PATREON_CAMPAIGN", "foo")
 
 
 class TestGetPatreonCampaignUrl:

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class WatchesService:
-    @sync_to_async()
+    @sync_to_async
     def fetch(self, guild_xid: int) -> list[WatchData]:
         """Fetch all watches for the given guild."""
         watches = (

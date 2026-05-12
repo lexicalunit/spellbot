@@ -737,7 +737,7 @@ async def safe_send_user(
             "discord server error sending to user %(user)s %(xid)s",
             user=user,
             xid=user_xid,
-            exec_info=True,
+            exc_info=True,
         )
     except (discord.errors.Forbidden, discord.errors.HTTPException) as ex:
         if is_expected_dm_failure(ex):
@@ -761,7 +761,7 @@ async def safe_send_user(
             "failed to send message to user %(user)s %(xid)s",
             user=user,
             xid=user_xid,
-            exec_info=True,
+            exc_info=True,
         )
     except ClientOSError as ex:
         add_span_error(ex)
@@ -769,7 +769,7 @@ async def safe_send_user(
             "client error sending to user %(user)s %(xid)s",
             user=user,
             xid=user_xid,
-            exec_info=True,
+            exc_info=True,
         )
 
 

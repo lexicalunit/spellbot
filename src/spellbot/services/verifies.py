@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class VerifiesService:
-    @sync_to_async()
+    @sync_to_async
     def upsert(
         self,
         guild_xid: int,

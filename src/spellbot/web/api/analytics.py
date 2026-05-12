@@ -100,7 +100,7 @@ async def analytics_endpoint(request: web.Request) -> WebResponse:
     if not validate_signature(guild_xid, expires, sig):
         return WebResponse(status=403, text="Invalid or expired link.")
 
-    @sync_to_async()
+    @sync_to_async
     def get_guild_name() -> str | None:
         guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
         return guild.name if guild else None
@@ -215,7 +215,7 @@ async def analytics_services_endpoint(request: web.Request) -> WebResponse:
     )
 
 
-@sync_to_async()
+@sync_to_async
 def delete_guild_member(guild_xid: int, user_xid: int) -> None:
     """Delete a GuildMember record when the user is no longer in the guild."""
     DatabaseSession.query(GuildMember).filter(

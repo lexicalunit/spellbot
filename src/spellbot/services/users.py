@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class UsersService:
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def upsert(
         self,
@@ -84,14 +84,14 @@ class UsersService:
         user = DatabaseSession.get(User, xid)
         return user.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def get(self, user_xid: int) -> UserData | None:
         """Get the user data for the given user id."""
         user: User | None = DatabaseSession.query(User).filter(User.xid == user_xid).one_or_none()
         return user.to_data() if user else None
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def set_banned(self, user_xid: int, banned: bool) -> UserData:
         """Mark the given user id as banned from using this bot."""
@@ -118,7 +118,7 @@ class UsersService:
         DatabaseSession.commit()
         return updated_user.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def current_game_id(self, user_data: UserData, channel_xid: int) -> int | None:
         """Get the current PENDING game id for the user in the given channel."""
@@ -137,7 +137,7 @@ class UsersService:
         )
         return queue.game_id if queue else None
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def leave_game(self, user_data: UserData, channel_xid: int) -> list[GameData]:
         """Remove the given user from games in the given channel; Returns affected game data."""
@@ -175,21 +175,21 @@ class UsersService:
         DatabaseSession.commit()
         return updated_games
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def is_waiting(self, user_data: UserData, channel_xid: int) -> GameData | None:
         """Return pending game data for the given user in the given channel."""
         user: User = DatabaseSession.get(User, user_data.xid)
         return user.waiting(channel_xid)
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def pending_games(self, user_data: UserData) -> int:
         """Return the number of pending games the user is in."""
         user: User = DatabaseSession.get(User, user_data.xid)
         return user.pending_games()
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def block(self, author_xid: int, target_xid: int) -> None:
         """Add a block for the given author, blocking the given target."""
@@ -202,7 +202,7 @@ class UsersService:
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def unblock(self, author_xid: int, target_xid: int) -> None:
         """Remove a block for the given author, unblocking the given target."""
@@ -214,7 +214,7 @@ class UsersService:
         ).delete(synchronize_session=False)
         DatabaseSession.commit()
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def watch(self, guild_xid: int, user_xid: int, note: str | None = None) -> None:
         """Add the given user to the moderator watch list for a guild."""
@@ -239,7 +239,7 @@ class UsersService:
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def unwatch(self, guild_xid: int, user_xid: int) -> None:
         """Remove the given user from the moderator watch list for a guild."""
@@ -251,7 +251,7 @@ class UsersService:
         ).delete(synchronize_session=False)
         DatabaseSession.commit()
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def blocklist(self, user_xid: int) -> list[UserData]:
         """Return the list of user ids that the given user has blocked."""
@@ -264,7 +264,7 @@ class UsersService:
             .all()
         ]
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def move_user(  # pragma: no cover
         self,
@@ -436,19 +436,19 @@ class UsersService:
 
         return None
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def get_players_by_xid(self, xids: list[int]) -> list[UserData]:
         """Fetch user data for the given list of user ids."""
         return [u.to_data() for u in DatabaseSession.query(User).filter(User.xid.in_(xids)).all()]
 
-    @sync_to_async()
+    @sync_to_async
     def get_xid_by_name(self, name: str) -> int | None:
         """Look up a user's xid by their name (case-insensitive)."""
         user = DatabaseSession.query(User).filter(func.lower(User.name) == func.lower(name)).first()
         return user.xid if user else None
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def blocked_by_count(self, user_xid: int) -> int:
         """Count how many users have blocked this user."""
@@ -456,7 +456,7 @@ class UsersService:
             DatabaseSession.query(Block).filter(Block.blocked_user_xid == user_xid).count() or 0,
         )
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def games_played_count(self, user_xid: int, guild_xid: int) -> int:
         """Count how many games this user has played in the given guild."""
@@ -473,7 +473,7 @@ class UsersService:
             or 0,
         )
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def is_watched(self, user_xid: int, guild_xid: int) -> str | None:
         """Check if user is being watched in this guild, return note if so."""
@@ -489,7 +489,7 @@ class UsersService:
         )
         return watch.note if watch else None
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def is_verified(self, user_xid: int, guild_xid: int) -> bool | None:
         """Check if user is verified in this guild. Returns None if no record exists."""
@@ -505,7 +505,7 @@ class UsersService:
         )
         return verify.verified if verify else None
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def play_date_range(
         self,
@@ -530,7 +530,7 @@ class UsersService:
         )
         return result[0], result[1]
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def filter_blocked_list(self, author_xid: int, other_xids: list[int]) -> list[int]:
         """Given an author, filters out any blocked players from a list of others."""
@@ -551,7 +551,7 @@ class UsersService:
             - set(users_who_blocked_author_or_other),
         )
 
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def filter_pending_games(self, user_xids: list[int]) -> list[int]:
         """Remove users from the list if they are already in the max number of pending queues."""

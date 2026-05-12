@@ -28,6 +28,25 @@ logger = logging.getLogger(__name__)
 
 UNRECOVERABLE = {400, 401, 403, 404}
 
+# Process-wide aiohttp client session, lazily created on first use and reused
+# for the lifetime of the process. aiohttp recommends a single long-lived
+# session per application rather than creating a new one per request.
+_http_session: aiohttp.ClientSession | None = None
+
+
+def get_http_session() -> aiohttp.ClientSession:
+    global _http_session  # noqa: PLW0603
+    if _http_session is None or _http_session.closed:
+        _http_session = aiohttp.ClientSession()
+    return _http_session
+
+
+async def close_http_session() -> None:
+    global _http_session  # noqa: PLW0603
+    if _http_session is not None and not _http_session.closed:
+        await _http_session.close()
+    _http_session = None
+
 
 def reply(
     data: dict[str, Any] | None = None,
@@ -134,9 +153,6 @@ def game_record_embed(
     }
 
 
-class InvalidJsonResponseError(ValueError): ...
-
-
 def retry_if_not_unrecoverable(exc: BaseException) -> bool:
     return not isinstance(exc, aiohttp.ClientResponseError) or exc.status not in UNRECOVERABLE
 
@@ -172,12 +188,11 @@ async def post_with_retry(
 async def send_message(channel_xid: int, message: dict[str, Any]) -> dict[str, Any] | None:
     logger.info("Sending message to channel %s...", channel_xid)
     try:
-        async with aiohttp.ClientSession() as session:
-            return await post_with_retry(
-                session,
-                f"/channels/{channel_xid}/messages",
-                message,
-            )
+        return await post_with_retry(
+            get_http_session(),
+            f"/channels/{channel_xid}/messages",
+            message,
+        )
     except Exception as ex:
         logger.warning("Send message failure: %s", ex, exc_info=True)
     return None
@@ -191,13 +206,12 @@ async def update_message(
 ) -> dict[str, Any] | None:
     logger.info("Sending message to channel %s...", channel_xid)
     try:
-        async with aiohttp.ClientSession() as session:
-            return await post_with_retry(
-                session,
-                f"/channels/{channel_xid}/messages/{message_xid}",
-                message,
-                method="patch",
-            )
+        return await post_with_retry(
+            get_http_session(),
+            f"/channels/{channel_xid}/messages/{message_xid}",
+            message,
+            method="patch",
+        )
     except Exception as ex:
         logger.warning("Send message failure: %s", ex, exc_info=True)
     return None
@@ -210,12 +224,11 @@ async def delete_message(
 ) -> dict[str, Any] | None:
     logger.info("Deleting message in channel %s...", channel_xid)
     try:
-        async with aiohttp.ClientSession() as session:
-            return await post_with_retry(
-                session,
-                f"/channels/{channel_xid}/messages/{message_xid}",
-                method="delete",
-            )
+        return await post_with_retry(
+            get_http_session(),
+            f"/channels/{channel_xid}/messages/{message_xid}",
+            method="delete",
+        )
     except Exception as ex:
         logger.warning("Delete message failure: %s", ex, exc_info=True)
     return None
@@ -225,24 +238,24 @@ async def delete_message(
 async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
     logger.info("Beginning DM send to user %s...", user_xid)
     try:
-        async with aiohttp.ClientSession() as session:
-            # create dm channel
-            dm_channel = await post_with_retry(
-                session,
-                "/users/@me/channels",
-                {"recipient_id": user_xid},
-            )
-            logger.info("DM channel to user %s created", user_xid)
+        session = get_http_session()
+        # create dm channel
+        dm_channel = await post_with_retry(
+            session,
+            "/users/@me/channels",
+            {"recipient_id": user_xid},
+        )
+        logger.info("DM channel to user %s created", user_xid)
 
-            # then send message to dm channel
-            channel_xid = dm_channel["id"]
-            logger.info("Sending DM to user %s...", user_xid)
-            dm_message = await post_with_retry(
-                session,
-                f"/channels/{channel_xid}/messages",
-                message,
-            )
-            logger.info("Sent DM to user %s with response: %s", user_xid, json.dumps(dm_message))
+        # then send message to dm channel
+        channel_xid = dm_channel["id"]
+        logger.info("Sending DM to user %s...", user_xid)
+        dm_message = await post_with_retry(
+            session,
+            f"/channels/{channel_xid}/messages",
+            message,
+        )
+        logger.info("Sent DM to user %s with response: %s", user_xid, json.dumps(dm_message))
 
     except aiohttp.ClientResponseError as ex:
         if ex.status in UNRECOVERABLE:

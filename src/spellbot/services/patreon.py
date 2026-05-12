@@ -66,11 +66,11 @@ def get_supporters(data: dict[str, Any], patrons: set[str]) -> set[int]:
 
 
 class PatreonService:
-    @sync_to_async()
+    @sync_to_async
     @tracer.wrap()
     def supporters(self) -> set[int]:
         """Return a list of Discord IDs of active Patreon supporters."""
-        if running_in_pytest():
+        if running_in_pytest() or not settings.PATREON_CAMPAIGN:
             return set()
 
         response: httpx.Response | None = None

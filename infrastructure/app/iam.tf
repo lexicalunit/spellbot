@@ -17,10 +17,12 @@ resource "aws_iam_role" "spellbot_deployment" {
         Condition = {
           StringEquals = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          },
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:lexicalunit/spellbot:*"
-        } }
+            "token.actions.githubusercontent.com:sub" = [
+              "repo:lexicalunit/spellbot:environment:stage",
+              "repo:lexicalunit/spellbot:environment:prod",
+            ]
+          }
+        }
       }
     ]
   })

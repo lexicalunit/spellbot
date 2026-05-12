@@ -152,7 +152,7 @@ class SpellBot(AutoShardedBot):
             logger.exception("warning: could not fetch application emojis")
 
     @asynccontextmanager
-    async def guild_lock(self, guild_xid: int) -> AsyncGenerator[None, None]:
+    async def guild_lock(self, guild_xid: int) -> AsyncGenerator[None]:
         if not self.guild_locks.get(guild_xid):
             self.guild_locks[guild_xid] = asyncio.Lock()
         async with self.guild_locks[guild_xid]:
@@ -165,7 +165,7 @@ class SpellBot(AutoShardedBot):
         pins: list[str] | None = None,
     ) -> GameLinkDetails:
         if self.mock_games:
-            return GameLinkDetails(f"http://exmaple.com/game/{uuid4()}")
+            return GameLinkDetails(f"http://example.com/game/{uuid4()}")
         service = game_data.service
         if span := tracer.current_span():  # pragma: no cover
             span.set_tag("link_service", GameService(service).name)

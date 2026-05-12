@@ -19,6 +19,5 @@ class PostData:
     @property
     def jump_link(self) -> str:
         return (
-            "https://discordapp.com/channels/"
-            f"{self.guild_xid}/{self.channel_xid}/{self.message_xid}"
+            f"https://discord.com/channels/{self.guild_xid}/{self.channel_xid}/{self.message_xid}"
         )

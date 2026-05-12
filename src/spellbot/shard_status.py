@@ -7,9 +7,9 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from packaging.version import parse as parse_version
-from redis import asyncio as aioredis
 
 from spellbot import __version__
+from spellbot.redis_client import get_redis
 
 from .settings import settings
 
@@ -57,9 +57,8 @@ async def update_shard_status(bot: SpellBot) -> None:
         logger.debug("REDIS_URL not configured, skipping shard status update")
         return
 
-    redis = None
     try:
-        redis = await aioredis.from_url(settings.REDIS_URL)
+        redis = await get_redis()
 
         shard_count = bot.shard_count or 1
         shard_ids = list(bot.shards.keys()) if bot.shards else [0]
@@ -140,9 +139,6 @@ async def update_shard_status(bot: SpellBot) -> None:
 
     except Exception:
         logger.warning("Failed to update shard status in Redis", exc_info=True)
-    finally:
-        if redis is not None:
-            await redis.aclose()
 
 
 async def get_all_shard_statuses() -> tuple[list[ShardStatus], dict[str, object] | None]:
@@ -154,9 +150,8 @@ async def get_all_shard_statuses() -> tuple[list[ShardStatus], dict[str, object]
     if not settings.REDIS_URL:
         return [], None
 
-    redis = None
     try:
-        redis = await aioredis.from_url(settings.REDIS_URL)
+        redis = await get_redis()
 
         # Get metadata first
         metadata_raw = await redis.get(f"{SHARD_STATUS_PREFIX}metadata")
@@ -182,8 +177,4 @@ async def get_all_shard_statuses() -> tuple[list[ShardStatus], dict[str, object]
     except Exception:
         logger.warning("Failed to get shard statuses from Redis", exc_info=True)
         return [], None
-    else:
-        return statuses, metadata
-    finally:
-        if redis is not None:
-            await redis.aclose()
+    return statuses, metadata

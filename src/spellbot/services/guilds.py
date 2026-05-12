@@ -28,7 +28,7 @@ def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
 
 
 class GuildsService:
-    @sync_to_async()
+    @sync_to_async
     def upsert(self, guild: discord.Guild) -> GuildData | None:
         """Upsert the given Discord guild into the database."""
         name_max_len = Guild.name.property.columns[0].type.length  # type: ignore
@@ -57,7 +57,7 @@ class GuildsService:
         result = DatabaseSession.query(Guild).filter(Guild.xid == guild.id).one_or_none()
         return result.to_data() if guild else None
 
-    @sync_to_async()
+    @sync_to_async
     def set_banned(self, guild_xid: int, banned: bool) -> None:
         """Mark the given guild as banned from using this bot."""
         values = {
@@ -78,13 +78,13 @@ class GuildsService:
         DatabaseSession.execute(upsert, values)
         DatabaseSession.commit()
 
-    @sync_to_async()
+    @sync_to_async
     def get(self, guild_xid: int) -> GuildData | None:
         """Fetch the guild data for the given guild xid."""
         guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
         return guild.to_data() if guild else None
 
-    @sync_to_async()
+    @sync_to_async
     def set_suggest_vc_category(self, guild_data: GuildData, category: str | None) -> GuildData:
         """Set the suggested voice channel category prefix for the guild."""
         stmt = (
@@ -97,7 +97,7 @@ class GuildsService:
         DatabaseSession.commit()
         return updated_guild.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     def set_motd(self, guild_data: GuildData, message: str | None = None) -> GuildData:
         """Set the message of the day for the guild."""
         motd = (
@@ -115,7 +115,7 @@ class GuildsService:
         DatabaseSession.commit()
         return updated_guild.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     def toggle_show_links(self, guild_data: GuildData) -> GuildData:
         """Toggle whether to show SpellTable links in game posts."""
         new_value = not guild_data.show_links
@@ -129,7 +129,7 @@ class GuildsService:
         DatabaseSession.commit()
         return updated_guild.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     def toggle_voice_create(self, guild_data: GuildData) -> GuildData:
         """Toggle whether to automatically create voice channels for games."""
         new_value = not guild_data.voice_create
@@ -146,7 +146,7 @@ class GuildsService:
         DatabaseSession.commit()
         return updated_guild.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     def toggle_use_max_bitrate(self, guild_data: GuildData) -> GuildData:
         """Toggle whether to use maximum bitrate for created voice channels."""
         new_value = not guild_data.use_max_bitrate
@@ -160,7 +160,7 @@ class GuildsService:
         DatabaseSession.commit()
         return updated_guild.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     def voice_category_prefixes(self, guild_xid: int) -> list[str]:
         """Return distinct voice category prefixes configured across all channels."""
         return [
@@ -171,7 +171,7 @@ class GuildsService:
             .all()
         ]
 
-    @sync_to_async()
+    @sync_to_async
     def voiced(self) -> list[int]:
         """Return guild xids that have voice channel creation enabled."""
         rows = DatabaseSession.query(Guild.xid).filter(Guild.voice_create.is_(True)).all()
@@ -179,7 +179,7 @@ class GuildsService:
             return []
         return [int(row[0]) for row in rows]
 
-    @sync_to_async()
+    @sync_to_async
     def has_award_with_count(self, guild_xid: int, count: int) -> bool:
         """Check if the guild has an award configured for the given play count."""
         return bool(
@@ -193,7 +193,7 @@ class GuildsService:
             .one_or_none(),
         )
 
-    @sync_to_async()
+    @sync_to_async
     def award_add(
         self,
         guild_xid: int,
@@ -221,7 +221,7 @@ class GuildsService:
         DatabaseSession.commit()
         return award.to_data()
 
-    @sync_to_async()
+    @sync_to_async
     def award_delete(self, guild_award_id: int) -> None:
         """Delete the award with the given id."""
         award = DatabaseSession.get(GuildAward, guild_award_id)
@@ -229,7 +229,7 @@ class GuildsService:
             DatabaseSession.delete(award)
         DatabaseSession.commit()
 
-    @sync_to_async()
+    @sync_to_async
     def setup_mythic_track(self, guild_data: GuildData) -> GuildData:
         """Toggle whether mythic track is enabled for the guild."""
         new_value = not guild_data.enable_mythic_track
