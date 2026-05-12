@@ -48,8 +48,9 @@ async def generate_link(game_data: GameData) -> tuple[str | None, str | None]:
             try:
                 data = await fetch_edhlab_link(client, game_data)
             except Exception as ex:
-                add_span_error(ex)
-                if attempt == RETRY_ATTEMPTS - 1:
+                is_final_attempt = attempt == RETRY_ATTEMPTS - 1
+                if is_final_attempt:
+                    add_span_error(ex)
                     logger.exception("EDHLAB API failure (final attempt)")
                     return None, None
                 logger.warning(
