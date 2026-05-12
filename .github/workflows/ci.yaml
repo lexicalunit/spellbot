@@ -77,10 +77,10 @@ jobs:
         run: psql -c 'SHOW max_connections;'
 
       - name: Checkout Source
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           version: latest
           enable-cache: true
@@ -94,7 +94,7 @@ jobs:
           DATABASE_URL: ${{ matrix.database-url }}
 
       - name: Send Reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5
         env:
           PYTHON: ${{ matrix.python-version }}
           POSTGRES: ${{ matrix.postgres-version }}
