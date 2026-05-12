@@ -3,6 +3,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy import select
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Guild, GuildAward
@@ -22,7 +23,7 @@ class TestServiceGuilds:
         await guilds.upsert(discord_guild)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.get(Guild, discord_guild.id)
+        guild = await DatabaseSession.get(Guild, discord_guild.id)
         assert guild
         assert guild.xid == discord_guild.id
         assert guild.name == "guild-name"
@@ -31,7 +32,7 @@ class TestServiceGuilds:
         await guilds.upsert(discord_guild)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.get(Guild, discord_guild.id)
+        guild = await DatabaseSession.get(Guild, discord_guild.id)
         assert guild
         assert guild.xid == discord_guild.id
         assert guild.name == "new-name"
@@ -57,7 +58,7 @@ class TestServiceGuilds:
 
         assert updated_guild_data.motd == message_of_the_day
         DatabaseSession.expire_all()
-        guild = DatabaseSession.get(Guild, guild.xid)
+        guild = await DatabaseSession.get(Guild, guild.xid)
         assert guild
         assert guild.motd == message_of_the_day
 
@@ -68,7 +69,7 @@ class TestServiceGuilds:
         await guilds.set_banned(guild.xid, banned=True)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.get(Guild, guild.xid)
+        guild = await DatabaseSession.get(Guild, guild.xid)
         assert guild
         assert guild.banned
 
@@ -82,7 +83,7 @@ class TestServiceGuilds:
         guild_data = await guilds.toggle_show_links(guild_data)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.get(Guild, 101)
+        guild = await DatabaseSession.get(Guild, 101)
         assert guild
         assert guild.show_links
         assert guild_data.show_links
@@ -90,7 +91,7 @@ class TestServiceGuilds:
         guild_data = await guilds.toggle_show_links(guild_data)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.get(Guild, 101)
+        guild = await DatabaseSession.get(Guild, 101)
         assert guild
         assert not guild.show_links
         assert not guild_data.show_links
@@ -105,7 +106,7 @@ class TestServiceGuilds:
         guild_data = await guilds.toggle_voice_create(guild_data)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.get(Guild, 101)
+        guild = await DatabaseSession.get(Guild, 101)
         assert guild
         assert guild.voice_create
         assert guild_data.voice_create
@@ -113,7 +114,7 @@ class TestServiceGuilds:
         guild_data = await guilds.toggle_voice_create(guild_data)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.get(Guild, 101)
+        guild = await DatabaseSession.get(Guild, 101)
         assert guild
         assert not guild.voice_create
         assert not guild_data.voice_create
@@ -142,12 +143,10 @@ class TestServiceGuilds:
         )
 
         award = (
-            DatabaseSession.query(GuildAward)
-            .filter(
-                GuildAward.count == 5,
+            await DatabaseSession.execute(
+                select(GuildAward).where(GuildAward.count == 5),
             )
-            .one_or_none()
-        )
+        ).scalar_one_or_none()
         assert award
         assert award.role == "a-role"
         assert award.message == "a-message"
@@ -163,8 +162,8 @@ class TestServiceGuilds:
         await guilds.award_delete(404)
 
         DatabaseSession.expire_all()
-        assert not DatabaseSession.get(GuildAward, award1_id)
-        assert DatabaseSession.get(GuildAward, award2.id)
+        assert not await DatabaseSession.get(GuildAward, award1_id)
+        assert await DatabaseSession.get(GuildAward, award2.id)
 
     async def test_guilds_has_award_with_count(self, guild: Guild) -> None:
         award1 = GuildAwardFactory.create(guild=guild, count=10)
@@ -186,7 +185,7 @@ class TestServiceGuilds:
 
         assert guild_data.enable_mythic_track
         DatabaseSession.expire_all()
-        guild = DatabaseSession.get(Guild, 101)
+        guild = await DatabaseSession.get(Guild, 101)
         assert guild
         assert guild.enable_mythic_track
 
@@ -200,7 +199,7 @@ class TestServiceGuilds:
         guild_data = await guilds.toggle_use_max_bitrate(guild_data)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.get(Guild, 101)
+        guild = await DatabaseSession.get(Guild, 101)
         assert guild
         assert guild.use_max_bitrate
         assert guild_data.use_max_bitrate
@@ -208,7 +207,7 @@ class TestServiceGuilds:
         guild_data = await guilds.toggle_use_max_bitrate(guild_data)
 
         DatabaseSession.expire_all()
-        guild = DatabaseSession.get(Guild, 101)
+        guild = await DatabaseSession.get(Guild, 101)
         assert guild
         assert not guild.use_max_bitrate
         assert not guild_data.use_max_bitrate

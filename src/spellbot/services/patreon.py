@@ -5,7 +5,6 @@ from typing import Any
 from urllib.parse import urlencode
 
 import httpx
-from asgiref.sync import sync_to_async
 from ddtrace.trace import tracer
 
 from spellbot.environment import running_in_pytest
@@ -66,10 +65,8 @@ def get_supporters(data: dict[str, Any], patrons: set[str]) -> set[int]:
 
 
 class PatreonService:
-    @sync_to_async()
     @tracer.wrap()
-    def supporters(self) -> set[int]:
-        """Return a list of Discord IDs of active Patreon supporters."""
+    async def supporters(self) -> set[int]:
         if running_in_pytest():
             return set()
 
@@ -81,9 +78,9 @@ class PatreonService:
             headers = {"Authorization": f"Bearer {settings.PATREON_TOKEN}"}
             next_url: str | None = get_patreon_campaign_url()
 
-            with httpx.Client(timeout=10.0) as client:
+            async with httpx.AsyncClient(timeout=10.0) as client:
                 while next_url:
-                    response = client.get(next_url, headers=headers)
+                    response = await client.get(next_url, headers=headers)
 
                     if response.status_code != 200:
                         logger.error("patreon sync failed, error response: %s", response.text)

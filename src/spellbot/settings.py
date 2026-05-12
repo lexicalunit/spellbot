@@ -24,6 +24,9 @@ class Settings:
         "CONVOKE_API_KEY",
         "CONVOKE_ROOT",
         "DATABASE_ECHO",
+        "DATABASE_POOL_MAX_OVERFLOW",
+        "DATABASE_POOL_RECYCLE_S",
+        "DATABASE_POOL_SIZE",
         "DATABASE_URL",
         "DD_API_KEY",
         "DD_APP_KEY",
@@ -120,6 +123,9 @@ class Settings:
             # Ensure that we're asking for the psycopg3+ driver (and not psycopg2)
             database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
         self.DATABASE_URL = database_url
+        self.DATABASE_POOL_SIZE = int(getenv("DATABASE_POOL_SIZE", "10"))
+        self.DATABASE_POOL_MAX_OVERFLOW = int(getenv("DATABASE_POOL_MAX_OVERFLOW", "10"))
+        self.DATABASE_POOL_RECYCLE_S = int(getenv("DATABASE_POOL_RECYCLE_S", "1800"))
 
         # cache
         self.REDIS_URL = getenv("REDIS_URL")

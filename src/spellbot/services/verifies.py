@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from asgiref.sync import sync_to_async
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
@@ -14,15 +14,13 @@ if TYPE_CHECKING:
 
 
 class VerifiesService:
-    @sync_to_async()
-    def upsert(
+    async def upsert(
         self,
         guild_xid: int,
         user_xid: int,
         verified: bool | None = None,
     ) -> VerifyData:
-        """Upsert a verification record for the given user in the given guild."""
-        values = {
+        values: dict[str, object] = {
             "user_xid": user_xid,
             "guild_xid": guild_xid,
         }
@@ -40,16 +38,13 @@ class VerifiesService:
                 ),
                 set_={"verified": upsert.excluded.verified},
             )
-        DatabaseSession.execute(upsert, values)
-        DatabaseSession.commit()
-        record = (
-            DatabaseSession.query(Verify)
-            .filter(
-                and_(
-                    Verify.guild_xid == guild_xid,
-                    Verify.user_xid == user_xid,
-                ),
-            )
-            .one_or_none()
+        await DatabaseSession.execute(upsert, values)
+        await DatabaseSession.commit()
+        result = await DatabaseSession.execute(
+            select(Verify).where(
+                and_(Verify.guild_xid == guild_xid, Verify.user_xid == user_xid),
+            ),
         )
+        record = result.scalar_one_or_none()
+        assert record is not None
         return record.to_data()

@@ -6,11 +6,13 @@ from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, NoReturn
 from uuid import uuid4
 
-from asgiref.sync import sync_to_async
-from sqlalchemy.engine import create_engine
-from sqlalchemy.engine.base import Connection, Engine, Transaction
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.session import Session
+from sqlalchemy.ext.asyncio import (
+    AsyncConnection,
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from wrapt import CallableObjectProxy
 
 from .models import create_all, reverse_all
@@ -19,11 +21,9 @@ from .settings import settings
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-    # For type checking, use the generic version from the stubs
     _CallableObjectProxyBase = CallableObjectProxy
 else:
-    # At runtime, CallableObjectProxy is not subscriptable, so create a wrapper
-    # that allows subscripting but just returns itself
+
     class _CallableObjectProxyBase(CallableObjectProxy):
         def __class_getitem__(cls, item: object) -> type:
             return cls
@@ -60,7 +60,7 @@ class TypedProxy[ProxiedObject](_CallableObjectProxyBase[ProxiedObject]):
     __wrapped__: ProxiedObject | None
 
     def __init__(self) -> None:
-        super().__init__(None)  # type: ignore[arg-type]  # None is valid for lazy init
+        super().__init__(None)  # type: ignore[arg-type]
 
     @classmethod
     def of_type(cls, _: type[ProxiedObject]) -> TypedProxy[ProxiedObject]:
@@ -76,80 +76,77 @@ class TypedProxy[ProxiedObject](_CallableObjectProxyBase[ProxiedObject]):
         raise NotImplementedError
 
 
-engine = TypedProxy[Engine].of_type(Engine)
-connection = TypedProxy[Connection].of_type(Connection)
-transaction = TypedProxy[Transaction].of_type(Transaction)
-db_session_maker = TypedProxy[sessionmaker].of_type(sessionmaker)
-DatabaseSession = ContextLocal[Session].of_type(Session)
+engine = TypedProxy[AsyncEngine].of_type(AsyncEngine)
+connection = TypedProxy[AsyncConnection].of_type(AsyncConnection)
+db_session_maker = TypedProxy[async_sessionmaker[AsyncSession]].of_type(async_sessionmaker)
+DatabaseSession = ContextLocal[AsyncSession].of_type(AsyncSession)
 
 
-@sync_to_async()
-def initialize_connection(
+def _to_async_url(db_url: str) -> str:
+    if db_url.startswith("postgresql+psycopg://"):
+        return db_url
+    if db_url.startswith("postgresql://"):  # pragma: no cover
+        return db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return db_url  # pragma: no cover
+
+
+async def initialize_connection(
     app: str,
     *,
     use_transaction: bool = False,
     run_migrations: bool = True,
     worker_id: str | None = None,
 ) -> None:
-    """
-    Connect to the database.
-
-    SpellBot follows the "thread-local scoped database sessions per request" model
-    of typical web applications except that instead of web requests, we're dealing
-    with bot interactions. And instead of thread local, we have context local aysnc
-    context. SpellBot maintains a database connection for the lifetime of the bot,
-    which is created in this function.
-
-    Subsequent interactions then will create their own transaction and session
-    with which to execute database queries. For more details on how this flow works,
-    see the section named "Using Thread-Local Scope with Web Applications" in the
-    SQLAlchemy documentation: https://docs.sqlalchemy.org/en/14/orm/contextual.html
-
-    If `use_transaction` is set to `True`, then a transaction is setup before any
-    sessions are created. This transaction can then be entirely rolled back using
-    `rollback_transaction()`. This is useful for allowing tests to run within their
-    own transaction that is always rolled back.
-    """
     db_url = settings.DATABASE_URL
     if worker_id:
         db_url += f"-{worker_id}"
         app += f"-{worker_id}"
     if run_migrations:  # pragma: no cover
         create_all(db_url)
-    engine_obj = create_engine(
-        db_url,
+
+    async_url = _to_async_url(db_url)
+    engine_obj: AsyncEngine = create_async_engine(
+        async_url,
         echo=settings.DATABASE_ECHO,
         connect_args={"application_name": app},
         isolation_level=None if use_transaction else "AUTOCOMMIT",
+        pool_size=settings.DATABASE_POOL_SIZE,
+        max_overflow=settings.DATABASE_POOL_MAX_OVERFLOW,
+        pool_recycle=settings.DATABASE_POOL_RECYCLE_S,
+        pool_pre_ping=True,
     )
-    connection_obj = engine_obj.connect()
 
     if use_transaction:  # pragma: no cover
-        transaction_obj = connection_obj.begin()
-        transaction.set(transaction_obj)
-
-    db_session_maker_obj = sessionmaker(bind=connection_obj)
+        connection_obj = await engine_obj.connect()
+        await connection_obj.begin()
+        db_session_maker_obj = async_sessionmaker(
+            bind=connection_obj,
+            expire_on_commit=False,
+            join_transaction_mode="create_savepoint",
+        )
+        connection.set(connection_obj)
+    else:
+        db_session_maker_obj = async_sessionmaker(
+            bind=engine_obj,
+            expire_on_commit=False,
+        )
 
     engine.set(engine_obj)
-    connection.set(connection_obj)
     db_session_maker.set(db_session_maker_obj)
 
 
-@sync_to_async()
-def begin_session() -> None:
+async def begin_session() -> None:
     session = db_session_maker()
     DatabaseSession.set(session)
 
 
-@sync_to_async()
-def rollback_session() -> None:  # pragma: no cover
-    DatabaseSession.rollback()
+async def rollback_session() -> None:  # pragma: no cover
+    await DatabaseSession.rollback()
 
 
-@sync_to_async()
-def end_session() -> None:
-    DatabaseSession.commit()
-    DatabaseSession.close()
+async def end_session() -> None:
+    await DatabaseSession.commit()
+    await DatabaseSession.close()
 
 
 @asynccontextmanager
@@ -161,16 +158,12 @@ async def db_session_manager() -> AsyncGenerator[None, None]:
         await end_session()
 
 
-@sync_to_async()
-def rollback_transaction() -> None:
-    if transaction.__wrapped__ and transaction.__wrapped__.is_active:
-        transaction.__wrapped__.rollback()
-    if connection.__wrapped__ and not connection.__wrapped__.closed:  # pragma: no cover
-        connection.__wrapped__.close()
-    status = engine.__wrapped__.pool.status() if engine.__wrapped__ else None
-    print(f"pool status: {status}")  # noqa: T201
-    if engine.__wrapped__:  # pragma: no cover
-        engine.__wrapped__.dispose()
+async def rollback_transaction() -> None:
+    if connection.__wrapped__ is not None and not connection.__wrapped__.closed:
+        await connection.__wrapped__.rollback()
+        await connection.__wrapped__.close()  # pragma: no cover
+    if engine.__wrapped__ is not None:  # pragma: no cover
+        await engine.__wrapped__.dispose()
 
 
 def delete_test_database(worker_id: str) -> None:  # pragma: no cover

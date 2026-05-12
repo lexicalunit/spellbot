@@ -49,7 +49,7 @@ class TestCogLeaveGame:
     ) -> None:
         p2 = factories.user.create()
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
-        DatabaseSession.commit()
+        await DatabaseSession.commit()
 
         with mock_operations(leave_action):
             leave_action.safe_fetch_text_channel.return_value = interaction.channel
@@ -116,7 +116,7 @@ class TestCogLeaveGame:
     ) -> None:
         p2 = factories.user.create()
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
-        DatabaseSession.commit()
+        await DatabaseSession.commit()
 
         with mock_operations(leave_action):
             leave_action.safe_fetch_text_channel.return_value = interaction.channel
@@ -241,7 +241,7 @@ class TestCogLeaveGame:
         channel: Channel,
     ) -> None:
         game.message_xid = None
-        DatabaseSession.commit()
+        await DatabaseSession.commit()
 
         with mock_operations(leave_action):
             leave_action.safe_fetch_text_channel.return_value = channel
@@ -324,7 +324,7 @@ class TestCogLeaveGame:
     ) -> None:
         p2 = factories.user.create()
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
-        DatabaseSession.commit()
+        await DatabaseSession.commit()
 
         with mock_operations(leave_action):
             leave_action.safe_original_response.return_value = message
@@ -383,7 +383,7 @@ class TestCogLeaveGame:
     ) -> None:
         p2 = factories.user.create()
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
-        DatabaseSession.commit()
+        await DatabaseSession.commit()
 
         with mock_operations(leave_action):
             leave_action.safe_original_response.return_value = message
@@ -463,7 +463,7 @@ class TestCogLeaveGame:
         """Test leave button when original response doesn't match but other players remain."""
         p2 = factories.user.create()
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
-        DatabaseSession.commit()
+        await DatabaseSession.commit()
 
         with mock_operations(leave_action):
             leave_action.safe_original_response.return_value = None

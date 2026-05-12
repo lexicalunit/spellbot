@@ -7,6 +7,7 @@ from unittest.mock import ANY, MagicMock
 import discord
 import pytest
 import pytest_asyncio
+from sqlalchemy import func, select, update
 
 from spellbot.actions import admin_action
 from spellbot.cogs import AdminCog
@@ -163,12 +164,12 @@ class TestCogAdminMotd:
             "Message of the day updated.",
             ephemeral=True,
         )
-        db_guild = DatabaseSession.query(Guild).one()
+        db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.motd == "this is a test"
 
         await run_command(cog.motd, interaction)
         DatabaseSession.expire_all()
-        db_guild = DatabaseSession.query(Guild).one()
+        db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.motd == ""
 
 
@@ -185,7 +186,7 @@ class TestCogAdminSuggestVCCategory:
             'Suggested voice channels category prefix set to "whatever".',
             ephemeral=True,
         )
-        db_guild = DatabaseSession.query(Guild).one()
+        db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.suggest_voice_category == "whatever"
 
         interaction.response.send_message.reset_mock()  # type: ignore
@@ -195,7 +196,7 @@ class TestCogAdminSuggestVCCategory:
             ephemeral=True,
         )
         DatabaseSession.expire_all()
-        db_guild = DatabaseSession.query(Guild).one()
+        db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.suggest_voice_category is None
 
     async def test_set_suggest_vc_category_when_voice_create_on(
@@ -218,7 +219,7 @@ class TestCogAdminSuggestVCCategory:
             ),
             ephemeral=True,
         )
-        db_guild = DatabaseSession.query(Guild).one()
+        db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.suggest_voice_category is None
 
     async def test_toggle_voice_create_on_when_suggest_vc_category_set(
@@ -233,7 +234,7 @@ class TestCogAdminSuggestVCCategory:
 
         await view.toggle_voice_create.callback(interaction)
 
-        db_guild = DatabaseSession.query(Guild).one()
+        db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.suggest_voice_category is None
 
 
@@ -318,7 +319,7 @@ class TestCogAdminSetupView:
         await view.toggle_show_links.callback(interaction)
 
         interaction.edit_original_response.assert_called_once()  # type: ignore
-        db_guild = DatabaseSession.query(Guild).one()
+        db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.show_links != Guild.show_links.default.arg  # type: ignore
 
     async def test_toggle_voice_create(
@@ -330,7 +331,7 @@ class TestCogAdminSetupView:
         await view.toggle_voice_create.callback(interaction)
 
         interaction.edit_original_response.assert_called_once()  # type: ignore
-        db_guild = DatabaseSession.query(Guild).one()
+        db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.voice_create != Guild.voice_create.default.arg  # type: ignore
 
     async def test_toggle_use_max_bitrate(
@@ -342,7 +343,7 @@ class TestCogAdminSetupView:
         await view.toggle_use_max_bitrate.callback(interaction)
 
         interaction.edit_original_response.assert_called_once()  # type: ignore
-        db_guild = DatabaseSession.query(Guild).one()
+        db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.use_max_bitrate != Guild.voice_create.default.arg  # type: ignore
 
 
@@ -410,7 +411,7 @@ class TestCogAdminChannels:
             f"Default seats set to {seats} for this channel.",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.default_seats == seats
 
     async def test_default_format(
@@ -425,7 +426,7 @@ class TestCogAdminChannels:
             f"Default format set to {GameFormat(format)} for this channel.",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.default_format == format
 
     async def test_default_bracket(
@@ -440,7 +441,7 @@ class TestCogAdminChannels:
             f"Default bracket set to {GameBracket(bracket)} for this channel.",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.default_bracket == bracket
 
     async def test_default_service(
@@ -455,7 +456,7 @@ class TestCogAdminChannels:
             f"Default service set to {GameService(service)} for this channel.",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.default_service == service
 
     async def test_auto_verify(
@@ -470,7 +471,7 @@ class TestCogAdminChannels:
             f"Auto verification set to {not default_value} for this channel.",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.auto_verify != default_value
 
     async def test_verified_only(
@@ -485,7 +486,7 @@ class TestCogAdminChannels:
             f"Verified only set to {not default_value} for this channel.",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.verified_only != default_value
 
     async def test_unverified_only(
@@ -500,7 +501,7 @@ class TestCogAdminChannels:
             f"Unverified only set to {not default_value} for this channel.",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.unverified_only != default_value
 
     async def test_voice_category(
@@ -516,7 +517,7 @@ class TestCogAdminChannels:
             f"Voice category prefix for this channel has been set to: {new_value}",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.voice_category != default_value
 
     async def test_channel_motd(
@@ -531,12 +532,12 @@ class TestCogAdminChannels:
             f"Message of the day for this channel has been set to: {motd}",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.motd == motd
 
         await run_command(cog.channel_motd, interaction)
         DatabaseSession.expire_all()
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.motd == ""
 
     async def test_channel_extra(
@@ -551,12 +552,12 @@ class TestCogAdminChannels:
             f"Extra message for this channel has been set to: {extra}",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.extra == extra
 
         await run_command(cog.channel_extra, interaction)
         DatabaseSession.expire_all()
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.extra == ""
 
     async def test_channels(
@@ -850,7 +851,10 @@ class TestCogAdminAwards:
             "flags": 0,
         }
         assert get_last_send_message(interaction, "ephemeral")
-        assert DatabaseSession.query(GuildAward).count() == 1
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(GuildAward))).scalar()
+            or 0
+        ) == 1
 
     async def test_award_add(
         self,
@@ -867,7 +871,7 @@ class TestCogAdminAwards:
             message="message",
             repeating=True,
         )
-        award = DatabaseSession.query(GuildAward).one()
+        award = (await DatabaseSession.execute(select(GuildAward))).scalar_one()
         assert get_last_send_message(interaction, "embed") == {
             "author": {"name": "Award added!"},
             "color": settings.INFO_EMBED_COLOR,
@@ -900,7 +904,10 @@ class TestCogAdminAwards:
             verified_only=True,
             unverified_only=True,
         )
-        assert DatabaseSession.query(GuildAward).count() == 0
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(GuildAward))).scalar()
+            or 0
+        ) == 0
         interaction.response.send_message.assert_called_once_with(  # type: ignore
             "Your award can't be both verified and unverified only.",
             ephemeral=True,
@@ -918,7 +925,10 @@ class TestCogAdminAwards:
             "Your message can't be longer than 500 characters.",
             ephemeral=True,
         )
-        assert DatabaseSession.query(GuildAward).count() == 0
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(GuildAward))).scalar()
+            or 0
+        ) == 0
 
     async def test_award_add_zero_count(
         self,
@@ -931,7 +941,10 @@ class TestCogAdminAwards:
             "You can't create an award for zero games played.",
             ephemeral=True,
         )
-        assert DatabaseSession.query(GuildAward).count() == 0
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(GuildAward))).scalar()
+            or 0
+        ) == 0
 
 
 @pytest.mark.asyncio
@@ -949,7 +962,7 @@ class TestCogAdminDeleteExpired:
             f"Delete expired setting for this channel has been set to: {setting}",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.delete_expired is setting
 
 
@@ -968,7 +981,7 @@ class TestCogAdminVoiceInvite:
             f"Voice invite setting for this channel has been set to: {setting}",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.voice_invite is setting
 
 
@@ -987,7 +1000,7 @@ class TestCogAdminBlindGames:
             f"Hidden player names for this channel has been set to: {setting}",
             ephemeral=True,
         )
-        db_channel = DatabaseSession.query(Channel).one()
+        db_channel = (await DatabaseSession.execute(select(Channel))).scalar_one()
         assert db_channel.blind_games is setting
 
 
@@ -1001,13 +1014,15 @@ class TestCogAdminMythicTrack:
         interaction: discord.Interaction,
         guild: Guild,
     ) -> None:
-        guild.enable_mythic_track = initial_setting  # type: ignore
-        DatabaseSession.commit()
+        await DatabaseSession.execute(
+            update(Guild).where(Guild.xid == guild.xid).values(enable_mythic_track=initial_setting),
+        )
+        await DatabaseSession.commit()
 
         await run_command(cog.setup_mythic_track, interaction)
 
         interaction.response.send_message.assert_called_once()  # type: ignore
-        db_guild = DatabaseSession.query(Guild).one()
+        db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.enable_mythic_track != initial_setting
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -286,55 +286,51 @@ class TestPatreonService:
         mock_response2.json.return_value = page2_data
 
         mock_client = MagicMock()
-        mock_client.get.side_effect = [mock_response1, mock_response2]
-        mock_client.__enter__ = MagicMock(return_value=mock_client)
-        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get = AsyncMock(side_effect=[mock_response1, mock_response2])
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
 
         with (
             patch("spellbot.services.patreon.running_in_pytest", return_value=False),
-            patch("spellbot.services.patreon.httpx.Client", return_value=mock_client),
+            patch("spellbot.services.patreon.httpx.AsyncClient", return_value=mock_client),
         ):
             service = PatreonService()
             result = await service.supporters()
 
         assert 123456 in result
         assert 789012 in result
-        assert 711717544435646494 in result  # test account
+        assert 711717544435646494 in result
 
     async def test_supporters_with_http_error(self) -> None:
-        """Test HTTP error response."""
         mock_response = MagicMock()
         mock_response.status_code = 401
         mock_response.text = "Unauthorized"
 
         mock_client = MagicMock()
-        mock_client.get.return_value = mock_response
-        mock_client.__enter__ = MagicMock(return_value=mock_client)
-        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
 
         with (
             patch("spellbot.services.patreon.running_in_pytest", return_value=False),
-            patch("spellbot.services.patreon.httpx.Client", return_value=mock_client),
+            patch("spellbot.services.patreon.httpx.AsyncClient", return_value=mock_client),
         ):
             service = PatreonService()
             result = await service.supporters()
 
-        # Should still return test account even on error
         assert 711717544435646494 in result
 
     async def test_supporters_with_exception(self) -> None:
-        """Test exception during HTTP request."""
         mock_client = MagicMock()
-        mock_client.get.side_effect = Exception("Connection error")
-        mock_client.__enter__ = MagicMock(return_value=mock_client)
-        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get = AsyncMock(side_effect=Exception("Connection error"))
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
 
         with (
             patch("spellbot.services.patreon.running_in_pytest", return_value=False),
-            patch("spellbot.services.patreon.httpx.Client", return_value=mock_client),
+            patch("spellbot.services.patreon.httpx.AsyncClient", return_value=mock_client),
         ):
             service = PatreonService()
             result = await service.supporters()
 
-        # Should return empty set on exception
         assert result == set()

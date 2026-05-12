@@ -26,7 +26,7 @@ class TestServiceChannels:
         await channels.upsert(discord_channel)
 
         DatabaseSession.expire_all()
-        channel = DatabaseSession.get(Channel, discord_channel.id)
+        channel = await DatabaseSession.get(Channel, discord_channel.id)
         assert channel
         assert channel.xid == discord_channel.id
         assert channel.name == "channel-name"
@@ -35,7 +35,7 @@ class TestServiceChannels:
         await channels.upsert(discord_channel)
 
         DatabaseSession.expire_all()
-        channel = DatabaseSession.get(Channel, discord_channel.id)
+        channel = await DatabaseSession.get(Channel, discord_channel.id)
         assert channel
         assert channel.xid == discord_channel.id
         assert channel.name == "new-name"

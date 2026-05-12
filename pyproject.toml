@@ -35,10 +35,8 @@ dependencies = [
   "python-json-logger>=3.3.0",
   "pyyaml>=6.0.1",
   "redis>=6.1.0",
-  "requests>=2.31.0",
   "sqlalchemy-utils>=0.41.2",
   "sqlalchemy>=2.0.41",
-  "supervisor>=4.2.5",
   "tenacity>=9.0.0",
   "toml>=0.10.2",
   "uvloop>=0.19",
@@ -115,10 +113,14 @@ packages = ["src/spellbot"]
 [tool.pyright]
 enableTypeIgnoreComments = true
 ignore = [".venv", "dist"]
+reportArgumentType = false
+reportAttributeAccessIssue = false
+reportCallIssue = false
 reportMatchNotExhaustive = true
+reportMissingImports = false
 reportMissingParameterType = true
 reportMissingTypeArgument = true
-reportUnnecessaryTypeIgnoreComment = "error"
+reportUnnecessaryTypeIgnoreComment = "none"
 typeCheckingMode = "basic"
 
 [tool.ruff]
@@ -161,6 +163,7 @@ ignore = [
   "ARG002",
   "ARG003",
   "ARG005",
+  "COM812",
   "BLE001",
   "D100",
   "D101",

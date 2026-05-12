@@ -183,7 +183,9 @@ class TestTaskExpireInactiveChannels:
         await action.expire_inactive_games()
 
         DatabaseSession.expire_all()
-        assert game.deleted_at is not None
+        refreshed = await DatabaseSession.get(Game, game.id)
+        assert refreshed is not None
+        assert refreshed.deleted_at is not None
 
     async def test_when_inactive_game_exists(
         self,
@@ -202,7 +204,9 @@ class TestTaskExpireInactiveChannels:
         await action.expire_inactive_games()
 
         DatabaseSession.expire_all()
-        assert game.deleted_at is not None
+        refreshed = await DatabaseSession.get(Game, game.id)
+        assert refreshed is not None
+        assert refreshed.deleted_at is not None
         assert f"expiring game {game.id}..." in caplog.text
 
     @pytest.mark.parametrize(
@@ -256,7 +260,7 @@ class TestTaskExpireInactiveChannels:
             factories.post.create(guild=guild, channel=channel, game=game, message_xid=message_xid)
         factories.user.create(game=game)
         action.services = mock_services
-        action.services.games.inactive_games = AsyncMock(return_value=[game.to_data()])
+        action.services.games.inactive_games = AsyncMock(return_value=[await game.to_data()])
         action.services.games.delete_games = AsyncMock()
 
         mock_channel_data = create_mock_channel(
@@ -487,8 +491,8 @@ class TestTaskCleanupOldVoiceChannels:
             .where(Game.id == game.id)
             .values(voice_xid=voice_channel.id)
         )
-        DatabaseSession.execute(stmt)
-        DatabaseSession.commit()
+        await DatabaseSession.execute(stmt)
+        await DatabaseSession.commit()
         voice_channel.voice_states.keys = lambda: False  # type: ignore
         make_category_channel(
             id=3001,
@@ -520,7 +524,7 @@ class TestTaskCleanupOldVoiceChannels:
             created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
         game.voice_xid = voice_channel.id + 1  # type: ignore
-        DatabaseSession.commit()
+        await DatabaseSession.commit()
         voice_channel.voice_states.keys = lambda: False  # type: ignore
         make_category_channel(
             id=3001,

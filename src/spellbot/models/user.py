@@ -67,54 +67,56 @@ class User(Base):
         doc="Queryset of games played by this user",
     )
 
-    def game(self, channel_xid: int) -> Game | None:
+    async def game(self, channel_xid: int) -> Game | None:
+        from sqlalchemy import select  # allow_inline
+
         from spellbot.database import DatabaseSession  # allow_inline
 
         from . import Game, Post, Queue  # allow_inline
 
-        session = DatabaseSession.object_session(self)
-        queue = (
-            session.query(Queue)
+        queue_result = await DatabaseSession.execute(
+            select(Queue)
             .join(Game)
             .join(Post)
-            .filter(
+            .where(
                 Queue.user_xid == self.xid,
                 Post.channel_xid == channel_xid,
                 Game.deleted_at.is_(None),
             )
-            .order_by(Game.updated_at.desc())
-            .first()
+            .order_by(Game.updated_at.desc()),
         )
-        return session.get(Game, queue.game_id) if queue else None
+        queue = queue_result.scalars().first()
+        if queue is None:
+            return None
+        return await DatabaseSession.get(Game, queue.game_id)
 
-    def waiting(self, channel_xid: int) -> GameData | None:
-        game = self.game(channel_xid)
+    async def waiting(self, channel_xid: int) -> GameData | None:
+        game = await self.game(channel_xid)
         if game is None:
             return None
         if game.status != GameStatus.PENDING.value:
             return None
         if game.deleted_at:
             return None
-        # Note: Check not required because self.game() already filters by posts + channel.
-        # if not any(post.channel_xid == channel_xid for post in game.posts):
-        #     return None
-        return game.to_data()
+        return await game.to_data()
 
-    def pending_games(self) -> int:
+    async def pending_games(self) -> int:
+        from sqlalchemy import func, select  # allow_inline
+
         from spellbot.database import DatabaseSession  # allow_inline
 
         from . import Game, Queue  # allow_inline
 
-        session = DatabaseSession.object_session(self)
-        return (
-            session.query(Queue)
+        result = await DatabaseSession.execute(
+            select(func.count())
+            .select_from(Queue)
             .join(Game)
-            .filter(
+            .where(
                 Queue.user_xid == self.xid,
                 Game.deleted_at.is_(None),
-            )
-            .count()
+            ),
         )
+        return result.scalar() or 0
 
     def to_data(self) -> UserData:
         from spellbot.data import UserData  # allow_inline

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import NamedTuple
 
-from asgiref.sync import sync_to_async
+from sqlalchemy import func, select
 from sqlalchemy.sql.expression import and_, or_
 
 from spellbot.database import DatabaseSession
@@ -17,61 +17,62 @@ class NewAward(NamedTuple):
 
 
 class AwardsService:
-    @sync_to_async()
-    def give_awards(self, guild_xid: int, player_xids: list[int]) -> dict[int, list[NewAward]]:
-        """Return dict of discord user ids -> role names to assign to that user."""
+    async def give_awards(
+        self,
+        guild_xid: int,
+        player_xids: list[int],
+    ) -> dict[int, list[NewAward]]:
         new_roles: dict[int, list[NewAward]] = defaultdict(list)
 
         for player_xid in player_xids:
-            plays = (
-                DatabaseSession.query(Game)
+            plays_result = await DatabaseSession.execute(
+                select(func.count())
+                .select_from(Game)
                 .join(Play)
-                .filter(
+                .where(
                     and_(
                         Game.guild_xid == guild_xid,
                         Play.user_xid == player_xid,
                     ),
-                )
-                .count()
+                ),
             )
+            plays = plays_result.scalar() or 0
             if not plays:
                 continue
 
-            verified = (
-                DatabaseSession.query(Verify.verified)
-                .filter(
+            verified_result = await DatabaseSession.execute(
+                select(Verify.verified).where(
                     Verify.user_xid == player_xid,
                     Verify.guild_xid == guild_xid,
-                )
-                .scalar()
+                ),
             )
-            verified = bool(verified)  # because it could be None
+            verified = bool(verified_result.scalar())
 
-            user_award = (
-                DatabaseSession.query(UserAward)
-                .filter(
+            user_award_result = await DatabaseSession.execute(
+                select(UserAward).where(
                     and_(
                         UserAward.guild_xid == guild_xid,
                         UserAward.user_xid == player_xid,
                     ),
-                )
-                .one_or_none()
+                ),
             )
+            user_award = user_award_result.scalar_one_or_none()
             if not user_award:
                 continue
 
-            award_q = DatabaseSession.query(GuildAward).filter(
-                GuildAward.guild_xid == guild_xid,
-            )
-            next_awards = award_q.filter(
-                or_(
-                    GuildAward.count == plays,
-                    and_(
-                        plays % GuildAward.count == 0,
-                        GuildAward.repeating.is_(True),
+            next_awards_result = await DatabaseSession.execute(
+                select(GuildAward).where(
+                    GuildAward.guild_xid == guild_xid,
+                    or_(
+                        GuildAward.count == plays,
+                        and_(
+                            plays % GuildAward.count == 0,
+                            GuildAward.repeating.is_(True),
+                        ),
                     ),
                 ),
-            ).all()
+            )
+            next_awards = next_awards_result.scalars().all()
             for next_award in next_awards:
                 if (user_award.guild_award_id != next_award.id) or (
                     user_award.guild_award_id == next_award.id and next_award.repeating
@@ -88,6 +89,6 @@ class AwardsService:
                         ),
                     )
                     user_award.guild_award_id = next_award.id
-        DatabaseSession.commit()
+        await DatabaseSession.commit()
 
         return new_roles

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
@@ -64,15 +65,15 @@ class TestServiceGames:
 
         # Verify in database
         DatabaseSession.expire_all()
-        found = DatabaseSession.get(User, user.xid)
+        found = await DatabaseSession.get(User, user.xid)
         assert found
-        found_game = found.game(game.channel_xid)
+        found_game = await found.game(game.channel_xid)
         assert found_game is not None
         assert found_game.id == game.id
 
     async def test_games_to_embed(self, game: Game) -> None:
         # The to_embed method is now on GameData, not GamesService
-        game_data = game.to_data()
+        game_data = await game.to_data()
         public_embed = game_data.to_embed(guild=None).to_dict()
         private_embed = game_data.to_embed(guild=None, dm=True).to_dict()
 
@@ -90,7 +91,7 @@ class TestServiceGames:
         assert any(p.message_xid == 12345 for p in updated_data.posts)
 
         # Verify in database
-        posts = DatabaseSession.query(Post).filter().all()
+        posts = (await DatabaseSession.execute(select(Post))).scalars().all()
         for post in posts:
             assert post.game_id == game.id
 
@@ -118,7 +119,7 @@ class TestServiceGames:
         await games.make_ready(game_data, "http://link", "whatever", pins=[])
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.get(Game, game.id)
+        found = await DatabaseSession.get(Game, game.id)
         assert found
         assert found.game_link == "http://link"
         assert found.password == "whatever"
@@ -135,7 +136,7 @@ class TestServiceGames:
         await games.shrink_game(game_data)
 
         DatabaseSession.expire_all()
-        updated = DatabaseSession.query(Game).one()
+        updated = (await DatabaseSession.execute(select(Game))).scalar_one()
         assert updated.seats == 2
 
     async def test_game_data_players(self, game: Game) -> None:
@@ -170,7 +171,7 @@ class TestServiceGames:
         await games.set_voice(game_data, voice_xid=12345)
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.get(Game, game.id)
+        found = await DatabaseSession.get(Game, game.id)
         assert found
         assert found.voice_xid == 12345
 
@@ -181,7 +182,7 @@ class TestServiceGames:
         await games.set_voice(game_data, voice_xid=12345, voice_invite_link="http://link")
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.get(Game, game.id)
+        found = await DatabaseSession.get(Game, game.id)
         assert found
         assert found.voice_xid == 12345
         assert found.voice_invite_link == "http://link"
@@ -198,8 +199,8 @@ class TestServiceGames:
         await games.dequeue_players([user1.xid, user2.xid])
 
         DatabaseSession.expire_all()
-        assert user1.game(game.channel_xid) is None
-        assert user2.game(game.channel_xid) is None
+        assert await user1.game(game.channel_xid) is None
+        assert await user2.game(game.channel_xid) is None
 
     async def test_player_convoke_data(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
@@ -230,19 +231,27 @@ class TestServiceGames:
         # UserFactory.create(game=game) automatically creates Play records for started games
         # Query for the Play records that were automatically created
         _play1 = (
-            DatabaseSession.query(Play)
-            .filter(
-                Play.user_xid == user1.xid,
-                Play.game_id == game.id,
+            (
+                await DatabaseSession.execute(
+                    select(Play).where(
+                        Play.user_xid == user1.xid,
+                        Play.game_id == game.id,
+                    ),
+                )
             )
+            .scalars()
             .first()
         )
         _play2 = (
-            DatabaseSession.query(Play)
-            .filter(
-                Play.user_xid == user2.xid,
-                Play.game_id == game.id,
+            (
+                await DatabaseSession.execute(
+                    select(Play).where(
+                        Play.user_xid == user2.xid,
+                        Play.game_id == game.id,
+                    ),
+                )
             )
+            .scalars()
             .first()
         )
 
@@ -312,17 +321,17 @@ class TestServiceGamesUpsert:
         assert game_data.id == game.id
 
         DatabaseSession.expire_all()
-        found_user = DatabaseSession.query(User).one()
+        found_user = (await DatabaseSession.execute(select(User))).scalar_one()
         found_queue = (
-            DatabaseSession.query(Queue)
-            .filter(
-                and_(
-                    Queue.game_id == game.id,
-                    Queue.user_xid == found_user.xid,
+            await DatabaseSession.execute(
+                select(Queue).where(
+                    and_(
+                        Queue.game_id == game.id,
+                        Queue.user_xid == found_user.xid,
+                    ),
                 ),
             )
-            .one_or_none()
-        )
+        ).scalar_one_or_none()
         assert found_queue is not None
 
     async def test_lfg_with_friend_when_existing_game(self, game: Game) -> None:
@@ -345,7 +354,11 @@ class TestServiceGamesUpsert:
         assert game_data.id == game.id
 
         DatabaseSession.expire_all()
-        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == game.id).all()
+        rows = (
+            await DatabaseSession.execute(
+                select(Queue.user_xid).where(Queue.game_id == game.id),
+            )
+        ).all()
         assert {row[0] for row in rows} == {101, 102}
 
     async def test_lfg_alone_when_no_game(self, guild: Guild, channel: Channel, user: User) -> None:
@@ -365,9 +378,9 @@ class TestServiceGamesUpsert:
         assert game_data is not None
 
         DatabaseSession.expire_all()
-        found_user = DatabaseSession.query(User).one()
-        found_game = DatabaseSession.query(Game).one()
-        found_queue = DatabaseSession.query(Queue).one()
+        found_user = (await DatabaseSession.execute(select(User))).scalar_one()
+        found_game = (await DatabaseSession.execute(select(Game))).scalar_one()
+        found_queue = (await DatabaseSession.execute(select(Queue))).scalar_one()
         assert found_game.guild_xid == guild.xid
         assert found_game.channel_xid == channel.xid
         assert found_queue.game_id == found_game.id
@@ -393,10 +406,14 @@ class TestServiceGamesUpsert:
         assert game_data is not None
 
         DatabaseSession.expire_all()
-        db_game = DatabaseSession.query(Game).one()
+        db_game = (await DatabaseSession.execute(select(Game))).scalar_one()
         assert db_game.guild_xid == guild.xid
         assert db_game.channel_xid == channel.xid
-        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == db_game.id).all()
+        rows = (
+            await DatabaseSession.execute(
+                select(Queue.user_xid).where(Queue.game_id == db_game.id),
+            )
+        ).all()
         assert {row[0] for row in rows} == {101, 102}
         assert db_game.rules == "some additional rules"
 
@@ -422,10 +439,16 @@ class TestServiceGamesUpsert:
         assert game_data is not None
 
         DatabaseSession.expire_all()
-        db_game = DatabaseSession.query(Game).filter(Game.id != bad_game.id).one()
+        db_game = (
+            await DatabaseSession.execute(select(Game).where(Game.id != bad_game.id))
+        ).scalar_one()
         assert db_game.guild_xid == guild.xid
         assert db_game.channel_xid == channel.xid
-        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == db_game.id).all()
+        rows = (
+            await DatabaseSession.execute(
+                select(Queue.user_xid).where(Queue.game_id == db_game.id),
+            )
+        ).all()
         assert {row[0] for row in rows} == {101, 102, 103}
 
     async def test_lfg_with_friend_when_game_wrong_format(
@@ -459,10 +482,16 @@ class TestServiceGamesUpsert:
         assert game_data is not None
 
         DatabaseSession.expire_all()
-        db_game = DatabaseSession.query(Game).filter(Game.id != bad_game.id).one()
+        db_game = (
+            await DatabaseSession.execute(select(Game).where(Game.id != bad_game.id))
+        ).scalar_one()
         assert db_game.guild_xid == guild.xid
         assert db_game.channel_xid == channel.xid
-        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == db_game.id).all()
+        rows = (
+            await DatabaseSession.execute(
+                select(Queue.user_xid).where(Queue.game_id == db_game.id),
+            )
+        ).all()
         assert {row[0] for row in rows} == {101, 102, 103}
 
     async def test_lfg_when_existing_game_and_blocked(self, game: Game) -> None:
@@ -484,10 +513,12 @@ class TestServiceGamesUpsert:
         )
 
         DatabaseSession.expire_all()
-        other_game = DatabaseSession.query(Game).filter(Game.id != game.id).one()
+        other_game = (
+            await DatabaseSession.execute(select(Game).where(Game.id != game.id))
+        ).scalar_one()
         assert new
-        assert game.players == [user1]
-        assert other_game.players == [user2]
+        assert [p.xid for p in await game.players()] == [user1.xid]
+        assert [p.xid for p in await other_game.players()] == [user2.xid]
 
     async def test_lfg_when_existing_game_and_blocker(self, game: Game) -> None:
         games = GamesService()
@@ -508,7 +539,9 @@ class TestServiceGamesUpsert:
         )
 
         DatabaseSession.expire_all()
-        other_game = DatabaseSession.query(Game).filter(Game.id != game.id).one()
+        other_game = (
+            await DatabaseSession.execute(select(Game).where(Game.id != game.id))
+        ).scalar_one()
         assert new
-        assert game.players == [user1]
-        assert other_game.players == [user2]
+        assert [p.xid for p in await game.players()] == [user1.xid]
+        assert [p.xid for p in await other_game.players()] == [user2.xid]
