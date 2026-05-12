@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - POSIX compliant changes for scripts used in docker images.
 - Update syrupy requirement to new version scheme: 2026.4.6.
 - Remove unused supervisor dependency and code related to it.
+- Better error handling when retrying integration endpoints.
 
 ## [v18.7.1](https://github.com/lexicalunit/spellbot/releases/tag/v18.7.1) - 2026-05-11
 

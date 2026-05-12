@@ -462,9 +462,9 @@ async def generate_link(
                     return GirudoLinkDetails(link=link)
 
             except Exception as ex:
-                add_span_error(ex)
                 is_final_attempt = attempt == retry_attempts - 1
                 if is_final_attempt:
+                    add_span_error(ex)
                     logger.exception("Girudo API failure (final attempt, email=%s):", email)
                     return GirudoLinkDetails()
 

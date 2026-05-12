@@ -138,8 +138,9 @@ async def generate_link(game_data: GameData) -> tuple[str | None, str | None]:  
             try:
                 data = await fetch_table_stream_link(client, ts_args)
             except Exception as ex:
-                add_span_error(ex)
-                if attempt == RETRY_ATTEMPTS - 1:
+                is_final_attempt = attempt == RETRY_ATTEMPTS - 1
+                if is_final_attempt:
+                    add_span_error(ex)
                     logger.exception("TableStream API failure (final attempt)")
                     return None, None
                 logger.warning(
@@ -147,6 +148,7 @@ async def generate_link(game_data: GameData) -> tuple[str | None, str | None]:  
                     attempt + 1,
                     exc_info=True,
                 )
+                continue
 
             if not data:
                 return None, None

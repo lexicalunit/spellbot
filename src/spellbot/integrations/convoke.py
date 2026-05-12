@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 services = ServicesRegistry()
 
 USE_PASSWORD = False  # no password is now supported!
-RETRY_ATTEMPTS = 2
-TIMEOUT_S = 3
+RETRY_ATTEMPTS = 3
+TIMEOUT_S = 1
 ADJECTIVES = [
     "ancient",
     "angry",
@@ -158,8 +158,9 @@ async def generate_link(
             try:
                 data = await fetch_convoke_link(client, game_data, key, pins)
             except Exception as ex:
-                add_span_error(ex)
-                if attempt == RETRY_ATTEMPTS - 1:
+                is_final_attempt = attempt == RETRY_ATTEMPTS - 1
+                if is_final_attempt:
+                    add_span_error(ex)
                     logger.exception("Convoke API failure (final attempt)")
                     return None, None
                 logger.warning(
