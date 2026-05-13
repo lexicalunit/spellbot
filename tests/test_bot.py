@@ -74,6 +74,12 @@ class TestSpellBot:
             ),
             pytest.param(
                 False,
+                GameService.PLAYGROUP_LIVE.value,
+                "playgroup_live.generate_link",
+                id="playgroup-live",
+            ),
+            pytest.param(
+                False,
                 GameService.NOT_ANY.value,
                 None,
                 id="no-service",
@@ -94,7 +100,7 @@ class TestSpellBot:
             mock = mocker.patch(f"spellbot.client.{factory}", AsyncMock())
         response = await bot.create_game_link(game)
         if factory:
-            if factory == "convoke.generate_link":
+            if factory in ("convoke.generate_link", "playgroup_live.generate_link"):
                 mock.assert_called_once_with(game, None)
             else:
                 mock.assert_called_once_with(game)

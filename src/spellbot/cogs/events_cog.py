@@ -10,7 +10,7 @@ from discord.app_commands import Choice
 from discord.ext import commands
 
 from spellbot.actions import LookingForGameAction
-from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER, visible_game_services
+from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_defer_interaction
 from spellbot.settings import settings
@@ -40,9 +40,7 @@ class EventsCog(commands.Cog):
     )
     @app_commands.describe(service="What service do you want to use to play this game?")
     @app_commands.choices(
-        service=[
-            Choice(name=str(service), value=service.value) for service in visible_game_services()
-        ],
+        service=[Choice(name=str(service), value=service.value) for service in GAME_SERVICE_ORDER],
     )
     @tracer.wrap(name="interaction", resource="game")
     async def game(

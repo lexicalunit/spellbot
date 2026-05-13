@@ -421,3 +421,49 @@ class TestGenerateLink:
 
         assert result == (None, None)
         assert mock_client.post.call_count == playgroup_live_module.RETRY_ATTEMPTS
+
+    @pytest.mark.asyncio
+    async def test_returns_none_when_session_data_empty(self) -> None:
+        game = create_mock_game(
+            game_id=42,
+            game_format=GameFormat.COMMANDER.value,
+            service=GameService.PLAYGROUP_LIVE.value,
+            seats=4,
+            bracket=GameBracket.NONE.value,
+        )
+        host = create_mock_user(xid=100)
+        host.playgroup_user_id = 42
+        game.players = [host]
+
+        with (
+            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
+            patch.object(
+                playgroup_live_module,
+                "fetch_playgroup_live_session",
+                AsyncMock(return_value={}),
+            ),
+        ):
+            result = await generate_link(game)
+
+        assert result == (None, None)
+
+    @pytest.mark.asyncio
+    async def test_returns_none_when_no_retry_attempts(self) -> None:
+        game = create_mock_game(
+            game_id=42,
+            game_format=GameFormat.COMMANDER.value,
+            service=GameService.PLAYGROUP_LIVE.value,
+            seats=4,
+            bracket=GameBracket.NONE.value,
+        )
+        host = create_mock_user(xid=100)
+        host.playgroup_user_id = 42
+        game.players = [host]
+
+        with (
+            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
+            patch.object(playgroup_live_module, "RETRY_ATTEMPTS", 0),
+        ):
+            result = await generate_link(game)
+
+        assert result == (None, None)
