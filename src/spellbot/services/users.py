@@ -121,7 +121,7 @@ async def set_banned(user_xid: int, banned: bool) -> UserData:
 async def set_playgroup_user_id(user_xid: int, playgroup_user_id: int) -> None:
     """Store the Playgroup Live user ID for the given Discord user."""
     await DatabaseSession.execute(
-        update(User).where(User.xid == user_xid).values(playgroup_user_id=playgroup_user_id),  # type: ignore
+        update(User).where(User.xid == user_xid).values(playgroup_user_id=playgroup_user_id),
     )
     await DatabaseSession.commit()
 
