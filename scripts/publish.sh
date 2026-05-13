@@ -37,8 +37,13 @@ if [[ -n $CHANGES ]]; then
     exit 1
 fi
 
-REMOTE_CHANGES="$(git ls-remote origin -h refs/heads/main)"
-if [[ -n $REMOTE_CHANGES ]]; then
+REMOTE_SHA="$(git ls-remote origin refs/heads/main | cut -f1)"
+LOCAL_SHA="$(git rev-parse HEAD)"
+if [[ -z $REMOTE_SHA ]]; then
+    echo "error: could not determine remote main SHA" 1>&2
+    exit 1
+fi
+if [[ $REMOTE_SHA != "$LOCAL_SHA" ]]; then
     echo "error: can not publish when there are remote changes" 1>&2
     exit 1
 fi
