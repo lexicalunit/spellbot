@@ -65,42 +65,41 @@ def get_supporters(data: dict[str, Any], patrons: set[str]) -> set[int]:
     return supporters
 
 
-class PatreonService:
-    @sync_to_async()
-    @tracer.wrap()
-    def supporters(self) -> set[int]:
-        """Return a list of Discord IDs of active Patreon supporters."""
-        if running_in_pytest():
-            return set()
+@sync_to_async
+@tracer.wrap()
+def supporters() -> set[int]:
+    """Return a list of Discord IDs of active Patreon supporters."""
+    if running_in_pytest() or not settings.PATREON_CAMPAIGN:
+        return set()
 
-        response: httpx.Response | None = None
-        all_patrons: set[str] = set()
-        all_included: list[dict[str, Any]] = []
+    response: httpx.Response | None = None
+    all_patrons: set[str] = set()
+    all_included: list[dict[str, Any]] = []
 
-        try:
-            headers = {"Authorization": f"Bearer {settings.PATREON_TOKEN}"}
-            next_url: str | None = get_patreon_campaign_url()
+    try:
+        headers = {"Authorization": f"Bearer {settings.PATREON_TOKEN}"}
+        next_url: str | None = get_patreon_campaign_url()
 
-            with httpx.Client(timeout=10.0) as client:
-                while next_url:
-                    response = client.get(next_url, headers=headers)
+        with httpx.Client(timeout=10.0) as client:
+            while next_url:
+                response = client.get(next_url, headers=headers)
 
-                    if response.status_code != 200:
-                        logger.error("patreon sync failed, error response: %s", response.text)
-                        break
+                if response.status_code != 200:
+                    logger.error("patreon sync failed, error response: %s", response.text)
+                    break
 
-                    data = response.json()
-                    all_patrons.update(get_patron_ids(data))
-                    all_included.extend(data.get("included") or [])
-                    links = data.get("links") or {}
-                    next_url = links.get("next")
+                data = response.json()
+                all_patrons.update(get_patron_ids(data))
+                all_included.extend(data.get("included") or [])
+                links = data.get("links") or {}
+                next_url = links.get("next")
 
-            combined_data: dict[str, Any] = {"included": all_included}
-            return get_supporters(combined_data, all_patrons)
+        combined_data: dict[str, Any] = {"included": all_included}
+        return get_supporters(combined_data, all_patrons)
 
-        except Exception:
-            logger.exception(
-                "patreon sync failed, unknown error: %s",
-                response.text if response else "no response",
-            )
-            return set()
+    except Exception:
+        logger.exception(
+            "patreon sync failed, unknown error: %s",
+            response.text if response else "no response",
+        )
+        return set()

@@ -9,9 +9,9 @@ import aiohttp_jinja2
 from aiohttp.web_response import Response as WebResponse
 from ddtrace.trace import tracer
 
+from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_request_id, generate_request_id
-from spellbot.services import ServicesRegistry
 
 if TYPE_CHECKING:
     from aiohttp import web
@@ -66,7 +66,6 @@ async def impl(request: web.Request, kind: RecordKind) -> WebResponse:
     except ValueError:
         return WebResponse(status=404)
 
-    services = ServicesRegistry()
     if kind is RecordKind.CHANNEL:
         records = await services.plays.channel_records(
             guild_xid=opts.guild_xid,

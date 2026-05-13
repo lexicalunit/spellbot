@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import discord
 from ddtrace.trace import tracer
 
-from spellbot.data import GameData
+from spellbot import services
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import MAX_RULES_LENGTH, GameStatus, generate_pin
 from spellbot.operations import (
@@ -97,12 +97,12 @@ class LookingForGameAction(BaseAction):
         if friend_xids:
             friend_xids = await self.ensure_users_exist(friend_xids)
         if friend_xids:
-            friend_xids = await self.services.users.filter_blocked_list(
+            friend_xids = await services.users.filter_blocked_list(
                 self.interaction.user.id,
                 friend_xids,
             )
         if friend_xids:
-            friend_xids = await self.services.users.filter_pending_games(friend_xids)
+            friend_xids = await services.users.filter_pending_games(friend_xids)
         return friend_xids
 
     @tracer.wrap()
@@ -128,7 +128,7 @@ class LookingForGameAction(BaseAction):
 
         if not origin:
             assert self.interaction.guild_id is not None
-            new, game = await self.services.games.upsert(
+            new, game = await services.games.upsert(
                 guild_xid=self.interaction.guild_id,
                 channel_xid=self.channel.id,
                 author_xid=self.interaction.user.id,
@@ -143,8 +143,8 @@ class LookingForGameAction(BaseAction):
             return new, game
 
         assert message_xid
-        found = await self.services.games.get_by_message_xid(message_xid)
-        if not found or await self.services.games.blocked(found, self.interaction.user.id):
+        found = await services.games.get_by_message_xid(message_xid)
+        if not found or await services.games.blocked(found, self.interaction.user.id):
             await safe_send_user(self.interaction.user, "You can not join this game.")
             return None, None
 
@@ -157,7 +157,7 @@ class LookingForGameAction(BaseAction):
             )
             return None, None
 
-        found = await self.services.games.add_player(found, self.interaction.user.id)
+        found = await services.games.add_player(found, self.interaction.user.id)
         return False, found
 
     @tracer.wrap()
@@ -171,14 +171,14 @@ class LookingForGameAction(BaseAction):
             return
 
         assert self.user_data is not None
-        if await self.services.users.pending_games(self.user_data):
+        if await services.users.pending_games(self.user_data):
             await safe_followup_channel(
                 self.interaction,
                 "You're already in a pending game, leave that one first.",
             )
             return
 
-        game_data = await self.services.games.get_last_game(
+        game_data = await services.games.get_last_game(
             user_xid=self.interaction.user.id,
             guild_xid=self.guild.id,
         )
@@ -211,7 +211,7 @@ class LookingForGameAction(BaseAction):
             return
 
         assert self.user_data
-        game_data = await self.services.users.is_waiting(self.user_data, self.channel.id)
+        game_data = await services.users.is_waiting(self.user_data, self.channel.id)
         if not game_data:
             await safe_followup_channel(
                 self.interaction,
@@ -220,7 +220,7 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        game_data = await self.services.games.shrink_game(game_data)
+        game_data = await services.games.shrink_game(game_data)
         player_xids = [player.xid for player in game_data.players]
         game_data, suggested_vc = await self.make_game_ready(game_data, player_xids=player_xids)
         assert self.interaction.guild_id
@@ -267,14 +267,14 @@ class LookingForGameAction(BaseAction):
         rules = None if not rules else rules[:MAX_RULES_LENGTH]
 
         assert self.user_data
-        if await self.services.users.is_waiting(self.user_data, self.channel.id):
+        if await services.users.is_waiting(self.user_data, self.channel.id):
             msg = "You're already in a game in this channel."
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
             await safe_followup_channel(self.interaction, msg)
             return None
 
-        if await self.services.users.pending_games(self.user_data) + 1 > settings.MAX_PENDING_GAMES:
+        if await services.users.pending_games(self.user_data) + 1 > settings.MAX_PENDING_GAMES:
             msg = "You're in too many pending games to join another one at this time."
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
@@ -305,7 +305,7 @@ class LookingForGameAction(BaseAction):
         other_game_ids: list[int] = []
         suggested_vc = None
         if game_data.fully_seated:
-            other_game_ids = await self.services.games.other_game_ids(game_data)
+            other_game_ids = await services.games.other_game_ids(game_data)
             player_xids = [player.xid for player in game_data.players]
             game_data, suggested_vc = await self.make_game_ready(game_data, player_xids)
             game_data = await self.handle_voice_creation(game_data, self.guild.id)
@@ -332,9 +332,9 @@ class LookingForGameAction(BaseAction):
         if not other_game_ids:
             return
 
-        message_xids = await self.services.games.message_xids(other_game_ids)
+        message_xids = await services.games.message_xids(other_game_ids)
         for message_xid in message_xids:
-            data = await self.services.games.get_by_message_xid(message_xid)
+            data = await services.games.get_by_message_xid(message_xid)
             if not data:
                 continue
 
@@ -393,7 +393,7 @@ class LookingForGameAction(BaseAction):
             return
 
         assert self.interaction.guild_id
-        _, game_data = await self.services.games.upsert(
+        _, game_data = await services.games.upsert(
             guild_xid=self.interaction.guild_id,
             channel_xid=self.channel.id,
             author_xid=found_players[0],
@@ -459,7 +459,7 @@ class LookingForGameAction(BaseAction):
                 },
             )
 
-        ready_game = await self.services.games.make_ready(
+        ready_game = await services.games.make_ready(
             game_data,
             details.link,
             details.password,
@@ -501,7 +501,7 @@ class LookingForGameAction(BaseAction):
                 reason=f"Creating temporary voice channel invite for Game-SB{game_data.id}",
             )
 
-        return await self.services.games.set_voice(
+        return await services.games.set_voice(
             game_data,
             voice_xid=voice_channel.id,
             voice_invite_link=invite.url if invite else None,
@@ -533,7 +533,7 @@ class LookingForGameAction(BaseAction):
                 allowed_mentions=allowed_mentions,
             )
         ):
-            return await self.services.games.add_post(
+            return await services.games.add_post(
                 game_data,
                 self.guild.id,
                 self.channel.id,
@@ -744,7 +744,7 @@ class LookingForGameAction(BaseAction):
 
         # give out awards
         assert self.interaction.guild_id is not None
-        new_roles = await self.services.awards.give_awards(
+        new_roles = await services.awards.give_awards(
             self.interaction.guild_id,
             player_xids,
         )
@@ -790,7 +790,7 @@ class LookingForGameAction(BaseAction):
         if not mod_role:
             return
 
-        watch_notes = await self.services.games.watch_notes(game_data, player_xids)
+        watch_notes = await services.games.watch_notes(game_data, player_xids)
         if not watch_notes:
             return
 
@@ -830,7 +830,7 @@ class LookingForGameAction(BaseAction):
             user = await safe_fetch_user(self.bot, user_xid)
             if not user:
                 continue
-            user_data = await self.services.users.upsert(user, guild_xid=guild_xid)
+            user_data = await services.users.upsert(user, guild_xid=guild_xid)
             if user_data.banned:
                 continue
             found_users.append(user_xid)

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from spellbot.services import AwardsService, NewAward
+from spellbot.services import NewAward, awards
 
 if TYPE_CHECKING:
     from spellbot.models import Channel, Guild
@@ -30,7 +30,6 @@ class TestServiceAwards:
             guild_xid=guild.xid,
             guild_award_id=None,
         )
-        awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {user.xid: [NewAward(role="one", message="msg", remove=False)]}
 
@@ -53,7 +52,6 @@ class TestServiceAwards:
         other_game = factories.game.create(guild=other_guild, channel=other_channel)
         factories.play.create(user_xid=user.xid, game_id=other_game.id)
 
-        awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {}
 
@@ -71,7 +69,6 @@ class TestServiceAwards:
             guild_xid=guild.xid,
             guild_award_id=None,
         )
-        awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {}
 
@@ -90,7 +87,6 @@ class TestServiceAwards:
             guild_xid=guild.xid,
             guild_award_id=None,
         )
-        awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {}
 
@@ -115,7 +111,6 @@ class TestServiceAwards:
             guild_xid=guild.xid,
             guild_award_id=None,
         )
-        awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {user.xid: [NewAward(role="one", message="msg", remove=False)]}
         game2 = factories.game.create(guild=guild, channel=channel)
@@ -134,7 +129,6 @@ class TestServiceAwards:
         user = factories.user.create()
         factories.play.create(user_xid=user.xid, game_id=game.id)
         # Note: no user_award created for this user
-        awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         assert give_outs == {}
 
@@ -162,7 +156,6 @@ class TestServiceAwards:
         )
         # Mark user as verified
         factories.verify.create(user_xid=user.xid, guild_xid=guild.xid, verified=True)
-        awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         # Award should not be given because user is verified but award is unverified_only
         assert give_outs == {}
@@ -190,7 +183,6 @@ class TestServiceAwards:
             guild_award_id=None,
         )
         # User is not verified (no verify record or verified=False)
-        awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         # Award should not be given because user is not verified but award is verified_only
         assert give_outs == {}
@@ -219,7 +211,6 @@ class TestServiceAwards:
         )
         # Mark user as verified
         factories.verify.create(user_xid=user.xid, guild_xid=guild.xid, verified=True)
-        awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         # Award should be given because user is verified
         assert give_outs == {user.xid: [NewAward(role="one", message="msg", remove=False)]}
@@ -247,7 +238,6 @@ class TestServiceAwards:
             guild_xid=guild.xid,
             guild_award_id=guild_award.id,
         )
-        awards = AwardsService()
         give_outs = await awards.give_awards(guild_xid=guild.xid, player_xids=[user.xid])
         # Award should not be given again because it's non-repeating and already earned
         assert give_outs == {}

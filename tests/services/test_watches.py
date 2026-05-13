@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.services import WatchesService
+from spellbot.services import watches
 from tests.factories import GuildFactory, UserFactory, WatchFactory
 
 pytestmark = pytest.mark.use_db
@@ -22,8 +22,7 @@ class TestServiceWatches:
         WatchFactory.create(guild_xid=guild2.xid, user_xid=user3.xid)
 
         DatabaseSession.expire_all()
-        watches_service = WatchesService()
-        result = await watches_service.fetch(guild1.xid)
+        result = await watches.fetch(guild1.xid)
         assert len(result) == 2
         assert result[0].guild_xid == guild1.xid
         assert result[0].user_xid == user1.xid

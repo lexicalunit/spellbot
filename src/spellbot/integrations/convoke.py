@@ -1,69 +1,23 @@
 from __future__ import annotations
 
 import logging
-import random
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 import httpx
 
-from spellbot import __version__
+from spellbot import __version__, services
 from spellbot.enums import GameBracket, GameFormat
 from spellbot.metrics import add_span_error
-from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
     from spellbot.data import GameData
 
 logger = logging.getLogger(__name__)
-services = ServicesRegistry()
 
-USE_PASSWORD = False  # no password is now supported!
 RETRY_ATTEMPTS = 3
 TIMEOUT_S = 1
-ADJECTIVES = [
-    "ancient",
-    "angry",
-    "arcane",
-    "blazing",
-    "cursed",
-    "dark",
-    "eternal",
-    "fierce",
-    "giant",
-    "grim",
-    "hidden",
-    "lucky",
-    "mighty",
-    "mystic",
-    "ominous",
-    "sacred",
-    "shiny",
-    "swift",
-    "twisted",
-    "wild",
-]
-NOUNS = [
-    "angel",
-    "beast",
-    "bolt",
-    "counter",
-    "dragon",
-    "elf",
-    "fetch",
-    "goblin",
-    "land",
-    "mana",
-    "merfolk",
-    "sliver",
-    "sorcery",
-    "stack",
-    "storm",
-    "token",
-    "wizard",
-    "zombie",
-]
 
 
 class ConvokeGameTypes(Enum):
@@ -101,16 +55,9 @@ def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:
             return ConvokeGameTypes.Other
 
 
-def passphrase() -> str | None:
-    if USE_PASSWORD:
-        return f"{random.choice(ADJECTIVES)} {random.choice(NOUNS)}"
-    return None
-
-
 async def fetch_convoke_link(
     client: httpx.AsyncClient,
     game_data: GameData,
-    key: str | None,
     pins: list[str] | None,
 ) -> dict[str, Any]:
     name = f"SB{game_data.id}"
@@ -134,8 +81,6 @@ async def fetch_convoke_link(
         payload["bracketLevel"] = f"B{game_data.bracket - 1}"
     if game_data.format == GameFormat.PRE_CONS.value:
         payload["bracketLevel"] = "PRECON"  # Convoke uses Bracket to indicate "pre-cons"
-    if key:
-        payload["password"] = key
     headers = {"user-agent": f"spellbot/{__version__}"}
     endpoint = f"{settings.CONVOKE_ROOT}/game/create-game"
     resp = await client.post(endpoint, json=payload, headers=headers)
@@ -150,13 +95,12 @@ async def generate_link(
     if not settings.CONVOKE_API_KEY:
         return None, None
 
-    key = passphrase()
     timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
     data: dict[str, Any] | None = None
     async with httpx.AsyncClient(timeout=timeout) as client:
         for attempt in range(RETRY_ATTEMPTS):
             try:
-                data = await fetch_convoke_link(client, game_data, key, pins)
+                data = await fetch_convoke_link(client, game_data, pins)
             except Exception as ex:
                 is_final_attempt = attempt == RETRY_ATTEMPTS - 1
                 if is_final_attempt:
@@ -173,7 +117,7 @@ async def generate_link(
             if not data:
                 return None, None
             game_link = data["url"]
-            game_pass = data.get("password") or key
+            game_pass = data.get("password")
             return game_link, game_pass
 
     return None, None

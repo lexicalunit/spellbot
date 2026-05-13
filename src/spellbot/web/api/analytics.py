@@ -10,10 +10,10 @@ from aiohttp.web_response import Response as WebResponse
 from asgiref.sync import sync_to_async
 from ddtrace.trace import tracer
 
+from spellbot import services
 from spellbot.database import DatabaseSession, db_session_manager
 from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.models import Guild, GuildMember
-from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.utils import validate_signature
 
@@ -21,8 +21,6 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from aiohttp import web
-
-    from spellbot.services.plays import PlaysService
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +55,7 @@ async def validate_analytics_request(
 
 async def analytics_json_endpoint(
     request: web.Request,
-    fetch_fn: Callable[[PlaysService, int, bool], Awaitable[dict[str, Any]]],
+    fetch_fn: Callable[[int, bool], Awaitable[dict[str, Any]]],
 ) -> WebResponse:
     """Return analytics JSON data using the provided fetch function."""
     guild_xid, error = await validate_analytics_request(request)
@@ -70,10 +68,9 @@ async def analytics_json_endpoint(
     all_time = period == "all"
 
     async with db_session_manager():
-        services = ServicesRegistry()
         if not await services.plays.guild_exists(guild_xid):
             return WebResponse(status=404, text="Guild not found.")
-        data = await fetch_fn(services.plays, guild_xid, all_time)
+        data = await fetch_fn(guild_xid, all_time)
 
     return WebResponse(
         status=200,
@@ -100,7 +97,7 @@ async def analytics_endpoint(request: web.Request) -> WebResponse:
     if not validate_signature(guild_xid, expires, sig):
         return WebResponse(status=403, text="Invalid or expired link.")
 
-    @sync_to_async()
+    @sync_to_async
     def get_guild_name() -> str | None:
         guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
         return guild.name if guild else None
@@ -121,7 +118,7 @@ async def analytics_summary_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
         request,
-        lambda p, g, a: p.analytics_summary(g, all_time=a),
+        lambda g, a: services.plays.analytics_summary(g, all_time=a),
     )
 
 
@@ -131,7 +128,7 @@ async def analytics_activity_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
         request,
-        lambda p, g, a: p.analytics_activity(g, all_time=a),
+        lambda g, a: services.plays.analytics_activity(g, all_time=a),
     )
 
 
@@ -141,7 +138,7 @@ async def analytics_wait_time_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
         request,
-        lambda p, g, a: p.analytics_wait_time(g, all_time=a),
+        lambda g, a: services.plays.analytics_wait_time(g, all_time=a),
     )
 
 
@@ -151,7 +148,7 @@ async def analytics_brackets_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
         request,
-        lambda p, g, a: p.analytics_brackets(g, all_time=a),
+        lambda g, a: services.plays.analytics_brackets(g, all_time=a),
     )
 
 
@@ -161,7 +158,7 @@ async def analytics_retention_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
         request,
-        lambda p, g, a: p.analytics_retention(g, all_time=a),
+        lambda g, a: services.plays.analytics_retention(g, all_time=a),
     )
 
 
@@ -171,7 +168,7 @@ async def analytics_growth_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
         request,
-        lambda p, g, a: p.analytics_growth(g, all_time=a),
+        lambda g, a: services.plays.analytics_growth(g, all_time=a),
     )
 
 
@@ -181,7 +178,7 @@ async def analytics_histogram_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
         request,
-        lambda p, g, a: p.analytics_histogram(g, all_time=a),
+        lambda g, a: services.plays.analytics_histogram(g, all_time=a),
     )
 
 
@@ -191,7 +188,7 @@ async def analytics_formats_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
         request,
-        lambda p, g, a: p.analytics_formats(g, all_time=a),
+        lambda g, a: services.plays.analytics_formats(g, all_time=a),
     )
 
 
@@ -201,7 +198,7 @@ async def analytics_channels_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
         request,
-        lambda p, g, a: p.analytics_channels(g, all_time=a),
+        lambda g, a: services.plays.analytics_channels(g, all_time=a),
     )
 
 
@@ -211,11 +208,11 @@ async def analytics_services_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
         request,
-        lambda p, g, a: p.analytics_services(g, all_time=a),
+        lambda g, a: services.plays.analytics_services(g, all_time=a),
     )
 
 
-@sync_to_async()
+@sync_to_async
 def delete_guild_member(guild_xid: int, user_xid: int) -> None:
     """Delete a GuildMember record when the user is no longer in the guild."""
     DatabaseSession.query(GuildMember).filter(
@@ -299,7 +296,6 @@ async def analytics_players_endpoint(request: web.Request) -> WebResponse:
     all_time = period == "all"
 
     async with db_session_manager():
-        services = ServicesRegistry()
         if not await services.plays.guild_exists(guild_xid):
             return WebResponse(status=404, text="Guild not found.")
         data = await services.plays.analytics_players(guild_xid, all_time=all_time)
@@ -332,7 +328,6 @@ async def analytics_blocked_endpoint(request: web.Request) -> WebResponse:
     all_time = period == "all"
 
     async with db_session_manager():
-        services = ServicesRegistry()
         if not await services.plays.guild_exists(guild_xid):
             return WebResponse(status=404, text="Guild not found.")
         data = await services.plays.analytics_blocked(guild_xid, all_time=all_time)

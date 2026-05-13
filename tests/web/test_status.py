@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from spellbot.shard_status import ShardStatus
-from spellbot.web.api.status import _get_int, format_latency, format_time_ago, get_latency_class
+from spellbot.web.api.status import format_latency, format_time_ago, get_int, get_latency_class
 
 if TYPE_CHECKING:
     from aiohttp.client import ClientSession
@@ -29,7 +29,7 @@ class TestGetInt:
         default: int,
         expected: int,
     ) -> None:
-        assert _get_int(metadata, key, default) == expected
+        assert get_int(metadata, key, default) == expected
 
 
 class TestFormatLatency:

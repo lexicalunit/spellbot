@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from spellbot.data import VerifyData
-from spellbot.services import VerifiesService
+from spellbot.services import verifies
 
 if TYPE_CHECKING:
     from spellbot.models import Guild
@@ -19,8 +19,6 @@ pytestmark = pytest.mark.use_db
 class TestServiceVerifies:
     async def test_verifies_upsert(self, guild: Guild, factories: Factories) -> None:
         user = factories.user.create()
-
-        verifies = VerifiesService()
 
         # First upsert with no verified parameter - should return unverified
         verify_data = await verifies.upsert(guild.xid, user.xid)

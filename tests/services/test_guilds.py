@@ -6,7 +6,7 @@ import pytest
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Guild, GuildAward
-from spellbot.services import GuildsService
+from spellbot.services import guilds
 from tests.factories import ChannelFactory, GuildAwardFactory, GuildFactory
 
 pytestmark = pytest.mark.use_db
@@ -18,7 +18,6 @@ class TestServiceGuilds:
         discord_guild = MagicMock()
         discord_guild.id = 101
         discord_guild.name = "guild-name"
-        guilds = GuildsService()
         await guilds.upsert(discord_guild)
 
         DatabaseSession.expire_all()
@@ -37,7 +36,6 @@ class TestServiceGuilds:
         assert guild.name == "new-name"
 
     async def test_guilds_get(self) -> None:
-        guilds = GuildsService()
         assert not await guilds.get(404)
 
         GuildFactory.create(xid=404)
@@ -48,7 +46,6 @@ class TestServiceGuilds:
 
     async def test_guilds_set_motd(self) -> None:
         guild = GuildFactory.create()
-        guilds = GuildsService()
         guild_data = await guilds.get(guild.xid)
         assert guild_data is not None
 
@@ -62,7 +59,6 @@ class TestServiceGuilds:
         assert guild.motd == message_of_the_day
 
     async def test_guilds_set_banned(self) -> None:
-        guilds = GuildsService()
         guild = GuildFactory.create()
 
         await guilds.set_banned(guild.xid, banned=True)
@@ -74,7 +70,6 @@ class TestServiceGuilds:
 
     async def test_guilds_toggle_show_links(self) -> None:
         guild = GuildFactory.create(xid=101, show_links=False)
-        guilds = GuildsService()
         guild_data = await guilds.get(101)
         assert guild_data is not None
         assert not guild_data.show_links
@@ -97,7 +92,6 @@ class TestServiceGuilds:
 
     async def test_guilds_toggle_voice_create(self) -> None:
         guild = GuildFactory.create(xid=101, voice_create=False)
-        guilds = GuildsService()
         guild_data = await guilds.get(101)
         assert guild_data is not None
         assert not guild_data.voice_create
@@ -119,7 +113,6 @@ class TestServiceGuilds:
         assert not guild_data.voice_create
 
     async def test_guilds_voiced(self) -> None:
-        guilds = GuildsService()
         assert await guilds.voiced() == []
 
         guild1 = GuildFactory.create(voice_create=True)
@@ -129,7 +122,6 @@ class TestServiceGuilds:
         assert set(await guilds.voiced()) == {guild1.xid, guild3.xid}
 
     async def test_guilds_award_add(self) -> None:
-        guilds = GuildsService()
         discord_guild = MagicMock()
         discord_guild.id = 101
         discord_guild.name = "guild-name"
@@ -157,7 +149,6 @@ class TestServiceGuilds:
         award1 = GuildAwardFactory.create(guild=guild)
         award2 = GuildAwardFactory.create(guild=guild)
 
-        guilds = GuildsService()
         award1_id = award1.id
         await guilds.award_delete(award1.id)
         await guilds.award_delete(404)
@@ -170,14 +161,12 @@ class TestServiceGuilds:
         award1 = GuildAwardFactory.create(guild=guild, count=10)
         award2 = GuildAwardFactory.create(guild=guild, count=20)
 
-        guilds = GuildsService()
         assert await guilds.has_award_with_count(guild.xid, award1.count)
         assert await guilds.has_award_with_count(guild.xid, award2.count)
         assert not await guilds.has_award_with_count(guild.xid, 30)
 
     async def test_guilds_setup_mythic_track(self) -> None:
         guild = GuildFactory.create(xid=101, enable_mythic_track=False)
-        guilds = GuildsService()
         guild_data = await guilds.get(guild.xid)
         assert guild_data is not None
         assert not guild_data.enable_mythic_track
@@ -192,7 +181,6 @@ class TestServiceGuilds:
 
     async def test_guilds_toggle_use_max_bitrate(self) -> None:
         guild = GuildFactory.create(xid=101, use_max_bitrate=False)
-        guilds = GuildsService()
         guild_data = await guilds.get(101)
         assert guild_data is not None
         assert not guild_data.use_max_bitrate
@@ -220,7 +208,6 @@ class TestServiceGuilds:
         ChannelFactory.create(guild=guild, voice_category="Voice Channels")
         ChannelFactory.create(guild=guild, voice_category="Other Category")
 
-        guilds = GuildsService()
         prefixes = await guilds.voice_category_prefixes(guild.xid)
 
         assert set(prefixes) == {"Voice Channels", "Other Category"}

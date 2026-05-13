@@ -6,7 +6,7 @@ resource "aws_lb" "main" {
   security_groups    = [aws_security_group.alb.id]
   subnets            = module.vpc.public_subnets
 
-  enable_deletion_protection = false
+  enable_deletion_protection = true
 
   tags = {
     Name = "spellbot-alb"
@@ -72,7 +72,7 @@ resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.main.arn
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
   certificate_arn   = aws_acm_certificate_validation.prod.certificate_arn
 
   # Default action (fallback to prod)

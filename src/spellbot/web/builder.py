@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
@@ -12,16 +13,15 @@ import jinja2
 from aiohttp import web
 from babel.dates import format_datetime
 
+from spellbot import services
 from spellbot.database import db_session_manager, initialize_connection
 from spellbot.models import import_models
-from spellbot.services import ServicesRegistry
+from spellbot.redis_client import close_redis
 from spellbot.settings import settings
 from spellbot.web.api import analytics, ping, record, rest, status
 from spellbot.web.tools import rate_limited
 
 if TYPE_CHECKING:
-    from asyncio.events import AbstractEventLoop as Loop
-
     from aiohttp.typedefs import Handler
 
 logger = logging.getLogger(__name__)
@@ -46,9 +46,10 @@ async def auth_middleware(request: web.Request, handler: Handler) -> web.StreamR
     if not auth_header or not auth_header.startswith("Bearer "):
         return web.json_response({"error": "Missing or invalid Authorization header"}, status=401)
 
-    token = auth_header.split("Bearer ")[1]
+    token = auth_header.removeprefix("Bearer ").strip()
+    if not token:
+        return web.json_response({"error": "Missing or invalid Authorization header"}, status=401)
     async with db_session_manager():
-        services = ServicesRegistry()
         if not await services.apps.verify_token(token, request.rel_url.path):
             if await rate_limited(request):
                 return web.json_response({"error": "Too many requests"}, status=429)
@@ -89,10 +90,20 @@ def build_web_app() -> web.Application:
             web.post(r"/api/game/{game}/record", rest.game_record_endpoint),
         ],
     )
+    app.on_cleanup.append(close_shared_clients)
     return app
 
 
-def launch_web_server(loop: Loop, port: int) -> None:  # pragma: no cover
+async def close_shared_clients(_app: web.Application) -> None:
+    await rest.close_http_session()
+    await close_redis()
+
+
+# In production we use gunicorn, see server.py for details.
+def launch_dev_server(debug: bool, port: int) -> None:  # pragma: no cover
+    loop = asyncio.new_event_loop()
+    loop.set_debug(debug)
+
     app = build_web_app()
     runner = web.AppRunner(app)
     loop.run_until_complete(runner.setup())
@@ -100,3 +111,5 @@ def launch_web_server(loop: Loop, port: int) -> None:  # pragma: no cover
     site = web.TCPSite(runner, settings.HOST, port)
     loop.run_until_complete(site.start())
     logger.info("server running: http://%s:%s", settings.HOST, port)
+
+    loop.run_forever()

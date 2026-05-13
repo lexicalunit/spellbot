@@ -66,12 +66,6 @@ class Settings:
         "REDIS_URL",
         "SECRET_TOKEN",
         "SHARD_STATUS_UPDATE_INTERVAL_S",
-        "SPELLTABLE_API_KEY",
-        "SPELLTABLE_AUTH_REDIRECT",
-        "SPELLTABLE_CLIENT_ID",
-        "SPELLTABLE_PASSES",
-        "SPELLTABLE_ROOT",
-        "SPELLTABLE_USERS",
         "STARTED_EMBED_COLOR",
         "SUBSCRIBE_LINK",
         "TABLESTREAM_AUTH_KEY",
@@ -81,7 +75,6 @@ class Settings:
         "VOICE_CLEANUP_BATCH",
         "VOICE_CLEANUP_LOOP_M",
         "VOICE_GRACE_PERIOD_M",
-        "WIZARDS_ROOT",
         "guild_xid",
     )
 
@@ -130,21 +123,6 @@ class Settings:
         # cache
         self.REDIS_URL = getenv("REDIS_URL")
 
-        # spelltable
-        self.WIZARDS_ROOT = getenv("WIZARDS_ROOT", "https://myaccounts.wizards.com")
-        self.SPELLTABLE_ROOT = getenv(
-            "SPELLTABLE_ROOT",
-            "https://xgaqvxzggl.execute-api.us-west-2.amazonaws.com",
-        )
-        self.SPELLTABLE_USERS = getenv("SPELLTABLE_USERS")
-        self.SPELLTABLE_PASSES = getenv("SPELLTABLE_PASSES")
-        self.SPELLTABLE_API_KEY = getenv("SPELLTABLE_API_KEY")
-        self.SPELLTABLE_CLIENT_ID = getenv("SPELLTABLE_CLIENT_ID")
-        self.SPELLTABLE_AUTH_REDIRECT = getenv(
-            "SPELLTABLE_AUTH_REDIRECT",
-            "https://spelltable.wizards.com/auth/authorize",
-        )
-
         # tablestream
         self.TABLESTREAM_ROOT = "https://api.table-stream.com"
         self.TABLESTREAM_CREATE = f"{self.TABLESTREAM_ROOT}/create-room"
@@ -161,7 +139,7 @@ class Settings:
 
         # configuration
         self.BOT_INVITE_LINK = (
-            r"https://discordapp.com/api/oauth2/authorize"
+            r"https://discord.com/api/oauth2/authorize"
             r"?client_id=725510263251402832"
             r"&permissions=2416045137"
             r"&scope=applications.commands%20bot"

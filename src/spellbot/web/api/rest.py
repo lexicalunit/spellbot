@@ -11,9 +11,9 @@ from aiohttp import web
 from dateutil import tz
 from ddtrace.trace import tracer
 
+from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_request_id, generate_request_id
-from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.web.tools import rate_limited
 
@@ -27,6 +27,25 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 UNRECOVERABLE = {400, 401, 403, 404}
+
+# Process-wide aiohttp client session, lazily created on first use and reused
+# for the lifetime of the process. aiohttp recommends a single long-lived
+# session per application rather than creating a new one per request.
+_http_session: aiohttp.ClientSession | None = None
+
+
+def get_http_session() -> aiohttp.ClientSession:
+    global _http_session  # noqa: PLW0603
+    if _http_session is None or _http_session.closed:
+        _http_session = aiohttp.ClientSession()
+    return _http_session
+
+
+async def close_http_session() -> None:
+    global _http_session  # noqa: PLW0603
+    if _http_session is not None and not _http_session.closed:
+        await _http_session.close()
+    _http_session = None
 
 
 def reply(
@@ -52,7 +71,6 @@ async def game_verify_endpoint(request: web.Request) -> WebResponse:
             user_xid = int(payload["user_xid"])
             guild_xid = int(payload["guild_xid"])
             pin = payload["pin"]
-            services = ServicesRegistry()
             verified = await services.plays.verify_game_pin(
                 game_id=game_id,
                 user_xid=user_xid,
@@ -134,9 +152,6 @@ def game_record_embed(
     }
 
 
-class InvalidJsonResponseError(ValueError): ...
-
-
 def retry_if_not_unrecoverable(exc: BaseException) -> bool:
     return not isinstance(exc, aiohttp.ClientResponseError) or exc.status not in UNRECOVERABLE
 
@@ -172,12 +187,11 @@ async def post_with_retry(
 async def send_message(channel_xid: int, message: dict[str, Any]) -> dict[str, Any] | None:
     logger.info("Sending message to channel %s...", channel_xid)
     try:
-        async with aiohttp.ClientSession() as session:
-            return await post_with_retry(
-                session,
-                f"/channels/{channel_xid}/messages",
-                message,
-            )
+        return await post_with_retry(
+            get_http_session(),
+            f"/channels/{channel_xid}/messages",
+            message,
+        )
     except Exception as ex:
         logger.warning("Send message failure: %s", ex, exc_info=True)
     return None
@@ -191,13 +205,12 @@ async def update_message(
 ) -> dict[str, Any] | None:
     logger.info("Sending message to channel %s...", channel_xid)
     try:
-        async with aiohttp.ClientSession() as session:
-            return await post_with_retry(
-                session,
-                f"/channels/{channel_xid}/messages/{message_xid}",
-                message,
-                method="patch",
-            )
+        return await post_with_retry(
+            get_http_session(),
+            f"/channels/{channel_xid}/messages/{message_xid}",
+            message,
+            method="patch",
+        )
     except Exception as ex:
         logger.warning("Send message failure: %s", ex, exc_info=True)
     return None
@@ -210,12 +223,11 @@ async def delete_message(
 ) -> dict[str, Any] | None:
     logger.info("Deleting message in channel %s...", channel_xid)
     try:
-        async with aiohttp.ClientSession() as session:
-            return await post_with_retry(
-                session,
-                f"/channels/{channel_xid}/messages/{message_xid}",
-                method="delete",
-            )
+        return await post_with_retry(
+            get_http_session(),
+            f"/channels/{channel_xid}/messages/{message_xid}",
+            method="delete",
+        )
     except Exception as ex:
         logger.warning("Delete message failure: %s", ex, exc_info=True)
     return None
@@ -225,24 +237,24 @@ async def delete_message(
 async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
     logger.info("Beginning DM send to user %s...", user_xid)
     try:
-        async with aiohttp.ClientSession() as session:
-            # create dm channel
-            dm_channel = await post_with_retry(
-                session,
-                "/users/@me/channels",
-                {"recipient_id": user_xid},
-            )
-            logger.info("DM channel to user %s created", user_xid)
+        session = get_http_session()
+        # create dm channel
+        dm_channel = await post_with_retry(
+            session,
+            "/users/@me/channels",
+            {"recipient_id": user_xid},
+        )
+        logger.info("DM channel to user %s created", user_xid)
 
-            # then send message to dm channel
-            channel_xid = dm_channel["id"]
-            logger.info("Sending DM to user %s...", user_xid)
-            dm_message = await post_with_retry(
-                session,
-                f"/channels/{channel_xid}/messages",
-                message,
-            )
-            logger.info("Sent DM to user %s with response: %s", user_xid, json.dumps(dm_message))
+        # then send message to dm channel
+        channel_xid = dm_channel["id"]
+        logger.info("Sending DM to user %s...", user_xid)
+        dm_message = await post_with_retry(
+            session,
+            f"/channels/{channel_xid}/messages",
+            message,
+        )
+        logger.info("Sent DM to user %s with response: %s", user_xid, json.dumps(dm_message))
 
     except aiohttp.ClientResponseError as ex:
         if ex.status in UNRECOVERABLE:
@@ -251,7 +263,7 @@ async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
         logger.warning("Discord API failure: %s", ex, exc_info=True)
 
 
-async def resolve_user_xid(services: ServicesRegistry, value: Any) -> int | None:
+async def resolve_user_xid(value: Any) -> int | None:
     """Resolve a user xid from either an int, string int, or username."""
     if value is None:
         return None
@@ -270,7 +282,6 @@ async def resolve_user_xid(services: ServicesRegistry, value: Any) -> int | None
 async def game_record_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     async with db_session_manager():
-        services = ServicesRegistry()
         try:
             game_id = int(request.match_info["game"])
         except ValueError:
@@ -282,12 +293,12 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
         # Resolve tracker (required)
         if not payload.get("tracker"):
             return reply(error="Tracker ID is required", status=400)
-        tracker_xid = await resolve_user_xid(services, payload.get("tracker"))
+        tracker_xid = await resolve_user_xid(payload.get("tracker"))
         if tracker_xid is None:
             return reply(error="Tracker not found", status=400)
 
         # Resolve winner (optional)
-        winner_xid = await resolve_user_xid(services, payload.get("winner"))
+        winner_xid = await resolve_user_xid(payload.get("winner"))
 
         # Process players data
         players_data = payload.get("players", []) or []
@@ -300,7 +311,7 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
         for p in players_data:
             if "xid" not in p or "commander" not in p:
                 return reply(error="Invalid player data", status=400)
-            xid = await resolve_user_xid(services, p["xid"])
+            xid = await resolve_user_xid(p["xid"])
             if xid is None:
                 return reply(error=f"Player not found: {p['xid']}", status=400)
             player_xids.append(xid)
