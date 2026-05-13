@@ -113,11 +113,7 @@ packages = ["src/spellbot"]
 [tool.pyright]
 enableTypeIgnoreComments = true
 ignore = [".venv", "dist"]
-reportArgumentType = false
-reportAttributeAccessIssue = false
-reportCallIssue = false
 reportMatchNotExhaustive = true
-reportMissingImports = false
 reportMissingParameterType = true
 reportMissingTypeArgument = true
 reportUnnecessaryTypeIgnoreComment = "error"
