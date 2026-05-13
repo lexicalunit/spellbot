@@ -45,6 +45,7 @@ class TestModelUser:
             "updated_at": user1.updated_at,
             "name": user1.name,
             "banned": user1.banned,
+            "playgroup_user_id": None,
         }
 
         user2_data = user2.to_data()
@@ -55,6 +56,7 @@ class TestModelUser:
             "updated_at": user2.updated_at,
             "name": user2.name,
             "banned": user2.banned,
+            "playgroup_user_id": None,
         }
 
     async def test_pending_games(self, factories: Factories) -> None:

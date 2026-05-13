@@ -3,6 +3,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, NamedTuple
 
+from spellbot.settings import settings
+
 
 # Additional metadata related to supported game formats.
 class FormatDetails(NamedTuple):
@@ -93,10 +95,20 @@ class GameService(Enum):
         "https://edhlab.gg/",
         4,
     )
+    PLAYGROUP_LIVE = (
+        "Playgroup Live",
+        (
+            "_A {emoji}[Playgroup Live](https://playgroup.gg/) link will "
+            "be created when all players have joined._"
+        ),
+        "https://playgroup.gg/",
+        6,
+    )
 
 
 GAME_SERVICE_ORDER = [
     GameService.CONVOKE,
+    GameService.PLAYGROUP_LIVE,
     GameService.TABLE_STREAM,
     GameService.GIRUDO,
     GameService.EDHLAB,
@@ -108,6 +120,12 @@ GAME_SERVICE_ORDER = [
     GameService.TTS,
     GameService.NOT_ANY,
 ]
+
+
+def visible_game_services() -> list[GameService]:
+    if settings.PLAYGROUP_LIVE_API_KEY:
+        return GAME_SERVICE_ORDER
+    return [s for s in GAME_SERVICE_ORDER if s is not GameService.PLAYGROUP_LIVE]
 
 
 class GameFormat(Enum):
