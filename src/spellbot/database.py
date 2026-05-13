@@ -63,7 +63,7 @@ class TypedProxy[ProxiedObject](_CallableObjectProxyBase[ProxiedObject]):
     __wrapped__: ProxiedObject | None
 
     def __init__(self) -> None:
-        super().__init__(None)  # None is valid for lazy init
+        super().__init__(None)  # type: ignore  # None is valid for lazy init
 
     @classmethod
     def of_type(cls, _: type[ProxiedObject]) -> TypedProxy[ProxiedObject]:

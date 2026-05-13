@@ -61,7 +61,7 @@ class TestLookingForGameAction:
         assert await action.get_service(None) == GameService.X_MAGE.value
 
     async def test_get_service_fallback_default(self, action: LookingForGameAction) -> None:
-        action.channel_data.default_service = None
+        action.channel_data.default_service = None  # type: ignore
         assert await action.get_service(None) == GameService.CONVOKE.value
 
     async def test_get_format(self, action: LookingForGameAction) -> None:
@@ -72,7 +72,7 @@ class TestLookingForGameAction:
         assert await action.get_format(None) == GameFormat.PAUPER.value
 
     async def test_get_format_fallback_default(self, action: LookingForGameAction) -> None:
-        action.channel_data.default_format = None
+        action.channel_data.default_format = None  # type: ignore
         assert await action.get_format(None) == GameFormat.COMMANDER.value
 
     @pytest.mark.parametrize(
@@ -1162,8 +1162,8 @@ class TestLookingForGameAction:
         await action.execute_start()
 
         services.games.shrink_game.assert_called_once_with(game_data)
-        action.make_game_ready.assert_called_once()
-        call_args = action.make_game_ready.call_args
+        action.make_game_ready.assert_called_once()  # type: ignore
+        call_args = action.make_game_ready.call_args  # type: ignore
         assert call_args[0][0] == game_data
         assert set(call_args[1]["player_xids"]) == {100, 200}
         voice_stub.assert_called_once_with(game_data, action.interaction.guild_id)
@@ -1174,5 +1174,5 @@ class TestLookingForGameAction:
         self,
         action: LookingForGameAction,
     ) -> None:
-        action.channel_data.default_bracket = None
+        action.channel_data.default_bracket = None  # type: ignore
         assert await action.get_bracket(None, None) == GameBracket.NONE.value

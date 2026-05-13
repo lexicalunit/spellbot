@@ -42,7 +42,7 @@ class TestCogVerify:
     ) -> None:
         await run_command(cog.verify, interaction, target=target)
 
-        interaction.response.send_message.assert_called_once_with(
+        interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Verified <@{target.id}>.",
             ephemeral=True,
         )
@@ -53,10 +53,10 @@ class TestCogVerify:
         assert found.user_xid == target.id
         assert found.verified
 
-        interaction.response.send_message.reset_mock()
+        interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.unverify, interaction, target=target)
 
-        interaction.response.send_message.assert_called_once_with(
+        interaction.response.send_message.assert_called_once_with(  # type: ignore
             f"Unverified <@{target.id}>.",
             ephemeral=True,
         )

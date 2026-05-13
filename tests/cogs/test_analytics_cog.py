@@ -28,7 +28,7 @@ class TestCogAnalytics:
         cog = AdminCog(bot)
         await run_command(cog.analytics, interaction)
 
-        interaction.response.send_message.assert_called_once_with(
+        interaction.response.send_message.assert_called_once_with(  # type: ignore
             embed=ANY,
             ephemeral=True,
         )

@@ -98,7 +98,7 @@ async def analytics_endpoint(request: web.Request) -> WebResponse:
         return WebResponse(status=403, text="Invalid or expired link.")
 
     async def get_guild_name() -> str | None:
-        result = await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))
+        result = await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
         guild = result.scalar_one_or_none()
         return guild.name if guild else None
 

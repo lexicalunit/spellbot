@@ -40,7 +40,7 @@ async def upsert(guild: discord.Guild) -> GuildData | None:
         }
         upsert = insert(Guild).values(**values)
         upsert = upsert.on_conflict_do_update(
-            index_elements=[Guild.xid],
+            index_elements=[Guild.xid],  # type: ignore
             index_where=Guild.xid == values["xid"],
             set_={
                 "name": upsert.excluded.name,
@@ -53,7 +53,7 @@ async def upsert(guild: discord.Guild) -> GuildData | None:
         guild_cache[guild.id] = name
 
     result = (
-        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild.id))
+        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild.id))  # type: ignore
     ).scalar_one_or_none()
     return await result.to_data() if guild else None
 
@@ -68,7 +68,7 @@ async def set_banned(guild_xid: int, banned: bool) -> None:
     }
     upsert = insert(Guild).values(**values)
     upsert = upsert.on_conflict_do_update(
-        index_elements=[Guild.xid],
+        index_elements=[Guild.xid],  # type: ignore
         index_where=Guild.xid == values["xid"],
         set_={
             "updated_at": upsert.excluded.updated_at,
@@ -82,7 +82,7 @@ async def set_banned(guild_xid: int, banned: bool) -> None:
 async def get(guild_xid: int) -> GuildData | None:
     """Fetch the guild data for the given guild xid."""
     guild = (
-        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))
+        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
     ).scalar_one_or_none()
     return await guild.to_data() if guild else None
 
@@ -94,7 +94,7 @@ async def set_suggest_vc_category(
     """Set the suggested voice channel category prefix for the guild."""
     stmt = (
         update(Guild)
-        .where(Guild.xid == guild_data.xid)
+        .where(Guild.xid == guild_data.xid)  # type: ignore
         .values(suggest_voice_category=category)
         .returning(Guild)
     )
@@ -106,7 +106,7 @@ async def set_suggest_vc_category(
 async def set_motd(guild_data: GuildData, message: str | None = None) -> GuildData:
     """Set the message of the day for the guild."""
     motd = message[: Guild.motd.property.columns[0].type.length] if message else ""
-    stmt = update(Guild).where(Guild.xid == guild_data.xid).values(motd=motd).returning(Guild)
+    stmt = update(Guild).where(Guild.xid == guild_data.xid).values(motd=motd).returning(Guild)  # type: ignore
     updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     await DatabaseSession.commit()
     return await updated_guild.to_data()
@@ -117,7 +117,7 @@ async def toggle_show_links(guild_data: GuildData) -> GuildData:
     new_value = not guild_data.show_links
     stmt = (
         update(Guild)
-        .where(Guild.xid == guild_data.xid)
+        .where(Guild.xid == guild_data.xid)  # type: ignore
         .values(show_links=new_value)
         .returning(Guild)
     )
@@ -132,7 +132,7 @@ async def toggle_voice_create(guild_data: GuildData) -> GuildData:
     values: dict[str, bool | None] = {"voice_create": new_value}
     if new_value:
         values["suggest_voice_category"] = None
-    stmt = update(Guild).where(Guild.xid == guild_data.xid).values(**values).returning(Guild)
+    stmt = update(Guild).where(Guild.xid == guild_data.xid).values(**values).returning(Guild)  # type: ignore
     updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     await DatabaseSession.commit()
     return await updated_guild.to_data()
@@ -143,7 +143,7 @@ async def toggle_use_max_bitrate(guild_data: GuildData) -> GuildData:
     new_value = not guild_data.use_max_bitrate
     stmt = (
         update(Guild)
-        .where(Guild.xid == guild_data.xid)
+        .where(Guild.xid == guild_data.xid)  # type: ignore
         .values(use_max_bitrate=new_value)
         .returning(Guild)
     )
@@ -168,7 +168,7 @@ async def voiced() -> list[int]:
     """Return guild xids that have voice channel creation enabled."""
     rows = (
         await DatabaseSession.execute(
-            select(Guild.xid).where(Guild.voice_create.is_(True)),
+            select(Guild.xid).where(Guild.voice_create.is_(True)),  # type: ignore
         )
     ).all()
     if not rows:
@@ -232,7 +232,7 @@ async def setup_mythic_track(guild_data: GuildData) -> GuildData:
     new_value = not guild_data.enable_mythic_track
     stmt = (
         update(Guild)
-        .where(Guild.xid == guild_data.xid)
+        .where(Guild.xid == guild_data.xid)  # type: ignore
         .values(enable_mythic_track=new_value)
         .returning(Guild)
     )

@@ -95,8 +95,8 @@ def get_last_send_message(
 ) -> dict[str, Any] | list[dict[str, Any]] | Any:
     """Get the last send_message call's kwargs from an interaction."""
     send_message = interaction.response.send_message
-    send_message.assert_called_once()
-    send_message_call = send_message.call_args_list[0]
+    send_message.assert_called_once()  # type: ignore
+    send_message_call = send_message.call_args_list[0]  # type: ignore
     actual = send_message_call.kwargs[kwarg]
     if kwarg == "embed":
         actual = actual.to_dict()
@@ -125,8 +125,8 @@ def get_last_edit_message(
 ) -> dict[str, Any] | list[dict[str, Any]] | Any:
     """Get the last edit_original_response call's kwargs from an interaction."""
     edit_message = interaction.edit_original_response
-    edit_message.assert_called_once()
-    edit_message_call = edit_message.call_args_list[0]
+    edit_message.assert_called_once()  # type: ignore
+    edit_message_call = edit_message.call_args_list[0]  # type: ignore
     actual = edit_message_call.kwargs[kwarg]
     if kwarg == "embed":
         actual = actual.to_dict()
@@ -198,20 +198,20 @@ async def session_context(
 
         _truncate_all()
 
-        BlockFactory._meta.sqlalchemy_session = sync_session
-        ChannelFactory._meta.sqlalchemy_session = sync_session
-        GameFactory._meta.sqlalchemy_session = sync_session
-        GuildAwardFactory._meta.sqlalchemy_session = sync_session
-        GuildFactory._meta.sqlalchemy_session = sync_session
-        GuildMemberFactory._meta.sqlalchemy_session = sync_session
-        PlayFactory._meta.sqlalchemy_session = sync_session
-        PostFactory._meta.sqlalchemy_session = sync_session
-        QueueFactory._meta.sqlalchemy_session = sync_session
-        TokenFactory._meta.sqlalchemy_session = sync_session
-        UserAwardFactory._meta.sqlalchemy_session = sync_session
-        UserFactory._meta.sqlalchemy_session = sync_session
-        VerifyFactory._meta.sqlalchemy_session = sync_session
-        WatchFactory._meta.sqlalchemy_session = sync_session
+        BlockFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        ChannelFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        GameFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        GuildAwardFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        GuildFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        GuildMemberFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        PlayFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        PostFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        QueueFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        TokenFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        UserAwardFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        UserFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        VerifyFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        WatchFactory._meta.sqlalchemy_session = sync_session  # type: ignore
 
         def cleanup_session() -> None:
             async def finalizer() -> None:
@@ -305,7 +305,7 @@ def channel(interaction: discord.Interaction, add_channel: Callable[..., Channel
     """Create a database Channel that matches the interaction's channel."""
     assert interaction.channel is not None
     assert hasattr(interaction.channel, "name")
-    channel_name = interaction.channel.name
+    channel_name = interaction.channel.name  # type: ignore
     return add_channel(xid=interaction.channel_id, name=channel_name)
 
 

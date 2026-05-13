@@ -89,15 +89,15 @@ class GuildAward(Base):
         from spellbot.data import GuildAwardData  # allow_inline
 
         return GuildAwardData(
-            id=self.id,
-            guild_xid=self.guild_xid,
-            count=self.count,
-            repeating=self.repeating,
-            remove=self.remove,
-            role=self.role,
-            message=self.message,
-            verified_only=self.verified_only,
-            unverified_only=self.unverified_only,
+            id=self.id,  # type: ignore
+            guild_xid=self.guild_xid,  # type: ignore
+            count=self.count,  # type: ignore
+            repeating=self.repeating,  # type: ignore
+            remove=self.remove,  # type: ignore
+            role=self.role,  # type: ignore
+            message=self.message,  # type: ignore
+            verified_only=self.verified_only,  # type: ignore
+            unverified_only=self.unverified_only,  # type: ignore
         )
 
 
@@ -126,7 +126,7 @@ class UserAward(Base):
         from spellbot.data import UserAwardData  # allow_inline
 
         return UserAwardData(
-            user_xid=self.user_xid,
-            guild_xid=self.guild_xid,
-            guild_award_id=self.guild_award_id,
+            user_xid=self.user_xid,  # type: ignore
+            guild_xid=self.guild_xid,  # type: ignore
+            guild_award_id=self.guild_award_id,  # type: ignore
         )

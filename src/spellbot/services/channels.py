@@ -42,7 +42,7 @@ async def upsert(channel: MessageableChannel) -> ChannelData:
         }
         upsert = insert(Channel).values(**values)
         upsert = upsert.on_conflict_do_update(
-            index_elements=[Channel.xid],
+            index_elements=[Channel.xid],  # type: ignore
             index_where=Channel.xid == values["xid"],
             set_={
                 "name": upsert.excluded.name,
@@ -55,7 +55,7 @@ async def upsert(channel: MessageableChannel) -> ChannelData:
         channel_cache[channel.id] = name
 
     result = await DatabaseSession.execute(
-        sa_select(Channel).where(Channel.xid == channel.id),
+        sa_select(Channel).where(Channel.xid == channel.id),  # type: ignore
     )
     db_channel = result.scalar_one()
     return db_channel.to_data()
@@ -64,14 +64,14 @@ async def upsert(channel: MessageableChannel) -> ChannelData:
 async def forget(xid: int) -> None:
     """Delete the channel with the given xid from the database."""
     await DatabaseSession.execute(
-        delete(Channel).where(Channel.xid == xid).execution_options(synchronize_session=False),
+        delete(Channel).where(Channel.xid == xid).execution_options(synchronize_session=False),  # type: ignore
     )
     channel_cache.pop(xid, None)
 
 
 async def select(xid: int) -> ChannelData | None:
     """Fetch the channel data for the given xid."""
-    result = await DatabaseSession.execute(sa_select(Channel).where(Channel.xid == xid))
+    result = await DatabaseSession.execute(sa_select(Channel).where(Channel.xid == xid))  # type: ignore
     channel = result.scalar_one_or_none()
     return channel.to_data() if channel else None
 
@@ -80,7 +80,7 @@ async def _set_column(xid: int, **values: object) -> None:
     """Update the given columns on the channel with the given xid."""
     query = (
         update(Channel)
-        .where(Channel.xid == xid)
+        .where(Channel.xid == xid)  # type: ignore
         .values(**values)
         .execution_options(synchronize_session=False)
     )

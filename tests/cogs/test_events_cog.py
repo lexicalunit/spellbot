@@ -155,7 +155,7 @@ class TestCogEvents:
         user_2 = factories.user.create()
         discord_user_1 = mock_discord_object(user_1)
         discord_user_2 = mock_discord_object(user_2)
-        guild.voice_create = True
+        guild.voice_create = True  # type: ignore
         await DatabaseSession.commit()
         channel = factories.channel.create(guild=guild, voice_invite=True)
         message.channel.id = channel.xid

@@ -68,11 +68,11 @@ class Token(Base):
         from spellbot.data import TokenData  # allow_inline
 
         return TokenData(
-            id=self.id,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            deleted_at=self.deleted_at,
-            key=self.key,
-            note=self.note,
-            scopes=self.scopes,
+            id=self.id,  # type: ignore
+            created_at=self.created_at,  # type: ignore
+            updated_at=self.updated_at,  # type: ignore
+            deleted_at=self.deleted_at,  # type: ignore
+            key=self.key,  # type: ignore
+            note=self.note,  # type: ignore
+            scopes=self.scopes,  # type: ignore
         )

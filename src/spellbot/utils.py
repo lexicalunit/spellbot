@@ -213,7 +213,7 @@ def is_admin(interaction: discord.Interaction) -> bool:
         return True
     if not hasattr(interaction.user, "roles"):
         raise AdminOnlyError
-    author_roles = interaction.user.roles
+    author_roles = interaction.user.roles  # type: ignore
     has_admin_role = any(
         role.name == settings.ADMIN_ROLE for role in cast("list[discord.Role]", author_roles)
     )
@@ -256,7 +256,7 @@ def user_can_moderate(
     member: discord.Member = cast("discord.Member", author)
     if (perms := safe_permissions_for(channel, member)) and perms.administrator:
         return True
-    author_roles = author.roles
+    author_roles = author.roles  # type: ignore
     return any(
         role.name == settings.ADMIN_ROLE or role.name.startswith(settings.MOD_PREFIX)
         for role in cast("list[discord.Role]", author_roles)
@@ -299,7 +299,7 @@ class suppress(AbstractContextManager[None]):
         if captured := exctype is not None and issubclass(exctype, self._exceptions):
             log_warning(self._log, exc_info=True, **self._kwargs)
             if span := tracer.current_span():  # pragma: no cover
-                span.set_exc_info(exctype, excinst, exctb)
+                span.set_exc_info(exctype, excinst, exctb)  # type: ignore
             if root := tracer.current_root_span():  # pragma: no cover
                 root.set_tags(
                     {

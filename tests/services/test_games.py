@@ -26,7 +26,7 @@ pytestmark = pytest.mark.use_db
 @pytest.mark.asyncio
 class TestServiceGames:
     async def test_games_get(self, game: Game) -> None:
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         assert game_data.id == game.id
         assert await games.get(404) is None
@@ -52,7 +52,7 @@ class TestServiceGames:
         PostFactory.create(guild=game.guild, channel=game.channel, game=game)
         user = UserFactory.create()
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         updated_game_data = await games.add_player(game_data, user.xid)
 
@@ -78,9 +78,9 @@ class TestServiceGames:
         assert private_embed is not None
 
     async def test_games_add_post(self, game: Game) -> None:
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
-        updated_data = await games.add_post(game_data, game.guild_xid, game.channel_xid, 12345)
+        updated_data = await games.add_post(game_data, game.guild_xid, game.channel_xid, 12345)  # type: ignore
 
         # Verify the post was added to game_data
         assert any(p.message_xid == 12345 for p in updated_data.posts)
@@ -92,12 +92,12 @@ class TestServiceGames:
 
     async def test_games_add_post_conflict(self, game: Game) -> None:
         PostFactory.create(guild=game.guild, channel=game.channel, game=game, message_xid=22345)
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         existing_count = len(game_data.posts)
 
         # Re-adding the same post should be a no-op (on_conflict_do_nothing returns None)
-        result = await games.add_post(game_data, game.guild_xid, game.channel_xid, 22345)
+        result = await games.add_post(game_data, game.guild_xid, game.channel_xid, 22345)  # type: ignore
         assert len(result.posts) == existing_count
 
     async def test_games_fully_seated(self, guild: Guild, channel: Channel) -> None:
@@ -117,7 +117,7 @@ class TestServiceGames:
         assert not pending_game_data.fully_seated
 
     async def test_games_make_ready(self, game: Game) -> None:
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         await games.make_ready(game_data, "http://link", "whatever", pins=[])
 
@@ -133,7 +133,7 @@ class TestServiceGames:
         UserFactory.create(game=game)
         assert game.seats == 4
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         await games.shrink_game(game_data)
 
@@ -146,7 +146,7 @@ class TestServiceGames:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         player_xids = {p.xid for p in game_data.players}
         assert player_xids == {user1.xid, user2.xid}
@@ -158,14 +158,14 @@ class TestServiceGames:
         watch = WatchFactory.create(guild_xid=game.guild.xid, user_xid=user1.xid)
 
         DatabaseSession.expire_all()
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         assert await games.watch_notes(game_data, [user1.xid, user2.xid, user3.xid]) == {
             user1.xid: watch.note,
         }
 
     async def test_games_set_voice(self, game: Game) -> None:
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         await games.set_voice(game_data, voice_xid=12345)
 
@@ -175,7 +175,7 @@ class TestServiceGames:
         assert found.voice_xid == 12345
 
     async def test_games_set_voice_with_link(self, game: Game) -> None:
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         await games.set_voice(game_data, voice_xid=12345, voice_invite_link="http://link")
 
@@ -186,7 +186,7 @@ class TestServiceGames:
         assert found.voice_invite_link == "http://link"
 
     async def test_message_xids(self, game: Game) -> None:
-        assert await games.message_xids([game.id]) == [game.posts[0].message_xid]
+        assert await games.message_xids([game.id]) == [game.posts[0].message_xid]  # type: ignore
 
     async def test_dequeue_players(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
@@ -201,7 +201,7 @@ class TestServiceGames:
     async def test_player_convoke_data(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
-        result = await games.player_convoke_data(game.id)
+        result = await games.player_convoke_data(game.id)  # type: ignore
         expected = [
             {"xid": user1.xid, "name": user1.name},
             {"xid": user2.xid, "name": user2.name},
@@ -269,7 +269,7 @@ class TestServiceGamesBlocked:
 
         BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         assert await games.blocked(game_data, user2.xid)
 
@@ -279,7 +279,7 @@ class TestServiceGamesBlocked:
 
         BlockFactory.create(user_xid=user2.xid, blocked_user_xid=user1.xid)
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         assert await games.blocked(game_data, user2.xid)
 
@@ -287,7 +287,7 @@ class TestServiceGamesBlocked:
         UserFactory.create(game=game)
         user3 = UserFactory.create()
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         assert not await games.blocked(game_data, user3.xid)
 
@@ -298,7 +298,7 @@ class TestServiceGamesUpsert:
         new, game_data = await games.upsert(
             guild_xid=game.guild.xid,
             channel_xid=game.channel.xid,
-            author_xid=user.xid,
+            author_xid=user.xid,  # type: ignore
             friends=[],
             seats=4,
             rules=None,
@@ -353,7 +353,7 @@ class TestServiceGamesUpsert:
         new, game_data = await games.upsert(
             guild_xid=guild.xid,
             channel_xid=channel.xid,
-            author_xid=user.xid,
+            author_xid=user.xid,  # type: ignore
             friends=[],
             seats=4,
             rules=None,
