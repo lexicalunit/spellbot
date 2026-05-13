@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 import discord
 from discord.embeds import Embed
 
+from spellbot import services
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Channel, GuildAward
 from spellbot.operations import (
@@ -87,7 +88,7 @@ class AdminAction(BaseAction):
         for channel in sorted(guild.channels, key=lambda c: c.xid):
             discord_channel = await safe_fetch_text_channel(self.bot, guild.xid, channel.xid)
             if not discord_channel:
-                await self.services.channels.forget(channel.xid)
+                await services.channels.forget(channel.xid)
                 continue
 
             channel_settings: dict[str, Any] = {}
@@ -211,7 +212,7 @@ class AdminAction(BaseAction):
             await safe_send_channel(self.interaction, "Invalid ID.", ephemeral=True)
             return
 
-        await self.services.channels.forget(channel_xid)
+        await services.channels.forget(channel_xid)
         await safe_send_channel(self.interaction, "Done.", ephemeral=True)
 
     async def info(self, game_id: str) -> None:
@@ -221,7 +222,7 @@ class AdminAction(BaseAction):
             return await self.report_failure()
         game_id_int = int(numeric_string)
 
-        found = await self.services.games.get(game_id_int)
+        found = await services.games.get(game_id_int)
         if not found:
             return await self.report_failure()
 
@@ -242,7 +243,7 @@ class AdminAction(BaseAction):
     async def setup_mythic_track(self) -> None:
         assert self.guild is not None
         assert self.guild_data is not None
-        self.guild_data = await self.services.guilds.setup_mythic_track(self.guild_data)
+        self.guild_data = await services.guilds.setup_mythic_track(self.guild_data)
         embed = Embed(title=f"Mythic Track Setup for {self.guild.name}")
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.color = discord.Color(settings.INFO_EMBED_COLOR)
@@ -315,7 +316,7 @@ class AdminAction(BaseAction):
             return
 
         assert self.guild_data is not None
-        award = await self.services.guilds.award_add(
+        award = await services.guilds.award_add(
             self.guild_data.xid,
             count,
             role,
@@ -336,7 +337,7 @@ class AdminAction(BaseAction):
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
     async def award_delete(self, guild_award_id: int) -> None:
-        await self.services.guilds.award_delete(guild_award_id)
+        await services.guilds.award_delete(guild_award_id)
         embed = Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         embed.set_author(name="Award deleted!")
@@ -359,7 +360,7 @@ class AdminAction(BaseAction):
             )
             return
 
-        self.guild_data = await self.services.guilds.set_suggest_vc_category(
+        self.guild_data = await services.guilds.set_suggest_vc_category(
             self.guild_data,
             category,
         )
@@ -371,7 +372,7 @@ class AdminAction(BaseAction):
 
     async def set_motd(self, message: str | None = None) -> None:
         assert self.guild_data
-        await self.services.guilds.set_motd(self.guild_data, message)
+        await services.guilds.set_motd(self.guild_data, message)
         await safe_send_channel(self.interaction, "Message of the day updated.", ephemeral=True)
 
     async def refresh_setup(self) -> None:
@@ -381,28 +382,28 @@ class AdminAction(BaseAction):
 
     async def toggle_show_links(self) -> None:
         assert self.guild_data is not None
-        self.guild_data = await self.services.guilds.toggle_show_links(self.guild_data)
+        self.guild_data = await services.guilds.toggle_show_links(self.guild_data)
         embed = await self.build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_voice_create(self) -> None:
         assert self.guild_data is not None
-        self.guild_data = await self.services.guilds.toggle_voice_create(self.guild_data)
+        self.guild_data = await services.guilds.toggle_voice_create(self.guild_data)
         embed = await self.build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_use_max_bitrate(self) -> None:
         assert self.guild_data is not None
-        self.guild_data = await self.services.guilds.toggle_use_max_bitrate(self.guild_data)
+        self.guild_data = await services.guilds.toggle_use_max_bitrate(self.guild_data)
         embed = await self.build_setup_embed()
         view = SetupView(self.bot)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def set_default_seats(self, seats: int) -> None:
         assert self.interaction.channel_id is not None
-        await self.services.channels.set_default_seats(self.interaction.channel_id, seats)
+        await services.channels.set_default_seats(self.interaction.channel_id, seats)
         await safe_send_channel(
             self.interaction,
             f"Default seats set to {seats} for this channel.",
@@ -411,7 +412,7 @@ class AdminAction(BaseAction):
 
     async def set_default_format(self, format: int) -> None:
         assert self.interaction.channel_id is not None
-        await self.services.channels.set_default_format(self.interaction.channel_id, format)
+        await services.channels.set_default_format(self.interaction.channel_id, format)
         await safe_send_channel(
             self.interaction,
             f"Default format set to {GameFormat(format)} for this channel.",
@@ -420,7 +421,7 @@ class AdminAction(BaseAction):
 
     async def set_default_bracket(self, bracket: int) -> None:
         assert self.interaction.channel_id is not None
-        await self.services.channels.set_default_bracket(self.interaction.channel_id, bracket)
+        await services.channels.set_default_bracket(self.interaction.channel_id, bracket)
         await safe_send_channel(
             self.interaction,
             f"Default bracket set to {GameBracket(bracket)} for this channel.",
@@ -429,7 +430,7 @@ class AdminAction(BaseAction):
 
     async def set_default_service(self, service: int) -> None:
         assert self.interaction.channel_id is not None
-        await self.services.channels.set_default_service(self.interaction.channel_id, service)
+        await services.channels.set_default_service(self.interaction.channel_id, service)
         await safe_send_channel(
             self.interaction,
             f"Default service set to {GameService(service)} for this channel.",
@@ -438,7 +439,7 @@ class AdminAction(BaseAction):
 
     async def set_auto_verify(self, setting: bool) -> None:
         assert self.interaction.channel_id is not None
-        await self.services.channels.set_auto_verify(self.interaction.channel_id, setting)
+        await services.channels.set_auto_verify(self.interaction.channel_id, setting)
         await safe_send_channel(
             self.interaction,
             f"Auto verification set to {setting} for this channel.",
@@ -447,7 +448,7 @@ class AdminAction(BaseAction):
 
     async def set_verified_only(self, setting: bool) -> None:
         assert self.interaction.channel_id is not None
-        await self.services.channels.set_verified_only(self.interaction.channel_id, setting)
+        await services.channels.set_verified_only(self.interaction.channel_id, setting)
         await safe_send_channel(
             self.interaction,
             f"Verified only set to {setting} for this channel.",
@@ -456,7 +457,7 @@ class AdminAction(BaseAction):
 
     async def set_unverified_only(self, setting: bool) -> None:
         assert self.interaction.channel_id is not None
-        await self.services.channels.set_unverified_only(self.interaction.channel_id, setting)
+        await services.channels.set_unverified_only(self.interaction.channel_id, setting)
         await safe_send_channel(
             self.interaction,
             f"Unverified only set to {setting} for this channel.",
@@ -465,7 +466,7 @@ class AdminAction(BaseAction):
 
     async def set_channel_motd(self, message: str | None = None) -> None:
         assert self.interaction.channel_id is not None
-        setting = await self.services.channels.set_motd(self.interaction.channel_id, message)
+        setting = await services.channels.set_motd(self.interaction.channel_id, message)
         await safe_send_channel(
             self.interaction,
             f"Message of the day for this channel has been set to: {setting}",
@@ -474,7 +475,7 @@ class AdminAction(BaseAction):
 
     async def set_channel_extra(self, message: str | None = None) -> None:
         assert self.interaction.channel_id is not None
-        setting = await self.services.channels.set_extra(self.interaction.channel_id, message)
+        setting = await services.channels.set_extra(self.interaction.channel_id, message)
         await safe_send_channel(
             self.interaction,
             f"Extra message for this channel has been set to: {setting}",
@@ -483,7 +484,7 @@ class AdminAction(BaseAction):
 
     async def set_voice_category(self, value: str) -> None:
         assert self.interaction.channel_id is not None
-        setting = await self.services.channels.set_voice_category(
+        setting = await services.channels.set_voice_category(
             self.interaction.channel_id,
             value,
         )
@@ -495,7 +496,7 @@ class AdminAction(BaseAction):
 
     async def set_delete_expired(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
-        setting = await self.services.channels.set_delete_expired(
+        setting = await services.channels.set_delete_expired(
             self.interaction.channel_id,
             value,
         )
@@ -507,7 +508,7 @@ class AdminAction(BaseAction):
 
     async def set_blind_games(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
-        setting = await self.services.channels.set_blind_games(self.interaction.channel_id, value)
+        setting = await services.channels.set_blind_games(self.interaction.channel_id, value)
         await safe_send_channel(
             self.interaction,
             f"Hidden player names for this channel has been set to: {setting}",
@@ -516,7 +517,7 @@ class AdminAction(BaseAction):
 
     async def set_voice_invite(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
-        setting = await self.services.channels.set_voice_invite(self.interaction.channel_id, value)
+        setting = await services.channels.set_voice_invite(self.interaction.channel_id, value)
         await safe_send_channel(
             self.interaction,
             f"Voice invite setting for this channel has been set to: {setting}",
@@ -529,7 +530,7 @@ class AdminAction(BaseAction):
         from_user_xid: int,
         to_user_xid: int,
     ) -> None:  # pragma: no cover
-        if error := await self.services.users.move_user(guild_xid, from_user_xid, to_user_xid):
+        if error := await services.users.move_user(guild_xid, from_user_xid, to_user_xid):
             await safe_send_channel(self.interaction, f"Error: {error}", ephemeral=True)
             return
         await safe_send_channel(
@@ -540,13 +541,13 @@ class AdminAction(BaseAction):
 
     async def expire_games(self, guild_xid: int) -> None:
         results = []
-        games = await self.services.games.inactive_games(guild_xid)
+        games = await services.games.inactive_games(guild_xid)
 
         batch = 0
         for game in games:
             game_id = game.id
             results.append(f"Expiring game #SB{game_id} ...")
-            dequeued = await self.services.games.delete_games([game_id])
+            dequeued = await services.games.delete_games([game_id])
             results.append(f"├── Dequeued {dequeued} players")
 
             for post_data in game.posts:
@@ -564,7 +565,7 @@ class AdminAction(BaseAction):
                     results.append(f"├── Could not find message {message_xid}")
                     continue
 
-                channel_data = await self.services.channels.select(channel_xid)
+                channel_data = await services.channels.select(channel_xid)
                 if not dequeued or (channel_data and channel_data.delete_expired):
                     results.append(f"├── Deleting message {message_xid} ...")
                     if not await safe_delete_message(post):
@@ -600,17 +601,17 @@ class AdminAction(BaseAction):
         target_xid = target.id
 
         # Fetch all user stats
-        games_count = await self.services.users.games_played_count(
+        games_count = await services.users.games_played_count(
             target_xid,
             self.interaction.guild_id,
         )
-        blocked_by_count = await self.services.users.blocked_by_count(target_xid)
-        watch_note = await self.services.users.is_watched(target_xid, self.interaction.guild_id)
-        verified_status = await self.services.users.is_verified(
+        blocked_by_count = await services.users.blocked_by_count(target_xid)
+        watch_note = await services.users.is_watched(target_xid, self.interaction.guild_id)
+        verified_status = await services.users.is_verified(
             target_xid,
             self.interaction.guild_id,
         )
-        first_play, last_play = await self.services.users.play_date_range(
+        first_play, last_play = await services.users.play_date_range(
             target_xid,
             self.interaction.guild_id,
         )

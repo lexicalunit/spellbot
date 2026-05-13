@@ -3,8 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, cast
 
-from redis import asyncio as aioredis
-
+from spellbot.redis_client import get_redis
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
@@ -30,20 +29,16 @@ async def rate_limited(request: web.Request, key: str | None = None) -> bool:
     if not settings.REDIS_URL:
         return False
 
-    redis = await aioredis.from_url(settings.REDIS_URL)
     ip = request.remote
     key = key or f"rate_limit:{ip}"
 
     try:
+        redis = await get_redis()
         resp = await cast(
             "Awaitable[str]",
             redis.eval(RATE_LIMIT_SCRIPT, 1, key, str(TIME_WINDOW)),
         )
-        count = int(resp)
     except Exception:
         logger.warning("redis error in rate limiter", exc_info=True)
         return False
-    else:
-        return count > RATE_LIMIT
-    finally:
-        await redis.aclose()
+    return int(resp) > RATE_LIMIT

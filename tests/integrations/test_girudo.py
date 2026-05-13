@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(autouse=True)
-def reset_girudo_state() -> Generator[None, None, None]:
+def reset_girudo_state() -> Generator[None]:
     """Reset module-level state between tests."""
     # Store original values
     original_formats = girudo.GIRUDO_FORMATS_CACHE

@@ -1,16 +1,31 @@
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import pytest_asyncio
 
+from spellbot import redis_client
+from spellbot.redis_client import close_redis
+from spellbot.settings import settings
 from spellbot.shard_status import (
     SHARD_STATUS_PREFIX,
     ShardStatus,
     get_all_shard_statuses,
     update_shard_status,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def reset_redis_client() -> AsyncGenerator[None]:
+    redis_client._redis_client = None
+    yield
+    await close_redis()
 
 
 class TestShardStatus:
@@ -92,20 +107,18 @@ class TestUpdateShardStatus:
         bot.guilds = [mock_guild]
 
         with (
-            patch("spellbot.shard_status.settings") as mock_settings,
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch(
-                "spellbot.shard_status.aioredis.from_url",
+                "spellbot.redis_client.aioredis.from_url",
                 new_callable=AsyncMock,
             ) as mock_from_url,
         ):
-            mock_settings.REDIS_URL = "redis://localhost"
             mock_from_url.return_value = mock_redis
 
             await update_shard_status(bot)
 
             # Verify Redis was called
             assert mock_redis.set.call_count == 2  # One for shard, one for metadata
-            mock_redis.aclose.assert_called_once()
 
     async def test_update_shard_status_with_null_latency(self) -> None:
         """Test that update_shard_status handles null latency."""
@@ -129,13 +142,12 @@ class TestUpdateShardStatus:
         bot.guilds = [mock_guild]
 
         with (
-            patch("spellbot.shard_status.settings") as mock_settings,
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch(
-                "spellbot.shard_status.aioredis.from_url",
+                "spellbot.redis_client.aioredis.from_url",
                 new_callable=AsyncMock,
             ) as mock_from_url,
         ):
-            mock_settings.REDIS_URL = "redis://localhost"
             mock_from_url.return_value = mock_redis
 
             await update_shard_status(bot)
@@ -169,13 +181,12 @@ class TestUpdateShardStatus:
         bot.guilds = [mock_guild]
 
         with (
-            patch("spellbot.shard_status.settings") as mock_settings,
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch(
-                "spellbot.shard_status.aioredis.from_url",
+                "spellbot.redis_client.aioredis.from_url",
                 new_callable=AsyncMock,
             ) as mock_from_url,
         ):
-            mock_settings.REDIS_URL = "redis://localhost"
             mock_from_url.return_value = mock_redis
 
             await update_shard_status(bot)
@@ -209,13 +220,12 @@ class TestUpdateShardStatus:
         bot.guilds = [mock_guild]
 
         with (
-            patch("spellbot.shard_status.settings") as mock_settings,
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch(
-                "spellbot.shard_status.aioredis.from_url",
+                "spellbot.redis_client.aioredis.from_url",
                 new_callable=AsyncMock,
             ) as mock_from_url,
         ):
-            mock_settings.REDIS_URL = "redis://localhost"
             mock_from_url.return_value = mock_redis
 
             await update_shard_status(bot)
@@ -246,14 +256,13 @@ class TestUpdateShardStatus:
         bot.guilds = [mock_guild]
 
         with (
-            patch("spellbot.shard_status.settings") as mock_settings,
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch(
-                "spellbot.shard_status.aioredis.from_url",
+                "spellbot.redis_client.aioredis.from_url",
                 new_callable=AsyncMock,
             ) as mock_from_url,
             patch("spellbot.shard_status.__version__", "1.0.0"),
         ):
-            mock_settings.REDIS_URL = "redis://localhost"
             mock_from_url.return_value = mock_redis
 
             await update_shard_status(bot)
@@ -272,25 +281,47 @@ class TestUpdateShardStatus:
         bot.ready_shards = {0}
 
         with (
-            patch("spellbot.shard_status.settings") as mock_settings,
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch(
-                "spellbot.shard_status.aioredis.from_url",
+                "spellbot.redis_client.aioredis.from_url",
                 new_callable=AsyncMock,
             ) as mock_from_url,
         ):
-            mock_settings.REDIS_URL = "redis://localhost"
             mock_from_url.side_effect = Exception("Redis connection failed")
 
             # Should not raise
             await update_shard_status(bot)
+
+    async def test_update_shard_status_reuses_client(self) -> None:
+        """Repeated calls share a single Redis client (from_url called once)."""
+        mock_redis = AsyncMock()
+        mock_redis.set = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=None)
+        mock_shard = MagicMock()
+        mock_shard.latency = 0.045
+        mock_shard.is_closed.return_value = False
+        bot = MagicMock()
+        bot.shard_count = 1
+        bot.shards = {0: mock_shard}
+        bot.ready_shards = {0}
+        bot.get_shard.return_value = mock_shard
+        bot.guilds = []
+
+        from_url = AsyncMock(return_value=mock_redis)
+        with (
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
+            patch("spellbot.redis_client.aioredis.from_url", from_url),
+        ):
+            await update_shard_status(bot)
+            await update_shard_status(bot)
+            assert from_url.call_count == 1
 
 
 @pytest.mark.asyncio
 class TestGetAllShardStatuses:
     async def test_get_all_shard_statuses_no_redis(self) -> None:
         """Test that get_all_shard_statuses returns empty when Redis is not configured."""
-        with patch("spellbot.shard_status.settings") as mock_settings:
-            mock_settings.REDIS_URL = None
+        with patch.object(settings, "REDIS_URL", None):
             statuses, metadata = await get_all_shard_statuses()
             assert statuses == []
             assert metadata is None
@@ -323,13 +354,12 @@ class TestGetAllShardStatuses:
         mock_redis.aclose = AsyncMock()
 
         with (
-            patch("spellbot.shard_status.settings") as mock_settings,
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch(
-                "spellbot.shard_status.aioredis.from_url",
+                "spellbot.redis_client.aioredis.from_url",
                 new_callable=AsyncMock,
             ) as mock_from_url,
         ):
-            mock_settings.REDIS_URL = "redis://localhost"
             mock_from_url.return_value = mock_redis
 
             statuses, meta = await get_all_shard_statuses()
@@ -360,13 +390,12 @@ class TestGetAllShardStatuses:
         mock_redis.aclose = AsyncMock()
 
         with (
-            patch("spellbot.shard_status.settings") as mock_settings,
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch(
-                "spellbot.shard_status.aioredis.from_url",
+                "spellbot.redis_client.aioredis.from_url",
                 new_callable=AsyncMock,
             ) as mock_from_url,
         ):
-            mock_settings.REDIS_URL = "redis://localhost"
             mock_from_url.return_value = mock_redis
 
             statuses, meta = await get_all_shard_statuses()
@@ -378,13 +407,12 @@ class TestGetAllShardStatuses:
     async def test_get_all_shard_statuses_redis_error(self) -> None:
         """Test that Redis errors are handled gracefully."""
         with (
-            patch("spellbot.shard_status.settings") as mock_settings,
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch(
-                "spellbot.shard_status.aioredis.from_url",
+                "spellbot.redis_client.aioredis.from_url",
                 new_callable=AsyncMock,
             ) as mock_from_url,
         ):
-            mock_settings.REDIS_URL = "redis://localhost"
             mock_from_url.side_effect = Exception("Redis connection failed")
 
             statuses, meta = await get_all_shard_statuses()

@@ -20,7 +20,7 @@ RETRY_ATTEMPTS = 2
 TIMEOUT_S = 3
 
 
-class TableSteamGameTypes(Enum):
+class TableStreamGameTypes(Enum):
     MTGCommander = "MTGCommander"
     MTGLegacy = "MTGLegacy"
     MTGModern = "MTGModern"
@@ -28,7 +28,7 @@ class TableSteamGameTypes(Enum):
     MTGVintage = "MTGVintage"
 
 
-def table_stream_game_type(format: GameFormat) -> TableSteamGameTypes:  # pragma: no cover
+def table_stream_game_type(format: GameFormat) -> TableStreamGameTypes:  # pragma: no cover
     match format:
         case (
             GameFormat.COMMANDER
@@ -47,20 +47,20 @@ def table_stream_game_type(format: GameFormat) -> TableSteamGameTypes:  # pragma
             | GameFormat.ARCHENEMY
             | GameFormat.HORDE_MAGIC
         ):
-            return TableSteamGameTypes.MTGCommander
+            return TableStreamGameTypes.MTGCommander
         case (
             GameFormat.LEGACY
             | GameFormat.PAUPER
             | GameFormat.DUEL_COMMANDER
             | GameFormat.BRAWL_TWO_PLAYER
         ):
-            return TableSteamGameTypes.MTGLegacy
+            return TableStreamGameTypes.MTGLegacy
         case GameFormat.MODERN | GameFormat.PIONEER:
-            return TableSteamGameTypes.MTGModern
+            return TableStreamGameTypes.MTGModern
         case GameFormat.STANDARD | GameFormat.SEALED:
-            return TableSteamGameTypes.MTGStandard
+            return TableStreamGameTypes.MTGStandard
         case GameFormat.VINTAGE:
-            return TableSteamGameTypes.MTGVintage
+            return TableStreamGameTypes.MTGVintage
 
 
 class TableStreamArgs(TypedDict):
@@ -115,7 +115,7 @@ async def fetch_table_stream_link(  # pragma: no cover
     """
     headers = {
         "user-agent": f"spellbot/{__version__}",
-        "Authorization": f"Bearer: {settings.TABLESTREAM_AUTH_KEY}",
+        "Authorization": f"Bearer {settings.TABLESTREAM_AUTH_KEY}",
     }
     response = await client.post(
         settings.TABLESTREAM_CREATE,

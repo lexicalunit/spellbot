@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from ddtrace.trace import tracer
 
+from spellbot import services
 from spellbot.operations import (
     safe_delete_message,
     safe_fetch_text_channel,
@@ -30,13 +31,13 @@ class LeaveAction(BaseAction):
         assert self.interaction.channel is not None
         assert self.user_data is not None
         channel_xid = self.interaction.channel.id
-        if not (game_id := await self.services.users.current_game_id(self.user_data, channel_xid)):
+        if not (game_id := await services.users.current_game_id(self.user_data, channel_xid)):
             return
 
-        success = await self.services.games.get(game_id)
+        success = await services.games.get(game_id)
         assert success  # given that the game_id was found, above, this should never fail
 
-        left_games: list[GameData] = await self.services.users.leave_game(
+        left_games: list[GameData] = await services.users.leave_game(
             self.user_data,
             channel_xid,
         )
@@ -84,14 +85,14 @@ class LeaveAction(BaseAction):
                     await safe_update_embed(message, embed=embed)
 
             if do_delete_game:
-                await self.services.games.delete_games([game_data.id])
+                await services.games.delete_games([game_data.id])
 
     @tracer.wrap()
     async def handle_command(self) -> None:
         assert self.interaction.channel is not None
         assert self.user_data is not None
         channel_xid = self.interaction.channel.id
-        if not (game_id := await self.services.users.current_game_id(self.user_data, channel_xid)):
+        if not (game_id := await services.users.current_game_id(self.user_data, channel_xid)):
             await safe_send_channel(
                 self.interaction,
                 "You were removed from any pending games in this channel.",
@@ -99,10 +100,10 @@ class LeaveAction(BaseAction):
             )
             return
 
-        found = await self.services.games.get(game_id)
+        found = await services.games.get(game_id)
         assert found
 
-        left_games = await self.services.users.leave_game(self.user_data, channel_xid)
+        left_games = await services.users.leave_game(self.user_data, channel_xid)
         for game_data in left_games:
             player_count = len(game_data.players)
             do_delete_game = player_count == 0
@@ -128,7 +129,7 @@ class LeaveAction(BaseAction):
                     await safe_update_embed(message, embed=embed)
 
             if do_delete_game:
-                await self.services.games.delete_games([game_data.id])
+                await services.games.delete_games([game_data.id])
 
         await safe_send_channel(
             self.interaction,
@@ -146,11 +147,11 @@ class LeaveAction(BaseAction):
     @tracer.wrap()
     async def execute_all(self) -> None:
         """Leave ALL games in ALL channels for this user."""
-        game_ids = await self.services.games.dequeue_players([self.interaction.user.id])
-        message_xids = await self.services.games.message_xids(game_ids)
+        game_ids = await services.games.dequeue_players([self.interaction.user.id])
+        message_xids = await services.games.message_xids(game_ids)
 
         for message_xid in message_xids:
-            game_data = await self.services.games.get_by_message_xid(message_xid)
+            game_data = await services.games.get_by_message_xid(message_xid)
             assert game_data is not None  # This should never happen
             player_count = len(game_data.players)
             do_delete_game = player_count == 0
@@ -177,7 +178,7 @@ class LeaveAction(BaseAction):
                             )
 
             if do_delete_game:
-                await self.services.games.delete_games([game_data.id])
+                await services.games.delete_games([game_data.id])
 
         await safe_send_channel(
             self.interaction,

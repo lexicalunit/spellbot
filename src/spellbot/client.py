@@ -14,13 +14,13 @@ from cachetools import TTLCache
 from ddtrace.trace import tracer
 from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, Context
 
+from . import services
 from .data import GameLinkDetails
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
 from .integrations import convoke, edhlab, girudo, tablestream
 from .metrics import add_span_request_id, generate_request_id, setup_metrics
 from .operations import safe_delete_message
-from .services import ServicesRegistry
 from .settings import settings
 from .utils import user_can_moderate
 
@@ -152,7 +152,7 @@ class SpellBot(AutoShardedBot):
             logger.exception("warning: could not fetch application emojis")
 
     @asynccontextmanager
-    async def guild_lock(self, guild_xid: int) -> AsyncGenerator[None, None]:
+    async def guild_lock(self, guild_xid: int) -> AsyncGenerator[None]:
         if not self.guild_locks.get(guild_xid):
             self.guild_locks[guild_xid] = asyncio.Lock()
         async with self.guild_locks[guild_xid]:
@@ -165,7 +165,7 @@ class SpellBot(AutoShardedBot):
         pins: list[str] | None = None,
     ) -> GameLinkDetails:
         if self.mock_games:
-            return GameLinkDetails(f"http://exmaple.com/game/{uuid4()}")
+            return GameLinkDetails(f"http://example.com/game/{uuid4()}")
         service = game_data.service
         if span := tracer.current_span():  # pragma: no cover
             span.set_tag("link_service", GameService(service).name)
@@ -234,7 +234,6 @@ class SpellBot(AutoShardedBot):
         return await super().on_command_error(context, exception)
 
     async def handle_verification(self, message: discord.Message) -> None:
-        services = ServicesRegistry()
         message_author_xid = message.author.id
         verified: bool | None = None
         assert message.guild is not None
@@ -253,7 +252,6 @@ class SpellBot(AutoShardedBot):
 
     @tracer.wrap()
     async def handle_message_deleted(self, message: discord.Message) -> None:
-        services = ServicesRegistry()
         data = await services.games.get_by_message_xid(message.id)
         if not data:
             return

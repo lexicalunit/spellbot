@@ -8,14 +8,12 @@ import httpx
 from spellbot import __version__
 from spellbot.enums import GameBracket
 from spellbot.metrics import add_span_error
-from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
     from spellbot.data import GameData
 
 logger = logging.getLogger(__name__)
-services = ServicesRegistry()
 
 RETRY_ATTEMPTS = 2
 TIMEOUT_S = 3

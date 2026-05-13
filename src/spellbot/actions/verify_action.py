@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from spellbot import services
 from spellbot.operations import safe_send_channel
 
 from .base_action import BaseAction
@@ -19,7 +20,7 @@ class VerifyAction(BaseAction):
         target_xid = target.id
 
         assert self.interaction.guild_id is not None
-        await self.services.verifies.upsert(self.interaction.guild_id, target_xid, setting)
+        await services.verifies.upsert(self.interaction.guild_id, target_xid, setting)
         await safe_send_channel(
             self.interaction,
             f"{'Verified' if setting else 'Unverified'} <@{target_xid}>.",

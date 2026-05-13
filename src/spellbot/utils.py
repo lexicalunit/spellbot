@@ -5,7 +5,6 @@ import hashlib
 import hmac
 import logging
 import time
-import traceback
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, cast
 
@@ -66,21 +65,21 @@ ALREADY_ACKNOWLEDGED_CODE = 40060
 EMBED_DESCRIPTION_SIZE_LIMIT = 4096
 
 
-def log_warning(log: str, exec_info: bool = False, **kwargs: Any) -> None:
+def log_warning(log: str, exc_info: bool = False, **kwargs: Any) -> None:
     message = f"warning: discord: {log}"
-    logger.warning(message, kwargs, exc_info=exec_info)
+    logger.warning(message, kwargs, exc_info=exc_info)
 
 
-def log_info(log: str, exec_info: bool = False, **kwargs: Any) -> None:
+def log_info(log: str, exc_info: bool = False, **kwargs: Any) -> None:
     message = f"info: discord: {log}"
-    logger.info(message, kwargs, exc_info=exec_info)
+    logger.info(message, kwargs, exc_info=exc_info)
 
 
 def safe_permissions_for(obj: Any, *args: Any) -> discord.Permissions | None:
     try:
         return obj.permissions_for(*args)
     except Exception:
-        log_info("failed to get permissions object", exec_info=True)
+        log_info("failed to get permissions object", exc_info=True)
         return None
 
 
@@ -298,7 +297,7 @@ class suppress(AbstractContextManager[None]):
         exctb: TracebackType | None,
     ) -> bool:
         if captured := exctype is not None and issubclass(exctype, self._exceptions):
-            log_warning(self._log, exec_info=True, **self._kwargs)
+            log_warning(self._log, exc_info=True, **self._kwargs)
             if span := tracer.current_span():  # pragma: no cover
                 span.set_exc_info(exctype, excinst, exctb)  # type: ignore
             if root := tracer.current_root_span():  # pragma: no cover
@@ -353,8 +352,13 @@ async def handle_interaction_errors(interaction: discord.Interaction, error: Exc
         if interaction.command is not None and isinstance(interaction, ContextMenu)
         else f"interaction `{interaction.id}`"
     )
-    logger.error("error: unhandled exception in %s: %s: %s", ref, error.__class__.__name__, error)
-    traceback.print_tb(error.__traceback__)
+    logger.error(
+        "error: unhandled exception in %s: %s: %s",
+        ref,
+        error.__class__.__name__,
+        error,
+        exc_info=error,
+    )
     return None
 
 

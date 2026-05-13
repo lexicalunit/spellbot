@@ -27,7 +27,7 @@ class Server(TypedDict):
     light_logo: NotRequired[str]  # server logo for light mode
 
 
-def batched[T](iterable: Iterable[T], n: int) -> Generator[Sequence[T], None, None]:
+def batched[T](iterable: Iterable[T], n: int) -> Generator[Sequence[T]]:
     it = iter(iterable)
     while True:
         batch = list(islice(it, n))

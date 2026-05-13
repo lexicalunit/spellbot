@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from dateutil import tz
 from ddtrace.trace import tracer
 
+from spellbot import services
 from spellbot.database import db_session_manager, rollback_session
 from spellbot.metrics import (
     add_span_error,
@@ -25,7 +26,6 @@ from spellbot.operations import (
     safe_get_partial_message,
     safe_update_embed,
 )
-from spellbot.services import GamesService, ServicesRegistry
 from spellbot.settings import settings
 
 from .base_action import handle_exception
@@ -42,8 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 class VoiceChannelFilterer:
-    def __init__(self, games: GamesService) -> None:
-        self.games = games
+    def __init__(self) -> None:
         grace_delta = timedelta(minutes=settings.VOICE_GRACE_PERIOD_M)
         grace_time_ago = datetime.now(tz=UTC) - grace_delta
         self.grace_time_ago = grace_time_ago.replace(tzinfo=tz.UTC)
@@ -77,7 +76,7 @@ class VoiceChannelFilterer:
                 continue
 
             logger.info("looking for matching game in database")
-            found = await self.games.get_by_voice_xid(channel.id)
+            found = await services.games.get_by_voice_xid(channel.id)
             if found:
                 logger.info("matching game found, adding to delete list")
                 channels.append(channel)
@@ -88,11 +87,10 @@ class VoiceChannelFilterer:
 class TasksAction:
     def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
-        self.services = ServicesRegistry()
 
     @classmethod
     @asynccontextmanager
-    async def create(cls, bot: SpellBot) -> AsyncGenerator[TasksAction, None]:
+    async def create(cls, bot: SpellBot) -> AsyncGenerator[TasksAction]:
         action = cls(bot)
         with tracer.trace(name=f"spellbot.interactions.{cls.__name__}.create") as span:
             setup_ignored_errors(span)
@@ -116,13 +114,13 @@ class TasksAction:
     async def gather_channels(self) -> list[VoiceChannel]:
         channels: list[VoiceChannel] = []
         active_guild_xids = {g.id for g in self.bot.guilds}
-        channel_filterer = VoiceChannelFilterer(self.services.games)
+        channel_filterer = VoiceChannelFilterer()
 
-        for guild_xid in await self.services.guilds.voiced():
-            guild_data = await self.services.guilds.get(guild_xid)
+        for guild_xid in await services.guilds.voiced():
+            guild_data = await services.guilds.get(guild_xid)
             guild_name = guild_data.name if guild_data else ""
             logger.info("looking in guild %s(%s)", guild_name, guild_xid)
-            prefixes = await self.services.guilds.voice_category_prefixes(guild_xid)
+            prefixes = await services.guilds.voice_category_prefixes(guild_xid)
 
             if guild_xid not in active_guild_xids:
                 logger.info("guild is not active")
@@ -159,7 +157,7 @@ class TasksAction:
     async def expire_inactive_games(self) -> None:
         logger.info("starting task expire_inactive_games")
         try:
-            games = await self.services.games.inactive_games()
+            games = await services.games.inactive_games()
             await self.expire_games(games)
         except BaseException as e:  # Catch EVERYTHING so tasks don't die
             add_span_error(e)
@@ -170,7 +168,7 @@ class TasksAction:
         batch = 0
         for game_data in game_data_list:
             logger.info("expiring game %s...", game_data.id)
-            dequeued = await self.services.games.delete_games([game_data.id])
+            dequeued = await services.games.delete_games([game_data.id])
             await self.expire_game(game_data, dequeued)
 
             batch += 1
@@ -194,7 +192,7 @@ class TasksAction:
             if not post:
                 continue
 
-            channel_data = await self.services.channels.select(channel_xid)
+            channel_data = await services.channels.select(channel_xid)
             if not dequeued or (channel_data and channel_data.delete_expired):
                 await safe_delete_message(post)
             else:
@@ -207,4 +205,4 @@ class TasksAction:
 
     async def patreon_sync(self) -> None:
         logger.info("starting task patreon_sync")
-        self.bot.supporters = await self.services.patreon.supporters()
+        self.bot.supporters = await services.patreon.supporters()

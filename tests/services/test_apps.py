@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from spellbot.services import AppsService
+from spellbot.services import apps
 
 if TYPE_CHECKING:
     from tests.fixtures import Factories
@@ -16,27 +16,23 @@ pytestmark = pytest.mark.use_db
 @pytest.mark.asyncio
 class TestServiceApps:
     async def test_verify_token(self, factories: Factories) -> None:
-        apps = AppsService()
         token = factories.token.create(key="key")
         assert await apps.verify_token(token.key, "/api/game/1/verify") is True
         assert await apps.verify_token("bogus", "/api/game/1/verify") is False
 
     async def test_verify_token_deleted(self, factories: Factories) -> None:
         """Test that deleted tokens are rejected."""
-        apps = AppsService()
         token = factories.token.create(key="deleted_key", deleted_at=datetime.now(tz=UTC))
         assert await apps.verify_token(token.key, "/api/game/1/verify") is False
 
     async def test_verify_token_wildcard_scope(self, factories: Factories) -> None:
         """Test that wildcard scope grants access to all paths."""
-        apps = AppsService()
         token = factories.token.create(key="wildcard_key", scopes="*")
         assert await apps.verify_token(token.key, "/api/game/1/verify") is True
         assert await apps.verify_token(token.key, "/api/anything/else") is True
 
     async def test_verify_token_specific_scope(self, factories: Factories) -> None:
         """Test that specific scopes only grant access to matching paths."""
-        apps = AppsService()
         token = factories.token.create(key="specific_key", scopes="game,play")
         assert await apps.verify_token(token.key, "/api/game/1/verify") is True
         assert await apps.verify_token(token.key, "/api/play/1") is True
@@ -44,7 +40,6 @@ class TestServiceApps:
 
     async def test_verify_token_empty_required_scope(self, factories: Factories) -> None:
         """Test that empty required scope returns False."""
-        apps = AppsService()
         token = factories.token.create(key="empty_scope_key", scopes="game")
         # Path where the second segment is empty after split
         # "/api//" -> ["", "api", "", ""] -> [1] is "api"
@@ -57,6 +52,5 @@ class TestServiceApps:
 
     async def test_verify_token_when_path_is_bad(self, factories: Factories) -> None:
         """Test that a bad path doesn't crash and returns False."""
-        apps = AppsService()
         token = factories.token.create(key="key", scopes="game")
         assert await apps.verify_token(token.key, "/bogus") is False

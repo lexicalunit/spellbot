@@ -102,32 +102,28 @@ def main(
     # When metrics are enabled, let's ensure that datadog-agent is running first...
     if not no_metrics():  # pragma: no cover
         logger = logging.root
-        conn: socket | None = None
         connected = False
 
         logger.info("metrics enabled, checking for connection to statsd server...")
         while not connected:
+            conn = socket()
             try:
-                conn = socket()
                 conn.connect(("127.0.0.1", 8126))
+            except Exception as e:
+                logger.info("statsd connection error: %s, retrying...", str(e))
+                time.sleep(1)
+            else:
                 logger.info("statsd server connection established")
                 connected = True
                 logger.info("waiting for statsd server to finish initialization...")
                 time.sleep(5)
-            except Exception as e:
-                logger.info("statsd connection error: %s, retrying...", str(e))
-                time.sleep(1)
             finally:
-                assert conn is not None
                 conn.close()
 
     if api:
-        from .web import launch_web_server  # allow_inline
+        from .web import launch_dev_server  # allow_inline
 
-        loop = asyncio.new_event_loop()
-        loop.set_debug(debug)
-        launch_web_server(loop, port or settings.PORT)
-        loop.run_forever()
+        launch_dev_server(debug, port or settings.PORT)
     else:
         from .client import build_bot  # allow_inline
 

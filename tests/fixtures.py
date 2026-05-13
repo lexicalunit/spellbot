@@ -223,7 +223,7 @@ async def session_context(
 def cleanup_databases(
     request: pytest.FixtureRequest,
     worker_id: str,
-) -> Generator[None, None, None]:
+) -> Generator[None]:
     yield
     if "use_db" in request.keywords:  # pragma: no cover
         delete_test_database(worker_id)
@@ -401,14 +401,14 @@ def context(
 
 
 @pytest.fixture
-def cli() -> Generator[MagicMock, None, None]:
+def cli() -> Generator[MagicMock]:
     with (
         patch("spellbot.cli.asyncio") as mock_asyncio,
         patch("spellbot.cli.configure_logging") as mock_configure_logging,
         patch("spellbot.cli.hupper") as mock_hupper,
         patch("spellbot.client.build_bot") as mock_build_bot,
         patch("spellbot.cli.settings") as mock_settings,
-        patch("spellbot.web.launch_web_server") as mock_launch_web_server,
+        patch("spellbot.web.launch_dev_server") as mock_launch_dev_server,
     ):
         mock_loop = MagicMock(name="loop")
         mock_loop.run_forever = MagicMock(name="run_forever")
@@ -425,7 +425,7 @@ def cli() -> Generator[MagicMock, None, None]:
         obj.build_bot = mock_build_bot
         obj.configure_logging = mock_configure_logging
         obj.hupper = mock_hupper
-        obj.launch_web_server = mock_launch_web_server
+        obj.launch_dev_server = mock_launch_dev_server
         obj.settings = mock_settings
         obj.bot = mock_bot
         obj.loop = mock_loop

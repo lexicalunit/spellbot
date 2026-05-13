@@ -97,7 +97,7 @@ class TestCodebase:
         # Some sources from beautiful-jekyll have persistent whitespace issues.
         WHITESPACE_EXCEPTIONS = "docs/_includes/head.html"
 
-        def paths(tree: Tree, path: Path) -> Generator[Path, None, None]:
+        def paths(tree: Tree, path: Path) -> Generator[Path]:
             for blob in tree.blobs:
                 yield path / blob.name
             for t in tree.trees:

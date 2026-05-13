@@ -12,7 +12,6 @@ from spellbot.integrations.convoke import (
     convoke_game_format,
     fetch_convoke_link,
     generate_link,
-    passphrase,
 )
 from tests.mocks import create_mock_game
 
@@ -51,21 +50,6 @@ class TestConvokeGameFormat:
         assert convoke_game_format(game_format) == expected
 
 
-class TestPassphrase:
-    def test_passphrase_when_disabled(self) -> None:
-        with patch.object(convoke_module, "USE_PASSWORD", False):
-            assert passphrase() is None
-
-    def test_passphrase_when_enabled(self) -> None:
-        with patch.object(convoke_module, "USE_PASSWORD", True):
-            result = passphrase()
-            assert result is not None
-            parts = result.split(" ")
-            assert len(parts) == 2
-            assert parts[0] in convoke_module.ADJECTIVES
-            assert parts[1] in convoke_module.NOUNS
-
-
 class TestFetchConvokeLink:
     @pytest.mark.asyncio
     async def test_fetch_convoke_link_success(self) -> None:
@@ -98,7 +82,7 @@ class TestFetchConvokeLink:
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
             patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
         ):
-            result = await fetch_convoke_link(mock_client, game, None, pins=["123456"])
+            result = await fetch_convoke_link(mock_client, game, pins=["123456"])
 
         assert result == {"url": "https://convoke.gg/game/123"}
         mock_client.post.assert_called_once()
@@ -137,7 +121,7 @@ class TestFetchConvokeLink:
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
             patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
         ):
-            result = await fetch_convoke_link(mock_client, game, None, pins=None)
+            result = await fetch_convoke_link(mock_client, game, pins=None)
 
         assert result == {"url": "https://convoke.gg/game/456"}
         payload = mock_client.post.call_args.kwargs["json"]
@@ -169,7 +153,7 @@ class TestFetchConvokeLink:
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
             patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
         ):
-            result = await fetch_convoke_link(mock_client, game, None, pins=None)
+            result = await fetch_convoke_link(mock_client, game, pins=None)
 
         assert result == {"url": "https://convoke.gg/game/456"}
         payload = mock_client.post.call_args.kwargs["json"]
@@ -201,11 +185,9 @@ class TestFetchConvokeLink:
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
             patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
         ):
-            result = await fetch_convoke_link(mock_client, game, "secret_pass", pins=None)
+            result = await fetch_convoke_link(mock_client, game, pins=None)
 
         assert result == {"url": "https://convoke.gg/game/789"}
-        payload = mock_client.post.call_args.kwargs["json"]
-        assert payload["password"] == "secret_pass"
 
 
 class TestGenerateLink:
@@ -231,7 +213,6 @@ class TestGenerateLink:
 
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
-            patch.object(convoke_module, "passphrase", return_value=None),
             patch.object(
                 convoke_module,
                 "fetch_convoke_link",
@@ -255,7 +236,6 @@ class TestGenerateLink:
 
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
-            patch.object(convoke_module, "passphrase", return_value=None),
             patch.object(
                 convoke_module,
                 "fetch_convoke_link",
@@ -267,30 +247,6 @@ class TestGenerateLink:
             result = await generate_link(game, pins=None)
 
         assert result == ("https://convoke.gg/game/123", "resp_pass")
-
-    @pytest.mark.asyncio
-    async def test_generate_link_success_with_passphrase(self) -> None:
-        game = create_mock_game(
-            game_id=1,
-            game_format=GameFormat.COMMANDER.value,
-            seats=4,
-            guild_xid=12345,
-            channel_xid=67890,
-            bracket=GameBracket.NONE.value,
-        )
-
-        with (
-            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
-            patch.object(convoke_module, "passphrase", return_value="ancient dragon"),
-            patch.object(
-                convoke_module,
-                "fetch_convoke_link",
-                AsyncMock(return_value={"url": "https://convoke.gg/game/456"}),
-            ),
-        ):
-            result = await generate_link(game, pins=None)
-
-        assert result == ("https://convoke.gg/game/456", "ancient dragon")
 
     @pytest.mark.asyncio
     async def test_generate_link_retries_on_failure_then_succeeds(self) -> None:
@@ -319,7 +275,6 @@ class TestGenerateLink:
 
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
-            patch.object(convoke_module, "passphrase", return_value=None),
             patch("httpx.AsyncClient") as mock_client_class,
             patch.object(convoke_module, "add_span_error"),
             patch.object(convoke_module.services.games, "player_convoke_data", mock_player_data),
@@ -352,7 +307,6 @@ class TestGenerateLink:
 
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
-            patch.object(convoke_module, "passphrase", return_value=None),
             patch("httpx.AsyncClient") as mock_client_class,
             patch.object(convoke_module, "add_span_error"),
             patch.object(convoke_module.services.games, "player_convoke_data", mock_player_data),
@@ -390,7 +344,6 @@ class TestGenerateLink:
 
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
-            patch.object(convoke_module, "passphrase", return_value=None),
             patch("httpx.AsyncClient") as mock_client_class,
             patch.object(convoke_module.services.games, "player_convoke_data", mock_player_data),
         ):

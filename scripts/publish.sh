@@ -14,7 +14,7 @@ run() {
     return $?
 }
 
-if echo "$*" | grep -Eq -- '--help\b|-h\b' || [[ -z $1 ]]; then
+if echo "$*" | grep -Eq -- '--help\b|-h\b' || [[ -z ${1:-} ]]; then
     usage
 fi
 
@@ -37,7 +37,7 @@ if [[ -n $CHANGES ]]; then
     exit 1
 fi
 
-REMOTE_CHANGES="$(git ls-remote origin -h refs/heads/master)"
+REMOTE_CHANGES="$(git ls-remote origin -h refs/heads/main)"
 if [[ -n $REMOTE_CHANGES ]]; then
     echo "error: can not publish when there are remote changes" 1>&2
     exit 1
@@ -89,7 +89,7 @@ run "git commit -am 'Release $VERSION'"
 # make sure that the docker build works before publishing
 TAG="lexicalunit/spellbot"
 DD_VERSION="$(git rev-parse --short HEAD)"
-run "DOCKER_BUILDKIT=0 docker buildx build --ulimit nofile=1024000:1024000 --build-arg DD_VERSION='$DD_VERSION' --platform linux/arm64 -t '$TAG' ."
+run "DOCKER_BUILDKIT=1 docker buildx build --ulimit nofile=1024000:1024000 --build-arg DD_VERSION='$DD_VERSION' --platform linux/arm64 -t '$TAG' ."
 
 # publish the release; assumes you've set up non-interactive publishing previously running:
 # security add-generic-password -s spellbot -a "$USER" -w YOUR-PYPI-TOKEN
