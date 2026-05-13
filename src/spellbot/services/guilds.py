@@ -21,6 +21,7 @@ guild_cache: dict[int, str] = {}
 
 
 def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
+    """Return True if the guild xid is in the local name cache under the given name."""
     if running_in_pytest():
         return False
     return bool((cached_name := guild_cache.get(xid)) and cached_name == name)

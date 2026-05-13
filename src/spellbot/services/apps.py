@@ -9,6 +9,7 @@ from spellbot.models import Token
 
 @tracer.wrap()
 async def verify_token(key: str, path: str) -> bool:
+    """Verify that the given API key has access to the given path."""
     result = await DatabaseSession.execute(select(Token).where(Token.key == key))
     token = result.scalar_one_or_none()
     if not token:

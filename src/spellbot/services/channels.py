@@ -21,17 +21,19 @@ channel_cache: dict[int, str] = {}
 
 
 def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
+    """Return True if the channel xid is in the local name cache under the given name."""
     if running_in_pytest():
         return False
     return bool((cached_name := channel_cache.get(xid)) and cached_name == name)
 
 
 async def upsert(channel: MessageableChannel) -> ChannelData:
+    """Upsert the given Discord channel into the database."""
     assert channel.guild is not None
     name_max_len = Channel.name.property.columns[0].type.length
     raw_name = getattr(channel, "name", "")
     name = raw_name[:name_max_len]
-    if not is_cached(channel.id, name):  # pragma: no branch
+    if not is_cached(channel.id, name):  # pragma: no branch (caching disabled in tests)
         values = {
             "xid": channel.id,
             "guild_xid": channel.guild.id,
@@ -60,6 +62,7 @@ async def upsert(channel: MessageableChannel) -> ChannelData:
 
 
 async def forget(xid: int) -> None:
+    """Delete the channel with the given xid from the database."""
     await DatabaseSession.execute(
         delete(Channel).where(Channel.xid == xid).execution_options(synchronize_session=False),
     )
@@ -67,12 +70,14 @@ async def forget(xid: int) -> None:
 
 
 async def select(xid: int) -> ChannelData | None:
+    """Fetch the channel data for the given xid."""
     result = await DatabaseSession.execute(sa_select(Channel).where(Channel.xid == xid))
     channel = result.scalar_one_or_none()
     return channel.to_data() if channel else None
 
 
 async def _set_column(xid: int, **values: object) -> None:
+    """Update the given columns on the channel with the given xid."""
     query = (
         update(Channel)
         .where(Channel.xid == xid)
@@ -84,34 +89,42 @@ async def _set_column(xid: int, **values: object) -> None:
 
 
 async def set_default_seats(xid: int, seats: int) -> None:
+    """Set the default number of seats for games in this channel."""
     await _set_column(xid, default_seats=seats)
 
 
 async def set_default_format(xid: int, format: int) -> None:
+    """Set the default game format for this channel."""
     await _set_column(xid, default_format=format)
 
 
 async def set_default_bracket(xid: int, bracket: int) -> None:
+    """Set the default game bracket for this channel."""
     await _set_column(xid, default_bracket=bracket)
 
 
 async def set_default_service(xid: int, service: int) -> None:
+    """Set the default game service for this channel."""
     await _set_column(xid, default_service=service)
 
 
 async def set_auto_verify(xid: int, setting: bool) -> None:
+    """Set whether users are automatically verified in this channel."""
     await _set_column(xid, auto_verify=setting)
 
 
 async def set_verified_only(xid: int, setting: bool) -> None:
+    """Set whether only verified users can use this channel."""
     await _set_column(xid, verified_only=setting)
 
 
 async def set_unverified_only(xid: int, setting: bool) -> None:
+    """Set whether only unverified users can use this channel."""
     await _set_column(xid, unverified_only=setting)
 
 
 async def set_motd(xid: int, message: str | None = None) -> str:
+    """Set the message of the day for this channel."""
     if message:
         max_len = Channel.motd.property.columns[0].type.length
         motd = message[:max_len]
@@ -122,6 +135,7 @@ async def set_motd(xid: int, message: str | None = None) -> str:
 
 
 async def set_extra(xid: int, message: str | None = None) -> str:
+    """Set extra text to display in game posts for this channel."""
     if message:
         max_len = Channel.extra.property.columns[0].type.length
         extra = message[:max_len]
@@ -132,6 +146,7 @@ async def set_extra(xid: int, message: str | None = None) -> str:
 
 
 async def set_voice_category(xid: int, value: str) -> str:
+    """Set the voice channel category prefix for this channel."""
     max_len = Channel.voice_category.property.columns[0].type.length
     name = value[:max_len]
     await _set_column(xid, voice_category=name)
@@ -139,15 +154,18 @@ async def set_voice_category(xid: int, value: str) -> str:
 
 
 async def set_delete_expired(xid: int, value: bool) -> bool:
+    """Set whether expired games should be deleted in this channel."""
     await _set_column(xid, delete_expired=value)
     return value
 
 
 async def set_blind_games(xid: int, value: bool) -> bool:
+    """Set whether games in this channel should be created in blind mode."""
     await _set_column(xid, blind_games=value)
     return value
 
 
 async def set_voice_invite(xid: int, value: bool) -> bool:
+    """Set whether voice channel invites should be created for games."""
     await _set_column(xid, voice_invite=value)
     return value

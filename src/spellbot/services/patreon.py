@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_patreon_campaign_url() -> str:
+    """Build the Patreon API URL for fetching the configured campaign's members."""
     return (
         f"https://www.patreon.com/api/oauth2/v2/campaigns/{settings.PATREON_CAMPAIGN}/members?"
         + urlencode(
@@ -50,6 +51,7 @@ def get_patron_ids(data: dict[str, Any]) -> set[str]:
 
 
 def get_supporters(data: dict[str, Any], patrons: set[str]) -> set[int]:
+    """Return the Discord user ids linked to the given Patreon patron ids."""
     supporters: set[int] = {711717544435646494}  # test account
     included = data.get("included") or []
     for item in included:
@@ -66,6 +68,7 @@ def get_supporters(data: dict[str, Any], patrons: set[str]) -> set[int]:
 
 @tracer.wrap()
 async def supporters() -> set[int]:
+    """Return a list of Discord IDs of active Patreon supporters."""
     if running_in_pytest():
         return set()
 

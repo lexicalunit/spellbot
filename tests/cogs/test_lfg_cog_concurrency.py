@@ -60,10 +60,13 @@ class TestCogLookingForGameConcurrency:
         )
         assert len(games) == n
 
+        # Since all these lfg requests should be handled concurrently, we should
+        # see message_xids OUT of order in the created games (as ordered by created at).
         messages_out_of_order = False
         message_xid: int | None = None
         for game in games:  # pragma: no cover
             if message_xid and game.posts[0].message_xid != message_xid + 1:
+                # At least one game is out of order, this is good!
                 messages_out_of_order = True
                 break
             message_xid = game.posts[0].message_xid
@@ -121,10 +124,13 @@ class TestCogLookingForGameConcurrency:
         )
         assert len(games) == n / default_seats
 
+        # Since all these lfg requests should be handled concurrently, we should
+        # see message_xids OUT of order in the created games (as ordered by created at).
         messages_out_of_order = False
         message_xid: int | None = None
         for game in games:  # pragma: no cover
             if message_xid is not None and game.posts[0].message_xid != message_xid + 1:
+                # At least one game is out of order, this is good!
                 messages_out_of_order = True
                 break
             message_xid = game.posts[0].message_xid

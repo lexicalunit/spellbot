@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 
 async def fetch(guild_xid: int) -> list[WatchData]:
+    """Fetch all watches for the given guild."""
     result = await DatabaseSession.execute(
         select(Watch).where(Watch.guild_xid == guild_xid).order_by(Watch.user_xid),
     )
