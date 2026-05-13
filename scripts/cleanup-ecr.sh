@@ -96,7 +96,10 @@ IMAGES_TO_DELETE=$(echo "$IMAGES" | jq -r --arg cutoff "$CUTOFF_TIMESTAMP" '
     select(
         (.imageTags | any(. == "prod" or . == "stage" or . == "latest")) | not
     ) |
-    select(.imagePushedAt < ($cutoff | tonumber)) |
+    select(
+        (.imagePushedAt | sub("(\\.[0-9]+)?([-+][0-9:]+|Z)$"; "Z") | fromdateiso8601)
+        < ($cutoff | tonumber)
+    ) |
     {
         digest: .imageDigest,
         tags: (.imageTags | join(", ")),

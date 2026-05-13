@@ -57,6 +57,8 @@
         .stats { display: flex; gap: 2rem; flex-wrap: wrap; }
         .stat { text-align: center; }
         .stat-value { font-size: 1.5rem; font-weight: 700; color: #818cf8; }
+        .stat-value a { color: inherit; text-decoration: none; }
+        .stat-value a:hover { text-decoration: underline; }
         .stat-label { font-size: 0.875rem; color: #9ca3af; }
         .shards-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -220,7 +222,13 @@
                     <div class="stat-label">Servers</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-value">{{ version }}</div>
+                    <div class="stat-value">
+                        {% if version_url %}
+                        <a href="{{ version_url }}" target="_blank" rel="noopener">{{ version }}</a>
+                        {% else %}
+                        {{ version }}
+                        {% endif %}
+                    </div>
                     <div class="stat-label">Version</div>
                 </div>
             </div>
