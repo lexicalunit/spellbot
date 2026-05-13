@@ -5,7 +5,7 @@ from enum import Enum, auto
 from functools import partial
 from typing import TYPE_CHECKING, cast
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import false, text
 
@@ -168,58 +168,72 @@ class Game(Base):
         doc="The channel this game was created in",
     )
 
-    @property
-    def players(self) -> list[User]:
+    async def players(self) -> list[User]:
         from spellbot.database import DatabaseSession  # allow_inline
 
         from . import Play, Queue, User  # allow_inline
 
         if self.started_at is None:
-            rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == self.id)
+            xid_result = await DatabaseSession.execute(
+                select(Queue.user_xid).where(Queue.game_id == self.id),
+            )
         else:
-            rows = DatabaseSession.query(Play.user_xid).filter(Play.game_id == self.id)
-        player_xids = [int(row[0]) for row in rows]
-        return DatabaseSession.query(User).filter(User.xid.in_(player_xids)).all()
+            xid_result = await DatabaseSession.execute(
+                select(Play.user_xid).where(Play.game_id == self.id),  # type: ignore
+            )
+        player_xids = [int(row[0]) for row in xid_result]
+        users_result = await DatabaseSession.execute(
+            select(User).where(User.xid.in_(player_xids)),
+        )
+        return list(users_result.scalars().all())
 
-    @property
-    def player_pins(self) -> dict[int, str | None]:
+    async def player_pins(self) -> dict[int, str | None]:
         from spellbot.database import DatabaseSession  # allow_inline
 
         from . import Play  # allow_inline
 
-        plays = DatabaseSession.query(Play).filter(Play.game_id == self.id)
+        plays_result = await DatabaseSession.execute(
+            select(Play).where(Play.game_id == self.id),  # type: ignore
+        )
+        guild = await self.awaitable_attrs.guild
+        enable_mythic_track = guild.enable_mythic_track
         return {
-            play.user_xid: play.pin if self.guild.enable_mythic_track else None for play in plays
+            play.user_xid: play.pin if enable_mythic_track else None
+            for play in plays_result.scalars().all()
         }
 
-    def to_data(self) -> GameData:
+    async def to_data(self) -> GameData:
         from spellbot.data.game_data import GameData  # allow_inline
 
+        guild = await self.awaitable_attrs.guild
+        channel = await self.awaitable_attrs.channel
+        posts = await self.awaitable_attrs.posts
+        players = await self.players()
         return GameData(
-            id=self.id,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            started_at=self.started_at,
-            deleted_at=self.deleted_at,
-            guild_xid=self.guild_xid,
-            guild=self.guild.to_data(),
+            id=self.id,  # type: ignore
+            created_at=self.created_at,  # type: ignore
+            updated_at=self.updated_at,  # type: ignore
+            started_at=self.started_at,  # type: ignore
+            deleted_at=self.deleted_at,  # type: ignore
+            guild_xid=self.guild_xid,  # type: ignore
+            guild=await guild.to_data(),
             channel_xid=self.channel_xid,
-            channel=self.channel.to_data(),
-            posts=[post.to_data() for post in self.posts],
-            voice_xid=self.voice_xid,
-            voice_invite_link=self.voice_invite_link,
+            channel=channel.to_data(),
+            posts=[post.to_data() for post in posts],
+            voice_xid=self.voice_xid,  # type: ignore
+            voice_invite_link=self.voice_invite_link,  # type: ignore
             seats=self.seats,
             status=self.status,
             format=self.format,
             bracket=self.bracket,
             service=self.service,
-            game_link=self.game_link,
-            password=self.password,
-            rules=self.rules,
-            blind=self.blind,
-            players=[player.to_data() for player in self.players],
-            player_pins=self.player_pins,
+            game_link=self.game_link,  # type: ignore
+            password=self.password,  # type: ignore
+            rules=self.rules,  # type: ignore
+            blind=self.blind,  # type: ignore
+            players=[player.to_data() for player in players],
+            player_pins=await self.player_pins(),
         )
 
 
-MAX_RULES_LENGTH: int = Game.rules.property.columns[0].type.length  # type: ignore
+MAX_RULES_LENGTH: int = Game.rules.property.columns[0].type.length

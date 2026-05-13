@@ -4,7 +4,6 @@ import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, NoReturn, Self, cast
 
-from asgiref.sync import sync_to_async
 from ddtrace.trace import tracer
 
 from spellbot import services
@@ -30,8 +29,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@sync_to_async
-def handle_exception(ex: Exception) -> NoReturn:
+async def handle_exception(ex: Exception) -> NoReturn:
     if isinstance(ex, SpellBotError):  # pragma: no cover
         raise ex
     logger.exception(
@@ -39,7 +37,7 @@ def handle_exception(ex: Exception) -> NoReturn:
         ex.__class__.__name__,
         ex,
     )
-    DatabaseSession.rollback()
+    await DatabaseSession.rollback()
     raise ex
 
 

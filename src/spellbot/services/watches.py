@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from asgiref.sync import sync_to_async
+from sqlalchemy import select
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Watch
@@ -11,13 +11,9 @@ if TYPE_CHECKING:
     from spellbot.data import WatchData
 
 
-@sync_to_async
-def fetch(guild_xid: int) -> list[WatchData]:
+async def fetch(guild_xid: int) -> list[WatchData]:
     """Fetch all watches for the given guild."""
-    watches = (
-        DatabaseSession.query(Watch)
-        .filter(Watch.guild_xid == guild_xid)
-        .order_by(Watch.user_xid)
-        .all()
+    result = await DatabaseSession.execute(
+        select(Watch).where(Watch.guild_xid == guild_xid).order_by(Watch.user_xid),
     )
-    return [watch.to_data() for watch in watches]
+    return [watch.to_data() for watch in result.scalars().all()]

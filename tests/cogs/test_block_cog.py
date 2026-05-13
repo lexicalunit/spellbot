@@ -5,6 +5,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import select
 
 from spellbot.cogs import BlockCog
 from spellbot.database import DatabaseSession
@@ -43,19 +44,26 @@ class TestCogBlock:
             ephemeral=True,
         )
 
-        target_user = DatabaseSession.query(User).filter(User.xid == target.id).one()
+        target_user = (
+            await DatabaseSession.execute(select(User).where(User.xid == target.id))
+        ).scalar_one()
         assert target_user.name == target.display_name
         assert target_user.xid == target.id
 
-        action_user = DatabaseSession.query(User).filter(User.xid == interaction.user.id).one()
+        action_user = (
+            await DatabaseSession.execute(select(User).where(User.xid == interaction.user.id))
+        ).scalar_one()
         assert action_user.name == interaction.user.display_name
         assert action_user.xid == interaction.user.id
 
         block = (
-            DatabaseSession.query(Block)
-            .filter(Block.user_xid == interaction.user.id, Block.blocked_user_xid == target.id)
-            .one()
-        )
+            await DatabaseSession.execute(
+                select(Block).where(
+                    Block.user_xid == interaction.user.id,
+                    Block.blocked_user_xid == target.id,
+                ),
+            )
+        ).scalar_one()
         assert block.user_xid == interaction.user.id
         assert block.blocked_user_xid == target.id
 
@@ -63,10 +71,13 @@ class TestCogBlock:
         interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.unblock, interaction, target=target)
         block = (
-            DatabaseSession.query(Block)
-            .filter(Block.user_xid == interaction.user.id, Block.blocked_user_xid == target.id)
-            .one_or_none()
-        )
+            await DatabaseSession.execute(
+                select(Block).where(
+                    Block.user_xid == interaction.user.id,
+                    Block.blocked_user_xid == target.id,
+                ),
+            )
+        ).scalar_one_or_none()
         assert block is None
 
     async def test_block_self(
@@ -84,7 +95,7 @@ class TestCogBlock:
             "You can not block yourself.",
             ephemeral=True,
         )
-        blocks = list(DatabaseSession.query(Block).all())
+        blocks = list((await DatabaseSession.execute(select(Block))).scalars().all())
         assert len(blocks) == 0
 
     async def test_blocked_happy_path(

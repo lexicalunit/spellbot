@@ -61,7 +61,7 @@ class TestLookingForGameAction:
         assert await action.get_service(None) == GameService.X_MAGE.value
 
     async def test_get_service_fallback_default(self, action: LookingForGameAction) -> None:
-        action.channel_data.default_service = None  # type: ignore[assignment]
+        action.channel_data.default_service = None  # type: ignore
         assert await action.get_service(None) == GameService.CONVOKE.value
 
     async def test_get_format(self, action: LookingForGameAction) -> None:
@@ -72,7 +72,7 @@ class TestLookingForGameAction:
         assert await action.get_format(None) == GameFormat.PAUPER.value
 
     async def test_get_format_fallback_default(self, action: LookingForGameAction) -> None:
-        action.channel_data.default_format = None  # type: ignore[assignment]
+        action.channel_data.default_format = None  # type: ignore
         assert await action.get_format(None) == GameFormat.COMMANDER.value
 
     @pytest.mark.parametrize(
@@ -415,6 +415,28 @@ class TestLookingForGameAction:
         await action.handle_voice_creation(game_data, 12345)
 
         voice_stub.assert_not_called()
+
+    async def test_handle_voice_creation_no_category_prefix(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        """Test handle_voice_creation returns early when channel has no voice_category."""
+        game_data = create_mock_game(game_id=1)
+        action.guild_data = create_mock_guild(
+            voice_create=True,
+            use_max_bitrate=False,
+        )
+        action.channel_data.voice_category = None
+        ensure_stub = mocker.patch(
+            "spellbot.actions.lfg_action.safe_ensure_voice_category",
+            AsyncMock(),
+        )
+
+        result = await action.handle_voice_creation(game_data, 12345)
+
+        assert result is game_data
+        ensure_stub.assert_not_called()
 
     async def test_handle_voice_creation_no_voice_channel(
         self,
@@ -1152,5 +1174,5 @@ class TestLookingForGameAction:
         self,
         action: LookingForGameAction,
     ) -> None:
-        action.channel_data.default_bracket = None  # type: ignore[assignment]
+        action.channel_data.default_bracket = None  # type: ignore
         assert await action.get_bracket(None, None) == GameBracket.NONE.value

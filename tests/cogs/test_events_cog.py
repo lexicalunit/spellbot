@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import discord
 import pytest
 import pytest_asyncio
+from sqlalchemy import select
 from sqlalchemy.sql.expression import and_
 
 from spellbot.actions import lfg_action
@@ -75,24 +76,24 @@ class TestCogEvents:
                 format=cast("int", GameFormat.LEGACY.value),
             )
 
-        game = DatabaseSession.query(Game).one()
+        game = (await DatabaseSession.execute(select(Game))).scalar_one()
         assert game.status == GameStatus.STARTED.value
-        admin = DatabaseSession.get(User, interaction.user.id)
+        admin = await DatabaseSession.get(User, interaction.user.id)
         assert admin is not None
         assert interaction.channel is not None
-        assert admin.game(interaction.channel.id) is None
+        assert await admin.game(interaction.channel.id) is None
         # Verify the specific players we created are in the game
         for player_xid in [player1.xid, player2.xid]:
             play = (
-                DatabaseSession.query(Play)
-                .filter(
-                    and_(
-                        Play.user_xid == player_xid,
-                        Play.game_id == game.id,
+                await DatabaseSession.execute(
+                    select(Play).where(
+                        and_(
+                            Play.user_xid == player_xid,
+                            Play.game_id == game.id,
+                        ),
                     ),
                 )
-                .one_or_none()
-            )
+            ).scalar_one_or_none()
             assert play is not None
 
     async def test_game_with_one_player(
@@ -155,7 +156,7 @@ class TestCogEvents:
         discord_user_1 = mock_discord_object(user_1)
         discord_user_2 = mock_discord_object(user_2)
         guild.voice_create = True  # type: ignore
-        DatabaseSession.commit()
+        await DatabaseSession.commit()
         channel = factories.channel.create(guild=guild, voice_invite=True)
         message.channel.id = channel.xid
         manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
@@ -181,6 +182,6 @@ class TestCogEvents:
                 service=GameService.NOT_ANY.value,
             )
 
-        game = DatabaseSession.query(Game).one()
+        game = (await DatabaseSession.execute(select(Game))).scalar_one()
         assert game.voice_xid == voice_channel.id
         assert game.voice_invite_link == voice_invite.url

@@ -35,7 +35,7 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
                         message_xid=randint(1000, 9999),
                     )
                     session.add(post)
-                    game.posts = [post]  # type: ignore
+                    game.posts = [post]
 
         return super()._create(model_class, *args, **kwargs)
 

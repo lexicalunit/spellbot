@@ -7,6 +7,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
@@ -47,7 +49,15 @@ class TestCogLookingForGameConcurrency:
         for future in done:
             future.result()
 
-        games = DatabaseSession.query(Game).order_by(Game.created_at).all()
+        games = list(
+            (
+                await DatabaseSession.execute(
+                    select(Game).options(selectinload(Game.posts)).order_by(Game.created_at),
+                )
+            )
+            .scalars()
+            .all(),
+        )
         assert len(games) == n
 
         # Since all these lfg requests should be handled concurrently, we should
@@ -103,7 +113,15 @@ class TestCogLookingForGameConcurrency:
         for future in done:
             future.result()
 
-        games = DatabaseSession.query(Game).order_by(Game.created_at).all()
+        games = list(
+            (
+                await DatabaseSession.execute(
+                    select(Game).options(selectinload(Game.posts)).order_by(Game.created_at),
+                )
+            )
+            .scalars()
+            .all(),
+        )
         assert len(games) == n / default_seats
 
         # Since all these lfg requests should be handled concurrently, we should

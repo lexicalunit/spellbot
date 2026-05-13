@@ -40,7 +40,7 @@ class Watch(Base):
         from spellbot.data import WatchData  # allow_inline
 
         return WatchData(
-            guild_xid=self.guild_xid,
-            user_xid=self.user_xid,
-            note=self.note,
+            guild_xid=self.guild_xid,  # type: ignore
+            user_xid=self.user_xid,  # type: ignore
+            note=self.note,  # type: ignore
         )

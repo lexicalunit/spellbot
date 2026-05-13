@@ -40,7 +40,7 @@ class Queue(Base):
         from spellbot.data import QueueData  # allow_inline
 
         return QueueData(
-            user_xid=self.user_xid,
-            game_id=self.game_id,
-            og_guild_xid=self.og_guild_xid,
+            user_xid=self.user_xid,  # type: ignore
+            game_id=self.game_id,  # type: ignore
+            og_guild_xid=self.og_guild_xid,  # type: ignore
         )
