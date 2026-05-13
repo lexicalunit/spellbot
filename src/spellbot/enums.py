@@ -98,8 +98,8 @@ class GameService(Enum):
     PLAYGROUP_LIVE = (
         "Playgroup Live",
         (
-            "_A {emoji}[Playgroup Live](https://playgroup.gg/) link will "
-            "be created when all players have joined._"
+            "*A {emoji}[Playgroup Live](https://playgroup.gg/) link will "
+            "be created when all players have joined.*"
         ),
         "https://playgroup.gg/",
         6,
