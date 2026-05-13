@@ -12,6 +12,7 @@ from ddtrace.trace import tracer
 
 from spellbot import services
 from spellbot.enums import GameBracket, GameFormat, GameService
+from spellbot.integrations import playgroup_live
 from spellbot.models import MAX_RULES_LENGTH, GameStatus, generate_pin
 from spellbot.operations import (
     VoiceChannelSuggestion,
@@ -44,6 +45,18 @@ logger = logging.getLogger(__name__)
 class LookingForGameAction(BaseAction):
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         super().__init__(bot, interaction)
+
+    async def block_if_no_player_linked(self, game_data: GameData) -> bool:
+        if game_data.service != GameService.PLAYGROUP_LIVE.value:
+            return False
+        if playgroup_live.find_linked_player(game_data) is not None:
+            return False
+        await safe_followup_channel(
+            self.interaction,
+            "To use Playgroup Live, at least one player must link their account. "
+            "Run `/playgroup link` and try again.",
+        )
+        return True
 
     @tracer.wrap()
     async def get_friends(self, friends: str | None = None) -> str:
@@ -220,9 +233,19 @@ class LookingForGameAction(BaseAction):
             )
             return
 
+        if await self.block_if_no_player_linked(game_data):
+            return
+
+        original_seats = (
+            game_data.seats if game_data.service == GameService.PLAYGROUP_LIVE.value else None
+        )
         game_data = await services.games.shrink_game(game_data)
         player_xids = [player.xid for player in game_data.players]
-        game_data, suggested_vc = await self.make_game_ready(game_data, player_xids=player_xids)
+        game_data, suggested_vc = await self.make_game_ready(
+            game_data,
+            player_xids=player_xids,
+            original_seats=original_seats,
+        )
         assert self.interaction.guild_id
         game_data = await self.handle_voice_creation(game_data, self.interaction.guild_id)
         game_data = await self.handle_embed_creation(
@@ -237,7 +260,7 @@ class LookingForGameAction(BaseAction):
         await self.handle_direct_messages(game_data, suggested_vc=suggested_vc, rematch=False)
 
     @tracer.wrap()
-    async def execute(
+    async def execute(  # noqa: C901
         self,
         friends: str | None = None,
         seats: int | None = None,
@@ -305,6 +328,8 @@ class LookingForGameAction(BaseAction):
         other_game_ids: list[int] = []
         suggested_vc = None
         if game_data.fully_seated:
+            if await self.block_if_no_player_linked(game_data):
+                return None
             other_game_ids = await services.games.other_game_ids(game_data)
             player_xids = [player.xid for player in game_data.players]
             game_data, suggested_vc = await self.make_game_ready(game_data, player_xids)
@@ -423,6 +448,7 @@ class LookingForGameAction(BaseAction):
         self,
         game_data: GameData,
         player_xids: list[int],
+        original_seats: int | None = None,
     ) -> tuple[GameData, VoiceChannelSuggestion | None]:
         # Convoke needs player pins, so we have to generate them before creating the game link.
         # Initially the design was to let the DB do this later, in the `make_ready()` method.
@@ -431,7 +457,7 @@ class LookingForGameAction(BaseAction):
         # method of the Game object will return None for players if MT is not enabled.
         pins = [generate_pin() for _ in player_xids]
 
-        details = await self.bot.create_game_link(game_data, pins)
+        details = await self.bot.create_game_link(game_data, pins, original_seats=original_seats)
 
         suggested_vc = None
         if (

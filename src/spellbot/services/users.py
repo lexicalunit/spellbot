@@ -118,6 +118,15 @@ async def set_banned(user_xid: int, banned: bool) -> UserData:
 
 
 @tracer.wrap()
+async def set_playgroup_user_id(user_xid: int, playgroup_user_id: int) -> None:
+    """Store the Playgroup Live user ID for the given Discord user."""
+    await DatabaseSession.execute(
+        update(User).where(User.xid == user_xid).values(playgroup_user_id=playgroup_user_id),  # type: ignore
+    )
+    await DatabaseSession.commit()
+
+
+@tracer.wrap()
 async def current_game_id(user_data: UserData, channel_xid: int) -> int | None:
     """Get the current PENDING game id for the user in the given channel."""
     queue = (
