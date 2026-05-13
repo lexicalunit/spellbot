@@ -120,7 +120,7 @@ reportMatchNotExhaustive = true
 reportMissingImports = false
 reportMissingParameterType = true
 reportMissingTypeArgument = true
-reportUnnecessaryTypeIgnoreComment = "none"
+reportUnnecessaryTypeIgnoreComment = "error"
 typeCheckingMode = "basic"
 
 [tool.ruff]
@@ -163,7 +163,6 @@ ignore = [
   "ARG002",
   "ARG003",
   "ARG005",
-  "COM812",
   "BLE001",
   "D100",
   "D101",
