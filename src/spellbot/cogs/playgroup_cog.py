@@ -9,10 +9,10 @@ from ddtrace.trace import tracer
 from discord import app_commands
 from discord.ext import commands
 
+from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.integrations.playgroup_live import TIMEOUT_S, lookup_playgroup_user
 from spellbot.metrics import add_span_context
-from spellbot import services
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_guild
 

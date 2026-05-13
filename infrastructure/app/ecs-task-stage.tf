@@ -163,6 +163,10 @@ resource "aws_ecs_task_definition" "spellbot_stage" {
           valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:CONVOKE_API_KEY::"
         },
         {
+          name      = "PLAYGROUP_LIVE_API_KEY"
+          valueFrom = "${aws_secretsmanager_secret.spellbot_prod.arn}:PLAYGROUP_LIVE_API_KEY::"
+        },
+        {
           name      = "EDHLAB_API_KEY"
           valueFrom = "${aws_secretsmanager_secret.spellbot_stage.arn}:EDHLAB_API_KEY::"
         },

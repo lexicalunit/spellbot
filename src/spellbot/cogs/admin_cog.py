@@ -243,7 +243,9 @@ class AdminCog(commands.Cog):
     )
     @app_commands.describe(service="Default service")
     @app_commands.choices(
-        service=[Choice(name=str(service), value=service.value) for service in visible_game_services()],
+        service=[
+            Choice(name=str(service), value=service.value) for service in visible_game_services()
+        ],
     )
     @tracer.wrap(name="interaction", resource="set_default_service")
     async def default_service(self, interaction: discord.Interaction, service: int) -> None:

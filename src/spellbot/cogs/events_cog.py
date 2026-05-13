@@ -40,7 +40,9 @@ class EventsCog(commands.Cog):
     )
     @app_commands.describe(service="What service do you want to use to play this game?")
     @app_commands.choices(
-        service=[Choice(name=str(service), value=service.value) for service in visible_game_services()],
+        service=[
+            Choice(name=str(service), value=service.value) for service in visible_game_services()
+        ],
     )
     @tracer.wrap(name="interaction", resource="game")
     async def game(

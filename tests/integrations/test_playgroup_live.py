@@ -9,8 +9,8 @@ import spellbot.integrations.playgroup_live as playgroup_live_module
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.integrations.playgroup_live import (
     fetch_playgroup_live_session,
-    generate_link,
     find_linked_player,
+    generate_link,
     lookup_playgroup_user,
     playgroup_bracket,
     playgroup_life_amount,
