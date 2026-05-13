@@ -444,6 +444,29 @@ class TestOperationsSendChannel:
         interaction.response.send_message.assert_called_once_with("content")
         interaction.original_response.assert_called_once_with()
 
+    async def test_error_during_send(self) -> None:
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 2
+
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.id = 3
+        channel.type = discord.ChannelType.text
+        channel.guild = guild
+
+        interaction = AsyncMock()
+        interaction.channel = channel
+        interaction.channel_id = channel.id
+        interaction.guild = guild
+        interaction.guild_id = guild.id
+        interaction.response.send_message.side_effect = discord.errors.NotFound(
+            MagicMock(),
+            "not found",
+        )
+
+        result = await safe_send_channel(interaction, "content")
+
+        assert result is None
+
 
 @pytest.mark.asyncio
 class TestOperationsFollowupChannel:

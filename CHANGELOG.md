@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Fixed a bug in the cleanup-ecr.sh script that prevented it from filtering images by date properly.
 
+### Changed
+
+- More DRY operations code.
+
 ## [v18.8.0](https://github.com/lexicalunit/spellbot/releases/tag/v18.8.0) - 2026-05-12
 
 ### Changed

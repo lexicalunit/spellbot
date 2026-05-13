@@ -5,12 +5,9 @@ import hashlib
 import hmac
 import logging
 import time
-from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, cast
 
 import discord
-from ddtrace.constants import ERROR_MSG, ERROR_TYPE
-from ddtrace.trace import tracer
 from discord.app_commands import AppCommandError, ContextMenu, NoPrivateMessage
 from discord.app_commands import Command as AppCommand
 from discord.ext.commands import AutoShardedBot
@@ -29,8 +26,6 @@ from .metrics import add_span_error
 from .settings import settings
 
 if TYPE_CHECKING:
-    from types import TracebackType
-
     from discord.abc import MessageableChannel
     from discord.ui import Item
 
@@ -262,53 +257,6 @@ def user_can_moderate(
         for role in cast("list[discord.Role]", author_roles)
         if role is not None
     )
-
-
-class suppress(AbstractContextManager[None]):
-    """
-    Suppresses any exceptions from the given set.
-
-    Logs the given message whenever an exception is suppressed. String interpolation
-    parameters should be embedded into the log message as `%(name)s` and provided
-    corresponding values via keyword argument. For example:
-
-        with suppress(YourError, log="whatever %s(wotnot)s", wotnot="I don't know"):
-            ...
-
-    Note that you should NOT use `return` within the context of `suppress()`. Instead
-    use The Single Return Law pattern. This is because static analysis tools will not
-    be able to understand that code following the context is reachable.
-    """
-
-    __slots__ = ("_exceptions", "_kwargs", "_log")
-
-    def __init__(self, *exceptions: type[Exception], log: str, **kwargs: Any) -> None:
-        self._exceptions = exceptions
-        self._log = log
-        self._kwargs = kwargs
-
-    def __enter__(self) -> None:
-        pass
-
-    def __exit__(
-        self,
-        exctype: type[BaseException] | None,
-        excinst: BaseException | None,
-        exctb: TracebackType | None,
-    ) -> bool:
-        if captured := exctype is not None and issubclass(exctype, self._exceptions):
-            log_warning(self._log, exc_info=True, **self._kwargs)
-            if span := tracer.current_span():  # pragma: no cover
-                span.set_exc_info(exctype, excinst, exctb)  # type: ignore
-            if root := tracer.current_root_span():  # pragma: no cover
-                root.set_tags(
-                    {
-                        ERROR_TYPE: "OperationalError",
-                        ERROR_MSG: "An error occurred during bot operation",
-                    },
-                )
-                root.error = 1
-        return captured
 
 
 # I have no idea how to properly type hint this.

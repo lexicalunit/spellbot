@@ -30,11 +30,13 @@ from .utils import (
     bot_can_send_messages,
     log_info,
     log_warning,
-    suppress,
 )
 
 # Error code that are due to user configuration issues that we can't work around.
 EXPECTED_DM_FAILURE_CODES = frozenset({CANT_SEND_CODE, NO_MUTUAL_GUILDS_CODE})
+
+# Common set of exceptions we suppress during Discord API operations.
+DISCORD_OP_EXCEPTIONS = (DiscordException, ClientOSError, NotFound)
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -99,20 +101,80 @@ async def retry(
             raise
 
 
+@dataclass
+class ExpectedError:
+    """Describes an expected error condition and how to handle it."""
+
+    check: Callable[[BaseException], bool]
+    warning_type: str
+    log_msg: str
+
+
+async def safe_call(
+    func: Callable[[], Awaitable[Any]],
+    log_msg: str,
+    **log_kwargs: Any,
+) -> Any:
+    """
+    Execute a Discord API call with standard error suppression and logging.
+
+    Returns None if the call fails with an expected Discord error.
+    """
+    try:
+        return await retry(func)
+    except DISCORD_OP_EXCEPTIONS as ex:
+        add_span_error(ex)
+        log_warning(log_msg, exc_info=True, **log_kwargs)
+        return None
+
+
+async def safe_call_with_expected(
+    func: Callable[[], Awaitable[Any]],
+    expected_errors: list[ExpectedError],
+    error_log_msg: str,
+    **log_kwargs: Any,
+) -> tuple[bool, Any]:
+    """
+    Execute a Discord API call with specific expected error handling.
+
+    Args:
+        func: The async function to call
+        expected_errors: List of expected error conditions that should be treated as warnings
+        error_log_msg: Log message for unexpected errors
+        **log_kwargs: Keyword arguments for log messages
+
+    Returns:
+        (success, result) tuple. success is True if call completed without error.
+
+    """
+
+    def ignore_error(ex: BaseException) -> bool:
+        return any(e.check(ex) for e in expected_errors)
+
+    try:
+        result = await retry(func, ignore_error=ignore_error)
+    except DISCORD_OP_EXCEPTIONS as ex:
+        for expected in expected_errors:
+            if expected.check(ex):
+                set_warning_tags(expected.warning_type, ex)
+                log_info(expected.log_msg, **log_kwargs)
+                return False, None
+        add_span_error(ex)
+        log_warning(error_log_msg, **log_kwargs)
+        return False, None
+    else:
+        return True, result
+
+
 @tracer.wrap()
 async def safe_original_response(
     interaction: discord.Interaction,
 ) -> discord.InteractionMessage | None:
-    response: discord.InteractionMessage | None = None
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="could fetch original response for user %(user_xid)s",
+    return await safe_call(
+        interaction.original_response,
+        "could fetch original response for user %(user_xid)s",
         user_xid=interaction.user.id,
-    ):
-        response = await retry(interaction.original_response)
-    return response
+    )
 
 
 def is_unknown_interaction(ex: BaseException) -> bool:
@@ -124,10 +186,6 @@ def is_already_acknowledged(ex: BaseException) -> bool:
         isinstance(ex, discord.errors.HTTPException)
         and getattr(ex, "code", None) == ALREADY_ACKNOWLEDGED_CODE
     )
-
-
-def is_expected_defer_error(ex: BaseException) -> bool:
-    return is_unknown_interaction(ex) or is_already_acknowledged(ex)
 
 
 def set_warning_tags(warning_type: str, ex: BaseException) -> None:
@@ -144,47 +202,24 @@ def set_warning_tags(warning_type: str, ex: BaseException) -> None:
 
 @tracer.wrap()
 async def safe_defer_interaction(interaction: discord.Interaction) -> bool:
-    try:
-        await retry(interaction.response.defer, ignore_error=is_expected_defer_error)
-    except NotFound as ex:
-        if is_unknown_interaction(ex):
-            # Interaction token has expired (usually >3 seconds elapsed)
-            set_warning_tags("unknown_interaction", ex)
-            log_info(
+    success, _ = await safe_call_with_expected(
+        interaction.response.defer,
+        [
+            ExpectedError(
+                is_unknown_interaction,
+                "unknown_interaction",
                 "unknown interaction for user %(user_xid)s (token expired)",
-                user_xid=interaction.user.id,
-            )
-            return False
-        add_span_error(ex)
-        log_warning(
-            "could not defer interaction for user %(user_xid)s",
-            user_xid=interaction.user.id,
-        )
-        return False
-    except discord.errors.HTTPException as ex:
-        if is_already_acknowledged(ex):
-            # Interaction was already responded to
-            set_warning_tags("already_acknowledged", ex)
-            log_info(
+            ),
+            ExpectedError(
+                is_already_acknowledged,
+                "already_acknowledged",
                 "interaction already acknowledged for user %(user_xid)s",
-                user_xid=interaction.user.id,
-            )
-            return False
-        add_span_error(ex)
-        log_warning(
-            "could not defer interaction for user %(user_xid)s",
-            user_xid=interaction.user.id,
-        )
-        return False
-    except (DiscordException, ClientOSError) as ex:
-        add_span_error(ex)
-        log_warning(
-            "could not defer interaction for user %(user_xid)s",
-            user_xid=interaction.user.id,
-        )
-        return False
-    else:
-        return True
+            ),
+        ],
+        "could not defer interaction for user %(user_xid)s",
+        user_xid=interaction.user.id,
+    )
+    return success
 
 
 @tracer.wrap()
@@ -195,19 +230,14 @@ async def safe_fetch_user(
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"user_xid": str(user_xid)})
 
-    user: discord.User | None
     if user := client.get_user(user_xid):
         return user
 
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="could not fetch user %(user_xid)s",
+    return await safe_call(
+        lambda: client.fetch_user(user_xid),
+        "could not fetch user %(user_xid)s",
         user_xid=user_xid,
-    ):
-        user = await retry(lambda: client.fetch_user(user_xid))
-    return user
+    )
 
 
 @tracer.wrap()
@@ -218,19 +248,14 @@ async def safe_fetch_guild(
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid)})
 
-    guild: discord.Guild | None
     if guild := client.get_guild(guild_xid):
         return guild
 
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="could not fetch guild %(guild_xid)s",
+    return await safe_call(
+        lambda: client.fetch_guild(guild_xid),
+        "could not fetch guild %(guild_xid)s",
         guild_xid=guild_xid,
-    ):
-        guild = await retry(lambda: client.fetch_guild(guild_xid))
-    return guild
+    )
 
 
 @tracer.wrap()
@@ -254,20 +279,13 @@ async def safe_fetch_text_channel(
         logger.warning("in guild %s, no permissions to read messages", guild_xid)
         return None
 
-    channel: discord.TextChannel | None = None
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="in guild %(guild_xid)s, could not fetch channel %(channel_xid)s",
+    fetched = await safe_call(
+        lambda: client.fetch_channel(channel_xid),
+        "in guild %(guild_xid)s, could not fetch channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,
-    ):
-        fetched = await retry(lambda: client.fetch_channel(channel_xid))
-        if isinstance(fetched, discord.TextChannel):
-            channel = fetched
-
-    return channel
+    )
+    return fetched if isinstance(fetched, discord.TextChannel) else None
 
 
 @tracer.wrap()
@@ -285,18 +303,10 @@ def safe_get_partial_message(
     if not bot_can_read(channel):
         return None
 
-    message: discord.PartialMessage | None = None
+    # Note: get_partial_message is synchronous and doesn't actually make API calls,
+    # so it won't raise Discord errors. We keep this simple.
     text_channel = cast("discord.TextChannel", channel)
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="in guild %(guild_xid)s, could not get partial message %(message_xid)s",
-        guild_xid=guild_xid,
-        message_xid=message_xid,
-    ):
-        message = text_channel.get_partial_message(message_xid)
-    return message
+    return text_channel.get_partial_message(message_xid)
 
 
 def is_unknown_message(ex: BaseException) -> bool:
@@ -312,31 +322,19 @@ async def safe_update_embed(
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"message_xid": str(message.id)})
 
-    try:
-        return await retry(lambda: message.edit(*args, **kwargs), ignore_error=is_unknown_message)
-    except NotFound as ex:
-        if is_unknown_message(ex):
-            # Message was deleted before we could edit it
-            if span := tracer.current_span():  # pragma: no cover
-                span.set_tags(
-                    {
-                        "warning": "true",
-                        "warning.type": "unknown_message",
-                        "warning.code": str(getattr(ex, "code", "")),
-                    },
-                )
-            log_info(
+    _, result = await safe_call_with_expected(
+        lambda: message.edit(*args, **kwargs),
+        [
+            ExpectedError(
+                is_unknown_message,
+                "unknown_message",
                 "unknown message %(message_xid)s (already deleted)",
-                message_xid=message.id,
-            )
-            return None
-        add_span_error(ex)
-        log_warning("could not update embed in message %(message_xid)s", message_xid=message.id)
-        return None
-    except (DiscordException, ClientOSError) as ex:
-        add_span_error(ex)
-        log_warning("could not update embed in message %(message_xid)s", message_xid=message.id)
-        return None
+            ),
+        ],
+        "could not update embed in message %(message_xid)s",
+        message_xid=message.id,
+    )
+    return result
 
 
 def is_missing_access(ex: BaseException) -> bool:
@@ -344,11 +342,6 @@ def is_missing_access(ex: BaseException) -> bool:
         isinstance(ex, discord.errors.Forbidden)
         and getattr(ex, "code", None) == MISSING_ACCESS_CODE
     )
-
-
-def is_expected_delete_error(ex: BaseException) -> bool:
-    """Check if this is an expected error when deleting a message."""
-    return is_missing_access(ex) or is_unknown_message(ex)
 
 
 @tracer.wrap()
@@ -367,30 +360,24 @@ async def safe_delete_message(message: discord.Message | discord.PartialMessage)
         )
         return False
 
-    try:
-        await retry(message.delete, ignore_error=is_expected_delete_error)
-    except discord.errors.Forbidden as ex:
-        if is_missing_access(ex):
-            set_warning_tags("missing_access", ex)
-            log_info("missing access to delete message %(message_xid)s", message_xid=message.id)
-            return False
-        add_span_error(ex)
-        log_warning("could not delete message %(message_xid)s", message_xid=message.id)
-        return False
-    except NotFound as ex:
-        if is_unknown_message(ex):
-            set_warning_tags("unknown_message", ex)
-            log_info("unknown message %(message_xid)s (already deleted)", message_xid=message.id)
-            return False
-        add_span_error(ex)
-        log_warning("could not delete message %(message_xid)s", message_xid=message.id)
-        return False
-    except (DiscordException, ClientOSError) as ex:
-        add_span_error(ex)
-        log_warning("could not delete message %(message_xid)s", message_xid=message.id)
-        return False
-    else:
-        return True
+    success, _ = await safe_call_with_expected(
+        message.delete,
+        [
+            ExpectedError(
+                is_missing_access,
+                "missing_access",
+                "missing access to delete message %(message_xid)s",
+            ),
+            ExpectedError(
+                is_unknown_message,
+                "unknown_message",
+                "unknown message %(message_xid)s (already deleted)",
+            ),
+        ],
+        "could not delete message %(message_xid)s",
+        message_xid=message.id,
+    )
+    return success
 
 
 @tracer.wrap()
@@ -405,17 +392,12 @@ async def safe_update_embed_origin(
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"interaction.message.id": str(interaction.message.id)})
 
-    success: bool = False
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="could not update origin embed in message %(message_xid)s",
+    result = await safe_call(
+        lambda: interaction.edit_original_response(*args, **kwargs),
+        "could not update origin embed in message %(message_xid)s",
         message_xid=interaction.message.id,
-    ):
-        await retry(lambda: interaction.edit_original_response(*args, **kwargs))
-        success = True
-    return success
+    )
+    return result is not None
 
 
 @tracer.wrap()
@@ -434,16 +416,11 @@ async def safe_create_category_channel(
     if not bot_can_manage_channels(guild):
         return None
 
-    channel: discord.CategoryChannel | None = None
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="in guild %(guild_xid)s, could not create category channel",
+    return await safe_call(
+        lambda: guild.create_category_channel(name),
+        "in guild %(guild_xid)s, could not create category channel",
         guild_xid=guild_xid,
-    ):
-        channel = await retry(lambda: guild.create_category_channel(name))
-    return channel
+    )
 
 
 @tracer.wrap()
@@ -462,22 +439,15 @@ async def safe_create_voice_channel(
     if not (guild := await retry(lambda: safe_fetch_guild(client, guild_xid))):
         return None
 
-    channel: discord.VoiceChannel | None = None
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="in guild %(guild_xid)s, could not create voice channel",
+    return await safe_call(
+        lambda: guild.create_voice_channel(
+            name,
+            category=category,
+            bitrate=int(guild.bitrate_limit) if use_max_bitrate else MISSING,
+        ),
+        "in guild %(guild_xid)s, could not create voice channel",
         guild_xid=guild_xid,
-    ):
-        channel = await retry(
-            lambda: guild.create_voice_channel(
-                name,
-                category=category,
-                bitrate=int(guild.bitrate_limit) if use_max_bitrate else MISSING,
-            ),
-        )
-    return channel
+    )
 
 
 @tracer.wrap()
@@ -554,17 +524,29 @@ async def safe_delete_channel(
     if span:  # pragma: no cover
         span.set_tag("channel_xid", str(channel_xid))
 
-    success = False
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        log="in guild %(guild_xid)s, could not delete channel %(channel_xid)s",
+    result = await safe_call(
+        channel.delete,  # type: ignore
+        "in guild %(guild_xid)s, could not delete channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,
-    ):
-        await retry(channel.delete)  # type: ignore
-        success = True
-    return success
+    )
+    return result is not None
+
+
+async def safe_send_and_get_message(
+    send_func: Callable[[], Awaitable[Any]],
+    response_func: Callable[[], Awaitable[discord.Message]],
+    log_msg: str,
+    **log_kwargs: Any,
+) -> discord.Message | None:
+    """Send a message and retrieve the message object, with error handling."""
+    try:
+        await retry(send_func)
+        return await retry(response_func)
+    except DISCORD_OP_EXCEPTIONS as ex:
+        add_span_error(ex)
+        log_warning(log_msg, exc_info=True, **log_kwargs)
+        return None
 
 
 @tracer.wrap()
@@ -581,18 +563,13 @@ async def safe_send_channel(
             },
         )
 
-    message: discord.Message | None = None
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="in guild %(guild_xid)s, could not send message to channel %(channel_xid)s",
+    return await safe_send_and_get_message(
+        lambda: interaction.response.send_message(*args, **kwargs),
+        interaction.original_response,
+        "in guild %(guild_xid)s, could not send message to channel %(channel_xid)s",
         guild_xid=interaction.guild_id,
         channel_xid=interaction.channel_id,
-    ):
-        await retry(lambda: interaction.response.send_message(*args, **kwargs))
-        message = await retry(interaction.original_response)
-    return message
+    )
 
 
 @tracer.wrap()
@@ -614,20 +591,16 @@ async def safe_followup_channel(
         view_hack = MISSING if kwargs["view"] is None else kwargs["view"]
         kwargs["view"] = view_hack
 
-    message: discord.Message | None = None
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="in guild %(guild_xid)s, could not send message to channel %(channel_xid)s",
+    if "content" in kwargs and kwargs["content"] is None:
+        kwargs["content"] = MISSING
+    kwargs["wait"] = True  # ensure that we get the message object back
+
+    return await safe_call(
+        lambda: interaction.followup.send(*args, **kwargs),
+        "in guild %(guild_xid)s, could not send message to channel %(channel_xid)s",
         guild_xid=interaction.guild_id,
         channel_xid=interaction.channel_id,
-    ):
-        if "content" in kwargs and kwargs["content"] is None:
-            kwargs["content"] = MISSING
-        kwargs["wait"] = True  # ensure that we get the message object back
-        message = await retry(lambda: interaction.followup.send(*args, **kwargs))
-    return message
+    )
 
 
 @tracer.wrap()
@@ -646,17 +619,12 @@ async def safe_channel_reply(
             guild_xid=guild_xid,
             channel_xid=channel_xid,
         )
-    message: discord.Message | None = None
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="in guild %(guild_xid)s, could not reply to channel %(channel_xid)s",
+    return await safe_call(
+        lambda: channel.send(*args, **kwargs),
+        "in guild %(guild_xid)s, could not reply to channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,
-    ):
-        message = await retry(lambda: channel.send(*args, **kwargs))
-    return message
+    )
 
 
 @tracer.wrap()
@@ -670,17 +638,12 @@ async def safe_create_channel_invite(
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"guild_xid": str(guild_xid), "channel_xid": str(channel_xid)})
 
-    invite: discord.Invite | None = None
-    with suppress(
-        DiscordException,
-        ClientOSError,
-        NotFound,
-        log="in guild %(guild_xid)s, could not create invite to channel %(channel_xid)s",
+    return await safe_call(
+        lambda: channel.create_invite(*args, **kwargs),
+        "in guild %(guild_xid)s, could not create invite to channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,
-    ):
-        invite = await retry(lambda: channel.create_invite(*args, **kwargs))
-    return invite
+    )
 
 
 @tracer.wrap()
@@ -718,6 +681,8 @@ async def safe_send_user(
     if not hasattr(user, "send"):
         return log_warning("no send method on user %(user)s %(xid)s", user=user, xid=user_xid)
 
+    # Note: safe_send_user has special handling for DiscordServerError and DM failures
+    # that differs from the standard safe_call pattern, so we handle it explicitly here.
     try:
         await retry(
             lambda: user.send(*args, **kwargs),
@@ -725,14 +690,7 @@ async def safe_send_user(
         )
     except discord.errors.DiscordServerError as ex:
         # Discord server errors (5xx) are transient issues, not bot errors.
-        if span := tracer.current_span():  # pragma: no cover
-            span.set_tags(
-                {
-                    "warning": "true",
-                    "warning.type": "discord_server_error",
-                    "warning.code": str(getattr(ex, "status", "")),
-                },
-            )
+        set_warning_tags("discord_server_error", ex)
         log_warning(
             "discord server error sending to user %(user)s %(xid)s",
             user=user,
@@ -743,14 +701,7 @@ async def safe_send_user(
         if is_expected_dm_failure(ex):
             # User may have the bot blocked, DMs allowed only for friends, or
             # no mutual-guild visibility per their privacy settings.
-            if span := tracer.current_span():  # pragma: no cover
-                span.set_tags(
-                    {
-                        "warning": "true",
-                        "warning.type": "dm_delivery_blocked",
-                        "warning.code": str(getattr(ex, "code", "")),
-                    },
-                )
+            set_warning_tags("dm_delivery_blocked", ex)
             return log_info(
                 "not allowed to send message to %(user)s %(xid)s",
                 user=user,
