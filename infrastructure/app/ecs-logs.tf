@@ -1,20 +1,20 @@
 # CloudWatch log groups
-resource "aws_cloudwatch_log_group" "spellbot_prod" {
-  name              = "/ecs/spellbot-prod"
-  retention_in_days = 5
 
-  tags = {
-    Name        = "spellbot-prod-logs"
-    Environment = "prod"
+locals {
+  log_retention_days = {
+    prod  = 5
+    stage = 1
   }
 }
 
-resource "aws_cloudwatch_log_group" "spellbot_stage" {
-  name              = "/ecs/spellbot-stage"
-  retention_in_days = 1
+resource "aws_cloudwatch_log_group" "spellbot" {
+  for_each = local.env_names
+
+  name              = "/ecs/spellbot-${each.key}"
+  retention_in_days = local.log_retention_days[each.key]
 
   tags = {
-    Name        = "spellbot-stage-logs"
-    Environment = "stage"
+    Name        = "spellbot-${each.key}-logs"
+    Environment = each.key
   }
 }
