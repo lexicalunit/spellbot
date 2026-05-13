@@ -8,7 +8,7 @@ from sqlalchemy.sql.expression import and_
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Channel, Game, GameStatus, Guild, Play, Post, Queue, User
-from spellbot.services import GamesService
+from spellbot.services import games
 from tests.factories import (
     BlockFactory,
     ChannelFactory,
@@ -25,7 +25,6 @@ pytestmark = pytest.mark.use_db
 @pytest.mark.asyncio
 class TestServiceGames:
     async def test_games_get(self, game: Game) -> None:
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         assert game_data.id == game.id
@@ -34,7 +33,6 @@ class TestServiceGames:
     async def test_games_get_by_voice_xid(self, guild: Guild, channel: Channel) -> None:
         game = GameFactory.create(guild=guild, channel=channel, voice_xid=12345)
 
-        games = GamesService()
         game_data = await games.get_by_voice_xid(game.voice_xid)
         assert game_data is not None
         assert game_data.id == game.id
@@ -44,7 +42,6 @@ class TestServiceGames:
         game = GameFactory.create(guild=guild, channel=channel)
         PostFactory.create(guild=guild, channel=channel, game=game)
 
-        games = GamesService()
         game_data = await games.get_by_message_xid(game.posts[0].message_xid)
         assert game_data is not None
         assert game_data.id == game.id
@@ -54,7 +51,6 @@ class TestServiceGames:
         PostFactory.create(guild=game.guild, channel=game.channel, game=game)
         user = UserFactory.create()
 
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         updated_game_data = await games.add_player(game_data, user.xid)
@@ -81,7 +77,6 @@ class TestServiceGames:
         assert private_embed is not None
 
     async def test_games_add_post(self, game: Game) -> None:
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         updated_data = await games.add_post(game_data, game.guild_xid, game.channel_xid, 12345)
@@ -102,7 +97,6 @@ class TestServiceGames:
             UserFactory.create(game=started_game)
         UserFactory.create(game=pending_game)
 
-        games = GamesService()
         started_game_data = await games.get(started_game.id)
         pending_game_data = await games.get(pending_game.id)
 
@@ -112,7 +106,6 @@ class TestServiceGames:
         assert not pending_game_data.fully_seated
 
     async def test_games_make_ready(self, game: Game) -> None:
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         await games.make_ready(game_data, "http://link", "whatever", pins=[])
@@ -129,7 +122,6 @@ class TestServiceGames:
         UserFactory.create(game=game)
         assert game.seats == 4
 
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         await games.shrink_game(game_data)
@@ -143,7 +135,6 @@ class TestServiceGames:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
 
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         player_xids = {p.xid for p in game_data.players}
@@ -156,7 +147,6 @@ class TestServiceGames:
         watch = WatchFactory.create(guild_xid=game.guild.xid, user_xid=user1.xid)
 
         DatabaseSession.expire_all()
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         assert await games.watch_notes(game_data, [user1.xid, user2.xid, user3.xid]) == {
@@ -164,7 +154,6 @@ class TestServiceGames:
         }
 
     async def test_games_set_voice(self, game: Game) -> None:
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         await games.set_voice(game_data, voice_xid=12345)
@@ -175,7 +164,6 @@ class TestServiceGames:
         assert found.voice_xid == 12345
 
     async def test_games_set_voice_with_link(self, game: Game) -> None:
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         await games.set_voice(game_data, voice_xid=12345, voice_invite_link="http://link")
@@ -187,13 +175,11 @@ class TestServiceGames:
         assert found.voice_invite_link == "http://link"
 
     async def test_message_xids(self, game: Game) -> None:
-        games = GamesService()
         assert await games.message_xids([game.id]) == [game.posts[0].message_xid]
 
     async def test_dequeue_players(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
-        games = GamesService()
 
         await games.dequeue_players([user1.xid, user2.xid])
 
@@ -204,7 +190,6 @@ class TestServiceGames:
     async def test_player_convoke_data(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
-        games = GamesService()
         result = await games.player_convoke_data(game.id)
         expected = [
             {"xid": user1.xid, "name": user1.name},
@@ -246,7 +231,6 @@ class TestServiceGames:
             .first()
         )
 
-        games = GamesService()
         result = await games.player_convoke_data(game.id)
         expected = [
             {"xid": user1.xid, "name": user1.name},
@@ -255,7 +239,6 @@ class TestServiceGames:
         assert result == expected
 
     async def test_player_convoke_data_when_game_not_found(self) -> None:
-        games = GamesService()
         assert await games.player_convoke_data(404) == []
 
 
@@ -267,7 +250,6 @@ class TestServiceGamesBlocked:
 
         BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
 
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         assert await games.blocked(game_data, user2.xid)
@@ -278,7 +260,6 @@ class TestServiceGamesBlocked:
 
         BlockFactory.create(user_xid=user2.xid, blocked_user_xid=user1.xid)
 
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         assert await games.blocked(game_data, user2.xid)
@@ -287,7 +268,6 @@ class TestServiceGamesBlocked:
         UserFactory.create(game=game)
         user3 = UserFactory.create()
 
-        games = GamesService()
         game_data = await games.get(game.id)
         assert game_data is not None
         assert not await games.blocked(game_data, user3.xid)
@@ -296,7 +276,6 @@ class TestServiceGamesBlocked:
 @pytest.mark.asyncio
 class TestServiceGamesUpsert:
     async def test_lfg_alone_when_existing_game(self, game: Game, user: User) -> None:
-        games = GamesService()
         new, game_data = await games.upsert(
             guild_xid=game.guild.xid,
             channel_xid=game.channel.xid,
@@ -329,7 +308,6 @@ class TestServiceGamesUpsert:
         user1 = UserFactory.create(xid=101)
         user2 = UserFactory.create(xid=102)
 
-        games = GamesService()
         new, game_data = await games.upsert(
             guild_xid=game.guild.xid,
             channel_xid=game.channel.xid,
@@ -349,7 +327,6 @@ class TestServiceGamesUpsert:
         assert {row[0] for row in rows} == {101, 102}
 
     async def test_lfg_alone_when_no_game(self, guild: Guild, channel: Channel, user: User) -> None:
-        games = GamesService()
         new, game_data = await games.upsert(
             guild_xid=guild.xid,
             channel_xid=channel.xid,
@@ -377,7 +354,6 @@ class TestServiceGamesUpsert:
         user1 = UserFactory.create(xid=101)
         user2 = UserFactory.create(xid=102)
 
-        games = GamesService()
         new, game_data = await games.upsert(
             guild_xid=guild.xid,
             channel_xid=channel.xid,
@@ -406,7 +382,6 @@ class TestServiceGamesUpsert:
         user3 = UserFactory.create(xid=103)
         bad_game = GameFactory.create(seats=2, channel=channel, guild=guild)
 
-        games = GamesService()
         new, game_data = await games.upsert(
             guild_xid=guild.xid,
             channel_xid=channel.xid,
@@ -443,7 +418,6 @@ class TestServiceGamesUpsert:
             format=GameFormat.TWO_HEADED_GIANT.value,
         )
 
-        games = GamesService()
         new, game_data = await games.upsert(
             guild_xid=guild.xid,
             channel_xid=channel.xid,
@@ -466,7 +440,6 @@ class TestServiceGamesUpsert:
         assert {row[0] for row in rows} == {101, 102, 103}
 
     async def test_lfg_when_existing_game_and_blocked(self, game: Game) -> None:
-        games = GamesService()
         user1 = UserFactory.create(xid=101, game=game)
         user2 = UserFactory.create(xid=102)
         BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
@@ -490,7 +463,6 @@ class TestServiceGamesUpsert:
         assert other_game.players == [user2]
 
     async def test_lfg_when_existing_game_and_blocker(self, game: Game) -> None:
-        games = GamesService()
         user1 = UserFactory.create(xid=101, game=game)
         user2 = UserFactory.create(xid=102)
         BlockFactory.create(user_xid=user2.xid, blocked_user_xid=user1.xid)

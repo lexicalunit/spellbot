@@ -180,7 +180,7 @@ class TestWebRecord:
 
         # unexpected error
         mocker.patch(
-            "spellbot.services.plays.PlaysService.verify_game_pin",
+            "spellbot.services.plays.verify_game_pin",
             side_effect=Exception("BOOM"),
         )
         resp = await client.post(
@@ -193,7 +193,7 @@ class TestWebRecord:
 
         # Test rate limiting on failed verification
         mocker.patch(
-            "spellbot.services.plays.PlaysService.verify_game_pin",
+            "spellbot.services.plays.verify_game_pin",
             return_value=False,
         )
         mocker.patch("spellbot.web.api.rest.rate_limited", return_value=True)
@@ -227,7 +227,7 @@ class TestWebRecord:
 
         # Test rate limiting on Exception
         mocker.patch(
-            "spellbot.services.plays.PlaysService.verify_game_pin",
+            "spellbot.services.plays.verify_game_pin",
             side_effect=Exception("BOOM"),
         )
         mocker.patch("spellbot.web.api.rest.rate_limited", return_value=True)

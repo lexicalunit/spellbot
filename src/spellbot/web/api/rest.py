@@ -11,9 +11,9 @@ from aiohttp import web
 from dateutil import tz
 from ddtrace.trace import tracer
 
+from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_request_id, generate_request_id
-from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.web.tools import rate_limited
 
@@ -71,7 +71,6 @@ async def game_verify_endpoint(request: web.Request) -> WebResponse:
             user_xid = int(payload["user_xid"])
             guild_xid = int(payload["guild_xid"])
             pin = payload["pin"]
-            services = ServicesRegistry()
             verified = await services.plays.verify_game_pin(
                 game_id=game_id,
                 user_xid=user_xid,
@@ -264,7 +263,7 @@ async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
         logger.warning("Discord API failure: %s", ex, exc_info=True)
 
 
-async def resolve_user_xid(services: ServicesRegistry, value: Any) -> int | None:
+async def resolve_user_xid(value: Any) -> int | None:
     """Resolve a user xid from either an int, string int, or username."""
     if value is None:
         return None
@@ -283,7 +282,6 @@ async def resolve_user_xid(services: ServicesRegistry, value: Any) -> int | None
 async def game_record_endpoint(request: web.Request) -> WebResponse:
     add_span_request_id(generate_request_id())
     async with db_session_manager():
-        services = ServicesRegistry()
         try:
             game_id = int(request.match_info["game"])
         except ValueError:
@@ -295,12 +293,12 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
         # Resolve tracker (required)
         if not payload.get("tracker"):
             return reply(error="Tracker ID is required", status=400)
-        tracker_xid = await resolve_user_xid(services, payload.get("tracker"))
+        tracker_xid = await resolve_user_xid(payload.get("tracker"))
         if tracker_xid is None:
             return reply(error="Tracker not found", status=400)
 
         # Resolve winner (optional)
-        winner_xid = await resolve_user_xid(services, payload.get("winner"))
+        winner_xid = await resolve_user_xid(payload.get("winner"))
 
         # Process players data
         players_data = payload.get("players", []) or []
@@ -313,7 +311,7 @@ async def game_record_endpoint(request: web.Request) -> WebResponse:
         for p in players_data:
             if "xid" not in p or "commander" not in p:
                 return reply(error="Invalid player data", status=400)
-            xid = await resolve_user_xid(services, p["xid"])
+            xid = await resolve_user_xid(p["xid"])
             if xid is None:
                 return reply(error=f"Player not found: {p['xid']}", status=400)
             player_xids.append(xid)

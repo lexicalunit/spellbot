@@ -5,6 +5,7 @@ from enum import Enum
 
 import discord
 
+from spellbot import services
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
@@ -25,7 +26,7 @@ class BlockAction(BaseAction):
         target: discord.User | discord.Member,
         action: ActionType,
     ) -> None:
-        await self.services.users.upsert(target)
+        await services.users.upsert(target)
 
         assert hasattr(target, "id")
         target_xid = target.id
@@ -39,9 +40,9 @@ class BlockAction(BaseAction):
             return
 
         if action is ActionType.BLOCK:
-            await self.services.users.block(self.interaction.user.id, target_xid)
+            await services.users.block(self.interaction.user.id, target_xid)
         else:
-            await self.services.users.unblock(self.interaction.user.id, target_xid)
+            await services.users.unblock(self.interaction.user.id, target_xid)
         await safe_send_channel(
             self.interaction,
             f"<@{target_xid}> has been {action.value}.",
@@ -55,7 +56,7 @@ class BlockAction(BaseAction):
         await self.execute(target, ActionType.UNBLOCK)
 
     async def blocked(self, page: int) -> None:
-        blocklist = await self.services.users.blocklist(self.interaction.user.id)
+        blocklist = await services.users.blocklist(self.interaction.user.id)
         embed = discord.Embed(title="Blocked Users")
         embed.set_thumbnail(url=settings.ICO_URL)
         pages = []
