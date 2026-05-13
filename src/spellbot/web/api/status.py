@@ -18,6 +18,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# GitHub repository for building release URLs
+GITHUB_REPO_URL = "https://github.com/lexicalunit/spellbot"
+
 # Mapping from indicator to (html_status, description)
 STATUS_DISPLAY: dict[str, tuple[str, str]] = {
     "unknown": ("unknown", "Status Unknown"),
@@ -26,6 +29,18 @@ STATUS_DISPLAY: dict[str, tuple[str, str]] = {
     "degraded": ("degraded", "Degraded Performance"),
     "outage": ("down", "Major Outage"),
 }
+
+
+def version_release_url(version: str | None) -> str | None:
+    """
+    Return the GitHub release page URL for a given version, or None if unavailable.
+
+    The release page shows the release notes and a "Full Changelog" link diffing
+    against the previous tag.
+    """
+    if not version or version == "unknown":
+        return None
+    return f"{GITHUB_REPO_URL}/releases/tag/v{version}"
 
 
 @dataclass
@@ -211,6 +226,7 @@ def format_status_for_html(data: StatusData) -> dict[str, Any]:
         "total_guilds": data.total_guilds,
         "shards": shard_data,
         "version": data.version,
+        "version_url": version_release_url(data.version),
         "upgrade_in_progress": data.upgrade_in_progress,
         "version_groups": version_groups,
         "last_updated": format_time_ago(data.last_updated) if data.last_updated else "never",
