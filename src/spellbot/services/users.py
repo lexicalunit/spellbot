@@ -189,12 +189,14 @@ async def leave_game(user_data: UserData, channel_xid: int) -> list[GameData]:
 
 @tracer.wrap()
 async def is_waiting(user_data: UserData, channel_xid: int) -> GameData | None:
+    """Return the pending game the user is waiting in for the given channel, if any."""
     user: User = await DatabaseSession.get(User, user_data.xid)
     return await user.waiting(channel_xid)
 
 
 @tracer.wrap()
 async def pending_games(user_data: UserData) -> int:
+    """Return the number of pending games the user is currently queued in."""
     user: User = await DatabaseSession.get(User, user_data.xid)
     return await user.pending_games()
 

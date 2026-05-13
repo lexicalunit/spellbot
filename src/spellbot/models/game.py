@@ -5,10 +5,11 @@ from enum import Enum, auto
 from functools import partial
 from typing import TYPE_CHECKING, cast
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import false, text
 
+from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
 
 from . import Base, now
@@ -169,10 +170,6 @@ class Game(Base):
     )
 
     async def players(self) -> list[User]:
-        from sqlalchemy import select  # allow_inline
-
-        from spellbot.database import DatabaseSession  # allow_inline
-
         from . import Play, Queue, User  # allow_inline
 
         if self.started_at is None:
@@ -190,10 +187,6 @@ class Game(Base):
         return list(users_result.scalars().all())
 
     async def player_pins(self) -> dict[int, str | None]:
-        from sqlalchemy import select  # allow_inline
-
-        from spellbot.database import DatabaseSession  # allow_inline
-
         from . import Play  # allow_inline
 
         plays_result = await DatabaseSession.execute(

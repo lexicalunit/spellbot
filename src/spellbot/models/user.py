@@ -4,9 +4,10 @@ from datetime import UTC, datetime
 from functools import partial
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false, func, select
 from sqlalchemy.orm import relationship
 
+from spellbot.database import DatabaseSession
 from spellbot.models import GameStatus
 
 from . import Base, now
@@ -68,10 +69,6 @@ class User(Base):
     )
 
     async def game(self, channel_xid: int) -> Game | None:
-        from sqlalchemy import select  # allow_inline
-
-        from spellbot.database import DatabaseSession  # allow_inline
-
         from . import Game, Post, Queue  # allow_inline
 
         queue_result = await DatabaseSession.execute(
@@ -101,10 +98,6 @@ class User(Base):
         return await game.to_data()
 
     async def pending_games(self) -> int:
-        from sqlalchemy import func, select  # allow_inline
-
-        from spellbot.database import DatabaseSession  # allow_inline
-
         from . import Game, Queue  # allow_inline
 
         result = await DatabaseSession.execute(

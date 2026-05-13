@@ -21,8 +21,11 @@ from .settings import settings
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
+    # For type checking, use the generic version from the stubs
     _CallableObjectProxyBase = CallableObjectProxy
 else:
+    # At runtime, CallableObjectProxy is not subscriptable, so create a wrapper
+    # that allows subscripting but just returns itself
 
     class _CallableObjectProxyBase(CallableObjectProxy):
         def __class_getitem__(cls, item: object) -> type:
@@ -60,7 +63,7 @@ class TypedProxy[ProxiedObject](_CallableObjectProxyBase[ProxiedObject]):
     __wrapped__: ProxiedObject | None
 
     def __init__(self) -> None:
-        super().__init__(None)
+        super().__init__(None)  # None is valid for lazy init
 
     @classmethod
     def of_type(cls, _: type[ProxiedObject]) -> TypedProxy[ProxiedObject]:
@@ -82,7 +85,7 @@ db_session_maker = TypedProxy[async_sessionmaker[AsyncSession]].of_type(async_se
 DatabaseSession = ContextLocal[AsyncSession].of_type(AsyncSession)
 
 
-def _to_async_url(db_url: str) -> str:
+def to_async_url(db_url: str) -> str:
     if db_url.startswith("postgresql+psycopg://"):
         return db_url
     if db_url.startswith("postgresql://"):  # pragma: no cover
@@ -97,6 +100,30 @@ async def initialize_connection(
     run_migrations: bool = True,
     worker_id: str | None = None,
 ) -> None:
+    """
+    Connect to the database.
+
+    SpellBot follows a "scoped session per request" model typical of web
+    applications, except the "request" is a bot interaction (or web request)
+    and scoping is done via a `ContextVar` rather than a thread local so the
+    active session propagates correctly across `await` boundaries without
+    bleeding between concurrent tasks. A single `AsyncEngine` is created here
+    for the lifetime of the process; each interaction then checks out its own
+    `AsyncSession` from the shared `async_sessionmaker` via `begin_session()`
+    / `end_session()`. By default the engine runs with `AUTOCOMMIT` isolation
+    and transactions are opened explicitly per session.
+
+    See the SQLAlchemy asyncio extension docs for background on the
+    `AsyncEngine` / `AsyncSession` patterns:
+    https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html
+
+    If `use_transaction` is set to `True`, a long-lived connection is opened
+    and an outer transaction is begun on it; the sessionmaker is bound to
+    that connection with `join_transaction_mode="create_savepoint"` so each
+    session nests inside the outer transaction via savepoints. The whole
+    outer transaction can then be discarded via `rollback_transaction()`,
+    which is useful for tests that want full isolation.
+    """
     db_url = settings.DATABASE_URL
     if worker_id:
         db_url += f"-{worker_id}"
@@ -104,7 +131,7 @@ async def initialize_connection(
     if run_migrations:  # pragma: no cover
         create_all(db_url)
 
-    async_url = _to_async_url(db_url)
+    async_url = to_async_url(db_url)
     engine_obj: AsyncEngine = create_async_engine(
         async_url,
         echo=settings.DATABASE_ECHO,

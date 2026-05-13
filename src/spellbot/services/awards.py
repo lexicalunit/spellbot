@@ -20,6 +20,7 @@ async def give_awards(
     guild_xid: int,
     player_xids: list[int],
 ) -> dict[int, list[NewAward]]:
+    """Return dict of discord user ids -> role names to assign to that user."""
     new_roles: dict[int, list[NewAward]] = defaultdict(list)
 
     for player_xid in player_xids:

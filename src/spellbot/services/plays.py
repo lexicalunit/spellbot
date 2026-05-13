@@ -114,6 +114,7 @@ CHANNEL_RECORDS_SQL = r"""
 
 
 def make_scores(data: str) -> dict[str, Any]:
+    """Parse the encoded `name:xid@name:xid` scores string into a dict by player name."""
     scores = {}
     records = data.split("@")
     for record in records:
@@ -123,6 +124,7 @@ def make_scores(data: str) -> dict[str, Any]:
 
 
 def decomposed(combined_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Flatten a list of game records into one row per player score."""
     decomposed_data = []
     for data in combined_data:
         for name, score_data in data["scores"].items():

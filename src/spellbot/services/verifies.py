@@ -18,6 +18,7 @@ async def upsert(
     user_xid: int,
     verified: bool | None = None,
 ) -> VerifyData:
+    """Upsert a verification record for the given user in the given guild."""
     values: dict[str, object] = {
         "user_xid": user_xid,
         "guild_xid": guild_xid,
