@@ -59,7 +59,7 @@ class StringLiteral(String):  # pragma: no cover
 
         def process(value: Any) -> Any:
             if isinstance(value, int):
-                return text(value)
+                return text(value)  # type: ignore
             if not isinstance(value, str):
                 value = text(value)
             result = super_processor(value)

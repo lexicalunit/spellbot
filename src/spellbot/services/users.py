@@ -462,7 +462,7 @@ async def move_user(  # pragma: no cover
             logger.info("upsert play: %s", play_values)
             play_upsert = insert(Play).values(**play_values)
             play_upsert = play_upsert.on_conflict_do_update(
-                index_elements=[Play.user_xid, Play.game_id],
+                index_elements=[Play.user_xid, Play.game_id],  # type: ignore
                 index_where=and_(
                     Play.user_xid == play_values["user_xid"],
                     Play.game_id == play_values["game_id"],
@@ -618,7 +618,7 @@ async def play_date_range(
                 func.min(Game.started_at),
                 func.max(Game.started_at),
             )
-            .join(Play, Play.game_id == Game.id)
+            .join(Play, Play.game_id == Game.id)  # type: ignore
             .where(
                 and_(
                     Play.user_xid == user_xid,

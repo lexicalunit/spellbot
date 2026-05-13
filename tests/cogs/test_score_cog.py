@@ -60,7 +60,7 @@ class TestCogScore:
         )
         factories.play.create(user_xid=user.xid, game_id=game.id)
 
-        interaction.response.send_message.reset_mock()
+        interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.score, interaction)
 
         assert get_last_send_message(interaction, "embed") == {
@@ -81,7 +81,7 @@ class TestCogScore:
         )
         factories.play.create(user_xid=user.xid, game_id=game.id)
 
-        interaction.response.send_message.reset_mock()
+        interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.score, interaction)
         assert get_last_send_message(interaction, "embed") == {
             "author": {"name": f"Record of games played on {guild.name}"},
@@ -101,8 +101,8 @@ class TestCogScore:
         await run_command(cog.score, new_interaction)
 
         send_message = new_interaction.response.send_message
-        send_message.assert_called_once()
-        embed = send_message.call_args.kwargs.get("embed")
+        send_message.assert_called_once()  # type: ignore
+        embed = send_message.call_args.kwargs.get("embed")  # type: ignore
         assert embed is not None
         assert embed.to_dict() == {
             "author": {"name": f"Record of games played on {new_guild.name}"},
@@ -224,7 +224,7 @@ class TestCogScore:
             "flags": 0,
         }
 
-        interaction.response.send_message.reset_mock()
+        interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.top, interaction)
         assert get_last_send_message(interaction, "embed") == {
             "title": f"Top players in #{channel.name} (this month)",
@@ -240,7 +240,7 @@ class TestCogScore:
             "flags": 0,
         }
 
-        interaction.response.send_message.reset_mock()
+        interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.top, interaction, ago=1)
         assert get_last_send_message(interaction, "embed") == {
             "title": f"Top players in #{channel.name} (1 months ago)",

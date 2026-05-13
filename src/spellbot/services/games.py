@@ -201,13 +201,13 @@ async def _find_existing(
         .filter(
             and_(
                 Game.guild_xid == guild_xid,
-                Game.channel_xid == channel_xid,
-                Game.seats == seats,
+                Game.channel_xid == channel_xid,  # type: ignore
+                Game.seats == seats,  # type: ignore
                 Game.rules == rules,
-                Game.format == format,
-                Game.bracket == bracket,
-                Game.service == service,
-                Game.status == GameStatus.PENDING.value,
+                Game.format == format,  # type: ignore
+                Game.bracket == bracket,  # type: ignore
+                Game.service == service,  # type: ignore
+                Game.status == GameStatus.PENDING.value,  # type: ignore
                 Game.deleted_at.is_(None),
             ),
         )
@@ -347,10 +347,10 @@ async def make_ready(
     ]
 
     # update game's state
-    game.game_link = game_link  # column is "game_link" for legacy reasons
-    game.password = password
+    game.game_link = game_link  # type: ignore  # column is "game_link" for legacy reasons
+    game.password = password  # type: ignore
     game.status = GameStatus.STARTED.value
-    game.started_at = datetime.now(tz=UTC)
+    game.started_at = datetime.now(tz=UTC)  # type: ignore
 
     if not queues:  # Not sure this is possible, but just in case.
         await DatabaseSession.commit()
@@ -555,7 +555,7 @@ async def get_last_game(user_xid: int, guild_xid: int) -> GameData | None:
         select(Game)
         .where(
             Game.guild_xid == guild_xid,
-            Game.status == GameStatus.STARTED.value,
+            Game.status == GameStatus.STARTED.value,  # type: ignore
             Game.deleted_at.is_(None),
             Play.user_xid == user_xid,
         )

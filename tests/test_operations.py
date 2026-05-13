@@ -339,13 +339,13 @@ class TestOperationsCreateCategoryChannel:
     async def test_happy_path(self, dpy_guild: discord.Guild) -> None:
         client = mock_client(guilds=[dpy_guild])
         await safe_create_category_channel(client, dpy_guild.id, "name")
-        dpy_guild.create_category_channel.assert_called_once_with("name")
+        dpy_guild.create_category_channel.assert_called_once_with("name")  # type: ignore
 
     async def test_no_permissions(self, dpy_guild: discord.Guild, mocker: MockerFixture) -> None:
         mocker.patch("spellbot.operations.bot_can_manage_channels", MagicMock(return_value=False))
         client = mock_client(guilds=[dpy_guild])
         response = await safe_create_category_channel(client, dpy_guild.id, "name")
-        dpy_guild.create_category_channel.assert_not_called()
+        dpy_guild.create_category_channel.assert_not_called()  # type: ignore
         assert response is None
 
     async def test_uncached(
@@ -356,22 +356,22 @@ class TestOperationsCreateCategoryChannel:
         client = mock_client(guilds=[dpy_guild])
         monkeypatch.setattr(client, "get_guild", MagicMock(return_value=None))
         await safe_create_category_channel(client, dpy_guild.id, "name")
-        dpy_guild.create_category_channel.assert_called_once_with("name")
+        dpy_guild.create_category_channel.assert_called_once_with("name")  # type: ignore
 
     async def test_not_found(self, dpy_guild: discord.Guild) -> None:
         client = mock_client()
         await safe_create_category_channel(client, dpy_guild.id, "name")
-        dpy_guild.create_category_channel.assert_not_called()
+        dpy_guild.create_category_channel.assert_not_called()  # type: ignore
 
 
 @pytest.mark.asyncio
 class TestOperationsCreateChannelInvite:
     async def test_happy_path(self, dpy_channel: discord.TextChannel) -> None:
         await safe_create_channel_invite(dpy_channel)
-        dpy_channel.create_invite.assert_called_once()
+        dpy_channel.create_invite.assert_called_once()  # type: ignore
 
     async def test_exception(self, dpy_channel: discord.TextChannel) -> None:
-        dpy_channel.create_invite.side_effect = DiscordException
+        dpy_channel.create_invite.side_effect = DiscordException  # type: ignore
         invite = await safe_create_channel_invite(dpy_channel)
         assert invite is None
 
@@ -382,7 +382,7 @@ class TestOperationsCreateVoiceChannel:
         category = MagicMock(spec=discord.CategoryChannel)
         client = mock_client(guilds=[dpy_guild])
         await safe_create_voice_channel(client, dpy_guild.id, "name", category=category)
-        dpy_guild.create_voice_channel.assert_called_once_with(
+        dpy_guild.create_voice_channel.assert_called_once_with(  # type: ignore
             "name",
             category=category,
             bitrate=ANY,
@@ -403,7 +403,7 @@ class TestOperationsCreateVoiceChannel:
             category=category,
             use_max_bitrate=True,
         )
-        dpy_guild.create_voice_channel.assert_called_once_with(
+        dpy_guild.create_voice_channel.assert_called_once_with(  # type: ignore
             "name",
             category=category,
             bitrate=int(dpy_guild.bitrate_limit),
@@ -419,7 +419,7 @@ class TestOperationsCreateVoiceChannel:
             category=category,
             use_max_bitrate=False,
         )
-        dpy_guild.create_voice_channel.assert_not_called()
+        dpy_guild.create_voice_channel.assert_not_called()  # type: ignore
 
 
 @pytest.mark.asyncio
@@ -604,7 +604,7 @@ class TestOperationsSendUser:
     async def test_not_sendable(self, caplog: pytest.LogCaptureFixture) -> None:
         user = Mock()
         del user.send
-        user.__str__ = lambda self: "user#1234"
+        user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 1234
         await safe_send_user(user, "content")
         assert "no send method on user user#1234 1234" in caplog.text
@@ -619,7 +619,7 @@ class TestOperationsSendUser:
         exception = discord.errors.Forbidden(MagicMock(), "msg")
         exception.code = NO_MUTUAL_GUILDS_CODE
         user = MagicMock(spec=discord.User | discord.Member)
-        user.__str__ = lambda self: "user#1234"
+        user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = user_xid
         user.send = AsyncMock(side_effect=exception)
         await safe_send_user(user, "content")
@@ -627,7 +627,7 @@ class TestOperationsSendUser:
 
     async def test_forbidden_other_code(self, caplog: pytest.LogCaptureFixture) -> None:
         user = MagicMock(spec=discord.User | discord.Member)
-        user.__str__ = lambda self: "user#1234"
+        user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 1234
         user.send = AsyncMock(side_effect=discord.errors.Forbidden(MagicMock(), "msg"))
         await safe_send_user(user, "content")
@@ -638,7 +638,7 @@ class TestOperationsSendUser:
         exception = discord.errors.HTTPException(MagicMock(), "msg")
         exception.code = CANT_SEND_CODE
         user = MagicMock(spec=discord.User | discord.Member)
-        user.__str__ = lambda self: "user#1234"
+        user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 1234
         user.send = AsyncMock(side_effect=exception)
         await safe_send_user(user, "content")
@@ -647,7 +647,7 @@ class TestOperationsSendUser:
     async def test_http_failure(self, caplog: pytest.LogCaptureFixture) -> None:
         exception = discord.errors.HTTPException(MagicMock(), "msg")
         user = MagicMock(spec=discord.User | discord.Member)
-        user.__str__ = lambda self: "user#1234"
+        user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 1234
         user.send = AsyncMock(side_effect=exception)
         await safe_send_user(user, "content")
@@ -656,7 +656,7 @@ class TestOperationsSendUser:
     async def test_server_error(self, caplog: pytest.LogCaptureFixture) -> None:
         exception = discord.errors.DiscordServerError(MagicMock(), "msg")
         user = MagicMock(spec=discord.User | discord.Member)
-        user.__str__ = lambda self: "user#1234"
+        user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 1234
         user.send = AsyncMock(side_effect=exception)
         await safe_send_user(user, "content")
@@ -665,7 +665,7 @@ class TestOperationsSendUser:
     async def test_client_error(self, caplog: pytest.LogCaptureFixture) -> None:
         exception = ClientOSError()
         user = MagicMock(spec=discord.User | discord.Member)
-        user.__str__ = lambda self: "user#1234"
+        user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 1234
         user.send = AsyncMock(side_effect=exception)
         await safe_send_user(user, "content")
@@ -688,7 +688,7 @@ class TestOperationsAddRole:
         role = discord.Role(
             guild=guild,
             state=MagicMock(),
-            data={"id": 2, "name": "role"},
+            data={"id": 2, "name": "role"},  # type: ignore
         )
         guild.me.top_role = role
         guild.roles = [role]
@@ -707,7 +707,7 @@ class TestOperationsAddRole:
         role = discord.Role(
             guild=guild,
             state=MagicMock(),
-            data={"id": 1, "name": "@everyone"},
+            data={"id": 1, "name": "@everyone"},  # type: ignore
         )
         guild.roles = [role]
         await safe_add_role(member, guild, "@everyone")
@@ -725,7 +725,7 @@ class TestOperationsAddRole:
         role = discord.Role(
             guild=guild,
             state=MagicMock(),
-            data={"id": 2, "name": "role"},
+            data={"id": 2, "name": "role"},  # type: ignore
         )
         guild.me.top_role = role
         guild.roles = [role]
@@ -746,7 +746,7 @@ class TestOperationsAddRole:
         role = discord.Role(
             guild=guild,
             state=MagicMock(),
-            data={"id": 2, "name": "role"},
+            data={"id": 2, "name": "role"},  # type: ignore
         )
         guild.me.top_role = role
         guild.get_member = MagicMock(return_value=member)
@@ -756,7 +756,7 @@ class TestOperationsAddRole:
 
     async def test_no_member(self, caplog: pytest.LogCaptureFixture) -> None:
         user = MagicMock(spec=discord.User | discord.Member)
-        user.__str__ = lambda self: "user#1234"
+        user.__str__ = lambda self: "user#1234"  # type: ignore
         user.id = 101
         guild = MagicMock(spec=discord.Guild)
         guild.id = 201
@@ -798,7 +798,7 @@ class TestOperationsAddRole:
         role = discord.Role(
             guild=guild,
             state=MagicMock(),
-            data={"id": 2, "name": "role"},
+            data={"id": 2, "name": "role"},  # type: ignore
         )
         guild.roles = [role]
         await safe_add_role(member, guild, "role")
@@ -819,12 +819,12 @@ class TestOperationsAddRole:
         admin_role = discord.Role(
             guild=guild,
             state=MagicMock(),
-            data={"id": 3, "name": "admin_role"},
+            data={"id": 3, "name": "admin_role"},  # type: ignore
         )
         user_role = discord.Role(
             guild=guild,
             state=MagicMock(),
-            data={"id": 4, "name": "user_role"},
+            data={"id": 4, "name": "user_role"},  # type: ignore
         )
         guild.me.top_role = user_role
         guild.roles = [user_role, admin_role]
@@ -838,7 +838,7 @@ class TestOperationsAddRole:
         member = MagicMock(spec=discord.User | discord.Member)
         member.id = 101
         member.roles = []
-        member.__str__ = lambda self: "user#1234"
+        member.__str__ = lambda self: "user#1234"  # type: ignore
         exception = discord.errors.Forbidden(MagicMock(), "msg")
         member.add_roles = AsyncMock(side_effect=exception)
         guild = MagicMock(spec=discord.Guild)
@@ -848,7 +848,7 @@ class TestOperationsAddRole:
         role = discord.Role(
             guild=guild,
             state=MagicMock(),
-            data={"id": 2, "name": "role"},
+            data={"id": 2, "name": "role"},  # type: ignore
         )
         guild.me.top_role = role
         guild.roles = [role]

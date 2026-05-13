@@ -269,7 +269,7 @@ class TestRetryIfNotUnrecoverable:
         ],
     )
     def test_client_response_error(self, status: int, expected: bool) -> None:
-        exc = aiohttp.ClientResponseError(None, None, status=status)
+        exc = aiohttp.ClientResponseError(None, None, status=status)  # type: ignore
         assert retry_if_not_unrecoverable(exc) is expected
 
     def test_non_client_response_error(self) -> None:
@@ -421,14 +421,14 @@ class TestSendDm:
         assert mock_post.call_count == 2
 
     async def test_send_dm_unrecoverable_error(self, mocker: MockerFixture) -> None:
-        exc = aiohttp.ClientResponseError(None, None, status=403)
+        exc = aiohttp.ClientResponseError(None, None, status=403)  # type: ignore
         mocker.patch("spellbot.web.api.rest.post_with_retry", side_effect=exc)
         # Should not raise, just log
         await send_dm(101, {"content": "Hello"})
 
     async def test_send_dm_recoverable_client_error(self, mocker: MockerFixture) -> None:
         # 500 is not in UNRECOVERABLE, so it should be re-raised and caught by outer except
-        exc = aiohttp.ClientResponseError(None, None, status=500)
+        exc = aiohttp.ClientResponseError(None, None, status=500)  # type: ignore
         mocker.patch("spellbot.web.api.rest.post_with_retry", side_effect=exc)
         # Should not raise, just log
         await send_dm(101, {"content": "Hello"})

@@ -79,11 +79,11 @@ class Play(Base):
         from spellbot.data import PlayData  # allow_inline
 
         return PlayData(
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            user_xid=self.user_xid,
+            created_at=self.created_at,  # type: ignore
+            updated_at=self.updated_at,  # type: ignore
+            user_xid=self.user_xid,  # type: ignore
             game_id=self.game_id,
-            og_guild_xid=self.og_guild_xid,
-            pin=self.pin,
-            verified_at=self.verified_at,
+            og_guild_xid=self.og_guild_xid,  # type: ignore
+            pin=self.pin,  # type: ignore
+            verified_at=self.verified_at,  # type: ignore
         )

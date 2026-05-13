@@ -44,7 +44,7 @@ class TestCogOwner:
 
         await run_owner_command(cog, cog.ban, context, str(target_user.id))
 
-        context.author.send.assert_called_once_with(
+        context.author.send.assert_called_once_with(  # type: ignore
             f"User <@{target_user.id}> has been banned.",
         )
         user = (
@@ -68,7 +68,7 @@ class TestCogOwner:
     ) -> None:
         cog = OwnerCog(bot)
         await run_owner_command(cog, cog.ban, context, None)
-        context.author.send.assert_called_once_with("No target user.")
+        context.author.send.assert_called_once_with("No target user.")  # type: ignore
 
     async def test_ban_with_invalid_target(
         self,
@@ -77,7 +77,7 @@ class TestCogOwner:
     ) -> None:
         cog = OwnerCog(bot)
         await run_owner_command(cog, cog.ban, context, "abc")
-        context.author.send.assert_called_once_with("Invalid user id.")
+        context.author.send.assert_called_once_with("Invalid user id.")  # type: ignore
 
     async def test_ban_and_unban_exceptions(
         self,
@@ -112,11 +112,11 @@ class TestCogOwner:
 
         await run_owner_command(cog, cog.ban_guild, context, str(target_guild))
 
-        context.author.send.assert_called_once_with(
+        context.author.send.assert_called_once_with(  # type: ignore
             f"Guild {target_guild} has been banned.",
         )
         guild = (
-            await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))
+            await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))  # type: ignore
         ).scalar_one()
         assert guild.xid == target_guild
         assert guild.banned
@@ -124,7 +124,7 @@ class TestCogOwner:
         DatabaseSession.expire_all()
         await run_owner_command(cog, cog.unban_guild, context, str(target_guild))
         guild = (
-            await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))
+            await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))  # type: ignore
         ).scalar_one()
         assert guild.xid == target_guild
         assert not guild.banned
@@ -136,7 +136,7 @@ class TestCogOwner:
     ) -> None:
         cog = OwnerCog(bot)
         await run_owner_command(cog, cog.ban_guild, context, None)
-        context.author.send.assert_called_once_with("No target guild.")
+        context.author.send.assert_called_once_with("No target guild.")  # type: ignore
 
     async def test_ban_guild_with_invalid_target(
         self,
@@ -145,7 +145,7 @@ class TestCogOwner:
     ) -> None:
         cog = OwnerCog(bot)
         await run_owner_command(cog, cog.ban_guild, context, "abc")
-        context.author.send.assert_called_once_with("Invalid guild id.")
+        context.author.send.assert_called_once_with("Invalid guild id.")  # type: ignore
 
     async def test_ban_and_unban_guild_exceptions(
         self,
@@ -181,7 +181,7 @@ class TestCogOwner:
 
         await run_owner_command(cog, cog.stats, context)
 
-        context.author.send.assert_called_once_with(
+        context.author.send.assert_called_once_with(  # type: ignore
             cleandoc(
                 """
                     ```
@@ -209,7 +209,7 @@ class TestCogOwner:
 
         await callback(context)
 
-        context.author.send.assert_called_once_with("Commands synced!")
+        context.author.send.assert_called_once_with("Commands synced!")  # type: ignore
 
     async def test_sync_exception(
         self,
@@ -227,4 +227,4 @@ class TestCogOwner:
         with pytest.raises(RuntimeError):
             await callback(context)
 
-        context.author.send.assert_called_once_with("Error: oops")
+        context.author.send.assert_called_once_with("Error: oops")  # type: ignore

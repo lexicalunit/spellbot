@@ -37,7 +37,7 @@ class ScoreAction(BaseAction):
     async def history(self) -> None:
         assert self.interaction.channel
         assert hasattr(self.interaction.channel, "name")
-        channel_name = self.interaction.channel.name
+        channel_name = self.interaction.channel.name  # type: ignore
         channel_xid = self.interaction.channel.id
 
         embed = discord.Embed()
@@ -54,7 +54,7 @@ class ScoreAction(BaseAction):
 
         assert self.interaction.channel
         assert hasattr(self.interaction.channel, "name")
-        channel_name = self.interaction.channel.name
+        channel_name = self.interaction.channel.name  # type: ignore
         channel_xid = self.interaction.channel.id
         guild_xid = self.interaction.guild_id
 

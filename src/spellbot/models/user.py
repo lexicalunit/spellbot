@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false, func, select
 from sqlalchemy.orm import relationship
 
-from spellbot.database import DatabaseSession
 from spellbot.models import GameStatus
 
 from . import Base, now
@@ -69,6 +68,8 @@ class User(Base):
     )
 
     async def game(self, channel_xid: int) -> Game | None:
+        from spellbot.database import DatabaseSession  # allow_inline
+
         from . import Game, Post, Queue  # allow_inline
 
         queue_result = await DatabaseSession.execute(
@@ -93,11 +94,13 @@ class User(Base):
             return None
         if game.status != GameStatus.PENDING.value:
             return None
-        if game.deleted_at:
+        if game.deleted_at:  # type: ignore
             return None
         return await game.to_data()
 
     async def pending_games(self) -> int:
+        from spellbot.database import DatabaseSession  # allow_inline
+
         from . import Game, Queue  # allow_inline
 
         result = await DatabaseSession.execute(
@@ -115,9 +118,9 @@ class User(Base):
         from spellbot.data import UserData  # allow_inline
 
         return UserData(
-            xid=self.xid,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            name=self.name,
-            banned=self.banned,
+            xid=self.xid,  # type: ignore
+            created_at=self.created_at,  # type: ignore
+            updated_at=self.updated_at,  # type: ignore
+            name=self.name,  # type: ignore
+            banned=self.banned,  # type: ignore
         )

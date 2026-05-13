@@ -9,7 +9,6 @@ from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Intege
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import false, text
 
-from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
 
 from . import Base, now
@@ -170,6 +169,8 @@ class Game(Base):
     )
 
     async def players(self) -> list[User]:
+        from spellbot.database import DatabaseSession  # allow_inline
+
         from . import Play, Queue, User  # allow_inline
 
         if self.started_at is None:
@@ -178,7 +179,7 @@ class Game(Base):
             )
         else:
             xid_result = await DatabaseSession.execute(
-                select(Play.user_xid).where(Play.game_id == self.id),
+                select(Play.user_xid).where(Play.game_id == self.id),  # type: ignore
             )
         player_xids = [int(row[0]) for row in xid_result]
         users_result = await DatabaseSession.execute(
@@ -187,10 +188,12 @@ class Game(Base):
         return list(users_result.scalars().all())
 
     async def player_pins(self) -> dict[int, str | None]:
+        from spellbot.database import DatabaseSession  # allow_inline
+
         from . import Play  # allow_inline
 
         plays_result = await DatabaseSession.execute(
-            select(Play).where(Play.game_id == self.id),
+            select(Play).where(Play.game_id == self.id),  # type: ignore
         )
         guild = await self.awaitable_attrs.guild
         enable_mythic_track = guild.enable_mythic_track
@@ -207,27 +210,27 @@ class Game(Base):
         posts = await self.awaitable_attrs.posts
         players = await self.players()
         return GameData(
-            id=self.id,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            started_at=self.started_at,
-            deleted_at=self.deleted_at,
-            guild_xid=self.guild_xid,
+            id=self.id,  # type: ignore
+            created_at=self.created_at,  # type: ignore
+            updated_at=self.updated_at,  # type: ignore
+            started_at=self.started_at,  # type: ignore
+            deleted_at=self.deleted_at,  # type: ignore
+            guild_xid=self.guild_xid,  # type: ignore
             guild=await guild.to_data(),
             channel_xid=self.channel_xid,
             channel=channel.to_data(),
             posts=[post.to_data() for post in posts],
-            voice_xid=self.voice_xid,
-            voice_invite_link=self.voice_invite_link,
+            voice_xid=self.voice_xid,  # type: ignore
+            voice_invite_link=self.voice_invite_link,  # type: ignore
             seats=self.seats,
             status=self.status,
             format=self.format,
             bracket=self.bracket,
             service=self.service,
-            game_link=self.game_link,
-            password=self.password,
-            rules=self.rules,
-            blind=self.blind,
+            game_link=self.game_link,  # type: ignore
+            password=self.password,  # type: ignore
+            rules=self.rules,  # type: ignore
+            blind=self.blind,  # type: ignore
             players=[player.to_data() for player in players],
             player_pins=await self.player_pins(),
         )

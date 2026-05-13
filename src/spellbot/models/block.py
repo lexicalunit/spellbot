@@ -55,8 +55,8 @@ class Block(Base):
         from spellbot.data import BlockData  # allow_inline
 
         return BlockData(
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            user_xid=self.user_xid,
-            blocked_user_xid=self.blocked_user_xid,
+            created_at=self.created_at,  # type: ignore
+            updated_at=self.updated_at,  # type: ignore
+            user_xid=self.user_xid,  # type: ignore
+            blocked_user_xid=self.blocked_user_xid,  # type: ignore
         )

@@ -81,7 +81,6 @@ dev = [
   "pytest>=8",
   "ruff>=0",
   "shellingham>=1",
-  "sqlalchemy-stubs>=0",
   "syrupy>=5.1.0",
   "tomli>=2",
   "tomlkit>=0",
