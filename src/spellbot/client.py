@@ -18,7 +18,7 @@ from . import services
 from .data import GameLinkDetails
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
-from .integrations import convoke, edhlab, girudo, tablestream
+from .integrations import convoke, edhlab, girudo, playgroup_live, tablestream
 from .metrics import add_span_request_id, generate_request_id, setup_metrics
 from .operations import safe_delete_message
 from .settings import settings
@@ -163,6 +163,7 @@ class SpellBot(AutoShardedBot):
         self,
         game_data: GameData,
         pins: list[str] | None = None,
+        original_seats: int | None = None,
     ) -> GameLinkDetails:
         if self.mock_games:
             return GameLinkDetails(f"http://example.com/game/{uuid4()}")
@@ -181,6 +182,9 @@ class SpellBot(AutoShardedBot):
                 return GameLinkDetails(details.link, details.password)
             case GameService.EDHLAB.value:
                 details = await edhlab.generate_link(game_data)
+                return GameLinkDetails(*details)
+            case GameService.PLAYGROUP_LIVE.value:
+                details = await playgroup_live.generate_link(game_data, original_seats)
                 return GameLinkDetails(*details)
             case _:
                 return GameLinkDetails()

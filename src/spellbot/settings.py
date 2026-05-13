@@ -63,6 +63,8 @@ class Settings:
         "PATREON_SYNC_LOOP_M",
         "PATREON_TOKEN",
         "PENDING_EMBED_COLOR",
+        "PLAYGROUP_LIVE_API_KEY",
+        "PLAYGROUP_LIVE_API_URL",
         "PORT",
         "REDIS_URL",
         "SECRET_TOKEN",
@@ -138,6 +140,10 @@ class Settings:
         self.EDHLAB_API_KEY = getenv("EDHLAB_API_KEY")
         self.EDHLAB_ROOT = getenv("EDHLAB_ROOT", "https://wmlcambifdkwygvwnpas.supabase.co")
         self.EDHLAB_CREATE = f"{self.EDHLAB_ROOT}/functions/v1/create-spellbot-game"
+
+        # playgroup live integration
+        self.PLAYGROUP_LIVE_API_URL = getenv("PLAYGROUP_LIVE_API_URL", "https://playgroup.gg")
+        self.PLAYGROUP_LIVE_API_KEY = getenv("PLAYGROUP_LIVE_API_KEY")
 
         # configuration
         self.BOT_INVITE_LINK = (

@@ -55,6 +55,12 @@ class User(Base):
         server_default=false(),
         doc="If true, this user is banned from using SpellBot",
     )
+    playgroup_user_id = Column(
+        BigInteger,
+        nullable=True,
+        default=None,
+        doc="The Playgroup Live user ID linked to this Discord user",
+    )
 
     queues = relationship(
         "Queue",
@@ -123,4 +129,5 @@ class User(Base):
             updated_at=self.updated_at,  # type: ignore
             name=self.name,  # type: ignore
             banned=self.banned,  # type: ignore
+            playgroup_user_id=self.playgroup_user_id,
         )
