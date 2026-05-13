@@ -9,7 +9,7 @@ import alembic.command
 import alembic.config
 from sqlalchemy import String, create_engine, text
 from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import declarative_base  # type: ignore (current type stubs are broken)
+from sqlalchemy.orm import declarative_base
 from sqlalchemy_utils import create_database, database_exists
 
 from . import import_models
@@ -59,7 +59,7 @@ class StringLiteral(String):  # pragma: no cover
 
         def process(value: Any) -> Any:
             if isinstance(value, int):
-                return text(value)  # type: ignore
+                return text(value)
             if not isinstance(value, str):
                 value = text(value)
             result = super_processor(value)

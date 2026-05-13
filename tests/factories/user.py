@@ -14,7 +14,7 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     @classmethod
     def _create(cls, model_class: Any, *args: Any, **kwargs: Any) -> Any:
-        session = cls._meta.sqlalchemy_session  # type: ignore
+        session = cls._meta.sqlalchemy_session
         if session is None:  # pragma: no cover
             raise RuntimeError("No session provided.")
 
@@ -35,7 +35,7 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
                         message_xid=randint(1000, 9999),
                     )
                     session.add(post)
-                    game.posts = [post]  # type: ignore
+                    game.posts = [post]
 
         return super()._create(model_class, *args, **kwargs)
 

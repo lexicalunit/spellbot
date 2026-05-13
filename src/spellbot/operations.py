@@ -562,7 +562,7 @@ async def safe_delete_channel(
         guild_xid=guild_xid,
         channel_xid=channel_xid,
     ):
-        await retry(channel.delete)  # type: ignore - this is asserted above
+        await retry(channel.delete)
         success = True
     return success
 

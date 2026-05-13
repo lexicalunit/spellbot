@@ -60,7 +60,7 @@ class TypedProxy[ProxiedObject](_CallableObjectProxyBase[ProxiedObject]):
     __wrapped__: ProxiedObject | None
 
     def __init__(self) -> None:
-        super().__init__(None)  # type: ignore[arg-type]
+        super().__init__(None)
 
     @classmethod
     def of_type(cls, _: type[ProxiedObject]) -> TypedProxy[ProxiedObject]:
@@ -158,11 +158,11 @@ async def db_session_manager() -> AsyncGenerator[None]:
         await end_session()
 
 
-async def rollback_transaction() -> None:
+async def rollback_transaction() -> None:  # pragma: no cover
     if connection.__wrapped__ is not None and not connection.__wrapped__.closed:
         await connection.__wrapped__.rollback()
-        await connection.__wrapped__.close()  # pragma: no cover
-    if engine.__wrapped__ is not None:  # pragma: no cover
+        await connection.__wrapped__.close()
+    if engine.__wrapped__ is not None:
         await engine.__wrapped__.dispose()
 
 
