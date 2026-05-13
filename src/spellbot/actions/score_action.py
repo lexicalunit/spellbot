@@ -4,6 +4,7 @@ import logging
 
 import discord
 
+from spellbot import services
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
 
@@ -19,7 +20,7 @@ class ScoreAction(BaseAction):
         guild_name = self.interaction.guild.name
         assert hasattr(target, "id")
         target_xid = target.id
-        count = await self.services.plays.count(target_xid, self.interaction.guild_id)
+        count = await services.plays.count(target_xid, self.interaction.guild_id)
 
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
@@ -58,7 +59,7 @@ class ScoreAction(BaseAction):
         guild_xid = self.interaction.guild_id
 
         assert guild_xid is not None
-        data = await self.services.plays.top_records(guild_xid, channel_xid, monthly, ago)
+        data = await services.plays.top_records(guild_xid, channel_xid, monthly, ago)
 
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)

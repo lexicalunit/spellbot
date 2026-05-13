@@ -7,21 +7,20 @@ from spellbot.database import DatabaseSession
 from spellbot.models import Token
 
 
-class AppsService:
-    @sync_to_async
-    @tracer.wrap()
-    def verify_token(self, key: str, path: str) -> bool:
-        """Verify that the given API key has access to the given path."""
-        token = DatabaseSession.query(Token).filter(Token.key == key).one_or_none()
-        if not token:
-            return False
-        if token.deleted_at:
-            return False
-        if token.scopes == "*":
-            return True
-        parts = path.lstrip("/").split("/")
-        if len(parts) < 2:
-            return False
-        required_scope = parts[1]
-        scopes_list = token.scopes.split(",")
-        return required_scope in scopes_list
+@sync_to_async
+@tracer.wrap()
+def verify_token(key: str, path: str) -> bool:
+    """Verify that the given API key has access to the given path."""
+    token = DatabaseSession.query(Token).filter(Token.key == key).one_or_none()
+    if not token:
+        return False
+    if token.deleted_at:
+        return False
+    if token.scopes == "*":
+        return True
+    parts = path.lstrip("/").split("/")
+    if len(parts) < 2:
+        return False
+    required_scope = parts[1]
+    scopes_list = token.scopes.split(",")
+    return required_scope in scopes_list

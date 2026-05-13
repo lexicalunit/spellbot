@@ -5,9 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from spellbot.services import patreon as mod
+from spellbot.services import patreon
 from spellbot.services.patreon import (
-    PatreonService,
     get_patreon_campaign_url,
     get_patron_ids,
     get_supporters,
@@ -16,7 +15,7 @@ from spellbot.services.patreon import (
 
 @pytest.fixture(autouse=True)
 def use_fake_patreon_campaign(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(mod.settings, "PATREON_CAMPAIGN", "foo")
+    monkeypatch.setattr(patreon.settings, "PATREON_CAMPAIGN", "foo")
 
 
 class TestGetPatreonCampaignUrl:
@@ -240,8 +239,7 @@ class TestGetSupporters:
 class TestPatreonService:
     async def test_supporters_returns_empty_in_pytest(self) -> None:
         """In pytest, supporters() returns empty set due to running_in_pytest() check."""
-        service = PatreonService()
-        result = await service.supporters()
+        result = await patreon.supporters()
         assert result == set()
 
     async def test_supporters_with_mocked_http_success(self) -> None:
@@ -300,8 +298,7 @@ class TestPatreonService:
             patch("spellbot.services.patreon.running_in_pytest", return_value=False),
             patch("spellbot.services.patreon.httpx.Client", return_value=mock_client),
         ):
-            service = PatreonService()
-            result = await service.supporters()
+            result = await patreon.supporters()
 
         assert 123456 in result
         assert 789012 in result
@@ -322,8 +319,7 @@ class TestPatreonService:
             patch("spellbot.services.patreon.running_in_pytest", return_value=False),
             patch("spellbot.services.patreon.httpx.Client", return_value=mock_client),
         ):
-            service = PatreonService()
-            result = await service.supporters()
+            result = await patreon.supporters()
 
         # Should still return test account even on error
         assert 711717544435646494 in result
@@ -339,8 +335,7 @@ class TestPatreonService:
             patch("spellbot.services.patreon.running_in_pytest", return_value=False),
             patch("spellbot.services.patreon.httpx.Client", return_value=mock_client),
         ):
-            service = PatreonService()
-            result = await service.supporters()
+            result = await patreon.supporters()
 
         # Should return empty set on exception
         assert result == set()

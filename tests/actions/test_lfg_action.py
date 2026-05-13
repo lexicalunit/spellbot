@@ -7,6 +7,7 @@ import discord
 import pytest
 import pytest_asyncio
 
+from spellbot import services
 from spellbot.actions import LookingForGameAction
 from spellbot.data import PostData
 from spellbot.enums import GameBracket, GameFormat, GameService
@@ -178,7 +179,7 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test execute_rematch when user already has pending games."""
-        mocker.patch.object(action.services.users, "pending_games", AsyncMock(return_value=1))
+        mocker.patch.object(services.users, "pending_games", AsyncMock(return_value=1))
         stub = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
 
         await action.execute_rematch()
@@ -194,8 +195,8 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test execute_rematch when user has no last game."""
-        mocker.patch.object(action.services.users, "pending_games", AsyncMock(return_value=0))
-        mocker.patch.object(action.services.games, "get_last_game", AsyncMock(return_value=None))
+        mocker.patch.object(services.users, "pending_games", AsyncMock(return_value=0))
+        mocker.patch.object(services.games, "get_last_game", AsyncMock(return_value=None))
         stub = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
 
         await action.execute_rematch()
@@ -215,7 +216,7 @@ class TestLookingForGameAction:
         discord_user = mock_discord_object(user)
         mocker.patch.object(action.interaction, "user", discord_user)
         mocker.patch.object(
-            action.services.users,
+            services.users,
             "is_waiting",
             AsyncMock(return_value=create_mock_game(game_id=1)),
         )
@@ -238,9 +239,9 @@ class TestLookingForGameAction:
         """Test execute when user has too many pending games (from button)."""
         discord_user = mock_discord_object(user)
         mocker.patch.object(action.interaction, "user", discord_user)
-        mocker.patch.object(action.services.users, "is_waiting", AsyncMock(return_value=None))
+        mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=None))
         mocker.patch.object(
-            action.services.users,
+            services.users,
             "pending_games",
             AsyncMock(return_value=settings.MAX_PENDING_GAMES),
         )
@@ -260,9 +261,9 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test execute when user has too many pending games (from slash command)."""
-        mocker.patch.object(action.services.users, "is_waiting", AsyncMock(return_value=None))
+        mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=None))
         mocker.patch.object(
-            action.services.users,
+            services.users,
             "pending_games",
             AsyncMock(return_value=settings.MAX_PENDING_GAMES),
         )
@@ -284,7 +285,7 @@ class TestLookingForGameAction:
     ) -> None:
         """Test _update_other_game_posts returns early when no other game IDs."""
         # Should return immediately without calling message_xids
-        stub = mocker.patch.object(action.services.games, "message_xids", AsyncMock())
+        stub = mocker.patch.object(services.games, "message_xids", AsyncMock())
         await action.update_other_game_posts([])
         stub.assert_not_called()
 
@@ -295,9 +296,9 @@ class TestLookingForGameAction:
     ) -> None:
         """Test _update_other_game_posts updates embeds for other games."""
         game_data = create_mock_game(game_id=1, channel_xid=12345, guild_xid=67890)
-        mocker.patch.object(action.services.games, "message_xids", AsyncMock(return_value=[111]))
+        mocker.patch.object(services.games, "message_xids", AsyncMock(return_value=[111]))
         mocker.patch.object(
-            action.services.games,
+            services.games,
             "get_by_message_xid",
             AsyncMock(return_value=game_data),
         )
@@ -328,9 +329,9 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _update_other_game_posts skips when no game data found."""
-        mocker.patch.object(action.services.games, "message_xids", AsyncMock(return_value=[111]))
+        mocker.patch.object(services.games, "message_xids", AsyncMock(return_value=[111]))
         mocker.patch.object(
-            action.services.games,
+            services.games,
             "get_by_message_xid",
             AsyncMock(return_value=None),
         )
@@ -348,9 +349,9 @@ class TestLookingForGameAction:
     ) -> None:
         """Test _update_other_game_posts skips when channel not found."""
         game_data = create_mock_game(game_id=1, channel_xid=123, guild_xid=456)
-        mocker.patch.object(action.services.games, "message_xids", AsyncMock(return_value=[111]))
+        mocker.patch.object(services.games, "message_xids", AsyncMock(return_value=[111]))
         mocker.patch.object(
-            action.services.games,
+            services.games,
             "get_by_message_xid",
             AsyncMock(return_value=game_data),
         )
@@ -436,7 +437,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=None),
         )
 
-        set_voice_stub = mocker.patch.object(action.services.games, "set_voice", AsyncMock())
+        set_voice_stub = mocker.patch.object(services.games, "set_voice", AsyncMock())
 
         await action.handle_voice_creation(game_data, 12345)
 
@@ -476,7 +477,7 @@ class TestLookingForGameAction:
         action.channel_data.voice_invite = True
 
         set_voice_stub = mocker.patch.object(
-            action.services.games,
+            services.games,
             "set_voice",
             AsyncMock(return_value=game_data),
         )
@@ -517,7 +518,7 @@ class TestLookingForGameAction:
         action.channel_data.voice_invite = False
 
         set_voice_stub = mocker.patch.object(
-            action.services.games,
+            services.games,
             "set_voice",
             AsyncMock(return_value=game_data),
         )
@@ -541,7 +542,7 @@ class TestLookingForGameAction:
         mock_guild.roles = [mock_role]
         mocker.patch.object(action.interaction, "guild", mock_guild)
 
-        watch_stub = mocker.patch.object(action.services.games, "watch_notes", AsyncMock())
+        watch_stub = mocker.patch.object(services.games, "watch_notes", AsyncMock())
 
         await action.handle_watched_players(game_data, [123])
 
@@ -560,7 +561,7 @@ class TestLookingForGameAction:
         mock_guild = MagicMock(spec=discord.Guild)
         mock_guild.roles = [mock_role]
         mocker.patch.object(action.interaction, "guild", mock_guild)
-        mocker.patch.object(action.services.games, "watch_notes", AsyncMock(return_value={}))
+        mocker.patch.object(services.games, "watch_notes", AsyncMock(return_value={}))
 
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
 
@@ -594,7 +595,7 @@ class TestLookingForGameAction:
             ),
         ]
         mocker.patch.object(
-            action.services.games,
+            services.games,
             "watch_notes",
             AsyncMock(return_value={123: "suspicious"}),
         )
@@ -629,7 +630,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=MagicMock(link="https://game.link", password=None)),
         )
         mocker.patch.object(
-            action.services.games,
+            services.games,
             "make_ready",
             AsyncMock(return_value=game_data),
         )
@@ -654,7 +655,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=mock_message),
         )
         add_post_stub = mocker.patch.object(
-            action.services.games,
+            services.games,
             "add_post",
             AsyncMock(return_value=game_data),
         )
@@ -676,7 +677,7 @@ class TestLookingForGameAction:
             "spellbot.actions.lfg_action.safe_followup_channel",
             AsyncMock(return_value=None),
         )
-        add_post_stub = mocker.patch.object(action.services.games, "add_post", AsyncMock())
+        add_post_stub = mocker.patch.object(services.games, "add_post", AsyncMock())
 
         await action.create_initial_post(game_data, mock_embed)
 
@@ -926,7 +927,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=mock_user),
         )
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
-        mocker.patch.object(action.services.awards, "give_awards", AsyncMock(return_value={}))
+        mocker.patch.object(services.awards, "give_awards", AsyncMock(return_value={}))
 
         await action.handle_direct_messages(game_data)
 
@@ -956,7 +957,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=mock_user),
         )
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
-        mocker.patch.object(action.services.awards, "give_awards", AsyncMock(return_value={}))
+        mocker.patch.object(services.awards, "give_awards", AsyncMock(return_value={}))
 
         await action.handle_direct_messages(game_data)
 
@@ -985,7 +986,7 @@ class TestLookingForGameAction:
         # Award for unfetched player
         new_award = NewAward(role="SomeRole", message="Congrats!", remove=False)
         mocker.patch.object(
-            action.services.awards,
+            services.awards,
             "give_awards",
             AsyncMock(return_value={123: [new_award]}),
         )
@@ -1025,7 +1026,7 @@ class TestLookingForGameAction:
         # Award for fetched player
         new_award = NewAward(role="SomeRole", message="Congrats!", remove=False)
         mocker.patch.object(
-            action.services.awards,
+            services.awards,
             "give_awards",
             AsyncMock(return_value={123: [new_award]}),
         )
@@ -1083,7 +1084,7 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test execute_start when user is not in a pending game."""
-        mocker.patch.object(action.services.users, "is_waiting", AsyncMock(return_value=None))
+        mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=None))
         stub = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
 
         await action.execute_start()
@@ -1108,12 +1109,12 @@ class TestLookingForGameAction:
         ]
 
         mocker.patch.object(
-            action.services.users,
+            services.users,
             "is_waiting",
             AsyncMock(return_value=game_data),
         )
         mocker.patch.object(
-            action.services.games,
+            services.games,
             "shrink_game",
             AsyncMock(return_value=game_data),
         )
@@ -1138,7 +1139,7 @@ class TestLookingForGameAction:
 
         await action.execute_start()
 
-        action.services.games.shrink_game.assert_called_once_with(game_data)  # type: ignore
+        services.games.shrink_game.assert_called_once_with(game_data)
         action.make_game_ready.assert_called_once()  # type: ignore
         call_args = action.make_game_ready.call_args  # type: ignore
         assert call_args[0][0] == game_data

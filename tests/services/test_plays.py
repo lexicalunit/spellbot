@@ -8,7 +8,7 @@ import pytest_asyncio
 
 from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
-from spellbot.services import PlaysService
+from spellbot.services import plays
 
 if TYPE_CHECKING:
     from freezegun.api import FrozenDateTimeFactory
@@ -29,13 +29,11 @@ class TestPlaysServiceAnalyticsSummary:
 
     async def test_guild_exists(self, factories: Factories) -> None:
         guild = factories.guild.create(xid=5001, name="test-guild")
-        plays = PlaysService()
         assert await plays.guild_exists(guild.xid) is True
         assert await plays.guild_exists(99999) is False
 
     async def test_empty_guild(self, factories: Factories) -> None:
         guild = factories.guild.create(xid=5002, name="empty-guild")
-        plays = PlaysService()
         result = await plays.analytics_summary(guild.xid)
         assert result["total_games"] == 0
         assert result["fill_rate"] == 0.0
@@ -66,7 +64,6 @@ class TestPlaysServiceAnalyticsSummary:
         factories.play.create(game_id=game1.id, user_xid=user1.xid, og_guild_xid=guild.xid)
         factories.play.create(game_id=game1.id, user_xid=user2.xid, og_guild_xid=guild.xid)
 
-        plays = PlaysService()
         result = await plays.analytics_summary(guild.xid)
 
         assert result["total_games"] == 1
@@ -106,7 +103,6 @@ class TestPlaysServiceAnalyticsSummary:
         )
         factories.play.create(game_id=game2.id, user_xid=user1.xid, og_guild_xid=guild.xid)
 
-        plays = PlaysService()
         result = await plays.analytics_summary(guild.xid)
 
         assert result["active_players"] == 2
@@ -139,8 +135,6 @@ class TestPlaysServiceAnalyticsSummary:
         factories.play.create(game_id=game1.id, user_xid=user2.xid, og_guild_xid=guild.xid)
 
         factories.block.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
-
-        plays = PlaysService()
 
         summary = await plays.analytics_summary(guild.xid, all_time=all_time)
         assert "total_games" in summary
@@ -177,7 +171,6 @@ class TestPlaysServiceAnalyticsSummary:
 
     async def test_histogram_empty_guild(self, factories: Factories) -> None:
         guild = factories.guild.create(xid=5008, name="empty-histogram-guild")
-        plays = PlaysService()
         result = await plays.analytics_histogram(guild.xid)
         assert result["median_games"] == 0
         assert result["games_histogram"] == []
@@ -216,7 +209,6 @@ class TestPlaysServiceAnalyticsSummary:
         )
         factories.play.create(game_id=game2.id, user_xid=user.xid, og_guild_xid=guild.xid)
 
-        plays = PlaysService()
         result = await plays.analytics_retention(guild.xid, all_time=True)
         assert "player_retention" in result
         weeks_with_returning = [w for w in result["player_retention"] if w["returning"] > 0]
@@ -247,7 +239,6 @@ class TestPlaysServiceAnalyticsSummary:
             )
             factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
 
-        plays = PlaysService()
         result = await plays.analytics_histogram(guild.xid)
 
         # Should have overflow bucket "21+"
@@ -284,8 +275,6 @@ class TestPlaysServiceAnalyticsSummary:
             created_at=now - timedelta(days=60, minutes=5),
         )
         factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
-
-        plays = PlaysService()
 
         # Without all_time, the old game should not appear
         result_30_days = await plays.analytics_players(guild.xid, all_time=False)

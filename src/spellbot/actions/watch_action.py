@@ -6,6 +6,7 @@ from enum import Enum
 import discord
 from discord.embeds import Embed
 
+from spellbot import services
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
@@ -29,7 +30,7 @@ class WatchAction(BaseAction):
         note: str | None = None,
     ) -> None:
         if target:
-            await self.services.users.upsert(target)
+            await services.users.upsert(target)
 
         target_xid: int | None = None
         assert target is not None or id is not None
@@ -42,7 +43,7 @@ class WatchAction(BaseAction):
 
         if action is ActionType.UNWATCH:
             assert self.interaction.guild_id is not None
-            await self.services.users.unwatch(self.interaction.guild_id, target_xid)
+            await services.users.unwatch(self.interaction.guild_id, target_xid)
             await safe_send_channel(
                 self.interaction,
                 f"No longer watching <@{target_xid}>.",
@@ -50,7 +51,7 @@ class WatchAction(BaseAction):
             )
         else:
             assert self.interaction.guild_id is not None
-            await self.services.users.watch(self.interaction.guild_id, target_xid, note=note)
+            await services.users.watch(self.interaction.guild_id, target_xid, note=note)
             await safe_send_channel(self.interaction, f"Watching <@{target_xid}>.", ephemeral=True)
 
     async def watch(
@@ -117,7 +118,7 @@ class WatchAction(BaseAction):
             return embed
 
         assert self.interaction.guild_id is not None
-        entries = await self.services.watches.fetch(guild_xid=self.interaction.guild_id)
+        entries = await services.watches.fetch(guild_xid=self.interaction.guild_id)
 
         embeds: list[Embed] = []
         embed = new_embed()

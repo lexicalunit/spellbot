@@ -10,11 +10,11 @@ import pytest
 import pytest_asyncio
 from sqlalchemy import update
 
+from spellbot import services
 from spellbot.actions import TasksAction
 from spellbot.client import build_bot
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Game, Guild
-from spellbot.services import ChannelsService, GamesService, GuildsService, ServicesRegistry
 from tests.mocks import create_mock_channel, mock_discord_object
 
 if TYPE_CHECKING:
@@ -41,10 +41,7 @@ def use_mock_sleep(mocker: MockerFixture) -> AsyncMock:
 
 @pytest_asyncio.fixture
 async def mock_services() -> MagicMock:
-    services = MagicMock(spec=ServicesRegistry)
-    services.games = MagicMock(spec=GamesService)
-    services.channels = MagicMock(spec=ChannelsService)
-    services.guilds = MagicMock(spec=GuildsService)
+    services = MagicMock()
     services.guilds.voiced = AsyncMock()
     return services
 
@@ -140,8 +137,9 @@ class TestTaskExpireInactiveChannels:
         action: TasksAction,
         mock_services: MagicMock,
         caplog: pytest.LogCaptureFixture,
+        mocker: MockerFixture,
     ) -> None:
-        action.services = mock_services
+        mocker.patch("spellbot.actions.tasks_action.services", mock_services)
         await action.expire_inactive_games()
         mock_services.games.delete_games.assert_not_called()
         assert "starting task expire_inactive_games" in caplog.text
@@ -255,16 +253,16 @@ class TestTaskExpireInactiveChannels:
         if message_xid is not None:
             factories.post.create(guild=guild, channel=channel, game=game, message_xid=message_xid)
         factories.user.create(game=game)
-        action.services = mock_services
-        action.services.games.inactive_games = AsyncMock(return_value=[game.to_data()])
-        action.services.games.delete_games = AsyncMock()
+        mocker.patch("spellbot.actions.tasks_action.services", mock_services)
+        mock_services.games.inactive_games = AsyncMock(return_value=[game.to_data()])
+        mock_services.games.delete_games = AsyncMock()
 
         mock_channel_data = create_mock_channel(
             xid=channel.xid,
             guild_xid=guild.xid,
             delete_expired=delete_expired,
         )
-        action.services.channels.select = AsyncMock(return_value=mock_channel_data)
+        mock_services.channels.select = AsyncMock(return_value=mock_channel_data)
         mock_fetch_channel = AsyncMock(return_value=chan)
         mocker.patch("spellbot.actions.tasks_action.safe_fetch_text_channel", mock_fetch_channel)
         mock_get_partial = MagicMock(return_value=post)
@@ -277,14 +275,14 @@ class TestTaskExpireInactiveChannels:
         await action.expire_inactive_games()
 
         DatabaseSession.expire_all()
-        action.services.games.delete_games.assert_called_once_with([game.id])
+        mock_services.games.delete_games.assert_called_once_with([game.id])
         assert f"expiring game {game.id}..." in caplog.text
         if message_xid is not None:
             mock_fetch_channel.assert_called_once_with(action.bot, guild.xid, channel.xid)
             if chan is not None:
                 mock_get_partial.assert_called_once_with(chan, guild.xid, message_xid)
                 if post is not None:
-                    action.services.channels.select.assert_called_once_with(channel.xid)
+                    mock_services.channels.select.assert_called_once_with(channel.xid)
                     if delete_expired:
                         mock_delete_message.assert_called_once_with(post)
                     else:
@@ -303,8 +301,9 @@ class TestTaskCleanupOldVoiceChannels:
         action: TasksAction,
         mock_services: MagicMock,
         caplog: pytest.LogCaptureFixture,
+        mocker: MockerFixture,
     ) -> None:
-        action.services = mock_services
+        mocker.patch("spellbot.actions.tasks_action.services", mock_services)
         await action.cleanup_old_voice_channels()
         mock_services.guilds.voiced.assert_called_once_with()
         assert "starting task cleanup_old_voice_channels" in caplog.text
@@ -640,8 +639,7 @@ class TestPatreonSync:
         mocker: MockerFixture,
     ) -> None:
         mock_supporters = AsyncMock(return_value={123, 456, 789})
-        action.services.patreon = MagicMock()
-        action.services.patreon.supporters = mock_supporters
+        mocker.patch.object(services.patreon, "supporters", mock_supporters)
 
         await action.patreon_sync()
 

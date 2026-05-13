@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, NoReturn, Self, cast
 from asgiref.sync import sync_to_async
 from ddtrace.trace import tracer
 
+from spellbot import services
 from spellbot.database import DatabaseSession, db_session_manager
 from spellbot.errors import (
     GuildBannedError,
@@ -16,7 +17,6 @@ from spellbot.errors import (
     UserVerifiedError,
 )
 from spellbot.metrics import add_span_request_id, setup_ignored_errors
-from spellbot.services import ServicesRegistry
 from spellbot.utils import user_can_moderate
 
 if TYPE_CHECKING:
@@ -45,7 +45,6 @@ def handle_exception(ex: Exception) -> NoReturn:
 
 class BaseAction:
     bot: SpellBot
-    services: ServicesRegistry
     interaction: discord.Interaction
     member: discord.Member
     guild: discord.Guild | None
@@ -56,7 +55,6 @@ class BaseAction:
 
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         self.bot = bot
-        self.services = ServicesRegistry()
         self.interaction = interaction
         self.member = cast("discord.Member", self.interaction.user)
         self.guild = cast("discord.Guild", self.interaction.guild)
@@ -65,16 +63,16 @@ class BaseAction:
     async def upsert_request_objects(self) -> None:  # pragma: no cover
         self.guild_data: GuildData | None = None
         if self.guild:
-            self.guild_data = await self.services.guilds.upsert(self.guild)
+            self.guild_data = await services.guilds.upsert(self.guild)
 
         if self.guild_data and self.guild_data.banned:
             raise GuildBannedError
 
         if self.guild and self.channel:
-            self.channel_data = await self.services.channels.upsert(self.channel)
+            self.channel_data = await services.channels.upsert(self.channel)
 
         guild_xid = self.guild.id if self.guild else None
-        self.user_data = await self.services.users.upsert(self.member, guild_xid=guild_xid)
+        self.user_data = await services.users.upsert(self.member, guild_xid=guild_xid)
 
         if self.user_data.banned:
             raise UserBannedError
@@ -88,7 +86,7 @@ class BaseAction:
         verified: bool | None = None
         if self.channel_data.auto_verify:
             verified = True
-        verify_data = await self.services.verifies.upsert(
+        verify_data = await services.verifies.upsert(
             self.guild.id,
             self.interaction.user.id,
             verified,

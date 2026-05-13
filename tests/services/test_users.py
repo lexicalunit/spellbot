@@ -8,7 +8,7 @@ import pytest
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, Game, Guild, Queue, User, Watch
-from spellbot.services import UsersService
+from spellbot.services import users
 from tests.factories import UserFactory
 
 if TYPE_CHECKING:
@@ -26,7 +26,6 @@ class TestServiceUsers:
         discord_user.id = 201
         discord_user.display_name = "user-name"
 
-        users = UsersService()
         await users.upsert(discord_user)
 
         DatabaseSession.expire_all()
@@ -45,7 +44,6 @@ class TestServiceUsers:
         assert user.name == "new-name"
 
     async def test_users_get(self) -> None:
-        users = UsersService()
         assert await users.get(201) is None
 
         UserFactory.create(xid=201)
@@ -59,7 +57,6 @@ class TestServiceUsers:
         user1 = UserFactory.create(banned=False)
         user2 = UserFactory.create(banned=True)
 
-        users = UsersService()
         user1_data = await users.get(user1.xid)
         user2_data = await users.get(user2.xid)
         assert user1_data is not None
@@ -70,14 +67,12 @@ class TestServiceUsers:
     async def test_users_set_banned(self) -> None:
         user = UserFactory.create(banned=False)
 
-        users = UsersService()
         updated = await users.set_banned(user.xid, banned=True)
         assert updated.banned
 
     async def test_users_current_game_id(self, game: Game) -> None:
         user = UserFactory.create(game=game)
 
-        users = UsersService()
         user_data = await users.get(user.xid)
         assert user_data is not None
         assert await users.current_game_id(user_data, game.channel_xid) == game.id
@@ -86,7 +81,6 @@ class TestServiceUsers:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
 
-        users = UsersService()
         user1_data = await users.get(user1.xid)
         assert user1_data is not None
         result = await users.is_waiting(user1_data, game.channel_xid)
@@ -101,7 +95,6 @@ class TestServiceUsers:
         user1 = UserFactory.create()
         user2 = UserFactory.create()
 
-        users = UsersService()
         await users.block(user1.xid, user2.xid)
 
         DatabaseSession.expire_all()
@@ -120,7 +113,6 @@ class TestServiceUsers:
         user1 = UserFactory.create()
         user2 = UserFactory.create()
 
-        users = UsersService()
         await users.block(user1.xid, user2.xid)
 
         DatabaseSession.expire_all()
@@ -144,7 +136,6 @@ class TestServiceUsers:
     async def test_users_watch(self, guild: Guild) -> None:
         user = UserFactory.create()
 
-        users = UsersService()
         await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note")
 
         DatabaseSession.expire_all()
@@ -158,7 +149,6 @@ class TestServiceUsers:
     async def test_users_watch_upsert(self, guild: Guild) -> None:
         user = UserFactory.create()
 
-        users = UsersService()
         await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note1")
         await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note2")
 
@@ -173,7 +163,6 @@ class TestServiceUsers:
     async def test_users_watch_without_note(self, guild: Guild) -> None:
         user = UserFactory.create()
 
-        users = UsersService()
         await users.watch(guild_xid=guild.xid, user_xid=user.xid)
 
         DatabaseSession.expire_all()
@@ -187,7 +176,6 @@ class TestServiceUsers:
     async def test_users_unwatch(self, guild: Guild) -> None:
         user = UserFactory.create()
 
-        users = UsersService()
         await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note")
 
         DatabaseSession.expire_all()
@@ -211,7 +199,6 @@ class TestServiceUsers:
     async def test_users_leave_game(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create()
-        users = UsersService()
 
         assert DatabaseSession.query(Queue).count() == 1
 
@@ -235,7 +222,6 @@ class TestServiceUsers:
         )
         user = factories.user.create(game=game)
 
-        users = UsersService()
         user_data = await users.get(user.xid)
         assert user_data is not None
         assert await users.current_game_id(user_data, channel.xid) is None
@@ -250,7 +236,6 @@ class TestServiceUsers:
         )
         user = factories.user.create(game=game)
 
-        users = UsersService()
         user_data = await users.get(user.xid)
         assert user_data is not None
         assert await users.is_waiting(user_data, channel.xid) is None
@@ -265,7 +250,6 @@ class TestServiceUsers:
         )
         user = factories.user.create(game=game)
 
-        users = UsersService()
         user_data = await users.get(user.xid)
         assert user_data is not None
 

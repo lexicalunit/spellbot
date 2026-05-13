@@ -13,10 +13,10 @@ import jinja2
 from aiohttp import web
 from babel.dates import format_datetime
 
+from spellbot import services
 from spellbot.database import db_session_manager, initialize_connection
 from spellbot.models import import_models
 from spellbot.redis_client import close_redis
-from spellbot.services import ServicesRegistry
 from spellbot.settings import settings
 from spellbot.web.api import analytics, ping, record, rest, status
 from spellbot.web.tools import rate_limited
@@ -50,7 +50,6 @@ async def auth_middleware(request: web.Request, handler: Handler) -> web.StreamR
     if not token:
         return web.json_response({"error": "Missing or invalid Authorization header"}, status=401)
     async with db_session_manager():
-        services = ServicesRegistry()
         if not await services.apps.verify_token(token, request.rel_url.path):
             if await rate_limited(request):
                 return web.json_response({"error": "Too many requests"}, status=429)
