@@ -1176,3 +1176,85 @@ class TestLookingForGameAction:
     ) -> None:
         action.channel_data.default_bracket = None  # type: ignore
         assert await action.get_bracket(None, None) == GameBracket.NONE.value
+
+    async def test_block_if_no_player_linked_non_playgroup_service(
+        self,
+        action: LookingForGameAction,
+    ) -> None:
+        """Returns False for services other than Playgroup Live."""
+        game_data = create_mock_game(service=GameService.CONVOKE.value)
+        assert await action.block_if_no_player_linked(game_data) is False
+
+    async def test_block_if_no_player_linked_with_linked_player(
+        self,
+        action: LookingForGameAction,
+    ) -> None:
+        """Returns False when at least one player is linked to Playgroup Live."""
+        game_data = create_mock_game(service=GameService.PLAYGROUP_LIVE.value)
+        host = create_mock_user(xid=100)
+        host.playgroup_user_id = 42
+        game_data.players = [host]
+        assert await action.block_if_no_player_linked(game_data) is False
+
+    async def test_block_if_no_player_linked_no_linked_player(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        """Returns True and sends followup when no player is linked to Playgroup Live."""
+        game_data = create_mock_game(service=GameService.PLAYGROUP_LIVE.value)
+        game_data.players = [create_mock_user(xid=100)]
+        stub = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+
+        assert await action.block_if_no_player_linked(game_data) is True
+
+        stub.assert_called_once_with(
+            action.interaction,
+            "To use Playgroup Live, at least one player must link their account. "
+            "Run `/playgroup link` and try again.",
+        )
+
+    async def test_execute_start_blocked_when_no_player_linked(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        """execute_start returns early when no player is linked to Playgroup Live."""
+        game_data = create_mock_game(service=GameService.PLAYGROUP_LIVE.value)
+        game_data.players = [create_mock_user(xid=100)]
+
+        mocker.patch.object(
+            services.users,
+            "is_waiting",
+            AsyncMock(return_value=game_data),
+        )
+        mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+        shrink_stub = mocker.patch.object(services.games, "shrink_game", AsyncMock())
+
+        await action.execute_start()
+
+        shrink_stub.assert_not_called()
+
+    async def test_execute_blocked_when_fully_seated_and_no_player_linked(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        """Execute returns early when game is fully seated but no player is linked."""
+        game_data = create_mock_game(service=GameService.PLAYGROUP_LIVE.value, seats=1)
+        game_data.players = [create_mock_user(xid=100)]
+        assert game_data.fully_seated
+
+        mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=None))
+        mocker.patch.object(services.users, "pending_games", AsyncMock(return_value=0))
+        mocker.patch.object(
+            action,
+            "upsert_game",
+            AsyncMock(return_value=(True, game_data)),
+        )
+        mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+        other_ids_stub = mocker.patch.object(services.games, "other_game_ids", AsyncMock())
+
+        await action.execute(format=GameFormat.COMMANDER.value)
+
+        other_ids_stub.assert_not_called()

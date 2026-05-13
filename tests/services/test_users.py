@@ -291,3 +291,15 @@ class TestServiceUsers:
         assert (
             (await DatabaseSession.execute(select(func.count()).select_from(Queue))).scalar() or 0
         ) == 1
+
+    async def test_set_playgroup_user_id(self) -> None:
+        user = UserFactory.create(xid=999)
+        assert user.playgroup_user_id is None
+
+        await users.set_playgroup_user_id(user.xid, 4242)
+
+        DatabaseSession.expire_all()
+        refreshed = (
+            await DatabaseSession.execute(select(User).where(User.xid == user.xid))
+        ).scalar_one()
+        assert refreshed.playgroup_user_id == 4242
