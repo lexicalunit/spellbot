@@ -227,8 +227,8 @@ safe_licenses = [
   "Python Software Foundation License",
   "Unlicense",
 ]
-# Psycopg uses LGPLv3, which is ok to link against, but otherwise not compatible with permissive
-# with the license of this project. We can explicitly ignore it here since we're only linking.
+# Psycopg uses LGPLv3, which is ok to link against, but otherwise not compatible with the more
+# permissive license of this project. We can explicitly ignore the pylic errors this causes.
 unsafe_packages = ["psycopg-binary", "psycopg"]
 
 [tool.pytest.ini_options]
@@ -236,3 +236,6 @@ addopts = """
     --no-header --disable-socket --allow-unix-socket --allow-hosts=127.0.0.1,::1 --cov --cov-append --cov-report xml:coverage.xml --cov-report=html -vv
 """
 asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+  "ignore:The default span name for @tracer.wrap on methods does not include the class name:ddtrace.internal.utils.deprecations.DDTraceDeprecationWarning",
+]
