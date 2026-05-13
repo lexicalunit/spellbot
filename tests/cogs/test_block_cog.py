@@ -39,7 +39,7 @@ class TestCogBlock:
 
         await run_command(cog.block, interaction, target=target)
 
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             f"<@{target.id}> has been blocked.",
             ephemeral=True,
         )
@@ -68,7 +68,7 @@ class TestCogBlock:
         assert block.blocked_user_xid == target.id
 
         DatabaseSession.expire_all()
-        interaction.response.send_message.reset_mock()  # type: ignore
+        interaction.response.send_message.reset_mock()
         await run_command(cog.unblock, interaction, target=target)
         block = (
             await DatabaseSession.execute(
@@ -91,7 +91,7 @@ class TestCogBlock:
 
         await run_command(cog.block, interaction, target=target)
 
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             "You can not block yourself.",
             ephemeral=True,
         )
@@ -111,7 +111,7 @@ class TestCogBlock:
 
         await run_command(cog.blocked, interaction)
 
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             embed=ANY,
             ephemeral=True,
         )
@@ -134,7 +134,7 @@ class TestCogBlock:
     ) -> None:
         await run_command(cog.blocked, interaction)
 
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             embed=ANY,
             ephemeral=True,
         )
@@ -163,7 +163,7 @@ class TestCogBlock:
         with patch("spellbot.actions.block_action.EMBED_DESCRIPTION_SIZE_LIMIT", 20):
             await run_command(cog.blocked, interaction)
 
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             embed=ANY,
             ephemeral=True,
         )
@@ -177,12 +177,12 @@ class TestCogBlock:
             "flags": 0,
         }
 
-        interaction.response.send_message.reset_mock()  # type: ignore
+        interaction.response.send_message.reset_mock()
 
         with patch("spellbot.actions.block_action.EMBED_DESCRIPTION_SIZE_LIMIT", 20):
             await run_command(cog.blocked, interaction, page=2)
 
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             embed=ANY,
             ephemeral=True,
         )

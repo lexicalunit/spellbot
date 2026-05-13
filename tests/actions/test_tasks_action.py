@@ -61,7 +61,7 @@ async def guild(factories: Factories) -> Guild:
 async def discord_guild(guild: Guild, mocker: MockerFixture) -> discord.Guild:
     discord_obj: discord.Guild = mock_discord_object(guild)  # type: ignore
     mocker.patch("spellbot.client.SpellBot.get_guild", return_value=discord_obj)
-    discord_obj.categories = []  # type: ignore
+    discord_obj.categories = []
     return discord_obj
 
 
@@ -406,7 +406,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_not_called()  # type: ignore
+        voice_channel.delete.assert_not_called()
         assert "channel is in grace period" in caplog.text
 
     async def test_when_voice_channel_is_occupied(
@@ -427,7 +427,7 @@ class TestTaskCleanupOldVoiceChannels:
             perms=manage_perms,
             created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
-        voice_channel.voice_states.keys = lambda: True  # type: ignore
+        voice_channel.voice_states.keys = lambda: True
         make_category_channel(
             id=3001,
             name=channel.voice_category,
@@ -437,7 +437,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_not_called()  # type: ignore
+        voice_channel.delete.assert_not_called()
         assert "channel is occupied" in caplog.text
 
     async def test_when_voice_channel_is_without_permissions(
@@ -456,7 +456,7 @@ class TestTaskCleanupOldVoiceChannels:
             perms=manage_perms,
             created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
-        voice_channel.voice_states.keys = lambda: False  # type: ignore
+        voice_channel.voice_states.keys = lambda: False
         make_category_channel(
             id=3001,
             name=channel.voice_category,
@@ -466,7 +466,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_not_called()  # type: ignore
+        voice_channel.delete.assert_not_called()
         assert f"no permissions to delete channel ({voice_channel.id})" in caplog.text
 
     async def test_when_voice_channel_is_renamed(
@@ -485,14 +485,10 @@ class TestTaskCleanupOldVoiceChannels:
             perms=manage_perms,
             created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
-        stmt = (
-            update(Game)  # type: ignore
-            .where(Game.id == game.id)
-            .values(voice_xid=voice_channel.id)
-        )
+        stmt = update(Game).where(Game.id == game.id).values(voice_xid=voice_channel.id)
         await DatabaseSession.execute(stmt)
         await DatabaseSession.commit()
-        voice_channel.voice_states.keys = lambda: False  # type: ignore
+        voice_channel.voice_states.keys = lambda: False
         make_category_channel(
             id=3001,
             name=channel.voice_category,
@@ -502,7 +498,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_called_once()  # type: ignore
+        voice_channel.delete.assert_called_once()
         assert f"deleting channel {voice_channel.name}({voice_channel.id})" in caplog.text
 
     async def test_when_voice_channel_is_not_for_game(
@@ -522,9 +518,9 @@ class TestTaskCleanupOldVoiceChannels:
             perms=manage_perms,
             created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
-        game.voice_xid = voice_channel.id + 1  # type: ignore
+        game.voice_xid = voice_channel.id + 1
         await DatabaseSession.commit()
-        voice_channel.voice_states.keys = lambda: False  # type: ignore
+        voice_channel.voice_states.keys = lambda: False
         make_category_channel(
             id=3001,
             name=channel.voice_category,
@@ -534,7 +530,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_not_called()  # type: ignore
+        voice_channel.delete.assert_not_called()
 
     async def test_when_voice_channel_is_occupied_and_old(
         self,
@@ -554,7 +550,7 @@ class TestTaskCleanupOldVoiceChannels:
             perms=manage_perms,
             created_at=datetime.now(tz=UTC) - timedelta(days=1),
         )
-        voice_channel.voice_states.keys = lambda: True  # type: ignore
+        voice_channel.voice_states.keys = lambda: True
         make_category_channel(
             id=3001,
             name=channel.voice_category,
@@ -564,7 +560,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_called_once()  # type: ignore
+        voice_channel.delete.assert_called_once()
         assert f"deleting channel Game-SB{game.id}({voice_channel.id})" in caplog.text
 
     async def test_when_voice_channel_is_deleted(
@@ -585,7 +581,7 @@ class TestTaskCleanupOldVoiceChannels:
             perms=manage_perms,
             created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
-        voice_channel.voice_states.keys = lambda: False  # type: ignore
+        voice_channel.voice_states.keys = lambda: False
         make_category_channel(
             id=3001,
             name=channel.voice_category,
@@ -595,7 +591,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_called_once()  # type: ignore
+        voice_channel.delete.assert_called_once()
         assert f"deleting channel Game-SB{game.id}({voice_channel.id})" in caplog.text
 
     async def test_when_voice_channel_is_deleted_and_batched(
@@ -620,7 +616,7 @@ class TestTaskCleanupOldVoiceChannels:
             perms=manage_perms,
             created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
-        voice_channel.voice_states.keys = lambda: False  # type: ignore
+        voice_channel.voice_states.keys = lambda: False
         make_category_channel(
             id=3001,
             name=channel.voice_category,
@@ -630,7 +626,7 @@ class TestTaskCleanupOldVoiceChannels:
 
         await action.cleanup_old_voice_channels()
 
-        voice_channel.delete.assert_called_once()  # type: ignore
+        voice_channel.delete.assert_called_once()
         assert f"deleting channel Game-SB{game.id}({voice_channel.id})" in caplog.text
         assert "batch limit reached" in caplog.text
 

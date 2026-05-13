@@ -284,3 +284,72 @@ class TestPlaysServiceAnalyticsSummary:
         result_all_time = await plays.analytics_players(guild.xid, all_time=True)
         assert len(result_all_time["top_players"]) == 1
         assert result_all_time["top_players"][0]["user_xid"] == str(user.xid)
+
+
+@pytest.mark.asyncio
+class TestPlaysServiceRecords:
+    """Tests for user_records and channel_records (direct invocation for coverage)."""
+
+    async def test_user_records_missing_guild(self) -> None:
+        assert await plays.user_records(guild_xid=99999, user_xid=1) is None
+
+    async def test_user_records_returns_rows(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(datetime(2020, 6, 15, 12, 0, tzinfo=UTC))
+        now = datetime.now(tz=UTC)
+
+        guild = factories.guild.create(xid=8101, name="ur-guild")
+        channel = factories.channel.create(xid=8201, name="ur-channel", guild=guild)
+        user = factories.user.create(xid=8301, name="ur-user")
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.COMMANDER.value,
+            started_at=now,
+            created_at=now - timedelta(minutes=5),
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=9101)
+        factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
+
+        rows = await plays.user_records(guild_xid=guild.xid, user_xid=user.xid)
+        assert rows is not None
+        assert len(rows) == 1
+        assert rows[0]["channel"] == channel.xid
+
+    async def test_channel_records_missing_guild(self) -> None:
+        assert await plays.channel_records(guild_xid=99998, channel_xid=1) is None
+
+    async def test_channel_records_missing_channel(self, factories: Factories) -> None:
+        guild = factories.guild.create(xid=8102, name="cr-guild")
+        assert await plays.channel_records(guild_xid=guild.xid, channel_xid=99997) is None
+
+    async def test_channel_records_returns_rows(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(datetime(2020, 6, 15, 12, 0, tzinfo=UTC))
+        now = datetime.now(tz=UTC)
+
+        guild = factories.guild.create(xid=8103, name="cr-guild2")
+        channel = factories.channel.create(xid=8203, name="cr-channel", guild=guild)
+        user = factories.user.create(xid=8303, name="cr-user")
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.COMMANDER.value,
+            started_at=now,
+            created_at=now - timedelta(minutes=5),
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=9103)
+        factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
+
+        rows = await plays.channel_records(guild_xid=guild.xid, channel_xid=channel.xid)
+        assert rows is not None
+        assert len(rows) == 1
+        assert rows[0]["channel"] == channel.xid

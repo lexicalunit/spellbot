@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock, MagicMock, patch
 from urllib.parse import parse_qs, urlparse
 
 import pytest
@@ -10,6 +11,7 @@ from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
 from spellbot.settings import settings
 from spellbot.utils import generate_signed_url
+from spellbot.web.api import analytics
 from spellbot.web.api.analytics import check_guild_member
 
 if TYPE_CHECKING:
@@ -648,3 +650,146 @@ class TestWebAnalyticsMembershipChecks:
         assert resp.status == 200
         data = await resp.json()
         assert data["top_blocked"] == []
+
+
+@pytest.mark.asyncio
+class TestWebAnalyticsDirect:
+    """Direct invocation tests so coverage can track lines through aiohttp middleware."""
+
+    async def test_analytics_json_endpoint_guild_not_found(self) -> None:
+        request = MagicMock()
+        request.match_info = {"guild": "99999"}
+        request.query = {}
+        with patch("spellbot.web.api.analytics.settings") as mock_settings:
+            mock_settings.CHECK_SIGNATURE = False
+            resp = await analytics.analytics_json_endpoint(request, AsyncMock(return_value={}))
+            assert resp.status == 404
+
+    async def test_analytics_json_endpoint_guild_exists(
+        self,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=8001, name="g")
+        request = MagicMock()
+        request.match_info = {"guild": str(guild.xid)}
+        request.query = {}
+        with patch("spellbot.web.api.analytics.settings") as mock_settings:
+            mock_settings.CHECK_SIGNATURE = False
+            fetch = AsyncMock(return_value={"a": 1})
+            resp = await analytics.analytics_json_endpoint(request, fetch)
+            assert resp.status == 200
+
+    async def test_analytics_endpoint_guild_not_found(self, mocker: MockerFixture) -> None:
+        request = MagicMock()
+        request.match_info = {"guild": "99999"}
+        request.query = {"expires": "9999999999", "sig": "x"}
+        mocker.patch("spellbot.web.api.analytics.validate_signature", return_value=True)
+        resp = await analytics.analytics_endpoint(request)
+        assert resp.status == 404
+
+    async def test_analytics_endpoint_happy_path(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=8002, name="g2")
+        request = MagicMock()
+        request.match_info = {"guild": str(guild.xid)}
+        request.query = {"expires": "9999999999", "sig": "x"}
+        mocker.patch("spellbot.web.api.analytics.validate_signature", return_value=True)
+        mocker.patch(
+            "spellbot.web.api.analytics.aiohttp_jinja2.render_template",
+            return_value="ok",
+        )
+        resp = await analytics.analytics_endpoint(request)
+        assert resp == "ok"
+
+    async def test_analytics_players_endpoint_guild_not_found(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        request = MagicMock()
+        request.match_info = {"guild": "99999"}
+        request.query = {"expires": "9999999999", "sig": "x"}
+        mocker.patch("spellbot.web.api.analytics.validate_signature", return_value=True)
+        resp = await analytics.analytics_players_endpoint(request)
+        assert resp.status == 404
+
+    async def test_analytics_players_endpoint_empty_top_players(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=8003, name="g3")
+        request = MagicMock()
+        request.match_info = {"guild": str(guild.xid)}
+        request.query = {"expires": "9999999999", "sig": "x"}
+        mocker.patch("spellbot.web.api.analytics.validate_signature", return_value=True)
+        resp = await analytics.analytics_players_endpoint(request)
+        assert resp.status == 200
+
+    async def test_analytics_blocked_endpoint_guild_not_found(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        request = MagicMock()
+        request.match_info = {"guild": "99999"}
+        request.query = {"expires": "9999999999", "sig": "x"}
+        mocker.patch("spellbot.web.api.analytics.validate_signature", return_value=True)
+        resp = await analytics.analytics_blocked_endpoint(request)
+        assert resp.status == 404
+
+    async def test_analytics_blocked_endpoint_empty_top_blocked(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=8004, name="g4")
+        request = MagicMock()
+        request.match_info = {"guild": str(guild.xid)}
+        request.query = {"expires": "9999999999", "sig": "x"}
+        mocker.patch("spellbot.web.api.analytics.validate_signature", return_value=True)
+        resp = await analytics.analytics_blocked_endpoint(request)
+        assert resp.status == 200
+
+    async def test_analytics_players_endpoint_with_top_players(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=8005, name="g5")
+        request = MagicMock()
+        request.match_info = {"guild": str(guild.xid)}
+        request.query = {"expires": "9999999999", "sig": "x"}
+        mocker.patch("spellbot.web.api.analytics.validate_signature", return_value=True)
+        mocker.patch(
+            "spellbot.services.plays.analytics_players",
+            AsyncMock(return_value={"top_players": [{"user_xid": "1"}]}),
+        )
+        mocker.patch(
+            "spellbot.web.api.analytics.check_membership_and_update",
+            AsyncMock(return_value=[{"user_xid": "1", "left_server": False}]),
+        )
+        resp = await analytics.analytics_players_endpoint(request)
+        assert resp.status == 200
+
+    async def test_analytics_blocked_endpoint_with_top_blocked(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=8006, name="g6")
+        request = MagicMock()
+        request.match_info = {"guild": str(guild.xid)}
+        request.query = {"expires": "9999999999", "sig": "x"}
+        mocker.patch("spellbot.web.api.analytics.validate_signature", return_value=True)
+        mocker.patch(
+            "spellbot.services.plays.analytics_blocked",
+            AsyncMock(return_value={"top_blocked": [{"user_xid": "1"}]}),
+        )
+        mocker.patch(
+            "spellbot.web.api.analytics.check_membership_and_update",
+            AsyncMock(return_value=[{"user_xid": "1", "left_server": False}]),
+        )
+        resp = await analytics.analytics_blocked_endpoint(request)
+        assert resp.status == 200

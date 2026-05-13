@@ -41,7 +41,7 @@ async def upsert(
     """Update or insert the user into the database."""
     assert hasattr(target, "id")
     xid = target.id
-    max_name_len = User.name.property.columns[0].type.length  # type: ignore
+    max_name_len = User.name.property.columns[0].type.length
     raw_name = getattr(target, "display_name", "")
     name = raw_name[:max_name_len]
     values = {"xid": xid, "name": name, "updated_at": datetime.now(tz=UTC)}
@@ -175,10 +175,10 @@ async def leave_game(user_data: UserData, channel_xid: int) -> list[GameData]:
     # This operation should "dirty" the Games, so
     # we need to update their updated_at field now.
     query = (
-        update(Game)  # type: ignore
+        update(Game)
         .where(Game.id.in_(left_game_ids))
         .values(updated_at=datetime.now(tz=UTC))
-        .returning(Game)  # type: ignore
+        .returning(Game)
         .execution_options(synchronize_session="fetch")
     )
     result = (await DatabaseSession.execute(query)).scalars()
@@ -237,7 +237,7 @@ async def watch(guild_xid: int, user_xid: int, note: str | None = None) -> None:
     }
     upsert = insert(Watch).values(**values)
     if note:
-        max_note_len = Watch.note.property.columns[0].type.length  # type: ignore
+        max_note_len = Watch.note.property.columns[0].type.length
         values["note"] = note[:max_note_len]
         upsert = upsert.on_conflict_do_update(
             constraint="watches_pkey",

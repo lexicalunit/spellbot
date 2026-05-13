@@ -28,7 +28,7 @@ def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
 
 async def upsert(guild: discord.Guild) -> GuildData | None:
     """Upsert the given Discord guild into the database."""
-    name_max_len = Guild.name.property.columns[0].type.length  # type: ignore
+    name_max_len = Guild.name.property.columns[0].type.length
     raw_name = getattr(guild, "name", "")
     name = raw_name[:name_max_len]
     if not is_cached(guild.id, name):  # pragma: no branch (caching disabled in tests)
@@ -92,10 +92,10 @@ async def set_suggest_vc_category(
 ) -> GuildData:
     """Set the suggested voice channel category prefix for the guild."""
     stmt = (
-        update(Guild)  # type: ignore
+        update(Guild)
         .where(Guild.xid == guild_data.xid)
         .values(suggest_voice_category=category)
-        .returning(Guild)  # type: ignore
+        .returning(Guild)
     )
     updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     await DatabaseSession.commit()
@@ -104,17 +104,8 @@ async def set_suggest_vc_category(
 
 async def set_motd(guild_data: GuildData, message: str | None = None) -> GuildData:
     """Set the message of the day for the guild."""
-    motd = (
-        message[: Guild.motd.property.columns[0].type.length]  # type: ignore
-        if message
-        else ""
-    )
-    stmt = (
-        update(Guild)  # type: ignore
-        .where(Guild.xid == guild_data.xid)
-        .values(motd=motd)
-        .returning(Guild)  # type: ignore
-    )
+    motd = message[: Guild.motd.property.columns[0].type.length] if message else ""
+    stmt = update(Guild).where(Guild.xid == guild_data.xid).values(motd=motd).returning(Guild)
     updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     await DatabaseSession.commit()
     return await updated_guild.to_data()
@@ -124,10 +115,10 @@ async def toggle_show_links(guild_data: GuildData) -> GuildData:
     """Toggle whether to show SpellTable links in game posts."""
     new_value = not guild_data.show_links
     stmt = (
-        update(Guild)  # type: ignore
+        update(Guild)
         .where(Guild.xid == guild_data.xid)
         .values(show_links=new_value)
-        .returning(Guild)  # type: ignore
+        .returning(Guild)
     )
     updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     await DatabaseSession.commit()
@@ -140,12 +131,7 @@ async def toggle_voice_create(guild_data: GuildData) -> GuildData:
     values: dict[str, bool | None] = {"voice_create": new_value}
     if new_value:
         values["suggest_voice_category"] = None
-    stmt = (
-        update(Guild)  # type: ignore
-        .where(Guild.xid == guild_data.xid)
-        .values(**values)
-        .returning(Guild)  # type: ignore
-    )
+    stmt = update(Guild).where(Guild.xid == guild_data.xid).values(**values).returning(Guild)
     updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     await DatabaseSession.commit()
     return await updated_guild.to_data()
@@ -155,10 +141,10 @@ async def toggle_use_max_bitrate(guild_data: GuildData) -> GuildData:
     """Toggle whether to use maximum bitrate for created voice channels."""
     new_value = not guild_data.use_max_bitrate
     stmt = (
-        update(Guild)  # type: ignore
+        update(Guild)
         .where(Guild.xid == guild_data.xid)
         .values(use_max_bitrate=new_value)
-        .returning(Guild)  # type: ignore
+        .returning(Guild)
     )
     updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     await DatabaseSession.commit()
@@ -244,10 +230,10 @@ async def setup_mythic_track(guild_data: GuildData) -> GuildData:
     """Toggle whether mythic track is enabled for the guild."""
     new_value = not guild_data.enable_mythic_track
     stmt = (
-        update(Guild)  # type: ignore
+        update(Guild)
         .where(Guild.xid == guild_data.xid)
         .values(enable_mythic_track=new_value)
-        .returning(Guild)  # type: ignore
+        .returning(Guild)
     )
     updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     await DatabaseSession.commit()

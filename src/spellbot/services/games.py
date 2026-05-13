@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-MAX_GAME_LINK_LEN = Game.game_link.property.columns[0].type.length  # type: ignore
+MAX_GAME_LINK_LEN = Game.game_link.property.columns[0].type.length
 
 
 @tracer.wrap()
@@ -91,10 +91,10 @@ async def add_player(game_data: GameData, player_xid: int) -> GameData:
 
     # This operation should "dirty" the Game, so we need to update its updated_at.
     query = (
-        update(Game)  # type: ignore
+        update(Game)
         .where(Game.id == game_data.id)
         .values(updated_at=datetime.now(tz=UTC))
-        .returning(Game)  # type: ignore
+        .returning(Game)
         .execution_options(synchronize_session="fetch")
     )
     result = await DatabaseSession.execute(query)
@@ -193,12 +193,12 @@ async def _find_existing(
     player_count = count(Queue.user_xid).over(partition_by=Game.id)
     inner = (
         select(
-            Game,  # type: ignore
+            Game,
             Queue.user_xid,
-            player_count.label("player_count"),  # type: ignore
+            player_count.label("player_count"),
         )
-        .join(Queue, isouter=True)  # type: ignore
-        .filter(  # type: ignore
+        .join(Queue, isouter=True)
+        .filter(
             and_(
                 Game.guild_xid == guild_xid,
                 Game.channel_xid == channel_xid,
@@ -314,10 +314,10 @@ async def other_game_ids(game_data: GameData) -> list[int]:
 async def shrink_game(game_data: GameData) -> GameData:
     """Shrink the number of seats in a game to the current number of players."""
     query = (
-        update(Game)  # type: ignore
+        update(Game)
         .where(Game.id == game_data.id)
         .values(seats=len(game_data.players))
-        .returning(Game)  # type: ignore
+        .returning(Game)
     )
     result = await DatabaseSession.execute(query)
     updated_game: Game = result.scalars().one()
@@ -347,10 +347,10 @@ async def make_ready(
     ]
 
     # update game's state
-    game.game_link = game_link  # column is "game_link" for legacy reasons  # type: ignore
-    game.password = password  # type: ignore
+    game.game_link = game_link  # column is "game_link" for legacy reasons
+    game.password = password
     game.status = GameStatus.STARTED.value
-    game.started_at = datetime.now(tz=UTC)  # type: ignore
+    game.started_at = datetime.now(tz=UTC)
 
     if not queues:  # Not sure this is possible, but just in case.
         await DatabaseSession.commit()
@@ -432,10 +432,10 @@ async def set_voice(
 ) -> GameData:
     """Assign the given voice channel information to the given game."""
     query = (
-        update(Game)  # type: ignore
+        update(Game)
         .where(Game.id == game_data.id)
         .values(voice_xid=voice_xid, voice_invite_link=voice_invite_link)
-        .returning(Game)  # type: ignore
+        .returning(Game)
     )
     result = await DatabaseSession.execute(query)
     updated_game: Game = result.scalars().one()
@@ -506,11 +506,7 @@ async def inactive_games(guild_xid: int | None = None) -> list[GameData]:
 @tracer.wrap()
 async def delete_games(game_ids: list[int]) -> int:
     """Delete the games with the given ids."""
-    query = (
-        update(Game)  # type: ignore
-        .where(Game.id.in_(game_ids))
-        .values(deleted_at=datetime.now(tz=UTC))
-    )
+    query = update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.now(tz=UTC))
     await DatabaseSession.execute(query)
     result = await DatabaseSession.execute(
         delete(Queue)
@@ -527,7 +523,7 @@ async def delete_games(game_ids: list[int]) -> int:
 async def message_xids(game_ids: list[int]) -> list[int]:
     """Return the discord post message ids for the given game ids."""
     query = select(
-        Post.message_xid,  # type: ignore
+        Post.message_xid,
     ).where(Post.game_id.in_(game_ids))
     rows = (await DatabaseSession.execute(query)).all()
     return [int(row[0]) for row in rows if row[0]]

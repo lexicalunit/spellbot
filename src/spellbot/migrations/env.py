@@ -7,7 +7,7 @@ from spellbot.models import Base, import_models
 
 import_models()
 config = context.config
-target_metadata = Base.metadata  # type: ignore
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:

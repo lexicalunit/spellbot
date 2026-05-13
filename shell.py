@@ -20,7 +20,7 @@ async def runner() -> None:
         from spellbot.database import DatabaseSession
         from spellbot.models import Base
 
-        for m in Base.registry.mappers:  # type: ignore
+        for m in Base.registry.mappers:
             globals()[m.class_.__name__] = m.class_
             banner.append(f"from spellbot.models import {m.class_.__name__}")
 

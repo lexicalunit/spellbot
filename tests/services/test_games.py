@@ -90,6 +90,16 @@ class TestServiceGames:
         for post in posts:
             assert post.game_id == game.id
 
+    async def test_games_add_post_conflict(self, game: Game) -> None:
+        PostFactory.create(guild=game.guild, channel=game.channel, game=game, message_xid=22345)
+        game_data = await games.get(game.id)
+        assert game_data is not None
+        existing_count = len(game_data.posts)
+
+        # Re-adding the same post should be a no-op (on_conflict_do_nothing returns None)
+        result = await games.add_post(game_data, game.guild_xid, game.channel_xid, 22345)
+        assert len(result.posts) == existing_count
+
     async def test_games_fully_seated(self, guild: Guild, channel: Channel) -> None:
         # fully_seated is now a property on GameData
         started_game = GameFactory.create(guild=guild, channel=channel)

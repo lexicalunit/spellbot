@@ -28,7 +28,7 @@ def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
 
 async def upsert(channel: MessageableChannel) -> ChannelData:
     assert channel.guild is not None
-    name_max_len = Channel.name.property.columns[0].type.length  # type: ignore
+    name_max_len = Channel.name.property.columns[0].type.length
     raw_name = getattr(channel, "name", "")
     name = raw_name[:name_max_len]
     if not is_cached(channel.id, name):  # pragma: no branch
@@ -113,7 +113,7 @@ async def set_unverified_only(xid: int, setting: bool) -> None:
 
 async def set_motd(xid: int, message: str | None = None) -> str:
     if message:
-        max_len = Channel.motd.property.columns[0].type.length  # type: ignore
+        max_len = Channel.motd.property.columns[0].type.length
         motd = message[:max_len]
     else:
         motd = ""
@@ -123,7 +123,7 @@ async def set_motd(xid: int, message: str | None = None) -> str:
 
 async def set_extra(xid: int, message: str | None = None) -> str:
     if message:
-        max_len = Channel.extra.property.columns[0].type.length  # type: ignore
+        max_len = Channel.extra.property.columns[0].type.length
         extra = message[:max_len]
     else:
         extra = ""
@@ -132,7 +132,7 @@ async def set_extra(xid: int, message: str | None = None) -> str:
 
 
 async def set_voice_category(xid: int, value: str) -> str:
-    max_len = Channel.voice_category.property.columns[0].type.length  # type: ignore
+    max_len = Channel.voice_category.property.columns[0].type.length
     name = value[:max_len]
     await _set_column(xid, voice_category=name)
     return name

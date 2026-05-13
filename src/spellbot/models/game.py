@@ -240,4 +240,4 @@ class Game(Base):
         )
 
 
-MAX_RULES_LENGTH: int = Game.rules.property.columns[0].type.length  # type: ignore
+MAX_RULES_LENGTH: int = Game.rules.property.columns[0].type.length

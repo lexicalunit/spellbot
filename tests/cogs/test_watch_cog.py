@@ -40,7 +40,7 @@ class TestCogWatch:
         target_member = cast("discord.Member", mock_discord_object(target_user))
 
         await run_command(cog.watch, interaction, target=target_member, note="note")
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             f"Watching <@{target_member.id}>.",
             ephemeral=True,
         )
@@ -51,9 +51,9 @@ class TestCogWatch:
         assert watch_data.user_xid == target_member.id
         assert watch_data.note == "note"
 
-        interaction.response.send_message.reset_mock()  # type: ignore
+        interaction.response.send_message.reset_mock()
         await run_command(cog.unwatch, interaction, target=target_member)
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             f"No longer watching <@{target_member.id}>.",
             ephemeral=True,
         )
@@ -72,7 +72,7 @@ class TestCogWatch:
         target_member = cast("discord.Member", mock_discord_object(target_user))
 
         await run_command(cog.watch, interaction, id=target_member.id, note="note")
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             f"Watching <@{target_member.id}>.",
             ephemeral=True,
         )
@@ -83,9 +83,9 @@ class TestCogWatch:
         assert watch_data.user_xid == target_member.id
         assert watch_data.note == "note"
 
-        interaction.response.send_message.reset_mock()  # type: ignore
+        interaction.response.send_message.reset_mock()
         await run_command(cog.unwatch, interaction, id=target_member.id)
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             f"No longer watching <@{target_member.id}>.",
             ephemeral=True,
         )
@@ -100,7 +100,7 @@ class TestCogWatch:
         guild: Guild,
     ) -> None:
         await run_command(cog.watch, interaction, note="note")
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             "You must provide either a target User or their ID.",
             ephemeral=True,
         )
@@ -112,7 +112,7 @@ class TestCogWatch:
         guild: Guild,
     ) -> None:
         await run_command(cog.watch, interaction, id="wah", note="note")
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             "You must provide a valid integer for an ID.",
             ephemeral=True,
         )
@@ -124,7 +124,7 @@ class TestCogWatch:
         guild: Guild,
     ) -> None:
         await run_command(cog.unwatch, interaction)
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             "You must provide either a target User or their ID.",
             ephemeral=True,
         )
@@ -136,7 +136,7 @@ class TestCogWatch:
         guild: Guild,
     ) -> None:
         await run_command(cog.unwatch, interaction, id="wah")
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
+        interaction.response.send_message.assert_called_once_with(
             "You must provide a valid integer for an ID.",
             ephemeral=True,
         )
@@ -229,7 +229,7 @@ class TestCogWatch:
             "flags": 0,
         }
 
-        interaction.response.send_message.reset_mock()  # type: ignore
+        interaction.response.send_message.reset_mock()
         await run_command(cog.watched, interaction, page=2)
         assert get_last_send_message(interaction, "embed") == {
             "color": settings.INFO_EMBED_COLOR,
