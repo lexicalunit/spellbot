@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 from typing import TYPE_CHECKING, Any, NoReturn
 from uuid import uuid4
 
@@ -45,8 +45,14 @@ class ContextLocal[ProxiedObject]:
     def of_type(cls, _: type[ProxiedObject]) -> ContextLocal[ProxiedObject]:
         return cls()
 
-    def set(self, obj: ProxiedObject) -> None:
-        context_vars[self].set(obj)
+    def set(self, obj: ProxiedObject) -> Token[ProxiedObject]:
+        return context_vars[self].set(obj)
+
+    def reset(self, token: Token[ProxiedObject]) -> None:
+        context_vars[self].reset(token)
+
+    def is_set(self) -> bool:
+        return context_vars[self].get(None) is not None
 
     def __getattr__(self, name: str) -> Any:
         obj = context_vars[self].get()
@@ -162,27 +168,30 @@ async def initialize_connection(
     db_session_maker.set(db_session_maker_obj)
 
 
-async def begin_session() -> None:
+async def begin_session() -> Token[AsyncSession]:
     session = db_session_maker()
-    DatabaseSession.set(session)
+    return DatabaseSession.set(session)
 
 
 async def rollback_session() -> None:  # pragma: no cover
     await DatabaseSession.rollback()
 
 
-async def end_session() -> None:
+async def end_session(token: Token[AsyncSession]) -> None:
     await DatabaseSession.commit()
     await DatabaseSession.close()
+    DatabaseSession.reset(token)
+    if DatabaseSession.is_set():  # pragma: no branch
+        DatabaseSession.expire_all()
 
 
 @asynccontextmanager
 async def db_session_manager() -> AsyncGenerator[None]:
-    await begin_session()
+    token = await begin_session()
     try:
         yield
     finally:
-        await end_session()
+        await end_session(token)
 
 
 async def rollback_transaction() -> None:  # pragma: no cover
