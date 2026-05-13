@@ -18,6 +18,10 @@ resource "aws_ecs_service" "spellbot_prod" {
     rollback = true
   }
 
+  # Allow the bot to finish startup (cogs, gateway connect, initial task burst)
+  # before the ALB starts evaluating the gunicorn target.
+  health_check_grace_period_seconds = 180
+
   network_configuration {
     subnets          = module.vpc.public_subnets
     security_groups  = [aws_security_group.ecs_tasks.id]
@@ -52,6 +56,10 @@ resource "aws_ecs_service" "spellbot_stage" {
   # Deployment configuration - no duplicates allowed (0% min, 100% max)
   deployment_minimum_healthy_percent = 0
   deployment_maximum_percent         = 100
+
+  # Allow the bot to finish startup (cogs, gateway connect, initial task burst)
+  # before the ALB starts evaluating the gunicorn target.
+  health_check_grace_period_seconds = 180
 
   network_configuration {
     subnets          = module.vpc.public_subnets
