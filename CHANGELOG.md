@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - On deploy, skip docker push if the image sha already exists in the repository.
-- Reduce complexity in terraform code.
+- Reduce complexity in terraform code. Also use modules for prod/stage deployments.
 
 ## [v18.9.1](https://github.com/lexicalunit/spellbot/releases/tag/v18.9.1) - 2026-05-13
 

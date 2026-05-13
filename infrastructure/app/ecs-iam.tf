@@ -61,10 +61,12 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets_policy" {
         Action = [
           "secretsmanager:GetSecretValue"
         ]
-        Resource = concat(
-          [for s in aws_secretsmanager_secret.spellbot : s.arn],
-          [for s in data.aws_secretsmanager_secret.db_password : s.arn]
-        )
+        Resource = [
+          module.prod.secrets_arn,
+          module.prod.db_secret_arn,
+          module.stage.secrets_arn,
+          module.stage.db_secret_arn
+        ]
       }
     ]
   })

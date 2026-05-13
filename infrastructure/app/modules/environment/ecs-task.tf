@@ -1,25 +1,7 @@
-# ECS Task Definitions for all environments
-# Uses for_each to reduce duplication between stage and prod
+# ECS Task Definition for the environment
 
 locals {
-  environments = {
-    prod = {
-      domain_name    = local.prod_domain_name
-      secrets_arn    = aws_secretsmanager_secret.spellbot["prod"].arn
-      db_secret_arn  = data.aws_secretsmanager_secret.db_password["prod"].arn
-      log_group_name = aws_cloudwatch_log_group.spellbot["prod"].name
-      image_uri      = data.aws_ssm_parameter.spellbot_image_uri["prod"].value
-      redis_db       = "0"
-    }
-    stage = {
-      domain_name    = local.stage_domain_name
-      secrets_arn    = aws_secretsmanager_secret.spellbot["stage"].arn
-      db_secret_arn  = data.aws_secretsmanager_secret.db_password["stage"].arn
-      log_group_name = aws_cloudwatch_log_group.spellbot["stage"].name
-      image_uri      = data.aws_ssm_parameter.spellbot_image_uri["stage"].value
-      redis_db       = "1"
-    }
-  }
+  domain_name = "${var.env_name}.${var.root_domain}"
 
   # Common environment variables shared across all containers
   common_env = {
@@ -44,7 +26,7 @@ locals {
     GIRUDO_DEFAULT_TCG_MAGIC_UUID = "ca8b23af-c9dd-4b16-bfaf-ee351caf4a16"
   }
 
-  # Common secret names for the main spellbot container
+  # Secret names for the main spellbot container
   app_secret_names = [
     "DD_API_KEY",
     "DD_APP_KEY",
@@ -59,7 +41,7 @@ locals {
     "GIRUDO_PASSWORDS"
   ]
 
-  # Common secret names for the gunicorn container
+  # Secret names for the gunicorn container
   api_secret_names = [
     "DD_API_KEY",
     "DD_APP_KEY",
@@ -69,15 +51,13 @@ locals {
 }
 
 resource "aws_ecs_task_definition" "spellbot" {
-  for_each = local.environments
-
-  family                   = "spellbot-${each.key}"
+  family                   = "spellbot-${var.env_name}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "1024" # 1 vCPU
   memory                   = "3072" # 3 GB
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  execution_role_arn       = var.ecs_task_execution_role_arn
+  task_role_arn            = var.ecs_task_role_arn
 
   runtime_platform {
     cpu_architecture = "ARM64"
@@ -95,18 +75,18 @@ resource "aws_ecs_task_definition" "spellbot" {
       ]
       environment = [
         for k, v in merge(local.common_env, {
-          DD_ENV       = each.key
-          API_BASE_URL = "https://${each.value.domain_name}"
+          DD_ENV       = var.env_name
+          API_BASE_URL = "https://${local.domain_name}"
         }) : { name = k, value = v }
       ]
       secrets = [
-        { name = "DD_API_KEY", valueFrom = "${each.value.secrets_arn}:DD_API_KEY::" },
-        { name = "DD_APP_KEY", valueFrom = "${each.value.secrets_arn}:DD_APP_KEY::" }
+        { name = "DD_API_KEY", valueFrom = "${aws_secretsmanager_secret.spellbot.arn}:DD_API_KEY::" },
+        { name = "DD_APP_KEY", valueFrom = "${aws_secretsmanager_secret.spellbot.arn}:DD_APP_KEY::" }
       ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = each.value.log_group_name
+          "awslogs-group"         = aws_cloudwatch_log_group.spellbot.name
           "awslogs-region"        = "us-east-1"
           "awslogs-stream-prefix" = "datadog"
         }
@@ -116,24 +96,24 @@ resource "aws_ecs_task_definition" "spellbot" {
     # Main SpellBot container
     {
       name      = "spellbot"
-      image     = each.value.image_uri
+      image     = data.aws_ssm_parameter.spellbot_image_uri.value
       essential = true
       environment = [
         for k, v in merge(local.common_env, local.app_common_env, {
-          DD_ENV       = each.key
-          ENVIRONMENT  = each.key
-          API_BASE_URL = "https://${each.value.domain_name}"
-          REDIS_URL    = "rediss://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}/${each.value.redis_db}"
+          DD_ENV       = var.env_name
+          ENVIRONMENT  = var.env_name
+          API_BASE_URL = "https://${local.domain_name}"
+          REDIS_URL    = "rediss://${var.elasticache_endpoint}:${var.elasticache_port}/${var.redis_db}"
         }) : { name = k, value = v }
       ]
       secrets = concat(
-        [for name in local.app_secret_names : { name = name, valueFrom = "${each.value.secrets_arn}:${name}::" }],
-        [{ name = "DATABASE_URL", valueFrom = "${each.value.db_secret_arn}:DB_URL::" }]
+        [for name in local.app_secret_names : { name = name, valueFrom = "${aws_secretsmanager_secret.spellbot.arn}:${name}::" }],
+        [{ name = "DATABASE_URL", valueFrom = "${data.aws_secretsmanager_secret.db_password.arn}:DB_URL::" }]
       )
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = each.value.log_group_name
+          "awslogs-group"         = aws_cloudwatch_log_group.spellbot.name
           "awslogs-region"        = "us-east-1"
           "awslogs-stream-prefix" = "spellbot"
         }
@@ -145,27 +125,27 @@ resource "aws_ecs_task_definition" "spellbot" {
     {
       name         = "spellbot-gunicorn"
       command      = ["./start.sh", "spellapi"]
-      image        = each.value.image_uri
+      image        = data.aws_ssm_parameter.spellbot_image_uri.value
       essential    = true
       portMappings = [{ containerPort = 80, protocol = "tcp" }]
       environment = [
         for k, v in merge(local.common_env, {
           DD_SERVICE  = "spellapi"
-          DD_ENV      = each.key
-          ENVIRONMENT = each.key
+          DD_ENV      = var.env_name
+          ENVIRONMENT = var.env_name
           PORT        = "80"
           HOST        = "0.0.0.0"
-          REDIS_URL   = "rediss://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}"
+          REDIS_URL   = "rediss://${var.elasticache_endpoint}:${var.elasticache_port}"
         }) : { name = k, value = v }
       ]
       secrets = concat(
-        [for name in local.api_secret_names : { name = name, valueFrom = "${each.value.secrets_arn}:${name}::" }],
-        [{ name = "DATABASE_URL", valueFrom = "${each.value.db_secret_arn}:DB_URL::" }]
+        [for name in local.api_secret_names : { name = name, valueFrom = "${aws_secretsmanager_secret.spellbot.arn}:${name}::" }],
+        [{ name = "DATABASE_URL", valueFrom = "${data.aws_secretsmanager_secret.db_password.arn}:DB_URL::" }]
       )
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = each.value.log_group_name
+          "awslogs-group"         = aws_cloudwatch_log_group.spellbot.name
           "awslogs-region"        = "us-east-1"
           "awslogs-stream-prefix" = "gunicorn"
         }
@@ -175,7 +155,7 @@ resource "aws_ecs_task_definition" "spellbot" {
   ])
 
   tags = {
-    Name        = "spellbot-${each.key}-task-definition"
-    Environment = each.key
+    Name        = "spellbot-${var.env_name}-task-definition"
+    Environment = var.env_name
   }
 }
