@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from asgiref.sync import sync_to_async
+from sqlalchemy import delete
+from sqlalchemy import select as sa_select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import update
 
@@ -20,16 +21,16 @@ channel_cache: dict[int, str] = {}
 
 
 def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
+    """Return True if the channel xid is in the local name cache under the given name."""
     if running_in_pytest():
         return False
     return bool((cached_name := channel_cache.get(xid)) and cached_name == name)
 
 
-@sync_to_async
-def upsert(channel: MessageableChannel) -> ChannelData:
+async def upsert(channel: MessageableChannel) -> ChannelData:
     """Upsert the given Discord channel into the database."""
     assert channel.guild is not None
-    name_max_len = Channel.name.property.columns[0].type.length  # type: ignore
+    name_max_len = Channel.name.property.columns[0].type.length
     raw_name = getattr(channel, "name", "")
     name = raw_name[:name_max_len]
     if not is_cached(channel.id, name):  # pragma: no branch (caching disabled in tests)
@@ -41,7 +42,7 @@ def upsert(channel: MessageableChannel) -> ChannelData:
         }
         upsert = insert(Channel).values(**values)
         upsert = upsert.on_conflict_do_update(
-            index_elements=[Channel.xid],
+            index_elements=[Channel.xid],  # type: ignore
             index_where=Channel.xid == values["xid"],
             set_={
                 "name": upsert.excluded.name,
@@ -49,210 +50,122 @@ def upsert(channel: MessageableChannel) -> ChannelData:
             },
             where=upsert.excluded.name != Channel.name,
         )
-        DatabaseSession.execute(upsert, values)
-        DatabaseSession.commit()
+        await DatabaseSession.execute(upsert, values)
+        await DatabaseSession.commit()
         channel_cache[channel.id] = name
 
-    db_channel = DatabaseSession.query(Channel).filter(Channel.xid == channel.id).one()
+    result = await DatabaseSession.execute(
+        sa_select(Channel).where(Channel.xid == channel.id),  # type: ignore
+    )
+    db_channel = result.scalar_one()
     return db_channel.to_data()
 
 
-@sync_to_async
-def forget(xid: int) -> None:
+async def forget(xid: int) -> None:
     """Delete the channel with the given xid from the database."""
-    DatabaseSession.query(Channel).filter(Channel.xid == xid).delete(synchronize_session=False)
+    await DatabaseSession.execute(
+        delete(Channel).where(Channel.xid == xid).execution_options(synchronize_session=False),  # type: ignore
+    )
     channel_cache.pop(xid, None)
 
 
-@sync_to_async
-def select(xid: int) -> ChannelData | None:
+async def select(xid: int) -> ChannelData | None:
     """Fetch the channel data for the given xid."""
-    channel = DatabaseSession.query(Channel).filter(Channel.xid == xid).one_or_none()
+    result = await DatabaseSession.execute(sa_select(Channel).where(Channel.xid == xid))  # type: ignore
+    channel = result.scalar_one_or_none()
     return channel.to_data() if channel else None
 
 
-@sync_to_async
-def set_default_seats(xid: int, seats: int) -> None:
+async def _set_column(xid: int, **values: object) -> None:
+    """Update the given columns on the channel with the given xid."""
+    query = (
+        update(Channel)
+        .where(Channel.xid == xid)  # type: ignore
+        .values(**values)
+        .execution_options(synchronize_session=False)
+    )
+    await DatabaseSession.execute(query)
+    await DatabaseSession.commit()
+
+
+async def set_default_seats(xid: int, seats: int) -> None:
     """Set the default number of seats for games in this channel."""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(default_seats=seats)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, default_seats=seats)
 
 
-@sync_to_async
-def set_default_format(xid: int, format: int) -> None:
+async def set_default_format(xid: int, format: int) -> None:
     """Set the default game format for this channel."""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(default_format=format)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, default_format=format)
 
 
-@sync_to_async
-def set_default_bracket(xid: int, bracket: int) -> None:
+async def set_default_bracket(xid: int, bracket: int) -> None:
     """Set the default game bracket for this channel."""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(default_bracket=bracket)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, default_bracket=bracket)
 
 
-@sync_to_async
-def set_default_service(xid: int, service: int) -> None:
+async def set_default_service(xid: int, service: int) -> None:
     """Set the default game service for this channel."""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(default_service=service)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, default_service=service)
 
 
-@sync_to_async
-def set_auto_verify(xid: int, setting: bool) -> None:
+async def set_auto_verify(xid: int, setting: bool) -> None:
     """Set whether users are automatically verified in this channel."""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(auto_verify=setting)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, auto_verify=setting)
 
 
-@sync_to_async
-def set_verified_only(xid: int, setting: bool) -> None:
+async def set_verified_only(xid: int, setting: bool) -> None:
     """Set whether only verified users can use this channel."""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(verified_only=setting)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, verified_only=setting)
 
 
-@sync_to_async
-def set_unverified_only(xid: int, setting: bool) -> None:
+async def set_unverified_only(xid: int, setting: bool) -> None:
     """Set whether only unverified users can use this channel."""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(unverified_only=setting)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, unverified_only=setting)
 
 
-@sync_to_async
-def set_motd(xid: int, message: str | None = None) -> str:
+async def set_motd(xid: int, message: str | None = None) -> str:
     """Set the message of the day for this channel."""
     if message:
-        max_len = Channel.motd.property.columns[0].type.length  # type: ignore
+        max_len = Channel.motd.property.columns[0].type.length
         motd = message[:max_len]
     else:
         motd = ""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(motd=motd)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, motd=motd)
     return motd
 
 
-@sync_to_async
-def set_extra(xid: int, message: str | None = None) -> str:
+async def set_extra(xid: int, message: str | None = None) -> str:
     """Set extra text to display in game posts for this channel."""
     if message:
-        max_len = Channel.extra.property.columns[0].type.length  # type: ignore
+        max_len = Channel.extra.property.columns[0].type.length
         extra = message[:max_len]
     else:
         extra = ""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(extra=extra)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, extra=extra)
     return extra
 
 
-@sync_to_async
-def set_voice_category(xid: int, value: str) -> str:
+async def set_voice_category(xid: int, value: str) -> str:
     """Set the voice channel category prefix for this channel."""
-    max_len = Channel.voice_category.property.columns[0].type.length  # type: ignore
+    max_len = Channel.voice_category.property.columns[0].type.length
     name = value[:max_len]
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(voice_category=name)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, voice_category=name)
     return name
 
 
-@sync_to_async
-def set_delete_expired(xid: int, value: bool) -> bool:
+async def set_delete_expired(xid: int, value: bool) -> bool:
     """Set whether expired games should be deleted in this channel."""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(delete_expired=value)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, delete_expired=value)
     return value
 
 
-@sync_to_async
-def set_blind_games(xid: int, value: bool) -> bool:
+async def set_blind_games(xid: int, value: bool) -> bool:
     """Set whether games in this channel should be created in blind mode."""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(blind_games=value)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, blind_games=value)
     return value
 
 
-@sync_to_async
-def set_voice_invite(xid: int, value: bool) -> bool:
+async def set_voice_invite(xid: int, value: bool) -> bool:
     """Set whether voice channel invites should be created for games."""
-    query = (
-        update(Channel)  # type: ignore
-        .where(Channel.xid == xid)
-        .values(voice_invite=value)
-        .execution_options(synchronize_session=False)
-    )
-    DatabaseSession.execute(query)
-    DatabaseSession.commit()
+    await _set_column(xid, voice_invite=value)
     return value

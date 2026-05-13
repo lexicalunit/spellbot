@@ -55,8 +55,8 @@ class GuildMember(Base):
         from spellbot.data import GuildMemberData  # allow_inline
 
         return GuildMemberData(
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            user_xid=self.user_xid,
-            guild_xid=self.guild_xid,
+            created_at=self.created_at,  # type: ignore
+            updated_at=self.updated_at,  # type: ignore
+            user_xid=self.user_xid,  # type: ignore
+            guild_xid=self.guild_xid,  # type: ignore
         )

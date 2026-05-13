@@ -77,10 +77,10 @@ class Post(Base):
         from spellbot.data import PostData  # allow_inline
 
         return PostData(
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            game_id=self.game_id,
-            guild_xid=self.guild_xid,
-            channel_xid=self.channel_xid,
-            message_xid=self.message_xid,
+            created_at=self.created_at,  # type: ignore
+            updated_at=self.updated_at,  # type: ignore
+            game_id=self.game_id,  # type: ignore
+            guild_xid=self.guild_xid,  # type: ignore
+            channel_xid=self.channel_xid,  # type: ignore
+            message_xid=self.message_xid,  # type: ignore
         )

@@ -6,6 +6,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import discord
 import pytest
+from sqlalchemy import func, select, update
 
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
@@ -61,22 +62,29 @@ class TestCogLookingForGame:
             assert isinstance(lfg_action.safe_followup_channel.call_args.kwargs["view"], GameView)
 
         # Find the user created by this interaction
-        user = DatabaseSession.query(User).filter(User.xid == interaction.user.id).one()
+        user = (
+            await DatabaseSession.execute(select(User).where(User.xid == interaction.user.id))
+        ).scalar_one()
         # Find the game created in this channel
         game = (
-            DatabaseSession.query(Game)
-            .filter(
-                Game.channel_xid == channel.xid,
-                Game.guild_xid == guild.xid,
+            (
+                await DatabaseSession.execute(
+                    select(Game)
+                    .where(
+                        Game.channel_xid == channel.xid,  # type: ignore
+                        Game.guild_xid == guild.xid,
+                    )
+                    .order_by(Game.id.desc()),
+                )
             )
-            .order_by(Game.id.desc())
+            .scalars()
             .first()
         )
         assert game is not None
         assert game.channel_xid == channel.xid
         assert game.guild_xid == guild.xid
         assert interaction.channel is not None
-        user_game = user.game(interaction.channel.id)
+        user_game = await user.game(interaction.channel.id)
         assert user_game is not None
         assert user_game.id == game.id
 
@@ -115,7 +123,7 @@ class TestCogLookingForGame:
             await run_command(cog.lfg, interaction)
 
             DatabaseSession.expire_all()
-            game = DatabaseSession.query(Game).one()
+            game = (await DatabaseSession.execute(select(Game))).scalar_one()
             started_at_timestamp = int(
                 game.started_at.replace(tzinfo=UTC).timestamp(),
             )
@@ -168,16 +176,19 @@ class TestCogLookingForGame:
         await run_command(cog.lfg, interaction)
 
         # Verify the original game still exists
-        other_game = DatabaseSession.query(Game).filter(Game.id == game.id).one()
+        other_game = (
+            await DatabaseSession.execute(select(Game).where(Game.id == game.id))
+        ).scalar_one()
         assert other_game is not None
         # Verify a new game was created for the user (due to blocking)
         # The user should be in a different game now
         user_game = (
-            DatabaseSession.query(Game)
-            .join(Queue, Queue.game_id == Game.id)
-            .filter(Queue.user_xid == user.xid)
-            .one()
-        )
+            await DatabaseSession.execute(
+                select(Game)
+                .join(Queue, Queue.game_id == Game.id)
+                .where(Queue.user_xid == user.xid),
+            )
+        ).scalar_one()
         assert other_game.id != user_game.id
 
     async def test_lfg_when_already_in_game(
@@ -197,8 +208,10 @@ class TestCogLookingForGame:
                 "You're already in a game in this channel.",
             )
 
-        found = DatabaseSession.query(User).filter(User.xid == player.xid).one()
-        assert found.game(channel.xid).id == game.id
+        found = (
+            await DatabaseSession.execute(select(User).where(User.xid == player.xid))
+        ).scalar_one()
+        assert (await found.game(channel.xid)).id == game.id
 
     async def test_lfg_with_format(
         self,
@@ -209,7 +222,9 @@ class TestCogLookingForGame:
     ) -> None:
         cog = LookingForGameCog(bot)
         await run_command(cog.lfg, interaction, format=GameFormat.MODERN.value)
-        assert DatabaseSession.query(Game).one().format == GameFormat.MODERN.value
+        assert (
+            await DatabaseSession.execute(select(Game))
+        ).scalar_one().format == GameFormat.MODERN.value
 
     async def test_lfg_with_seats(
         self,
@@ -220,7 +235,7 @@ class TestCogLookingForGame:
     ) -> None:
         cog = LookingForGameCog(bot)
         await run_command(cog.lfg, interaction, seats=2)
-        assert DatabaseSession.query(Game).one().seats == 2
+        assert (await DatabaseSession.execute(select(Game))).scalar_one().seats == 2
 
     async def test_lfg_with_friends(
         self,
@@ -242,8 +257,8 @@ class TestCogLookingForGame:
             await run_command(cog.lfg, interaction, friends=f"<@{friend1.xid}><@{friend2.xid}>")
 
         DatabaseSession.expire_all()
-        game = DatabaseSession.query(Game).one()
-        queues = DatabaseSession.query(Queue).all()
+        game = (await DatabaseSession.execute(select(Game))).scalar_one()
+        queues = list((await DatabaseSession.execute(select(Queue))).scalars().all())
         assert len(queues) == 3
         assert all(queue.game_id == game.id for queue in queues)
 
@@ -268,8 +283,8 @@ class TestCogLookingForGame:
             await run_command(cog.lfg, interaction, friends=f"<@{friend1.xid}><@{friend2.xid}>")
 
         DatabaseSession.expire_all()
-        game = DatabaseSession.query(Game).one()
-        queues = DatabaseSession.query(Queue).all()
+        game = (await DatabaseSession.execute(select(Game))).scalar_one()
+        queues = list((await DatabaseSession.execute(select(Queue))).scalars().all())
         assert len(queues) == 2
         assert all(queue.game_id == game.id for queue in queues)
         assert not any(queue.user_xid == friend1.xid for queue in queues)
@@ -295,8 +310,8 @@ class TestCogLookingForGame:
             await run_command(cog.lfg, interaction, friends=f"<@{friend1.xid}><@{friend2.xid}>")
 
         DatabaseSession.expire_all()
-        game = DatabaseSession.query(Game).one()
-        queues = DatabaseSession.query(Queue).all()
+        game = (await DatabaseSession.execute(select(Game))).scalar_one()
+        queues = list((await DatabaseSession.execute(select(Queue))).scalars().all())
         assert len(queues) == 2
         assert all(queue.game_id == game.id for queue in queues)
         assert not any(queue.user_xid == friend1.xid for queue in queues)
@@ -326,7 +341,7 @@ class TestCogLookingForGame:
                 friends=f"<@{friend1.xid}><@{friend2.xid}><@{friend3.xid}><@{friend4.xid}>",
             )
 
-        assert not DatabaseSession.query(Game).one_or_none()
+        assert not (await DatabaseSession.execute(select(Game))).scalar_one_or_none()
 
     async def test_lfg_multiple_times(
         self,
@@ -337,7 +352,9 @@ class TestCogLookingForGame:
     ) -> None:
         await run_command(cog.lfg, interaction)
         await run_command(cog.lfg, interaction)
-        assert DatabaseSession.query(Game).count() == 1
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(Game))).scalar() or 0
+        ) == 1
 
     async def test_rematch(
         self,
@@ -386,7 +403,9 @@ class TestCogLookingForGame:
             )
 
         DatabaseSession.expire_all()
-        assert DatabaseSession.query(Game).count() == 2
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(Game))).scalar() or 0
+        ) == 2
 
     async def test_start(
         self,
@@ -412,7 +431,7 @@ class TestCogLookingForGame:
             await run_command(cog.start, interaction)
 
         DatabaseSession.expire_all()
-        game = DatabaseSession.query(Game).one()
+        game = (await DatabaseSession.execute(select(Game))).scalar_one()
         assert game.status == GameStatus.STARTED.value
         assert game.seats == 2
 
@@ -517,7 +536,9 @@ class TestCogLookingForGameJoinButton:
                 "You can not join this game.",
             )
 
-        assert DatabaseSession.query(Game).count() == 1
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(Game))).scalar() or 0
+        ) == 1
 
     async def test_join_when_started(
         self,
@@ -533,9 +554,12 @@ class TestCogLookingForGameJoinButton:
         factories.user.create(game=game)
         factories.user.create(game=game)
         factories.user.create(game=game)
-        game.started_at = datetime.now(tz=UTC)  # type: ignore
-        game.status = GameStatus.STARTED.value
-        DatabaseSession.commit()
+        await DatabaseSession.execute(
+            update(Game)
+            .where(Game.id == game.id)
+            .values(started_at=datetime.now(tz=UTC), status=GameStatus.STARTED.value),
+        )
+        await DatabaseSession.commit()
 
         # then try to join it
         with mock_operations(
@@ -552,7 +576,9 @@ class TestCogLookingForGameJoinButton:
                 "Sorry, that game has already started.",
             )
 
-        assert DatabaseSession.query(Game).count() == 1
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(Game))).scalar() or 0
+        ) == 1
 
     async def test_join_when_defer_fails(
         self,

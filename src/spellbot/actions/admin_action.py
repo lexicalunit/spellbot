@@ -298,7 +298,7 @@ class AdminAction(BaseAction):
             )
             return
 
-        max_message_len = GuildAward.message.property.columns[0].type.length  # type: ignore
+        max_message_len = GuildAward.message.property.columns[0].type.length
         if len(message) > max_message_len:
             await safe_send_channel(
                 self.interaction,

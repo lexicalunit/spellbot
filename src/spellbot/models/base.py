@@ -8,13 +8,13 @@ import alembic
 import alembic.command
 import alembic.config
 from sqlalchemy import String, create_engine, text
-from sqlalchemy.orm import declarative_base  # type: ignore (current type stubs are broken)
+from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import declarative_base
 from sqlalchemy_utils import create_database, database_exists
 
 from . import import_models
 
 if TYPE_CHECKING:
-    from sqlalchemy.engine.base import Connection
     from sqlalchemy.ext.declarative import DeclarativeMeta
 
 MODULE_ROOT = Path(__file__).resolve().parent
@@ -25,31 +25,37 @@ ALEMBIC_INI = MIGRATIONS_DIR / "alembic.ini"
 logger = logging.getLogger(__name__)
 
 now = text("(now() at time zone 'utc')")
-Base: DeclarativeMeta = declarative_base()
+Base: DeclarativeMeta = declarative_base(cls=AsyncAttrs)
 
 
 def create_all(database_url: str) -> None:
     import_models()
     engine = create_engine(database_url, echo=False)
-    if not database_exists(engine.url):  # pragma: no cover
-        create_database(engine.url)
-    connection: Connection = engine.connect()
-    config = alembic.config.Config(str(ALEMBIC_INI))
-    config.set_main_option("script_location", str(MIGRATIONS_DIR))
-    config.set_main_option("sqlalchemy.url", database_url)
-    config.attributes["connection"] = connection
-    alembic.command.upgrade(config, "head")
+    try:
+        if not database_exists(engine.url):  # pragma: no cover
+            create_database(engine.url)
+        with engine.connect() as connection:
+            config = alembic.config.Config(str(ALEMBIC_INI))
+            config.set_main_option("script_location", str(MIGRATIONS_DIR))
+            config.set_main_option("sqlalchemy.url", database_url)
+            config.attributes["connection"] = connection
+            alembic.command.upgrade(config, "head")
+    finally:
+        engine.dispose()
 
 
 def reverse_all(database_url: str) -> None:
     import_models()
     engine = create_engine(database_url, echo=False)
-    connection: Connection = engine.connect()
-    config = alembic.config.Config(str(ALEMBIC_INI))
-    config.set_main_option("script_location", str(MIGRATIONS_DIR))
-    config.set_main_option("sqlalchemy.url", database_url)
-    config.attributes["connection"] = connection
-    alembic.command.downgrade(config, "base")
+    try:
+        with engine.connect() as connection:
+            config = alembic.config.Config(str(ALEMBIC_INI))
+            config.set_main_option("script_location", str(MIGRATIONS_DIR))
+            config.set_main_option("sqlalchemy.url", database_url)
+            config.attributes["connection"] = connection
+            alembic.command.downgrade(config, "base")
+    finally:
+        engine.dispose()
 
 
 class StringLiteral(String):  # pragma: no cover

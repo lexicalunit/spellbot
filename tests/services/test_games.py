@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.sql.expression import and_
 
 from spellbot.database import DatabaseSession
@@ -25,7 +26,7 @@ pytestmark = pytest.mark.use_db
 @pytest.mark.asyncio
 class TestServiceGames:
     async def test_games_get(self, game: Game) -> None:
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         assert game_data.id == game.id
         assert await games.get(404) is None
@@ -51,7 +52,7 @@ class TestServiceGames:
         PostFactory.create(guild=game.guild, channel=game.channel, game=game)
         user = UserFactory.create()
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         updated_game_data = await games.add_player(game_data, user.xid)
 
@@ -60,15 +61,15 @@ class TestServiceGames:
 
         # Verify in database
         DatabaseSession.expire_all()
-        found = DatabaseSession.get(User, user.xid)
+        found = await DatabaseSession.get(User, user.xid)
         assert found
-        found_game = found.game(game.channel_xid)
+        found_game = await found.game(game.channel_xid)
         assert found_game is not None
         assert found_game.id == game.id
 
     async def test_games_to_embed(self, game: Game) -> None:
         # The to_embed method is now on GameData, not GamesService
-        game_data = game.to_data()
+        game_data = await game.to_data()
         public_embed = game_data.to_embed(guild=None).to_dict()
         private_embed = game_data.to_embed(guild=None, dm=True).to_dict()
 
@@ -77,17 +78,27 @@ class TestServiceGames:
         assert private_embed is not None
 
     async def test_games_add_post(self, game: Game) -> None:
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
-        updated_data = await games.add_post(game_data, game.guild_xid, game.channel_xid, 12345)
+        updated_data = await games.add_post(game_data, game.guild_xid, game.channel_xid, 12345)  # type: ignore
 
         # Verify the post was added to game_data
         assert any(p.message_xid == 12345 for p in updated_data.posts)
 
         # Verify in database
-        posts = DatabaseSession.query(Post).filter().all()
+        posts = (await DatabaseSession.execute(select(Post))).scalars().all()
         for post in posts:
             assert post.game_id == game.id
+
+    async def test_games_add_post_conflict(self, game: Game) -> None:
+        PostFactory.create(guild=game.guild, channel=game.channel, game=game, message_xid=22345)
+        game_data = await games.get(game.id)  # type: ignore
+        assert game_data is not None
+        existing_count = len(game_data.posts)
+
+        # Re-adding the same post should be a no-op (on_conflict_do_nothing returns None)
+        result = await games.add_post(game_data, game.guild_xid, game.channel_xid, 22345)  # type: ignore
+        assert len(result.posts) == existing_count
 
     async def test_games_fully_seated(self, guild: Guild, channel: Channel) -> None:
         # fully_seated is now a property on GameData
@@ -106,12 +117,12 @@ class TestServiceGames:
         assert not pending_game_data.fully_seated
 
     async def test_games_make_ready(self, game: Game) -> None:
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         await games.make_ready(game_data, "http://link", "whatever", pins=[])
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.get(Game, game.id)
+        found = await DatabaseSession.get(Game, game.id)
         assert found
         assert found.game_link == "http://link"
         assert found.password == "whatever"
@@ -122,12 +133,12 @@ class TestServiceGames:
         UserFactory.create(game=game)
         assert game.seats == 4
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         await games.shrink_game(game_data)
 
         DatabaseSession.expire_all()
-        updated = DatabaseSession.query(Game).one()
+        updated = (await DatabaseSession.execute(select(Game))).scalar_one()
         assert updated.seats == 2
 
     async def test_game_data_players(self, game: Game) -> None:
@@ -135,7 +146,7 @@ class TestServiceGames:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         player_xids = {p.xid for p in game_data.players}
         assert player_xids == {user1.xid, user2.xid}
@@ -147,35 +158,35 @@ class TestServiceGames:
         watch = WatchFactory.create(guild_xid=game.guild.xid, user_xid=user1.xid)
 
         DatabaseSession.expire_all()
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         assert await games.watch_notes(game_data, [user1.xid, user2.xid, user3.xid]) == {
             user1.xid: watch.note,
         }
 
     async def test_games_set_voice(self, game: Game) -> None:
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         await games.set_voice(game_data, voice_xid=12345)
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.get(Game, game.id)
+        found = await DatabaseSession.get(Game, game.id)
         assert found
         assert found.voice_xid == 12345
 
     async def test_games_set_voice_with_link(self, game: Game) -> None:
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         await games.set_voice(game_data, voice_xid=12345, voice_invite_link="http://link")
 
         DatabaseSession.expire_all()
-        found = DatabaseSession.get(Game, game.id)
+        found = await DatabaseSession.get(Game, game.id)
         assert found
         assert found.voice_xid == 12345
         assert found.voice_invite_link == "http://link"
 
     async def test_message_xids(self, game: Game) -> None:
-        assert await games.message_xids([game.id]) == [game.posts[0].message_xid]
+        assert await games.message_xids([game.id]) == [game.posts[0].message_xid]  # type: ignore
 
     async def test_dequeue_players(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
@@ -184,13 +195,13 @@ class TestServiceGames:
         await games.dequeue_players([user1.xid, user2.xid])
 
         DatabaseSession.expire_all()
-        assert user1.game(game.channel_xid) is None
-        assert user2.game(game.channel_xid) is None
+        assert await user1.game(game.channel_xid) is None
+        assert await user2.game(game.channel_xid) is None
 
     async def test_player_convoke_data(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
-        result = await games.player_convoke_data(game.id)
+        result = await games.player_convoke_data(game.id)  # type: ignore
         expected = [
             {"xid": user1.xid, "name": user1.name},
             {"xid": user2.xid, "name": user2.name},
@@ -215,19 +226,27 @@ class TestServiceGames:
         # UserFactory.create(game=game) automatically creates Play records for started games
         # Query for the Play records that were automatically created
         _play1 = (
-            DatabaseSession.query(Play)
-            .filter(
-                Play.user_xid == user1.xid,
-                Play.game_id == game.id,
+            (
+                await DatabaseSession.execute(
+                    select(Play).where(
+                        Play.user_xid == user1.xid,
+                        Play.game_id == game.id,
+                    ),
+                )
             )
+            .scalars()
             .first()
         )
         _play2 = (
-            DatabaseSession.query(Play)
-            .filter(
-                Play.user_xid == user2.xid,
-                Play.game_id == game.id,
+            (
+                await DatabaseSession.execute(
+                    select(Play).where(
+                        Play.user_xid == user2.xid,
+                        Play.game_id == game.id,
+                    ),
+                )
             )
+            .scalars()
             .first()
         )
 
@@ -250,7 +269,7 @@ class TestServiceGamesBlocked:
 
         BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         assert await games.blocked(game_data, user2.xid)
 
@@ -260,7 +279,7 @@ class TestServiceGamesBlocked:
 
         BlockFactory.create(user_xid=user2.xid, blocked_user_xid=user1.xid)
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         assert await games.blocked(game_data, user2.xid)
 
@@ -268,7 +287,7 @@ class TestServiceGamesBlocked:
         UserFactory.create(game=game)
         user3 = UserFactory.create()
 
-        game_data = await games.get(game.id)
+        game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
         assert not await games.blocked(game_data, user3.xid)
 
@@ -279,7 +298,7 @@ class TestServiceGamesUpsert:
         new, game_data = await games.upsert(
             guild_xid=game.guild.xid,
             channel_xid=game.channel.xid,
-            author_xid=user.xid,
+            author_xid=user.xid,  # type: ignore
             friends=[],
             seats=4,
             rules=None,
@@ -291,17 +310,17 @@ class TestServiceGamesUpsert:
         assert game_data.id == game.id
 
         DatabaseSession.expire_all()
-        found_user = DatabaseSession.query(User).one()
+        found_user = (await DatabaseSession.execute(select(User))).scalar_one()
         found_queue = (
-            DatabaseSession.query(Queue)
-            .filter(
-                and_(
-                    Queue.game_id == game.id,
-                    Queue.user_xid == found_user.xid,
+            await DatabaseSession.execute(
+                select(Queue).where(
+                    and_(
+                        Queue.game_id == game.id,
+                        Queue.user_xid == found_user.xid,
+                    ),
                 ),
             )
-            .one_or_none()
-        )
+        ).scalar_one_or_none()
         assert found_queue is not None
 
     async def test_lfg_with_friend_when_existing_game(self, game: Game) -> None:
@@ -323,14 +342,18 @@ class TestServiceGamesUpsert:
         assert game_data.id == game.id
 
         DatabaseSession.expire_all()
-        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == game.id).all()
+        rows = (
+            await DatabaseSession.execute(
+                select(Queue.user_xid).where(Queue.game_id == game.id),
+            )
+        ).all()
         assert {row[0] for row in rows} == {101, 102}
 
     async def test_lfg_alone_when_no_game(self, guild: Guild, channel: Channel, user: User) -> None:
         new, game_data = await games.upsert(
             guild_xid=guild.xid,
             channel_xid=channel.xid,
-            author_xid=user.xid,
+            author_xid=user.xid,  # type: ignore
             friends=[],
             seats=4,
             rules=None,
@@ -342,9 +365,9 @@ class TestServiceGamesUpsert:
         assert game_data is not None
 
         DatabaseSession.expire_all()
-        found_user = DatabaseSession.query(User).one()
-        found_game = DatabaseSession.query(Game).one()
-        found_queue = DatabaseSession.query(Queue).one()
+        found_user = (await DatabaseSession.execute(select(User))).scalar_one()
+        found_game = (await DatabaseSession.execute(select(Game))).scalar_one()
+        found_queue = (await DatabaseSession.execute(select(Queue))).scalar_one()
         assert found_game.guild_xid == guild.xid
         assert found_game.channel_xid == channel.xid
         assert found_queue.game_id == found_game.id
@@ -369,10 +392,14 @@ class TestServiceGamesUpsert:
         assert game_data is not None
 
         DatabaseSession.expire_all()
-        db_game = DatabaseSession.query(Game).one()
+        db_game = (await DatabaseSession.execute(select(Game))).scalar_one()
         assert db_game.guild_xid == guild.xid
         assert db_game.channel_xid == channel.xid
-        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == db_game.id).all()
+        rows = (
+            await DatabaseSession.execute(
+                select(Queue.user_xid).where(Queue.game_id == db_game.id),
+            )
+        ).all()
         assert {row[0] for row in rows} == {101, 102}
         assert db_game.rules == "some additional rules"
 
@@ -397,10 +424,16 @@ class TestServiceGamesUpsert:
         assert game_data is not None
 
         DatabaseSession.expire_all()
-        db_game = DatabaseSession.query(Game).filter(Game.id != bad_game.id).one()
+        db_game = (
+            await DatabaseSession.execute(select(Game).where(Game.id != bad_game.id))
+        ).scalar_one()
         assert db_game.guild_xid == guild.xid
         assert db_game.channel_xid == channel.xid
-        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == db_game.id).all()
+        rows = (
+            await DatabaseSession.execute(
+                select(Queue.user_xid).where(Queue.game_id == db_game.id),
+            )
+        ).all()
         assert {row[0] for row in rows} == {101, 102, 103}
 
     async def test_lfg_with_friend_when_game_wrong_format(
@@ -433,10 +466,16 @@ class TestServiceGamesUpsert:
         assert game_data is not None
 
         DatabaseSession.expire_all()
-        db_game = DatabaseSession.query(Game).filter(Game.id != bad_game.id).one()
+        db_game = (
+            await DatabaseSession.execute(select(Game).where(Game.id != bad_game.id))
+        ).scalar_one()
         assert db_game.guild_xid == guild.xid
         assert db_game.channel_xid == channel.xid
-        rows = DatabaseSession.query(Queue.user_xid).filter(Queue.game_id == db_game.id).all()
+        rows = (
+            await DatabaseSession.execute(
+                select(Queue.user_xid).where(Queue.game_id == db_game.id),
+            )
+        ).all()
         assert {row[0] for row in rows} == {101, 102, 103}
 
     async def test_lfg_when_existing_game_and_blocked(self, game: Game) -> None:
@@ -457,10 +496,12 @@ class TestServiceGamesUpsert:
         )
 
         DatabaseSession.expire_all()
-        other_game = DatabaseSession.query(Game).filter(Game.id != game.id).one()
+        other_game = (
+            await DatabaseSession.execute(select(Game).where(Game.id != game.id))
+        ).scalar_one()
         assert new
-        assert game.players == [user1]
-        assert other_game.players == [user2]
+        assert [p.xid for p in await game.players()] == [user1.xid]
+        assert [p.xid for p in await other_game.players()] == [user2.xid]
 
     async def test_lfg_when_existing_game_and_blocker(self, game: Game) -> None:
         user1 = UserFactory.create(xid=101, game=game)
@@ -480,7 +521,9 @@ class TestServiceGamesUpsert:
         )
 
         DatabaseSession.expire_all()
-        other_game = DatabaseSession.query(Game).filter(Game.id != game.id).one()
+        other_game = (
+            await DatabaseSession.execute(select(Game).where(Game.id != game.id))
+        ).scalar_one()
         assert new
-        assert game.players == [user1]
-        assert other_game.players == [user2]
+        assert [p.xid for p in await game.players()] == [user1.xid]
+        assert [p.xid for p in await other_game.players()] == [user2.xid]

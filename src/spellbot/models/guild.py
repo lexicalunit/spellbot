@@ -116,28 +116,30 @@ class Guild(Base):
         doc="Awards available in this guild",
     )
 
-    def to_data(self) -> GuildData:
+    async def to_data(self) -> GuildData:
         from spellbot.data import GuildData  # allow_inline
 
+        channels = await self.awaitable_attrs.channels
+        awards = await self.awaitable_attrs.awards
         return GuildData(
             xid=self.xid,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            name=self.name,
-            motd=self.motd,
-            show_links=self.show_links,
-            voice_create=self.voice_create,
-            use_max_bitrate=self.use_max_bitrate,
+            created_at=self.created_at,  # type: ignore
+            updated_at=self.updated_at,  # type: ignore
+            name=self.name,  # type: ignore
+            motd=self.motd,  # type: ignore
+            show_links=self.show_links,  # type: ignore
+            voice_create=self.voice_create,  # type: ignore
+            use_max_bitrate=self.use_max_bitrate,  # type: ignore
             channels=sorted(
-                [channel.to_data() for channel in cast("Iterable[Channel]", self.channels)],
+                [channel.to_data() for channel in cast("Iterable[Channel]", channels)],
                 key=lambda c: c.xid,
             ),
             awards=sorted(
-                [award.to_data() for award in cast("Iterable[GuildAward]", self.awards)],
+                [award.to_data() for award in cast("Iterable[GuildAward]", awards)],
                 key=lambda c: c.id,
             ),
-            banned=self.banned,
-            notice=self.notice,
-            suggest_voice_category=self.suggest_voice_category,
-            enable_mythic_track=self.enable_mythic_track,
+            banned=self.banned,  # type: ignore
+            notice=self.notice,  # type: ignore
+            suggest_voice_category=self.suggest_voice_category,  # type: ignore
+            enable_mythic_track=self.enable_mythic_track,  # type: ignore
         )

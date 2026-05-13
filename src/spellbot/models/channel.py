@@ -166,21 +166,21 @@ class Channel(Base):
 
         return ChannelData(
             xid=self.xid,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            guild_xid=self.guild_xid,
-            name=self.name,
-            default_seats=self.default_seats,
+            created_at=self.created_at,  # type: ignore
+            updated_at=self.updated_at,  # type: ignore
+            guild_xid=self.guild_xid,  # type: ignore
+            name=self.name,  # type: ignore
+            default_seats=self.default_seats,  # type: ignore
             default_format=GameFormat(cast("int", self.default_format)),
             default_bracket=GameBracket(cast("int", self.default_bracket)),
             default_service=GameService(cast("int", self.default_service)),
-            auto_verify=self.auto_verify,
-            unverified_only=self.unverified_only,
-            verified_only=self.verified_only,
-            motd=self.motd,
-            extra=self.extra,
-            voice_category=self.voice_category,
-            voice_invite=self.voice_invite,
-            delete_expired=self.delete_expired,
-            blind_games=self.blind_games,
+            auto_verify=self.auto_verify,  # type: ignore
+            unverified_only=self.unverified_only,  # type: ignore
+            verified_only=self.verified_only,  # type: ignore
+            motd=self.motd,  # type: ignore
+            extra=self.extra,  # type: ignore
+            voice_category=self.voice_category,  # type: ignore
+            voice_invite=self.voice_invite,  # type: ignore
+            delete_expired=self.delete_expired,  # type: ignore
+            blind_games=self.blind_games,  # type: ignore
         )

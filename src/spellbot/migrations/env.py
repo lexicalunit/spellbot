@@ -7,7 +7,7 @@ from spellbot.models import Base, import_models
 
 import_models()
 config = context.config
-target_metadata = Base.metadata  # type: ignore
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
@@ -41,17 +41,27 @@ def run_migrations_online() -> None:
     In this scenario we need to create an Engine and associate a
     connection with the context.
     """
+    existing_connection = config.attributes.get("connection")
+    if existing_connection is not None:
+        context.configure(connection=existing_connection, target_metadata=target_metadata)
+        with context.begin_transaction():
+            context.run_migrations()
+        return
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
+        config.get_section(config.config_ini_section),  # type: ignore
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
-    with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+    try:
+        with connectable.connect() as connection:
+            context.configure(connection=connection, target_metadata=target_metadata)
 
-        with context.begin_transaction():
-            context.run_migrations()
+            with context.begin_transaction():
+                context.run_migrations()
+    finally:
+        connectable.dispose()
 
 
 if context.is_offline_mode():

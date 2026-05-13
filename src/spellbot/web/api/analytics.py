@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any
 import aiohttp_jinja2
 import httpx
 from aiohttp.web_response import Response as WebResponse
-from asgiref.sync import sync_to_async
 from ddtrace.trace import tracer
+from sqlalchemy import delete, select
 
 from spellbot import services
 from spellbot.database import DatabaseSession, db_session_manager
@@ -97,9 +97,9 @@ async def analytics_endpoint(request: web.Request) -> WebResponse:
     if not validate_signature(guild_xid, expires, sig):
         return WebResponse(status=403, text="Invalid or expired link.")
 
-    @sync_to_async
-    def get_guild_name() -> str | None:
-        guild = DatabaseSession.query(Guild).filter(Guild.xid == guild_xid).one_or_none()
+    async def get_guild_name() -> str | None:
+        result = await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
+        guild = result.scalar_one_or_none()
         return guild.name if guild else None
 
     async with db_session_manager():
@@ -212,13 +212,14 @@ async def analytics_services_endpoint(request: web.Request) -> WebResponse:
     )
 
 
-@sync_to_async
-def delete_guild_member(guild_xid: int, user_xid: int) -> None:
+async def delete_guild_member(guild_xid: int, user_xid: int) -> None:
     """Delete a GuildMember record when the user is no longer in the guild."""
-    DatabaseSession.query(GuildMember).filter(
-        GuildMember.guild_xid == guild_xid,
-        GuildMember.user_xid == user_xid,
-    ).delete()
+    await DatabaseSession.execute(
+        delete(GuildMember).where(
+            GuildMember.guild_xid == guild_xid,
+            GuildMember.user_xid == user_xid,
+        ),
+    )
 
 
 async def check_guild_member(guild_xid: int, user_xid: int) -> bool | None:

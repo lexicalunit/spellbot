@@ -39,7 +39,7 @@ class Verify(Base):
         from spellbot.data import VerifyData  # allow_inline
 
         return VerifyData(
-            guild_xid=self.guild_xid,
-            user_xid=self.user_xid,
-            verified=self.verified,
+            guild_xid=self.guild_xid,  # type: ignore
+            user_xid=self.user_xid,  # type: ignore
+            verified=self.verified,  # type: ignore
         )
