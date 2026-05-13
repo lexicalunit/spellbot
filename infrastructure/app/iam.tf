@@ -174,7 +174,10 @@ resource "aws_iam_policy" "spellbot_ssm_deployment" {
           "ssm:DeleteParameter",
           "ssm:DescribeParameters"
         ]
-        Resource = [for p in aws_ssm_parameter.spellbot_image_uri : p.arn]
+        Resource = [
+          module.prod.ssm_parameter_arn,
+          module.stage.ssm_parameter_arn
+        ]
       }
     ]
   })

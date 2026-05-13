@@ -1,4 +1,5 @@
 .PHONY: all install test lint format typecheck check clean
+.PHONY: infra-stage infra-prod infra-o11y
 
 all: check
 
@@ -26,3 +27,15 @@ clean:
 	@echo "cleaning runtime artifacts..."
 	@rm -rf .coverage .pytest_cache .ruff_cache dist htmlcov
 	@find . -name "__pycache__" -o -name "*.pyc" | xargs rm -rf
+
+infra-stage:
+	@echo "Deploying app infrastructure to stage..."
+	@cd infrastructure/app && terraform apply -target=module.stage
+
+infra-prod:
+	@echo "Deploying app infrastructure to prod..."
+	@cd infrastructure/app && terraform apply -target=module.prod
+
+infra-o11y:
+	@echo "Deploying observability infrastructure..."
+	@cd infrastructure/o11y && terraform apply
