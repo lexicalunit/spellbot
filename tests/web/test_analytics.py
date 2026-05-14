@@ -42,7 +42,8 @@ class TestWebAnalyticsShell:
 
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
         url = generate_signed_url(guild.xid, expires_in_minutes=10)
-        path = url.split("bot.spellbot.io")[-1]
+        parsed = urlparse(url)
+        path = f"{parsed.path}?{parsed.query}"
 
         resp = await client.get(path)
         assert resp.status == 200
@@ -57,7 +58,8 @@ class TestWebAnalyticsShell:
     ) -> None:
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
         url = generate_signed_url(99999, expires_in_minutes=10)
-        path = url.split("bot.spellbot.io")[-1]
+        parsed = urlparse(url)
+        path = f"{parsed.path}?{parsed.query}"
 
         resp = await client.get(path)
         assert resp.status == 404
@@ -76,7 +78,8 @@ class TestWebAnalyticsShell:
     ) -> None:
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
         url = generate_signed_url(201, expires_in_minutes=10)
-        path = url.split("bot.spellbot.io")[-1]
+        parsed = urlparse(url)
+        path = f"{parsed.path}?{parsed.query}"
 
         mocker.patch("spellbot.utils.time.time", return_value=2000.0)
         resp = await client.get(path)

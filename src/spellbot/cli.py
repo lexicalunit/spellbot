@@ -2,26 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import time
-from os import getenv
 from socket import socket
 
 import click
 import hupper
 import uvloop
-from dotenv import load_dotenv
-
-from .environment import running_in_pytest
-
-# load .env environment variables as early as possible, BEFORE importing settings
-if not running_in_pytest():  # pragma: no cover
-    load_dotenv()
 
 from . import __version__
 from .logs import configure_logging
 from .metrics import no_metrics
 from .settings import settings
 
-if not getenv("DISABLE_UVLOOP", ""):  # pragma: no cover
+if not settings.DISABLE_UVLOOP:  # pragma: no cover
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
@@ -89,7 +81,7 @@ def main(
         hupper.start_reloader("spellbot.main")
 
     # Ensure that configure_logging() is called as early as possible
-    level = log_level if log_level is not None else (getenv("LOG_LEVEL") or "INFO")
+    level = log_level if log_level is not None else settings.LOG_LEVEL
     configure_logging(level)
 
     import logging  # allow_inline

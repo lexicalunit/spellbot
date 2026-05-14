@@ -10,5 +10,5 @@ if TYPE_CHECKING:
 
 class TestMigrations:
     def test_alembic(self, settings: Settings) -> None:
-        create_all(settings.DATABASE_URL)
-        reverse_all(settings.DATABASE_URL)
+        create_all(settings.RESOLVED_DATABASE_URL)
+        reverse_all(settings.RESOLVED_DATABASE_URL)
