@@ -15,3 +15,14 @@ class TestWebPing:
         assert resp.status == 200
         text = await resp.text()
         assert "ok" in text
+
+
+@pytest.mark.asyncio
+class TestWebStaticFiles:
+    async def test_analytics_js(self, client: ClientSession) -> None:
+        resp = await client.get("/analytics.js")
+        assert resp.status == 200
+        assert resp.content_type == "text/javascript"
+        text = await resp.text()
+        assert "ANALYTICS_CONFIG" in text
+        assert resp.headers.get("Cache-Control") == "public, max-age=3600"

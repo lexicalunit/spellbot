@@ -65,6 +65,14 @@ async def auth_middleware(request: web.Request, handler: Handler) -> web.StreamR
     return await handler(request)
 
 
+async def serve_analytics_js(_: web.Request) -> web.FileResponse:
+    """Serve the analytics JavaScript file with caching headers."""
+    return web.FileResponse(
+        TEMPLATES_ROOT / "analytics.js",
+        headers={"Cache-Control": "public, max-age=3600"},  # 1 hour cache
+    )
+
+
 def build_web_app() -> web.Application:
     import_models()
     app = web.Application(middlewares=[auth_middleware])
@@ -75,6 +83,7 @@ def build_web_app() -> web.Application:
     )
     for routes in ALL_ROUTES:
         app.router.add_routes(routes)
+    app.router.add_get("/analytics.js", serve_analytics_js)
     app.on_cleanup.append(close_shared_clients)
     return app
 
