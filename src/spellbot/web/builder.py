@@ -69,7 +69,10 @@ async def serve_analytics_js(_: web.Request) -> web.FileResponse:
     """Serve the analytics JavaScript file with caching headers."""
     return web.FileResponse(
         TEMPLATES_ROOT / "analytics.js",
-        headers={"Cache-Control": "public, max-age=3600"},  # 1 hour cache
+        headers={
+            "Cache-Control": "public, max-age=3600",  # 1 hour cache
+            "Content-Type": "application/javascript; charset=utf-8",
+        },
     )
 
 
