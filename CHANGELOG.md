@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v18.9.2](https://github.com/lexicalunit/spellbot/releases/tag/v18.9.2) - 2026-05-14
+
 ### Changed
 
 - On deploy, skip docker push if the image sha already exists in the repository.
