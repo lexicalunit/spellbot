@@ -130,7 +130,7 @@ async def initialize_connection(
     outer transaction can then be discarded via `rollback_transaction()`,
     which is useful for tests that want full isolation.
     """
-    db_url = settings.DATABASE_URL
+    db_url = settings.RESOLVED_DATABASE_URL
     if worker_id:
         db_url += f"-{worker_id}"
         app += f"-{worker_id}"
@@ -203,4 +203,4 @@ async def rollback_transaction() -> None:  # pragma: no cover
 
 
 def delete_test_database(worker_id: str) -> None:  # pragma: no cover
-    reverse_all(f"{settings.DATABASE_URL}-{worker_id}")
+    reverse_all(f"{settings.RESOLVED_DATABASE_URL}-{worker_id}")

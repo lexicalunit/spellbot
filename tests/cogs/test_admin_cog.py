@@ -1326,7 +1326,7 @@ class TestCogAdminUserInfo:
         assert "⚠️ Watched: Suspicious" in fields["Watch Status"]
         assert "2025-01-15 to 2026-03-20" in fields["Play Range"]
         assert fields["Game History"] == (
-            f"[View on spellbot.io](https://bot.spellbot.io/g/{guild.xid}/u/{target_user.xid})"
+            f"[View on spellbot.io]({settings.API_BASE_URL}/g/{guild.xid}/u/{target_user.xid})"
         )
 
     async def test_user_info_no_games(

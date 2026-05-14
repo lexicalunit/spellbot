@@ -47,7 +47,7 @@ class TestCogScore:
             "color": settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 0 games on this server.\n"
             "View more [details on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{guild.xid}/u/{user.xid}).",
+            f"({settings.API_BASE_URL}/g/{guild.xid}/u/{user.xid}).",
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
             "flags": 0,
@@ -68,7 +68,7 @@ class TestCogScore:
             "color": settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 1 game on this server.\n"
             "View more [details on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{guild.xid}/u/{user.xid}).",
+            f"({settings.API_BASE_URL}/g/{guild.xid}/u/{user.xid}).",
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
             "flags": 0,
@@ -88,7 +88,7 @@ class TestCogScore:
             "color": settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 2 games on this server.\n"
             "View more [details on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{guild.xid}/u/{user.xid}).",
+            f"({settings.API_BASE_URL}/g/{guild.xid}/u/{user.xid}).",
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
             "flags": 0,
@@ -109,7 +109,7 @@ class TestCogScore:
             "color": settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 0 games on this server.\n"
             "View more [details on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{new_guild.id}/u/{user.xid}).",
+            f"({settings.API_BASE_URL}/g/{new_guild.id}/u/{user.xid}).",
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
             "flags": 0,
@@ -132,7 +132,7 @@ class TestCogScore:
             "color": settings.INFO_EMBED_COLOR,
             "description": f"<@{target_member.id}> has played 0 games on this server.\n"
             "View more [details on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{guild.xid}/u/{target_member.id}).",
+            f"({settings.API_BASE_URL}/g/{guild.xid}/u/{target_member.id}).",
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
             "flags": 0,
@@ -152,7 +152,7 @@ class TestCogScore:
             "author": {"name": f"Recent games played in {channel.name}"},
             "color": settings.INFO_EMBED_COLOR,
             "description": "View [game history on spellbot.io]"
-            f"(https://bot.spellbot.io/g/{guild.xid}/c/{channel.xid}).",
+            f"({settings.API_BASE_URL}/g/{guild.xid}/c/{channel.xid}).",
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
             "flags": 0,
