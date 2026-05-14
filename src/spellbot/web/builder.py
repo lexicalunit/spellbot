@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
@@ -14,7 +13,7 @@ from aiohttp import web
 from babel.dates import format_datetime
 
 from spellbot import services
-from spellbot.database import db_session_manager, initialize_connection
+from spellbot.database import db_session_manager
 from spellbot.models import import_models
 from spellbot.redis_client import close_redis
 from spellbot.settings import settings
@@ -27,6 +26,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
+
+ALL_ROUTES = [
+    ping.routes,
+    status.routes,
+    analytics.routes,
+    record.routes,
+    rest.routes,
+]
 
 
 def humanize(ts: int, offset: int, zone: str) -> str:
@@ -66,30 +73,8 @@ def build_web_app() -> web.Application:
         loader=jinja2.FileSystemLoader(TEMPLATES_ROOT),
         filters={"humanize": humanize},
     )
-    app.add_routes(
-        [
-            web.get(r"/", ping.endpoint),
-            web.get(r"/status", status.endpoint),
-            web.get(r"/status.json", status.json_endpoint),
-            web.get(r"/g/{guild}/analytics", analytics.analytics_endpoint),
-            web.get(r"/g/{guild}/analytics/summary", analytics.analytics_summary_endpoint),
-            web.get(r"/g/{guild}/analytics/activity", analytics.analytics_activity_endpoint),
-            web.get(r"/g/{guild}/analytics/wait-time", analytics.analytics_wait_time_endpoint),
-            web.get(r"/g/{guild}/analytics/brackets", analytics.analytics_brackets_endpoint),
-            web.get(r"/g/{guild}/analytics/retention", analytics.analytics_retention_endpoint),
-            web.get(r"/g/{guild}/analytics/growth", analytics.analytics_growth_endpoint),
-            web.get(r"/g/{guild}/analytics/histogram", analytics.analytics_histogram_endpoint),
-            web.get(r"/g/{guild}/analytics/formats", analytics.analytics_formats_endpoint),
-            web.get(r"/g/{guild}/analytics/channels", analytics.analytics_channels_endpoint),
-            web.get(r"/g/{guild}/analytics/services", analytics.analytics_services_endpoint),
-            web.get(r"/g/{guild}/analytics/players", analytics.analytics_players_endpoint),
-            web.get(r"/g/{guild}/analytics/blocked", analytics.analytics_blocked_endpoint),
-            web.get(r"/g/{guild}/c/{channel}", record.channel_endpoint),
-            web.get(r"/g/{guild}/u/{user}", record.user_endpoint),
-            web.post(r"/api/game/{game}/verify", rest.game_verify_endpoint),
-            web.post(r"/api/game/{game}/record", rest.game_record_endpoint),
-        ],
-    )
+    for routes in ALL_ROUTES:
+        app.router.add_routes(routes)
     app.on_cleanup.append(close_shared_clients)
     return app
 
@@ -97,19 +82,3 @@ def build_web_app() -> web.Application:
 async def close_shared_clients(_app: web.Application) -> None:
     await rest.close_http_session()
     await close_redis()
-
-
-# In production we use gunicorn, see server.py for details.
-def launch_dev_server(debug: bool, port: int) -> None:  # pragma: no cover
-    loop = asyncio.new_event_loop()
-    loop.set_debug(debug)
-
-    app = build_web_app()
-    runner = web.AppRunner(app)
-    loop.run_until_complete(runner.setup())
-    loop.run_until_complete(initialize_connection("spellbot-web"))
-    site = web.TCPSite(runner, settings.HOST, port)
-    loop.run_until_complete(site.start())
-    logger.info("server running: http://%s:%s", settings.HOST, port)
-
-    loop.run_forever()

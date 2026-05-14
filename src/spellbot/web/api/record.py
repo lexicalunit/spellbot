@@ -3,20 +3,19 @@ from __future__ import annotations
 import logging
 from contextlib import suppress
 from enum import Enum, auto
-from typing import TYPE_CHECKING, NamedTuple
+from typing import NamedTuple
 
 import aiohttp_jinja2
-from aiohttp.web_response import Response as WebResponse
+from aiohttp import web
 from ddtrace.trace import tracer
 
 from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_request_id, generate_request_id
 
-if TYPE_CHECKING:
-    from aiohttp import web
-
 logger = logging.getLogger(__name__)
+
+routes = web.RouteTableDef()
 
 
 class RecordKind(Enum):
@@ -60,11 +59,11 @@ async def parse_opts(request: web.Request, kind: RecordKind) -> Opts:
     )
 
 
-async def impl(request: web.Request, kind: RecordKind) -> WebResponse:
+async def impl(request: web.Request, kind: RecordKind) -> web.Response:
     try:
         opts = await parse_opts(request, kind)
     except ValueError:
-        return WebResponse(status=404)
+        return web.Response(status=404)
 
     if kind is RecordKind.CHANNEL:
         records = await services.plays.channel_records(
@@ -80,7 +79,7 @@ async def impl(request: web.Request, kind: RecordKind) -> WebResponse:
         )
 
     if records is None:
-        return WebResponse(status=404)
+        return web.Response(status=404)
 
     path = f"{'channel' if kind is RecordKind.CHANNEL else 'user'}_record.html.j2"
     context = {
@@ -93,15 +92,17 @@ async def impl(request: web.Request, kind: RecordKind) -> WebResponse:
     return aiohttp_jinja2.render_template(path, request, context)
 
 
+@routes.get(r"/g/{guild}/c/{channel}")
 @tracer.wrap(name="web", resource="channel_record")
-async def channel_endpoint(request: web.Request) -> WebResponse:
+async def channel_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
     async with db_session_manager():
         return await impl(request, RecordKind.CHANNEL)
 
 
+@routes.get(r"/g/{guild}/u/{user}")
 @tracer.wrap(name="web", resource="user_record")
-async def user_endpoint(request: web.Request) -> WebResponse:
+async def user_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
     async with db_session_manager():
         return await impl(request, RecordKind.USER)

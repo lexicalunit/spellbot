@@ -33,9 +33,14 @@ if TYPE_CHECKING:
 
 
 class TestUtilsLogging:
-    def test_log_warning(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_log_warning_with_kwargs(self, caplog: pytest.LogCaptureFixture) -> None:
         log_warning("log-line %(foo)s", foo="foo")
         assert "log-line foo" in caplog.text
+        assert "warning:" in caplog.text
+
+    def test_log_warning_without_kwargs(self, caplog: pytest.LogCaptureFixture) -> None:
+        log_warning("simple log message")
+        assert "simple log message" in caplog.text
         assert "warning:" in caplog.text
 
 

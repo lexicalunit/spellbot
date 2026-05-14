@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import aiohttp_jinja2
 import httpx
-from aiohttp.web_response import Response as WebResponse
+from aiohttp import web
 from ddtrace.trace import tracer
 from sqlalchemy import delete, select
 
@@ -20,14 +20,14 @@ from spellbot.utils import validate_signature
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from aiohttp import web
-
 logger = logging.getLogger(__name__)
+
+routes = web.RouteTableDef()
 
 
 async def validate_analytics_request(
     request: web.Request,
-) -> tuple[int, None] | tuple[None, WebResponse]:
+) -> tuple[int, None] | tuple[None, web.Response]:
     """
     Validate guild_xid, expires, and signature.
 
@@ -36,7 +36,7 @@ async def validate_analytics_request(
     try:
         guild_xid = int(request.match_info["guild"])
     except (KeyError, ValueError):
-        return None, WebResponse(status=404)
+        return None, web.Response(status=404)
 
     if not settings.CHECK_SIGNATURE:
         return guild_xid, None
@@ -45,10 +45,10 @@ async def validate_analytics_request(
         expires = int(request.query["expires"])
         sig = request.query["sig"]
     except (KeyError, ValueError):
-        return None, WebResponse(status=403, text="Missing or invalid signature parameters.")
+        return None, web.Response(status=403, text="Missing or invalid signature parameters.")
 
     if not validate_signature(guild_xid, expires, sig):
-        return None, WebResponse(status=403, text="Invalid or expired link.")
+        return None, web.Response(status=403, text="Invalid or expired link.")
 
     return guild_xid, None
 
@@ -56,7 +56,7 @@ async def validate_analytics_request(
 async def analytics_json_endpoint(
     request: web.Request,
     fetch_fn: Callable[[int, bool], Awaitable[dict[str, Any]]],
-) -> WebResponse:
+) -> web.Response:
     """Return analytics JSON data using the provided fetch function."""
     guild_xid, error = await validate_analytics_request(request)
     if error:
@@ -69,33 +69,34 @@ async def analytics_json_endpoint(
 
     async with db_session_manager():
         if not await services.plays.guild_exists(guild_xid):
-            return WebResponse(status=404, text="Guild not found.")
+            return web.Response(status=404, text="Guild not found.")
         data = await fetch_fn(guild_xid, all_time)
 
-    return WebResponse(
+    return web.Response(
         status=200,
         content_type="application/json",
         text=json.dumps(data),
     )
 
 
+@routes.get(r"/g/{guild}/analytics")
 @tracer.wrap(name="web", resource="analytics")
-async def analytics_endpoint(request: web.Request) -> WebResponse:
+async def analytics_endpoint(request: web.Request) -> web.Response:
     """Shell page endpoint - returns HTML immediately with loading spinner."""
     add_span_request_id(generate_request_id())
     try:
         guild_xid = int(request.match_info["guild"])
     except (KeyError, ValueError):
-        return WebResponse(status=404)
+        return web.Response(status=404)
 
     try:
         expires = int(request.query["expires"])
         sig = request.query["sig"]
     except (KeyError, ValueError):
-        return WebResponse(status=403, text="Missing or invalid signature parameters.")
+        return web.Response(status=403, text="Missing or invalid signature parameters.")
 
     if not validate_signature(guild_xid, expires, sig):
-        return WebResponse(status=403, text="Invalid or expired link.")
+        return web.Response(status=403, text="Invalid or expired link.")
 
     async def get_guild_name() -> str | None:
         result = await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
@@ -106,14 +107,15 @@ async def analytics_endpoint(request: web.Request) -> WebResponse:
         guild_name = await get_guild_name()
 
     if guild_name is None:
-        return WebResponse(status=404, text="Guild not found.")
+        return web.Response(status=404, text="Guild not found.")
 
     context = {"guild_xid": guild_xid, "guild_name": guild_name, "expires": expires, "sig": sig}
     return aiohttp_jinja2.render_template("analytics.html.j2", request, context)
 
 
+@routes.get(r"/g/{guild}/analytics/summary")
 @tracer.wrap(name="web", resource="analytics_summary")
-async def analytics_summary_endpoint(request: web.Request) -> WebResponse:
+async def analytics_summary_endpoint(request: web.Request) -> web.Response:
     """Return summary stats (fill rate, total games, unique players, etc.)."""
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
@@ -122,8 +124,9 @@ async def analytics_summary_endpoint(request: web.Request) -> WebResponse:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/activity")
 @tracer.wrap(name="web", resource="analytics_activity")
-async def analytics_activity_endpoint(request: web.Request) -> WebResponse:
+async def analytics_activity_endpoint(request: web.Request) -> web.Response:
     """Return daily activity data (games per day, expired, new users)."""
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
@@ -132,8 +135,9 @@ async def analytics_activity_endpoint(request: web.Request) -> WebResponse:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/wait-time")
 @tracer.wrap(name="web", resource="analytics_wait_time")
-async def analytics_wait_time_endpoint(request: web.Request) -> WebResponse:
+async def analytics_wait_time_endpoint(request: web.Request) -> web.Response:
     """Return average wait time per day data."""
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
@@ -142,8 +146,9 @@ async def analytics_wait_time_endpoint(request: web.Request) -> WebResponse:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/brackets")
 @tracer.wrap(name="web", resource="analytics_brackets")
-async def analytics_brackets_endpoint(request: web.Request) -> WebResponse:
+async def analytics_brackets_endpoint(request: web.Request) -> web.Response:
     """Return games by bracket per day data."""
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
@@ -152,8 +157,9 @@ async def analytics_brackets_endpoint(request: web.Request) -> WebResponse:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/retention")
 @tracer.wrap(name="web", resource="analytics_retention")
-async def analytics_retention_endpoint(request: web.Request) -> WebResponse:
+async def analytics_retention_endpoint(request: web.Request) -> web.Response:
     """Return player retention data."""
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
@@ -162,8 +168,9 @@ async def analytics_retention_endpoint(request: web.Request) -> WebResponse:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/growth")
 @tracer.wrap(name="web", resource="analytics_growth")
-async def analytics_growth_endpoint(request: web.Request) -> WebResponse:
+async def analytics_growth_endpoint(request: web.Request) -> web.Response:
     """Return cumulative player growth data."""
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
@@ -172,8 +179,9 @@ async def analytics_growth_endpoint(request: web.Request) -> WebResponse:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/histogram")
 @tracer.wrap(name="web", resource="analytics_histogram")
-async def analytics_histogram_endpoint(request: web.Request) -> WebResponse:
+async def analytics_histogram_endpoint(request: web.Request) -> web.Response:
     """Return games per player histogram data."""
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
@@ -182,8 +190,9 @@ async def analytics_histogram_endpoint(request: web.Request) -> WebResponse:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/formats")
 @tracer.wrap(name="web", resource="analytics_formats")
-async def analytics_formats_endpoint(request: web.Request) -> WebResponse:
+async def analytics_formats_endpoint(request: web.Request) -> web.Response:
     """Return popular formats data."""
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
@@ -192,8 +201,9 @@ async def analytics_formats_endpoint(request: web.Request) -> WebResponse:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/channels")
 @tracer.wrap(name="web", resource="analytics_channels")
-async def analytics_channels_endpoint(request: web.Request) -> WebResponse:
+async def analytics_channels_endpoint(request: web.Request) -> web.Response:
     """Return busiest channels data."""
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
@@ -202,8 +212,9 @@ async def analytics_channels_endpoint(request: web.Request) -> WebResponse:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/services")
 @tracer.wrap(name="web", resource="analytics_services")
-async def analytics_services_endpoint(request: web.Request) -> WebResponse:
+async def analytics_services_endpoint(request: web.Request) -> web.Response:
     """Return popular services data."""
     add_span_request_id(generate_request_id())
     return await analytics_json_endpoint(
@@ -283,8 +294,9 @@ async def check_membership_and_update(
     return results
 
 
+@routes.get(r"/g/{guild}/analytics/players")
 @tracer.wrap(name="web", resource="analytics_players")
-async def analytics_players_endpoint(request: web.Request) -> WebResponse:
+async def analytics_players_endpoint(request: web.Request) -> web.Response:
     """Return top players data with membership status."""
     add_span_request_id(generate_request_id())
 
@@ -298,7 +310,7 @@ async def analytics_players_endpoint(request: web.Request) -> WebResponse:
 
     async with db_session_manager():
         if not await services.plays.guild_exists(guild_xid):
-            return WebResponse(status=404, text="Guild not found.")
+            return web.Response(status=404, text="Guild not found.")
         data = await services.plays.analytics_players(guild_xid, all_time=all_time)
 
         # Check membership status for each player
@@ -308,15 +320,16 @@ async def analytics_players_endpoint(request: web.Request) -> WebResponse:
                 data["top_players"],
             )
 
-    return WebResponse(
+    return web.Response(
         status=200,
         content_type="application/json",
         text=json.dumps(data),
     )
 
 
+@routes.get(r"/g/{guild}/analytics/blocked")
 @tracer.wrap(name="web", resource="analytics_blocked")
-async def analytics_blocked_endpoint(request: web.Request) -> WebResponse:
+async def analytics_blocked_endpoint(request: web.Request) -> web.Response:
     """Return top blocked players data with membership status."""
     add_span_request_id(generate_request_id())
 
@@ -330,7 +343,7 @@ async def analytics_blocked_endpoint(request: web.Request) -> WebResponse:
 
     async with db_session_manager():
         if not await services.plays.guild_exists(guild_xid):
-            return WebResponse(status=404, text="Guild not found.")
+            return web.Response(status=404, text="Guild not found.")
         data = await services.plays.analytics_blocked(guild_xid, all_time=all_time)
 
         # Check membership status for each blocked user
@@ -340,7 +353,7 @@ async def analytics_blocked_endpoint(request: web.Request) -> WebResponse:
                 data["top_blocked"],
             )
 
-    return WebResponse(
+    return web.Response(
         status=200,
         content_type="application/json",
         text=json.dumps(data),
