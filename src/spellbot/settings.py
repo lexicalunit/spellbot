@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from os import getenv
 from typing import TYPE_CHECKING
 
 from discord import Object
+from pydantic import computed_field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .environment import running_in_pytest
 
@@ -12,197 +13,162 @@ if TYPE_CHECKING:
     from discord.abc import Snowflake
 
 
-class Settings:
-    __slots__ = (
-        "ADMIN_ROLE",
-        "API_BASE_URL",
-        "BOT_APPLICATION_ID",
-        "BOT_INVITE_LINK",
-        "BOT_TOKEN",
-        "CHECK_SIGNATURE",
-        "CONTENT_ROOT",
-        "CONVOKE_API_KEY",
-        "CONVOKE_ROOT",
-        "DATABASE_ECHO",
-        "DATABASE_POOL_MAX_OVERFLOW",
-        "DATABASE_POOL_RECYCLE_S",
-        "DATABASE_POOL_SIZE",
-        "DATABASE_URL",
-        "DD_API_KEY",
-        "DD_APP_KEY",
-        "DD_TRACE_ENABLED",
-        "DEBUG_GUILD",
-        "DONATE_LINK",
-        "EDHLAB_API_KEY",
-        "EDHLAB_CREATE",
-        "EDHLAB_ROOT",
-        "EMPTY_EMBED_COLOR",
-        "EXPIRE_GAMES_LOOP_M",
-        "EXPIRE_TIME_M",
-        "GIRUDO_AUTH_URL",
-        "GIRUDO_BASE_URL",
-        "GIRUDO_CREATE_URL",
-        "GIRUDO_DEFAULT_FORMAT_NAME",
-        "GIRUDO_DEFAULT_FORMAT_UUID",
-        "GIRUDO_DEFAULT_TCG_MAGIC_UUID",
-        "GIRUDO_DEFAULT_TCG_NAME",
-        "GIRUDO_DEFAULT_TCG_UUID",
-        "GIRUDO_EMAILS",
-        "GIRUDO_LOBBY_URL",
-        "GIRUDO_PASSWORDS",
-        "GIRUDO_RETRY_ATTEMPTS",
-        "GIRUDO_STORE_DATA_URL",
-        "GIRUDO_TIMEOUT_S",
-        "HOST",
-        "INFO_EMBED_COLOR",
-        "LOCALE",
-        "MAX_PENDING_GAMES",
-        "MOD_PREFIX",
-        "OWNER_XID",
-        "PATREON_CAMPAIGN",
-        "PATREON_SYNC_LOOP_M",
-        "PATREON_TOKEN",
-        "PENDING_EMBED_COLOR",
-        "PLAYGROUP_LIVE_API_KEY",
-        "PLAYGROUP_LIVE_API_URL",
-        "PORT",
-        "REDIS_URL",
-        "SECRET_TOKEN",
-        "SHARD_STATUS_UPDATE_INTERVAL_S",
-        "STARTED_EMBED_COLOR",
-        "SUBSCRIBE_LINK",
-        "TABLESTREAM_AUTH_KEY",
-        "TABLESTREAM_CREATE",
-        "TABLESTREAM_ROOT",
-        "VOICE_AGE_LIMIT_H",
-        "VOICE_CLEANUP_BATCH",
-        "VOICE_CLEANUP_LOOP_M",
-        "VOICE_GRACE_PERIOD_M",
-        "guild_xid",
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        validate_default=True,
     )
 
-    def __init__(self, guild_xid: int | None = None) -> None:  # noqa: PLR0915
-        self.guild_xid = guild_xid
+    # Content URLs
+    CONTENT_ROOT: str = "https://raw.githubusercontent.com/lexicalunit"
+    SUBSCRIBE_LINK: str = "https://www.patreon.com/lexicalunit"
+    DONATE_LINK: str = "https://ko-fi.com/lexicalunit"
 
-        # content
-        self.CONTENT_ROOT = "https://raw.githubusercontent.com/lexicalunit"
-        self.SUBSCRIBE_LINK = "https://www.patreon.com/lexicalunit"
-        self.DONATE_LINK = "https://ko-fi.com/lexicalunit"
+    # Application
+    BOT_TOKEN: str | None = None
+    BOT_APPLICATION_ID: str | None = None
+    PORT: int = 3008
+    HOST: str = "localhost"
+    DEBUG_GUILD: str | None = None
+    API_BASE_URL: str = "https://bot.spellbot.io"
+    OWNER_XID: int | None = None
+    SECRET_TOKEN: str | None = None
+    CHECK_SIGNATURE: bool = True
 
-        # application
-        self.BOT_TOKEN = getenv("BOT_TOKEN")
-        self.BOT_APPLICATION_ID = getenv("BOT_APPLICATION_ID")
-        self.PORT = int(getenv("PORT", "3008"))
-        self.HOST = getenv("HOST") or "localhost"
-        self.DEBUG_GUILD = getenv("DEBUG_GUILD")
-        self.API_BASE_URL = getenv("API_BASE_URL", "https://bot.spellbot.io")
-        owner_xid = getenv("OWNER_XID")
-        self.OWNER_XID = int(owner_xid) if owner_xid else None
-        self.SECRET_TOKEN = getenv("SECRET_TOKEN")
-        self.CHECK_SIGNATURE = getenv("CHECK_SIGNATURE", "true").lower() == "true"
+    # Logging
+    LOG_LEVEL: str = "INFO"
 
-        # datadog
-        self.DD_API_KEY = getenv("DD_API_KEY")
-        self.DD_APP_KEY = getenv("DD_APP_KEY")
-        self.DD_TRACE_ENABLED = getenv("DD_TRACE_ENABLED", "true").lower() == "true"
+    # Runtime
+    DISABLE_UVLOOP: bool = False
 
-        # database
-        default_database_url = f"postgresql://postgres@{self.HOST}:5432/postgres"
-        if running_in_pytest():  # pragma: no cover
-            default_database_url += "-test"
-        database_url = getenv("DATABASE_URL") or default_database_url
-        if database_url.startswith("postgres://"):  # pragma: no cover
-            # SQLAlchemy 1.4.x removed support for the postgres:// URI scheme
-            database_url = database_url.replace("postgres://", "postgresql://", 1)
-        if database_url.startswith("postgresql://"):  # pragma: no cover
-            # Ensure that we're asking for the psycopg3+ driver (and not psycopg2)
-            database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
-        self.DATABASE_URL = database_url
-        # See: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Managing.Performance.html
-        # db.t4g.medium max_connections is 90 at time of this writing
-        self.DATABASE_POOL_SIZE = int(getenv("DATABASE_POOL_SIZE", "20"))
-        self.DATABASE_POOL_MAX_OVERFLOW = int(getenv("DATABASE_POOL_MAX_OVERFLOW", "40"))
-        self.DATABASE_POOL_RECYCLE_S = int(getenv("DATABASE_POOL_RECYCLE_S", "1800"))
+    # Datadog
+    DD_API_KEY: str | None = None
+    DD_APP_KEY: str | None = None
+    DD_TRACE_ENABLED: bool = True
+    DD_ENV: str = "dev"
 
-        # cache
-        self.REDIS_URL = getenv("REDIS_URL")
+    # Database
+    DATABASE_URL: str | None = None
+    DATABASE_POOL_SIZE: int = 20
+    DATABASE_POOL_MAX_OVERFLOW: int = 40
+    DATABASE_POOL_RECYCLE_S: int = 1800
+    DATABASE_ECHO: bool = False
 
-        # tablestream
-        self.TABLESTREAM_ROOT = "https://api.table-stream.com"
-        self.TABLESTREAM_CREATE = f"{self.TABLESTREAM_ROOT}/create-room"
-        self.TABLESTREAM_AUTH_KEY = getenv("TABLESTREAM_AUTH_KEY")
+    # Cache
+    REDIS_URL: str | None = None
 
-        # convoke
-        self.CONVOKE_ROOT = getenv("CONVOKE_ROOT", "https://api.convoke.games/api")
-        self.CONVOKE_API_KEY = getenv("CONVOKE_API_KEY")
+    # TableStream
+    TABLESTREAM_ROOT: str = "https://api.table-stream.com"
+    TABLESTREAM_AUTH_KEY: str | None = None
+    TABLESTREAM_CREATE: str = ""  # Derived from TABLESTREAM_ROOT in model_validator
 
-        # EDHLAB
-        self.EDHLAB_API_KEY = getenv("EDHLAB_API_KEY")
-        self.EDHLAB_ROOT = getenv("EDHLAB_ROOT", "https://wmlcambifdkwygvwnpas.supabase.co")
-        self.EDHLAB_CREATE = f"{self.EDHLAB_ROOT}/functions/v1/create-spellbot-game"
+    # Convoke
+    CONVOKE_ROOT: str = "https://api.convoke.games/api"
+    CONVOKE_API_KEY: str | None = None
 
-        # playgroup live integration
-        self.PLAYGROUP_LIVE_API_URL = getenv("PLAYGROUP_LIVE_API_URL", "https://playgroup.gg")
-        self.PLAYGROUP_LIVE_API_KEY = getenv("PLAYGROUP_LIVE_API_KEY")
+    # EDHLAB
+    EDHLAB_API_KEY: str | None = None
+    EDHLAB_ROOT: str = "https://wmlcambifdkwygvwnpas.supabase.co"
+    EDHLAB_CREATE: str = ""  # Derived from EDHLAB_ROOT in model_validator
 
-        # configuration
-        self.BOT_INVITE_LINK = (
-            r"https://discord.com/api/oauth2/authorize"
-            r"?client_id=725510263251402832"
-            r"&permissions=2416045137"
-            r"&scope=applications.commands%20bot"
-        )
-        self.INFO_EMBED_COLOR = 0x5A3EFD
-        self.STARTED_EMBED_COLOR = 0xF8AE4A
-        self.PENDING_EMBED_COLOR = 0x5A3EFD
-        self.EMPTY_EMBED_COLOR = 0xCDCDCD
-        self.DATABASE_ECHO = False
-        self.ADMIN_ROLE = "SpellBot Admin"
-        self.MOD_PREFIX = "Moderator"
-        self.MAX_PENDING_GAMES = 5
-        self.LOCALE = getenv("LOCALE", "en")
+    # Playgroup Live
+    PLAYGROUP_LIVE_API_URL: str = "https://playgroup.gg"
+    PLAYGROUP_LIVE_API_KEY: str | None = None
 
-        # tasks
-        self.VOICE_GRACE_PERIOD_M = 10  # 10 minutes
-        self.VOICE_AGE_LIMIT_H = 5  # 5 hours
-        self.VOICE_CLEANUP_LOOP_M = 30  # 30 minutes
-        self.VOICE_CLEANUP_BATCH = 30  # batch size
-        self.EXPIRE_GAMES_LOOP_M = 10  # 10 minutes
-        self.EXPIRE_TIME_M = 45  # 45 minutes
-        self.SHARD_STATUS_UPDATE_INTERVAL_S = 30  # 30 seconds
+    # Bot configuration
+    BOT_INVITE_LINK: str = (
+        "https://discord.com/api/oauth2/authorize"
+        "?client_id=725510263251402832"
+        "&permissions=2416045137"
+        "&scope=applications.commands%20bot"
+    )
+    INFO_EMBED_COLOR: int = 0x5A3EFD
+    STARTED_EMBED_COLOR: int = 0xF8AE4A
+    PENDING_EMBED_COLOR: int = 0x5A3EFD
+    EMPTY_EMBED_COLOR: int = 0xCDCDCD
+    ADMIN_ROLE: str = "SpellBot Admin"
+    MOD_PREFIX: str = "Moderator"
+    MAX_PENDING_GAMES: int = 5
+    LOCALE: str = "en"
 
-        # patreon integration
-        self.PATREON_TOKEN = getenv("PATREON_TOKEN")
-        self.PATREON_CAMPAIGN = getenv("PATREON_CAMPAIGN")
-        self.PATREON_SYNC_LOOP_M = 60  # 60 minutes
+    # Task intervals
+    VOICE_GRACE_PERIOD_M: int = 10
+    VOICE_AGE_LIMIT_H: int = 5
+    VOICE_CLEANUP_LOOP_M: int = 30
+    VOICE_CLEANUP_BATCH: int = 30
+    EXPIRE_GAMES_LOOP_M: int = 10
+    EXPIRE_TIME_M: int = 45
+    SHARD_STATUS_UPDATE_INTERVAL_S: int = 30
 
-        # girudo integration
-        self.GIRUDO_BASE_URL = getenv("GIRUDO_BASE_URL", "https://game.girudo.com")
-        self.GIRUDO_AUTH_URL = getenv(
-            "GIRUDO_AUTH_URL",
-            "https://game.girudo.com/auth-service/api/v1/login",
-        )
-        self.GIRUDO_LOBBY_URL = getenv(
-            "GIRUDO_LOBBY_URL",
-            "https://game.girudo.com/game-service/v1/game/lobby?limit=15&offset=0",
-        )
-        self.GIRUDO_CREATE_URL = getenv(
-            "GIRUDO_CREATE_URL",
-            "https://game.girudo.com/game-service/v1/game/multiplayer",
-        )
-        self.GIRUDO_EMAILS = getenv("GIRUDO_EMAILS")
-        self.GIRUDO_PASSWORDS = getenv("GIRUDO_PASSWORDS")
-        self.GIRUDO_DEFAULT_FORMAT_UUID = getenv("GIRUDO_DEFAULT_FORMAT_UUID")
-        self.GIRUDO_DEFAULT_FORMAT_NAME = getenv("GIRUDO_DEFAULT_FORMAT_NAME", "Commander / EDH")
-        self.GIRUDO_DEFAULT_TCG_UUID = getenv("GIRUDO_DEFAULT_TCG_UUID")
-        self.GIRUDO_DEFAULT_TCG_NAME = getenv("GIRUDO_DEFAULT_TCG_NAME", "Magic The Gathering")
-        self.GIRUDO_STORE_DATA_URL = getenv(
-            "GIRUDO_STORE_DATA_URL",
-            "https://game.girudo.com/user-service/api/v1/store-data",
-        )
-        self.GIRUDO_RETRY_ATTEMPTS = int(getenv("GIRUDO_RETRY_ATTEMPTS", "2"))
-        self.GIRUDO_TIMEOUT_S = int(getenv("GIRUDO_TIMEOUT_S", "10"))
-        self.GIRUDO_DEFAULT_TCG_MAGIC_UUID = getenv("GIRUDO_DEFAULT_TCG_MAGIC_UUID")
+    # Patreon
+    PATREON_TOKEN: str | None = None
+    PATREON_CAMPAIGN: str | None = None
+    PATREON_SYNC_LOOP_M: int = 60
+
+    # Girudo
+    GIRUDO_BASE_URL: str = "https://game.girudo.com"
+    GIRUDO_AUTH_URL: str = "https://game.girudo.com/auth-service/api/v1/login"
+    GIRUDO_LOBBY_URL: str = "https://game.girudo.com/game-service/v1/game/lobby?limit=15&offset=0"
+    GIRUDO_CREATE_URL: str = "https://game.girudo.com/game-service/v1/game/multiplayer"
+    GIRUDO_EMAILS: str | None = None
+    GIRUDO_PASSWORDS: str | None = None
+    GIRUDO_DEFAULT_FORMAT_UUID: str | None = None
+    GIRUDO_DEFAULT_FORMAT_NAME: str = "Commander / EDH"
+    GIRUDO_DEFAULT_TCG_UUID: str | None = None
+    GIRUDO_DEFAULT_TCG_NAME: str = "Magic The Gathering"
+    GIRUDO_STORE_DATA_URL: str = "https://game.girudo.com/user-service/api/v1/store-data"
+    GIRUDO_RETRY_ATTEMPTS: int = 2
+    GIRUDO_TIMEOUT_S: int = 10
+    GIRUDO_DEFAULT_TCG_MAGIC_UUID: str | None = None
+
+    # Not from environment - set during validation
+    _database_url_resolved: str | None = None
+
+    @model_validator(mode="after")
+    def resolve_derived_urls(self) -> Settings:
+        """Build derived URLs from base URLs."""
+        # Resolve database URL with proper driver prefix
+        if self.DATABASE_URL:
+            url = self.DATABASE_URL
+        else:
+            url = f"postgresql://postgres@{self.HOST}:5432/postgres"
+            if running_in_pytest():  # pragma: no cover
+                url += "-test"
+
+        # SQLAlchemy 1.4.x removed support for the postgres:// URI scheme
+        if url.startswith("postgres://"):  # pragma: no cover
+            url = url.replace("postgres://", "postgresql://", 1)
+        # Ensure that we're asking for the psycopg3+ driver (and not psycopg2)
+        if url.startswith("postgresql://"):  # pragma: no cover
+            url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+        object.__setattr__(self, "_database_url_resolved", url)
+
+        # Derive TABLESTREAM_CREATE if not explicitly set
+        if not self.TABLESTREAM_CREATE:
+            object.__setattr__(
+                self,
+                "TABLESTREAM_CREATE",
+                f"{self.TABLESTREAM_ROOT}/create-room",
+            )
+
+        # Derive EDHLAB_CREATE if not explicitly set
+        if not self.EDHLAB_CREATE:
+            object.__setattr__(
+                self,
+                "EDHLAB_CREATE",
+                f"{self.EDHLAB_ROOT}/functions/v1/create-spellbot-game",
+            )
+
+        return self
+
+    @computed_field
+    @property
+    def RESOLVED_DATABASE_URL(self) -> str:
+        """The database URL with proper driver prefix applied."""
+        return self._database_url_resolved or ""
 
     def workaround_over_eager_caching(self, url: str) -> str:
         return f"{url}?{datetime.now(tz=UTC).date().strftime('%Y-%m-%d')}"
@@ -244,20 +210,14 @@ class Settings:
             "https://spellbot.io/assets/img/logos/spellbot-black.png",
         )
 
-    @property
-    def TRANS_THUMB_URL(self) -> str:  # pragma: no cover
-        return self.workaround_over_eager_caching(
-            "https://spellbot.io/assets/img/logos/spellbot-trans.png",
-        )
-
     def trans(self, guild_xid: int | None) -> bool:  # pragma: no cover
         now = datetime.now(tz=UTC)
         return now.month == 11 or (now.month == 3 and now.day == 31)
 
     @property
-    def AUTISTIC_THUMB_URL(self) -> str:  # pragma: no cover
+    def TRANS_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://spellbot.io/assets/img/logos/spellbot-autistic.png",
+            "https://spellbot.io/assets/img/logos/spellbot-trans.png",
         )
 
     def autistic(self, guild_xid: int | None) -> bool:  # pragma: no cover
@@ -265,13 +225,19 @@ class Settings:
         return now.month == 4 and now.day == 2
 
     @property
-    def CONVOKE_THUMB_URL(self) -> str:  # pragma: no cover
+    def AUTISTIC_THUMB_URL(self) -> str:  # pragma: no cover
         return self.workaround_over_eager_caching(
-            "https://spellbot.io/assets/img/servers/convoke.png",
+            "https://spellbot.io/assets/img/logos/spellbot-autistic.png",
         )
 
     def convoke(self, guild_xid: int | None) -> bool:  # pragma: no cover
         return guild_xid == 1417960690110697504  # Convoke
+
+    @property
+    def CONVOKE_THUMB_URL(self) -> str:  # pragma: no cover
+        return self.workaround_over_eager_caching(
+            "https://spellbot.io/assets/img/servers/convoke.png",
+        )
 
     def thumb(self, guild_xid: int | None) -> str:  # pragma: no cover
         if self.convoke(guild_xid):

@@ -186,7 +186,7 @@ async def session_context(
         test_session = db_session_maker()
         DatabaseSession.set(test_session)
 
-        sync_db_url = Settings().DATABASE_URL + f"-{worker_id}"
+        sync_db_url = Settings().RESOLVED_DATABASE_URL + f"-{worker_id}"
         sync_engine = create_engine(sync_db_url, isolation_level="AUTOCOMMIT")
         sync_session_factory = sessionmaker(bind=sync_engine, expire_on_commit=False)
         sync_session = sync_session_factory()
@@ -443,6 +443,7 @@ def cli() -> Generator[MagicMock]:
         mock_hupper.start_reloader = MagicMock(name="start_reloader")
         mock_settings.BOT_TOKEN = "facedeadbeef"
         mock_settings.PORT = 404
+        mock_settings.LOG_LEVEL = "INFO"
 
         obj = MagicMock()
         obj.asyncio = mock_asyncio
