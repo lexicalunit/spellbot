@@ -317,7 +317,7 @@ async def handle_interaction_errors(interaction: discord.Interaction, error: Exc
 async def handle_view_errors(
     interaction: discord.Interaction,
     error: Exception,
-    item: Item[Any],
+    _item: Item[Any],
 ) -> None:  # pragma: no cover
     return await handle_interaction_errors(interaction, error)
 

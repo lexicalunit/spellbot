@@ -41,7 +41,7 @@ class Game(Base):
         nullable=False,
         default=partial(datetime.now, UTC),
         server_default=now,
-        doc="UTC timestamp when this games was first created",
+        doc="UTC timestamp when this game was first created",
     )
     updated_at = Column(
         DateTime,
@@ -50,18 +50,18 @@ class Game(Base):
         server_default=now,
         onupdate=partial(datetime.now, UTC),
         index=True,
-        doc="UTC timestamp when this games was last updated",
+        doc="UTC timestamp when this game was last updated",
     )
     started_at = Column(
         DateTime,
         nullable=True,
-        doc="UTC timestamp when this games was started",
+        doc="UTC timestamp when this game was started",
     )
     deleted_at = Column(
         DateTime,
         nullable=True,
         index=True,
-        doc="UTC timestamp when this games was deleted",
+        doc="UTC timestamp when this game was deleted",
     )
     guild_xid = Column(
         BigInteger,
