@@ -20,11 +20,11 @@ from spellbot.web.tools import rate_limited
 if TYPE_CHECKING:
     from datetime import datetime
 
-    from aiohttp.web_response import Response as WebResponse
-
     from spellbot.data import GameData, UserData
 
 logger = logging.getLogger(__name__)
+
+routes = web.RouteTableDef()
 
 UNRECOVERABLE = {400, 401, 403, 404}
 
@@ -53,7 +53,7 @@ def reply(
     *,
     status: int | None = None,
     error: str | None = None,
-) -> WebResponse:
+) -> web.Response:
     data = data or {}
     status = status or (200 if error is None else 500)
     if error is None:
@@ -61,8 +61,9 @@ def reply(
     return web.json_response({"error": error}, status=status)
 
 
+@routes.post(r"/api/game/{game}/verify")
 @tracer.wrap(name="rest", resource="game_verify_endpoint")
-async def game_verify_endpoint(request: web.Request) -> WebResponse:
+async def game_verify_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
     try:
         async with db_session_manager():
@@ -278,8 +279,9 @@ async def resolve_user_xid(value: Any) -> int | None:
     return None
 
 
+@routes.post(r"/api/game/{game}/record")
 @tracer.wrap(name="rest", resource="game_record_endpoint")
-async def game_record_endpoint(request: web.Request) -> WebResponse:
+async def game_record_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
     async with db_session_manager():
         try:

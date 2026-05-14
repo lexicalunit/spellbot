@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import aiohttp_jinja2
 from aiohttp import web
@@ -13,10 +13,9 @@ from packaging.version import parse as parse_version
 from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.shard_status import ShardStatus, get_all_shard_statuses
 
-if TYPE_CHECKING:
-    from aiohttp.web_response import Response as WebResponse
-
 logger = logging.getLogger(__name__)
+
+routes = web.RouteTableDef()
 
 # GitHub repository for building release URLs
 GITHUB_REPO_URL = "https://github.com/lexicalunit/spellbot"
@@ -233,8 +232,9 @@ def format_status_for_html(data: StatusData) -> dict[str, Any]:
     }
 
 
+@routes.get("/status")
 @tracer.wrap(name="web", resource="status")
-async def endpoint(request: web.Request) -> WebResponse:
+async def endpoint(request: web.Request) -> web.Response:
     """Render the shard status page."""
     add_span_request_id(generate_request_id())
     statuses, metadata = await get_all_shard_statuses()
@@ -283,6 +283,7 @@ def format_status_for_json(data: StatusData) -> dict[str, Any]:
     }
 
 
+@routes.get("/status.json")
 @tracer.wrap(name="web", resource="status_json")
 async def json_endpoint(_: web.Request) -> web.Response:
     """Return SpellBot status as JSON."""
