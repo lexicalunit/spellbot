@@ -2,23 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from os import getenv, getpid
+from os import getpid
 
 from aiohttp import web
-from dotenv import load_dotenv
 
+from spellbot.database import initialize_connection
+from spellbot.environment import running_in_pytest
 from spellbot.logs import configure_logging
+from spellbot.settings import settings
 
-configure_logging(getenv("LOG_LEVEL") or "INFO")
+from .builder import build_web_app
 
-from spellbot.database import initialize_connection  # noqa: E402
-from spellbot.environment import running_in_pytest  # noqa: E402
-from spellbot.settings import settings  # noqa: E402
-
-from .builder import build_web_app  # noqa: E402
-
-if not running_in_pytest():  # pragma: no cover
-    load_dotenv()
+configure_logging(settings.LOG_LEVEL)
 
 logger = logging.getLogger(__name__)
 
