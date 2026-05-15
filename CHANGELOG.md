@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v18.9.3](https://github.com/lexicalunit/spellbot/releases/tag/v18.9.3) - 2026-05-14
+
 ### Changed
 
 - Added graceful degradation for analytics page when Chart.js fails to load.
