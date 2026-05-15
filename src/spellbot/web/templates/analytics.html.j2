@@ -233,6 +233,21 @@
         query: "?expires={{ expires }}&sig={{ sig }}",
         expires: {{ expires }}
     };
+    /* Check if Chart.js loaded successfully */
+    window.CHART_AVAILABLE = typeof Chart !== 'undefined';
+    if (!window.CHART_AVAILABLE) {
+        document.addEventListener('DOMContentLoaded', function() {
+            var sections = document.querySelectorAll('.chart-box');
+            sections.forEach(function(section) {
+                section.innerHTML = '<div class="section-error">Charts unavailable. Please check your internet connection and refresh.</div>';
+            });
+            var stats = ['statFillRate', 'statTotalGames', 'statActivePlayers', 'statRepeatRate'];
+            stats.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.innerHTML = '<span style="color:#f87171;font-size:0.8rem">—</span>';
+            });
+        });
+    }
     </script>
     <script src="/analytics.js"></script>
 </body>

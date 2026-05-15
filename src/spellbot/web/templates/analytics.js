@@ -15,6 +15,12 @@
     return;
   }
 
+  /* Check if Chart.js is available - if not, graceful degradation was already handled */
+  if (!window.CHART_AVAILABLE) {
+    console.warn("Chart.js not available, analytics disabled");
+    return;
+  }
+
   const BASE_URL = config.baseUrl;
   const QUERY = config.query;
   const EXPIRES = config.expires;
