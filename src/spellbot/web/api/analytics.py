@@ -245,6 +245,17 @@ async def analytics_day_of_week_endpoint(request: web.Request) -> web.Response:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/rules")
+@tracer.wrap(name="web", resource="analytics_rules")
+async def analytics_rules_endpoint(request: web.Request) -> web.Response:
+    """Return top rules and n-gram word cloud data."""
+    add_span_request_id(generate_request_id())
+    return await analytics_json_endpoint(
+        request,
+        lambda g, a: services.plays.analytics_rules(g, all_time=a),
+    )
+
+
 async def delete_guild_member(guild_xid: int, user_xid: int) -> None:
     """Delete a GuildMember record when the user is no longer in the guild."""
     await DatabaseSession.execute(

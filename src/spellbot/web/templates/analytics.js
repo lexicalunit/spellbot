@@ -111,10 +111,13 @@
   }
 
   function barOpts(indexAxis) {
+    // For horizontal bars (indexAxis: "y"), use mode "y" to detect hover on row
+    const axis = indexAxis || "x";
     return {
-      indexAxis: indexAxis || "x",
+      indexAxis: axis,
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: axis === "y" ? "y" : "index", intersect: false },
       plugins: { legend: { display: false } },
       scales: {
         x: { grid: { color: GRID }, ticks: { color: TICK } },
@@ -130,6 +133,7 @@
     return {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } },
         zoom: zoomOpts,
@@ -233,6 +237,7 @@
   const stackedOpts = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
     plugins: {
       legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } },
       zoom: zoomOpts,
@@ -261,6 +266,59 @@
     return currentPeriod === "all" ? "All Time" : "Last 30 Days";
   }
 
+  /* Get user's timezone offset in hours (e.g., -7 for PDT, +5.5 for IST) */
+  function getTimezoneOffsetHours() {
+    return -new Date().getTimezoneOffset() / 60;
+  }
+
+  /* Get user's timezone abbreviation or UTC offset string */
+  function getUserTimezone() {
+    try {
+      // Try to get timezone abbreviation (e.g., "PST", "EST")
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZoneName: "short",
+      });
+      const parts = formatter.formatToParts(new Date());
+      const tzPart = parts.find((p) => p.type === "timeZoneName");
+      if (tzPart) return tzPart.value;
+    } catch (e) {
+      // Fallback to UTC offset
+    }
+    const offset = getTimezoneOffsetHours();
+    const sign = offset >= 0 ? "+" : "";
+    return "UTC" + sign + offset;
+  }
+
+  /* Convert UTC hour (0-23) to local hour */
+  function utcHourToLocal(utcHour) {
+    const offset = getTimezoneOffsetHours();
+    let localHour = (utcHour + offset) % 24;
+    if (localHour < 0) localHour += 24;
+    return Math.floor(localHour);
+  }
+
+  /* Get today's date in YYYY-MM-DD format (UTC) */
+  function getTodayUTC() {
+    return new Date().toISOString().split("T")[0];
+  }
+
+  /* Get today's date in YYYY-MM-DD format (local timezone) */
+  function getTodayLocal() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  /* Filter out the current (incomplete) day from daily data.
+     We filter both UTC and local "today" to handle all timezones. */
+  function excludeToday(days) {
+    const todayUTC = getTodayUTC();
+    const todayLocal = getTodayLocal();
+    return days.filter((d) => d !== todayUTC && d !== todayLocal);
+  }
+
   function updateTitles() {
     const label = periodLabel();
     const weeksLabel = currentPeriod === "all" ? "All Time" : "Last 12 Weeks";
@@ -285,9 +343,13 @@
     document.getElementById("blockedTitle").textContent =
       "Most Blocked Players (" + label + ")";
     document.getElementById("hourOfDayTitle").textContent =
-      "Games by Hour of Day, UTC (" + label + ")";
+      "Games by Hour of Day, " + getUserTimezone() + " (" + label + ")";
     document.getElementById("dayOfWeekTitle").textContent =
       "Games by Day of Week (" + label + ")";
+    document.getElementById("topRulesTitle").textContent =
+      "Top Game Rules (" + label + ")";
+    document.getElementById("rulesCloudTitle").textContent =
+      "Rules Word Cloud (" + label + ")";
   }
 
   function showLoading(sectionId) {
@@ -354,13 +416,16 @@
     const gamesPerDay = data.games_per_day || [];
     const expiredPerDay = data.expired_per_day || [];
     const dailyNewUsers = data.daily_new_users || [];
-    const allDays = [
-      ...new Set([
-        ...gamesPerDay.map((d) => d.day),
-        ...expiredPerDay.map((d) => d.day),
-        ...dailyNewUsers.map((d) => d.day),
-      ]),
-    ].sort();
+    // Exclude today (incomplete day) from the chart
+    const allDays = excludeToday(
+      [
+        ...new Set([
+          ...gamesPerDay.map((d) => d.day),
+          ...expiredPerDay.map((d) => d.day),
+          ...dailyNewUsers.map((d) => d.day),
+        ]),
+      ].sort(),
+    );
     if (allDays.length) {
       const gMap = toDayMap(gamesPerDay),
         eMap = toDayMap(expiredPerDay),
@@ -407,8 +472,14 @@
   }
 
   function renderWaitTime(data) {
-    if (data.avg_wait_per_day && data.avg_wait_per_day.length) {
-      const days = data.avg_wait_per_day.map((d) => d.day);
+    // Exclude today (incomplete day) from the chart
+    const allDays = (data.avg_wait_per_day || []).map((d) => d.day);
+    const days = excludeToday(allDays);
+    const daySet = new Set(days);
+    const filteredData = (data.avg_wait_per_day || []).filter((d) =>
+      daySet.has(d.day),
+    );
+    if (filteredData.length) {
       const canvas = addCanvas("waitTimeSection", "chartWaitTime");
       setupZoomableChart(
         new Chart(canvas, {
@@ -418,7 +489,7 @@
             datasets: [
               {
                 label: "Avg Wait (minutes)",
-                data: data.avg_wait_per_day.map((d) => d.minutes),
+                data: filteredData.map((d) => d.minutes),
                 borderColor: "#fbbf24",
                 backgroundColor: "rgba(251,191,36,0.1)",
                 fill: true,
@@ -436,8 +507,11 @@
 
   function renderBrackets(data) {
     const bracketData = data.games_by_bracket_per_day || [];
-    if (bracketData.length) {
-      const bracketDays = [...new Set(bracketData.map((d) => d.day))].sort();
+    // Exclude today (incomplete day) from the chart
+    const bracketDays = excludeToday(
+      [...new Set(bracketData.map((d) => d.day))].sort(),
+    );
+    if (bracketDays.length) {
       const bracketColorMap = {
         None: "#6b7280",
         "Bracket 1: Exhibition": "#22c55e",
@@ -571,6 +645,7 @@
           responsive: true,
           maintainAspectRatio: false,
           indexAxis: "x",
+          interaction: { mode: "index", intersect: false },
           plugins: {
             legend: { display: false },
             annotation: {
@@ -615,17 +690,25 @@
 
   function renderHourOfDay(data) {
     if (data.games_by_hour && data.games_by_hour.length) {
+      // Convert UTC hours to local timezone and reorder
+      const hourData = data.games_by_hour.map((d) => ({
+        localHour: utcHourToLocal(d.hour),
+        count: d.count,
+      }));
+      // Sort by local hour (0-23)
+      hourData.sort((a, b) => a.localHour - b.localHour);
+
       const canvas = addCanvas("hourOfDaySection", "chartHourOfDay");
       new Chart(canvas, {
         type: "bar",
         data: {
-          labels: data.games_by_hour.map(
-            (d) => d.hour.toString().padStart(2, "0") + ":00",
+          labels: hourData.map(
+            (d) => d.localHour.toString().padStart(2, "0") + ":00",
           ),
           datasets: [
             {
               label: "Games",
-              data: data.games_by_hour.map((d) => d.count),
+              data: hourData.map((d) => d.count),
               backgroundColor: "#f472b6",
               borderRadius: 3,
             },
@@ -634,6 +717,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
           plugins: { legend: { display: false } },
           scales: {
             x: {
@@ -672,6 +756,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
           plugins: { legend: { display: false } },
           scales: {
             x: { grid: { color: GRID }, ticks: { color: TICK } },
@@ -815,6 +900,73 @@
     }
   }
 
+  function renderTopRules(data) {
+    if (data.top_rules?.length) {
+      const section = document.getElementById("topRulesSection");
+      section.innerHTML =
+        '<table><thead><tr><th>Rule</th><th style="text-align:right">Games</th></tr></thead><tbody>' +
+        data.top_rules
+          .map(
+            (r) =>
+              `<tr><td>${escapeHtml(r.rule)}</td><td style="text-align:right">${r.count}</td></tr>`,
+          )
+          .join("") +
+        "</tbody></table>";
+    } else {
+      showNoData("topRulesSection");
+    }
+  }
+
+  function renderRulesCloud(data) {
+    if (data.rule_ngrams?.length) {
+      const section = document.getElementById("rulesCloudSection");
+      const maxCount = Math.max(...data.rule_ngrams.map((n) => n.count));
+      const minCount = Math.min(...data.rule_ngrams.map((n) => n.count));
+
+      // Use logarithmic scale to handle large disparities in counts
+      const logMin = Math.log(minCount || 1);
+      const logMax = Math.log(maxCount || 1);
+      const logRange = logMax - logMin || 1;
+
+      // Color palette for variety
+      const colors = [
+        "#a78bfa", // purple
+        "#60a5fa", // blue
+        "#4ade80", // green
+        "#f472b6", // pink
+        "#fbbf24", // amber
+        "#67e8f9", // cyan
+        "#fb923c", // orange
+        "#a3e635", // lime
+      ];
+
+      // Shuffle the ngrams for a more organic look
+      const shuffled = [...data.rule_ngrams].sort(() => Math.random() - 0.5);
+
+      // Generate word cloud as styled spans
+      const words = shuffled
+        .map((n, i) => {
+          // Logarithmic scale for better distribution
+          const logCount = Math.log(n.count || 1);
+          const scale = (logCount - logMin) / logRange;
+          // Scale font size between 0.8rem and 2rem
+          const fontSize = 0.8 + scale * 1.2;
+          // Pick color based on index for variety
+          const color = colors[i % colors.length];
+          // Slight random rotation for visual interest (-4 to 4 degrees)
+          const rotation = (Math.random() - 0.5) * 8;
+          // Vary opacity: higher count = more opaque
+          const opacity = 0.75 + scale * 0.25;
+          return `<span class="cloud-word" style="font-size:${fontSize}rem;color:${color};opacity:${opacity};transform:rotate(${rotation}deg)" title="${n.count} games">${escapeHtml(n.phrase)}</span>`;
+        })
+        .join("");
+
+      section.innerHTML = `<div class="word-cloud">${words}</div>`;
+    } else {
+      showNoData("rulesCloudSection");
+    }
+  }
+
   /* ── Handle window resize for charts ── */
   let resizeTimeout;
   window.addEventListener("resize", function () {
@@ -862,6 +1014,14 @@
     { name: "services", sectionId: "servicesSection", render: renderServices },
     { name: "players", sectionId: "playersSection", render: renderPlayers },
     { name: "blocked", sectionId: "blockedSection", render: renderBlocked },
+    {
+      name: "rules",
+      sectionId: "topRulesSection",
+      render: (data) => {
+        renderTopRules(data);
+        renderRulesCloud(data);
+      },
+    },
   ];
 
   function fetchEndpoint({ name, sectionId, render }) {

@@ -130,12 +130,11 @@ class Settings(BaseSettings):
     def resolve_derived_urls(self) -> Settings:
         """Build derived URLs from base URLs."""
         # Resolve database URL with proper driver prefix
-        if self.DATABASE_URL:
-            url = self.DATABASE_URL
-        else:
-            url = f"postgresql://postgres@{self.HOST}:5432/postgres"
-            if running_in_pytest():  # pragma: no cover
-                url += "-test"
+        url = self.DATABASE_URL or f"postgresql://postgres@{self.HOST}:5432/postgres"
+
+        # Always use a separate test database when running in pytest
+        if running_in_pytest() and not url.endswith("-test"):  # pragma: no cover
+            url += "-test"
 
         # SQLAlchemy 1.4.x removed support for the postgres:// URI scheme
         if url.startswith("postgres://"):  # pragma: no cover
