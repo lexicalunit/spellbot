@@ -367,6 +367,30 @@ class TestWebAnalyticsEndpoints:
         data = await self.get_analytics_endpoint(client, factories, mocker, "channels")
         assert "busiest_channels" in data
 
+    async def test_analytics_hour_of_day(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self.get_analytics_endpoint(client, factories, mocker, "hour-of-day")
+        assert "games_by_hour" in data
+        games_by_hour = data["games_by_hour"]
+        assert isinstance(games_by_hour, list)
+        assert len(games_by_hour) == 24  # All 24 hours
+
+    async def test_analytics_day_of_week(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self.get_analytics_endpoint(client, factories, mocker, "day-of-week")
+        assert "games_by_day" in data
+        games_by_day = data["games_by_day"]
+        assert isinstance(games_by_day, list)
+        assert len(games_by_day) == 7  # All 7 days
+
 
 @pytest.mark.asyncio
 class TestWebAnalyticsSignatureBypass:

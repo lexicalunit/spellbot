@@ -284,6 +284,10 @@
       "Top Players (" + label + ")";
     document.getElementById("blockedTitle").textContent =
       "Most Blocked Players (" + label + ")";
+    document.getElementById("hourOfDayTitle").textContent =
+      "Games by Hour of Day, UTC (" + label + ")";
+    document.getElementById("dayOfWeekTitle").textContent =
+      "Games by Day of Week (" + label + ")";
   }
 
   function showLoading(sectionId) {
@@ -609,6 +613,81 @@
     }
   }
 
+  function renderHourOfDay(data) {
+    if (data.games_by_hour && data.games_by_hour.length) {
+      const canvas = addCanvas("hourOfDaySection", "chartHourOfDay");
+      new Chart(canvas, {
+        type: "bar",
+        data: {
+          labels: data.games_by_hour.map(
+            (d) => d.hour.toString().padStart(2, "0") + ":00",
+          ),
+          datasets: [
+            {
+              label: "Games",
+              data: data.games_by_hour.map((d) => d.count),
+              backgroundColor: "#f472b6",
+              borderRadius: 3,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: {
+              grid: { color: GRID },
+              ticks: { color: TICK, maxRotation: 45, minRotation: 45 },
+            },
+            y: {
+              grid: { color: GRID },
+              ticks: { color: TICK },
+              beginAtZero: true,
+            },
+          },
+        },
+      });
+    } else {
+      showNoData("hourOfDaySection");
+    }
+  }
+
+  function renderDayOfWeek(data) {
+    if (data.games_by_day && data.games_by_day.length) {
+      const canvas = addCanvas("dayOfWeekSection", "chartDayOfWeek");
+      new Chart(canvas, {
+        type: "bar",
+        data: {
+          labels: data.games_by_day.map((d) => d.day),
+          datasets: [
+            {
+              label: "Games",
+              data: data.games_by_day.map((d) => d.count),
+              backgroundColor: "#4ade80",
+              borderRadius: 3,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: GRID }, ticks: { color: TICK } },
+            y: {
+              grid: { color: GRID },
+              ticks: { color: TICK },
+              beginAtZero: true,
+            },
+          },
+        },
+      });
+    } else {
+      showNoData("dayOfWeekSection");
+    }
+  }
+
   function renderFormats(data) {
     if (data.popular_formats && data.popular_formats.length) {
       const canvas = addCanvas("formatsSection", "chartFormats");
@@ -767,6 +846,16 @@
       name: "histogram",
       sectionId: "histogramSection",
       render: renderHistogram,
+    },
+    {
+      name: "hour-of-day",
+      sectionId: "hourOfDaySection",
+      render: renderHourOfDay,
+    },
+    {
+      name: "day-of-week",
+      sectionId: "dayOfWeekSection",
+      render: renderDayOfWeek,
     },
     { name: "formats", sectionId: "formatsSection", render: renderFormats },
     { name: "channels", sectionId: "channelsSection", render: renderChannels },
