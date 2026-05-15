@@ -962,3 +962,74 @@ async def analytics_day_of_week(guild_xid: int, *, all_time: bool = False) -> di
     ]
 
     return {"games_by_day": games_by_day}
+
+
+def normalize_rule(rule: str) -> str:
+    """Normalize a rule string for comparison."""
+    # Lowercase, strip whitespace, remove trailing punctuation
+    normalized = rule.lower().strip()
+    # Remove trailing punctuation
+    while normalized and normalized[-1] in ".!?,;:":
+        normalized = normalized[:-1]
+    # Collapse multiple spaces and return
+    return " ".join(normalized.split())
+
+
+def extract_ngrams(text: str, n: int) -> list[str]:
+    """Extract n-grams from text."""
+    words = text.lower().split()
+    # Filter out very short words (1 char) but keep meaningful short words
+    words = [w.strip(".,!?;:\"'()[]") for w in words]
+    words = [w for w in words if len(w) > 1]
+    if len(words) < n:
+        return []
+    return [" ".join(words[i : i + n]) for i in range(len(words) - n + 1)]
+
+
+async def analytics_rules(guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+    """Return top rules and n-gram frequencies for word cloud."""
+    thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+    filters = [
+        Game.guild_xid == guild_xid,
+        Game.started_at.isnot(None),
+        Game.deleted_at.is_(None),
+        Game.rules.isnot(None),
+        Game.rules != "",
+    ]
+    if not all_time:
+        filters.append(Game.started_at >= thirty_days_ago)
+
+    rules_result = await DatabaseSession.execute(
+        select(Game.rules).where(*filters),
+    )
+    rules_list = [row[0] for row in rules_result.all() if row[0]]
+
+    # Count normalized full rules
+    rule_counter: Counter[str] = Counter()
+    for rule in rules_list:
+        normalized = normalize_rule(rule)
+        if normalized:
+            rule_counter[normalized] += 1
+
+    # Get top 10 rules
+    top_rules = [{"rule": rule, "count": count} for rule, count in rule_counter.most_common(10)]
+
+    # Extract bigrams and trigrams for word cloud
+    ngram_counter: Counter[str] = Counter()
+    for rule in rules_list:
+        normalized = normalize_rule(rule)
+        if normalized:
+            # Add bigrams
+            for bigram in extract_ngrams(normalized, 2):
+                ngram_counter[bigram] += 1
+            # Add trigrams
+            for trigram in extract_ngrams(normalized, 3):
+                ngram_counter[trigram] += 1
+
+    # Get top 50 n-grams for word cloud
+    rule_ngrams = [
+        {"phrase": phrase, "count": count} for phrase, count in ngram_counter.most_common(50)
+    ]
+
+    return {"top_rules": top_rules, "rule_ngrams": rule_ngrams}

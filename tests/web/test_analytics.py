@@ -391,6 +391,20 @@ class TestWebAnalyticsEndpoints:
         assert isinstance(games_by_day, list)
         assert len(games_by_day) == 7  # All 7 days
 
+    async def test_analytics_rules(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self.get_analytics_endpoint(client, factories, mocker, "rules")
+        assert "top_rules" in data
+        assert "rule_ngrams" in data
+        top_rules = data["top_rules"]
+        assert isinstance(top_rules, list)
+        rule_ngrams = data["rule_ngrams"]
+        assert isinstance(rule_ngrams, list)
+
 
 @pytest.mark.asyncio
 class TestWebAnalyticsSignatureBypass:
