@@ -223,6 +223,28 @@ async def analytics_services_endpoint(request: web.Request) -> web.Response:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/hour-of-day")
+@tracer.wrap(name="web", resource="analytics_hour_of_day")
+async def analytics_hour_of_day_endpoint(request: web.Request) -> web.Response:
+    """Return games per hour of the day histogram."""
+    add_span_request_id(generate_request_id())
+    return await analytics_json_endpoint(
+        request,
+        lambda g, a: services.plays.analytics_hour_of_day(g, all_time=a),
+    )
+
+
+@routes.get(r"/g/{guild}/analytics/day-of-week")
+@tracer.wrap(name="web", resource="analytics_day_of_week")
+async def analytics_day_of_week_endpoint(request: web.Request) -> web.Response:
+    """Return games per day of the week histogram."""
+    add_span_request_id(generate_request_id())
+    return await analytics_json_endpoint(
+        request,
+        lambda g, a: services.plays.analytics_day_of_week(g, all_time=a),
+    )
+
+
 async def delete_guild_member(guild_xid: int, user_xid: int) -> None:
     """Delete a GuildMember record when the user is no longer in the guild."""
     await DatabaseSession.execute(

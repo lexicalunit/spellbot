@@ -895,3 +895,70 @@ async def analytics_blocked(guild_xid: int, *, all_time: bool = False) -> dict[s
     ]
 
     return {"top_blocked": top_blocked}
+
+
+async def analytics_hour_of_day(guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+    """Return games per hour of the day histogram."""
+    thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+    filters = [
+        Game.guild_xid == guild_xid,
+        Game.started_at.isnot(None),
+        Game.deleted_at.is_(None),
+    ]
+    if not all_time:
+        filters.append(Game.started_at >= thirty_days_ago)
+
+    hour_rows = (
+        await DatabaseSession.execute(
+            select(
+                extract("hour", Game.started_at).label("hour"),
+                func.count(Game.id).label("count"),
+            )
+            .where(*filters)
+            .group_by(text("hour"))
+            .order_by(text("hour")),
+        )
+    ).all()
+
+    # Build a complete 0-23 hour array
+    hour_counts = {int(row[0]): row[1] for row in hour_rows}
+    games_by_hour = [{"hour": h, "count": hour_counts.get(h, 0)} for h in range(24)]
+
+    return {"games_by_hour": games_by_hour}
+
+
+async def analytics_day_of_week(guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+    """Return games per day of the week histogram."""
+    thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+    filters = [
+        Game.guild_xid == guild_xid,
+        Game.started_at.isnot(None),
+        Game.deleted_at.is_(None),
+    ]
+    if not all_time:
+        filters.append(Game.started_at >= thirty_days_ago)
+
+    # Extract day of week (0=Sunday in most SQL dialects, but varies by DB)
+    # PostgreSQL: 0=Sunday, 1=Monday, ..., 6=Saturday
+    dow_rows = (
+        await DatabaseSession.execute(
+            select(
+                extract("dow", Game.started_at).label("dow"),
+                func.count(Game.id).label("count"),
+            )
+            .where(*filters)
+            .group_by(text("dow"))
+            .order_by(text("dow")),
+        )
+    ).all()
+
+    # Build a complete 0-6 day array (Sunday=0 to Saturday=6)
+    day_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    dow_counts = {int(row[0]): row[1] for row in dow_rows}
+    games_by_day = [
+        {"day": day_names[d], "day_num": d, "count": dow_counts.get(d, 0)} for d in range(7)
+    ]
+
+    return {"games_by_day": games_by_day}

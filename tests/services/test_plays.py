@@ -169,6 +169,14 @@ class TestPlaysServiceAnalyticsSummary:
         blk = await plays.analytics_blocked(guild.xid, all_time=all_time)
         assert "top_blocked" in blk
 
+        hour = await plays.analytics_hour_of_day(guild.xid, all_time=all_time)
+        assert "games_by_hour" in hour
+        assert len(hour["games_by_hour"]) == 24
+
+        dow = await plays.analytics_day_of_week(guild.xid, all_time=all_time)
+        assert "games_by_day" in dow
+        assert len(dow["games_by_day"]) == 7
+
     async def test_histogram_empty_guild(self, factories: Factories) -> None:
         guild = factories.guild.create(xid=5008, name="empty-histogram-guild")
         result = await plays.analytics_histogram(guild.xid)
