@@ -36,4 +36,4 @@ class TestCogAnalytics:
         assert embed["color"] == settings.INFO_EMBED_COLOR
         assert "Server Analytics" in embed["author"]["name"]
         assert "Open Analytics" in embed["description"]
-        assert "expires in 10 minutes" in embed["description"]
+        assert "expires in 15 minutes" in embed["description"]
