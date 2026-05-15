@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added graceful degradation for analytics page when Chart.js fails to load.
 - Added unit tests for the table stream integration.
+- Stack returning players on top of new players in the analytics page.
 
 ## [v18.9.2](https://github.com/lexicalunit/spellbot/releases/tag/v18.9.2) - 2026-05-14
 
