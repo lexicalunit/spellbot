@@ -489,15 +489,15 @@
             labels: weeks,
             datasets: [
               {
-                label: "Returning Players",
-                data: data.player_retention.map((d) => d.returning),
-                backgroundColor: "#3b82f6",
-                borderRadius: 2,
-              },
-              {
                 label: "New Players",
                 data: data.player_retention.map((d) => d.new),
                 backgroundColor: "#22c55e",
+                borderRadius: 2,
+              },
+              {
+                label: "Returning Players",
+                data: data.player_retention.map((d) => d.returning),
+                backgroundColor: "#3b82f6",
                 borderRadius: 2,
               },
             ],
