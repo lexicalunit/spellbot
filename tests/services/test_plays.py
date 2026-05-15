@@ -130,9 +130,22 @@ class TestPlaysServiceAnalyticsSummary:
             format=GameFormat.COMMANDER.value,
             started_at=now,
             created_at=now - timedelta(minutes=5),
+            rules="no proxies allowed!",  # Test punctuation stripping
         )
         factories.play.create(game_id=game1.id, user_xid=user1.xid, og_guild_xid=guild.xid)
         factories.play.create(game_id=game1.id, user_xid=user2.xid, og_guild_xid=guild.xid)
+
+        # Create game with rules that normalize to empty string (edge case)
+        game2 = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.COMMANDER.value,
+            started_at=now,
+            created_at=now - timedelta(minutes=3),
+            rules="...",  # Becomes empty after normalization
+        )
+        factories.play.create(game_id=game2.id, user_xid=user1.xid, og_guild_xid=guild.xid)
 
         factories.block.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
 
@@ -176,6 +189,10 @@ class TestPlaysServiceAnalyticsSummary:
         dow = await plays.analytics_day_of_week(guild.xid, all_time=all_time)
         assert "games_by_day" in dow
         assert len(dow["games_by_day"]) == 7
+
+        rules = await plays.analytics_rules(guild.xid, all_time=all_time)
+        assert "top_rules" in rules
+        assert "rule_ngrams" in rules
 
     async def test_histogram_empty_guild(self, factories: Factories) -> None:
         guild = factories.guild.create(xid=5008, name="empty-histogram-guild")
@@ -361,3 +378,32 @@ class TestPlaysServiceRecords:
         assert rows is not None
         assert len(rows) == 1
         assert rows[0]["channel"] == channel.xid
+
+
+class TestRulesHelpers:
+    """Tests for normalize_rule and extract_ngrams helper functions."""
+
+    def test_normalize_rule_strips_punctuation(self) -> None:
+        assert plays.normalize_rule("no proxies!") == "no proxies"
+        assert plays.normalize_rule("proxies ok...") == "proxies ok"
+        assert plays.normalize_rule("rule?!") == "rule"
+
+    def test_normalize_rule_empty_after_strip(self) -> None:
+        # Edge case: rule becomes empty after stripping punctuation
+        assert plays.normalize_rule("...") == ""
+        assert plays.normalize_rule("!?") == ""
+
+    def test_extract_ngrams_short_text(self) -> None:
+        # Single word can't produce bigrams
+        assert plays.extract_ngrams("proxies", 2) == []
+        assert plays.extract_ngrams("no", 3) == []
+
+    def test_extract_ngrams_produces_bigrams(self) -> None:
+        result = plays.extract_ngrams("no proxies allowed", 2)
+        assert "no proxies" in result
+        assert "proxies allowed" in result
+
+    def test_extract_ngrams_produces_trigrams(self) -> None:
+        result = plays.extract_ngrams("no proxies allowed here", 3)
+        assert "no proxies allowed" in result
+        assert "proxies allowed here" in result

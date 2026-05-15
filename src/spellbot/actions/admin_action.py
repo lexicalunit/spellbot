@@ -664,7 +664,11 @@ class AdminAction(BaseAction):
         assert self.interaction.guild
         assert self.interaction.guild_id is not None
 
-        url = generate_signed_url(self.interaction.guild_id)
+        EXPIRE_TIME = 15  # minutes
+        url = generate_signed_url(
+            guild_xid=self.interaction.guild_id,
+            expires_in_minutes=EXPIRE_TIME,
+        )
 
         embed = Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
@@ -672,7 +676,7 @@ class AdminAction(BaseAction):
         embed.description = (
             f"View your server's analytics dashboard:\n"
             f"📊 [Open Analytics]({url})\n\n"
-            f"_This link expires in 10 minutes._"
+            f"_This link expires in {EXPIRE_TIME} minutes._"
         )
         embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
