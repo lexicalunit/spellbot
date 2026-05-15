@@ -28,8 +28,8 @@ class TableStreamGameTypes(Enum):
     MTGVintage = "MTGVintage"
 
 
-def table_stream_game_type(format: GameFormat) -> TableStreamGameTypes:  # pragma: no cover
-    match format:
+def table_stream_game_type(format: GameFormat) -> TableStreamGameTypes:
+    match format:  # pragma: no branch
         case (
             GameFormat.COMMANDER
             | GameFormat.OATHBREAKER
@@ -59,7 +59,7 @@ def table_stream_game_type(format: GameFormat) -> TableStreamGameTypes:  # pragm
             return TableStreamGameTypes.MTGModern
         case GameFormat.STANDARD | GameFormat.SEALED:
             return TableStreamGameTypes.MTGStandard
-        case GameFormat.VINTAGE:
+        case GameFormat.VINTAGE:  # pragma: no branch
             return TableStreamGameTypes.MTGVintage
 
 
@@ -81,7 +81,7 @@ class TableStreamArgs(TypedDict):
     initialScheduleTTLInSeconds: NotRequired[int]
 
 
-def build_ts_args(game_data: GameData) -> TableStreamArgs:  # pragma: no cover
+def build_ts_args(game_data: GameData) -> TableStreamArgs:
     room_name = f"SB{game_data.id}"
     sb_game_format = GameFormat(game_data.format)
     ts_game_type = table_stream_game_type(sb_game_format).value
@@ -94,7 +94,7 @@ def build_ts_args(game_data: GameData) -> TableStreamArgs:  # pragma: no cover
     )
 
 
-async def fetch_table_stream_link(  # pragma: no cover
+async def fetch_table_stream_link(
     client: httpx.AsyncClient,
     ts_args: TableStreamArgs,
 ) -> dict[str, Any] | None:
@@ -126,7 +126,7 @@ async def fetch_table_stream_link(  # pragma: no cover
     return response.json()
 
 
-async def generate_link(game_data: GameData) -> tuple[str | None, str | None]:  # pragma: no cover
+async def generate_link(game_data: GameData) -> tuple[str | None, str | None]:
     if not settings.TABLESTREAM_AUTH_KEY:
         return None, None
 
