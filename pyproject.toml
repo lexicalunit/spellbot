@@ -48,7 +48,7 @@ license = {text = "MIT"}
 name = "spellbot"
 readme = "README.md"
 requires-python = "<4,>=3.13"
-version = "18.9.3"
+version = "18.9.4"
 
 [project.urls]
 homepage = "http://spellbot.io/"
