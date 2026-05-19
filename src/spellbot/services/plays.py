@@ -788,6 +788,41 @@ async def analytics_channels(guild_xid: int, *, all_time: bool = False) -> dict[
     return {"busiest_channels": busiest_channels}
 
 
+async def analytics_channel_players(guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+    """Return unique players per channel."""
+    thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+    filters = [
+        Game.guild_xid == guild_xid,
+        Game.started_at.isnot(None),
+        Game.deleted_at.is_(None),
+    ]
+    if not all_time:
+        filters.append(Game.started_at >= thirty_days_ago)
+
+    # Count distinct users per channel through plays
+    channel_rows = (
+        await DatabaseSession.execute(
+            select(  # type: ignore
+                Channel.xid,  # type: ignore
+                Channel.name,
+                func.count(func.distinct(Play.user_xid)).label("players"),
+            )
+            .select_from(Channel)
+            .join(Game, Game.channel_xid == Channel.xid)
+            .join(Play, Play.game_id == Game.id)
+            .where(*filters)
+            .group_by(Channel.xid, Channel.name)
+            .order_by(text("players DESC"))
+            .limit(10),
+        )
+    ).all()
+
+    channel_players = [{"name": row[1] or str(row[0]), "players": row[2]} for row in channel_rows]
+
+    return {"channel_players": channel_players}
+
+
 async def analytics_services(guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
     """Return popular services data."""
     thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)

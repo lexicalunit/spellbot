@@ -212,6 +212,17 @@ async def analytics_channels_endpoint(request: web.Request) -> web.Response:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/channel-players")
+@tracer.wrap(name="web", resource="analytics_channel_players")
+async def analytics_channel_players_endpoint(request: web.Request) -> web.Response:
+    """Return unique players per channel data."""
+    add_span_request_id(generate_request_id())
+    return await analytics_json_endpoint(
+        request,
+        lambda g, a: services.plays.analytics_channel_players(g, all_time=a),
+    )
+
+
 @routes.get(r"/g/{guild}/analytics/services")
 @tracer.wrap(name="web", resource="analytics_services")
 async def analytics_services_endpoint(request: web.Request) -> web.Response:

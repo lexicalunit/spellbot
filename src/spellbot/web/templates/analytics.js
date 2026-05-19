@@ -336,6 +336,8 @@
       "Popular Formats (" + label + ")";
     document.getElementById("channelsTitle").textContent =
       "Busiest Channels (" + label + ")";
+    document.getElementById("channelPlayersTitle").textContent =
+      "Unique Players per Channel (" + label + ")";
     document.getElementById("servicesTitle").textContent =
       "Popular Services (" + label + ")";
     document.getElementById("playersTitle").textContent =
@@ -819,6 +821,29 @@
     }
   }
 
+  function renderChannelPlayers(data) {
+    if (data.channel_players && data.channel_players.length) {
+      const canvas = addCanvas("channelPlayersSection", "chartChannelPlayers");
+      new Chart(canvas, {
+        type: "bar",
+        data: {
+          labels: data.channel_players.map((d) => d.name),
+          datasets: [
+            {
+              label: "Unique Players",
+              data: data.channel_players.map((d) => d.players),
+              backgroundColor: "#c084fc",
+              borderRadius: 3,
+            },
+          ],
+        },
+        options: barOpts("y"),
+      });
+    } else {
+      showNoData("channelPlayersSection");
+    }
+  }
+
   function renderServices(data) {
     if (data.popular_services?.length) {
       const canvas = addCanvas("servicesSection", "chartServices");
@@ -1011,6 +1036,11 @@
     },
     { name: "formats", sectionId: "formatsSection", render: renderFormats },
     { name: "channels", sectionId: "channelsSection", render: renderChannels },
+    {
+      name: "channel-players",
+      sectionId: "channelPlayersSection",
+      render: renderChannelPlayers,
+    },
     { name: "services", sectionId: "servicesSection", render: renderServices },
     { name: "players", sectionId: "playersSection", render: renderPlayers },
     { name: "blocked", sectionId: "blockedSection", render: renderBlocked },
