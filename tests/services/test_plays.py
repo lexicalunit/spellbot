@@ -161,6 +161,9 @@ class TestPlaysServiceAnalyticsSummary:
         channels = await plays.analytics_channels(guild.xid, all_time=all_time)
         assert "busiest_channels" in channels
 
+        channel_players = await plays.analytics_channel_players(guild.xid, all_time=all_time)
+        assert "channel_players" in channel_players
+
         wt = await plays.analytics_wait_time(guild.xid, all_time=all_time)
         assert "avg_wait_per_day" in wt
 

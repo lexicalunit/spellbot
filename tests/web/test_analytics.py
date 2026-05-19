@@ -367,6 +367,15 @@ class TestWebAnalyticsEndpoints:
         data = await self.get_analytics_endpoint(client, factories, mocker, "channels")
         assert "busiest_channels" in data
 
+    async def test_analytics_channel_players(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self.get_analytics_endpoint(client, factories, mocker, "channel-players")
+        assert "channel_players" in data
+
     async def test_analytics_hour_of_day(
         self,
         client: ClientSession,
