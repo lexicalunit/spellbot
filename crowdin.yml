@@ -1,0 +1,3 @@
+files:
+  - source: /src/spellbot/translations
+    translation: '%language%.yaml'
