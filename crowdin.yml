@@ -1,3 +1,5 @@
 files:
   - source: /src/spellbot/translations/en.yaml
     translation: /src/spellbot/translations/%two_letters_code%.yaml
+    excluded_target_languages:
+      - en
