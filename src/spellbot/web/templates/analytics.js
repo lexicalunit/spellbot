@@ -352,6 +352,8 @@
       "Top Game Rules (" + label + ")";
     document.getElementById("rulesCloudTitle").textContent =
       "Rules Word Cloud (" + label + ")";
+    document.getElementById("languagesTitle").textContent =
+      "Game Languages (" + label + ")";
   }
 
   function showLoading(sectionId) {
@@ -992,6 +994,34 @@
     }
   }
 
+  // Use Intl.DisplayNames to get human-readable language names
+  const languageNames = new Intl.DisplayNames(["en"], { type: "language" });
+
+  function getLanguageName(locale) {
+    try {
+      return languageNames.of(locale) || locale;
+    } catch {
+      return locale;
+    }
+  }
+
+  function renderLanguages(data) {
+    if (data.top_languages?.length) {
+      const section = document.getElementById("languagesSection");
+      section.innerHTML =
+        '<table><thead><tr><th>Language</th><th style="text-align:right">Games</th></tr></thead><tbody>' +
+        data.top_languages
+          .map((r) => {
+            const displayName = getLanguageName(r.locale);
+            return `<tr><td>${escapeHtml(displayName)}</td><td style="text-align:right">${r.count}</td></tr>`;
+          })
+          .join("") +
+        "</tbody></table>";
+    } else {
+      showNoData("languagesSection");
+    }
+  }
+
   /* ── Handle window resize for charts ── */
   let resizeTimeout;
   window.addEventListener("resize", function () {
@@ -1051,6 +1081,11 @@
         renderTopRules(data);
         renderRulesCloud(data);
       },
+    },
+    {
+      name: "languages",
+      sectionId: "languagesSection",
+      render: renderLanguages,
     },
   ];
 

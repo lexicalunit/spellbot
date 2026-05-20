@@ -182,6 +182,83 @@ def generate_endpoint_data(period: str) -> dict[str, Any]:
         reverse=True,
     )
 
+    # Hour of day
+    games_by_hour = [{"hour": h, "count": random.randint(20, 200)} for h in range(24)]
+    # Make evening hours more popular
+    for h in range(18, 23):
+        games_by_hour[h]["count"] = random.randint(150, 300)
+
+    # Day of week
+    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    games_by_day = [
+        {"day": day, "count": random.randint(200, 400) if i >= 5 else random.randint(100, 250)}
+        for i, day in enumerate(day_names)
+    ]
+
+    # Channel players (unique players per channel)
+    channel_players = sorted(
+        [{"name": name, "players": random.randint(50, 500)} for name in channel_names],
+        key=lambda x: x["players"],
+        reverse=True,
+    )
+
+    # Rules
+    rule_phrases = [
+        "no proxies",
+        "proxies ok",
+        "no mox",
+        "mox ok",
+        "rule 0 discussion",
+        "casual only",
+        "no infinites",
+        "infinites ok",
+        "no stax",
+        "webcam required",
+    ]
+    top_rules = sorted(
+        [{"rule": rule, "count": random.randint(50, 800)} for rule in rule_phrases],
+        key=lambda x: x["count"],
+        reverse=True,
+    )[:10]
+
+    ngram_phrases = [
+        "no proxies",
+        "proxies ok",
+        "no mox",
+        "mox ok",
+        "rule 0",
+        "casual games",
+        "no infinites",
+        "infinites allowed",
+        "webcam on",
+        "mic required",
+        "chill vibes",
+        "competitive ok",
+        "budget decks",
+        "no stax",
+        "stax ok",
+        "precons only",
+        "upgraded precons",
+        "high power",
+        "low power",
+        "mid power",
+    ]
+    rule_ngrams = [{"phrase": phrase, "count": random.randint(10, 500)} for phrase in ngram_phrases]
+
+    # Languages
+    locales = ["en-US", "en-GB", "es-ES", "pt-BR", "de", "fr", "ja", "ko", "it", "pl"]
+    top_languages = sorted(
+        [
+            {
+                "locale": loc,
+                "count": random.randint(500, 8000) if loc == "en-US" else random.randint(20, 800),
+            }
+            for loc in locales
+        ],
+        key=lambda x: x["count"],
+        reverse=True,
+    )[:10]
+
     return {
         "summary": {
             "total_games": total_games,
@@ -199,78 +276,100 @@ def generate_endpoint_data(period: str) -> dict[str, Any]:
         "retention": {"player_retention": player_retention},
         "growth": {"cumulative_players": cumulative_players},
         "histogram": {"games_histogram": games_histogram, "median_games": median_games},
+        "hour-of-day": {"games_by_hour": games_by_hour},
+        "day-of-week": {"games_by_day": games_by_day},
         "formats": {"popular_formats": popular_formats},
         "channels": {"busiest_channels": busiest_channels},
+        "channel-players": {"channel_players": channel_players},
         "services": {"popular_services": popular_services},
         "players": {"top_players": top_players},
         "blocked": {"top_blocked": top_blocked},
+        "rules": {"top_rules": top_rules, "rule_ngrams": rule_ngrams},
+        "languages": {"top_languages": top_languages},
     }
 
 
 def generate_html(data_30d: dict[str, Any], data_all: dict[str, Any]) -> str:
-    """Generate the static HTML with embedded data for both periods."""
-    # Read the template
-    template_path = Path(__file__).parent.parent / "src/spellbot/web/templates/analytics.html.j2"
-    template = template_path.read_text()
+    """
+    Generate the static HTML with embedded data for both periods.
 
-    # Replace Jinja2 variables for the shell page
+    Strategy: Keep the JS file unmodified. Instead:
+    1. Provide window.ANALYTICS_CONFIG so the JS initializes
+    2. Override window.fetch to return demo data instead of making network requests
+    3. Hide the countdown timer via CSS (it will show "expired" but that's fine)
+    """
+    template_path = Path(__file__).parent.parent / "src/spellbot/web/templates/analytics.html.j2"
+    js_path = Path(__file__).parent.parent / "src/spellbot/web/templates/analytics.js"
+    template = template_path.read_text()
+    js_content = js_path.read_text()
+
+    # Replace Jinja2 variables
     html = template.replace("{{ guild_name }}", "Planeswalker's Guild")
 
     # Replace the "Expires in" countdown with "Demo Mode" indicator
+    # Keep a hidden countdown span so the JS timer doesn't crash
     html = html.replace(
         '<div class="expires">Expires in <span id="countdown"></span></div>',
         '<div class="expires" style="background:#1e3a5f">'
-        '<span style="color:#60a5fa">Demo Mode</span></div>',
+        '<span style="color:#60a5fa">Demo Mode</span>'
+        '<span id="countdown" style="display:none"></span></div>',
     )
 
-    # Replace the config section with demo data cache
-    config_marker = "/* ── Config from server ── */"
-    config_end = "const EXPIRES = {{ expires }};"
-    config_start = html.find(config_marker)
-    config_end_idx = html.find(config_end, config_start) + len(config_end)
+    # Build demo data JSON
+    demo_data = {"30d": data_30d, "all": data_all}
+    demo_data_json = json.dumps(demo_data)
 
-    data_cache_json = json.dumps({"30d": data_30d, "all": data_all})
-    demo_config = f"""/* ── Demo mode - data pre-loaded ── */
-    const BASE_URL = "";  // Not used in demo
-    const QUERY = "";     // Not used in demo
-    const DEMO_DATA = {data_cache_json};"""
+    # Create the demo bootstrap script that:
+    # 1. Sets up ANALYTICS_CONFIG
+    # 2. Sets CHART_AVAILABLE flag
+    # 3. Overrides fetch() to return demo data
+    demo_bootstrap = f"""<script>
+    // Demo mode: provide config and override fetch
+    window.ANALYTICS_CONFIG = {{
+        baseUrl: "/demo/analytics",
+        query: "?demo=true",
+        expires: Math.floor(Date.now() / 1000) + 3600  // 1 hour from now
+    }};
 
-    html = html[:config_start] + demo_config + html[config_end_idx:]
+    // Check if Chart.js loaded successfully
+    window.CHART_AVAILABLE = typeof Chart !== 'undefined';
 
-    # Remove the countdown timer section
-    countdown_start = html.find("/* ── Countdown timer ── */")
-    countdown_end = html.find("})();", countdown_start) + len("})();")
-    html = html[:countdown_start] + "/* Countdown disabled for demo */" + html[countdown_end:]
+    // Pre-loaded demo data
+    const DEMO_DATA = {demo_data_json};
 
-    # Replace fetchEndpoint to use cached data instead of network
-    # Find the function start
-    fetch_marker = "function fetchEndpoint({ name, sectionId, render }) {"
-    fetch_start = html.find(fetch_marker)
+    // Override fetch to return demo data
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {{
+        // Extract endpoint name from URL (e.g., "/demo/analytics/summary" -> "summary")
+        const match = url.match(/\\/analytics\\/([^?]+)/);
+        if (match) {{
+            const endpoint = match[1];
+            // Extract period from URL params
+            const urlParams = new URLSearchParams(url.split('?')[1] || '');
+            const period = urlParams.get('period') || '30d';
+            const data = DEMO_DATA[period]?.[endpoint];
+            if (data) {{
+                return Promise.resolve({{
+                    ok: true,
+                    json: () => Promise.resolve(data)
+                }});
+            }}
+        }}
+        // Fall back to original fetch for other requests (like Chart.js CDN)
+        return originalFetch.apply(this, arguments);
+    }};
+    </script>"""
 
-    # Find the next function definition to know where this function ends
-    next_function_marker = "function refreshAll()"
-    fetch_end = html.find(next_function_marker, fetch_start)
+    # Replace the config script block with our demo bootstrap
+    config_start = html.find("/* Config passed to external analytics.js */")
+    config_end = html.find("</script>", config_start) + len("</script>")
+    html = html[: config_start - len("    <script>\n")] + demo_bootstrap + html[config_end:]
 
-    demo_fetch = """function fetchEndpoint({ name, sectionId, render }) {
-        // Demo mode: use pre-loaded data from DEMO_DATA
-        const cache = dataCache[currentPeriod];
-        if (cache[name]) {
-            render(cache[name]);
-            return;
-        }
-        // Load from embedded demo data
-        const demoData = DEMO_DATA[currentPeriod][name];
-        if (demoData) {
-            dataCache[currentPeriod][name] = demoData;
-            render(demoData);
-        } else {
-            showError(sectionId, "No demo data");
-        }
-    }
-
-    """
-
-    return html[:fetch_start] + demo_fetch + html[fetch_end:]
+    # Replace external JS reference with inline JS (to work as a standalone file)
+    return html.replace(
+        '<script src="/analytics.js"></script>',
+        f"<script>\n{js_content}\n    </script>",
+    )
 
 
 def main() -> None:

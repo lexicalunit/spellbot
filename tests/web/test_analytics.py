@@ -258,6 +258,15 @@ class TestWebAnalyticsEndpoints:
         data = await self.get_analytics_endpoint(client, factories, mocker, "formats")
         assert "popular_formats" in data
 
+    async def test_analytics_languages(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        data = await self.get_analytics_endpoint(client, factories, mocker, "languages")
+        assert "top_languages" in data
+
     async def test_analytics_services(
         self,
         client: ClientSession,

@@ -179,6 +179,9 @@ class TestPlaysServiceAnalyticsSummary:
         fmt = await plays.analytics_formats(guild.xid, all_time=all_time)
         assert "popular_formats" in fmt
 
+        lang = await plays.analytics_languages(guild.xid, all_time=all_time)
+        assert "top_languages" in lang
+
         svc = await plays.analytics_services(guild.xid, all_time=all_time)
         assert "popular_services" in svc
 

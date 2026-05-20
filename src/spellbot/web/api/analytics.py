@@ -201,6 +201,17 @@ async def analytics_formats_endpoint(request: web.Request) -> web.Response:
     )
 
 
+@routes.get(r"/g/{guild}/analytics/languages")
+@tracer.wrap(name="web", resource="analytics_languages")
+async def analytics_languages_endpoint(request: web.Request) -> web.Response:
+    """Return game languages data."""
+    add_span_request_id(generate_request_id())
+    return await analytics_json_endpoint(
+        request,
+        lambda g, a: services.plays.analytics_languages(g, all_time=a),
+    )
+
+
 @routes.get(r"/g/{guild}/analytics/channels")
 @tracer.wrap(name="web", resource="analytics_channels")
 async def analytics_channels_endpoint(request: web.Request) -> web.Response:

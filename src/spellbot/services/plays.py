@@ -756,6 +756,35 @@ async def analytics_formats(guild_xid: int, *, all_time: bool = False) -> dict[s
     return {"popular_formats": popular_formats}
 
 
+async def analytics_languages(guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
+    """Return game languages data."""
+    thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
+
+    filters = [
+        Game.guild_xid == guild_xid,
+        Game.started_at.isnot(None),
+        Game.deleted_at.is_(None),
+    ]
+    if not all_time:
+        filters.append(Game.started_at >= thirty_days_ago)
+
+    locale_rows = (
+        await DatabaseSession.execute(
+            select(
+                Game.locale,
+                func.count(Game.id).label("count"),
+            )
+            .where(*filters)
+            .group_by(Game.locale)
+            .order_by(text("count DESC"))
+            .limit(10),
+        )
+    ).all()
+    top_languages = [{"locale": row[0], "count": row[1]} for row in locale_rows]
+
+    return {"top_languages": top_languages}
+
+
 async def analytics_channels(guild_xid: int, *, all_time: bool = False) -> dict[str, Any]:
     """Return busiest channels data."""
     thirty_days_ago = datetime.now(tz=UTC) + relativedelta(days=-30)
