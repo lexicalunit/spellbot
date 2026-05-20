@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v18.10.0](https://github.com/lexicalunit/spellbot/releases/tag/v18.10.0) - 2026-05-19
+
 ### Added
 
 - Added support for preferred locale based on the Discord server when creating Convoke games.
