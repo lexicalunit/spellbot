@@ -32,7 +32,6 @@ en:
       support: "Support SpellBot"
       support_text: "Become [a monthly patron](%{subscribe}) or give a [one-off tip](%{donate})."
     footer: "SpellBot Game ID: #SB%{game_id} — Service: %{service}"
-
   # Game services pending messages
   service:
     not_any: "_Please contact the players in your game to organize this game._"
@@ -47,7 +46,6 @@ en:
     girudo: "_A %{emoji}[Girudo](https://www.girudo.com/) link will be created when all players have joined._"
     edhlab: "_A %{emoji}[EDHLAB](https://edhlab.gg/) link will be created when all players have joined._"
     playgroup_live: "*A %{emoji}[Playgroup Live](https://playgroup.gg/) link will be created when all players have joined.*"
-
   # LFG action messages
   lfg:
     playgroup_link_required: "To use Playgroup Live, at least one player must link their account. Run `/playgroup link` and try again."
@@ -72,14 +70,12 @@ en:
     dm_failures: "Unable to send Direct Messages to some players: %{players}"
     award_failure: "Unable to %{action} role %{role} %{direction} user <@%{user_id}>"
     mythic_track: "Track your game on %{emoji}[Mythic Track](%{link}) with PIN code: `%{pin}`"
-
   # Watch notifications
   watch:
     title: "Watched user(s) joined a game"
     jump_to_game: "[⇤ Jump to the game post](%{link})"
     users_header: "**Users:**"
     game_id: "Game ID"
-
   # Button labels
   button:
     join: "Join this game!"
@@ -88,7 +84,6 @@ en:
     toggle_voice: "Toggle Create Voice Channels"
     toggle_bitrate: "Toggle Use Max Bitrate"
     refresh: "Refresh"
-
   # Admin action messages
   admin:
     no_game_found: "There is no game with that ID."
@@ -169,7 +164,6 @@ en:
     mythic_track_title: "Mythic Track Setup for %{guild}"
     mythic_track_on: "✅ Mythic Track has been turned **on** for this server!\n\nTo continue setup, please [connect your Discord account to Mythic Track](%{guide}).\n\nWhile this feature is turned on, SpellBot will generate PIN codes for players to enter into Mythic Track so that their games can be tracked."
     mythic_track_off: "❌ Mythic Track has been turned **off** for this server. Rerun this command to toggle it back on. Note that turning this feature off does _not_ remove any existing Mythic Track data."
-
   # Award display
   award:
     line_every: "• **ID %{id}** — _every %{count} games_ — %{action} `@%{role}`%{verify_status}— %{message}"
@@ -178,7 +172,6 @@ en:
     action_take: "take"
     verified_only: "verified only"
     unverified_only: "unverified only"
-
   # Block action messages
   block:
     self_block: "You can not block yourself."
@@ -187,17 +180,14 @@ en:
     list_title: "Blocked Users"
     list_empty: "You have no blocked users."
     list_page: "Page %{current} of %{total}"
-
   # Leave action messages
   leave:
     removed_channel: "You were removed from any pending games in this channel."
     removed_all: "You were removed from all pending games."
-
   # Verify action messages
   verify:
     verified: "Verified <@%{user_id}>."
     unverified: "Unverified <@%{user_id}>."
-
   # Watch action messages
   watch_action:
     provide_target: "You must provide either a target User or their ID."
@@ -205,7 +195,6 @@ en:
     watching: "Watching <@%{user_id}>."
     not_watching: "No longer watching <@%{user_id}>."
     list_title: "List of watched players on this server"
-
   # Score action messages
   score:
     record_title: "Record of games played on %{guild}"
@@ -218,8 +207,7 @@ en:
     range_ago: "%{months} months ago"
     range_this_month: "this month"
     range_all_time: "all time"
-    top_header: "Rank \xa0\xa0\xa0 Games \xa0\xa0\xa0 Player"
-
+    top_header: "Rank     Games     Player"
   # About command
   about:
     title: "SpellBot"
