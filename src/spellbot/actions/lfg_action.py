@@ -12,6 +12,7 @@ from ddtrace.trace import tracer
 
 from spellbot import services
 from spellbot.enums import GameBracket, GameFormat, GameService
+from spellbot.i18n import guild_locale, t
 from spellbot.integrations import playgroup_live
 from spellbot.models import MAX_RULES_LENGTH, GameStatus, generate_pin
 from spellbot.operations import (
@@ -51,10 +52,10 @@ class LookingForGameAction(BaseAction):
             return False
         if playgroup_live.find_linked_player(game_data) is not None:
             return False
+        locale = guild_locale(self.guild)
         await safe_followup_channel(
             self.interaction,
-            "To use Playgroup Live, at least one player must link their account. "
-            "Run `/playgroup link` and try again.",
+            t("lfg.playgroup_link_required", locale=locale),
         )
         return True
 
@@ -141,7 +142,6 @@ class LookingForGameAction(BaseAction):
 
         if not origin:
             assert self.interaction.guild_id is not None
-            preferred_locale = self.guild.preferred_locale
             new, game = await services.games.upsert(
                 guild_xid=self.interaction.guild_id,
                 channel_xid=self.channel.id,
@@ -153,14 +153,15 @@ class LookingForGameAction(BaseAction):
                 bracket=bracket,
                 service=service,
                 blind=bool(self.channel_data.blind_games),
-                locale=preferred_locale.language_code if preferred_locale else "en",
+                locale=guild_locale(self.guild),
             )
             return new, game
 
         assert message_xid
         found = await services.games.get_by_message_xid(message_xid)
+        locale = found.locale if found else "en"
         if not found or await services.games.blocked(found, self.interaction.user.id):
-            await safe_send_user(self.interaction.user, "You can not join this game.")
+            await safe_send_user(self.interaction.user, t("lfg.cannot_join", locale=locale))
             return None, None
 
         if found.status == GameStatus.STARTED.value:
@@ -168,7 +169,7 @@ class LookingForGameAction(BaseAction):
             # inform the player that their interaction failed
             await safe_send_user(
                 self.interaction.user,
-                "Sorry, that game has already started.",
+                t("lfg.game_started", locale=locale),
             )
             return None, None
 
@@ -177,11 +178,12 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def execute_rematch(self) -> None:
+        locale = guild_locale(self.guild)
         if not self.guild or not self.channel:
             # Someone tried to lfg in a Discord thread rather than in the channel itself.
             await safe_send_user(
                 self.interaction.user,
-                "Please run this command in the same channel as your last played game.",
+                t("lfg.run_in_channel", locale=locale),
             )
             return
 
@@ -189,7 +191,7 @@ class LookingForGameAction(BaseAction):
         if await services.users.pending_games(self.user_data):
             await safe_followup_channel(
                 self.interaction,
-                "You're already in a pending game, leave that one first.",
+                t("lfg.already_pending", locale=locale),
             )
             return
 
@@ -200,7 +202,7 @@ class LookingForGameAction(BaseAction):
         if not game_data:
             await safe_followup_channel(
                 self.interaction,
-                "You have not played a game in this guild yet.",
+                t("lfg.no_previous_game", locale=locale),
             )
             return
 
@@ -217,10 +219,11 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def execute_start(self) -> None:
+        locale = guild_locale(self.guild)
         if not self.guild or not self.channel:
             await safe_send_user(
                 self.interaction.user,
-                "Please run this command in the same channel as your game.",
+                t("lfg.run_in_game_channel", locale=locale),
                 ephemeral=True,
             )
             return
@@ -230,7 +233,7 @@ class LookingForGameAction(BaseAction):
         if not game_data:
             await safe_followup_channel(
                 self.interaction,
-                "You're not in a pending game in this channel.",
+                t("lfg.not_pending_here", locale=locale),
                 ephemeral=True,
             )
             return
@@ -272,11 +275,12 @@ class LookingForGameAction(BaseAction):
         service: int | None = None,
         message_xid: int | None = None,
     ) -> None:
+        locale = guild_locale(self.guild)
         if not self.guild or not self.channel:
             # Someone tried to lfg in a Discord thread rather than in the channel itself.
             await safe_send_user(
                 self.interaction.user,
-                "Sorry, that command is not supported in this context.",
+                t("lfg.unsupported_context", locale=locale),
             )
             return None
 
@@ -293,14 +297,14 @@ class LookingForGameAction(BaseAction):
 
         assert self.user_data
         if await services.users.is_waiting(self.user_data, self.channel.id):
-            msg = "You're already in a game in this channel."
+            msg = t("lfg.already_in_channel", locale=locale)
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
             await safe_followup_channel(self.interaction, msg)
             return None
 
         if await services.users.pending_games(self.user_data) + 1 > settings.MAX_PENDING_GAMES:
-            msg = "You're in too many pending games to join another one at this time."
+            msg = t("lfg.too_many_pending", locale=locale)
             if origin:
                 return await safe_send_user(self.interaction.user, msg)
             await safe_followup_channel(self.interaction, msg)
@@ -309,7 +313,7 @@ class LookingForGameAction(BaseAction):
         friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", actual_friends)))
 
         if len(friend_xids) + 1 > actual_seats:
-            await safe_send_user(self.interaction.user, "You mentioned too many players.")
+            await safe_send_user(self.interaction.user, t("lfg.too_many_friends", locale=locale))
             return None
 
         friend_xids = await self.filter_friend_xids(friend_xids)
@@ -378,7 +382,7 @@ class LookingForGameAction(BaseAction):
                 await safe_update_embed(
                     message,
                     embed=embed,
-                    view=GameView(bot=self.bot),
+                    view=GameView(bot=self.bot, locale=data.locale),
                 )
 
     @tracer.wrap()
@@ -391,6 +395,7 @@ class LookingForGameAction(BaseAction):
         rematch: bool = False,
     ) -> None:
         assert self.channel
+        locale = guild_locale(self.guild)
 
         game_format = GameFormat(format or GameFormat.COMMANDER.value)
         game_bracket = GameBracket(bracket or GameBracket.NONE.value)
@@ -400,7 +405,12 @@ class LookingForGameAction(BaseAction):
         if requested_seats < 2 or requested_seats > game_format.players:
             await safe_followup_channel(
                 self.interaction,
-                f"You can't create a {game_format} game with {requested_seats} players.",
+                t(
+                    "lfg.invalid_player_count",
+                    locale=locale,
+                    format=str(game_format),
+                    count=requested_seats,
+                ),
             )
             return
 
@@ -412,10 +422,7 @@ class LookingForGameAction(BaseAction):
             excluded_players_s = ", ".join(f"<@{xid}>" for xid in excluded_player_xids)
             await safe_followup_channel(
                 self.interaction,
-                (
-                    "Some of the players you mentioned can not"
-                    f" be added to a game: {excluded_players_s}"
-                ),
+                t("lfg.excluded_players", locale=locale, players=excluded_players_s),
             )
             return
 
@@ -596,7 +603,7 @@ class LookingForGameAction(BaseAction):
         )
         content = self.channel_data.extra
 
-        view = None if fully_seated else GameView(bot=self.bot)
+        view = None if fully_seated else GameView(bot=self.bot, locale=game_data.locale)
         if new:  # create the initial game post:
             return await self.create_initial_post(game_data, embed, view, content)
 
@@ -671,33 +678,33 @@ class LookingForGameAction(BaseAction):
     @tracer.wrap()
     async def reply_found_embed(self, game_data: GameData) -> None:
         assert self.guild is not None
+        locale = game_data.locale
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         links = game_data.jump_links
         format = game_data.format
-        embed.set_author(name=f"I found a {GameFormat(format)} game for you!")
+        embed.set_author(name=t("lfg.found_game", locale=locale, format=str(GameFormat(format))))
         embed.color = settings.INFO_EMBED_COLOR
         if link := links.get(self.guild.id):
-            embed.description = f"You can [jump to the game post]({link}) to see it!"
+            embed.description = t("lfg.jump_to_game", locale=locale, link=link)
         else:
-            game_id = game_data.id
-            embed.description = f"You have joined the game SB{game_id}!"
+            embed.description = t("lfg.joined_game", locale=locale, game_id=game_data.id)
         await safe_followup_channel(self.interaction, embed=embed)
 
     @tracer.wrap()
     async def reply_force_start_embed(self, game_data: GameData) -> None:
         assert self.guild is not None
+        locale = game_data.locale
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
         links = game_data.jump_links
         format = game_data.format
-        embed.set_author(name=f"I started your {GameFormat(format)} game for you!")
+        embed.set_author(name=t("lfg.started_game", locale=locale, format=str(GameFormat(format))))
         embed.color = settings.INFO_EMBED_COLOR
         if link := links.get(self.guild.id):
-            embed.description = f"You can [jump to the game post]({link}) to see it!"
+            embed.description = t("lfg.jump_to_game", locale=locale, link=link)
         else:
-            game_id = game_data.id
-            embed.description = f"The game SB{game_id} has been started!"
+            embed.description = t("lfg.game_started_id", locale=locale, game_id=game_data.id)
         await safe_followup_channel(self.interaction, embed=embed)
 
     @tracer.wrap()
@@ -707,17 +714,14 @@ class LookingForGameAction(BaseAction):
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
     ) -> None:
+        guild_locale_fallback = game_data.locale
         player_pins = game_data.player_pins
         player_names = {player.xid: player.name for player in game_data.players}
         player_xids = list(player_pins.keys())
-        base_embed = game_data.to_embed(
-            guild=self.guild,
-            dm=True,
-            suggested_vc=suggested_vc,
-            rematch=rematch,
-            emojis=self.bot.emojis_cache,
-            supporters=self.bot.supporters,
-        )
+
+        # Fetch stored user locales from the database
+        player_data_list = await services.users.get_players_by_xid(player_xids)
+        player_locales = {pd.xid: pd.locale or guild_locale_fallback for pd in player_data_list}
 
         # notify players
         fetched_players: dict[int, discord.User] = {}
@@ -752,22 +756,41 @@ class LookingForGameAction(BaseAction):
             )
 
         async def notify_player(player_xid: int) -> None:
-            embed = base_embed.copy()
+            player = await safe_fetch_user(self.bot, player_xid)
+            if not player:
+                failed_xids.append(player_xid)
+                return
+
+            fetched_players[player_xid] = player
+
+            # Use the stored locale from database, falling back to guild locale
+            player_locale = player_locales.get(player_xid, guild_locale_fallback)
+
+            # Generate a personalized embed for this player with their locale
+            embed = game_data.to_embed(
+                guild=self.guild,
+                dm=True,
+                suggested_vc=suggested_vc,
+                rematch=rematch,
+                emojis=self.bot.emojis_cache,
+                supporters=self.bot.supporters,
+                locale_override=player_locale,
+            )
+
             if pin := player_pins[player_xid]:
                 mt_emoji = ""
                 emojis = self.bot.emojis_cache
                 if emoji := next((e for e in emojis if e.name == "mythic_track"), None):
                     mt_emoji = f"{emoji} "
-                embed.description = (
-                    f"{embed.description}\n\n"
-                    f"Track your game on {mt_emoji}[Mythic Track]({mythic_track_link(player_xid)}) "
-                    f"with PIN code: `{pin}`"
+                embed.description = f"{embed.description}\n\n" + t(
+                    "lfg.mythic_track",
+                    locale=player_locale,
+                    emoji=mt_emoji,
+                    link=mythic_track_link(player_xid),
+                    pin=pin,
                 )
-            if player := await safe_fetch_user(self.bot, player_xid):
-                fetched_players[player_xid] = player
-                await safe_send_user(player, embed=embed)
-            else:
-                failed_xids.append(player_xid)
+
+            await safe_send_user(player, embed=embed)
 
         notify_player_tasks = [notify_player(player_xid) for player_xid in player_xids]
         await asyncio.gather(*notify_player_tasks)
@@ -782,11 +805,15 @@ class LookingForGameAction(BaseAction):
         for player_xid, new_awards in new_roles.items():
             for new_award in new_awards:
                 if player_xid not in fetched_players:
-                    warning = (
-                        f"Unable to {'take' if new_award.remove else 'give'}"
-                        f" role {new_award.role}"
-                        f" {'from' if new_award.remove else 'to'}"
-                        f" user <@{player_xid}>"
+                    action = "take" if new_award.remove else "give"
+                    direction = "from" if new_award.remove else "to"
+                    warning = t(
+                        "lfg.award_failure",
+                        locale=guild_locale_fallback,
+                        action=action,
+                        role=new_award.role,
+                        direction=direction,
+                        user_id=player_xid,
                     )
                     await safe_followup_channel(self.interaction, warning)
                     continue
@@ -802,7 +829,7 @@ class LookingForGameAction(BaseAction):
         # notify issues with player permissions
         if failed_xids:
             failures = ", ".join(f"<@!{xid}>" for xid in failed_xids)
-            warning = f"Unable to send Direct Messages to some players: {failures}"
+            warning = t("lfg.dm_failures", locale=guild_locale_fallback, players=failures)
             await safe_followup_channel(self.interaction, warning)
 
         await self.handle_watched_players(game_data, player_xids)
@@ -811,6 +838,7 @@ class LookingForGameAction(BaseAction):
     async def handle_watched_players(self, game_data: GameData, player_xids: list[int]) -> None:
         """Notify moderators about watched players."""
         assert self.interaction.guild
+        locale = game_data.locale
         mod_role: discord.Role | None = None
         for role in self.interaction.guild.roles:
             if role.name.startswith(settings.MOD_PREFIX):
@@ -826,16 +854,20 @@ class LookingForGameAction(BaseAction):
 
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
-        embed.set_author(name="Watched user(s) joined a game")
+        embed.set_author(name=t("watch.title", locale=locale))
         embed.color = settings.INFO_EMBED_COLOR
         description = ""
         for jump_link in game_data.jump_links.values():
-            description += f"[⇤ Jump to the game post]({jump_link})\n"
-        description += "\n\n**Users:**"
+            description += t("watch.jump_to_game", locale=locale, link=jump_link) + "\n"
+        description += f"\n\n{t('watch.users_header', locale=locale)}"
         for user_xid, note in watch_notes.items():
             description += f"\n• <@{user_xid}>: {note}"
         embed.description = description
-        embed.add_field(name="Game ID", value=f"SB{game_data.id}", inline=False)
+        embed.add_field(
+            name=t("watch.game_id", locale=locale),
+            value=f"SB{game_data.id}",
+            inline=False,
+        )
 
         for member in mod_role.members:
             await safe_send_user(member, embed=embed)

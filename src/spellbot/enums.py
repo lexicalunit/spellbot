@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
+from spellbot.i18n import t
 from spellbot.settings import settings
+
+if TYPE_CHECKING:
+    import discord
 
 
 # Additional metadata related to supported game formats.
@@ -24,86 +28,45 @@ class GameService(Enum):
     def __init__(
         self,
         title: str,
-        pending_msg: str,
+        translation_key: str,
         fallback_url: str | None,
         max_seats: int,
     ) -> None:
-        """
-        Build a service for Magic: The Gathering games.
-
-        - title: The human readable name of the service.
-        - pending_msg: A message to display when a game is pending for this service.
-        - fallback_url: A fallback URL where users can manually create a game if needed.
-        """
+        """Build a service for Magic: The Gathering games."""
         self.title = title
-        self.pending_msg = pending_msg
+        self.translation_key = translation_key
         self.fallback_url = fallback_url
         self.max_seats = max_seats
 
     def __str__(self) -> str:
         return self.title
 
+    def get_pending_msg(
+        self,
+        locale: str = "en",
+        emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
+    ) -> str:
+        """Get the pending message for this service, with optional emoji."""
+        emoji_str = ""
+        if emojis:
+            emoji_name = self.name.lower().replace("-", "_").replace(" ", "_")
+            if emoji := next((e for e in emojis if e.name == emoji_name), None):
+                emoji_str = f"{emoji} "
+        return t(f"service.{self.translation_key}", locale=locale, emoji=emoji_str)
+
     # DO NOT REORDER -- IT WOULD INVALIDATE EXISTING DATABASE ENTRIES!
-    NOT_ANY = "Not any", "_Please contact the players in your game to organize this game._", None, 8
-    SPELLTABLE = (
-        "SpellTable",
-        (
-            "_Please go create a game on {emoji}[SpellTable](https://spelltable.wizards.com/) "
-            "for this game._"
-        ),
-        None,
-        4,
-    )
-    COCKATRICE = "Cockatrice", "_Please use Cockatrice for this game._", None, 5
-    X_MAGE = "XMage", "_Please use XMage for this game._", None, 10
-    MTG_ARENA = "MTG Arena", "_Please use MTG Arena for this game._", None, 2
-    MTG_ONLINE = "MTG Online", "_Please use MTG Online for this game._", None, 4
-    TTS = "TabletopSim", "_Please use TabletopSim for this game._", None, 10
-    TABLE_STREAM = (
-        "Table Stream",
-        (
-            "_A {emoji}[Table Stream](https://table-stream.com/) link will "
-            "be created when all players have joined._"
-        ),
-        "https://table-stream.com/",
-        6,
-    )
-    CONVOKE = (
-        "Convoke",
-        (
-            "_A {emoji}[Convoke](https://www.convoke.games/) link will "
-            "be created when all players have joined._"
-        ),
-        "https://www.convoke.games/",
-        8,
-    )
-    GIRUDO = (
-        "Girudo",
-        (
-            "_A {emoji}[Girudo](https://www.girudo.com/) link will "
-            "be created when all players have joined._"
-        ),
-        "https://www.girudo.com/",
-        4,
-    )
-    EDHLAB = (
-        "EDHLAB",
-        (
-            "_A {emoji}[EDHLAB](https://edhlab.gg/) link will "
-            "be created when all players have joined._"
-        ),
-        "https://edhlab.gg/",
-        4,
-    )
-    PLAYGROUP_LIVE = (
-        "Playgroup Live",
-        (
-            "*A {emoji}[Playgroup Live](https://playgroup.gg/) link will "
-            "be created when all players have joined.*"
-        ),
-        "https://playgroup.gg/",
-        6,
-    )
+    NOT_ANY = "Not any", "not_any", None, 8
+    SPELLTABLE = "SpellTable", "spelltable", None, 4
+    COCKATRICE = "Cockatrice", "cockatrice", None, 5
+    X_MAGE = "XMage", "xmage", None, 10
+    MTG_ARENA = "MTG Arena", "mtg_arena", None, 2
+    MTG_ONLINE = "MTG Online", "mtg_online", None, 4
+    TTS = "TabletopSim", "tts", None, 10
+    TABLE_STREAM = "Table Stream", "table_stream", "https://table-stream.com/", 6
+    CONVOKE = "Convoke", "convoke", "https://www.convoke.games/", 8
+    GIRUDO = "Girudo", "girudo", "https://www.girudo.com/", 4
+    EDHLAB = "EDHLAB", "edhlab", "https://edhlab.gg/", 4
+    PLAYGROUP_LIVE = "Playgroup Live", "playgroup_live", "https://playgroup.gg/", 6
 
 
 GAME_SERVICE_ORDER = [

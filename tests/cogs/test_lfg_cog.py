@@ -460,7 +460,7 @@ class TestCogLookingForGameJoinButton:
             interaction.message = message
             view = GameView(bot=bot)
 
-            await view.join.callback(interaction)
+            await view.join(interaction)
 
             mock_call = lfg_action.safe_update_embed_origin
             mock_call.assert_called_once()
@@ -503,7 +503,7 @@ class TestCogLookingForGameJoinButton:
             interaction.message = message
             view = GameView(bot=bot)
 
-            await view.join.callback(interaction)
+            await view.join(interaction)
 
             lfg_action.safe_update_embed_origin.assert_not_called()
 
@@ -529,7 +529,7 @@ class TestCogLookingForGameJoinButton:
             interaction.message = message
             view = GameView(bot=bot)
 
-            await view.join.callback(interaction)
+            await view.join(interaction)
 
             lfg_action.safe_send_user.assert_called_once_with(
                 interaction.user,
@@ -569,7 +569,7 @@ class TestCogLookingForGameJoinButton:
             interaction.message = message
             view = GameView(bot=bot)
 
-            await view.join.callback(interaction)
+            await view.join(interaction)
 
             lfg_action.safe_send_user.assert_called_once_with(
                 interaction.user,
@@ -598,6 +598,6 @@ class TestCogLookingForGameJoinButton:
             interaction.message = message
             view = GameView(bot=bot)
 
-            await view.join.callback(interaction)
+            await view.join(interaction)
 
             lfg_action.safe_update_embed_origin.assert_not_called()

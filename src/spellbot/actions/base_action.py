@@ -15,6 +15,7 @@ from spellbot.errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
+from spellbot.i18n import user_locale
 from spellbot.metrics import add_span_request_id, setup_ignored_errors
 from spellbot.utils import user_can_moderate
 
@@ -69,8 +70,14 @@ class BaseAction:
         if self.guild and self.channel:
             self.channel_data = await services.channels.upsert(self.channel)
 
+        # Capture user's locale from the interaction to store in the database
+        locale = user_locale(self.interaction)
         guild_xid = self.guild.id if self.guild else None
-        self.user_data = await services.users.upsert(self.member, guild_xid=guild_xid)
+        self.user_data = await services.users.upsert(
+            self.member,
+            guild_xid=guild_xid,
+            locale=locale,
+        )
 
         if self.user_data.banned:
             raise UserBannedError

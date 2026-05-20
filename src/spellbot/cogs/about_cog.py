@@ -8,6 +8,7 @@ from discord import Color, Embed, app_commands
 from discord.ext import commands
 
 from spellbot import SpellBot, __version__
+from spellbot.i18n import guild_locale, t
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
@@ -28,23 +29,19 @@ class AboutCog(commands.Cog):
     @tracer.wrap(name="interaction", resource="about")
     async def about(self, interaction: discord.Interaction) -> None:
         add_span_context(interaction)
-        embed = Embed(title="SpellBot")
+        locale = guild_locale(interaction.guild)
+        embed = Embed(title=t("about.title", locale=locale))
         embed.set_thumbnail(url=settings.thumb(interaction.guild_id))
         version = f"[{__version__}](https://pypi.org/project/spellbot/{__version__}/)"
-        embed.add_field(name="Version", value=version)
+        embed.add_field(name=t("about.version", locale=locale), value=version)
         author = "[@lexicalunit](https://github.com/lexicalunit)"
-        embed.add_field(name="Author", value=author)
-        embed.description = (
-            "_The Discord bot for Webcam Magic._\n"
-            "\n"
-            f"Having issues with SpellBot? Please [report bugs]({ISSUES})!\n"
-            "\n"
-            f"[🔗 Add SpellBot to your Discord!]({settings.BOT_INVITE_LINK})\n"
-            "\n"
-            "SpellBot's continued operation is made possible"
-            " by [PlayEDH](https://www.playedh.com/) and my Patreon supporters.\n"
-            "\n"
-            f"💜 Help keep SpellBot running by [becoming a patron!]({PATREON})"
+        embed.add_field(name=t("about.author", locale=locale), value=author)
+        embed.description = t(
+            "about.description",
+            locale=locale,
+            issues=ISSUES,
+            invite=settings.BOT_INVITE_LINK,
+            patreon=PATREON,
         )
         embed.url = "http://spellbot.io/"
         embed.color = Color(settings.INFO_EMBED_COLOR)

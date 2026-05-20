@@ -7,6 +7,7 @@ import discord
 from discord.embeds import Embed
 
 from spellbot import services
+from spellbot.i18n import guild_locale, t
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
@@ -32,6 +33,7 @@ class WatchAction(BaseAction):
         if target:
             await services.users.upsert(target)
 
+        locale = guild_locale(self.guild)
         target_xid: int | None = None
         assert target is not None or id is not None
         if target and hasattr(target, "id"):
@@ -46,13 +48,17 @@ class WatchAction(BaseAction):
             await services.users.unwatch(self.interaction.guild_id, target_xid)
             await safe_send_channel(
                 self.interaction,
-                f"No longer watching <@{target_xid}>.",
+                t("watch_action.not_watching", locale=locale, user_id=target_xid),
                 ephemeral=True,
             )
         else:
             assert self.interaction.guild_id is not None
             await services.users.watch(self.interaction.guild_id, target_xid, note=note)
-            await safe_send_channel(self.interaction, f"Watching <@{target_xid}>.", ephemeral=True)
+            await safe_send_channel(
+                self.interaction,
+                t("watch_action.watching", locale=locale, user_id=target_xid),
+                ephemeral=True,
+            )
 
     async def watch(
         self,
@@ -60,10 +66,11 @@ class WatchAction(BaseAction):
         id: str | None = None,
         note: str | None = None,
     ) -> None:
+        locale = guild_locale(self.guild)
         if not target and not id:
             await safe_send_channel(
                 self.interaction,
-                "You must provide either a target User or their ID.",
+                t("watch_action.provide_target", locale=locale),
                 ephemeral=True,
             )
             return
@@ -75,7 +82,7 @@ class WatchAction(BaseAction):
             except ValueError:
                 await safe_send_channel(
                     self.interaction,
-                    "You must provide a valid integer for an ID.",
+                    t("watch_action.invalid_id", locale=locale),
                     ephemeral=True,
                 )
                 return
@@ -87,10 +94,11 @@ class WatchAction(BaseAction):
         target: discord.User | discord.Member | None = None,
         id: str | None = None,
     ) -> None:
+        locale = guild_locale(self.guild)
         if not target and not id:
             await safe_send_channel(
                 self.interaction,
-                "You must provide either a target User or their ID.",
+                t("watch_action.provide_target", locale=locale),
                 ephemeral=True,
             )
             return
@@ -102,7 +110,7 @@ class WatchAction(BaseAction):
             except ValueError:
                 await safe_send_channel(
                     self.interaction,
-                    "You must provide a valid integer for an ID.",
+                    t("watch_action.invalid_id", locale=locale),
                     ephemeral=True,
                 )
                 return
@@ -110,9 +118,11 @@ class WatchAction(BaseAction):
         await self.execute(ActionType.UNWATCH, target=target, id=xid)
 
     async def get_watched_embeds(self) -> list[Embed]:
+        locale = guild_locale(self.guild)
+
         def new_embed() -> Embed:
             assert self.interaction.guild
-            embed = Embed(title="List of watched players on this server")
+            embed = Embed(title=t("watch_action.list_title", locale=locale))
             embed.set_thumbnail(url=settings.ICO_URL)
             embed.color = discord.Color(settings.INFO_EMBED_COLOR)
             return embed
@@ -137,7 +147,7 @@ class WatchAction(BaseAction):
         n = len(embeds)
         if n > 1:
             for i, embed in enumerate(embeds, start=1):
-                embed.set_footer(text=f"page {i} of {n}")
+                embed.set_footer(text=t("admin.page", locale=locale, current=i, total=n))
 
         return embeds
 
