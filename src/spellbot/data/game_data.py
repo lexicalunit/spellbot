@@ -8,6 +8,7 @@ from dateutil import tz
 from ddtrace.trace import tracer
 
 from spellbot.enums import GameBracket, GameFormat, GameService
+from spellbot.i18n import t
 from spellbot.models import GameStatus
 from spellbot.settings import settings
 
@@ -18,6 +19,18 @@ if TYPE_CHECKING:
     from spellbot.operations import VoiceChannelSuggestion
 
 HR = "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
+
+
+# Helper to select singular or plural translation key
+def _plural(
+    count: int,
+    singular_key: str,
+    plural_key: str,
+    locale: str,
+    **kwargs: str | int,
+) -> str:
+    key = singular_key if count == 1 else plural_key
+    return t(key, locale=locale, count=count, **kwargs)
 
 
 @dataclass
@@ -79,13 +92,17 @@ class GameData:
     def format_name(self) -> str:
         return str(GameFormat(self.format))
 
-    @property
-    def embed_title(self) -> str:
+    def embed_title(self, locale: str | None = None) -> str:
+        locale = locale or self.locale
         if self.status == GameStatus.STARTED.value:
-            return "**Your game is ready!**"
+            return t("game.title.ready", locale=locale)
         remaining = int(cast("int", self.seats)) - len(self.players)
-        plural = "s" if remaining > 1 else ""
-        return f"**Waiting for {remaining} more player{plural} to join...**"
+        return _plural(
+            remaining,
+            "game.title.waiting_one",
+            "game.title.waiting_many",
+            locale,
+        )
 
     @property
     def jump_links(self) -> dict[int, str]:
@@ -114,12 +131,15 @@ class GameData:
     def embed_description(
         self,
         *,
-        guild: discord.Guild | None,
+        guild: discord.Guild | None = None,
         dm: bool = False,
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
         emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
+        locale: str | None = None,
     ) -> str:
+        del guild  # unused, kept for API compatibility
+        locale = locale or self.locale
         if span := tracer.current_span():  # pragma: no cover
             span.set_tags(
                 {
@@ -134,8 +154,10 @@ class GameData:
         parts: list[str] = []
         if self.guild.notice:
             parts.append(f"{self.guild.notice}")
-        parts.append(self.embed_description_link_info(effective_service, dm, rematch, emojis))
-        parts.extend(self.embed_description_extras(dm, suggested_vc))
+        parts.append(
+            self.embed_description_link_info(effective_service, dm, rematch, emojis, locale),
+        )
+        parts.extend(self.embed_description_extras(dm, suggested_vc, locale))
         parts.extend(self.embed_motd())
         return "\n\n".join(parts)
 
@@ -149,9 +171,11 @@ class GameData:
         rematch: bool = False,
         emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
         supporters: set[int] | None = None,
+        locale_override: str | None = None,
     ) -> discord.Embed:
+        locale = locale_override or self.locale
         emojis = emojis or []
-        title = "**Rematch Game!**" if rematch else self.embed_title
+        title = t("game.title.rematch", locale=locale) if rematch else self.embed_title(locale)
         embed = discord.Embed(title=title)
         embed.set_thumbnail(url=settings.thumb(self.guild_xid))
         embed.description = self.embed_description(
@@ -160,28 +184,40 @@ class GameData:
             suggested_vc=suggested_vc,
             rematch=rematch,
             emojis=emojis,
+            locale=locale,
         )
         if self.rules:
-            embed.add_field(name="⚠️ Additional Rules:", value=self.rules, inline=False)
+            embed.add_field(
+                name=t("game.field.rules", locale=locale),
+                value=self.rules,
+                inline=False,
+            )
         if self.blind and not dm:
             joined = len(self.players)
-            plural = "s" if joined != 1 else ""
-            verb = "is" if joined == 1 else "are"
             embed.add_field(
-                name="Players",
-                value=f"**{joined} player name{plural} {verb} hidden**",
+                name=t("game.field.players", locale=locale),
+                value=_plural(
+                    joined,
+                    "game.field.players_hidden_one",
+                    "game.field.players_hidden_many",
+                    locale,
+                ),
                 inline=False,
             )
         elif self.players:
             players_value = self.embed_players(emojis, supporters)
-            embed.add_field(name="Players", value=players_value, inline=False)
-        embed.add_field(name="Format", value=self.format_name)
+            embed.add_field(
+                name=t("game.field.players", locale=locale),
+                value=players_value,
+                inline=False,
+            )
+        embed.add_field(name=t("game.field.format", locale=locale), value=self.format_name)
         if self.bracket != GameBracket.NONE.value:
-            embed.add_field(name="Bracket", value=self.bracket_title)
+            embed.add_field(name=t("game.field.bracket", locale=locale), value=self.bracket_title)
         timestamp_field = (
-            ("Started at", f"<t:{self.started_at_timestamp}>")
+            (t("game.field.started_at", locale=locale), f"<t:{self.started_at_timestamp}>")
             if self.started_at
-            else ("Updated at", f"<t:{self.updated_at_timestamp}>")
+            else (t("game.field.updated_at", locale=locale), f"<t:{self.updated_at_timestamp}>")
         )
         embed.add_field(name=timestamp_field[0], value=timestamp_field[1])
         if self.players:
@@ -193,16 +229,22 @@ class GameData:
         else:
             embed.color = discord.Color(settings.EMPTY_EMBED_COLOR)
         if suggested_vc and (vc_xid := suggested_vc.get()):
-            embed.add_field(name="🔊 Suggested Voice Channel", value=f"<#{vc_xid}>", inline=False)
+            embed.add_field(
+                name=t("game.field.voice_channel", locale=locale),
+                value=f"<#{vc_xid}>",
+                inline=False,
+            )
         embed.add_field(
-            name="Support SpellBot",
-            value=(
-                f"Become [a monthly patron]({settings.SUBSCRIBE_LINK}) or "
-                f"give a [one-off tip]({settings.DONATE_LINK})."
+            name=t("game.field.support", locale=locale),
+            value=t(
+                "game.field.support_text",
+                locale=locale,
+                subscribe=settings.SUBSCRIBE_LINK,
+                donate=settings.DONATE_LINK,
             ),
             inline=False,
         )
-        embed.set_footer(text=self.embed_footer)
+        embed.set_footer(text=self.embed_footer(locale))
         return embed
 
     def show_links(self, dm: bool = False) -> bool:
@@ -223,66 +265,90 @@ class GameData:
         dm: bool,
         rematch: bool,
         emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
+        locale: str | None = None,
     ) -> str:
+        locale = locale or self.locale
         if self.status != GameStatus.STARTED.value:
-            if "{emoji}" in effective_service.pending_msg:
-                emoji_str = ""
-                if emojis:
-                    emoji_name = effective_service.name.lower().replace("-", "_").replace(" ", "_")
-                    if emoji := next((e for e in emojis if e.name == emoji_name), None):
-                        emoji_str = f"{emoji} "
-                return effective_service.pending_msg.format(emoji=emoji_str)
-            return effective_service.pending_msg
+            return effective_service.get_pending_msg(locale, emojis)
         if not self.show_links(dm):
-            return "Please check your Direct Messages for your game details."
+            return t("game.description.check_dm", locale=locale)
         if rematch:
-            return (
-                "This is a rematch of a previous game. "
-                "Please continue using the same game lobby and voice channel."
-            )
+            return t("game.description.rematch_info", locale=locale)
         if self.game_link:
-            return f"# [Join your {effective_service} game now!]({self.game_link})"
+            return t(
+                "game.description.join_link",
+                locale=locale,
+                service=str(effective_service),
+                link=self.game_link,
+            )
         if effective_service.fallback_url:
-            return (
-                "Sorry but SpellBot was unable to create a link"
-                f" for this game. Please go to [{effective_service}]"
-                f"({effective_service.fallback_url}) to create one."
+            return t(
+                "game.description.link_error",
+                locale=locale,
+                service=str(effective_service),
+                url=effective_service.fallback_url,
             )
         if effective_service.value != GameService.NOT_ANY.value:
-            return f"Please use {effective_service} to play this game."
-        return "Contact the other players in your game to organize this match."
+            return t(
+                "game.description.use_service",
+                locale=locale,
+                service=str(effective_service),
+            )
+        return t("game.description.contact_players", locale=locale)
 
     def embed_description_extras(
         self,
         dm: bool,
         suggested_vc: VoiceChannelSuggestion | None,
+        locale: str | None = None,
     ) -> list[str]:
+        locale = locale or self.locale
         if self.status != GameStatus.STARTED.value:
             return []
         parts: list[str] = []
         if self.show_links(dm):
             if self.password:
-                parts.append(f"Password: `{self.password}`")
+                parts.append(t("game.description.password", locale=locale, password=self.password))
             if self.voice_xid:
-                parts.append(f"## Join your voice chat now: <#{self.voice_xid}>")
+                parts.append(
+                    t("game.description.voice_chat", locale=locale, channel_id=self.voice_xid),
+                )
             if self.voice_invite_link:
-                parts.append(f"Or use this voice channel invite: {self.voice_invite_link}")
+                parts.append(
+                    t(
+                        "game.description.voice_invite",
+                        locale=locale,
+                        invite=self.voice_invite_link,
+                    ),
+                )
             if suggested_vc:
                 if suggested_vc.already_picked is not None:
                     parts.append(
-                        "## Your pod is already using a voice channel, "
-                        f"join them now: <#{suggested_vc.already_picked}>!\n{HR}",
+                        t(
+                            "game.description.voice_already_picked",
+                            locale=locale,
+                            channel_id=suggested_vc.already_picked,
+                        )
+                        + f"\n{HR}",
                     )
                 elif suggested_vc.random_empty is not None:
                     parts.append(
-                        "## Please consider using this available voice channel: "
-                        f"<#{suggested_vc.random_empty}>.\n{HR}",
+                        t(
+                            "game.description.voice_available",
+                            locale=locale,
+                            channel_id=suggested_vc.random_empty,
+                        )
+                        + f"\n{HR}",
                     )
         if dm:
             jump_link = next(iter(self.jump_links.values()))
             parts.append(
-                "You can also [jump to the original game post]"
-                f"({jump_link}) in <#{self.channel_xid}>.",
+                t(
+                    "game.description.jump_to_post",
+                    locale=locale,
+                    link=jump_link,
+                    channel_id=self.channel_xid,
+                ),
             )
         return parts
 
@@ -317,9 +383,14 @@ class GameData:
         ]
         return "\n".join(player_strs)
 
-    @property
-    def embed_footer(self) -> str:
-        return f"SpellBot Game ID: #SB{self.id} — Service: {GameService(self.service)}"
+    def embed_footer(self, locale: str | None = None) -> str:
+        locale = locale or self.locale
+        return t(
+            "game.footer",
+            locale=locale,
+            game_id=self.id,
+            service=str(GameService(self.service)),
+        )
 
 
 @dataclass

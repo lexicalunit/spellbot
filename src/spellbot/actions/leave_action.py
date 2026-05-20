@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from ddtrace.trace import tracer
 
 from spellbot import services
+from spellbot.i18n import guild_locale, t
 from spellbot.operations import (
     safe_delete_message,
     safe_fetch_text_channel,
@@ -92,10 +93,11 @@ class LeaveAction(BaseAction):
         assert self.interaction.channel is not None
         assert self.user_data is not None
         channel_xid = self.interaction.channel.id
+        locale = guild_locale(self.guild)
         if not (game_id := await services.users.current_game_id(self.user_data, channel_xid)):
             await safe_send_channel(
                 self.interaction,
-                "You were removed from any pending games in this channel.",
+                t("leave.removed_channel", locale=locale),
                 ephemeral=True,
             )
             return
@@ -131,9 +133,10 @@ class LeaveAction(BaseAction):
             if do_delete_game:
                 await services.games.delete_games([game_data.id])
 
+        locale = guild_locale(self.guild)
         await safe_send_channel(
             self.interaction,
-            "You were removed from any pending games in this channel.",
+            t("leave.removed_channel", locale=locale),
             ephemeral=True,
         )
 
@@ -174,14 +177,15 @@ class LeaveAction(BaseAction):
                             await safe_update_embed(
                                 message,
                                 embed=embed,
-                                view=GameView(bot=self.bot),
+                                view=GameView(bot=self.bot, locale=game_data.locale),
                             )
 
             if do_delete_game:
                 await services.games.delete_games([game_data.id])
 
+        locale = guild_locale(self.guild)
         await safe_send_channel(
             self.interaction,
-            "You were removed from all pending games.",
+            t("leave.removed_all", locale=locale),
             ephemeral=True,
         )

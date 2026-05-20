@@ -21,3 +21,4 @@ class UserData:
     name: str
     banned: bool
     playgroup_user_id: int | None = None
+    locale: str = "en"

@@ -207,7 +207,7 @@ class TestCogAdminSuggestVCCategory:
         guild: Guild,
     ) -> None:
         """You can't set the suggested vc category when voice create is on."""
-        await view.toggle_voice_create.callback(interaction)
+        await view.toggle_voice_create(interaction)
 
         await run_command(cog.set_suggest_vc_category, interaction, category="whatever")
 
@@ -232,7 +232,7 @@ class TestCogAdminSuggestVCCategory:
         """Setting the voice create feature on clears the suggested vc category."""
         await run_command(cog.set_suggest_vc_category, interaction, category="whatever")
 
-        await view.toggle_voice_create.callback(interaction)
+        await view.toggle_voice_create(interaction)
 
         db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.suggest_voice_category is None
@@ -247,7 +247,7 @@ class TestCogAdminSetupView:
         guild: Guild,
         settings: Settings,
     ) -> None:
-        await view.refresh_setup.callback(interaction)
+        await view.refresh_setup(interaction)
 
         assert get_last_edit_message(interaction, "view") == [
             {
@@ -316,7 +316,7 @@ class TestCogAdminSetupView:
         interaction: discord.Interaction,
         guild: Guild,
     ) -> None:
-        await view.toggle_show_links.callback(interaction)
+        await view.toggle_show_links(interaction)
 
         interaction.edit_original_response.assert_called_once()  # type: ignore
         db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
@@ -328,7 +328,7 @@ class TestCogAdminSetupView:
         interaction: discord.Interaction,
         guild: Guild,
     ) -> None:
-        await view.toggle_voice_create.callback(interaction)
+        await view.toggle_voice_create(interaction)
 
         interaction.edit_original_response.assert_called_once()  # type: ignore
         db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
@@ -340,7 +340,7 @@ class TestCogAdminSetupView:
         interaction: discord.Interaction,
         guild: Guild,
     ) -> None:
-        await view.toggle_use_max_bitrate.callback(interaction)
+        await view.toggle_use_max_bitrate(interaction)
 
         interaction.edit_original_response.assert_called_once()  # type: ignore
         db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
