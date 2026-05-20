@@ -115,6 +115,7 @@ async def upsert(
     format: int,
     bracket: int,
     service: int,
+    locale: str,
     create_new: bool = False,
     blind: bool = False,
 ) -> tuple[bool, GameData]:
@@ -148,6 +149,7 @@ async def upsert(
             bracket=bracket,
             service=service,
             blind=blind,
+            locale=locale,
         )
         DatabaseSession.add(game)
         await DatabaseSession.commit()

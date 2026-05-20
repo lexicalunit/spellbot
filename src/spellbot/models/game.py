@@ -150,6 +150,13 @@ class Game(Base):
         server_default=false(),
         doc="Configuration for blind games",
     )
+    locale = Column(
+        String(255),
+        nullable=False,
+        default="en",
+        server_default=text("'en'"),
+        doc="The preferred locale for this game",
+    )
 
     posts = relationship(
         "Post",
@@ -231,6 +238,7 @@ class Game(Base):
             password=self.password,  # type: ignore
             rules=self.rules,  # type: ignore
             blind=self.blind,  # type: ignore
+            locale=self.locale,  # type: ignore
             players=[player.to_data() for player in players],
             player_pins=await self.player_pins(),
         )

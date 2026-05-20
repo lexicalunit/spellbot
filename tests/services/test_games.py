@@ -305,6 +305,7 @@ class TestServiceGamesUpsert:
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.CONVOKE.value,
+            locale="en",
         )
         assert not new
         assert game_data.id == game.id
@@ -337,6 +338,7 @@ class TestServiceGamesUpsert:
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.CONVOKE.value,
+            locale="en",
         )
         assert not new
         assert game_data.id == game.id
@@ -360,6 +362,7 @@ class TestServiceGamesUpsert:
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.CONVOKE.value,
+            locale="en",
         )
         assert new
         assert game_data is not None
@@ -387,6 +390,7 @@ class TestServiceGamesUpsert:
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.CONVOKE.value,
+            locale="en",
         )
         assert new
         assert game_data is not None
@@ -419,6 +423,7 @@ class TestServiceGamesUpsert:
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.CONVOKE.value,
+            locale="en",
         )
         assert new
         assert game_data is not None
@@ -461,6 +466,7 @@ class TestServiceGamesUpsert:
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
             service=GameService.CONVOKE.value,
+            locale="en",
         )
         assert new
         assert game_data is not None
@@ -493,6 +499,7 @@ class TestServiceGamesUpsert:
             format=game.format,
             bracket=game.bracket,
             service=GameService.CONVOKE.value,
+            locale="en",
         )
 
         DatabaseSession.expire_all()
@@ -518,6 +525,7 @@ class TestServiceGamesUpsert:
             format=game.format,
             bracket=game.bracket,
             service=GameService.CONVOKE.value,
+            locale="en",
         )
 
         DatabaseSession.expire_all()

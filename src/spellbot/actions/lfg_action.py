@@ -141,6 +141,7 @@ class LookingForGameAction(BaseAction):
 
         if not origin:
             assert self.interaction.guild_id is not None
+            preferred_locale = self.guild.preferred_locale
             new, game = await services.games.upsert(
                 guild_xid=self.interaction.guild_id,
                 channel_xid=self.channel.id,
@@ -152,6 +153,7 @@ class LookingForGameAction(BaseAction):
                 bracket=bracket,
                 service=service,
                 blind=bool(self.channel_data.blind_games),
+                locale=preferred_locale.language_code if preferred_locale else "en",
             )
             return new, game
 
@@ -418,6 +420,7 @@ class LookingForGameAction(BaseAction):
             return
 
         assert self.interaction.guild_id
+        preferred_locale = self.guild.preferred_locale if self.guild else None
         _, game_data = await services.games.upsert(
             guild_xid=self.interaction.guild_id,
             channel_xid=self.channel.id,
@@ -430,6 +433,7 @@ class LookingForGameAction(BaseAction):
             service=game_service.value,
             create_new=True,
             blind=bool(self.channel_data.blind_games),
+            locale=preferred_locale.language_code if preferred_locale else "en",
         )
         game_data, suggested_vc = await self.make_game_ready(game_data, player_xids)
         game_data = await self.handle_voice_creation(game_data, self.interaction.guild_id)

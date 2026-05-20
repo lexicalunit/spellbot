@@ -250,6 +250,7 @@ def create_mock_game(
         players=[],
         posts=[],
         player_pins={},
+        locale=kwargs.get("locale", "en"),
     )
 
 
