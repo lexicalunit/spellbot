@@ -142,7 +142,6 @@ class LookingForGameAction(BaseAction):
 
         if not origin:
             assert self.interaction.guild_id is not None
-            preferred_locale = self.guild.preferred_locale
             new, game = await services.games.upsert(
                 guild_xid=self.interaction.guild_id,
                 channel_xid=self.channel.id,
@@ -154,7 +153,7 @@ class LookingForGameAction(BaseAction):
                 bracket=bracket,
                 service=service,
                 blind=bool(self.channel_data.blind_games),
-                locale=preferred_locale.language_code if preferred_locale else "en",
+                locale=guild_locale(self.guild),
             )
             return new, game
 
@@ -383,7 +382,7 @@ class LookingForGameAction(BaseAction):
                 await safe_update_embed(
                     message,
                     embed=embed,
-                    view=GameView(bot=self.bot),
+                    view=GameView(bot=self.bot, locale=data.locale),
                 )
 
     @tracer.wrap()
@@ -604,7 +603,7 @@ class LookingForGameAction(BaseAction):
         )
         content = self.channel_data.extra
 
-        view = None if fully_seated else GameView(bot=self.bot)
+        view = None if fully_seated else GameView(bot=self.bot, locale=game_data.locale)
         if new:  # create the initial game post:
             return await self.create_initial_post(game_data, embed, view, content)
 

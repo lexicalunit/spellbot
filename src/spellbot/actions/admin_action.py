@@ -242,8 +242,9 @@ class AdminAction(BaseAction):
         return None
 
     async def setup(self) -> None:
+        locale = guild_locale(self.guild)
         embed = await self.build_setup_embed()
-        view = SetupView(self.bot)
+        view = SetupView(self.bot, locale=locale)
         await safe_send_channel(self.interaction, embed=embed, view=view)
 
     async def setup_mythic_track(self) -> None:
@@ -387,29 +388,33 @@ class AdminAction(BaseAction):
         )
 
     async def refresh_setup(self) -> None:
+        locale = guild_locale(self.guild)
         embed = await self.build_setup_embed()
-        view = SetupView(self.bot)
+        view = SetupView(self.bot, locale=locale)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_show_links(self) -> None:
         assert self.guild_data is not None
+        locale = guild_locale(self.guild)
         self.guild_data = await services.guilds.toggle_show_links(self.guild_data)
         embed = await self.build_setup_embed()
-        view = SetupView(self.bot)
+        view = SetupView(self.bot, locale=locale)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_voice_create(self) -> None:
         assert self.guild_data is not None
+        locale = guild_locale(self.guild)
         self.guild_data = await services.guilds.toggle_voice_create(self.guild_data)
         embed = await self.build_setup_embed()
-        view = SetupView(self.bot)
+        view = SetupView(self.bot, locale=locale)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def toggle_use_max_bitrate(self) -> None:
         assert self.guild_data is not None
+        locale = guild_locale(self.guild)
         self.guild_data = await services.guilds.toggle_use_max_bitrate(self.guild_data)
         embed = await self.build_setup_embed()
-        view = SetupView(self.bot)
+        view = SetupView(self.bot, locale=locale)
         await safe_update_embed_origin(self.interaction, embed=embed, view=view)
 
     async def set_default_seats(self, seats: int) -> None:
