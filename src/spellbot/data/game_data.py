@@ -45,6 +45,7 @@ class GameData:
     players: list[UserData] = field(default_factory=list)
     posts: list[PostData] = field(default_factory=list)
     player_pins: dict[int, str | None] = field(default_factory=dict)
+    locale: str = "en"
 
     @property
     def placeholders(self) -> dict[str, str]:

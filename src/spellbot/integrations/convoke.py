@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+SUPPORTED_LOCALES = ["de", "en", "es", "fr", "it", "ja", "pt"]
 RETRY_ATTEMPTS = 3
 TIMEOUT_S = 1
 
@@ -64,8 +65,12 @@ async def fetch_convoke_link(
     sb_game_format = GameFormat(game_data.format)
     format = convoke_game_format(sb_game_format).value
     players = await services.games.player_convoke_data(game_data.id)
+    game_language = "en"
+    for supported_locale in SUPPORTED_LOCALES:
+        if game_data.locale.startswith(supported_locale):
+            game_language = supported_locale
+            break
     payload = {
-        "apiKey": settings.CONVOKE_API_KEY,
         "isPublic": False,
         "name": name,
         "spellbotGameId": str(game_data.id),
@@ -74,6 +79,7 @@ async def fetch_convoke_link(
         "discordGuild": str(game_data.guild_xid),
         "discordChannel": str(game_data.channel_xid),
         "discordPlayers": [{"id": str(p["xid"]), "name": p["name"]} for p in players],
+        "language": game_language,
     }
     if pins:
         payload["spellbotGamePins"] = pins
@@ -81,7 +87,10 @@ async def fetch_convoke_link(
         payload["bracketLevel"] = f"B{game_data.bracket - 1}"
     if game_data.format == GameFormat.PRE_CONS.value:
         payload["bracketLevel"] = "PRECON"  # Convoke uses Bracket to indicate "pre-cons"
-    headers = {"user-agent": f"spellbot/{__version__}"}
+    headers = {
+        "user-agent": f"spellbot/{__version__}",
+        "x-api-key": settings.CONVOKE_API_KEY,
+    }
     endpoint = f"{settings.CONVOKE_ROOT}/game/create-game"
     resp = await client.post(endpoint, json=payload, headers=headers)
     resp.raise_for_status()

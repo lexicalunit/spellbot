@@ -59,6 +59,7 @@ class TestModelGame:
             "blind": game.blind,
             "players": [asdict(player.to_data()) for player in await game.players()],
             "player_pins": await game.player_pins(),
+            "locale": game.locale,
         }
 
     async def test_game_player_count(self, factories: Factories) -> None:

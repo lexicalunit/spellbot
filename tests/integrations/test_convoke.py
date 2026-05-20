@@ -189,6 +189,73 @@ class TestFetchConvokeLink:
 
         assert result == {"url": "https://convoke.gg/game/789"}
 
+    @pytest.mark.asyncio
+    async def test_fetch_convoke_link_with_supported_locale(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"url": "https://convoke.gg/game/123"}
+        mock_client.post = AsyncMock(return_value=mock_response)
+
+        game = create_mock_game(
+            game_id=42,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
+            locale="ja",
+        )
+
+        with (
+            patch.object(
+                convoke_module.services.games,
+                "player_convoke_data",
+                AsyncMock(return_value=[]),
+            ),
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
+            patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
+        ):
+            result = await fetch_convoke_link(mock_client, game, pins=None)
+
+        assert result == {"url": "https://convoke.gg/game/123"}
+        payload = mock_client.post.call_args.kwargs["json"]
+        assert payload["language"] == "ja"
+
+    @pytest.mark.asyncio
+    async def test_fetch_convoke_link_with_unsupported_locale(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"url": "https://convoke.gg/game/123"}
+        mock_client.post = AsyncMock(return_value=mock_response)
+
+        game = create_mock_game(
+            game_id=42,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
+            locale="ko",  # Korean - not in SUPPORTED_LOCALES
+        )
+
+        with (
+            patch.object(
+                convoke_module.services.games,
+                "player_convoke_data",
+                AsyncMock(return_value=[]),
+            ),
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
+            patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
+        ):
+            result = await fetch_convoke_link(mock_client, game, pins=None)
+
+        assert result == {"url": "https://convoke.gg/game/123"}
+        payload = mock_client.post.call_args.kwargs["json"]
+        # Falls back to "en" for unsupported locales
+        assert payload["language"] == "en"
+
 
 class TestGenerateLink:
     @pytest.mark.asyncio
