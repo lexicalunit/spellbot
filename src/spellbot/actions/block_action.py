@@ -6,6 +6,7 @@ from enum import Enum
 import discord
 
 from spellbot import services
+from spellbot.i18n import guild_locale, t
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
@@ -27,6 +28,7 @@ class BlockAction(BaseAction):
         action: ActionType,
     ) -> None:
         await services.users.upsert(target)
+        locale = guild_locale(self.guild)
 
         assert hasattr(target, "id")
         target_xid = target.id
@@ -34,20 +36,18 @@ class BlockAction(BaseAction):
         if self.interaction.user.id == target_xid:
             await safe_send_channel(
                 self.interaction,
-                "You can not block yourself.",
+                t("block.self_block", locale=locale),
                 ephemeral=True,
             )
             return
 
         if action is ActionType.BLOCK:
             await services.users.block(self.interaction.user.id, target_xid)
+            msg = t("block.blocked", locale=locale, user_id=target_xid)
         else:
             await services.users.unblock(self.interaction.user.id, target_xid)
-        await safe_send_channel(
-            self.interaction,
-            f"<@{target_xid}> has been {action.value}.",
-            ephemeral=True,
-        )
+            msg = t("block.unblocked", locale=locale, user_id=target_xid)
+        await safe_send_channel(self.interaction, msg, ephemeral=True)
 
     async def block(self, target: discord.User | discord.Member) -> None:
         await self.execute(target, ActionType.BLOCK)
@@ -56,8 +56,9 @@ class BlockAction(BaseAction):
         await self.execute(target, ActionType.UNBLOCK)
 
     async def blocked(self, page: int) -> None:
+        locale = guild_locale(self.guild)
         blocklist = await services.users.blocklist(self.interaction.user.id)
-        embed = discord.Embed(title="Blocked Users")
+        embed = discord.Embed(title=t("block.list_title", locale=locale))
         embed.set_thumbnail(url=settings.ICO_URL)
         pages = []
         cur_page = ""
@@ -73,7 +74,9 @@ class BlockAction(BaseAction):
         if pages:
             index = min(page - 1, len(pages) - 1)
             embed.description = pages[index]
-            embed.set_footer(text=f"Page {page} of {len(pages)}")
+            embed.set_footer(
+                text=t("block.list_page", locale=locale, current=page, total=len(pages)),
+            )
         else:
-            embed.description = "You have no blocked users."
+            embed.description = t("block.list_empty", locale=locale)
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)

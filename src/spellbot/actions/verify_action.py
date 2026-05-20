@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from spellbot import services
+from spellbot.i18n import guild_locale, t
 from spellbot.operations import safe_send_channel
 
 from .base_action import BaseAction
@@ -18,12 +19,14 @@ class VerifyAction(BaseAction):
     async def execute(self, target: discord.User | discord.Member, setting: bool) -> None:
         assert hasattr(target, "id")
         target_xid = target.id
+        locale = guild_locale(self.guild)
 
         assert self.interaction.guild_id is not None
         await services.verifies.upsert(self.interaction.guild_id, target_xid, setting)
+        key = "verify.verified" if setting else "verify.unverified"
         await safe_send_channel(
             self.interaction,
-            f"{'Verified' if setting else 'Unverified'} <@{target_xid}>.",
+            t(key, locale=locale, user_id=target_xid),
             ephemeral=True,
         )
 
