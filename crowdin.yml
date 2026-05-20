@@ -1,3 +1,3 @@
 files:
   - source: /src/spellbot/translations
-    translation: '%two_letters_code%.yaml'
+    translation: "%two_letters_code%.yaml"
