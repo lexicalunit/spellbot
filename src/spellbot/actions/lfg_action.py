@@ -715,18 +715,14 @@ class LookingForGameAction(BaseAction):
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
     ) -> None:
-        locale = game_data.locale
+        guild_locale_fallback = game_data.locale
         player_pins = game_data.player_pins
         player_names = {player.xid: player.name for player in game_data.players}
         player_xids = list(player_pins.keys())
-        base_embed = game_data.to_embed(
-            guild=self.guild,
-            dm=True,
-            suggested_vc=suggested_vc,
-            rematch=rematch,
-            emojis=self.bot.emojis_cache,
-            supporters=self.bot.supporters,
-        )
+
+        # Fetch stored user locales from the database
+        player_data_list = await services.users.get_players_by_xid(player_xids)
+        player_locales = {pd.xid: pd.locale or guild_locale_fallback for pd in player_data_list}
 
         # notify players
         fetched_players: dict[int, discord.User] = {}
@@ -761,7 +757,27 @@ class LookingForGameAction(BaseAction):
             )
 
         async def notify_player(player_xid: int) -> None:
-            embed = base_embed.copy()
+            player = await safe_fetch_user(self.bot, player_xid)
+            if not player:
+                failed_xids.append(player_xid)
+                return
+
+            fetched_players[player_xid] = player
+
+            # Use the stored locale from database, falling back to guild locale
+            player_locale = player_locales.get(player_xid, guild_locale_fallback)
+
+            # Generate a personalized embed for this player with their locale
+            embed = game_data.to_embed(
+                guild=self.guild,
+                dm=True,
+                suggested_vc=suggested_vc,
+                rematch=rematch,
+                emojis=self.bot.emojis_cache,
+                supporters=self.bot.supporters,
+                locale_override=player_locale,
+            )
+
             if pin := player_pins[player_xid]:
                 mt_emoji = ""
                 emojis = self.bot.emojis_cache
@@ -769,16 +785,13 @@ class LookingForGameAction(BaseAction):
                     mt_emoji = f"{emoji} "
                 embed.description = f"{embed.description}\n\n" + t(
                     "lfg.mythic_track",
-                    locale=locale,
+                    locale=player_locale,
                     emoji=mt_emoji,
                     link=mythic_track_link(player_xid),
                     pin=pin,
                 )
-            if player := await safe_fetch_user(self.bot, player_xid):
-                fetched_players[player_xid] = player
-                await safe_send_user(player, embed=embed)
-            else:
-                failed_xids.append(player_xid)
+
+            await safe_send_user(player, embed=embed)
 
         notify_player_tasks = [notify_player(player_xid) for player_xid in player_xids]
         await asyncio.gather(*notify_player_tasks)
@@ -797,7 +810,7 @@ class LookingForGameAction(BaseAction):
                     direction = "from" if new_award.remove else "to"
                     warning = t(
                         "lfg.award_failure",
-                        locale=locale,
+                        locale=guild_locale_fallback,
                         action=action,
                         role=new_award.role,
                         direction=direction,
@@ -817,7 +830,7 @@ class LookingForGameAction(BaseAction):
         # notify issues with player permissions
         if failed_xids:
             failures = ", ".join(f"<@!{xid}>" for xid in failed_xids)
-            warning = t("lfg.dm_failures", locale=locale, players=failures)
+            warning = t("lfg.dm_failures", locale=guild_locale_fallback, players=failures)
             await safe_followup_channel(self.interaction, warning)
 
         await self.handle_watched_players(game_data, player_xids)
