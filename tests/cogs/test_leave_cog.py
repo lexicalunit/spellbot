@@ -330,7 +330,7 @@ class TestCogLeaveGame:
             leave_action.safe_original_response.return_value = message
             view = GameView(bot)
 
-            await view.leave.callback(interaction)
+            await view.leave(interaction)
 
             leave_action.safe_update_embed_origin.assert_called_once()
             safe_update_embed_origin_call = leave_action.safe_update_embed_origin.call_args_list[0]
@@ -363,7 +363,7 @@ class TestCogLeaveGame:
             leave_action.safe_original_response.return_value = message
             view = GameView(bot)
 
-            await view.leave.callback(interaction)
+            await view.leave(interaction)
 
             leave_action.safe_update_embed_origin.assert_not_called()
             leave_action.safe_delete_message.assert_called_once_with(interaction.message)
@@ -389,7 +389,7 @@ class TestCogLeaveGame:
             leave_action.safe_original_response.return_value = message
             view = GameView(bot)
 
-            await view.leave.callback(interaction)
+            await view.leave(interaction)
 
             leave_action.safe_update_embed_origin.assert_called_once_with(
                 interaction,
@@ -426,7 +426,7 @@ class TestCogLeaveGame:
             leave_action.safe_original_response.return_value = message
             view = GameView(bot)
 
-            await view.leave.callback(interaction)
+            await view.leave(interaction)
 
             leave_action.safe_update_embed_origin.assert_not_called()
 
@@ -445,7 +445,7 @@ class TestCogLeaveGame:
             leave_action.safe_get_partial_message.return_value = message
             view = GameView(bot)
 
-            await view.leave.callback(interaction)
+            await view.leave(interaction)
 
             leave_action.safe_update_embed_origin.assert_not_called()
             leave_action.safe_delete_message.assert_called_once_with(message)
@@ -471,7 +471,7 @@ class TestCogLeaveGame:
             leave_action.safe_get_partial_message.return_value = message
             view = GameView(bot)
 
-            await view.leave.callback(interaction)
+            await view.leave(interaction)
 
             leave_action.safe_update_embed_origin.assert_not_called()
             leave_action.safe_update_embed.assert_called_once()
@@ -492,7 +492,7 @@ class TestCogLeaveGame:
             leave_action.safe_get_partial_message.return_value = message
             view = GameView(bot)
 
-            await view.leave.callback(interaction)
+            await view.leave(interaction)
 
             leave_action.safe_update_embed_origin.assert_not_called()
             leave_action.safe_update_embed.assert_not_called()
@@ -512,7 +512,7 @@ class TestCogLeaveGame:
             leave_action.safe_get_partial_message.return_value = None
             view = GameView(bot)
 
-            await view.leave.callback(interaction)
+            await view.leave(interaction)
 
             leave_action.safe_update_embed_origin.assert_not_called()
             leave_action.safe_update_embed.assert_not_called()
@@ -534,7 +534,7 @@ class TestCogLeaveGame:
         with mock_operations(leave_action):
             view = GameView(bot)
 
-            await view.leave.callback(interaction)
+            await view.leave(interaction)
 
             leave_action.safe_update_embed_origin.assert_not_called()
             leave_action.safe_delete_message.assert_not_called()

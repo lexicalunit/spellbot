@@ -177,7 +177,7 @@ class LeaveAction(BaseAction):
                             await safe_update_embed(
                                 message,
                                 embed=embed,
-                                view=GameView(bot=self.bot),
+                                view=GameView(bot=self.bot, locale=game_data.locale),
                             )
 
             if do_delete_game:
