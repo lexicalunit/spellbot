@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 async def upsert(
     target: discord.User | discord.Member,
     guild_xid: int | None = None,
+    locale: str | None = None,
 ) -> UserData:
     """Update or insert the user into the database."""
     assert hasattr(target, "id")
@@ -44,17 +45,28 @@ async def upsert(
     max_name_len = User.name.property.columns[0].type.length
     raw_name = getattr(target, "display_name", "")
     name = raw_name[:max_name_len]
-    values = {"xid": xid, "name": name, "updated_at": datetime.now(tz=UTC)}
-    upsert = insert(User).values(**values)
-    upsert = upsert.on_conflict_do_update(
+    values = {
+        "xid": xid,
+        "name": name,
+        "updated_at": datetime.now(tz=UTC),
+    }
+    if locale:
+        values["locale"] = locale
+
+    upsert_stmt = insert(User).values(**values)
+    set_updates = {
+        "name": upsert_stmt.excluded.name,
+        "updated_at": upsert_stmt.excluded.updated_at,
+    }
+    if locale:
+        set_updates["locale"] = upsert_stmt.excluded.locale
+
+    upsert_stmt = upsert_stmt.on_conflict_do_update(
         index_elements=[User.xid],
         index_where=User.xid == values["xid"],
-        set_={
-            "name": upsert.excluded.name,
-            "updated_at": upsert.excluded.updated_at,
-        },
+        set_=set_updates,
     )
-    await DatabaseSession.execute(upsert, values)
+    await DatabaseSession.execute(upsert_stmt, values)
 
     # Upsert GuildMember record if guild_xid is provided
     if guild_xid is not None:

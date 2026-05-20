@@ -92,9 +92,8 @@ class GameData:
     def format_name(self) -> str:
         return str(GameFormat(self.format))
 
-    @property
-    def embed_title(self) -> str:
-        locale = self.locale
+    def embed_title(self, locale: str | None = None) -> str:
+        locale = locale or self.locale
         if self.status == GameStatus.STARTED.value:
             return t("game.title.ready", locale=locale)
         remaining = int(cast("int", self.seats)) - len(self.players)
@@ -132,12 +131,15 @@ class GameData:
     def embed_description(
         self,
         *,
-        guild: discord.Guild | None,
+        guild: discord.Guild | None = None,
         dm: bool = False,
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
         emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
+        locale: str | None = None,
     ) -> str:
+        del guild  # unused, kept for API compatibility
+        locale = locale or self.locale
         if span := tracer.current_span():  # pragma: no cover
             span.set_tags(
                 {
@@ -152,8 +154,10 @@ class GameData:
         parts: list[str] = []
         if self.guild.notice:
             parts.append(f"{self.guild.notice}")
-        parts.append(self.embed_description_link_info(effective_service, dm, rematch, emojis))
-        parts.extend(self.embed_description_extras(dm, suggested_vc))
+        parts.append(
+            self.embed_description_link_info(effective_service, dm, rematch, emojis, locale),
+        )
+        parts.extend(self.embed_description_extras(dm, suggested_vc, locale))
         parts.extend(self.embed_motd())
         return "\n\n".join(parts)
 
@@ -167,10 +171,11 @@ class GameData:
         rematch: bool = False,
         emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
         supporters: set[int] | None = None,
+        locale_override: str | None = None,
     ) -> discord.Embed:
-        locale = self.locale
+        locale = locale_override or self.locale
         emojis = emojis or []
-        title = t("game.title.rematch", locale=locale) if rematch else self.embed_title
+        title = t("game.title.rematch", locale=locale) if rematch else self.embed_title(locale)
         embed = discord.Embed(title=title)
         embed.set_thumbnail(url=settings.thumb(self.guild_xid))
         embed.description = self.embed_description(
@@ -179,6 +184,7 @@ class GameData:
             suggested_vc=suggested_vc,
             rematch=rematch,
             emojis=emojis,
+            locale=locale,
         )
         if self.rules:
             embed.add_field(
@@ -238,7 +244,7 @@ class GameData:
             ),
             inline=False,
         )
-        embed.set_footer(text=self.embed_footer)
+        embed.set_footer(text=self.embed_footer(locale))
         return embed
 
     def show_links(self, dm: bool = False) -> bool:
@@ -259,8 +265,9 @@ class GameData:
         dm: bool,
         rematch: bool,
         emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
+        locale: str | None = None,
     ) -> str:
-        locale = self.locale
+        locale = locale or self.locale
         if self.status != GameStatus.STARTED.value:
             return effective_service.get_pending_msg(locale, emojis)
         if not self.show_links(dm):
@@ -293,8 +300,9 @@ class GameData:
         self,
         dm: bool,
         suggested_vc: VoiceChannelSuggestion | None,
+        locale: str | None = None,
     ) -> list[str]:
-        locale = self.locale
+        locale = locale or self.locale
         if self.status != GameStatus.STARTED.value:
             return []
         parts: list[str] = []
@@ -375,11 +383,11 @@ class GameData:
         ]
         return "\n".join(player_strs)
 
-    @property
-    def embed_footer(self) -> str:
+    def embed_footer(self, locale: str | None = None) -> str:
+        locale = locale or self.locale
         return t(
             "game.footer",
-            locale=self.locale,
+            locale=locale,
             game_id=self.id,
             service=str(GameService(self.service)),
         )

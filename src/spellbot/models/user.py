@@ -61,6 +61,13 @@ class User(Base):
         default=None,
         doc="The Playgroup Live user ID linked to this Discord user",
     )
+    locale = Column(
+        String(10),
+        nullable=False,
+        default="en",
+        server_default="en",
+        doc="The user's preferred locale from Discord interactions",
+    )
 
     queues = relationship(
         "Queue",
@@ -130,4 +137,5 @@ class User(Base):
             name=self.name,  # type: ignore
             banned=self.banned,  # type: ignore
             playgroup_user_id=self.playgroup_user_id,  # type: ignore
+            locale=self.locale,  # type: ignore
         )
