@@ -138,7 +138,7 @@ Thoughts and suggestions? Come join us on the [SpellBot Discord server][discord-
 
 ## 🙌 Supported By
 
-The continued operation of SpellBot is supported by <a href="https://www.playedh.com/">PlayEDH</a> as well as generous donations from [my patrons on Patreon][patreon] and [Ko-fi][kofi]. If you would like to help support SpellBot, please consider [signing up][patreon] for as little a _one dollar a month_ or [giving me a one-off tip][kofi] for whatever you feel is appropriate.
+The continued operation of SpellBot is supported by <a href="https://www.playedh.com/">PlayEDH</a> as well as generous donations from [my patrons on Patreon][patreon] and [Ko-fi][kofi]. If you would like to help support SpellBot, please consider [signing up][patreon] for as little as _one dollar a month_ or [giving me a one-off tip][kofi] for whatever you feel is appropriate.
 
 ## ❤️ Contributing
 
