@@ -1,0 +1,66 @@
+name: terraform
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "infrastructure/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "infrastructure/**"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  TF_VERSION: "1.12"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+    strategy:
+      matrix:
+        directory:
+          - infrastructure/app
+          - infrastructure/db
+          - infrastructure/o11y
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881571f087b235e37b180 # v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6 # v4
+        with:
+          tflint_version: latest
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: infrastructure
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: ${{ matrix.directory }}
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ${{ matrix.directory }}
+
+      - name: TFLint Init
+        run: tflint --init
+        working-directory: ${{ matrix.directory }}
+
+      - name: TFLint
+        run: tflint --format=compact
+        working-directory: ${{ matrix.directory }}
