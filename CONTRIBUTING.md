@@ -25,7 +25,7 @@ SpellBot requires a database to run properly. The connection string for the data
 You can start a local database via Docker by running:
 
 ```shell
-docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:15
+docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17
 ```
 
 Using this locally will allow you to use the default value for `DATABASE_URL` without having to manually set it to anything.
@@ -56,7 +56,7 @@ This will start SpellBot and reload it whenever the source code changes.
 
 ```shell
 uv run pytest --cov --cov-report=html
-open coverage/index.html
+open htmlcov/index.html
 ```
 
 ## Formatting and linting
@@ -75,12 +75,12 @@ An interactive shell using [IPython](https://ipython.readthedocs.io/en/stable/) 
 uv run python shell.py
 ```
 
-From this shell you will be able to interact with the database using SpellBot models and code. For example:
+From this shell you will be able to interact with the database using SpellBot models and code. The shell runs in async mode, so use `await` with database operations. For example:
 
 ```shell
 $ uv run python shell.py
 
-In [1]: DatabaseSession.query(User).all()
+In [1]: (await DatabaseSession.execute(select(User))).scalars().all()
 Out[1]: []
 ```
 
