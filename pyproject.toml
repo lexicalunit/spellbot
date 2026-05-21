@@ -12,7 +12,6 @@ dependencies = [
   "aiohttp-jinja2>=1.6",
   "aiohttp>=3.9.4",
   "alembic>=1.13.1",
-  "asgiref>=3.8.1",
   "attrs>=23.2.0",
   "babel>=2.14.0",
   "cachetools>=5.5.0",
