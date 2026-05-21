@@ -22,14 +22,14 @@ Your use of the SpellBot service is governed by this agreement (the "Terms"). Th
 
 In order to use the Service, You (the "Customer", "You", or "Your") must first agree to the Terms. You understand and agree that SpellBot will treat Your use of the Service as acceptance of the Terms from that point onwards.
 
-SpellBot may make changes to the Terms from time to time. You may reject the changes by ceasing to use Spellbot. You understand and agree that if You use the Service after the date on which the Terms have changed, SpellBot will treat Your use as acceptance of the updated Terms.
+SpellBot may make changes to the Terms from time to time. You may reject the changes by ceasing to use SpellBot. You understand and agree that if You use the Service after the date on which the Terms have changed, SpellBot will treat Your use as acceptance of the updated Terms.
 
 If you have any question about the Terms, please contact us at spellbot@lexicalunit.com.
 
 ## Your Account
 
 - You may not use the Service if You are a person barred from receiving the Service under the laws of the United States or other countries, including the country in which You are resident or from which You use the Service.
-- You must be a human. Account created by automated methods are not permitted.
+- You must be a human. Accounts created by automated methods are not permitted.
 
 ## Use of the Service
 

@@ -2,7 +2,7 @@
 
 This bot is a Python based [Discord bot][discord-dev] built on top of the [`discord.py`](https://github.com/Rapptz/discord.py) library.
 
-It uses [`uv`](usage) to manage dependencies. To install development dependencies use: `uv sync`. This will allow you to run [PyTest](https://docs.pytest.org/en/latest/) and the included scripts.
+It uses [`uv`](https://docs.astral.sh/uv/) to manage dependencies. To install development dependencies use: `uv sync`. This will allow you to run [PyTest](https://docs.pytest.org/en/latest/) and the included scripts.
 
 You can install `uv` with the script [`brew`](https://brew.sh/):
 
@@ -69,7 +69,7 @@ uv run pytest -k codebase
 
 ## Interactive Shell
 
-An interactive shell using [IPyhton](https://ipython.readthedocs.io/en/stable/) can be started by running:
+An interactive shell using [IPython](https://ipython.readthedocs.io/en/stable/) can be started by running:
 
 ```shell
 uv run python shell.py
@@ -119,7 +119,7 @@ To release a new version of `spellbot`, use `uv`:
 ```shell
 uv version --bump [major|minor|patch]
 uv run pytest # verify that all tests pass
-# edit the CHANGELOG.md file to promote all unlreased changes to the new version
+# edit the CHANGELOG.md file to promote all unreleased changes to the new version
 uv build
 git commit -am "Release vM.N.P"
 uv publish # you will be prompted for your PyPI login credentials here
