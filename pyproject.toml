@@ -6,7 +6,7 @@ classifiers = [
   "Topic :: Communications :: Chat",
   "Topic :: Games/Entertainment :: Board Games",
   "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
   "aiohttp-jinja2>=1.6",
@@ -48,7 +48,7 @@ keywords = ["discord", "magic", "bot", "mtg", "webcam"]
 license = {text = "MIT"}
 name = "spellbot"
 readme = "README.md"
-requires-python = "<4,>=3.13"
+requires-python = "<4,>=3.14"
 version = "18.10.0"
 
 [project.urls]
@@ -145,7 +145,7 @@ exclude = [
   "venv",
 ]
 line-length = 100
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 extend-select = ["ALL"]
@@ -160,6 +160,7 @@ ignore = [
   "ARG003",
   "ARG005",
   "BLE001",
+  "COM812",
   "D100",
   "D101",
   "D102",

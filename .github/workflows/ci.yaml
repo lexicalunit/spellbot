@@ -62,7 +62,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: ["3.13"]
+        python-version: ["3.14"]
         postgres-version: ["17"]
         database-url:
           ["postgresql+psycopg://postgres:postgres@localhost:5432/postgres"]
@@ -163,20 +163,6 @@ jobs:
           tags: spellbot:test
           cache-from: type=gha,scope=docker-build
           cache-to: type=gha,mode=max,scope=docker-build
-
-      - name: Debug container environment
-        if: failure() || success()
-        run: |
-          echo "=== Which python ==="
-          docker run --rm spellbot:test which python
-          echo "=== Entry point shebang ==="
-          docker run --rm spellbot:test head -3 /spellbot/.venv/bin/spellbot
-          echo "=== Site packages ==="
-          docker run --rm spellbot:test ls /spellbot/.venv/lib/python3.13/site-packages/ | head -20
-          echo "=== Check for spellbot package ==="
-          docker run --rm spellbot:test ls -la /spellbot/.venv/lib/python3.13/site-packages/ | grep -i spell || echo "No spellbot found"
-          echo "=== Venv python import test ==="
-          docker run --rm spellbot:test /spellbot/.venv/bin/python -c "import spellbot; print('OK')" || echo "Failed with venv python"
 
       - name: Verify CLI runs
         run: |

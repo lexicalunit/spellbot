@@ -271,7 +271,7 @@ async def resolve_user_xid(value: Any) -> int | None:
     # Try to parse as int first
     try:
         return int(value)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         pass
     # If it's a string, try to look up by name
     if isinstance(value, str):

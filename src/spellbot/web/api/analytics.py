@@ -35,7 +35,7 @@ async def validate_analytics_request(
     """
     try:
         guild_xid = int(request.match_info["guild"])
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         return None, web.Response(status=404)
 
     if not settings.CHECK_SIGNATURE:
@@ -44,7 +44,7 @@ async def validate_analytics_request(
     try:
         expires = int(request.query["expires"])
         sig = request.query["sig"]
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         return None, web.Response(status=403, text="Missing or invalid signature parameters.")
 
     if not validate_signature(guild_xid, expires, sig):
@@ -86,13 +86,13 @@ async def analytics_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
     try:
         guild_xid = int(request.match_info["guild"])
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         return web.Response(status=404)
 
     try:
         expires = int(request.query["expires"])
         sig = request.query["sig"]
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         return web.Response(status=403, text="Missing or invalid signature parameters.")
 
     if not validate_signature(guild_xid, expires, sig):
