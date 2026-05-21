@@ -44,6 +44,20 @@ def humanize(ts: int, offset: int, zone: str) -> str:
 
 
 @web.middleware
+async def security_headers_middleware(
+    request: web.Request,
+    handler: Handler,
+) -> web.StreamResponse:
+    """Add security headers to all responses."""
+    response = await handler(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
+
+@web.middleware
 async def auth_middleware(request: web.Request, handler: Handler) -> web.StreamResponse:
     # only rest endpoints require authorization
     if not request.path.startswith("/api"):
@@ -78,7 +92,7 @@ async def serve_analytics_js(_: web.Request) -> web.FileResponse:
 
 def build_web_app() -> web.Application:
     import_models()
-    app = web.Application(middlewares=[auth_middleware])
+    app = web.Application(middlewares=[security_headers_middleware, auth_middleware])
     aiohttp_jinja2.setup(
         app,
         loader=jinja2.FileSystemLoader(TEMPLATES_ROOT),

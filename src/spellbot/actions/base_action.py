@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 async def handle_exception(ex: Exception) -> NoReturn:
-    if isinstance(ex, SpellBotError):  # pragma: no cover
+    if isinstance(ex, SpellBotError):
         raise ex
     logger.exception(
         "error: rolling back database session due to unhandled exception: %s: %s",

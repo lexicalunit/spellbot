@@ -199,7 +199,7 @@ def bot_can_send_messages(channel: MessageableChannel) -> bool:
 
 
 def is_admin(interaction: discord.Interaction) -> bool:
-    if interaction.user.id == settings.OWNER_XID:  # pragma: no cover
+    if interaction.user.id == settings.OWNER_XID:
         return True
     guild = getattr(interaction, "guild", None)
     channel = getattr(interaction, "channel", None)
@@ -229,7 +229,7 @@ def is_guild(interaction: discord.Interaction) -> bool:
 
 
 def is_mod(interaction: discord.Interaction) -> bool:
-    if interaction.user.id == settings.OWNER_XID:  # pragma: no cover
+    if interaction.user.id == settings.OWNER_XID:
         return True
     guild = getattr(interaction, "guild", None)
     channel = getattr(interaction, "channel", None)
