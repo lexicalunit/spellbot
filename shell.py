@@ -58,4 +58,11 @@ async def runner() -> None:
         )
 
 
-asyncio.run(runner())
+try:
+    asyncio.run(runner())
+except RuntimeError as exc:
+    # On Python 3.14, asyncio.run()'s shutdown calls shutdown_default_executor
+    # with a timeout, which requires a current task; nest_asyncio's patched
+    # task tracking doesn't satisfy this on loop teardown.
+    if "Timeout should be used inside a task" not in str(exc):
+        raise
