@@ -404,7 +404,7 @@ async def get_available_lobby(
         try:
             curr = int(info.get("current_player_count", 0))
             maxp = int(info.get("max_players", 0))
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             continue
         if curr < maxp and settings.GIRUDO_BASE_URL:
             base_url = settings.GIRUDO_BASE_URL.replace("api.", "game.")
