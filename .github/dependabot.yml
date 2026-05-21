@@ -54,3 +54,75 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+
+  - package-ecosystem: "bundler"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 14
+    labels:
+      - "dependencies"
+      - "docs"
+    commit-message:
+      prefix: "deps-docs"
+      include: "scope"
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/app"
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 30
+    labels:
+      - "dependencies"
+      - "infrastructure"
+    commit-message:
+      prefix: "infra"
+      include: "scope"
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/db"
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 30
+    labels:
+      - "dependencies"
+      - "infrastructure"
+    commit-message:
+      prefix: "infra"
+      include: "scope"
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/o11y"
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 30
+    labels:
+      - "dependencies"
+      - "infrastructure"
+    commit-message:
+      prefix: "infra"
+      include: "scope"
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
