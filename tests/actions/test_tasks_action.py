@@ -12,8 +12,10 @@ from sqlalchemy import update
 
 from spellbot import services
 from spellbot.actions import TasksAction
+from spellbot.actions.base_action import handle_exception
 from spellbot.client import build_bot
 from spellbot.database import DatabaseSession
+from spellbot.errors import SpellBotError
 from spellbot.models import Channel, Game, Guild
 from tests.mocks import create_mock_channel, mock_discord_object
 
@@ -645,3 +647,31 @@ class TestPatreonSync:
 
         mock_supporters.assert_called_once()
         assert action.bot.supporters == {123, 456, 789}
+
+
+@pytest.mark.asyncio
+class TestHandleException:
+    async def test_reraises_spellbot_error(self) -> None:
+
+        class TestSpellBotError(SpellBotError):
+            pass
+
+        error = TestSpellBotError("test error")
+        with pytest.raises(TestSpellBotError):
+            await handle_exception(error)
+
+    async def test_rolls_back_and_reraises_other_exceptions(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+
+        mock_rollback = mocker.patch(
+            "spellbot.actions.base_action.DatabaseSession.rollback",
+            new_callable=AsyncMock,
+        )
+
+        error = RuntimeError("unexpected error")
+        with pytest.raises(RuntimeError):
+            await handle_exception(error)
+
+        mock_rollback.assert_called_once()

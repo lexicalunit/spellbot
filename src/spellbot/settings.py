@@ -7,6 +7,8 @@ from discord import Object
 from pydantic import computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from spellbot.branding import get_thumb_url
+
 from .environment import running_in_pytest
 
 if TYPE_CHECKING:
@@ -184,72 +186,9 @@ class Settings(BaseSettings):
             f"{self.CONTENT_ROOT}/spellbot/main/spellbot.png",
         )
 
-    def queer(self, guild_xid: int | None) -> bool:  # pragma: no cover
-        return (
-            guild_xid
-            in [
-                757455940009328670,  # Oath of the Gaywatch
-                699775410082414733,  # Development
-            ]
-            or datetime.now(tz=UTC).month == 6
-        )
-
-    @property
-    def QUEER_THUMB_URL(self) -> str:  # pragma: no cover
-        return self.workaround_over_eager_caching(
-            "https://spellbot.io/assets/img/logos/spellbot-lgbtq.png",
-        )
-
-    def black(self, guild_xid: int | None) -> bool:  # pragma: no cover
-        return datetime.now(tz=UTC).month == 2
-
-    @property
-    def BLACK_THUMB_URL(self) -> str:  # pragma: no cover
-        return self.workaround_over_eager_caching(
-            "https://spellbot.io/assets/img/logos/spellbot-black.png",
-        )
-
-    def trans(self, guild_xid: int | None) -> bool:  # pragma: no cover
-        now = datetime.now(tz=UTC)
-        return now.month == 11 or (now.month == 3 and now.day == 31)
-
-    @property
-    def TRANS_THUMB_URL(self) -> str:  # pragma: no cover
-        return self.workaround_over_eager_caching(
-            "https://spellbot.io/assets/img/logos/spellbot-trans.png",
-        )
-
-    def autistic(self, guild_xid: int | None) -> bool:  # pragma: no cover
-        now = datetime.now(tz=UTC)
-        return now.month == 4 and now.day == 2
-
-    @property
-    def AUTISTIC_THUMB_URL(self) -> str:  # pragma: no cover
-        return self.workaround_over_eager_caching(
-            "https://spellbot.io/assets/img/logos/spellbot-autistic.png",
-        )
-
-    def convoke(self, guild_xid: int | None) -> bool:  # pragma: no cover
-        return guild_xid == 1417960690110697504  # Convoke
-
-    @property
-    def CONVOKE_THUMB_URL(self) -> str:  # pragma: no cover
-        return self.workaround_over_eager_caching(
-            "https://spellbot.io/assets/img/servers/convoke.png",
-        )
-
-    def thumb(self, guild_xid: int | None) -> str:  # pragma: no cover
-        if self.convoke(guild_xid):
-            return settings.CONVOKE_THUMB_URL
-        if self.autistic(guild_xid):
-            return settings.AUTISTIC_THUMB_URL
-        if settings.trans(guild_xid):
-            return settings.TRANS_THUMB_URL
-        if settings.queer(guild_xid):
-            return settings.QUEER_THUMB_URL
-        if settings.black(guild_xid):
-            return settings.BLACK_THUMB_URL
-        return settings.THUMB_URL
+    def thumb(self, guild_xid: int | None) -> str:
+        """Get the thumbnail URL for a guild based on date and guild-specific branding."""
+        return self.workaround_over_eager_caching(get_thumb_url(guild_xid))
 
     @property
     def GUILD_OBJECT(self) -> Snowflake | None:

@@ -742,6 +742,58 @@ resource "datadog_dashboard" "spellbot_dashboard" {
           }
         }
       }
+
+      widget {
+        timeseries_definition {
+          title = "RDS Database Connections"
+          request {
+            query {
+              metric_query {
+                name  = "query1"
+                query = "avg:aws.rds.database_connections{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier}"
+              }
+            }
+            formula {
+              formula_expression = "query1"
+            }
+          }
+          marker {
+            display_type = "warning dashed"
+            value        = "y = 80"
+            label        = "Warning (80)"
+          }
+          marker {
+            display_type = "error dashed"
+            value        = "y = 100"
+            label        = "Critical (100)"
+          }
+        }
+      }
+
+      widget {
+        timeseries_definition {
+          title = "DB Connection Errors"
+          request {
+            formula {
+              formula_expression = "query1"
+            }
+            query {
+              event_query {
+                name        = "query1"
+                data_source = "spans"
+                search {
+                  query = "env:prod @db.system:postgresql status:error"
+                }
+                indexes = ["*"]
+                compute {
+                  aggregation = "count"
+                  interval    = 300000
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 
@@ -1123,4 +1175,69 @@ EOT
     recovery_window = "last_15m"
     trigger_window  = "last_30m"
   }
+}
+
+# SQLAlchemy Connection Pool Alerts
+resource "datadog_monitor" "sqlalchemy_pool_timeout" {
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 1
+  }
+  name    = "SpellBot: SQLAlchemy Connection Pool Timeouts"
+  type    = "log alert"
+  tags    = ["service:spellbot", "env:prod"]
+  query   = <<-EOT
+    logs("environment:prod (\"pool timeout\" OR \"QueuePool limit\" OR \"connection pool exhausted\")").index("*").rollup("count").last("5m") > 1
+  EOT
+  message = <<-EOT
+    {{#is_alert}}
+    SpellBot is experiencing database connection pool timeouts. This indicates the pool is exhausted.
+
+    Possible causes:
+    - Too many concurrent database operations
+    - Long-running queries holding connections
+    - Pool size too small for current load
+
+    Check current pool settings:
+    - DATABASE_POOL_SIZE: 20
+    - DATABASE_POOL_MAX_OVERFLOW: 40
+
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+resource "datadog_monitor" "postgres_connection_errors" {
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 5
+    warning  = 2
+  }
+  name    = "SpellBot: PostgreSQL Connection Errors"
+  type    = "trace-analytics alert"
+  tags    = ["service:spellbot", "env:prod"]
+  query   = <<-EOT
+    trace-analytics("env:prod @db.system:postgresql status:error").rollup("count").last("5m") > 5
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    SpellBot is experiencing occasional PostgreSQL connection errors.
+    Count: {{value}} errors in the last 5 minutes.
+
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    SpellBot is experiencing a HIGH number of PostgreSQL connection errors.
+    Count: {{value}} errors in the last 5 minutes.
+
+    This may indicate:
+    - Database connectivity issues
+    - Connection pool exhaustion
+    - Network problems between app and database
+
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
 }

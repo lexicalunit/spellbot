@@ -438,6 +438,16 @@ class TestUtilsIsAdmin:
         with pytest.raises(AdminOnlyError):
             is_admin(ctx)
 
+    def test_when_user_is_bot_owner(self, mocker: MockerFixture) -> None:
+        mock_settings = mocker.patch("spellbot.utils.settings")
+        mock_settings.OWNER_XID = 12345
+        user = MagicMock()
+        user.id = 12345
+        ctx = MagicMock(spec=discord.Interaction)
+        ctx.user = user
+        # No guild or channel needed - owner bypasses all checks
+        assert is_admin(ctx)
+
 
 class TestUtilsIsMod:
     def test_happy_path(self, mocker: MockerFixture) -> None:
@@ -460,6 +470,16 @@ class TestUtilsIsMod:
 
         with pytest.raises(ModOnlyError):
             is_mod(interaction)
+
+    def test_when_user_is_bot_owner(self, mocker: MockerFixture) -> None:
+        mock_settings = mocker.patch("spellbot.utils.settings")
+        mock_settings.OWNER_XID = 12345
+        user = MagicMock()
+        user.id = 12345
+        interaction = MagicMock(spec=discord.Interaction)
+        interaction.user = user
+        # No guild or channel needed - owner bypasses all checks
+        assert is_mod(interaction)
 
 
 class TestUtilsIsGuild:
