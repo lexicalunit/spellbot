@@ -9,7 +9,7 @@ RUN uv sync --no-cache --frozen --no-dev --no-install-project
 COPY src ./src
 RUN uv sync --no-cache --frozen --no-dev
 
-FROM python:3.14.5-alpine
+FROM ghcr.io/astral-sh/uv:python3.13-alpine
 
 ARG DD_VERSION=dev
 ENV DD_VERSION=$DD_VERSION
