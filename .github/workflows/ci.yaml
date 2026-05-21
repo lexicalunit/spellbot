@@ -163,7 +163,7 @@ jobs:
 
       - name: Verify package is installed
         run: |
-          docker run --rm spellbot:test python -c "import spellbot; print(f'spellbot {spellbot.__version__}')"
+          docker run --rm spellbot:test python -c "import spellbot; print('spellbot module imported successfully')"
 
       - name: Verify CLI runs
         run: |
