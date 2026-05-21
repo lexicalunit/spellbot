@@ -1,6 +1,6 @@
 ## 🎲 **The Discord bot for Webcam Magic**
 
-SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [Girudo][girudo], [EDHLAB][edhlab], and [Table Stream][tablestream]. Just looking to play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
+SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [Girudo][girudo], [Playgroup Live][playgroup], [EDHLAB][edhlab], and [Table Stream][tablestream]. Just looking to play a game of Commander? Run the command `/lfg` and SpellBot will help you out!
 
 ## **🔭 Where to Play?**
 
@@ -30,5 +30,6 @@ The continued operation of SpellBot is supported by <a href="https://www.playedh
 [lexicalunit]: http://github.com/lexicalunit
 [mit]: https://opensource.org/licenses/MIT
 [patreon]: https://www.patreon.com/lexicalunit
+[playgroup]: https://playgroup.gg/
 [tablestream]: https://table-stream.com/
 [where-to-play]: https://spellbot.io/#where-to-play
