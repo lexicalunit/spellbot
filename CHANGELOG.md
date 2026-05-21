@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support for i18n in bot responses.
 - Integrate with Crowdin for translations.
 - Dependabot config for bundler and terraform.
+- Adds CI/CD validation for terraform code.
 
 ## [v18.10.0](https://github.com/lexicalunit/spellbot/releases/tag/v18.10.0) - 2026-05-19
 
