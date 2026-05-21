@@ -4,6 +4,7 @@ import asyncio
 import logging
 from os import getpid
 
+import uvloop
 from aiohttp import web
 
 from spellbot.database import initialize_connection
@@ -31,16 +32,20 @@ async def on_startup(_app: web.Application) -> None:
 
 def launch_dev_server(debug: bool, port: int) -> None:  # pragma: no cover
     """Run development server. For production, use gunicorn (see start.sh)."""
-    loop = asyncio.new_event_loop()
-    loop.set_debug(debug)
 
-    runner = web.AppRunner(app)
-    loop.run_until_complete(runner.setup())
-    site = web.TCPSite(runner, settings.HOST, port)
-    loop.run_until_complete(site.start())
-    logger.info("server running: http://%s:%s", settings.HOST, port)
+    async def run_server() -> None:
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, settings.HOST, port)
+        await site.start()
+        logger.info("server running: http://%s:%s", settings.HOST, port)
+        # Run forever by waiting on an event that never gets set
+        await asyncio.Event().wait()
 
-    loop.run_forever()
+    if settings.DISABLE_UVLOOP:
+        asyncio.run(run_server(), debug=debug)
+    else:
+        uvloop.run(run_server(), debug=debug)
 
 
 if not running_in_pytest():  # pragma: no cover

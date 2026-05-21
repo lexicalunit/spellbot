@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
+import freezegun
 import pytest
 import pytest_asyncio
 from click.testing import CliRunner
@@ -54,7 +55,13 @@ if TYPE_CHECKING:
     from aiohttp import web
     from aiohttp.test_utils import TestClient
     from discord.app_commands import Command
-    from freezegun.api import FrozenDateTimeFactory
+    from freezegun.api import (
+        FrozenDateTimeFactory,
+        StepTickTimeFactory,
+        TickingDateTimeFactory,
+    )
+
+    FreezeTimeFactory = FrozenDateTimeFactory | StepTickTimeFactory | TickingDateTimeFactory
 
     from spellbot import SpellBot
     from spellbot.models import Channel, Game, Guild, User
@@ -424,19 +431,21 @@ def context(
     return stub
 
 
+def close_coroutine(coro: Any, **kwargs: Any) -> None:
+    coro.close()
+
+
 @pytest.fixture
 def cli() -> Generator[MagicMock]:
     with (
         patch("spellbot.cli.asyncio") as mock_asyncio,
+        patch("spellbot.cli.uvloop") as mock_uvloop,
         patch("spellbot.cli.configure_logging") as mock_configure_logging,
         patch("spellbot.cli.hupper") as mock_hupper,
         patch("spellbot.client.build_bot") as mock_build_bot,
         patch("spellbot.cli.settings") as mock_settings,
         patch("spellbot.web.launch_dev_server") as mock_launch_dev_server,
     ):
-        mock_loop = MagicMock(name="loop")
-        mock_loop.run_forever = MagicMock(name="run_forever")
-        mock_asyncio.new_event_loop = MagicMock(return_value=mock_loop, name="new_event_loop")
         mock_bot = MagicMock(name="bot")
         mock_bot.run = MagicMock(name="run")
         mock_build_bot.return_value = mock_bot
@@ -444,16 +453,18 @@ def cli() -> Generator[MagicMock]:
         mock_settings.BOT_TOKEN = "facedeadbeef"
         mock_settings.PORT = 404
         mock_settings.LOG_LEVEL = "INFO"
+        mock_settings.DISABLE_UVLOOP = False
+        mock_uvloop.run = MagicMock(side_effect=close_coroutine)
 
         obj = MagicMock()
         obj.asyncio = mock_asyncio
+        obj.uvloop = mock_uvloop
         obj.build_bot = mock_build_bot
         obj.configure_logging = mock_configure_logging
         obj.hupper = mock_hupper
         obj.launch_dev_server = mock_launch_dev_server
         obj.settings = mock_settings
         obj.bot = mock_bot
-        obj.loop = mock_loop
         yield obj
 
 
@@ -462,6 +473,23 @@ def runner() -> CliRunner:
     return CliRunner()
 
 
+@pytest.fixture
+def freezer(request: pytest.FixtureRequest) -> Generator[FreezeTimeFactory]:
+    """
+    Override pytest-freezer's freezer fixture to use real_asyncio=True.
+
+    This prevents asyncio.sleep() from hanging when time is frozen.
+    See https://github.com/spulec/freezegun/issues/383
+    """
+    marker = request.node.get_closest_marker("freeze_time")
+    args = getattr(marker, "args", ())
+    kwargs = getattr(marker, "kwargs", {})
+    # Enable real_asyncio to prevent asyncio.sleep() from hanging
+    kwargs.setdefault("real_asyncio", True)
+    with freezegun.freeze_time(*args, **kwargs) as frozen_datetime_factory:
+        yield frozen_datetime_factory
+
+
 @pytest_asyncio.fixture(autouse=True)
-async def use_consistent_date(freezer: FrozenDateTimeFactory) -> None:
+async def use_consistent_date(freezer: FreezeTimeFactory) -> None:
     freezer.move_to("1982-04-24")

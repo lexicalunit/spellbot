@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:python3.13-alpine AS builder
+FROM ghcr.io/astral-sh/uv:python3.14-alpine AS builder
 ENV UV_LINK_MODE=copy
 
 WORKDIR /spellbot
@@ -9,7 +9,7 @@ RUN uv sync --no-cache --frozen --no-dev --no-install-project
 COPY src ./src
 RUN uv sync --no-cache --frozen --no-dev
 
-FROM ghcr.io/astral-sh/uv:python3.13-alpine
+FROM ghcr.io/astral-sh/uv:python3.14-alpine
 
 ARG DD_VERSION=dev
 ENV DD_VERSION=$DD_VERSION

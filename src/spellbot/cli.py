@@ -13,9 +13,6 @@ from .logs import configure_logging
 from .metrics import no_metrics
 from .settings import settings
 
-if not settings.DISABLE_UVLOOP:  # pragma: no cover
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
 
 @click.command()
 @click.option(
@@ -119,6 +116,17 @@ def main(
     else:
         from .client import build_bot  # allow_inline
 
-        assert settings.BOT_TOKEN is not None
+        bot_token = settings.BOT_TOKEN
+        if bot_token is None:
+            raise SystemExit(1)
+
         bot = build_bot(mock_games=mock_games, disable_tasks=disable_tasks)
-        bot.run(settings.BOT_TOKEN, log_handler=None)
+
+        async def run_bot() -> None:  # pragma: no cover
+            async with bot:
+                await bot.start(bot_token)
+
+        if settings.DISABLE_UVLOOP:  # pragma: no cover
+            asyncio.run(run_bot())
+        else:
+            uvloop.run(run_bot())

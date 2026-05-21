@@ -21,7 +21,7 @@ class TestCLI:
         result = runner.invoke(main, ["--help"])
         assert result.exit_code == 0
         assert result.output == snapshot
-        cli.bot.run.assert_not_called()
+        cli.uvloop.run.assert_not_called()
 
     def test_run_api(
         self,
@@ -52,7 +52,7 @@ class TestCLI:
         cli.hupper.start_reloader.assert_not_called()
         cli.configure_logging.assert_called_once_with("INFO")
         cli.build_bot.assert_called_once_with(mock_games=False, disable_tasks=False)
-        cli.bot.run.assert_called_once_with("facedeadbeef", log_handler=None)
+        cli.uvloop.run.assert_called_once()
 
     def test_run_bot_with_log_level(
         self,
@@ -74,7 +74,7 @@ class TestCLI:
         cli.hupper.start_reloader.assert_not_called()
         cli.configure_logging.assert_called_once_with("INFO")
         cli.build_bot.assert_not_called()
-        cli.bot.run.assert_not_called()
+        cli.uvloop.run.assert_not_called()
 
     def test_run_bot_with_mock_games(self, cli: MagicMock, runner: CliRunner) -> None:
         runner.invoke(main, ["--mock-games"])
