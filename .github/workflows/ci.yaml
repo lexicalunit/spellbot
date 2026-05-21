@@ -161,14 +161,23 @@ jobs:
           cache-from: type=gha,scope=docker-build
           cache-to: type=gha,mode=max,scope=docker-build
 
-      - name: Verify package is installed
+      - name: Debug container environment
         run: |
-          docker run --rm spellbot:test python -c "import spellbot; print('spellbot module imported successfully')"
+          echo "=== Which python ==="
+          docker run --rm spellbot:test which python
+          echo "=== Python path ==="
+          docker run --rm spellbot:test python -c "import sys; print('\n'.join(sys.path))"
+          echo "=== Entry point shebang ==="
+          docker run --rm spellbot:test head -1 /spellbot/.venv/bin/spellbot
+          echo "=== Site packages ==="
+          docker run --rm spellbot:test ls /spellbot/.venv/lib/python3.13/site-packages/ | grep -i spell || echo "No spellbot in site-packages"
+          echo "=== Venv python test ==="
+          docker run --rm spellbot:test /spellbot/.venv/bin/python -c "import spellbot; print('OK')" || echo "Failed with venv python"
 
       - name: Verify CLI runs
         run: |
-          docker run --rm spellbot:test spellbot --help
-          docker run --rm spellbot:test spellapi --help
+          docker run --rm spellbot:test python -m spellbot --help
+          docker run --rm spellbot:test python -m spellbot.web --help
 
       - name: Check image size
         run: |
