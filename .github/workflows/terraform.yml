@@ -17,50 +17,185 @@ env:
   TF_VERSION: "1.12"
 
 jobs:
-  validate:
+  validate-app:
     runs-on: ubuntu-latest
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+      group: ${{ github.workflow }}-app-${{ github.ref }}
       cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
-    strategy:
-      matrix:
-        directory:
-          - infrastructure/app
-          - infrastructure/db
-          - infrastructure/o11y
 
     steps:
       - name: Checkout Source
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- infrastructure/app/ | wc -l)
+          else
+            CHANGED=$(git diff --name-only HEAD~1 -- infrastructure/app/ | wc -l)
+          fi
+          echo "count=$CHANGED" >> $GITHUB_OUTPUT
+          echo "Changed files in infrastructure/app: $CHANGED"
 
       - name: Setup Terraform
+        if: steps.changes.outputs.count != '0'
         uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Setup TFLint
+        if: steps.changes.outputs.count != '0'
         uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
         with:
           tflint_version: latest
 
       - name: Terraform Format Check
+        if: steps.changes.outputs.count != '0'
         run: terraform fmt -check -recursive
-        working-directory: infrastructure
+        working-directory: infrastructure/app
 
       - name: Terraform Init
+        if: steps.changes.outputs.count != '0'
         run: terraform init -backend=false
-        working-directory: ${{ matrix.directory }}
+        working-directory: infrastructure/app
 
       - name: Terraform Validate
+        if: steps.changes.outputs.count != '0'
         run: terraform validate
-        working-directory: ${{ matrix.directory }}
+        working-directory: infrastructure/app
 
       - name: TFLint Init
+        if: steps.changes.outputs.count != '0'
         run: tflint --init
-        working-directory: ${{ matrix.directory }}
+        working-directory: infrastructure/app
 
       - name: TFLint
+        if: steps.changes.outputs.count != '0'
         run: tflint --format=compact
-        working-directory: ${{ matrix.directory }}
+        working-directory: infrastructure/app
+
+  validate-db:
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: ${{ github.workflow }}-db-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- infrastructure/db/ | wc -l)
+          else
+            CHANGED=$(git diff --name-only HEAD~1 -- infrastructure/db/ | wc -l)
+          fi
+          echo "count=$CHANGED" >> $GITHUB_OUTPUT
+          echo "Changed files in infrastructure/db: $CHANGED"
+
+      - name: Setup Terraform
+        if: steps.changes.outputs.count != '0'
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Setup TFLint
+        if: steps.changes.outputs.count != '0'
+        uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
+        with:
+          tflint_version: latest
+
+      - name: Terraform Format Check
+        if: steps.changes.outputs.count != '0'
+        run: terraform fmt -check -recursive
+        working-directory: infrastructure/db
+
+      - name: Terraform Init
+        if: steps.changes.outputs.count != '0'
+        run: terraform init -backend=false
+        working-directory: infrastructure/db
+
+      - name: Terraform Validate
+        if: steps.changes.outputs.count != '0'
+        run: terraform validate
+        working-directory: infrastructure/db
+
+      - name: TFLint Init
+        if: steps.changes.outputs.count != '0'
+        run: tflint --init
+        working-directory: infrastructure/db
+
+      - name: TFLint
+        if: steps.changes.outputs.count != '0'
+        run: tflint --format=compact
+        working-directory: infrastructure/db
+
+  validate-o11y:
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: ${{ github.workflow }}-o11y-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- infrastructure/o11y/ | wc -l)
+          else
+            CHANGED=$(git diff --name-only HEAD~1 -- infrastructure/o11y/ | wc -l)
+          fi
+          echo "count=$CHANGED" >> $GITHUB_OUTPUT
+          echo "Changed files in infrastructure/o11y: $CHANGED"
+
+      - name: Setup Terraform
+        if: steps.changes.outputs.count != '0'
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Setup TFLint
+        if: steps.changes.outputs.count != '0'
+        uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
+        with:
+          tflint_version: latest
+
+      - name: Terraform Format Check
+        if: steps.changes.outputs.count != '0'
+        run: terraform fmt -check -recursive
+        working-directory: infrastructure/o11y
+
+      - name: Terraform Init
+        if: steps.changes.outputs.count != '0'
+        run: terraform init -backend=false
+        working-directory: infrastructure/o11y
+
+      - name: Terraform Validate
+        if: steps.changes.outputs.count != '0'
+        run: terraform validate
+        working-directory: infrastructure/o11y
+
+      - name: TFLint Init
+        if: steps.changes.outputs.count != '0'
+        run: tflint --init
+        working-directory: infrastructure/o11y
+
+      - name: TFLint
+        if: steps.changes.outputs.count != '0'
+        run: tflint --format=compact
+        working-directory: infrastructure/o11y
