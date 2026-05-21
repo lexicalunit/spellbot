@@ -17,6 +17,7 @@ jobs:
     outputs:
       app: ${{ steps.filter.outputs.app }}
       docker: ${{ steps.filter.outputs.docker }}
+      docs: ${{ steps.filter.outputs.docs }}
       infra-app: ${{ steps.filter.outputs.infra-app }}
       infra-db: ${{ steps.filter.outputs.infra-db }}
       infra-o11y: ${{ steps.filter.outputs.infra-o11y }}
@@ -40,6 +41,8 @@ jobs:
               - 'scripts/start*.sh'
               - 'pyproject.toml'
               - 'uv.lock'
+            docs:
+              - 'docs/**'
             infra-app:
               - 'infrastructure/app/**'
             infra-db:
@@ -189,6 +192,30 @@ jobs:
             echo "::warning::Image size (${SIZE_MB}MB) exceeds 500MB"
           fi
 
+  docs:
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: ${{ github.workflow }}-docs-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@354a1ad156761f5ee2b7b13fa8e09943a5e8d252 # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: docs
+
+      - name: Build Jekyll site
+        run: bundle exec jekyll build --strict_front_matter
+        working-directory: docs
+
   terraform-app:
     needs: changes
     if: needs.changes.outputs.infra-app == 'true'
@@ -321,7 +348,16 @@ jobs:
   # Gate job - this is the only required check for PRs
   ci:
     runs-on: ubuntu-latest
-    needs: [changes, build, docker, terraform-app, terraform-db, terraform-o11y]
+    needs:
+      [
+        changes,
+        build,
+        docker,
+        docs,
+        terraform-app,
+        terraform-db,
+        terraform-o11y,
+      ]
     if: always()
     steps:
       - name: Check required jobs
@@ -337,6 +373,10 @@ jobs:
           fi
           if [[ "${{ needs.docker.result }}" == "failure" ]]; then
             echo "docker job failed"
+            exit 1
+          fi
+          if [[ "${{ needs.docs.result }}" == "failure" ]]; then
+            echo "docs job failed"
             exit 1
           fi
           if [[ "${{ needs.terraform-app.result }}" == "failure" ]]; then
