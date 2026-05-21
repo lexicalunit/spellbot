@@ -120,7 +120,7 @@ In your `Settings ► Chat` make sure that you have enabled **Embeds and link pr
     />
 </p>
 
-And in your `Settings ► Privacy & Safety`, enable both **Allow direct message message for server members** and **Enable message requests from server members you may not know**.
+And in your `Settings ► Privacy & Safety`, enable both **Allow direct messages from server members** and **Enable message requests from server members you may not know**.
 
 <p align="center">
     <img

@@ -1,6 +1,6 @@
 # Integrations with external services
 
-At the time of this writing SpellBot can create games on Convoke[convoke], Girudo[girudo], [EDHLAB][edhlab], and [TableStream][tablestream]. This document explains how to add support for additional services.
+At the time of this writing SpellBot can create games on [Convoke][convoke], [Girudo][girudo], [EDHLAB][edhlab], and [TableStream][tablestream]. This document explains how to add support for additional services.
 
 ## Update the GameService enum
 
