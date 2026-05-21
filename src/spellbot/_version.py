@@ -22,16 +22,16 @@ def version_from_package() -> str | None:
 
 
 def version_from_toml() -> str | None:
+    import tomllib  # allow_inline
     from os.path import realpath  # allow_inline
     from pathlib import Path  # allow_inline
-
-    import toml  # allow_inline
 
     try:
         pkg_root = Path(realpath(__file__)).parent
         src_root = Path(pkg_root).parent
         repo_root = src_root.parent
-        pyproject = toml.load(repo_root / "pyproject.toml")
+        with (repo_root / "pyproject.toml").open("rb") as fp:
+            pyproject = tomllib.load(fp)
     except Exception:
         return None
 

@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from pathlib import Path
+from time import monotonic
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import discord
 import httpx
-from cachetools import TTLCache
 from ddtrace.trace import tracer
 from discord.ext.commands import AutoShardedBot, CommandError, CommandNotFound, Context
 
@@ -39,6 +40,41 @@ if hasattr(discord.VoiceClient, "warn_nacl"):  # pragma: no cover
     discord.VoiceClient.warn_nacl = False
 
 
+class TTLDict[K, V]:
+    """Small bounded TTL dict; evicts expired entries on access and keeps size capped."""
+
+    def __init__(self, *, maxsize: int, ttl: float) -> None:
+        self._maxsize = maxsize
+        self._ttl = ttl
+        self._data: OrderedDict[K, tuple[float, V]] = OrderedDict()
+
+    def _purge(self) -> None:
+        now = monotonic()
+        for k in [k for k, (exp, _) in self._data.items() if exp <= now]:
+            del self._data[k]
+
+    def get(self, key: K) -> V | None:
+        self._purge()
+        item = self._data.get(key)
+        if item is None:
+            return None
+        self._data.move_to_end(key)
+        return item[1]
+
+    def __getitem__(self, key: K) -> V:
+        self._purge()
+        item = self._data[key]
+        self._data.move_to_end(key)
+        return item[1]
+
+    def __setitem__(self, key: K, value: V) -> None:
+        self._purge()
+        self._data[key] = (monotonic() + self._ttl, value)
+        self._data.move_to_end(key)
+        while len(self._data) > self._maxsize:
+            self._data.popitem(last=False)
+
+
 class SpellBot(AutoShardedBot):
     def __init__(
         self,
@@ -58,7 +94,7 @@ class SpellBot(AutoShardedBot):
         self.mock_games = mock_games
         self.disable_tasks = disable_tasks
         self.create_connection = create_connection
-        self.guild_locks = TTLCache[int, asyncio.Lock](maxsize=100, ttl=3600)  # 1 hr
+        self.guild_locks = TTLDict[int, asyncio.Lock](maxsize=100, ttl=3600)  # 1 hr
         self.supporters: set[int] = set()
         self.ready_shards: set[int] = set()
         self.emojis_cache: list[discord.PartialEmoji | discord.Emoji] = []

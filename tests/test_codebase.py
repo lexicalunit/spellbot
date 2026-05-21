@@ -3,13 +3,13 @@ from __future__ import annotations
 import ast
 import re
 import sys
+import tomllib
 from os import chdir
 from pathlib import Path
 from subprocess import getoutput, run
 from typing import TYPE_CHECKING, cast
 
 import pytest
-import toml
 from git.repo import Repo
 
 from . import REPO_ROOT, SRC_DIRS
@@ -79,7 +79,8 @@ class TestCodebase:
 
     def test_pyproject_dependencies(self) -> None:  # pragma: no cover
         """Checks that pyproject.toml dependencies are sorted."""
-        pyproject = toml.load("pyproject.toml")
+        with Path("pyproject.toml").open("rb") as fp:
+            pyproject = tomllib.load(fp)
 
         dev_deps = list(pyproject["project"]["dependencies"])
         assert dev_deps == sorted(dev_deps)
