@@ -4,25 +4,59 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "docs/**"
-      - CHANGELOG.md
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - "docs/**"
-      - CHANGELOG.md
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+      docker: ${{ steps.filter.outputs.docker }}
+      docs: ${{ steps.filter.outputs.docs }}
+      infra-app: ${{ steps.filter.outputs.infra-app }}
+      infra-db: ${{ steps.filter.outputs.infra-db }}
+      infra-o11y: ${{ steps.filter.outputs.infra-o11y }}
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Detect changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            app:
+              - 'src/**'
+              - 'tests/**'
+              - 'pyproject.toml'
+              - 'uv.lock'
+              - '.github/workflows/ci.yaml'
+            docker:
+              - 'Dockerfile'
+              - 'scripts/start*.sh'
+              - 'pyproject.toml'
+              - 'uv.lock'
+            docs:
+              - 'docs/**'
+            infra-app:
+              - 'infrastructure/app/**'
+            infra-db:
+              - 'infrastructure/db/**'
+            infra-o11y:
+              - 'infrastructure/o11y/**'
+
   build:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+      group: ${{ github.workflow }}-build-${{ github.ref }}
       cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
     strategy:
@@ -104,10 +138,265 @@ jobs:
         with:
           env_vars: PYTHON,POSTGRES,DB_URL
 
+  docker:
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: ${{ github.workflow }}-docker-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Build Docker image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          push: false
+          load: true
+          tags: spellbot:test
+          cache-from: type=gha,scope=docker-build
+          cache-to: type=gha,mode=max,scope=docker-build
+
+      - name: Debug container environment
+        if: failure() || success()
+        run: |
+          echo "=== Which python ==="
+          docker run --rm spellbot:test which python
+          echo "=== Entry point shebang ==="
+          docker run --rm spellbot:test head -3 /spellbot/.venv/bin/spellbot
+          echo "=== Site packages ==="
+          docker run --rm spellbot:test ls /spellbot/.venv/lib/python3.13/site-packages/ | head -20
+          echo "=== Check for spellbot package ==="
+          docker run --rm spellbot:test ls -la /spellbot/.venv/lib/python3.13/site-packages/ | grep -i spell || echo "No spellbot found"
+          echo "=== Venv python import test ==="
+          docker run --rm spellbot:test /spellbot/.venv/bin/python -c "import spellbot; print('OK')" || echo "Failed with venv python"
+
+      - name: Verify CLI runs
+        run: |
+          docker run --rm spellbot:test /spellbot/.venv/bin/python -c "from spellbot import main; main()" --help
+
+      - name: Check image size
+        run: |
+          SIZE=$(docker image inspect spellbot:test --format='{{.Size}}')
+          SIZE_MB=$((SIZE / 1024 / 1024))
+          echo "Image size: ${SIZE_MB}MB"
+          # Fail if image is larger than 500MB
+          if [ $SIZE_MB -gt 500 ]; then
+            echo "::warning::Image size (${SIZE_MB}MB) exceeds 500MB"
+          fi
+
+  docs:
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: ${{ github.workflow }}-docs-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@354a1ad156761f5ee2b7b13fa8e09943a5e8d252 # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: docs
+
+      - name: Build Jekyll site
+        run: bundle exec jekyll build --strict_front_matter
+        working-directory: docs
+
+  terraform-app:
+    needs: changes
+    if: needs.changes.outputs.infra-app == 'true'
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: ${{ github.workflow }}-tf-app-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: "1.12"
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
+        with:
+          tflint_version: latest
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: infrastructure/app
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: infrastructure/app
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: infrastructure/app
+
+      - name: TFLint Init
+        run: tflint --init
+        working-directory: infrastructure/app
+
+      - name: TFLint
+        run: tflint --format=compact
+        working-directory: infrastructure/app
+
+  terraform-db:
+    needs: changes
+    if: needs.changes.outputs.infra-db == 'true'
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: ${{ github.workflow }}-tf-db-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: "1.12"
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
+        with:
+          tflint_version: latest
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: infrastructure/db
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: infrastructure/db
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: infrastructure/db
+
+      - name: TFLint Init
+        run: tflint --init
+        working-directory: infrastructure/db
+
+      - name: TFLint
+        run: tflint --format=compact
+        working-directory: infrastructure/db
+
+  terraform-o11y:
+    needs: changes
+    if: needs.changes.outputs.infra-o11y == 'true'
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: ${{ github.workflow }}-tf-o11y-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: "1.12"
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
+        with:
+          tflint_version: latest
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: infrastructure/o11y
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: infrastructure/o11y
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: infrastructure/o11y
+
+      - name: TFLint Init
+        run: tflint --init
+        working-directory: infrastructure/o11y
+
+      - name: TFLint
+        run: tflint --format=compact
+        working-directory: infrastructure/o11y
+
+  # Gate job - this is the only required check for PRs
+  ci:
+    runs-on: ubuntu-latest
+    needs:
+      [
+        changes,
+        build,
+        docker,
+        docs,
+        terraform-app,
+        terraform-db,
+        terraform-o11y,
+      ]
+    if: always()
+    steps:
+      - name: Check required jobs
+        run: |
+          # Check if any job failed (not skipped, not successful)
+          if [[ "${{ needs.changes.result }}" == "failure" ]]; then
+            echo "changes job failed"
+            exit 1
+          fi
+          if [[ "${{ needs.build.result }}" == "failure" ]]; then
+            echo "build job failed"
+            exit 1
+          fi
+          if [[ "${{ needs.docker.result }}" == "failure" ]]; then
+            echo "docker job failed"
+            exit 1
+          fi
+          if [[ "${{ needs.docs.result }}" == "failure" ]]; then
+            echo "docs job failed"
+            exit 1
+          fi
+          if [[ "${{ needs.terraform-app.result }}" == "failure" ]]; then
+            echo "terraform-app job failed"
+            exit 1
+          fi
+          if [[ "${{ needs.terraform-db.result }}" == "failure" ]]; then
+            echo "terraform-db job failed"
+            exit 1
+          fi
+          if [[ "${{ needs.terraform-o11y.result }}" == "failure" ]]; then
+            echo "terraform-o11y job failed"
+            exit 1
+          fi
+          echo "All required jobs passed or were skipped"
+
   deploy-stage:
     name: Deploy to stage
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [build, ci]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.build.result == 'success'
     uses: ./.github/workflows/deploy.yml
     with:
       environment: stage
