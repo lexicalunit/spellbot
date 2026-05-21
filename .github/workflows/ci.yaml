@@ -5,14 +5,20 @@ on:
     branches:
       - main
     paths-ignore:
+      - "*.md"
+      - "*.png"
+      - "conf/**"
       - "docs/**"
-      - CHANGELOG.md
+      - "infrastructure/**"
   pull_request:
     branches:
       - main
     paths-ignore:
+      - "*.md"
+      - "*.png"
+      - "conf/**"
       - "docs/**"
-      - CHANGELOG.md
+      - "infrastructure/**"
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
