@@ -158,10 +158,14 @@ jobs:
           push: false
           load: true
           tags: spellbot:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=docker-build
+          cache-to: type=gha,mode=max,scope=docker-build
 
-      - name: Verify image runs
+      - name: Verify package is installed
+        run: |
+          docker run --rm spellbot:test python -c "import spellbot; print(f'spellbot {spellbot.__version__}')"
+
+      - name: Verify CLI runs
         run: |
           docker run --rm spellbot:test spellbot --help
           docker run --rm spellbot:test spellapi --help
