@@ -11,7 +11,7 @@ from discord.ext.commands import AutoShardedBot, CommandNotFound, Context, UserI
 from sqlalchemy import select
 
 from spellbot import SpellBot
-from spellbot.client import ASSETS_DIR
+from spellbot.client import ASSETS_DIR, TTLDict
 from spellbot.data import GameLinkDetails
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameService
@@ -752,3 +752,14 @@ class TestSpellBotEmojis:
 
         # Should not raise, just log the exception
         await bot.ensure_application_emojis()
+
+
+class TestTTLDict:
+    def test_evicts_oldest_when_maxsize_exceeded(self) -> None:
+        cache = TTLDict[int, str](maxsize=2, ttl=3600)
+        cache[1] = "a"
+        cache[2] = "b"
+        cache[3] = "c"
+        assert cache.get(1) is None
+        assert cache[2] == "b"
+        assert cache[3] == "c"

@@ -10,11 +10,11 @@ import alembic.config
 from sqlalchemy import String, create_engine, text
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import declarative_base
-from sqlalchemy_utils import create_database, database_exists
 
 from . import import_models
 
 if TYPE_CHECKING:
+    from sqlalchemy.engine.url import URL
     from sqlalchemy.ext.declarative import DeclarativeMeta
 
 MODULE_ROOT = Path(__file__).resolve().parent
@@ -28,12 +28,27 @@ now = text("(now() at time zone 'utc')")
 Base: DeclarativeMeta = declarative_base(cls=AsyncAttrs)
 
 
+def ensure_database_exists(url: URL) -> None:  # pragma: no cover
+    """Postgres-only: create the target database if it does not yet exist."""
+    database_name = url.database
+    server_engine = create_engine(url.set(database="postgres"), isolation_level="AUTOCOMMIT")
+    try:
+        with server_engine.connect() as conn:
+            exists = conn.execute(
+                text("SELECT 1 FROM pg_database WHERE datname = :name"),
+                {"name": database_name},
+            ).scalar()
+            if not exists:
+                conn.execute(text(f'CREATE DATABASE "{database_name}"'))
+    finally:
+        server_engine.dispose()
+
+
 def create_all(database_url: str) -> None:
     import_models()
     engine = create_engine(database_url, echo=False)
     try:
-        if not database_exists(engine.url):  # pragma: no cover
-            create_database(engine.url)
+        ensure_database_exists(engine.url)
         with engine.connect() as connection:
             config = alembic.config.Config(str(ALEMBIC_INI))
             config.set_main_option("script_location", str(MIGRATIONS_DIR))
