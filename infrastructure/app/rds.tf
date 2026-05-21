@@ -24,7 +24,7 @@ module "aurora_cluster" {
   db_subnet_group_name = module.vpc.database_subnet_group_name
   security_group_ingress_rules = {
     database_ingress = {
-      source_security_group_id = aws_security_group.ecs_tasks.id
+      referenced_security_group_id = aws_security_group.ecs_tasks.id
     }
   }
 
