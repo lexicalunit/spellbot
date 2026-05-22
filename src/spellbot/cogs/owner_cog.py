@@ -57,6 +57,24 @@ async def set_banned_guild(banned: bool, ctx: commands.Context[SpellBot], arg: s
     return None
 
 
+async def set_admin(is_admin: bool, ctx: commands.Context[SpellBot], arg: str | None) -> None:
+    assert ctx.message
+    if arg is None:
+        return await safe_send_user(ctx.message.author, "No target user.")
+
+    user_xid: int
+    try:
+        user_xid = int(arg)
+    except ValueError:
+        return await safe_send_user(ctx.message.author, "Invalid user id.")
+    await services.users.set_admin(user_xid, is_admin)
+    await safe_send_user(
+        ctx.message.author,
+        f"User <@{user_xid}> is {'now an admin' if is_admin else 'no longer an admin'}.",
+    )
+    return None
+
+
 @for_all_callbacks(commands.is_owner())
 class OwnerCog(commands.Cog):
     def __init__(self, bot: SpellBot) -> None:
@@ -117,6 +135,28 @@ class OwnerCog(commands.Cog):
         async with db_session_manager():
             try:
                 await set_banned_guild(False, ctx, arg)
+            except Exception as ex:
+                await safe_send_user(ctx.message.author, f"Error: {ex}")
+                await handle_exception(ex)
+
+    @commands.command(name="promote")
+    @tracer.wrap(name="interaction", resource="promote")
+    async def promote(self, ctx: commands.Context[SpellBot], arg: str | None = None) -> None:
+        add_span_context(ctx)
+        async with db_session_manager():
+            try:
+                await set_admin(True, ctx, arg)
+            except Exception as ex:
+                await safe_send_user(ctx.message.author, f"Error: {ex}")
+                await handle_exception(ex)
+
+    @commands.command(name="demote")
+    @tracer.wrap(name="interaction", resource="demote")
+    async def demote(self, ctx: commands.Context[SpellBot], arg: str | None = None) -> None:
+        add_span_context(ctx)
+        async with db_session_manager():
+            try:
+                await set_admin(False, ctx, arg)
             except Exception as ex:
                 await safe_send_user(ctx.message.author, f"Error: {ex}")
                 await handle_exception(ex)

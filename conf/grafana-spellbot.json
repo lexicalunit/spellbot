@@ -1,22 +1,22 @@
 {
-  "apiVersion": "dashboard.grafana.app/v2beta1",
-  "kind": "DashboardWithAccessInfo",
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
   "metadata": {
     "annotations": {
       "grafana.app/createdBy": "user:u000000002",
       "grafana.app/folder": "",
       "grafana.app/saved-from-ui": "Grafana Cloud",
       "grafana.app/updatedBy": "user:u000000002",
-      "grafana.app/updatedTimestamp": "2026-02-04T01:05:00Z"
+      "grafana.app/updatedTimestamp": "2026-03-01T06:19:07Z"
     },
     "creationTimestamp": "2020-10-13T05:03:57Z",
-    "generation": 137,
+    "generation": 140,
     "labels": {
       "grafana.app/deprecatedInternalID": "1"
     },
     "name": "4TSUCbcMz",
     "namespace": "stacks-145519",
-    "resourceVersion": "1770167100839131",
+    "resourceVersion": "2027992008076820924",
     "uid": "N3ccbGQULJEp9Yqol8TXrOXfXmXshrVLvAgs0awLeRIX"
   },
   "spec": {
@@ -492,221 +492,6 @@
               }
             },
             "version": "13.0.0-22349652341"
-          }
-        }
-      },
-      "panel-30": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "dexhxyaxvbu2od"
-                      },
-                      "group": "grafana-postgresql-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "editorMode": "code",
-                        "format": "time_series",
-                        "group": [
-                          {
-                            "params": [
-                              "1d",
-                              "none"
-                            ],
-                            "type": "time"
-                          }
-                        ],
-                        "metricColumn": "none",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n    $__timeGroupAlias(games.started_at,1d),\n    COUNT(DISTINCT(plays.user_xid)) AS \"convoke\"\nFROM games\nJOIN plays ON plays.game_id = games.id\nWHERE games.started_at IS NOT NULL\n    AND  $__timeFilter(games.started_at)\n    AND $server\n    AND service = 9\nGROUP BY 1\nORDER BY 1;",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "xid"
-                              ],
-                              "type": "column"
-                            },
-                            {
-                              "params": [
-                                "count"
-                              ],
-                              "type": "aggregate"
-                            },
-                            {
-                              "params": [
-                                "count"
-                              ],
-                              "type": "alias"
-                            }
-                          ]
-                        ],
-                        "sql": {
-                          "columns": [
-                            {
-                              "parameters": [],
-                              "type": "function"
-                            }
-                          ],
-                          "groupBy": [
-                            {
-                              "property": {
-                                "type": "string"
-                              },
-                              "type": "groupBy"
-                            }
-                          ],
-                          "limit": 50
-                        },
-                        "table": "users",
-                        "timeColumn": "updated_at",
-                        "timeColumnType": "timestamp",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "dexhxyaxvbu2od"
-                      },
-                      "group": "grafana-postgresql-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "dataset": "spellbot_prod",
-                        "editorMode": "code",
-                        "format": "table",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n    $__timeGroupAlias(games.started_at,1d),\n    COUNT(DISTINCT(plays.user_xid)) AS \"other\"\nFROM games\nJOIN plays ON plays.game_id = games.id\nWHERE games.started_at IS NOT NULL\n    AND  $__timeFilter(games.started_at)\n    AND $server\n    AND service != 9\nGROUP BY 1\nORDER BY 1;",
-                        "sql": {
-                          "columns": [
-                            {
-                              "parameters": [],
-                              "type": "function"
-                            }
-                          ],
-                          "groupBy": [
-                            {
-                              "property": {
-                                "type": "string"
-                              },
-                              "type": "groupBy"
-                            }
-                          ],
-                          "limit": 50
-                        }
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "B"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "",
-          "id": 30,
-          "links": [],
-          "title": "Convoke Adoption (Unique Daily Players)",
-          "transparent": true,
-          "vizConfig": {
-            "group": "timeseries",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 10,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "short"
-                },
-                "overrides": []
-              },
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "maxHeight": 600,
-                  "mode": "multi",
-                  "sort": "none"
-                }
-              }
-            },
-            "version": "12.4.0-21496434218"
           }
         }
       },
@@ -2143,7 +1928,7 @@
                     "spanNulls": false,
                     "stacking": {
                       "group": "A",
-                      "mode": "none"
+                      "mode": "percent"
                     },
                     "thresholdsStyle": {
                       "mode": "off"
@@ -2186,7 +1971,7 @@
                 }
               }
             },
-            "version": "12.4.0-21496434218"
+            "version": "13.0.0-22349652341"
           }
         }
       },
@@ -2362,7 +2147,7 @@
                 }
               }
             },
-            "version": "12.4.0-21496434218"
+            "version": "13.0.0-22349652341"
           }
         }
       },
@@ -2517,6 +2302,229 @@
                   "maxHeight": 600,
                   "mode": "multi",
                   "sort": "none"
+                }
+              }
+            },
+            "version": "13.0.0-22349652341"
+          }
+        }
+      },
+      "panel-71": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "dexhxyaxvbu2od"
+                      },
+                      "group": "grafana-postgresql-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "time_series",
+                        "group": [
+                          {
+                            "params": [
+                              "1d",
+                              "none"
+                            ],
+                            "type": "time"
+                          }
+                        ],
+                        "metricColumn": "none",
+                        "rawQuery": true,
+                        "rawSql": "SELECT\n  case\n    when games.service = 1  then 'Not any'\n    when games.service = 2  then 'SpellTable'\n    when games.service = 3  then 'Cockatrice'\n    when games.service = 4  then 'XMage'\n    when games.service = 5  then 'MTG Arena'\n    when games.service = 6  then 'MTG Online'\n    when games.service = 7  then 'TabletopSim'\n    when games.service = 8  then 'Table Stream'\n    when games.service = 9  then 'Convoke'\n    when games.service = 10 then 'Girudo'\n  end as \"service\",\n  $__timeGroupAlias(games.created_at,7d),\n  count(games.id) AS \"Service used: \"\nFROM games\nWHERE\n  $__timeFilter(games.created_at) AND\n  games.started_at IS NOT NULL\nGROUP BY 1, 2\n-- HAVING count(games.id) > 10\n-- ORDER BY 1, 2\nORDER BY 2 ASC",
+                        "select": [
+                          [
+                            {
+                              "params": [
+                                "id"
+                              ],
+                              "type": "column"
+                            },
+                            {
+                              "params": [
+                                "count"
+                              ],
+                              "type": "aggregate"
+                            },
+                            {
+                              "params": [
+                                "count"
+                              ],
+                              "type": "alias"
+                            }
+                          ]
+                        ],
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        },
+                        "table": "games",
+                        "timeColumn": "created_at",
+                        "timeColumnType": "timestamp",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 71,
+          "links": [],
+          "title": "Weekly Service Popularity ‡",
+          "transparent": true,
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic-by-name"
+                  },
+                  "custom": {
+                    "axisBorderShow": true,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisGridShow": true,
+                    "axisLabel": "Games Played",
+                    "axisPlacement": "auto",
+                    "barAlignment": 1,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 100,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineStyle": {
+                      "fill": "solid"
+                    },
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "percent"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "fieldMinMax": false,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byValue",
+                      "options": {
+                        "op": "gte",
+                        "reducer": "allIsZero",
+                        "value": 0
+                      }
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": true,
+                          "tooltip": true,
+                          "viz": false
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byValue",
+                      "options": {
+                        "op": "gte",
+                        "reducer": "allIsNull",
+                        "value": 0
+                      }
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": true,
+                          "tooltip": true,
+                          "viz": false
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "sum"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true,
+                  "sortBy": "Total",
+                  "sortDesc": true,
+                  "width": 500
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "maxHeight": 600,
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -2729,10 +2737,10 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-68"
+                "name": "panel-71"
               },
-              "height": 19,
-              "width": 9,
+              "height": 14,
+              "width": 24,
               "x": 0,
               "y": 41
             }
@@ -2745,9 +2753,9 @@
                 "name": "panel-69"
               },
               "height": 19,
-              "width": 15,
-              "x": 9,
-              "y": 41
+              "width": 24,
+              "x": 0,
+              "y": 55
             }
           },
           {
@@ -2755,12 +2763,12 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-30"
+                "name": "panel-68"
               },
-              "height": 18,
-              "width": 17,
+              "height": 19,
+              "width": 24,
               "x": 0,
-              "y": 60
+              "y": 74
             }
           }
         ]
@@ -2797,20 +2805,135 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "All",
+            "text": "true",
             "value": "true"
           },
           "hide": "dontHide",
           "includeAll": false,
           "multi": false,
           "name": "server",
-          "options": [],
+          "options": [
+            {
+              "selected": true,
+              "text": "All",
+              "value": "true"
+            },
+            {
+              "selected": false,
+              "text": "PlayEDH",
+              "value": "games.guild_xid = 304276578005942272"
+            },
+            {
+              "selected": false,
+              "text": "Not PlayEDH",
+              "value": "games.guild_xid != 304276578005942272"
+            },
+            {
+              "selected": false,
+              "text": "CompetitiveEDH",
+              "value": "games.guild_xid = 113555415446413312"
+            },
+            {
+              "selected": false,
+              "text": "r/cEDH Discord",
+              "value": "games.guild_xid = 1225118416298315857"
+            },
+            {
+              "selected": false,
+              "text": "Tolarian Community College",
+              "value": "games.guild_xid = 574711449566445603"
+            },
+            {
+              "selected": false,
+              "text": "The Nitpicking Nerds Discord Server",
+              "value": "games.guild_xid = 531209216443154443"
+            },
+            {
+              "selected": false,
+              "text": "i_hate_your_deck's server",
+              "value": "games.guild_xid = 793590120049672242"
+            },
+            {
+              "selected": false,
+              "text": "Command the Cause - Gaming Club",
+              "value": "games.guild_xid = 817867020837584906"
+            },
+            {
+              "selected": false,
+              "text": "Commander SpellTable (DE)",
+              "value": "games.guild_xid = 752261529390284870"
+            },
+            {
+              "selected": false,
+              "text": "Asylum Gaming",
+              "value": "games.guild_xid = 840959507747569715"
+            },
+            {
+              "selected": false,
+              "text": "EDH Tambayan",
+              "value": "games.guild_xid = 750696719905456189"
+            },
+            {
+              "selected": false,
+              "text": "EDH Fight Club",
+              "value": "games.guild_xid = 815001383979450368"
+            },
+            {
+              "selected": false,
+              "text": "Dungeons & Cardboard",
+              "value": "games.guild_xid = 852684404328497172"
+            },
+            {
+              "selected": false,
+              "text": "Playing With Power MTG",
+              "value": "games.guild_xid = 530219227924267008"
+            },
+            {
+              "selected": false,
+              "text": "MTG@Home",
+              "value": "games.guild_xid = 689674672240984067"
+            },
+            {
+              "selected": false,
+              "text": "The Mages Guild | EDH Community",
+              "value": "games.guild_xid = 806995731268632596"
+            },
+            {
+              "selected": false,
+              "text": "SpellTable",
+              "value": "games.guild_xid = 699186736424681533"
+            },
+            {
+              "selected": false,
+              "text": "Oath of the Gaywatch",
+              "value": "games.guild_xid = 757455940009328670"
+            },
+            {
+              "selected": false,
+              "text": "ChannelFireball",
+              "value": "games.guild_xid = 508059359683543050"
+            },
+            {
+              "selected": false,
+              "text": "DOYOU EDH",
+              "value": "games.guild_xid = 757933229931233280"
+            },
+            {
+              "selected": false,
+              "text": "Landfall: Commander en Español",
+              "value": "games.guild_xid = 574726557675946000"
+            },
+            {
+              "selected": false,
+              "text": "cEDH Portuguese League",
+              "value": "games.guild_xid = 799686008811290626"
+            }
+          ],
           "query": "All : true,PlayEDH : games.guild_xid = 304276578005942272,Not PlayEDH : games.guild_xid != 304276578005942272,CompetitiveEDH : games.guild_xid = 113555415446413312,r/cEDH Discord : games.guild_xid = 1225118416298315857,Tolarian Community College : games.guild_xid = 574711449566445603,The Nitpicking Nerds Discord Server : games.guild_xid = 531209216443154443,i_hate_your_deck's server : games.guild_xid = 793590120049672242,Command the Cause - Gaming Club : games.guild_xid = 817867020837584906,Commander SpellTable (DE) : games.guild_xid = 752261529390284870,Asylum Gaming : games.guild_xid = 840959507747569715,EDH Tambayan : games.guild_xid = 750696719905456189,EDH Fight Club : games.guild_xid = 815001383979450368,Dungeons & Cardboard : games.guild_xid = 852684404328497172,Playing With Power MTG : games.guild_xid = 530219227924267008,MTG@Home : games.guild_xid = 689674672240984067,The Mages Guild | EDH Community : games.guild_xid = 806995731268632596,SpellTable : games.guild_xid = 699186736424681533,Oath of the Gaywatch : games.guild_xid = 757455940009328670,ChannelFireball : games.guild_xid = 508059359683543050,DOYOU EDH : games.guild_xid = 757933229931233280,Landfall: Commander en Español : games.guild_xid = 574726557675946000,cEDH Portuguese League : games.guild_xid = 799686008811290626",
           "skipUrlSync": false,
           "valuesFormat": "csv"
         }
       }
     ]
-  },
-  "status": {}
+  }
 }

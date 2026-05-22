@@ -90,9 +90,7 @@ There's two methods for doing a release. You can use a script to handle everythi
 
 ### Scripted
 
-To do a release automatically there is a \*NIX script available in the `scripts`
-directory to help. To use it you will need to have non-interactive
-`uv publish` enabled by running:
+To do a release automatically there is a \*NIX script available in the `scripts` directory to help. To use it you will need to have non-interactive `uv publish` enabled by running:
 
 ```shell
 uv publish --token "YOUR-PYPI-TOKEN-GOES-HERE"
@@ -127,8 +125,7 @@ git tag 'vM.N.P'
 git push --tags origin main
 ```
 
-> **Note:** The reason you should run `pytest` after running the `uv version`
-> command is to ensure that all test still pass after the version is updated.
+> **Note:** The reason you should run `pytest` after running the `uv version` command is to ensure that all test still pass after the version is updated.
 
 You can get the `M.N.P` version numbers from `pyproject.toml` after you've run the `uv version` command. On a \*NIX shell you could also get it automatically like so:
 

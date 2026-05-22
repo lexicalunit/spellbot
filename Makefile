@@ -1,4 +1,4 @@
-.PHONY: all install test lint format typecheck check clean
+.PHONY: all install test lint format typecheck check clean session-key
 .PHONY: infra-stage infra-prod infra-o11y
 
 all: check
@@ -22,6 +22,9 @@ typecheck: install
 	@uv run --frozen pyright
 
 check: lint typecheck test
+
+session-key: install
+	@uv run --frozen python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 
 clean:
 	@echo "cleaning runtime artifacts..."

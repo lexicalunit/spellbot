@@ -172,6 +172,73 @@ class TestCogOwner:
             await run_owner_command(cog, cog.unban_guild, context, str(target_guild))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
+    async def test_promote_and_demote(
+        self,
+        bot: SpellBot,
+        context: commands.Context[SpellBot],
+    ) -> None:
+        target_user = MagicMock()
+        target_user.id = 2002
+        cog = OwnerCog(bot)
+
+        await run_owner_command(cog, cog.promote, context, str(target_user.id))
+
+        context.author.send.assert_called_once_with(  # type: ignore
+            f"User <@{target_user.id}> is now an admin.",
+        )
+        user = (
+            await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
+        ).scalar_one()
+        assert user.is_admin
+
+        DatabaseSession.expire_all()
+        await run_owner_command(cog, cog.demote, context, str(target_user.id))
+        user = (
+            await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
+        ).scalar_one()
+        assert not user.is_admin
+
+    async def test_promote_without_target(
+        self,
+        bot: SpellBot,
+        context: commands.Context[SpellBot],
+    ) -> None:
+        cog = OwnerCog(bot)
+        await run_owner_command(cog, cog.promote, context, None)
+        context.author.send.assert_called_once_with("No target user.")  # type: ignore
+
+    async def test_promote_with_invalid_target(
+        self,
+        bot: SpellBot,
+        context: commands.Context[SpellBot],
+    ) -> None:
+        cog = OwnerCog(bot)
+        await run_owner_command(cog, cog.promote, context, "abc")
+        context.author.send.assert_called_once_with("Invalid user id.")  # type: ignore
+
+    async def test_promote_and_demote_exceptions(
+        self,
+        bot: SpellBot,
+        context: commands.Context[SpellBot],
+        mocker: MockerFixture,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        target_user = MagicMock()
+        target_user.id = 2002
+        cog = OwnerCog(bot)
+
+        mocker.patch("spellbot.cogs.owner_cog.set_admin", AsyncMock(side_effect=RuntimeError()))
+
+        with pytest.raises(RuntimeError):
+            await run_owner_command(cog, cog.promote, context, str(target_user.id))
+        assert "rolling back database session due to unhandled exception" in caplog.text
+
+        caplog.clear()
+
+        with pytest.raises(RuntimeError):
+            await run_owner_command(cog, cog.demote, context, str(target_user.id))
+        assert "rolling back database session due to unhandled exception" in caplog.text
+
     async def test_stats(
         self,
         bot: SpellBot,

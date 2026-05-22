@@ -30,6 +30,7 @@ from spellbot.database import (
 from spellbot.models import Base, Queue
 from spellbot.models import User as UserModel
 from spellbot.settings import Settings
+from spellbot.settings import settings as runtime_settings
 from spellbot.web import build_web_app
 from tests.factories import (
     BlockFactory,
@@ -278,7 +279,13 @@ async def bot() -> SpellBot:
 def client(
     aiohttp_client: Callable[..., Awaitable[TestClient[web.Request, web.Application]]],
 ) -> TestClient[web.Request, web.Application]:
-    app = build_web_app()
+    # `setup_admin_sessions` reads `API_BASE_URL` once at construction to decide
+    # whether session cookies should be `Secure`. The TestClient binds to
+    # `http://127.0.0.1`, so a `Secure` cookie would be dropped on the loopback
+    # round-trip and `/admin/login` -> `/admin/oauth/callback` would lose its
+    # `oauth_state`. Force an `http://` base URL while the app is built.
+    with patch.object(runtime_settings, "API_BASE_URL", "http://127.0.0.1"):
+        app = build_web_app()
     event_loop = asyncio.get_event_loop()
     return event_loop.run_until_complete(aiohttp_client(app))
 

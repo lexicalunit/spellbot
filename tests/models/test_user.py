@@ -45,6 +45,7 @@ class TestModelUser:
             "updated_at": user1.updated_at,
             "name": user1.name,
             "banned": user1.banned,
+            "is_admin": user1.is_admin,
             "playgroup_user_id": None,
             "locale": "en",
         }
@@ -57,6 +58,7 @@ class TestModelUser:
             "updated_at": user2.updated_at,
             "name": user2.name,
             "banned": user2.banned,
+            "is_admin": user2.is_admin,
             "playgroup_user_id": None,
             "locale": "en",
         }
