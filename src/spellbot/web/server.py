@@ -11,10 +11,12 @@ from spellbot.database import initialize_connection
 from spellbot.environment import running_in_pytest
 from spellbot.logs import configure_logging
 from spellbot.settings import settings
+from spellbot.tracing import configure_tracing
 
 from .builder import build_web_app
 
 configure_logging(settings.LOG_LEVEL)
+configure_tracing()
 
 logger = logging.getLogger(__name__)
 

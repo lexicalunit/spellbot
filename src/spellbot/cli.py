@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from socket import socket
 
@@ -12,6 +13,7 @@ from . import __version__
 from .logs import configure_logging
 from .metrics import no_metrics
 from .settings import settings
+from .tracing import configure_tracing
 
 
 @click.command()
@@ -81,12 +83,11 @@ def main(
     level = log_level if log_level is not None else settings.LOG_LEVEL
     configure_logging(level)
 
-    import logging  # allow_inline
-
     # ddtrace logging is awful and spammy
     ddtrace_logger = logging.getLogger("ddtrace")
     ddtrace_logger.propagate = False
     ddtrace_logger.setLevel(logging.CRITICAL)
+    configure_tracing()
 
     # When metrics are enabled, let's ensure that datadog-agent is running first...
     if not no_metrics():  # pragma: no cover
