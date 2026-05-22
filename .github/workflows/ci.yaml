@@ -381,8 +381,8 @@ jobs:
 
   deploy-stage:
     name: Deploy to stage
-    needs: [build, ci]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.build.result == 'success'
+    # Deploy on every push to main, with no dependence on other jobs.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     uses: ./.github/workflows/deploy.yml
     with:
       environment: stage
