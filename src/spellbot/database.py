@@ -6,6 +6,8 @@ from contextvars import ContextVar, Token
 from typing import TYPE_CHECKING, Any, NoReturn
 from uuid import uuid4
 
+from sqlalchemy import any_, bindparam
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.asyncio import (
     AsyncConnection,
     AsyncEngine,
@@ -19,7 +21,9 @@ from .models import create_all, reverse_all
 from .settings import settings
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import AsyncGenerator, Sequence
+
+    from sqlalchemy.sql.elements import ColumnElement
 
     # For type checking, use the generic version from the stubs
     _CallableObjectProxyBase = CallableObjectProxy
@@ -204,3 +208,19 @@ async def rollback_transaction() -> None:  # pragma: no cover
 
 def delete_test_database(worker_id: str) -> None:  # pragma: no cover
     reverse_all(f"{settings.RESOLVED_DATABASE_URL}-{worker_id}")
+
+
+def any_of(column: ColumnElement[Any], values: Sequence[Any]) -> ColumnElement[bool]:
+    """
+    Build a `column = ANY(:values)` predicate using a single typed array bind.
+
+    Equivalent in semantics to `column.in_(values)` against PostgreSQL, but
+    emits a single typed array bind instead of SQLAlchemy's expanding bind
+    parameters. The expanding form produces `__[POSTCOMPILE_*]` tokens in
+    the captured SQL that the Datadog APM SQL obfuscator cannot parse,
+    causing affected query spans to be tagged `Non-parsable SQL query` and
+    dropping their per-resource stats rollups.
+    """
+    return column == any_(
+        bindparam(None, list(values), type_=ARRAY(column.type), unique=True),
+    )

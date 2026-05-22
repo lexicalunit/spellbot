@@ -12,7 +12,7 @@ from sqlalchemy.sql.expression import and_, asc, column, or_
 from sqlalchemy.sql.functions import count
 
 from spellbot.data import PlayerDataDict, QueueData
-from spellbot.database import DatabaseSession
+from spellbot.database import DatabaseSession, any_of
 from spellbot.models import (
     Block,
     Game,
@@ -233,7 +233,7 @@ async def _find_existing(
         row.blocked_user_xid
         for row in (
             await DatabaseSession.execute(
-                select(Block).where(Block.user_xid.in_(joiners)),
+                select(Block).where(any_of(Block.user_xid, joiners)),
             )
         )
         .scalars()
@@ -252,7 +252,7 @@ async def _find_existing(
             row.blocked_user_xid
             for row in (
                 await DatabaseSession.execute(
-                    select(Block).where(Block.user_xid.in_(players)),
+                    select(Block).where(any_of(Block.user_xid, players)),
                 )
             )
             .scalars()
@@ -304,7 +304,7 @@ async def other_game_ids(game_data: GameData) -> list[int]:
     rows = (
         await DatabaseSession.execute(
             select(Queue.game_id).where(
-                Queue.user_xid.in_(player_xids),
+                any_of(Queue.user_xid, player_xids),
                 Queue.game_id != game_data.id,
             ),
         )
@@ -394,7 +394,7 @@ async def make_ready(
     player_xids = [queue.user_xid for queue in queues]
     await DatabaseSession.execute(
         delete(Queue)
-        .where(Queue.user_xid.in_(player_xids))
+        .where(any_of(Queue.user_xid, player_xids))
         .execution_options(synchronize_session=False),
     )
 
@@ -414,7 +414,7 @@ async def watch_notes(
                 select(Watch).where(
                     and_(
                         Watch.guild_xid == game_data.guild_xid,
-                        Watch.user_xid.in_(player_xids),
+                        any_of(Watch.user_xid, player_xids),
                     ),
                 ),
             )
@@ -508,11 +508,11 @@ async def inactive_games(guild_xid: int | None = None) -> list[GameData]:
 @tracer.wrap()
 async def delete_games(game_ids: list[int]) -> int:
     """Delete the games with the given ids."""
-    query = update(Game).where(Game.id.in_(game_ids)).values(deleted_at=datetime.now(tz=UTC))
+    query = update(Game).where(any_of(Game.id, game_ids)).values(deleted_at=datetime.now(tz=UTC))
     await DatabaseSession.execute(query)
     result = await DatabaseSession.execute(
         delete(Queue)
-        .where(Queue.game_id.in_(game_ids))
+        .where(any_of(Queue.game_id, game_ids))
         .execution_options(synchronize_session=False),
     )
     dequeued = result.rowcount
@@ -526,7 +526,7 @@ async def message_xids(game_ids: list[int]) -> list[int]:
     """Return the discord post message ids for the given game ids."""
     query = select(
         Post.message_xid,
-    ).where(Post.game_id.in_(game_ids))
+    ).where(any_of(Post.game_id, game_ids))
     rows = (await DatabaseSession.execute(query)).all()
     return [int(row[0]) for row in rows if row[0]]
 
@@ -537,7 +537,7 @@ async def dequeue_players(player_xids: list[int]) -> list[int]:
     queues = (
         (
             await DatabaseSession.execute(
-                select(Queue).where(Queue.user_xid.in_(player_xids)),
+                select(Queue).where(any_of(Queue.user_xid, player_xids)),
             )
         )
         .scalars()

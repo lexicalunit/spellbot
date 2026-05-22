@@ -9,7 +9,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
-from spellbot.database import DatabaseSession
+from spellbot.database import DatabaseSession, any_of
 from spellbot.models import (
     Block,
     Game,
@@ -224,7 +224,7 @@ async def leave_game(user_data: UserData, channel_xid: int) -> list[GameData]:
     await DatabaseSession.execute(
         delete(Queue).where(
             Queue.user_xid == user_data.xid,
-            Queue.game_id.in_(left_game_ids),
+            any_of(Queue.game_id, left_game_ids),
         ),
     )
     await DatabaseSession.commit()
@@ -233,7 +233,7 @@ async def leave_game(user_data: UserData, channel_xid: int) -> list[GameData]:
     # we need to update their updated_at field now.
     query = (
         update(Game)
-        .where(Game.id.in_(left_game_ids))
+        .where(any_of(Game.id, left_game_ids))
         .values(updated_at=datetime.now(tz=UTC))
         .returning(Game)
         .execution_options(synchronize_session="fetch")
@@ -577,7 +577,7 @@ async def get_players_by_xid(xids: list[int]) -> list[UserData]:
     """Fetch user data for the given list of user ids."""
     return [
         u.to_data()
-        for u in (await DatabaseSession.execute(select(User).where(User.xid.in_(xids))))
+        for u in (await DatabaseSession.execute(select(User).where(any_of(User.xid, xids))))
         .scalars()
         .all()
     ]
@@ -707,7 +707,7 @@ async def filter_blocked_list(author_xid: int, other_xids: list[int]) -> list[in
         for row in (
             await DatabaseSession.execute(
                 select(Block).where(
-                    Block.blocked_user_xid.in_([author_xid, *other_xids]),
+                    any_of(Block.blocked_user_xid, [author_xid, *other_xids]),
                 ),
             )
         )
