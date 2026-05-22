@@ -448,6 +448,7 @@ def cli() -> Generator[MagicMock]:
         patch("spellbot.cli.asyncio") as mock_asyncio,
         patch("spellbot.cli.uvloop") as mock_uvloop,
         patch("spellbot.cli.configure_logging") as mock_configure_logging,
+        patch("spellbot.cli.configure_tracing") as mock_configure_tracing,
         patch("spellbot.cli.hupper") as mock_hupper,
         patch("spellbot.client.build_bot") as mock_build_bot,
         patch("spellbot.cli.settings") as mock_settings,
@@ -468,6 +469,7 @@ def cli() -> Generator[MagicMock]:
         obj.uvloop = mock_uvloop
         obj.build_bot = mock_build_bot
         obj.configure_logging = mock_configure_logging
+        obj.configure_tracing = mock_configure_tracing
         obj.hupper = mock_hupper
         obj.launch_dev_server = mock_launch_dev_server
         obj.settings = mock_settings
