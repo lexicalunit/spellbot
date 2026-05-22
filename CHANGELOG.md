@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v19.1.3](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.3) - 2026-05-22
+
 ### Changed
 
 - Replaced SQLAlchemy `.in_(list)` predicates with PostgreSQL `= ANY(:array)` binds via a new `any_of()` helper, so the Datadog APM SQL obfuscator can parse the captured statements instead of tagging them as `Non-parsable SQL query`.
