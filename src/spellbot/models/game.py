@@ -176,7 +176,7 @@ class Game(Base):
     )
 
     async def players(self) -> list[User]:
-        from spellbot.database import DatabaseSession  # allow_inline
+        from spellbot.database import DatabaseSession, any_of  # allow_inline
 
         from . import Play, Queue, User  # allow_inline
 
@@ -190,7 +190,7 @@ class Game(Base):
             )
         player_xids = [int(row[0]) for row in xid_result]
         users_result = await DatabaseSession.execute(
-            select(User).where(User.xid.in_(player_xids)),
+            select(User).where(any_of(User.xid, player_xids)),
         )
         return list(users_result.scalars().all())
 

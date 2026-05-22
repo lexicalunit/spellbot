@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import and_, case, distinct, extract, func, or_, select
 
-from spellbot.database import DatabaseSession
+from spellbot.database import DatabaseSession, any_of
 from spellbot.enums import GAME_FORMAT_ORDER, GameBracket, GameFormat, GameService
 from spellbot.models import Block, Game, Guild, Play, User
 from spellbot.services.plays import extract_ngrams, normalize_rule
@@ -393,12 +393,12 @@ async def dashboard_casual_vs_cedh(period: PeriodSpec, opts: GuildFilter) -> dic
     cedh_format = GameFormat.CEDH.value
     cedh_bracket = GameBracket.BRACKET_5.value
     casual_clause = and_(
-        Game.guild_xid.in_(CASUAL_GUILDS),
+        any_of(Game.guild_xid, list(CASUAL_GUILDS)),
         Game.format != cedh_format,
         Game.bracket != cedh_bracket,
     )
     cedh_clause = or_(
-        Game.guild_xid.in_(CEDH_GUILDS),
+        any_of(Game.guild_xid, list(CEDH_GUILDS)),
         Game.format == cedh_format,
         Game.bracket == cedh_bracket,
     )
@@ -461,7 +461,7 @@ async def dashboard_server_popularity(
             select(Guild.name, bucket_col, func.count(Game.id))
             .select_from(Game)
             .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
-            .where(*filters, Guild.name.in_(top_names))
+            .where(*filters, any_of(Guild.name, top_names))
             .group_by(Guild.name, bucket_col)
             .order_by(bucket_col),
         )
