@@ -20,5 +20,6 @@ class UserData:
     updated_at: datetime
     name: str
     banned: bool
+    is_admin: bool = False
     playgroup_user_id: int | None = None
     locale: str = "en"

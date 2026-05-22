@@ -71,6 +71,43 @@ class TestServiceUsers:
         updated = await users.set_banned(user.xid, banned=True)
         assert updated.banned
 
+    async def test_users_set_admin_promotes_existing_user(self) -> None:
+        user = UserFactory.create(is_admin=False)
+
+        updated = await users.set_admin(user.xid, is_admin=True)
+        assert updated.is_admin
+
+        DatabaseSession.expire_all()
+        fresh = await DatabaseSession.get(User, user.xid)
+        assert fresh is not None
+        assert fresh.is_admin
+        assert fresh.name == user.name
+
+    async def test_users_set_admin_demotes_existing_user(self) -> None:
+        user = UserFactory.create(is_admin=True)
+
+        updated = await users.set_admin(user.xid, is_admin=False)
+        assert not updated.is_admin
+
+    async def test_users_set_admin_creates_missing_user(self) -> None:
+        assert await DatabaseSession.get(User, 9999) is None
+
+        updated = await users.set_admin(9999, is_admin=True)
+        assert updated.is_admin
+        assert updated.xid == 9999
+        assert updated.name == "Unknown User"
+
+    async def test_users_is_admin_true(self) -> None:
+        user = UserFactory.create(is_admin=True)
+        assert await users.is_admin(user.xid) is True
+
+    async def test_users_is_admin_false(self) -> None:
+        user = UserFactory.create(is_admin=False)
+        assert await users.is_admin(user.xid) is False
+
+    async def test_users_is_admin_missing_user(self) -> None:
+        assert await users.is_admin(8888) is False
+
     async def test_users_current_game_id(self, game: Game) -> None:
         user = UserFactory.create(game=game)
 

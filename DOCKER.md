@@ -1,7 +1,6 @@
 # Docker Support
 
-SpellBot can be run directly from docker so that you don't have
-to worry about installing anything or managing your environment.
+SpellBot can be run directly from docker so that you don't have to worry about installing anything or managing your environment.
 
 ## Database
 
@@ -36,8 +35,7 @@ DOCKER_BUILDKIT=1 docker buildx build \
     -t 'lexicalunit/spellbot' .
 ```
 
-Now you can run SpellBot via `docker run`. You should pass your
-configuration into the process via environment variables:
+Now you can run SpellBot via `docker run`. You should pass your configuration into the process via environment variables:
 
 ```shell
 docker run -it --rm \

@@ -31,6 +31,7 @@ locals {
     "DD_API_KEY",
     "DD_APP_KEY",
     "BOT_TOKEN",
+    "BOT_APPLICATION_ID",
     "SECRET_TOKEN",
     "TABLESTREAM_AUTH_KEY",
     "CONVOKE_API_KEY",
@@ -46,7 +47,10 @@ locals {
     "DD_API_KEY",
     "DD_APP_KEY",
     "BOT_TOKEN",
-    "SECRET_TOKEN"
+    "BOT_APPLICATION_ID",
+    "SECRET_TOKEN",
+    "BOT_CLIENT_SECRET",
+    "SESSION_SECRET_KEY"
   ]
 }
 
@@ -130,12 +134,14 @@ resource "aws_ecs_task_definition" "spellbot" {
       portMappings = [{ containerPort = 80, protocol = "tcp" }]
       environment = [
         for k, v in merge(local.common_env, {
-          DD_SERVICE  = "spellapi"
-          DD_ENV      = var.env_name
-          ENVIRONMENT = var.env_name
-          PORT        = "80"
-          HOST        = "0.0.0.0"
-          REDIS_URL   = "rediss://${var.elasticache_endpoint}:${var.elasticache_port}"
+          DD_SERVICE   = "spellapi"
+          DD_ENV       = var.env_name
+          ENVIRONMENT  = var.env_name
+          PORT         = "80"
+          HOST         = "0.0.0.0"
+          REDIS_URL    = "rediss://${var.elasticache_endpoint}:${var.elasticache_port}"
+          OWNER_XID    = local.app_common_env.OWNER_XID
+          API_BASE_URL = "https://${local.domain_name}"
         }) : { name = k, value = v }
       ]
       secrets = concat(

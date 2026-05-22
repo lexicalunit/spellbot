@@ -3,7 +3,8 @@ from __future__ import annotations
 from discord.app_commands import AppCommandError
 
 
-class SpellBotError(AppCommandError): ...
+class SpellBotError(AppCommandError):
+    """Base class for SpellBot-raised application command errors."""
 
 
 class AdminOnlyError(SpellBotError):
