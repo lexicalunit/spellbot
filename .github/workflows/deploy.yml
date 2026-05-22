@@ -29,6 +29,13 @@ jobs:
 
     environment: ${{ inputs.environment }}
 
+    # Serialize deploys that share a commit SHA so a stage push to `main` and a
+    # prod tag deploy of the same commit (or a re-run of either) can never both
+    # try to upload the immutable SHA tag at the same time.
+    concurrency:
+      group: deploy-image-${{ github.sha }}
+      cancel-in-progress: false
+
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -78,36 +85,23 @@ jobs:
         id: check-image
         run: |
           IMAGE_TAG="${{ steps.short-sha.outputs.short-sha }}"
-          if aws ecr describe-images --repository-name ${{ env.ECR_REPOSITORY }} --image-ids imageTag=$IMAGE_TAG 2>/dev/null; then
+          set +e
+          ERR=$(aws ecr describe-images \
+            --repository-name "${{ env.ECR_REPOSITORY }}" \
+            --image-ids imageTag="$IMAGE_TAG" 2>&1 >/dev/null)
+          STATUS=$?
+          set -e
+          if [[ $STATUS -eq 0 ]]; then
             echo "Image with tag $IMAGE_TAG already exists in ECR, skipping build"
             echo "exists=true" >> $GITHUB_OUTPUT
-          else
+          elif echo "$ERR" | grep -q "ImageNotFoundException"; then
             echo "Image with tag $IMAGE_TAG does not exist, will build and push"
             echo "exists=false" >> $GITHUB_OUTPUT
+          else
+            echo "Unexpected error from describe-images:"
+            echo "$ERR"
+            exit 1
           fi
-
-      - name: Build Docker image tags
-        id: image-tags
-        if: steps.check-image.outputs.exists == 'false'
-        run: |
-          BASE_TAG="${{ steps.ecr-uri.outputs.ecr-uri }}:${{ steps.short-sha.outputs.short-sha }}"
-          TAGS="$BASE_TAG"
-
-          if [[ "${{ inputs.environment }}" == "stage" ]]; then
-            TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:stage"
-            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-              TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:pr-${{ github.event.number }}"
-            fi
-          elif [[ "${{ inputs.environment }}" == "prod" ]]; then
-            TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:latest"
-            TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:prod"
-          fi
-
-          if [[ -n "${{ inputs.image-tag-suffix }}" ]]; then
-            TAGS="$TAGS,${{ steps.ecr-uri.outputs.ecr-uri }}:${{ inputs.image-tag-suffix }}"
-          fi
-
-          echo "tags=$TAGS" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         if: steps.check-image.outputs.exists == 'false'
@@ -116,11 +110,70 @@ jobs:
           context: .
           platforms: linux/arm64
           push: true
-          tags: ${{ steps.image-tags.outputs.tags }}
+          tags: ${{ steps.ecr-uri.outputs.ecr-uri }}:${{ steps.short-sha.outputs.short-sha }}
           build-args: |
             DD_VERSION=${{ steps.short-sha.outputs.short-sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Apply environment alias tags
+        # Always run, even when the build was skipped, so that aliases like
+        # `latest`, `prod`, `stage`, and `pr-<n>` always point at the SHA we are
+        # actually deploying. `aws ecr put-image` is idempotent: when an alias
+        # already points at this manifest it returns ImageAlreadyExistsException
+        # which we treat as a no-op.
+        run: |
+          REPO="${{ env.ECR_REPOSITORY }}"
+          SHA_TAG="${{ steps.short-sha.outputs.short-sha }}"
+
+          ALIASES=()
+          if [[ "${{ inputs.environment }}" == "stage" ]]; then
+            ALIASES+=("stage")
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              ALIASES+=("pr-${{ github.event.number }}")
+            fi
+          elif [[ "${{ inputs.environment }}" == "prod" ]]; then
+            ALIASES+=("latest" "prod")
+          fi
+          if [[ -n "${{ inputs.image-tag-suffix }}" ]]; then
+            ALIASES+=("${{ inputs.image-tag-suffix }}")
+          fi
+
+          if [[ ${#ALIASES[@]} -eq 0 ]]; then
+            echo "No alias tags to apply"
+            exit 0
+          fi
+
+          MANIFEST=$(aws ecr batch-get-image \
+            --repository-name "$REPO" \
+            --image-ids imageTag="$SHA_TAG" \
+            --query 'images[0].imageManifest' \
+            --output text)
+          if [[ -z "$MANIFEST" || "$MANIFEST" == "None" ]]; then
+            echo "Could not retrieve manifest for tag $SHA_TAG"
+            exit 1
+          fi
+
+          for ALIAS in "${ALIASES[@]}"; do
+            echo "Applying alias tag '$ALIAS' -> $SHA_TAG"
+            set +e
+            ERR=$(aws ecr put-image \
+              --repository-name "$REPO" \
+              --image-tag "$ALIAS" \
+              --image-manifest "$MANIFEST" 2>&1 >/dev/null)
+            STATUS=$?
+            set -e
+            if [[ $STATUS -eq 0 ]]; then
+              continue
+            fi
+            if echo "$ERR" | grep -q "ImageAlreadyExistsException"; then
+              echo "Alias '$ALIAS' already points at this manifest"
+              continue
+            fi
+            echo "Failed to apply alias '$ALIAS':"
+            echo "$ERR"
+            exit 1
+          done
 
       - name: Deploy to ECS
         id: deploy
