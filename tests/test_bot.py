@@ -763,3 +763,12 @@ class TestTTLDict:
         assert cache.get(1) is None
         assert cache[2] == "b"
         assert cache[3] == "c"
+
+    def test_purge_removes_expired_entries(self, mocker: MockerFixture) -> None:
+        now = mocker.patch("spellbot.client.monotonic", return_value=1000.0)
+        cache = TTLDict[int, str](maxsize=10, ttl=60.0)
+        cache[1] = "a"
+        cache[2] = "b"
+        now.return_value = 2000.0
+        assert cache.get(1) is None
+        assert cache.get(2) is None

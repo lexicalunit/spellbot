@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     SECRET_TOKEN: str | None = None
     CHECK_SIGNATURE: bool = True
 
+    # Admin dashboard (Discord OAuth2)
+    BOT_CLIENT_SECRET: str | None = None
+    SESSION_SECRET_KEY: str | None = None
+
     # Logging
     LOG_LEVEL: str = "INFO"
 

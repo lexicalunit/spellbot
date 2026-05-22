@@ -185,8 +185,8 @@ Any usage of SpellBot implies that you accept the following policies.
 [kofi-button]: https://img.shields.io/badge/Ko--fi-F16061?style=flat&logo=ko-fi&logoColor=white
 [kofi]: https://ko-fi.com/lexicalunit
 [lexicalunit]: http://github.com/lexicalunit
-[metrics-badge]: https://img.shields.io/badge/metrics-grafana-orange.svg
-[metrics]: https://lexicalunit.grafana.net/d/4TSUCbcMz/spellbot?orgId=1
+[metrics-badge]: https://img.shields.io/badge/metrics-dashboard-orange.svg
+[metrics]: http://prod.app.spellbot.io/admin/dashboard
 [mit-badge]: https://img.shields.io/badge/License-MIT-yellow.svg
 [mit]: https://opensource.org/license/mit
 [patreon-button]: https://img.shields.io/badge/Patreon-F96854?style=flat&logo=patreon&logoColor=white

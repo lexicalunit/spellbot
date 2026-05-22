@@ -17,7 +17,7 @@ from spellbot.database import db_session_manager
 from spellbot.models import import_models
 from spellbot.redis_client import close_redis
 from spellbot.settings import settings
-from spellbot.web.api import analytics, ping, record, rest, status
+from spellbot.web.api import admin_auth, analytics, dashboard, ping, record, rest, status
 from spellbot.web.tools import rate_limited
 
 if TYPE_CHECKING:
@@ -33,6 +33,8 @@ ALL_ROUTES = [
     analytics.routes,
     record.routes,
     rest.routes,
+    admin_auth.routes,
+    dashboard.routes,
 ]
 
 
@@ -90,9 +92,36 @@ async def serve_analytics_js(_: web.Request) -> web.FileResponse:
     )
 
 
+async def serve_dashboard_js(_: web.Request) -> web.FileResponse:
+    """
+    Serve the admin dashboard JavaScript file.
+
+    Served publicly (the file contains no secrets — only chart wiring and
+    fetch calls against `/admin/dashboard/*`, which are themselves gated by
+    `admin_auth_middleware`). No-cache headers ensure admins pick up new
+    dashboard code immediately after a deploy without a hard refresh.
+    """
+    return web.FileResponse(
+        TEMPLATES_ROOT / "dashboard.js",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Content-Type": "application/javascript; charset=utf-8",
+        },
+    )
+
+
 def build_web_app() -> web.Application:
     import_models()
-    app = web.Application(middlewares=[security_headers_middleware, auth_middleware])
+    app = web.Application(
+        middlewares=[
+            security_headers_middleware,
+            auth_middleware,
+        ],
+    )
+    # `setup_admin_sessions` appends the aiohttp_session middleware;
+    # so it must come before `admin_auth_middleware`
+    admin_auth.setup_admin_sessions(app)
+    app.middlewares.append(admin_auth.admin_auth_middleware)
     aiohttp_jinja2.setup(
         app,
         loader=jinja2.FileSystemLoader(TEMPLATES_ROOT),
@@ -101,6 +130,7 @@ def build_web_app() -> web.Application:
     for routes in ALL_ROUTES:
         app.router.add_routes(routes)
     app.router.add_get("/analytics.js", serve_analytics_js)
+    app.router.add_get("/dashboard.js", serve_dashboard_js)
     app.on_cleanup.append(close_shared_clients)
     return app
 

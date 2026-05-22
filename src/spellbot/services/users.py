@@ -130,6 +130,42 @@ async def set_banned(user_xid: int, banned: bool) -> UserData:
 
 
 @tracer.wrap()
+async def set_admin(user_xid: int, is_admin: bool) -> UserData:
+    """Grant or revoke admin dashboard access for the given user id."""
+    values = {
+        "xid": user_xid,
+        "name": "Unknown User",
+        "updated_at": datetime.now(tz=UTC),
+        "is_admin": is_admin,
+    }
+    stmt = insert(User).values(**values)
+    stmt = (
+        stmt.on_conflict_do_update(
+            index_elements=[User.xid],
+            index_where=User.xid == values["xid"],
+            set_={
+                "updated_at": stmt.excluded.updated_at,
+                "is_admin": stmt.excluded.is_admin,
+            },
+        )
+        .values(values)
+        .returning(User)
+    )
+    updated_user: User = (await DatabaseSession.execute(stmt)).scalars().one()
+    await DatabaseSession.commit()
+    return updated_user.to_data()
+
+
+@tracer.wrap()
+async def is_admin(user_xid: int) -> bool:
+    """Return True if the given user xid has admin dashboard access."""
+    result = await DatabaseSession.execute(
+        select(User.is_admin).where(User.xid == user_xid),
+    )
+    return bool(result.scalar())
+
+
+@tracer.wrap()
 async def set_playgroup_user_id(user_xid: int, playgroup_user_id: int) -> None:
     """Store the Playgroup Live user ID for the given Discord user."""
     await DatabaseSession.execute(
