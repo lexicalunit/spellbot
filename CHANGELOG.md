@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Log pipeline processor to categorize ECS tasks by container.
+- Additional logging for admin dashboard authentication.
+
 ## [v19.1.1](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.1) - 2026-05-21
 
 ### Fixed
