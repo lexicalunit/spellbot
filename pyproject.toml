@@ -10,10 +10,12 @@ classifiers = [
 ]
 dependencies = [
   "aiohttp-jinja2>=1.6",
+  "aiohttp-session>=2.12.1",
   "aiohttp>=3.9.4",
   "alembic>=1.13.1",
   "babel>=2.14.0",
   "click>=8.1.7",
+  "cryptography>=48.0.0",
   "datadog>=0.49.1",
   "ddtrace>=3.16.2",
   "discord-py>=2.7.1",

@@ -55,6 +55,13 @@ class User(Base):
         server_default=false(),
         doc="If true, this user is banned from using SpellBot",
     )
+    is_admin = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="If true, this user can access the admin dashboard",
+    )
     playgroup_user_id = Column(
         BigInteger,
         nullable=True,
@@ -136,6 +143,7 @@ class User(Base):
             updated_at=self.updated_at,  # type: ignore
             name=self.name,  # type: ignore
             banned=self.banned,  # type: ignore
+            is_admin=self.is_admin,  # type: ignore
             playgroup_user_id=self.playgroup_user_id,  # type: ignore
             locale=self.locale,  # type: ignore
         )

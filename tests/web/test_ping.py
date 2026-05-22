@@ -44,6 +44,12 @@ class TestWebStaticFiles:
         assert "ANALYTICS_CONFIG" in text
         assert resp.headers.get("Cache-Control") == "public, max-age=3600"
 
+    async def test_dashboard_js(self, client: ClientSession) -> None:
+        resp = await client.get("/dashboard.js")
+        assert resp.status == 200
+        assert resp.content_type == "application/javascript"
+        assert resp.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
+
 
 @pytest.mark.asyncio
 class TestWebHealth:
