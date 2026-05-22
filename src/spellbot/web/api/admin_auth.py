@@ -138,6 +138,16 @@ async def admin_oauth_callback(request: web.Request) -> web.StreamResponse:
     session = await get_session(request)
     expected_state = session.get("oauth_state")
     if not code or not state or state != expected_state:
+        logger.warning(
+            "Invalid OAuth state: has_code=%s has_state=%s session_new=%s "
+            "has_expected=%s state_match=%s ua=%s",
+            bool(code),
+            bool(state),
+            session.new,
+            expected_state is not None,
+            bool(state) and state == expected_state,
+            request.headers.get("User-Agent", "")[:80],
+        )
         return web.Response(status=400, text="Invalid OAuth state.")
 
     data = {

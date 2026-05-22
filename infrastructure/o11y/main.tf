@@ -1208,6 +1208,52 @@ resource "datadog_monitor" "sqlalchemy_pool_timeout" {
   EOT
 }
 
+# Log Pipelines
+resource "datadog_logs_custom_pipeline" "spellbot_ecs" {
+  name       = "SpellBot ECS"
+  is_enabled = true
+  filter {
+    query = "source:ecs @aws.awslogs.logGroup:/ecs/spellbot-*"
+  }
+  processor {
+    category_processor {
+      name       = "Tag ECS container as component:bot|api|agent"
+      is_enabled = true
+      target     = "component"
+      category {
+        name = "bot"
+        filter {
+          query = "@aws.awslogs.logStream:spellbot/*"
+        }
+      }
+      category {
+        name = "api"
+        filter {
+          query = "@aws.awslogs.logStream:gunicorn/*"
+        }
+      }
+      category {
+        name = "agent"
+        filter {
+          query = "@aws.awslogs.logStream:datadog/*"
+        }
+      }
+    }
+  }
+  processor {
+    attribute_remapper {
+      name                 = "Promote component attribute to tag"
+      is_enabled           = true
+      sources              = ["component"]
+      source_type          = "attribute"
+      target               = "component"
+      target_type          = "tag"
+      preserve_source      = false
+      override_on_conflict = false
+    }
+  }
+}
+
 resource "datadog_monitor" "postgres_connection_errors" {
   on_missing_data     = "default"
   require_full_window = false
