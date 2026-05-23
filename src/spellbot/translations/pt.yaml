@@ -219,11 +219,11 @@ pt:
     no_permission: "You do not have permission to do that."
     guild_only: "This command only works in a guild."
     no_dms: "This command is not supported in DMs."
-    banned: "You have been banned from using SpellBot."
-    verified_only: "Only verified users can do that here."
-    unverified_only: "Only unverified users can do that here."
+    banned: "Este comando não é suportado em DMs."
+    verified_only: "Apenas usuários verificados podem fazer isso aqui."
+    unverified_only: "Apenas usuários não verificados podem fazer isso aqui."
   # Playgroup Live commands
   playgroup:
-    already_linked: "Your Discord account is already linked to Playgroup Live!"
-    linked: "Linked! Welcome, **%{username}**. Your Playgroup Live games will now be attributed to your account."
-    not_found: "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."
+    already_linked: "Sua conta Discord já está vinculada ao Playgroup Live!"
+    linked: "Vinculado! Bem-vindo, **%{username}**. Seus jogos do Playgroup Live agora serão atribuídos à sua conta."
+    not_found: "Nenhuma conta Playgroup encontrada para seu Discord. Vá para <https://playgroup.gg/profiles> e clique em **Link Discord**, depois execute `/playgroup link` novamente para confirmar."

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from ddtrace.trace import tracer
 
 from spellbot import services
-from spellbot.i18n import guild_locale, t
+from spellbot.i18n import t, user_locale
 from spellbot.operations import (
     safe_delete_message,
     safe_fetch_text_channel,
@@ -93,7 +93,7 @@ class LeaveAction(BaseAction):
         assert self.interaction.channel is not None
         assert self.user_data is not None
         channel_xid = self.interaction.channel.id
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         if not (game_id := await services.users.current_game_id(self.user_data, channel_xid)):
             await safe_send_channel(
                 self.interaction,
@@ -133,7 +133,7 @@ class LeaveAction(BaseAction):
             if do_delete_game:
                 await services.games.delete_games([game_data.id])
 
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await safe_send_channel(
             self.interaction,
             t("leave.removed_channel", locale=locale),
@@ -183,7 +183,7 @@ class LeaveAction(BaseAction):
             if do_delete_game:
                 await services.games.delete_games([game_data.id])
 
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await safe_send_channel(
             self.interaction,
             t("leave.removed_all", locale=locale),

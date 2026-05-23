@@ -11,6 +11,7 @@ from discord.ext import commands
 
 from spellbot import services
 from spellbot.database import db_session_manager
+from spellbot.i18n import t, user_locale
 from spellbot.integrations.playgroup_live import TIMEOUT_S, lookup_playgroup_user
 from spellbot.metrics import add_span_context
 from spellbot.settings import settings
@@ -38,13 +39,14 @@ class PlaygroupCog(commands.Cog):
     async def link(self, interaction: discord.Interaction) -> None:
         add_span_context(interaction)
         await interaction.response.defer(ephemeral=True)
+        locale = user_locale(interaction)
 
         async with db_session_manager():
             user_data = await services.users.get(interaction.user.id)
 
             if user_data and user_data.playgroup_user_id is not None:
                 await interaction.followup.send(
-                    "Your Discord account is already linked to Playgroup Live!",
+                    t("playgroup.already_linked", locale=locale),
                     ephemeral=True,
                 )
                 return
@@ -62,15 +64,12 @@ class PlaygroupCog(commands.Cog):
                     playgroup_user_id,
                 )
                 await interaction.followup.send(
-                    f"Linked! Welcome, **{username}**. "
-                    "Your Playgroup Live games will now be attributed to your account.",
+                    t("playgroup.linked", locale=locale, username=username),
                     ephemeral=True,
                 )
             else:
                 await interaction.followup.send(
-                    "No Playgroup account found for your Discord. "
-                    "Go to <https://playgroup.gg/profiles> and click **Link Discord**, "
-                    "then run `/playgroup link` again to confirm.",
+                    t("playgroup.not_found", locale=locale),
                     ephemeral=True,
                 )
 
