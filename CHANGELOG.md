@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Most active guild per languages analytics on the admin dashboard.
+
 ## [v19.1.6](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.6) - 2026-05-22
 
 ### Added

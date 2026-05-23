@@ -130,6 +130,17 @@ async def dashboard_game_languages_endpoint(request: web.Request) -> web.Respons
     return await dashboard_json_endpoint(request, services.dashboard.dashboard_game_languages)
 
 
+@routes.get("/admin/dashboard/top-guild-per-game-language")
+@tracer.wrap(name="web", resource="dashboard_top_guild_per_game_language")
+async def dashboard_top_guild_per_game_language_endpoint(request: web.Request) -> web.Response:
+    """Return the most active guild for each distinct game locale."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(
+        request,
+        services.dashboard.dashboard_top_guild_per_game_language,
+    )
+
+
 @routes.get("/admin/dashboard/hour-of-day")
 @tracer.wrap(name="web", resource="dashboard_hour_of_day")
 async def dashboard_hour_of_day_endpoint(request: web.Request) -> web.Response:

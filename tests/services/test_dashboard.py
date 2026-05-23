@@ -376,6 +376,40 @@ class TestDashboardLanguages:
         result = await dashboard.dashboard_game_languages(period_30d(), all_guilds())
         assert isinstance(result["rows"], list)
 
+    async def test_top_guild_per_game_language(self, seed: Seed) -> None:
+        g1 = seed["g1"]
+        g2 = seed["g2"]
+        result = await dashboard.dashboard_top_guild_per_game_language(
+            period_all(),
+            all_guilds(),
+        )
+        by_locale = {row["locale"]: row for row in result["rows"]}
+        assert by_locale["en"]["guild_name"] == g1.name
+        assert by_locale["en"]["guild_xid"] == str(int(g1.xid))
+        assert by_locale["en"]["count"] == 4
+        assert by_locale["de"]["guild_name"] == g2.name
+        assert by_locale["de"]["guild_xid"] == str(int(g2.xid))
+        assert by_locale["de"]["count"] == 2
+        # Rows are ordered by count descending then locale.
+        assert result["rows"][0]["locale"] == "en"
+        assert result["rows"][1]["locale"] == "de"
+
+    async def test_top_guild_per_game_language_guild_filter(self, seed: Seed) -> None:
+        g1 = seed["g1"]
+        opts = GuildFilter(mode="exclude", xid=int(g1.xid))
+        result = await dashboard.dashboard_top_guild_per_game_language(period_all(), opts)
+        locales = {row["locale"] for row in result["rows"]}
+        assert "en" not in locales
+        assert "de" in locales
+
+    async def test_top_guild_per_game_language_bounded(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_top_guild_per_game_language(
+            period_30d(),
+            all_guilds(),
+        )
+        assert isinstance(result["rows"], list)
+
 
 @pytest.mark.asyncio
 class TestDashboardHourAndDay:
