@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v19.1.6](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.6) - 2026-05-22
+
 ### Added
 
 - Adds an `active` column to guilds to filter them out of tasks.
