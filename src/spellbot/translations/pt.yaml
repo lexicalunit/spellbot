@@ -222,3 +222,8 @@ pt:
     banned: "Este comando não é suportado em DMs."
     verified_only: "Apenas usuários verificados podem fazer isso aqui."
     unverified_only: "Apenas usuários não verificados podem fazer isso aqui."
+  # Playgroup Live commands
+  playgroup:
+    already_linked: "Sua conta Discord já está vinculada ao Playgroup Live!"
+    linked: "Vinculado! Bem-vindo, **%{username}**. Seus jogos do Playgroup Live agora serão atribuídos à sua conta."
+    not_found: "Nenhuma conta Playgroup encontrada para seu Discord. Vá para <https://playgroup.gg/profiles> e clique em **Link Discord**, depois execute `/playgroup link` novamente para confirmar."

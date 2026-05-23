@@ -6,7 +6,7 @@ from enum import Enum
 import discord
 
 from spellbot import services
-from spellbot.i18n import guild_locale, t
+from spellbot.i18n import t, user_locale
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
@@ -28,7 +28,7 @@ class BlockAction(BaseAction):
         action: ActionType,
     ) -> None:
         await services.users.upsert(target)
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
 
         assert hasattr(target, "id")
         target_xid = target.id
@@ -56,7 +56,7 @@ class BlockAction(BaseAction):
         await self.execute(target, ActionType.UNBLOCK)
 
     async def blocked(self, page: int) -> None:
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         blocklist = await services.users.blocklist(self.interaction.user.id)
         embed = discord.Embed(title=t("block.list_title", locale=locale))
         embed.set_thumbnail(url=settings.ICO_URL)
