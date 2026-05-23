@@ -22,6 +22,7 @@ from .errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
+from .i18n import t, user_locale
 from .metrics import add_span_error
 from .settings import settings
 
@@ -279,22 +280,23 @@ def for_all_callbacks(decorator: Any) -> Any:
 async def handle_interaction_errors(interaction: discord.Interaction, error: Exception) -> None:
     from .operations import safe_send_user  # allow_inline: circular import
 
+    locale = user_locale(interaction)
     if isinstance(error, AdminOnlyError):
-        return await safe_send_user(interaction.user, "You do not have permission to do that.")
+        return await safe_send_user(interaction.user, t("errors.no_permission", locale=locale))
     if isinstance(error, ModOnlyError):
-        return await safe_send_user(interaction.user, "You do not have permission to do that.")
+        return await safe_send_user(interaction.user, t("errors.no_permission", locale=locale))
     if isinstance(error, GuildOnlyError):
-        return await safe_send_user(interaction.user, "This command only works in a guild.")
+        return await safe_send_user(interaction.user, t("errors.guild_only", locale=locale))
     if isinstance(error, NoPrivateMessage):
-        return await safe_send_user(interaction.user, "This command is not supported in DMs.")
+        return await safe_send_user(interaction.user, t("errors.no_dms", locale=locale))
     if isinstance(error, UserBannedError):
-        return await safe_send_user(interaction.user, "You have been banned from using SpellBot.")
+        return await safe_send_user(interaction.user, t("errors.banned", locale=locale))
     if isinstance(error, GuildBannedError):
-        return await safe_send_user(interaction.user, "You have been banned from using SpellBot.")
+        return await safe_send_user(interaction.user, t("errors.banned", locale=locale))
     if isinstance(error, UserUnverifiedError):
-        return await safe_send_user(interaction.user, "Only verified users can do that here.")
+        return await safe_send_user(interaction.user, t("errors.verified_only", locale=locale))
     if isinstance(error, UserVerifiedError):
-        return await safe_send_user(interaction.user, "Only unverified users can do that here.")
+        return await safe_send_user(interaction.user, t("errors.unverified_only", locale=locale))
 
     add_span_error(error)
     ref = (
