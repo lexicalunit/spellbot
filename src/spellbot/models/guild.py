@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from functools import partial
 from typing import TYPE_CHECKING, cast
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false, null
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false, null, true
 from sqlalchemy.orm import relationship
 
 from . import Base, now
@@ -95,6 +95,13 @@ class Guild(Base):
         server_default=false(),
         doc="If true, enable mythic track for this guild",
     )
+    active = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=true(),
+        doc="If false, the bot is no longer a member of this guild",
+    )
 
     games = relationship(
         "Game",
@@ -142,4 +149,5 @@ class Guild(Base):
             notice=self.notice,  # type: ignore
             suggest_voice_category=self.suggest_voice_category,  # type: ignore
             enable_mythic_track=self.enable_mythic_track,  # type: ignore
+            active=self.active,  # type: ignore
         )
