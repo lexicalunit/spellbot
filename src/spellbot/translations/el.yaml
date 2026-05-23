@@ -222,3 +222,8 @@ el:
     banned: "You have been banned from using SpellBot."
     verified_only: "Only verified users can do that here."
     unverified_only: "Only unverified users can do that here."
+  # Playgroup Live commands
+  playgroup:
+    already_linked: "Your Discord account is already linked to Playgroup Live!"
+    linked: "Linked! Welcome, **%{username}**. Your Playgroup Live games will now be attributed to your account."
+    not_found: "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."

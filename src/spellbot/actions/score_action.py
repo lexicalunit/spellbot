@@ -5,7 +5,7 @@ import logging
 import discord
 
 from spellbot import services
-from spellbot.i18n import guild_locale, t
+from spellbot.i18n import t, user_locale
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
 
@@ -18,7 +18,7 @@ class ScoreAction(BaseAction):
     async def execute(self, target: discord.Member | discord.User) -> None:
         assert self.interaction.guild
         assert self.interaction.guild_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         guild_name = self.interaction.guild.name
         assert hasattr(target, "id")
         target_xid = target.id
@@ -42,7 +42,7 @@ class ScoreAction(BaseAction):
     async def history(self) -> None:
         assert self.interaction.channel
         assert hasattr(self.interaction.channel, "name")
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         channel_name = self.interaction.channel.name  # type: ignore
         channel_xid = self.interaction.channel.id
 
@@ -60,7 +60,7 @@ class ScoreAction(BaseAction):
 
         assert self.interaction.channel
         assert hasattr(self.interaction.channel, "name")
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         channel_name = self.interaction.channel.name  # type: ignore
         channel_xid = self.interaction.channel.id
         guild_xid = self.interaction.guild_id
