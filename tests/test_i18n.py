@@ -55,3 +55,52 @@ class TestTranslate:
         result = t("game.title.ready", locale="en")
         assert isinstance(result, str)
         assert len(result) > 0
+
+
+class TestPortugueseTranslations:
+    def test_simple_string(self) -> None:
+        assert t("game.title.ready", locale="pt") == "**O seu jogo está pronto!**"
+
+    def test_string_with_named_variable(self) -> None:
+        assert t("admin.channels_title", locale="pt", guild="MyGuild") == (
+            "Configuração para canais em MyGuild"
+        )
+
+    def test_pluralization_singular(self) -> None:
+        assert t("game.title.waiting_one", locale="pt", count=1) == (
+            "**À espera que mais 1 jogador se junte...**"
+        )
+
+    def test_pluralization_plural(self) -> None:
+        assert t("game.title.waiting_many", locale="pt", count=3) == (
+            "**À espera que mais 3 jogadores se juntem...**"
+        )
+
+    def test_region_qualified_locale_routes_to_pt(self) -> None:
+        # `t` normalizes "pt-BR" / "pt-PT" / "pt_BR" down to "pt" before lookup.
+        assert t("watch.title", locale="pt-BR") == "Utilizadores observados juntaram-se a um jogo"
+        assert t("watch.title", locale="pt_PT") == "Utilizadores observados juntaram-se a um jogo"
+
+    def test_user_locale_pt_returns_pt_translation(self) -> None:
+        interaction = MagicMock()
+        locale_enum = MagicMock()
+        locale_enum.value = "pt-BR"
+        interaction.locale = locale_enum
+        locale = user_locale(interaction)
+        assert locale == "pt"
+        assert t("button.join", locale=locale) == "Entrar neste jogo!"
+
+    def test_guild_locale_pt_returns_pt_translation(self) -> None:
+        guild = MagicMock()
+        locale_enum = MagicMock()
+        locale_enum.value = "pt-BR"
+        guild.preferred_locale = locale_enum
+        locale = guild_locale(guild)
+        assert locale == "pt"
+        assert t("admin.done", locale=locale) == "Concluído."
+
+    def test_pt_differs_from_en_for_translated_keys(self) -> None:
+        # Sanity check that we're actually reading from `pt.yaml`, not falling
+        # back to `en.yaml`, for a key that has been translated.
+        assert t("about.author", locale="pt") == "Autor"
+        assert t("about.author", locale="en") == "Author"
