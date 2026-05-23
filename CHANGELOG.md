@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds loading spinners when admin dashboard filter changes.
+
 ## [v19.1.7](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.7) - 2026-05-23
 
 ### Added
