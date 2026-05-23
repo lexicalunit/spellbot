@@ -9,7 +9,7 @@ from discord.embeds import Embed
 
 from spellbot import services
 from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.i18n import guild_locale, t
+from spellbot.i18n import guild_locale, t, user_locale
 from spellbot.models import Channel, GuildAward
 from spellbot.operations import (
     safe_delete_message,
@@ -65,7 +65,7 @@ class AdminAction(BaseAction):
         super().__init__(bot, interaction)
 
     async def report_failure(self) -> None:
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await safe_send_channel(
             self.interaction,
             t("admin.no_game_found", locale=locale),
@@ -207,7 +207,7 @@ class AdminAction(BaseAction):
         return embed
 
     async def forget_channel(self, channel_str: str) -> None:
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         try:
             channel_xid = int(channel_str)
         except ValueError:
@@ -263,7 +263,7 @@ class AdminAction(BaseAction):
         await safe_send_channel(self.interaction, embed=embed)
 
     async def channels(self, page: int) -> None:
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         embeds = await self.build_channels_embeds()
         try:
             await safe_send_channel(self.interaction, embed=embeds[page - 1])
@@ -275,7 +275,7 @@ class AdminAction(BaseAction):
             )
 
     async def awards(self, page: int) -> None:
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         embeds = await self.build_awards_embeds()
         try:
             await safe_send_channel(self.interaction, embed=embeds[page - 1])
@@ -293,7 +293,7 @@ class AdminAction(BaseAction):
         message: str,
         **options: bool | None,
     ) -> None:
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         repeating = bool(options.get("repeating", False))
         remove = bool(options.get("remove", False))
         verified_only = bool(options.get("verified_only", False))
@@ -346,7 +346,7 @@ class AdminAction(BaseAction):
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
     async def award_delete(self, guild_award_id: int) -> None:
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await services.guilds.award_delete(guild_award_id)
         embed = Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
@@ -358,7 +358,7 @@ class AdminAction(BaseAction):
 
     async def set_suggest_vc_category(self, category: str | None) -> None:
         assert self.guild_data is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         if self.guild_data.voice_create:
             await safe_send_channel(
                 self.interaction,
@@ -379,7 +379,7 @@ class AdminAction(BaseAction):
 
     async def set_motd(self, message: str | None = None) -> None:
         assert self.guild_data
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await services.guilds.set_motd(self.guild_data, message)
         await safe_send_channel(
             self.interaction,
@@ -419,7 +419,7 @@ class AdminAction(BaseAction):
 
     async def set_default_seats(self, seats: int) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await services.channels.set_default_seats(self.interaction.channel_id, seats)
         await safe_send_channel(
             self.interaction,
@@ -429,7 +429,7 @@ class AdminAction(BaseAction):
 
     async def set_default_format(self, format: int) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await services.channels.set_default_format(self.interaction.channel_id, format)
         await safe_send_channel(
             self.interaction,
@@ -439,7 +439,7 @@ class AdminAction(BaseAction):
 
     async def set_default_bracket(self, bracket: int) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await services.channels.set_default_bracket(self.interaction.channel_id, bracket)
         await safe_send_channel(
             self.interaction,
@@ -449,7 +449,7 @@ class AdminAction(BaseAction):
 
     async def set_default_service(self, service: int) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await services.channels.set_default_service(self.interaction.channel_id, service)
         await safe_send_channel(
             self.interaction,
@@ -459,7 +459,7 @@ class AdminAction(BaseAction):
 
     async def set_auto_verify(self, setting: bool) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await services.channels.set_auto_verify(self.interaction.channel_id, setting)
         await safe_send_channel(
             self.interaction,
@@ -469,7 +469,7 @@ class AdminAction(BaseAction):
 
     async def set_verified_only(self, setting: bool) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await services.channels.set_verified_only(self.interaction.channel_id, setting)
         await safe_send_channel(
             self.interaction,
@@ -479,7 +479,7 @@ class AdminAction(BaseAction):
 
     async def set_unverified_only(self, setting: bool) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         await services.channels.set_unverified_only(self.interaction.channel_id, setting)
         await safe_send_channel(
             self.interaction,
@@ -489,7 +489,7 @@ class AdminAction(BaseAction):
 
     async def set_channel_motd(self, message: str | None = None) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         setting = await services.channels.set_motd(self.interaction.channel_id, message)
         await safe_send_channel(
             self.interaction,
@@ -499,7 +499,7 @@ class AdminAction(BaseAction):
 
     async def set_channel_extra(self, message: str | None = None) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         setting = await services.channels.set_extra(self.interaction.channel_id, message)
         await safe_send_channel(
             self.interaction,
@@ -509,7 +509,7 @@ class AdminAction(BaseAction):
 
     async def set_voice_category(self, value: str) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         setting = await services.channels.set_voice_category(
             self.interaction.channel_id,
             value,
@@ -522,7 +522,7 @@ class AdminAction(BaseAction):
 
     async def set_delete_expired(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         setting = await services.channels.set_delete_expired(
             self.interaction.channel_id,
             value,
@@ -535,7 +535,7 @@ class AdminAction(BaseAction):
 
     async def set_blind_games(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         setting = await services.channels.set_blind_games(self.interaction.channel_id, value)
         await safe_send_channel(
             self.interaction,
@@ -545,7 +545,7 @@ class AdminAction(BaseAction):
 
     async def set_voice_invite(self, value: bool) -> None:
         assert self.interaction.channel_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         setting = await services.channels.set_voice_invite(self.interaction.channel_id, value)
         await safe_send_channel(
             self.interaction,
@@ -559,7 +559,7 @@ class AdminAction(BaseAction):
         from_user_xid: int,
         to_user_xid: int,
     ) -> None:  # pragma: no cover
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         if error := await services.users.move_user(guild_xid, from_user_xid, to_user_xid):
             await safe_send_channel(
                 self.interaction,
@@ -574,16 +574,16 @@ class AdminAction(BaseAction):
         )
 
     async def expire_games(self, guild_xid: int) -> None:
-        locale = guild_locale(self.guild)
+        user_loc = user_locale(self.interaction)
         results = []
         games = await services.games.inactive_games(guild_xid)
 
         batch = 0
         for game in games:
             game_id = game.id
-            results.append(t("admin.expire_game", locale=locale, game_id=game_id))
+            results.append(t("admin.expire_game", locale=user_loc, game_id=game_id))
             dequeued = await services.games.delete_games([game_id])
-            results.append(t("admin.expire_dequeued", locale=locale, count=dequeued))
+            results.append(t("admin.expire_dequeued", locale=user_loc, count=dequeued))
 
             for post_data in game.posts:
                 guild_xid = post_data.guild_xid
@@ -593,36 +593,37 @@ class AdminAction(BaseAction):
                 chan = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
                 if not chan:
                     results.append(
-                        t("admin.expire_no_channel", locale=locale, channel_id=channel_xid),
+                        t("admin.expire_no_channel", locale=user_loc, channel_id=channel_xid),
                     )
                     continue
 
                 post = safe_get_partial_message(chan, guild_xid, message_xid)
                 if not post:
                     results.append(
-                        t("admin.expire_no_message", locale=locale, message_id=message_xid),
+                        t("admin.expire_no_message", locale=user_loc, message_id=message_xid),
                     )
                     continue
 
                 channel_data = await services.channels.select(channel_xid)
                 if not dequeued or (channel_data and channel_data.delete_expired):
                     results.append(
-                        t("admin.expire_deleting", locale=locale, message_id=message_xid),
+                        t("admin.expire_deleting", locale=user_loc, message_id=message_xid),
                     )
                     if not await safe_delete_message(post):
-                        results.append(t("admin.expire_no_permission", locale=locale))
+                        results.append(t("admin.expire_no_permission", locale=user_loc))
                 else:
                     results.append(
-                        t("admin.expire_updating", locale=locale, message_id=message_xid),
+                        t("admin.expire_updating", locale=user_loc, message_id=message_xid),
                     )
+                    guild_loc = guild_locale(self.guild)
                     if not await safe_update_embed(
                         post,
-                        content=t("admin.game_expired", locale=locale),
+                        content=t("admin.game_expired", locale=guild_loc),
                         embed=None,
                         view=None,
                     ):
-                        results.append(t("admin.expire_no_permission", locale=locale))
-                results.append(t("admin.expire_done", locale=locale))
+                        results.append(t("admin.expire_no_permission", locale=user_loc))
+                results.append(t("admin.expire_done", locale=user_loc))
 
             batch += 1
             if batch >= 5:  # pragma: no cover
@@ -637,14 +638,14 @@ class AdminAction(BaseAction):
         else:
             await safe_send_channel(
                 self.interaction,
-                t("admin.expire_none", locale=locale),
+                t("admin.expire_none", locale=user_loc),
                 ephemeral=True,
             )
 
     async def user_info(self, target: discord.Member | discord.User) -> None:
         assert self.interaction.guild
         assert self.interaction.guild_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         guild_name = self.interaction.guild.name
         target_xid = target.id
 
@@ -743,7 +744,7 @@ class AdminAction(BaseAction):
     async def analytics(self) -> None:
         assert self.interaction.guild
         assert self.interaction.guild_id is not None
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
 
         EXPIRE_TIME = 15  # minutes
         url = generate_signed_url(

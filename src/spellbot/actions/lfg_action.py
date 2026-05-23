@@ -12,7 +12,7 @@ from ddtrace.trace import tracer
 
 from spellbot import services
 from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.i18n import guild_locale, t
+from spellbot.i18n import guild_locale, t, user_locale
 from spellbot.integrations import playgroup_live
 from spellbot.models import MAX_RULES_LENGTH, GameStatus, generate_pin
 from spellbot.operations import (
@@ -219,7 +219,7 @@ class LookingForGameAction(BaseAction):
 
     @tracer.wrap()
     async def execute_start(self) -> None:
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         if not self.guild or not self.channel:
             await safe_send_user(
                 self.interaction.user,

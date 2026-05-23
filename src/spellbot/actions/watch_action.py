@@ -7,7 +7,7 @@ import discord
 from discord.embeds import Embed
 
 from spellbot import services
-from spellbot.i18n import guild_locale, t
+from spellbot.i18n import guild_locale, t, user_locale
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
 from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
@@ -33,7 +33,7 @@ class WatchAction(BaseAction):
         if target:
             await services.users.upsert(target)
 
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         target_xid: int | None = None
         assert target is not None or id is not None
         if target and hasattr(target, "id"):
@@ -66,7 +66,7 @@ class WatchAction(BaseAction):
         id: str | None = None,
         note: str | None = None,
     ) -> None:
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         if not target and not id:
             await safe_send_channel(
                 self.interaction,
@@ -94,7 +94,7 @@ class WatchAction(BaseAction):
         target: discord.User | discord.Member | None = None,
         id: str | None = None,
     ) -> None:
-        locale = guild_locale(self.guild)
+        locale = user_locale(self.interaction)
         if not target and not id:
             await safe_send_channel(
                 self.interaction,
