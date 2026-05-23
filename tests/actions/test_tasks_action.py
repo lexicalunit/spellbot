@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
     from spellbot import SpellBot
-    from spellbot.models import Channel, Guild
     from tests.fixtures import Factories
 
 pytestmark = pytest.mark.use_db
@@ -330,7 +329,7 @@ class TestTaskCleanupOldVoiceChannels:
         caplog: pytest.LogCaptureFixture,
         factories: Factories,
     ) -> None:
-        factories.guild.create(voice_create=True)
+        guild = factories.guild.create(voice_create=True)
         mocker.patch(
             "spellbot.client.SpellBot.guilds",
             new_callable=PropertyMock,
@@ -340,6 +339,11 @@ class TestTaskCleanupOldVoiceChannels:
         async with TasksAction.create(bot) as action:
             await action.cleanup_old_voice_channels()
         assert "guild is not active" in caplog.text
+
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.active is False
 
     async def test_when_guild_is_not_cached(
         self,

@@ -124,6 +124,7 @@ class TasksAction:
 
             if guild_xid not in active_guild_xids:
                 logger.info("guild is not active")
+                await services.guilds.set_active(guild_xid, False)
                 continue
 
             guild = self.bot.get_guild(guild_xid)

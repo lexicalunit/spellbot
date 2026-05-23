@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.sql.expression import and_
+from sqlalchemy.sql.expression import and_, or_
 
 from spellbot.database import DatabaseSession
 from spellbot.environment import running_in_pytest
@@ -37,6 +37,7 @@ async def upsert(guild: discord.Guild) -> GuildData | None:
             "xid": guild.id,
             "name": name,
             "updated_at": datetime.now(tz=UTC),
+            "active": True,
         }
         upsert = insert(Guild).values(**values)
         upsert = upsert.on_conflict_do_update(
@@ -45,8 +46,12 @@ async def upsert(guild: discord.Guild) -> GuildData | None:
             set_={
                 "name": upsert.excluded.name,
                 "updated_at": upsert.excluded.updated_at,
+                "active": upsert.excluded.active,
             },
-            where=upsert.excluded.name != Guild.name,
+            where=or_(
+                upsert.excluded.name != Guild.name,
+                upsert.excluded.active != Guild.active,
+            ),
         )
         await DatabaseSession.execute(upsert, values)
         await DatabaseSession.commit()
@@ -165,15 +170,28 @@ async def voice_category_prefixes(guild_xid: int) -> list[str]:
 
 
 async def voiced() -> list[int]:
-    """Return guild xids that have voice channel creation enabled."""
+    """Return guild xids that have voice channel creation enabled and are active."""
     rows = (
         await DatabaseSession.execute(
-            select(Guild.xid).where(Guild.voice_create.is_(True)),  # type: ignore
+            select(Guild.xid).where(  # type: ignore
+                and_(
+                    Guild.voice_create.is_(True),
+                    Guild.active.is_(True),
+                ),
+            ),
         )
     ).all()
     if not rows:
         return []
     return [int(row[0]) for row in rows]
+
+
+async def set_active(guild_xid: int, active: bool) -> None:
+    """Mark the given guild as active or inactive."""
+    await DatabaseSession.execute(
+        update(Guild).where(Guild.xid == guild_xid).values(active=active),  # type: ignore
+    )
+    await DatabaseSession.commit()
 
 
 async def has_award_with_count(guild_xid: int, count: int) -> bool:

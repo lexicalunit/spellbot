@@ -291,6 +291,7 @@ def create_mock_guild(
         notice=kwargs.get("notice"),
         suggest_voice_category=suggest_voice_category,
         enable_mythic_track=kwargs.get("enable_mythic_track", True),
+        active=kwargs.get("active", True),
         channels=[],
         awards=[],
     )

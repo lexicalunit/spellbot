@@ -44,5 +44,6 @@ class TestModelGuild:
             "updated_at": guild.updated_at,
             "use_max_bitrate": guild.use_max_bitrate,
             "voice_create": guild.voice_create,
+            "active": guild.active,
             "xid": guild.xid,
         }

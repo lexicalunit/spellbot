@@ -119,8 +119,57 @@ class TestServiceGuilds:
         guild1 = GuildFactory.create(voice_create=True)
         GuildFactory.create()
         guild3 = GuildFactory.create(voice_create=True)
+        GuildFactory.create(voice_create=True, active=False)
 
         assert set(await guilds.voiced()) == {guild1.xid, guild3.xid}
+
+    async def test_guilds_set_active(self) -> None:
+        guild = GuildFactory.create()
+        assert guild.active is True
+
+        await guilds.set_active(guild.xid, active=False)
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.active is False
+
+        await guilds.set_active(guild.xid, active=True)
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.active is True
+
+    async def test_guilds_upsert_is_noop_when_unchanged(self) -> None:
+        guild = GuildFactory.create(name="guild-name")
+
+        DatabaseSession.expire_all()
+        before = await DatabaseSession.get(Guild, guild.xid)
+        assert before
+        original_updated_at = before.updated_at
+
+        discord_guild = MagicMock()
+        discord_guild.id = guild.xid
+        discord_guild.name = "guild-name"
+        await guilds.upsert(discord_guild)
+
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.updated_at == original_updated_at
+
+    async def test_guilds_upsert_reactivates_inactive_guild(self) -> None:
+        guild = GuildFactory.create(active=False)
+
+        discord_guild = MagicMock()
+        discord_guild.id = guild.xid
+        discord_guild.name = "reactivated-name"
+        await guilds.upsert(discord_guild)
+
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.active is True
+        assert refreshed.name == "reactivated-name"
 
     async def test_guilds_award_add(self) -> None:
         discord_guild = MagicMock()
