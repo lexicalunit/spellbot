@@ -214,3 +214,11 @@ es:
     version: "Version"
     author: "Author"
     description: "_The Discord bot for Webcam Magic._\n\nHaving issues with SpellBot? Please [report bugs](%{issues})!\n\n[🔗 Add SpellBot to your Discord!](%{invite})\n\nSpellBot's continued operation is made possible by [PlayEDH](https://www.playedh.com/) and my Patreon supporters.\n\n💜 Help keep SpellBot running by [becoming a patron!](%{patreon})"
+  # Interaction error messages
+  errors:
+    no_permission: "You do not have permission to do that."
+    guild_only: "This command only works in a guild."
+    no_dms: "This command is not supported in DMs."
+    banned: "You have been banned from using SpellBot."
+    verified_only: "Only verified users can do that here."
+    unverified_only: "Only unverified users can do that here."
