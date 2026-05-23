@@ -614,6 +614,41 @@
     }
   }
 
+  function renderTopGuildPerGameLanguage(sectionId, rows) {
+    const el = document.getElementById(sectionId);
+    if (!rows.length) {
+      el.innerHTML = '<div class="no-data">No data yet.</div>';
+      return;
+    }
+    const body = rows
+      .map(function (r) {
+        return (
+          "<tr><td>" +
+          escapeHtml(r.locale) +
+          "</td><td>" +
+          escapeHtml(r.guild_name) +
+          '</td><td class="num">' +
+          fmt(r.count) +
+          "</td></tr>"
+        );
+      })
+      .join("");
+    el.innerHTML =
+      '<table class="lang-table"><thead><tr><th>Locale</th><th>Server</th>' +
+      '<th style="text-align:right">Games</th></tr></thead><tbody>' +
+      body +
+      "</tbody></table>";
+  }
+
+  async function loadTopGuildPerGameLanguage() {
+    try {
+      const d = await fetchJson("top-guild-per-game-language");
+      renderTopGuildPerGameLanguage("topGuildPerGameLanguageSection", d.rows);
+    } catch (ex) {
+      showError("topGuildPerGameLanguageSection", "Failed to load.");
+    }
+  }
+
   function renderCountTable(sectionId, rows, keyField, label) {
     const el = document.getElementById(sectionId);
     if (!rows.length) {
@@ -1068,6 +1103,7 @@
     loadTopBlocked();
     loadUserLanguages();
     loadGameLanguages();
+    loadTopGuildPerGameLanguage();
     loadRules();
   }
 

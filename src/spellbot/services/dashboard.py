@@ -546,6 +546,44 @@ async def dashboard_game_languages(period: PeriodSpec, opts: GuildFilter) -> dic
     return {"rows": [{"locale": row[0], "count": int(row[1])} for row in rows]}
 
 
+async def dashboard_top_guild_per_game_language(
+    period: PeriodSpec,
+    opts: GuildFilter,
+) -> dict[str, Any]:
+    """Return the most active guild for each distinct game locale."""
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.isnot(None),
+        Guild.name.isnot(None),
+        *game_guild_filter(opts),
+    ]
+    if period.start_dt is not None:
+        filters.append(Game.started_at >= period.start_dt)
+    count_col = func.count(Game.id)
+    rows = (
+        await DatabaseSession.execute(
+            select(Game.locale, Guild.xid, Guild.name, count_col)  # type: ignore[arg-type]
+            .select_from(Game)
+            .join(Guild, Guild.xid == Game.guild_xid)
+            .where(*filters)
+            .group_by(Game.locale, Guild.xid, Guild.name)
+            .order_by(Game.locale, count_col.desc(), Guild.name),
+        )
+    ).all()
+
+    top_by_locale: dict[str, dict[str, Any]] = {}
+    for locale, guild_xid, guild_name, count in rows:
+        if locale in top_by_locale:
+            continue
+        top_by_locale[locale] = {
+            "locale": locale,
+            "guild_xid": str(int(guild_xid)),
+            "guild_name": guild_name,
+            "count": int(count),
+        }
+    ordered = sorted(top_by_locale.values(), key=lambda r: (-r["count"], r["locale"]))
+    return {"rows": ordered}
+
+
 async def dashboard_hour_of_day(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """
     Return counts of started games per UTC hour of the day (0-23).

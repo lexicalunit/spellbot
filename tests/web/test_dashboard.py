@@ -74,6 +74,7 @@ JSON_ENDPOINTS: list[tuple[str, set[str]]] = [
     ("/admin/dashboard/bracket-adoption", {"rate"}),
     ("/admin/dashboard/user-languages", {"rows"}),
     ("/admin/dashboard/game-languages", {"rows"}),
+    ("/admin/dashboard/top-guild-per-game-language", {"rows"}),
     ("/admin/dashboard/hour-of-day", {"hours"}),
     ("/admin/dashboard/day-of-week", {"days"}),
     ("/admin/dashboard/popular-formats", {"rows"}),
