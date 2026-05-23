@@ -193,6 +193,28 @@
     }
   }
 
+  // Markup mirrored from dashboard.html.j2 so a filter-driven reload reverts
+  // every panel to the same loading treatment used on the initial page render.
+  const SECTION_LOADING_HTML =
+    '<div class="section-loading">' +
+    '<div class="section-spinner"></div>' +
+    '<div class="section-loading-text">Loading...</div>' +
+    "</div>";
+  const STAT_LOADING_HTML = '<div class="section-spinner"></div>';
+
+  function showAllLoading() {
+    // Tear down live charts first so Chart.js releases its canvases before we
+    // wipe the containing element's children.
+    Object.keys(state.charts).forEach(destroyChart);
+    document.querySelectorAll(".chart-box, .table-box").forEach(function (el) {
+      el.innerHTML = SECTION_LOADING_HTML;
+    });
+    document.querySelectorAll(".stat-value").forEach(function (el) {
+      el.innerHTML = STAT_LOADING_HTML;
+    });
+    document.getElementById("bucketLabel").textContent = "—";
+  }
+
   function lineOpts(stacked) {
     return {
       responsive: true,
@@ -1085,6 +1107,7 @@
   }
 
   function reloadAll() {
+    showAllLoading();
     loadTotals();
     loadSummary();
     loadAvgWaitTime();
