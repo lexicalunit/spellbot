@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated README and main webpage to reflect the current state of Discord user settings.
+- Updated the screenshots used in the README and on the website.
+
 ## [v19.1.11](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.11) - 2026-05-24
 
 ### Added
