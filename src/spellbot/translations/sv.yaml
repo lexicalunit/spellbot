@@ -2,10 +2,10 @@ sv:
   # Game embed titles and descriptions
   game:
     title:
-      ready: "**Your game is ready!**"
-      rematch: "**Rematch Game!**"
-      waiting_one: "**Waiting for %{count} more player to join...**"
-      waiting_many: "**Waiting for %{count} more players to join...**"
+      ready: "**Ditt spel är redo!**"
+      rematch: "**Omspel!**"
+      waiting_one: "**Väntar på att %{count} till spelare ska gå med...**"
+      waiting_many: "**Väntar på att ytterligare %{count} spelare ska gå med...**"
     description:
       check_dm: "Please check your Direct Messages for your game details."
       rematch_info: "This is a rematch of a previous game. Please continue using the same game lobby and voice channel."
