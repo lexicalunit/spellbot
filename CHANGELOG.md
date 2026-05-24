@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Japanese translation.
+- More Polish translations.
+- Adds some Swedish translations.
+
 ## [v19.1.10](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.10) - 2026-05-23
 
 ### Added
