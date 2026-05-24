@@ -175,6 +175,8 @@ class TestDashboardSummary:
         result = await dashboard.dashboard_summary(period_all(), all_guilds())
         # 4 started in g1 + 2 in g2 = 6 started games (deleted has no started_at).
         assert result["games"] == 6
+        assert result["expired"] == 1
+        assert result["fill_rate"] == pytest.approx(85.7, rel=0.01)
         assert result["players"] == 4
         assert result["servers"] >= 2
         assert result["period"] == "all"
@@ -186,6 +188,8 @@ class TestDashboardSummary:
         opts = GuildFilter(mode="include", xid=int(g1.xid))
         result = await dashboard.dashboard_summary(period_all(), opts)
         assert result["games"] == 4
+        assert result["expired"] == 1
+        assert result["fill_rate"] == 80.0
         assert result["players"] == 3
 
     async def test_guild_exclude_filter(self, seed: Seed) -> None:
@@ -193,6 +197,8 @@ class TestDashboardSummary:
         opts = GuildFilter(mode="exclude", xid=int(g1.xid))
         result = await dashboard.dashboard_summary(period_all(), opts)
         assert result["games"] == 2
+        assert result["expired"] == 0
+        assert result["fill_rate"] == 100.0
         assert result["players"] == 2
 
     async def test_bounded_period(self, seed: Seed) -> None:
@@ -200,6 +206,13 @@ class TestDashboardSummary:
         result = await dashboard.dashboard_summary(period_30d(), all_guilds())
         assert result["games"] >= 1
         assert result["bucket"] == "day"
+
+    async def test_fill_rate_zero_when_no_games(self, factories: Factories) -> None:
+        del factories
+        result = await dashboard.dashboard_summary(period_30d(), all_guilds())
+        assert result["games"] == 0
+        assert result["expired"] == 0
+        assert result["fill_rate"] == 0.0
 
 
 @pytest.mark.asyncio
@@ -273,6 +286,41 @@ class TestDashboardGames:
         del seed
         result = await dashboard.dashboard_games(period_30d(), all_guilds())
         assert isinstance(result["started"], list)
+
+
+@pytest.mark.asyncio
+class TestDashboardPlayerGrowth:
+    async def test_cumulative_reaches_all_players(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_player_growth(period_all(), all_guilds())
+        series = result["cumulative_players"]
+        assert series, "expected at least one bucket"
+        # 4 distinct players ever play across both guilds.
+        assert series[-1]["count"] == 4
+        # Series is monotonically non-decreasing.
+        running = 0
+        for row in series:
+            assert row["count"] >= running
+            running = row["count"]
+
+    async def test_guild_filter(self, seed: Seed) -> None:
+        g2 = seed["g2"]
+        result = await dashboard.dashboard_player_growth(
+            period_all(),
+            GuildFilter(mode="include", xid=int(g2.xid)),
+        )
+        # Only u3 and u4 play in g2.
+        assert result["cumulative_players"][-1]["count"] == 2
+
+    async def test_bounded_period_returns_list(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_player_growth(period_30d(), all_guilds())
+        assert isinstance(result["cumulative_players"], list)
+
+    async def test_empty_when_no_plays(self, factories: Factories) -> None:
+        del factories
+        result = await dashboard.dashboard_player_growth(period_30d(), all_guilds())
+        assert result["cumulative_players"] == []
 
 
 @pytest.mark.asyncio

@@ -82,6 +82,14 @@ async def dashboard_games_endpoint(request: web.Request) -> web.Response:
     return await dashboard_json_endpoint(request, services.dashboard.dashboard_games)
 
 
+@routes.get("/admin/dashboard/player-growth")
+@tracer.wrap(name="web", resource="dashboard_player_growth")
+async def dashboard_player_growth_endpoint(request: web.Request) -> web.Response:
+    """Return cumulative unique-player counts bucketed at `period.bucket`."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_player_growth)
+
+
 @routes.get("/admin/dashboard/casual-vs-cedh")
 @tracer.wrap(name="web", resource="dashboard_casual_vs_cedh")
 async def dashboard_casual_vs_cedh_endpoint(request: web.Request) -> web.Response:
