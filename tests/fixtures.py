@@ -29,6 +29,7 @@ from spellbot.database import (
 )
 from spellbot.models import Base, Queue
 from spellbot.models import User as UserModel
+from spellbot.services.guilds import guild_cache
 from spellbot.settings import Settings
 from spellbot.settings import settings as runtime_settings
 from spellbot.web import build_web_app
@@ -502,3 +503,8 @@ def freezer(request: pytest.FixtureRequest) -> Generator[FreezeTimeFactory]:
 @pytest_asyncio.fixture(autouse=True)
 async def use_consistent_date(freezer: FreezeTimeFactory) -> None:
     freezer.move_to("1982-04-24")
+
+
+@pytest.fixture(autouse=True)
+def clear_guild_cache() -> None:
+    guild_cache.clear()

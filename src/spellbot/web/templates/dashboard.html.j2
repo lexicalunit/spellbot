@@ -77,7 +77,8 @@
         }
         .chart-box canvas { display: block; width: 100% !important; height: 100% !important; }
         .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
-        @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
+        .row.row-three { grid-template-columns: 1fr 1fr 1fr; }
+        @media (max-width: 900px) { .row, .row.row-three { grid-template-columns: 1fr; } }
         .footer {
             margin-top: 2rem; padding-top: 1rem;
             border-top: 1px solid #333; text-align: center;
@@ -220,12 +221,13 @@
             <div class="section"><h2>Most Blocked Players (All Time)</h2><div id="topBlockedSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
         </div>
 
-        <div class="row">
+        <div class="row row-three">
             <div class="section"><h2>User Languages</h2><div id="userLanguagesSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
             <div class="section"><h2>Game Languages</h2><div id="gameLanguagesSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
+            <div class="section"><h2>Guild Languages</h2><div id="guildLanguagesSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
         </div>
 
-        <div class="section"><h2>Most Active Server per Game Language</h2><div id="topGuildPerGameLanguageSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
+        <div class="section"><h2>Most Active Server per Language</h2><div id="topGuildPerGameLanguageSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
 
         <div class="row">
             <div class="section"><h2>Top Game Rules</h2><div id="topRulesSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>

@@ -15,7 +15,7 @@ from spellbot.errors import (
     UserUnverifiedError,
     UserVerifiedError,
 )
-from spellbot.i18n import user_locale
+from spellbot.i18n import guild_locale, user_locale
 from spellbot.metrics import add_span_request_id, setup_ignored_errors
 from spellbot.utils import user_can_moderate
 
@@ -62,7 +62,10 @@ class BaseAction:
     async def upsert_request_objects(self) -> None:  # pragma: no cover
         self.guild_data: GuildData | None = None
         if self.guild:
-            self.guild_data = await services.guilds.upsert(self.guild)
+            self.guild_data = await services.guilds.upsert(
+                self.guild,
+                locale=guild_locale(self.guild),
+            )
 
         if self.guild_data and self.guild_data.banned:
             raise GuildBannedError
