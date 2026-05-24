@@ -1,3 +1,5 @@
+commit_message: "New translations %original_file_name% (%language%)"
+
 files:
   - source: /src/spellbot/translations/en.yaml
     translation: /src/spellbot/translations/%two_letters_code%.yaml
