@@ -441,6 +441,57 @@ class TestDashboardLanguages:
         assert ja_rows[0]["guild_xid"] == str(int(top.xid))
         assert ja_rows[0]["count"] == 2
 
+    async def test_guild_languages(self, factories: Factories) -> None:
+        g_en_a = factories.guild.create(xid=900201, name="EN A", locale="en")
+        g_en_b = factories.guild.create(xid=900202, name="EN B", locale="en")
+        g_de = factories.guild.create(xid=900203, name="DE", locale="de")
+        ch_en_a = factories.channel.create(xid=910201, name="en-a-ch", guild=g_en_a)
+        ch_en_b = factories.channel.create(xid=910202, name="en-b-ch", guild=g_en_b)
+        ch_de = factories.channel.create(xid=910203, name="de-ch", guild=g_de)
+        # Multiple games per guild should not inflate the distinct-guild count.
+        for offset in (1.0, 2.0):
+            factories.game.create(
+                guild=g_en_a,
+                channel=ch_en_a,
+                started_at=NOW - timedelta(hours=offset),
+            )
+        factories.game.create(
+            guild=g_en_b,
+            channel=ch_en_b,
+            started_at=NOW - timedelta(hours=3.0),
+        )
+        factories.game.create(
+            guild=g_de,
+            channel=ch_de,
+            started_at=NOW - timedelta(hours=4.0),
+        )
+
+        result = await dashboard.dashboard_guild_languages(period_all(), all_guilds())
+        by_locale = {row["locale"]: row["count"] for row in result["rows"]}
+        assert by_locale["en"] == 2
+        assert by_locale["de"] == 1
+        # Rows are ordered by count descending then locale.
+        assert result["rows"][0]["locale"] == "en"
+
+    async def test_guild_languages_guild_filter(self, factories: Factories) -> None:
+        g1 = factories.guild.create(xid=900301, name="Excluded", locale="en")
+        g2 = factories.guild.create(xid=900302, name="Kept", locale="fr")
+        ch1 = factories.channel.create(xid=910301, name="ex-ch", guild=g1)
+        ch2 = factories.channel.create(xid=910302, name="kept-ch", guild=g2)
+        factories.game.create(guild=g1, channel=ch1, started_at=NOW - timedelta(hours=1.0))
+        factories.game.create(guild=g2, channel=ch2, started_at=NOW - timedelta(hours=2.0))
+
+        opts = GuildFilter(mode="exclude", xid=int(g1.xid))
+        result = await dashboard.dashboard_guild_languages(period_all(), opts)
+        locales = {row["locale"] for row in result["rows"]}
+        assert "en" not in locales
+        assert "fr" in locales
+
+    async def test_guild_languages_bounded(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_guild_languages(period_30d(), all_guilds())
+        assert isinstance(result["rows"], list)
+
 
 @pytest.mark.asyncio
 class TestDashboardHourAndDay:
