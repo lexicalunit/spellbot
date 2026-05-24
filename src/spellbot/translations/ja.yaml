@@ -216,14 +216,14 @@ ja:
     description: "_Webcam Magic 向けの Discord ボットです。_\n\nSpellBot で問題が発生していますか？[バグを報告](%{issues})してください！\n\n[🔗 SpellBot を Discord に追加！](%{invite})\n\nSpellBot の継続運用は、[PlayEDH](https://www.playedh.com/) と Patreon サポーターの支援によって支えられています。\n\n💜 [Patreon で支援して](%{patreon})、SpellBot の運営継続にご協力ください！"
   # Interaction error messages
   errors:
-    no_permission: "You do not have permission to do that."
-    guild_only: "This command only works in a guild."
-    no_dms: "This command is not supported in DMs."
-    banned: "You have been banned from using SpellBot."
-    verified_only: "Only verified users can do that here."
-    unverified_only: "Only unverified users can do that here."
+    no_permission: "それを行う権限がありません。"
+    guild_only: "このコマンドはギルド内でのみ動作します。"
+    no_dms: "このコマンドはDMではサポートされていません。"
+    banned: "SpellBotの使用は禁止されています。"
+    verified_only: "ここでそれを行うことができるのは検証済みユーザーのみです。"
+    unverified_only: "ここでそれを行うことができるのは未検証のユーザーのみです。"
   # Playgroup Live commands
   playgroup:
-    already_linked: "Your Discord account is already linked to Playgroup Live!"
-    linked: "Linked! Welcome, **%{username}**. Your Playgroup Live games will now be attributed to your account."
-    not_found: "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."
+    already_linked: "あなたのDiscordアカウントはすでにPlaygroup Liveにリンクされています！"
+    linked: "リンクしました！ようこそ**%{username}**。あなたのPlaygroupライブゲームはあなたのアカウントに帰属します。"
+    not_found: "あなたのDiscordのプレイグループアカウントが見つかりませんでした。 <https://playgroup.gg/profiles> に移動して**Discordをリンク**をクリックし、再度`/playgroup link`を実行して確認してください。"
