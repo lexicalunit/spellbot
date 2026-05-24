@@ -8,7 +8,7 @@ el:
       waiting_many: "**Αναμονή για να συμμετάσχουν %{count} ακόμη παίκτες...**"
     description:
       check_dm: "Ελέγξτε τα άμεσα μηνύματά σας για να δείτε τα στοιχεία του παιχνιδιού σας."
-      rematch_info: "Αυτή είναι ρεβάνς ενός προηγούμενου παιχνιδιού. Συνεχίστε να χρησιμοποιείτε το ίδιο λόμπι παιχνιδιού και το ίδιο κανάλι φωνής."
+      rematch_info: "Αυτή είναι ρεβάνς ενός προηγούμενου παιχνιδιού. Συνεχίστε να χρησιμοποιείτε το ίδιο λόμπι παιχνιδιού και το ίδιο φωνητικό κανάλι."
       join_link: "# [Συμμετέχετε στο παιχνίδι σας %{service} τώρα!](%{link})"
       link_error: "Λυπούμαστε αλλά το SpellBot δεν κατάφερε να δημιουργήσει σύνδεσμο για αυτό το παιχνίδι. Μεταβείτε στο [%{service}](%{url}) για να δημιουργήσετε έναν."
       use_service: "Χρησιμοποιήστε %{service} για να παίξετε αυτό το παιχνίδι."
@@ -16,7 +16,7 @@ el:
       password: "Κωδικός πρόσβασης: `%{password}`"
       voice_chat: "## Συμμετέχετε στη φωνητική συνομιλία τώρα: <#%{channel_id}>"
       voice_invite: "Ή χρησιμοποιήστε αυτήν την πρόσκληση φωνητικού καναλιού: %{invite}"
-      voice_already_picked: "## Your pod is already using a voice channel, join them now: <#%{channel_id}>!"
+      voice_already_picked: "## Η ομάδα σας χρησιμοποιεί ήδη φωνητικό κανάλι. Συμμετέχετε τώρα: <#%{channel_id}>!"
       voice_available: "## Please consider using this available voice channel: <#%{channel_id}>."
       jump_to_post: "You can also [jump to the original game post](%{link}) in <#%{channel_id}>."
     field:
@@ -99,7 +99,7 @@ el:
     field_motd: "MOTD"
     field_none: "None"
     field_public_links: "Δημόσιοι σύνδεσμοι"
-    field_voice_create: "Δημιουργία καναλιών φωνής"
+    field_voice_create: "Δημιουργία φωνητικών καναλιών"
     field_max_bitrate: "Use Max Bitrate"
     "on": "✅ On"
     "off": "❌ Off"
