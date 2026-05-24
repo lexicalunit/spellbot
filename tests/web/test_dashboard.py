@@ -64,10 +64,23 @@ async def admin_client(client: WebClient, mocker: MockerFixture) -> WebClient:
 
 # Each tuple: (url path, expected top-level JSON key(s) that must be present).
 JSON_ENDPOINTS: list[tuple[str, set[str]]] = [
-    ("/admin/dashboard/summary", {"games", "players", "servers", "brackets", "period", "bucket"}),
+    (
+        "/admin/dashboard/summary",
+        {
+            "games",
+            "expired",
+            "fill_rate",
+            "players",
+            "servers",
+            "brackets",
+            "period",
+            "bucket",
+        },
+    ),
     ("/admin/dashboard/totals", {"games", "players", "servers"}),
     ("/admin/dashboard/users-activity", {"new_users", "dau", "wau", "mau", "dau_mau"}),
     ("/admin/dashboard/games", {"started", "expired"}),
+    ("/admin/dashboard/player-growth", {"cumulative_players"}),
     ("/admin/dashboard/casual-vs-cedh", {"casual", "cedh"}),
     ("/admin/dashboard/server-popularity", {"series"}),
     ("/admin/dashboard/service-popularity", {"series"}),

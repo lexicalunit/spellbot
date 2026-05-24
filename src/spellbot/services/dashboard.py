@@ -126,13 +126,7 @@ async def dashboard_guilds(*, top_n: int = 100) -> list[dict[str, Any]]:
 
 
 async def dashboard_summary(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
-    """
-    Return the headline totals shown across the top of the dashboard.
-
-    Games and players are restricted by `period` and `opts`. The `servers` count
-    reflects guilds whose `updated_at` falls within the period; this metric is global
-    and intentionally ignores the guild filter.
-    """
+    """Return the headline totals shown across the top of the dashboard."""
     game_filters = [Game.started_at.isnot(None), *game_guild_filter(opts)]
     if period.start_dt is not None:
         game_filters.append(Game.started_at >= period.start_dt)
@@ -141,6 +135,23 @@ async def dashboard_summary(period: PeriodSpec, opts: GuildFilter) -> dict[str, 
         (await DatabaseSession.execute(select(func.count(Game.id)).where(*game_filters))).scalar()
         or 0,
     )
+
+    expired_filters = [
+        Game.started_at.is_(None),
+        Game.deleted_at.isnot(None),
+        *game_guild_filter(opts),
+    ]
+    if period.start_dt is not None:
+        expired_filters.append(Game.deleted_at >= period.start_dt)
+    expired = int(
+        (
+            await DatabaseSession.execute(select(func.count(Game.id)).where(*expired_filters))
+        ).scalar()
+        or 0,
+    )
+
+    total_attempted = games + expired
+    fill_rate = round(100.0 * games / total_attempted, 1) if total_attempted else 0.0
 
     players = int(
         (
@@ -178,6 +189,8 @@ async def dashboard_summary(period: PeriodSpec, opts: GuildFilter) -> dict[str, 
 
     return {
         "games": games,
+        "expired": expired,
+        "fill_rate": fill_rate,
         "players": players,
         "servers": servers,
         "brackets": brackets,
@@ -370,6 +383,22 @@ async def dashboard_games(period: PeriodSpec, opts: GuildFilter) -> dict[str, An
         "started": [{"date": iso_str(r[0]), "count": int(r[1])} for r in started_rows],
         "expired": [{"date": iso_str(r[0]), "count": int(r[1])} for r in expired_rows],
     }
+
+
+async def dashboard_player_growth(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """
+    Return cumulative unique-player counts bucketed at `period.bucket`.
+
+    Each user is attributed to the bucket containing their first in-scope
+    `Game.started_at`; the series accumulates new users across buckets.
+    """
+    new_users = await new_user_bucket_series(period, opts)
+    running = 0
+    series: list[dict[str, Any]] = []
+    for row in new_users:
+        running += int(row["count"])
+        series.append({"date": row["date"], "count": running})
+    return {"cumulative_players": series}
 
 
 async def dashboard_casual_vs_cedh(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:

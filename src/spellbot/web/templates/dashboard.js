@@ -281,12 +281,16 @@
       document.getElementById("statGames").textContent = fmt(data.games);
       document.getElementById("statPlayers").textContent = fmt(data.players);
       document.getElementById("statServers").textContent = fmt(data.servers);
+      document.getElementById("statFillRate").textContent =
+        (data.fill_rate == null ? 0 : data.fill_rate) + "%";
       document.getElementById("bucketLabel").textContent = data.bucket || "—";
       setBracketStats(data.brackets);
     } catch (ex) {
-      ["statGames", "statPlayers", "statServers"].forEach(function (id) {
-        document.getElementById(id).textContent = "—";
-      });
+      ["statGames", "statPlayers", "statServers", "statFillRate"].forEach(
+        function (id) {
+          document.getElementById(id).textContent = "—";
+        },
+      );
       document.getElementById("bucketLabel").textContent = "—";
       setBracketStats(null);
     }
@@ -323,68 +327,86 @@
     return dataset;
   }
 
-  async function loadUsersActivity() {
+  async function loadGameActivity() {
+    let users;
+    let games;
     try {
-      const d = await fetchJson("users-activity");
-      document.getElementById("statDauMau").textContent =
-        (d.dau_mau || 0) + "%";
-      document.getElementById("statWau").textContent = fmt(avgCount(d.wau));
-      document.getElementById("statMau").textContent = fmt(avgCount(d.mau));
-      const rawDates = unifyDates([d.new_users, d.dau]);
-      const trim = computeTrim(rawDates, currentBucket());
-      const labels = rawDates.slice(trim.startIdx).map(function (s) {
-        return s.slice(0, 10);
-      });
-      const newUsers = alignSeries(rawDates, d.new_users).slice(trim.startIdx);
-      const dau = alignSeries(rawDates, d.dau).slice(trim.startIdx);
-      const dash = dashSegment(trim.partialFromIdx);
-      const ctx = addCanvas("usersActivitySection");
-      destroyChart("usersActivity");
-      state.charts.usersActivity = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: labels,
-          datasets: [
-            applyDash(lineDataset("New Users", newUsers, COLORS[3]), dash),
-            applyDash(lineDataset("Active Users", dau, COLORS[0]), dash),
-          ],
-        },
-        options: lineOpts(false),
-      });
+      [users, games] = await Promise.all([
+        fetchJson("users-activity"),
+        fetchJson("games"),
+      ]);
     } catch (ex) {
-      showError("usersActivitySection", "Failed to load user activity.");
+      showError("gameActivitySection", "Failed to load game activity.");
       ["statWau", "statMau", "statDauMau"].forEach(function (id) {
         document.getElementById(id).textContent = "—";
       });
+      return;
     }
+    document.getElementById("statDauMau").textContent =
+      (users.dau_mau || 0) + "%";
+    document.getElementById("statWau").textContent = fmt(avgCount(users.wau));
+    document.getElementById("statMau").textContent = fmt(avgCount(users.mau));
+    const rawDates = unifyDates([
+      users.new_users,
+      games.started,
+      games.expired,
+    ]);
+    const trim = computeTrim(rawDates, currentBucket());
+    const labels = rawDates.slice(trim.startIdx).map(function (s) {
+      return s.slice(0, 10);
+    });
+    const newUsers = alignSeries(rawDates, users.new_users).slice(
+      trim.startIdx,
+    );
+    const started = alignSeries(rawDates, games.started).slice(trim.startIdx);
+    const expired = alignSeries(rawDates, games.expired).slice(trim.startIdx);
+    const dash = dashSegment(trim.partialFromIdx);
+    const ctx = addCanvas("gameActivitySection");
+    destroyChart("gameActivity");
+    state.charts.gameActivity = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          applyDash(lineDataset("New Users", newUsers, "#4ade80"), dash),
+          applyDash(lineDataset("Started Games", started, "#818cf8"), dash),
+          applyDash(lineDataset("Expired Games", expired, "#f472b6"), dash),
+        ],
+      },
+      options: lineOpts(false),
+    });
   }
 
-  async function loadGames() {
+  async function loadPlayerGrowth() {
     try {
-      const d = await fetchJson("games");
-      const rawDates = unifyDates([d.started, d.expired]);
+      const d = await fetchJson("player-growth");
+      const series = d.cumulative_players || [];
+      const rawDates = series.map(function (p) {
+        return p.date;
+      });
       const trim = computeTrim(rawDates, currentBucket());
       const labels = rawDates.slice(trim.startIdx).map(function (s) {
         return s.slice(0, 10);
       });
-      const started = alignSeries(rawDates, d.started).slice(trim.startIdx);
-      const expired = alignSeries(rawDates, d.expired).slice(trim.startIdx);
+      const points = series.slice(trim.startIdx);
       const dash = dashSegment(trim.partialFromIdx);
-      const ctx = addCanvas("gamesSection");
-      destroyChart("games");
-      state.charts.games = new Chart(ctx, {
+      const ctx = addCanvas("playerGrowthSection");
+      destroyChart("playerGrowth");
+      state.charts.playerGrowth = new Chart(ctx, {
         type: "line",
         data: {
           labels: labels,
           datasets: [
-            applyDash(lineDataset("Started", started, "#22c55e"), dash),
-            applyDash(lineDataset("Expired", expired, "#ef4444"), dash),
+            applyDash(
+              lineDataset("Total Unique Players", points, "#8b5cf6", true),
+              dash,
+            ),
           ],
         },
         options: lineOpts(false),
       });
     } catch (ex) {
-      showError("gamesSection", "Failed to load games.");
+      showError("playerGrowthSection", "Failed to load player growth.");
     }
   }
 
@@ -1120,8 +1142,8 @@
     loadTotals();
     loadSummary();
     loadAvgWaitTime();
-    loadUsersActivity();
-    loadGames();
+    loadGameActivity();
+    loadPlayerGrowth();
     loadCasualVsCedh();
     loadServerPopularity();
     loadServicePopularity();
