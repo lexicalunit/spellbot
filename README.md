@@ -108,27 +108,11 @@ SpellBot integrates seamlessly with [Mythic Track](https://www.mythictrack.com/s
 
 ## ❓ Help
 
-Two of the most common issues people using SpellBot run into are related to receiving Direct Messages from the bot. SpellBot uses Discord embeds in the DMs that it sends and there are some settings you need to enable for this to work correctly.
+The most common issue people have when using SpellBot is related to receiving Direct Messages from the bot. SpellBot uses Discord embeds in the DMs that it sends and there are some settings you need to enable for this to work correctly.
 
-In your `Settings ► Chat` make sure that you have enabled **Embeds and link previews**.
-
-<p align="center">
-    <img
-        src="https://spellbot.io/assets/img/screenshots/settings-chat.png"
-        width="700"
-        alt="Settings - Chat"
-    />
-</p>
-
-And in your `Settings ► Privacy & Safety`, enable both **Allow direct messages from server members** and **Enable message requests from server members you may not know**.
-
-<p align="center">
-    <img
-        src="https://spellbot.io/assets/img/screenshots/settings-privacy.png"
-        width="700"
-        alt="Settings - Privacy & Safety"
-    />
-</p>
+1. In your Settings search for **embeds and link previews** and make sure that it's on.
+2. For each Server you will want to make sure that you have allowed Direct Messages from those server members. Search your Settings for **Direct Messages** and turn the option on.
+3. You may also need to enable message requests from server members you may not know. Search your Settings for **message requests** and turn that option on as well.
 
 If you have more questions, please don't hesitate to join us on the [SpellBot Discord server][discord-invite] to get answers from our generous community.
 
