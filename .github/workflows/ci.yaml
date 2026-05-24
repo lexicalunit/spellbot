@@ -331,6 +331,29 @@ jobs:
         run: tflint --format=compact
         working-directory: infrastructure/o11y
 
+  deploy-stage:
+    name: Deploy to stage
+    needs:
+      [
+        changes,
+        build,
+        docker,
+        docs,
+        terraform-app,
+        terraform-db,
+        terraform-o11y,
+      ]
+    if: |
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: stage
+    secrets: inherit
+
   # Gate job - this is the only required check for PRs
   ci:
     runs-on: ubuntu-latest
@@ -343,6 +366,7 @@ jobs:
         terraform-app,
         terraform-db,
         terraform-o11y,
+        deploy-stage,
       ]
     if: always()
     steps:
@@ -377,13 +401,8 @@ jobs:
             echo "terraform-o11y job failed"
             exit 1
           fi
+          if [[ "${{ needs.deploy-stage.result }}" == "failure" ]]; then
+            echo "deploy-stage job failed"
+            exit 1
+          fi
           echo "All required jobs passed or were skipped"
-
-  deploy-stage:
-    name: Deploy to stage
-    # Deploy on every push to main, with no dependence on other jobs.
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    uses: ./.github/workflows/deploy.yml
-    with:
-      environment: stage
-    secrets: inherit
