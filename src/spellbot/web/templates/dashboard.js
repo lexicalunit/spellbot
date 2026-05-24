@@ -636,6 +636,15 @@
     }
   }
 
+  async function loadGuildLanguages() {
+    try {
+      const d = await fetchJson("guild-languages");
+      renderLanguageTable("guildLanguagesSection", d.rows, "Servers");
+    } catch (ex) {
+      showError("guildLanguagesSection", "Failed to load.");
+    }
+  }
+
   function renderTopGuildPerGameLanguage(sectionId, rows) {
     const el = document.getElementById(sectionId);
     if (!rows.length) {
@@ -1126,6 +1135,7 @@
     loadTopBlocked();
     loadUserLanguages();
     loadGameLanguages();
+    loadGuildLanguages();
     loadTopGuildPerGameLanguage();
     loadRules();
   }

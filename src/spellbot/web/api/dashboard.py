@@ -141,6 +141,14 @@ async def dashboard_top_guild_per_game_language_endpoint(request: web.Request) -
     )
 
 
+@routes.get("/admin/dashboard/guild-languages")
+@tracer.wrap(name="web", resource="dashboard_guild_languages")
+async def dashboard_guild_languages_endpoint(request: web.Request) -> web.Response:
+    """Return counts of distinct active guilds grouped by guild locale."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_guild_languages)
+
+
 @routes.get("/admin/dashboard/hour-of-day")
 @tracer.wrap(name="web", resource="dashboard_hour_of_day")
 async def dashboard_hour_of_day_endpoint(request: web.Request) -> web.Response:
