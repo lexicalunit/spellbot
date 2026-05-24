@@ -216,14 +216,14 @@ sv:
     description: "_Discord-boten för Webcam Magic._\n\nHar du problem med SpellBot? [Rapportera gärna fel](%{issues})!\n\n[🔗 Lägg till SpellBot till din Discord!](%{invite})\n\nSpellBots fortsatta drift möjliggörs av [PlayEDH](https://www.playedh.com/) och mina Patreon-medlemmar.\n\n💜 Hjälp till att hålla SpellBot igång genom att [bli Patreon-medlem!](%{patreon})"
   # Interaction error messages
   errors:
-    no_permission: "You do not have permission to do that."
-    guild_only: "This command only works in a guild."
-    no_dms: "This command is not supported in DMs."
-    banned: "You have been banned from using SpellBot."
-    verified_only: "Only verified users can do that here."
-    unverified_only: "Only unverified users can do that here."
+    no_permission: "Du har inte behörighet att göra det."
+    guild_only: "Detta kommando fungerar bara i en guild."
+    no_dms: "Detta kommando stöds inte i DMs."
+    banned: "Du har blivit bannad från att använda SpellBot."
+    verified_only: "Endast verifierade användare kan göra det här."
+    unverified_only: "Endast overifierade användare kan göra det här."
   # Playgroup Live commands
   playgroup:
-    already_linked: "Your Discord account is already linked to Playgroup Live!"
-    linked: "Linked! Welcome, **%{username}**. Your Playgroup Live games will now be attributed to your account."
-    not_found: "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."
+    already_linked: "Ditt Discord-konto är redan kopplat till Playgroup Live!"
+    linked: "Linked! Välkommen, **%{username}**. Dina Playgroup Live-spel kommer nu att tillskrivas ditt konto."
+    not_found: "Inget spelgruppskonto hittades för din Discord. Gå till <https://playgroup.gg/profiles> och klicka på **Länk Discord**, kör sedan `/playgroup link` igen för att bekräfta."
