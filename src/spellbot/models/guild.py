@@ -102,6 +102,13 @@ class Guild(Base):
         server_default=true(),
         doc="If false, the bot is no longer a member of this guild",
     )
+    locale = Column(
+        String(10),
+        nullable=False,
+        default="en",
+        server_default="en",
+        doc="The guild's preferred locale from Discord",
+    )
 
     games = relationship(
         "Game",
@@ -150,4 +157,5 @@ class Guild(Base):
             suggest_voice_category=self.suggest_voice_category,  # type: ignore
             enable_mythic_track=self.enable_mythic_track,  # type: ignore
             active=self.active,  # type: ignore
+            locale=self.locale,  # type: ignore
         )

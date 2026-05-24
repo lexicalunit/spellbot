@@ -584,6 +584,28 @@ async def dashboard_top_guild_per_game_language(
     return {"rows": ordered}
 
 
+async def dashboard_guild_languages(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """Return distinct active-guild counts grouped by guild locale, descending."""
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.isnot(None),
+        *game_guild_filter(opts),
+    ]
+    if period.start_dt is not None:
+        filters.append(Game.started_at >= period.start_dt)
+    count_col = func.count(distinct(Guild.xid))  # type: ignore[arg-type]
+    rows = (
+        await DatabaseSession.execute(
+            select(Guild.locale, count_col)
+            .select_from(Game)
+            .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore[arg-type]
+            .where(*filters)
+            .group_by(Guild.locale)
+            .order_by(count_col.desc(), Guild.locale),
+        )
+    ).all()
+    return {"rows": [{"locale": row[0], "count": int(row[1])} for row in rows]}
+
+
 async def dashboard_hour_of_day(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """
     Return counts of started games per UTC hour of the day (0-23).

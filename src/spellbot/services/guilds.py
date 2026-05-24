@@ -8,7 +8,6 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_, or_
 
 from spellbot.database import DatabaseSession
-from spellbot.environment import running_in_pytest
 from spellbot.models import Channel, Guild, GuildAward
 
 if TYPE_CHECKING:
@@ -17,45 +16,50 @@ if TYPE_CHECKING:
     from spellbot.data import GuildAwardData, GuildData
 
 
-guild_cache: dict[int, str] = {}
+guild_cache: dict[int, tuple[str, str | None]] = {}
 
 
-def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
-    """Return True if the guild xid is in the local name cache under the given name."""
-    if running_in_pytest():
-        return False
-    return bool((cached_name := guild_cache.get(xid)) and cached_name == name)
+def is_cached(xid: int, name: str, locale: str | None) -> bool:
+    """Return True if the guild xid is cached under the given name and locale."""
+    return guild_cache.get(xid) == (name, locale)
 
 
-async def upsert(guild: discord.Guild) -> GuildData | None:
+async def upsert(guild: discord.Guild, locale: str | None = None) -> GuildData | None:
     """Upsert the given Discord guild into the database."""
     name_max_len = Guild.name.property.columns[0].type.length
     raw_name = getattr(guild, "name", "")
     name = raw_name[:name_max_len]
-    if not is_cached(guild.id, name):  # pragma: no branch (caching disabled in tests)
+    if not is_cached(guild.id, name, locale):
         values = {
             "xid": guild.id,
             "name": name,
             "updated_at": datetime.now(tz=UTC),
             "active": True,
         }
+        if locale:
+            values["locale"] = locale
         upsert = insert(Guild).values(**values)
+        set_updates = {
+            "name": upsert.excluded.name,
+            "updated_at": upsert.excluded.updated_at,
+            "active": upsert.excluded.active,
+        }
+        where_clauses = [
+            upsert.excluded.name != Guild.name,
+            upsert.excluded.active != Guild.active,
+        ]
+        if locale:
+            set_updates["locale"] = upsert.excluded.locale
+            where_clauses.append(upsert.excluded.locale != Guild.locale)
         upsert = upsert.on_conflict_do_update(
             index_elements=[Guild.xid],  # type: ignore
             index_where=Guild.xid == values["xid"],
-            set_={
-                "name": upsert.excluded.name,
-                "updated_at": upsert.excluded.updated_at,
-                "active": upsert.excluded.active,
-            },
-            where=or_(
-                upsert.excluded.name != Guild.name,
-                upsert.excluded.active != Guild.active,
-            ),
+            set_=set_updates,
+            where=or_(*where_clauses),
         )
         await DatabaseSession.execute(upsert, values)
         await DatabaseSession.commit()
-        guild_cache[guild.id] = name
+        guild_cache[guild.id] = (name, locale)
 
     result = (
         await DatabaseSession.execute(select(Guild).where(Guild.xid == guild.id))  # type: ignore

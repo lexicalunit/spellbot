@@ -45,5 +45,6 @@ class TestModelGuild:
             "use_max_bitrate": guild.use_max_bitrate,
             "voice_create": guild.voice_create,
             "active": guild.active,
+            "locale": guild.locale,
             "xid": guild.xid,
         }

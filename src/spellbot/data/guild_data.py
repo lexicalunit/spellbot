@@ -25,5 +25,6 @@ class GuildData:
     suggest_voice_category: str | None
     enable_mythic_track: bool
     active: bool = True
+    locale: str = "en"
     channels: list[ChannelData] = field(default_factory=list)
     awards: list[GuildAwardData] = field(default_factory=list)
