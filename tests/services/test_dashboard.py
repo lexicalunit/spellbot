@@ -410,6 +410,37 @@ class TestDashboardLanguages:
         )
         assert isinstance(result["rows"], list)
 
+    async def test_top_guild_per_game_language_keeps_only_top_per_locale(
+        self,
+        factories: Factories,
+    ) -> None:
+        top = factories.guild.create(xid=900101, name="Top Guild")
+        runner_up = factories.guild.create(xid=900102, name="Runner Up")
+        top_ch = factories.channel.create(xid=910101, name="top-ch", guild=top)
+        runner_up_ch = factories.channel.create(xid=910102, name="ru-ch", guild=runner_up)
+        for offset in (1.0, 2.0):
+            factories.game.create(
+                guild=top,
+                channel=top_ch,
+                started_at=NOW - timedelta(hours=offset),
+                locale="ja",
+            )
+        factories.game.create(
+            guild=runner_up,
+            channel=runner_up_ch,
+            started_at=NOW - timedelta(hours=3.0),
+            locale="ja",
+        )
+
+        result = await dashboard.dashboard_top_guild_per_game_language(
+            period_all(),
+            all_guilds(),
+        )
+        ja_rows = [row for row in result["rows"] if row["locale"] == "ja"]
+        assert len(ja_rows) == 1
+        assert ja_rows[0]["guild_xid"] == str(int(top.xid))
+        assert ja_rows[0]["count"] == 2
+
 
 @pytest.mark.asyncio
 class TestDashboardHourAndDay:

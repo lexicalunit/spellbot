@@ -171,6 +171,49 @@ class TestServiceGuilds:
         assert refreshed.active is True
         assert refreshed.name == "reactivated-name"
 
+    async def test_guilds_upsert_persists_locale(self) -> None:
+        discord_guild = MagicMock()
+        discord_guild.id = 202
+        discord_guild.name = "guild-name"
+        await guilds.upsert(discord_guild, locale="es")
+
+        DatabaseSession.expire_all()
+        guild = await DatabaseSession.get(Guild, discord_guild.id)
+        assert guild
+        assert guild.locale == "es"
+
+    async def test_guilds_upsert_updates_locale(self) -> None:
+        guild = GuildFactory.create(locale="en")
+
+        discord_guild = MagicMock()
+        discord_guild.id = guild.xid
+        discord_guild.name = guild.name
+        await guilds.upsert(discord_guild, locale="fr")
+
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.locale == "fr"
+
+    async def test_guilds_upsert_is_noop_when_locale_unchanged(self) -> None:
+        guild = GuildFactory.create(name="guild-name", locale="en")
+
+        DatabaseSession.expire_all()
+        before = await DatabaseSession.get(Guild, guild.xid)
+        assert before
+        original_updated_at = before.updated_at
+
+        discord_guild = MagicMock()
+        discord_guild.id = guild.xid
+        discord_guild.name = "guild-name"
+        await guilds.upsert(discord_guild, locale="en")
+
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.updated_at == original_updated_at
+        assert refreshed.locale == "en"
+
     async def test_guilds_award_add(self) -> None:
         discord_guild = MagicMock()
         discord_guild.id = 101
