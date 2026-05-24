@@ -216,14 +216,14 @@ pl:
     description: "_Bot do gier Webcam Magic na Discordzie._\n\nMasz problemy ze SpellBotem? [Zgłoś błędy](%{issues})!\n\n[🔗 Dodaj SpellBota do swojego Discorda!](%{invite})\n\nDziałanie SpellBota jest możliwe dzięki społeczności [PlayEDH](https://www.playedh.com/) oraz moim darczyńcom na Patreonie.\n\n💜 Pomóż nam utrzymać działanie SpellBota, [zostań patronem!](%{patreon})"
   # Interaction error messages
   errors:
-    no_permission: "You do not have permission to do that."
-    guild_only: "This command only works in a guild."
-    no_dms: "This command is not supported in DMs."
-    banned: "You have been banned from using SpellBot."
-    verified_only: "Only verified users can do that here."
-    unverified_only: "Only unverified users can do that here."
+    no_permission: "Nie masz uprawnień, aby to zrobić."
+    guild_only: "To polecenie działa tylko w gildii."
+    no_dms: "Ta komenda nie jest obsługiwana w DM."
+    banned: "Zostałeś zbanowany w użyciu SpellBota."
+    verified_only: "Tylko zweryfikowani użytkownicy mogą to zrobić tutaj."
+    unverified_only: "Tylko niezweryfikowani użytkownicy mogą to zrobić tutaj."
   # Playgroup Live commands
   playgroup:
-    already_linked: "Your Discord account is already linked to Playgroup Live!"
-    linked: "Linked! Welcome, **%{username}**. Your Playgroup Live games will now be attributed to your account."
-    not_found: "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."
+    already_linked: "Twoje konto Discord jest już połączone z Playgroup Live!"
+    linked: "Połączone! Witaj, **%{username}**. Twoje gry w grupy Playgroup Live zostaną teraz przypisane do Twojego konta."
+    not_found: "Nie znaleziono konta grupy odtwarzania dla twojego Discord. Przejdź do <https://playgroup.gg/profiles> i kliknij **Link Discord**, a następnie uruchom `/playgroup link` ponownie, aby potwierdzić."
