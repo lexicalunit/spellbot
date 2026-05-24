@@ -48,7 +48,7 @@ el:
     playgroup_live: "*Ένας σύνδεσμος %{emoji}[Playgroup Live](https://playgroup.gg/) θα δημιουργηθεί όταν έχουν μπει όλοι οι παίκτες.*"
   # LFG action messages
   lfg:
-    playgroup_link_required: "To use Playgroup Live, at least one player must link their account. Run `/playgroup link` and try again."
+    playgroup_link_required: "Για να χρησιμοποιήσετε το Playgroup Live, τουλάχιστον ένας παίκτης πρέπει να συνδέσει τον λογαριασμό του. Εκτελέστε την εντολή `/playgroup link` και προσπαθήστε ξανά."
     run_in_channel: "Please run this command in the same channel as your last played game."
     already_pending: "You're already in a pending game, leave that one first."
     no_previous_game: "You have not played a game in this guild yet."
