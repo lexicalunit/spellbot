@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds seats, bracket, and locale to the user/channel record pages.
+
 ## [v19.3.0](https://github.com/lexicalunit/spellbot/releases/tag/v19.3.0) - 2026-05-25
 
 ### Fixed

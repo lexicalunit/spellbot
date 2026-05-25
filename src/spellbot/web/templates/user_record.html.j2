@@ -8,6 +8,9 @@
             <th>Guild</th>
             <th>Channel</th>
             <th>Format</th>
+            <th>Seats</th>
+            <th>Bracket</th>
+            <th>Locale</th>
             <th>Link</th>
             <th>Players</th>
         </tr>
@@ -24,6 +27,9 @@
                 <td><a href="https://discord.com/channels/{{record.guild}}">{{record.guild_name}}</a></td>
                 <td><a href="https://discord.com/channels/{{record.guild}}/{{record.channel}}">#{{record.channel_name}}</a></td>
                 <td>{{record.format}}</td>
+                <td>{{record.seats}}</td>
+                <td>{{record.bracket}}</td>
+                <td>{{record.locale}}</td>
                 {% if record.link %}
                     <td><a href="{{record.link}}">Open in {{record.service}}</a><span class="data">{{record.link}}</span></td>
                 {% else %}

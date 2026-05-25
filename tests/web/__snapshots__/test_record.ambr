@@ -416,6 +416,9 @@
               <th>Guild</th>
               <th>Channel</th>
               <th>Format</th>
+              <th>Seats</th>
+              <th>Bracket</th>
+              <th>Locale</th>
               <th>Link</th>
               <th>User Name</th>
               <th>User ID</th>
@@ -431,6 +434,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Modern</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -446,6 +452,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Modern</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -461,6 +470,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Standard</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -476,6 +488,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Standard</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -491,6 +506,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Legacy</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -506,6 +524,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Legacy</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -1100,6 +1121,9 @@
               <th>Guild</th>
               <th>Channel</th>
               <th>Format</th>
+              <th>Seats</th>
+              <th>Bracket</th>
+              <th>Locale</th>
               <th>Link</th>
               <th>User Name</th>
               <th>User ID</th>
@@ -1694,6 +1718,9 @@
               <th>Guild</th>
               <th>Channel</th>
               <th>Format</th>
+              <th>Seats</th>
+              <th>Bracket</th>
+              <th>Locale</th>
               <th>Link</th>
               <th>User Name</th>
               <th>User ID</th>
@@ -1709,6 +1736,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Modern</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -1724,6 +1754,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Modern</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -1739,6 +1772,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Standard</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -1754,6 +1790,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Standard</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -1769,6 +1808,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Legacy</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -1784,6 +1826,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Legacy</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -2378,6 +2423,9 @@
               <th>Guild</th>
               <th>Channel</th>
               <th>Format</th>
+              <th>Seats</th>
+              <th>Bracket</th>
+              <th>Locale</th>
               <th>Link</th>
               <th>User Name</th>
               <th>User ID</th>
@@ -2393,6 +2441,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Modern</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -2408,6 +2459,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Modern</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -2423,6 +2477,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Standard</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -2438,6 +2495,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Standard</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -2453,6 +2513,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Legacy</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -2468,6 +2531,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Legacy</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -3062,6 +3128,9 @@
               <th>Guild</th>
               <th>Channel</th>
               <th>Format</th>
+              <th>Seats</th>
+              <th>Bracket</th>
+              <th>Locale</th>
               <th>Link</th>
               <th>Players</th>
           </tr>
@@ -3076,6 +3145,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Modern</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -3117,6 +3189,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Standard</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -3158,6 +3233,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Legacy</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -3778,6 +3856,9 @@
               <th>Guild</th>
               <th>Channel</th>
               <th>Format</th>
+              <th>Seats</th>
+              <th>Bracket</th>
+              <th>Locale</th>
               <th>Link</th>
               <th>Players</th>
           </tr>
@@ -4371,6 +4452,9 @@
               <th>Guild</th>
               <th>Channel</th>
               <th>Format</th>
+              <th>Seats</th>
+              <th>Bracket</th>
+              <th>Locale</th>
               <th>Link</th>
               <th>Players</th>
           </tr>
@@ -4385,6 +4469,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Modern</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -4426,6 +4513,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Standard</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
@@ -4467,6 +4557,9 @@
                   <td><a href="https://discord.com/channels/201">guild</a></td>
                   <td><a href="https://discord.com/channels/201/301">#channel</a></td>
                   <td>Legacy</td>
+                  <td>2</td>
+                  <td>None</td>
+                  <td>en</td>
                   
                       <td>&nbsp;</td>
                   
