@@ -91,7 +91,7 @@ el:
     done: "Τελείωσε."
     invalid_page: "Μη έγκυρη σελίδα."
     channels_title: "Διαμόρφωση καναλιών στο %{guild}"
-    channels_default: "**Όλα τα κανάλια σε αυτόν τον διακομιστή έχουν προεπιλεγμένη ρύθμιση.**\n\nΜπορείτε να χρησιμοποιήσετε συγκεκριμένες εντολές `/set` σε ένα κανάλι για να αλλάξετε τις ρυθμίσεις του καναλιού."
+    channels_default: "**All channels on this server have a default configuration.**\n\nYou may use channel specific `/set` commands within a channel to change that channel's configuration."
     awards_title: "Βραβεία Παίκτη SpellBot για το %{guild}"
     awards_empty: "**Δεν έχουν ρυθμιστεί βραβεία σε αυτόν τον διακομιστή.**\n\nΓια να προσθέσετε βραβεία χρησιμοποιήστε την εντολή `/award add`."
     setup_title: "Ρύθμιση SpellBot για το %{guild}"
