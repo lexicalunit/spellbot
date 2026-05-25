@@ -1,47 +1,63 @@
 {% extends "record_base.html.j2" %}
-{% block table %}
-<table>
-    <thead>
-        <tr class="table100-head">
-            <th>Game</th>
-            <th>Time</th>
-            <th>Guild</th>
-            <th>Channel</th>
-            <th>Format</th>
-            <th>Seats</th>
-            <th>Bracket</th>
-            <th>Locale</th>
-            <th>Link</th>
-            <th>User Name</th>
-            <th>User ID</th>
-            <th>Jump</th>
-        </tr>
-    </thead>
-    <tbody id="rows">
-        {% for record in records %}
-            <tr>
-                <td><a href="/game/{{record.id}}">SB#{{record.id}}</a></td>
-                {% if tz_offset and tz_name %}
-                    <td>{{record.updated_at | humanize(tz_offset, tz_name)}}</td>
-                {% else %}
-                    <td class="timestamp">{{record.updated_at}}</td>
-                {% endif %}
-                <td><a href="https://discord.com/channels/{{record.guild}}">{{record.guild_name}}</a></td>
-                <td><a href="https://discord.com/channels/{{record.guild}}/{{record.channel}}">#{{record.channel_name}}</a></td>
-                <td>{{record.format}}</td>
-                <td>{{record.seats}}</td>
-                <td>{{record.bracket}}</td>
-                <td>{{record.locale}}</td>
-                {% if record.link %}
-                    <td><a href="{{record.link}}">Open in {{record.service}}</a><span class="data">{{record.link}}</span></td>
-                {% else %}
-                    <td>&nbsp;</td>
-                {% endif %}
-                <td>{{record.user_name | default('Unknown User', true)}}</td>
-                <td class="user_id">{{record.user_xid}}</td>
-                <td><a href="https://discord.com/channels/{{record.guild}}/{{record.channel}}/{{record.message}}" class="button">Jump to game</a></td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% block title %}Channel Records — #{{ target_name or target_xid }}{% endblock %}
+{% block heading %}Channel Records: #{{ target_name or 'Unknown Channel' }}{% endblock %}
+{% block subtitle %}
+<div class="subtitle">
+    {% if guild_name %}<a href="https://discord.com/channels/{{ guild_xid }}">{{ guild_name }}</a> &middot;{% endif %}
+    <a href="https://discord.com/channels/{{ guild_xid }}/{{ target_xid }}">Open channel</a>
+</div>
+{% endblock %}
+{% block content %}
+<div class="section">
+    <h2>Games ({{ records | length }})</h2>
+    <div class="card">
+        {% if records %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Game</th>
+                    <th>Time</th>
+                    <th>Format</th>
+                    <th>Seats</th>
+                    <th>Bracket</th>
+                    <th>Locale</th>
+                    <th>Link</th>
+                    <th>User Name</th>
+                    <th>User ID</th>
+                    <th>Jump</th>
+                </tr>
+            </thead>
+            <tbody id="rows">
+                {% for record in records %}
+                <tr>
+                    <td data-label="Game"><a href="/game/{{ record.id }}">SB#{{ record.id }}</a></td>
+                    {% if tz_offset and tz_name %}
+                    <td data-label="Time">{{ record.updated_at | humanize(tz_offset, tz_name) }}</td>
+                    {% else %}
+                    <td data-label="Time" class="timestamp">{{ record.updated_at }}</td>
+                    {% endif %}
+                    <td data-label="Format">{{ record.format }}</td>
+                    <td data-label="Seats">{{ record.seats }}</td>
+                    <td data-label="Bracket">{{ record.bracket }}</td>
+                    <td data-label="Locale">{{ record.locale }}</td>
+                    <td data-label="Link">
+                        {% if record.link %}<a href="{{ record.link }}">Open in {{ record.service }}</a>{% else %}&mdash;{% endif %}
+                    </td>
+                    <td data-label="User Name">
+                        <a href="/u/{{ record.user_xid }}">{{ record.user_name | default('Unknown User', true) }}</a>
+                    </td>
+                    <td data-label="User ID">
+                        <span class="user-id">{{ record.user_xid }}</span>
+                        <button type="button" class="copy" data-copy="{{ record.user_xid }}" title="Copy User ID">⎘</button>
+                    </td>
+                    <td data-label="Jump"><a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}/{{ record.message }}" class="button">Jump to game</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty">No games found for this channel.</div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

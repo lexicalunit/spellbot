@@ -24,6 +24,7 @@ USER_RECORDS_SQL = r"""
         SELECT
             games.id AS game_id,
             games.updated_at,
+            games.guild_xid,
             games.channel_xid,
             posts.message_xid,
             games.game_link,
@@ -38,7 +39,6 @@ USER_RECORDS_SQL = r"""
             AND posts.guild_xid = games.guild_xid
             AND posts.channel_xid = games.channel_xid
         WHERE
-            games.guild_xid = :guild_xid AND
             plays.user_xid = :user_xid
         ORDER BY games.updated_at DESC
         OFFSET :offset
@@ -47,6 +47,7 @@ USER_RECORDS_SQL = r"""
     SELECT
         game_plays.game_id,
         game_plays.updated_at,
+        game_plays.guild_xid,
         game_plays.channel_xid,
         game_plays.message_xid,
         game_plays.game_link,
@@ -55,6 +56,7 @@ USER_RECORDS_SQL = r"""
         game_plays.seats,
         game_plays.bracket,
         game_plays.locale,
+        guilds.name,
         channels.name,
         STRING_AGG(
             CONCAT(
@@ -68,10 +70,12 @@ USER_RECORDS_SQL = r"""
     FROM game_plays
     JOIN plays ON plays.game_id = game_plays.game_id
     JOIN users ON users.xid = plays.user_xid
+    JOIN guilds ON guilds.xid = game_plays.guild_xid
     JOIN channels ON channels.xid = game_plays.channel_xid
     GROUP BY
         game_plays.game_id,
         game_plays.updated_at,
+        game_plays.guild_xid,
         game_plays.channel_xid,
         game_plays.message_xid,
         game_plays.game_link,
@@ -80,6 +84,7 @@ USER_RECORDS_SQL = r"""
         game_plays.seats,
         game_plays.bracket,
         game_plays.locale,
+        guilds.name,
         channels.name
     ORDER BY game_plays.updated_at DESC
     ;
@@ -135,6 +140,7 @@ USER_RECORDS_EXPORT_SQL = r"""
         SELECT
             games.id AS game_id,
             games.updated_at,
+            games.guild_xid,
             games.channel_xid,
             posts.message_xid,
             games.game_link,
@@ -149,13 +155,13 @@ USER_RECORDS_EXPORT_SQL = r"""
             AND posts.guild_xid = games.guild_xid
             AND posts.channel_xid = games.channel_xid
         WHERE
-            games.guild_xid = :guild_xid AND
             plays.user_xid = :user_xid
         ORDER BY games.updated_at DESC
     )
     SELECT
         game_plays.game_id,
         game_plays.updated_at,
+        game_plays.guild_xid,
         game_plays.channel_xid,
         game_plays.message_xid,
         game_plays.game_link,
@@ -164,6 +170,7 @@ USER_RECORDS_EXPORT_SQL = r"""
         game_plays.seats,
         game_plays.bracket,
         game_plays.locale,
+        guilds.name,
         channels.name,
         STRING_AGG(
             CONCAT(
@@ -177,10 +184,12 @@ USER_RECORDS_EXPORT_SQL = r"""
     FROM game_plays
     JOIN plays ON plays.game_id = game_plays.game_id
     JOIN users ON users.xid = plays.user_xid
+    JOIN guilds ON guilds.xid = game_plays.guild_xid
     JOIN channels ON channels.xid = game_plays.channel_xid
     GROUP BY
         game_plays.game_id,
         game_plays.updated_at,
+        game_plays.guild_xid,
         game_plays.channel_xid,
         game_plays.message_xid,
         game_plays.game_link,
@@ -189,6 +198,7 @@ USER_RECORDS_EXPORT_SQL = r"""
         game_plays.seats,
         game_plays.bracket,
         game_plays.locale,
+        guilds.name,
         channels.name
     ORDER BY game_plays.updated_at DESC
     ;
@@ -306,20 +316,12 @@ async def verify_game_pin(
     return True
 
 
-async def count(user_xid: int, guild_xid: int) -> int:
-    """Count the number of games played by a user in a guild."""
+async def count(user_xid: int) -> int:
+    """Count the number of games played by a user across all guilds."""
     return int(
         (
             await DatabaseSession.execute(
-                select(func.count())
-                .select_from(Play)
-                .join(Game)
-                .where(
-                    and_(
-                        Play.user_xid == user_xid,
-                        Game.guild_xid == guild_xid,
-                    ),
-                ),
+                select(func.count()).select_from(Play).where(Play.user_xid == user_xid),
             )
         ).scalar()
         or 0,
@@ -327,21 +329,19 @@ async def count(user_xid: int, guild_xid: int) -> int:
 
 
 async def user_records(
-    guild_xid: int,
     user_xid: int,
     page: int = 0,
 ) -> list[dict[str, Any]] | None:
-    """Fetch paginated game records for a user in a guild."""
-    guild = (
-        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
+    """Fetch paginated game records for a user across all guilds."""
+    user = (
+        await DatabaseSession.execute(select(User).where(User.xid == user_xid))
     ).scalar_one_or_none()
-    if not guild:
+    if not user:
         return None
 
     rows = await DatabaseSession.execute(
         text(USER_RECORDS_SQL),
         {
-            "guild_xid": guild_xid,
             "user_xid": user_xid,
             "offset": page * USER_PAGE_SIZE,
             "page_size": USER_PAGE_SIZE,
@@ -351,18 +351,18 @@ async def user_records(
         {
             "id": row[0],
             "updated_at": row[1].replace(tzinfo=tz.UTC).timestamp() * 1000,
-            "guild": guild_xid,
-            "channel": row[2],
-            "message": row[3],
-            "link": row[4],
-            "format": str(GameFormat(row[5])),
-            "service": str(GameService(row[6])),
-            "seats": row[7],
-            "bracket": str(GameBracket(row[8])),
-            "locale": row[9],
-            "guild_name": guild.name,
-            "channel_name": row[10],
-            "scores": make_scores(row[11]),
+            "guild": row[2],
+            "channel": row[3],
+            "message": row[4],
+            "link": row[5],
+            "format": str(GameFormat(row[6])),
+            "service": str(GameService(row[7])),
+            "seats": row[8],
+            "bracket": str(GameBracket(row[9])),
+            "locale": row[10],
+            "guild_name": row[11],
+            "channel_name": row[12],
+            "scores": make_scores(row[13]),
         }
         for row in rows
     ]
@@ -416,18 +416,18 @@ async def channel_records(
     return decomposed(combined_data)
 
 
-async def user_export_target_exists(guild_xid: int) -> bool:
-    """Return True if the guild for a user-records export exists."""
+async def user_export_target_exists(user_xid: int) -> bool:
+    """Return True if the user for a user-records export exists."""
     return (
         await DatabaseSession.execute(
-            select(Guild.xid).where(Guild.xid == guild_xid),  # type: ignore
+            select(User.xid).where(User.xid == user_xid),
         )
     ).scalar_one_or_none() is not None
 
 
 async def channel_export_target_exists(guild_xid: int, channel_xid: int) -> bool:
     """Return True if both the guild and channel for a channel-records export exist."""
-    if not await user_export_target_exists(guild_xid):
+    if not await guild_exists(guild_xid):
         return False
     return (
         await DatabaseSession.execute(
@@ -437,38 +437,37 @@ async def channel_export_target_exists(guild_xid: int, channel_xid: int) -> bool
 
 
 async def stream_user_records(
-    guild_xid: int,
     user_xid: int,
 ) -> AsyncIterator[dict[str, Any]]:
-    """Stream all game records for a user in a guild without pagination."""
-    guild_name = (
+    """Stream all game records for a user across all guilds without pagination."""
+    user_exists = (
         await DatabaseSession.execute(
-            select(Guild.name).where(Guild.xid == guild_xid),  # type: ignore
+            select(User.xid).where(User.xid == user_xid),
         )
     ).scalar_one_or_none()
-    if guild_name is None:
+    if user_exists is None:
         return
 
     result = await DatabaseSession.execute(
         text(USER_RECORDS_EXPORT_SQL),
-        {"guild_xid": guild_xid, "user_xid": user_xid},
+        {"user_xid": user_xid},
     )
     for row in result:
         yield {
             "id": row[0],
             "updated_at": row[1].replace(tzinfo=tz.UTC).timestamp() * 1000,
-            "guild": guild_xid,
-            "channel": row[2],
-            "message": row[3],
-            "link": row[4],
-            "format": str(GameFormat(row[5])),
-            "service": str(GameService(row[6])),
-            "seats": row[7],
-            "bracket": str(GameBracket(row[8])),
-            "locale": row[9],
-            "guild_name": guild_name,
-            "channel_name": row[10],
-            "scores": make_scores(row[11]),
+            "guild": row[2],
+            "channel": row[3],
+            "message": row[4],
+            "link": row[5],
+            "format": str(GameFormat(row[6])),
+            "service": str(GameService(row[7])),
+            "seats": row[8],
+            "bracket": str(GameBracket(row[9])),
+            "locale": row[10],
+            "guild_name": row[11],
+            "channel_name": row[12],
+            "scores": make_scores(row[13]),
         }
 
 

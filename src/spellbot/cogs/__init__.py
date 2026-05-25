@@ -17,7 +17,7 @@ from .leave_cog import LeaveGameCog
 from .lfg_cog import LookingForGameCog
 from .owner_cog import OwnerCog
 from .playgroup_cog import PlaygroupCog
-from .score_cog import ScoreCog
+from .record_cog import RecordCog
 from .tasks_cog import TasksCog
 from .verify_cog import VerifyCog
 from .watch_cog import WatchCog
@@ -38,7 +38,7 @@ __all__ = [
     "LookingForGameCog",
     "OwnerCog",
     "PlaygroupCog",
-    "ScoreCog",
+    "RecordCog",
     "TasksCog",
     "VerifyCog",
     "WatchCog",

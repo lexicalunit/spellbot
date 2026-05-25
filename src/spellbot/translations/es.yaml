@@ -112,7 +112,7 @@ es:
     award_added_view: "Puede ver todos los premios con el comando `/awards`."
     award_deleted: "¡Premio eliminado!"
     voice_create_on: "La creación de canales de voz está habilitada para este servidor. No hay necesidad de sugerir canales de voz existentes. Los nuevos canales se crearán automáticamente."
-    suggest_vc_set: 'Se ha establecido el prefijo de categoría de canales de voz sugeridos para «%{category}».'
+    suggest_vc_set: "Se ha establecido el prefijo de categoría de canales de voz sugeridos para «%{category}»."
     suggest_vc_off: "Canales de voz sugeridos desactivados."
     motd_updated: "El mensaje del día se ha actualizado."
     default_seats_set: "Las plazas predeterminadas se han establecido en %{seats} para este canal."
@@ -198,10 +198,10 @@ es:
     list_title: "Lista de jugadores observados en este servidor"
   # Score action messages
   score:
-    record_title: "Registro de partidas jugadas en %{guild}"
+    record_title: "Registro de partidas jugadas"
     games_one: "%{count} partida"
     games_many: "%{count} partidas"
-    record_description: "%{mention} ha jugado %{games} en este servidor.\nVea más [detalles en spellbot.io](%{link})."
+    record_description: "%{mention} ha jugado %{games}.\nVea más [detalles en spellbot.io](%{link})."
     history_title: "Partidas recientes jugadas en %{channel}"
     history_description: "Vea [el historial de partidas en spellbot.io](%{link})."
     top_title: "Los mejores jugadores en #%{channel} (%{range})"

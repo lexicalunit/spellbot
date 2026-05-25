@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 import pytest
 import pytest_asyncio
 
-from spellbot.cogs import ScoreCog
+from spellbot.cogs import RecordCog
 from tests.fixtures import Factories, get_last_send_message, run_command
 from tests.mocks import build_channel, build_guild, build_interaction, mock_discord_object
 
@@ -24,15 +24,15 @@ pytestmark = pytest.mark.use_db
 
 
 @pytest_asyncio.fixture
-async def cog(bot: SpellBot) -> ScoreCog:
-    return ScoreCog(bot)
+async def cog(bot: SpellBot) -> RecordCog:
+    return RecordCog(bot)
 
 
 @pytest.mark.asyncio
-class TestCogScore:
-    async def test_score(
+class TestCogRecord:
+    async def test_record(
         self,
-        cog: ScoreCog,
+        cog: RecordCog,
         user: User,
         channel: Channel,
         interaction: discord.Interaction,
@@ -40,14 +40,14 @@ class TestCogScore:
         factories: Factories,
         settings: Settings,
     ) -> None:
-        await run_command(cog.score, interaction)
+        await run_command(cog.record, interaction)
 
         assert get_last_send_message(interaction, "embed") == {
-            "author": {"name": f"Record of games played on {guild.name}"},
+            "author": {"name": "Record of games played"},
             "color": settings.INFO_EMBED_COLOR,
-            "description": f"<@{user.xid}> has played 0 games on this server.\n"
+            "description": f"<@{user.xid}> has played 0 games.\n"
             "View more [details on spellbot.io]"
-            f"({settings.API_BASE_URL}/g/{guild.xid}/u/{user.xid}).",
+            f"({settings.API_BASE_URL}/u/{user.xid}).",
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
             "flags": 0,
@@ -61,14 +61,14 @@ class TestCogScore:
         factories.play.create(user_xid=user.xid, game_id=game.id)
 
         interaction.response.send_message.reset_mock()  # type: ignore
-        await run_command(cog.score, interaction)
+        await run_command(cog.record, interaction)
 
         assert get_last_send_message(interaction, "embed") == {
-            "author": {"name": f"Record of games played on {guild.name}"},
+            "author": {"name": "Record of games played"},
             "color": settings.INFO_EMBED_COLOR,
-            "description": f"<@{user.xid}> has played 1 game on this server.\n"
+            "description": f"<@{user.xid}> has played 1 game.\n"
             "View more [details on spellbot.io]"
-            f"({settings.API_BASE_URL}/g/{guild.xid}/u/{user.xid}).",
+            f"({settings.API_BASE_URL}/u/{user.xid}).",
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
             "flags": 0,
@@ -82,13 +82,13 @@ class TestCogScore:
         factories.play.create(user_xid=user.xid, game_id=game.id)
 
         interaction.response.send_message.reset_mock()  # type: ignore
-        await run_command(cog.score, interaction)
+        await run_command(cog.record, interaction)
         assert get_last_send_message(interaction, "embed") == {
-            "author": {"name": f"Record of games played on {guild.name}"},
+            "author": {"name": "Record of games played"},
             "color": settings.INFO_EMBED_COLOR,
-            "description": f"<@{user.xid}> has played 2 games on this server.\n"
+            "description": f"<@{user.xid}> has played 2 games.\n"
             "View more [details on spellbot.io]"
-            f"({settings.API_BASE_URL}/g/{guild.xid}/u/{user.xid}).",
+            f"({settings.API_BASE_URL}/u/{user.xid}).",
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
             "flags": 0,
@@ -98,26 +98,26 @@ class TestCogScore:
         new_channel = build_channel(new_guild, 2)
         discord_user = mock_discord_object(user)
         new_interaction = build_interaction(new_guild, new_channel, discord_user)
-        await run_command(cog.score, new_interaction)
+        await run_command(cog.record, new_interaction)
 
         send_message = new_interaction.response.send_message
         send_message.assert_called_once()  # type: ignore
         embed = send_message.call_args.kwargs.get("embed")  # type: ignore
         assert embed is not None
         assert embed.to_dict() == {
-            "author": {"name": f"Record of games played on {new_guild.name}"},
+            "author": {"name": "Record of games played"},
             "color": settings.INFO_EMBED_COLOR,
-            "description": f"<@{user.xid}> has played 0 games on this server.\n"
+            "description": f"<@{user.xid}> has played 2 games.\n"
             "View more [details on spellbot.io]"
-            f"({settings.API_BASE_URL}/g/{new_guild.id}/u/{user.xid}).",
+            f"({settings.API_BASE_URL}/u/{user.xid}).",
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
             "flags": 0,
         }
 
-    async def test_score_for_other_user(
+    async def test_record_for_other_user(
         self,
-        cog: ScoreCog,
+        cog: RecordCog,
         add_user: Callable[..., User],
         interaction: discord.Interaction,
         guild: Guild,
@@ -125,14 +125,14 @@ class TestCogScore:
     ) -> None:
         target_user = add_user()
         target_member = cast("discord.Member", mock_discord_object(target_user))
-        await run_command(cog.score, interaction, user=target_member)
+        await run_command(cog.record, interaction, user=target_member)
 
         assert get_last_send_message(interaction, "embed") == {
-            "author": {"name": f"Record of games played on {guild.name}"},
+            "author": {"name": "Record of games played"},
             "color": settings.INFO_EMBED_COLOR,
-            "description": f"<@{target_member.id}> has played 0 games on this server.\n"
+            "description": f"<@{target_member.id}> has played 0 games.\n"
             "View more [details on spellbot.io]"
-            f"({settings.API_BASE_URL}/g/{guild.xid}/u/{target_member.id}).",
+            f"({settings.API_BASE_URL}/u/{target_member.id}).",
             "thumbnail": {"url": settings.ICO_URL},
             "type": "rich",
             "flags": 0,
@@ -140,7 +140,7 @@ class TestCogScore:
 
     async def test_history(
         self,
-        cog: ScoreCog,
+        cog: RecordCog,
         channel: Channel,
         interaction: discord.Interaction,
         guild: Guild,
@@ -160,7 +160,7 @@ class TestCogScore:
 
     async def test_top(
         self,
-        cog: ScoreCog,
+        cog: RecordCog,
         channel: Channel,
         add_user: Callable[..., User],
         freezer: FrozenDateTimeFactory,
