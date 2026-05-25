@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Better handling of cEDH vs Casual in dashboard.
+
 ## [v19.1.12](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.12) - 2026-05-24
 
 ### Changed
