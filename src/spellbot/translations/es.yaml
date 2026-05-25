@@ -2,12 +2,12 @@ es:
   # Game embed titles and descriptions
   game:
     title:
-      ready: "**Your game is ready!**"
-      rematch: "**Rematch Game!**"
-      waiting_one: "**Waiting for %{count} more player to join...**"
-      waiting_many: "**Waiting for %{count} more players to join...**"
+      ready: "**¡Tu partida está lista!**"
+      rematch: "**¡Juego de revancha!**"
+      waiting_one: "**Esperando a que se una %{count} jugador más...**"
+      waiting_many: "**Esperando a que se unan %{count} jugadores más...**"
     description:
-      check_dm: "Please check your Direct Messages for your game details."
+      check_dm: "Revisa los mensajes directos para ver los detalles de la partida."
       rematch_info: "This is a rematch of a previous game. Please continue using the same game lobby and voice channel."
       join_link: "# [Join your %{service} game now!](%{link})"
       link_error: "Sorry but SpellBot was unable to create a link for this game. Please go to [%{service}](%{url}) to create one."
