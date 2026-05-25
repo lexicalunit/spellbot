@@ -325,30 +325,115 @@ class TestDashboardPlayerGrowth:
 
 @pytest.mark.asyncio
 class TestDashboardCasualVsCedh:
-    async def test_classification(self, factories: Factories, seed: Seed) -> None:
+    async def test_cedh_by_curated_guild_id(
+        self,
+        factories: Factories,
+        seed: Seed,
+    ) -> None:
         del seed
-        casual_guild = factories.guild.create(xid=304276578005942272, name="PlayEDH")
-        cedh_guild = factories.guild.create(xid=113555415446413312, name="cEDH")
-        ch_a = factories.channel.create(xid=910101, name="a", guild=casual_guild)
-        ch_b = factories.channel.create(xid=910102, name="b", guild=cedh_guild)
+        # 113555415446413312 is in CEDH_GUILDS; name intentionally avoids "cedh"
+        # so the classification is driven solely by the guild id.
+        cedh_guild = factories.guild.create(xid=113555415446413312, name="Comp Server")
+        ch = factories.channel.create(xid=910101, name="a", guild=cedh_guild)
         factories.game.create(
-            guild=casual_guild,
-            channel=ch_a,
+            guild=cedh_guild,
+            channel=ch,
             started_at=NOW - timedelta(hours=1),
             created_at=NOW - timedelta(hours=2),
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.NONE.value,
         )
+        result = await dashboard.dashboard_casual_vs_cedh(
+            period_all(),
+            GuildFilter(mode="include", xid=int(cedh_guild.xid)),
+        )
+        assert sum(p["count"] for p in result["cedh"]) == 1
+        assert result["casual"] == []
+
+    async def test_cedh_by_guild_name_contains_cedh(
+        self,
+        factories: Factories,
+        seed: Seed,
+    ) -> None:
+        del seed
+        # Guild id is not in CEDH_GUILDS, but its name contains "cedh" (case
+        # insensitive); every game on it is therefore cEDH.
+        guild = factories.guild.create(xid=900111, name="The cEDH Lounge")
+        ch = factories.channel.create(xid=910111, name="a", guild=guild)
         factories.game.create(
-            guild=cedh_guild,
-            channel=ch_b,
+            guild=guild,
+            channel=ch,
             started_at=NOW - timedelta(hours=1),
             created_at=NOW - timedelta(hours=2),
+            format=GameFormat.MODERN.value,
+            bracket=GameBracket.NONE.value,
         )
-        result = await dashboard.dashboard_casual_vs_cedh(period_all(), all_guilds())
-        assert sum(p["count"] for p in result["casual"]) >= 1
-        # cEDH includes guild2 from seed (bracket 5) plus the cedh guild here.
-        assert sum(p["count"] for p in result["cedh"]) >= 1
+        result = await dashboard.dashboard_casual_vs_cedh(
+            period_all(),
+            GuildFilter(mode="include", xid=int(guild.xid)),
+        )
+        assert sum(p["count"] for p in result["cedh"]) == 1
+        assert result["casual"] == []
+
+    async def test_cedh_by_format_and_bracket(
+        self,
+        factories: Factories,
+        seed: Seed,
+    ) -> None:
+        del seed
+        guild = factories.guild.create(xid=900112, name="Mixed Server")
+        ch = factories.channel.create(xid=910112, name="a", guild=guild)
+        # Three cEDH-qualifying games (format CEDH, format EDH_MAX, bracket 5)
+        # and one casual game on the same non-curated, non-cedh-named server.
+        factories.game.create(
+            guild=guild,
+            channel=ch,
+            started_at=NOW - timedelta(hours=1),
+            created_at=NOW - timedelta(hours=2),
+            format=GameFormat.CEDH.value,
+            bracket=GameBracket.NONE.value,
+        )
+        factories.game.create(
+            guild=guild,
+            channel=ch,
+            started_at=NOW - timedelta(hours=3),
+            created_at=NOW - timedelta(hours=4),
+            format=GameFormat.EDH_MAX.value,
+            bracket=GameBracket.NONE.value,
+        )
+        factories.game.create(
+            guild=guild,
+            channel=ch,
+            started_at=NOW - timedelta(hours=5),
+            created_at=NOW - timedelta(hours=6),
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.BRACKET_5.value,
+        )
+        factories.game.create(
+            guild=guild,
+            channel=ch,
+            started_at=NOW - timedelta(hours=7),
+            created_at=NOW - timedelta(hours=8),
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.BRACKET_3.value,
+        )
+        result = await dashboard.dashboard_casual_vs_cedh(
+            period_all(),
+            GuildFilter(mode="include", xid=int(guild.xid)),
+        )
+        assert sum(p["count"] for p in result["cedh"]) == 3
+        assert sum(p["count"] for p in result["casual"]) == 1
+
+    async def test_guild_filter_is_honored(self, seed: Seed) -> None:
+        g2 = seed["g2"]
+        # g2 has only casual commander/modern games and is not in CEDH_GUILDS
+        # and its name does not contain "cedh"; cEDH series should be empty.
+        result = await dashboard.dashboard_casual_vs_cedh(
+            period_all(),
+            GuildFilter(mode="include", xid=int(g2.xid)),
+        )
+        assert result["cedh"] == []
+        assert sum(p["count"] for p in result["casual"]) == 2
 
     async def test_classification_bounded(self, seed: Seed) -> None:
         del seed
@@ -379,6 +464,31 @@ class TestDashboardServerPopularity:
             top_n=1,
         )
         assert len(result["series"]) == 1
+
+    async def test_totals_threshold_filters_table_only(self, seed: Seed) -> None:
+        del seed
+        # The seeded guilds have far fewer than 10 games; with the default
+        # threshold totals is empty but the chart series is unaffected.
+        result = await dashboard.dashboard_server_popularity(period_all(), all_guilds())
+        assert result["totals"] == []
+        assert len(result["series"]) >= 2
+
+    async def test_totals_includes_qualifying_guilds_sorted_desc(
+        self,
+        seed: Seed,
+    ) -> None:
+        del seed
+        result = await dashboard.dashboard_server_popularity(
+            period_all(),
+            all_guilds(),
+            totals_min=2,
+        )
+        names = [r["name"] for r in result["totals"]]
+        counts = [r["count"] for r in result["totals"]]
+        assert "Guild One" in names
+        assert "Guild Two" in names
+        assert all(c >= 2 for c in counts)
+        assert counts == sorted(counts, reverse=True)
 
 
 @pytest.mark.asyncio
@@ -608,6 +718,101 @@ class TestDashboardBracketAdoption:
         del seed
         result = await dashboard.dashboard_bracket_adoption(period_30d(), all_guilds())
         assert isinstance(result["rate"], list)
+
+    async def test_leaders_shape_and_default_empty(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_bracket_adoption(period_all(), all_guilds())
+        leaders = result["leaders"]
+        # One row per non-NONE bracket, in bracket order.
+        assert [r["bracket"] for r in leaders] == [
+            "Bracket 1: Exhibition",
+            "Bracket 2: Core",
+            "Bracket 3: Upgraded",
+            "Bracket 4: Optimized",
+            "Bracket 5: Competitive",
+        ]
+        # The seed's bracketable bracket-3 game lives on Guild One; bracket 5
+        # is on a CEDH-format game which is not bracketable, so it has no
+        # qualifying leader.
+        by_bracket = {r["bracket"]: r for r in leaders}
+        assert by_bracket["Bracket 3: Upgraded"]["server"] == "Guild One"
+        assert by_bracket["Bracket 3: Upgraded"]["count"] == 1
+        assert by_bracket["Bracket 5: Competitive"]["server"] is None
+        assert by_bracket["Bracket 5: Competitive"]["count"] == 0
+        # Brackets with no games come through as empty placeholders.
+        assert by_bracket["Bracket 1: Exhibition"]["server"] is None
+        assert by_bracket["Bracket 1: Exhibition"]["count"] == 0
+
+    async def test_leaders_picks_top_server_per_bracket(
+        self,
+        factories: Factories,
+        seed: Seed,
+    ) -> None:
+        del seed
+        # Two more guilds both playing bracket-4 commander games; the one
+        # with more games should be reported as the leader.
+        ga = factories.guild.create(xid=900801, name="Alpha Guild")
+        gb = factories.guild.create(xid=900802, name="Beta Guild")
+        cha = factories.channel.create(xid=910801, name="a", guild=ga)
+        chb = factories.channel.create(xid=910802, name="b", guild=gb)
+        for off in (1.0, 2.0, 3.0):
+            factories.game.create(
+                guild=ga,
+                channel=cha,
+                started_at=NOW - timedelta(hours=off),
+                created_at=NOW - timedelta(hours=off + 0.1),
+                format=GameFormat.COMMANDER.value,
+                bracket=GameBracket.BRACKET_4.value,
+            )
+        factories.game.create(
+            guild=gb,
+            channel=chb,
+            started_at=NOW - timedelta(hours=5),
+            created_at=NOW - timedelta(hours=5.1),
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.BRACKET_4.value,
+        )
+        result = await dashboard.dashboard_bracket_adoption(period_all(), all_guilds())
+        by_bracket = {r["bracket"]: r for r in result["leaders"]}
+        assert by_bracket["Bracket 4: Optimized"]["server"] == "Alpha Guild"
+        assert by_bracket["Bracket 4: Optimized"]["count"] == 3
+
+    async def test_leaders_tie_breaks_alphabetically(
+        self,
+        factories: Factories,
+        seed: Seed,
+    ) -> None:
+        del seed
+        # Equal counts on the same bracket; the alphabetically-first guild
+        # name wins. "Alpha Guild" beats "Beta Guild" for bracket 2.
+        ga = factories.guild.create(xid=900811, name="Alpha Guild")
+        gb = factories.guild.create(xid=900812, name="Beta Guild")
+        cha = factories.channel.create(xid=910811, name="a", guild=ga)
+        chb = factories.channel.create(xid=910812, name="b", guild=gb)
+        for guild, channel, off in ((ga, cha, 1.0), (gb, chb, 2.0)):
+            factories.game.create(
+                guild=guild,
+                channel=channel,
+                started_at=NOW - timedelta(hours=off),
+                created_at=NOW - timedelta(hours=off + 0.1),
+                format=GameFormat.COMMANDER.value,
+                bracket=GameBracket.BRACKET_2.value,
+            )
+        result = await dashboard.dashboard_bracket_adoption(period_all(), all_guilds())
+        by_bracket = {r["bracket"]: r for r in result["leaders"]}
+        assert by_bracket["Bracket 2: Core"]["server"] == "Alpha Guild"
+        assert by_bracket["Bracket 2: Core"]["count"] == 1
+
+    async def test_leaders_honors_guild_filter(self, seed: Seed) -> None:
+        g2 = seed["g2"]
+        # g2 has no bracketed games at all; every leader row should be empty.
+        result = await dashboard.dashboard_bracket_adoption(
+            period_all(),
+            GuildFilter(mode="include", xid=int(g2.xid)),
+        )
+        for row in result["leaders"]:
+            assert row["server"] is None
+            assert row["count"] == 0
 
 
 @pytest.mark.asyncio

@@ -3,12 +3,23 @@ from __future__ import annotations
 from collections import Counter
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import and_, case, distinct, extract, func, or_, select
+from sqlalchemy import case, distinct, extract, func, or_, select
 
 from spellbot.database import DatabaseSession, any_of
-from spellbot.enums import GAME_FORMAT_ORDER, GameBracket, GameFormat, GameService
+from spellbot.enums import (
+    GAME_BRACKET_ORDER,
+    GAME_FORMAT_ORDER,
+    GameBracket,
+    GameFormat,
+    GameService,
+)
 from spellbot.models import Block, Game, Guild, Play, User
 from spellbot.services.plays import extract_ngrams, normalize_rule
+
+if TYPE_CHECKING:
+    from sqlalchemy.sql import ColumnElement
+
+    from spellbot.web.dashboard_filters import GuildFilter, PeriodSpec
 
 SERVICE_LABEL = case(
     *((Game.service == s.value, s.title) for s in GameService),
@@ -28,54 +39,21 @@ BRACKETABLE_FORMATS: frozenset[int] = frozenset(
     },
 )
 
-# Curated guild classification lists used by `dashboard_casual_vs_cedh`.
-# These mirror the lists in the historical Grafana dashboard and are
-# intentionally imperfect: some servers host both casual and competitive play.
-# In addition to the lists, games marked `GameFormat.CEDH` or
-# `GameBracket.BRACKET_5` are always counted as cEDH regardless of guild.
-CASUAL_GUILDS: frozenset[int] = frozenset(
-    {
-        304276578005942272,  # PlayEDH
-        574711449566445603,  # TCC
-        531209216443154443,  # Nitpicking Nerds
-        815001383979450368,  # EDH Fight Club
-        793590120049672242,  # IHYD
-        750696719905456189,  # Tambayan
-        752261529390284870,  # DE
-        840959507747569715,  # Combat Step
-        817867020837584906,  # CTC
-        757455940009328670,  # Gaywatch
-        1229388601113051198,  # Fight Club Royal
-        924643928844673045,  # Turbo
-        1176073262078378004,  # Breakfast Club
-        689674672240984067,  # MTG@Home
-    },
-)
+# Curated allowlist of cEDH guilds used by `dashboard_casual_vs_cedh`. Any
+# game on one of these servers is classified as cEDH regardless of its format
+# or bracket. Guilds whose name contains "cedh" (case-insensitive) are also
+# treated as cEDH without needing to be listed here.
 CEDH_GUILDS: frozenset[int] = frozenset(
     {
         113555415446413312,  # Competitive EDH
         1321026027337547817,  # CriticalEDH
-        1225118416298315857,  # r/cEDH Discord
         682734915846275184,  # Play to Win
         530219227924267008,  # PWP
         954838268275470367,  # ka0s Tournaments
         763138565231345665,  # WreckRoomCedh
-        1206898724266319882,  # Espanola cEDH
         1036729704180355202,  # Training Grounds
-        799686008811290626,  # cEDH PT
-        1061492498402394132,  # cEDH Training Grounds
-        966025312368463922,  # cEDH DE
-        629303378685460530,  # AUS cEDH
-        1110129065152745505,  # UK cEDH
-        749653914839679057,  # cEDH Quebec
-        947983400483033148,  # PDX cEDH
     },
 )
-
-if TYPE_CHECKING:
-    from sqlalchemy.sql import ColumnElement
-
-    from spellbot.web.dashboard_filters import GuildFilter, PeriodSpec
 
 
 def game_guild_filter(opts: GuildFilter) -> list[ColumnElement[bool]]:
@@ -405,53 +383,49 @@ async def dashboard_casual_vs_cedh(period: PeriodSpec, opts: GuildFilter) -> dic
     """
     Return bucketed counts of started games classified as Casual vs cEDH.
 
-    Classification mirrors the historical Grafana dashboard:
+    A game is classified as **cEDH** when any of the following is true:
 
-    * **Casual** — games in :data:`CASUAL_GUILDS` whose `format` is not
-      `GameFormat.CEDH` and whose `bracket` is not `GameBracket.BRACKET_5`.
-    * **cEDH** — games in :data:`CEDH_GUILDS`, OR any game whose `format` is
-      `GameFormat.CEDH`, OR any game whose `bracket` is
-      `GameBracket.BRACKET_5`.
+    * `Game.guild_xid` is in :data:`CEDH_GUILDS`.
+    * The owning guild's name contains "cedh" (case-insensitive).
+    * `Game.format` is `GameFormat.CEDH` or `GameFormat.EDH_MAX`.
+    * `Game.bracket` is `GameBracket.BRACKET_5`.
 
-    The classification is global and intentionally ignores the dashboard's
-    guild filter; `opts` is accepted for API symmetry. Games outside both
-    lists (and without the cEDH format/bracket markers) are not counted in
-    either series.
+    All other started games are classified as **Casual**. The dashboard's
+    guild filter is honored, so selecting a single server restricts both
+    series to games on that server.
     """
-    del opts
-    cedh_format = GameFormat.CEDH.value
-    cedh_bracket = GameBracket.BRACKET_5.value
-    casual_clause = and_(
-        any_of(Game.guild_xid, list(CASUAL_GUILDS)),
-        Game.format != cedh_format,
-        Game.bracket != cedh_bracket,
-    )
-    cedh_clause = or_(
+    is_cedh = or_(
         any_of(Game.guild_xid, list(CEDH_GUILDS)),
-        Game.format == cedh_format,
-        Game.bracket == cedh_bracket,
+        func.coalesce(Guild.name, "").ilike("%cedh%"),
+        Game.format == GameFormat.CEDH.value,
+        Game.format == GameFormat.EDH_MAX.value,
+        Game.bracket == GameBracket.BRACKET_5.value,
     )
+    classification = case((is_cedh, "cedh"), else_="casual").label("classification")
 
     bucket_col = trunc_date(Game.created_at, period.bucket).label("bucket")
-    common: list[ColumnElement[bool]] = [Game.started_at.isnot(None)]
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.isnot(None),
+        *game_guild_filter(opts),
+    ]
     if period.start_dt is not None:
-        common.append(Game.created_at >= period.start_dt)
+        filters.append(Game.created_at >= period.start_dt)
 
-    async def run(clause: ColumnElement[bool]) -> list[dict[str, Any]]:
-        rows = (
-            await DatabaseSession.execute(
-                select(bucket_col, func.count(Game.id))
-                .where(*common, clause)
-                .group_by(bucket_col)
-                .order_by(bucket_col),
-            )
-        ).all()
-        return [{"date": iso_str(r[0]), "count": int(r[1])} for r in rows]
+    rows = (
+        await DatabaseSession.execute(
+            select(classification, bucket_col, func.count(Game.id))
+            .select_from(Game)
+            .outerjoin(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+            .where(*filters)
+            .group_by(classification, bucket_col)
+            .order_by(bucket_col),
+        )
+    ).all()
 
-    return {
-        "casual": await run(casual_clause),
-        "cedh": await run(cedh_clause),
-    }
+    series: dict[str, list[dict[str, Any]]] = {"casual": [], "cedh": []}
+    for kind, bucket, count in rows:
+        series[kind].append({"date": iso_str(bucket), "count": int(count)})
+    return series
 
 
 async def dashboard_server_popularity(
@@ -459,8 +433,15 @@ async def dashboard_server_popularity(
     opts: GuildFilter,
     *,
     top_n: int = 20,
+    totals_min: int = 10,
 ) -> dict[str, Any]:
-    """Return bucketed game counts for the top `top_n` guilds by total games."""
+    """
+    Return bucketed game counts for the top `top_n` guilds by total games.
+
+    Also returns `totals`: every guild with at least `totals_min` games under
+    the same filters, sorted by count descending. The table on the dashboard
+    uses this to show all qualifying servers (a superset of those in the chart).
+    """
     filters: list[ColumnElement[bool]] = [
         Game.started_at.isnot(None),
         Guild.name.isnot(None),
@@ -469,20 +450,22 @@ async def dashboard_server_popularity(
     if period.start_dt is not None:
         filters.append(Game.created_at >= period.start_dt)
 
-    top_rows = (
+    total_col = func.count(Game.id).label("total")
+    all_rows = (
         await DatabaseSession.execute(
-            select(Guild.name, func.count(Game.id).label("total"))
+            select(Guild.name, total_col)
             .select_from(Game)
             .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
             .where(*filters)
             .group_by(Guild.name)
-            .order_by(func.count(Game.id).desc())
-            .limit(top_n),
+            .order_by(total_col.desc(), Guild.name),
         )
     ).all()
-    top_names = [r[0] for r in top_rows]
+    totals = [{"name": r[0], "count": int(r[1])} for r in all_rows if int(r[1]) >= totals_min]
+
+    top_names = [r[0] for r in all_rows[:top_n]]
     if not top_names:
-        return {"series": []}
+        return {"series": [], "totals": totals}
 
     bucket_col = trunc_date(Game.created_at, period.bucket).label("bucket")
     series_rows = (
@@ -500,7 +483,10 @@ async def dashboard_server_popularity(
     for name, bucket, count in series_rows:
         by_name[name].append({"date": iso_str(bucket), "count": int(count)})
 
-    return {"series": [{"name": name, "points": by_name[name]} for name in top_names]}
+    return {
+        "series": [{"name": name, "points": by_name[name]} for name in top_names],
+        "totals": totals,
+    }
 
 
 async def dashboard_service_popularity(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
@@ -734,6 +720,10 @@ async def dashboard_bracket_adoption(period: PeriodSpec, opts: GuildFilter) -> d
 
     Adoption is `count(games where bracket is set) / count(games)` restricted
     to games whose `format` is in `BRACKETABLE_FORMATS` and which have started.
+
+    Also returns `leaders`: one row per non-`NONE` bracket with the guild that
+    has the most games of that bracket under the same filters. Brackets with
+    no qualifying games are included with `server=None` and `count=0`.
     """
     filters: list[ColumnElement[bool]] = [
         Game.started_at.isnot(None),
@@ -760,7 +750,43 @@ async def dashboard_bracket_adoption(period: PeriodSpec, opts: GuildFilter) -> d
         total_int = int(total_count or 0)
         rate = (float(adopted_count or 0) / float(total_int)) * 100.0 if total_int > 0 else 0.0
         points.append({"date": iso_str(bucket), "count": round(rate, 2)})
-    return {"rate": points}
+
+    leader_count = func.count(Game.id).label("count")
+    leader_rows = (
+        await DatabaseSession.execute(
+            select(Game.bracket, Guild.name, leader_count)  # type: ignore
+            .select_from(Game)
+            .join(Guild, Guild.xid == Game.guild_xid)
+            .where(
+                *filters,
+                Game.bracket != GameBracket.NONE.value,
+                Guild.name.isnot(None),
+            )
+            .group_by(Game.bracket, Guild.name),
+        )
+    ).all()
+
+    best_per_bracket: dict[int, tuple[str, int]] = {}
+    for bracket_value, name, count in leader_rows:
+        c = int(count)
+        b = int(bracket_value)
+        cur = best_per_bracket.get(b)
+        if cur is None or c > cur[1] or (c == cur[1] and name < cur[0]):
+            best_per_bracket[b] = (name, c)
+
+    leaders: list[dict[str, Any]] = []
+    for b in GAME_BRACKET_ORDER:
+        if b is GameBracket.NONE:
+            continue
+        winner = best_per_bracket.get(b.value)
+        leaders.append(
+            {
+                "bracket": b.title,
+                "server": winner[0] if winner is not None else None,
+                "count": winner[1] if winner is not None else 0,
+            },
+        )
+    return {"rate": points, "leaders": leaders}
 
 
 async def dashboard_avg_wait_time(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
