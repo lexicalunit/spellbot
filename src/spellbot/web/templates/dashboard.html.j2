@@ -121,6 +121,36 @@
         .lang-table td.pct { text-align: right; color: #9ca3af; font-variant-numeric: tabular-nums; }
         .lang-table tr:last-child td { border-bottom: none; }
         .player-xid { color: #9ca3af; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+        .chart-with-table {
+            display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 1rem;
+            /* Fix the row height so the table can't stretch the chart vertically
+               by trying to fit every row; the table scrolls internally instead. */
+            height: 576px;
+        }
+        .chart-with-table.compact { height: 400px; }
+        .chart-with-table .table-box { min-height: 0; max-height: none; }
+        @media (max-width: 900px) {
+            .chart-with-table { grid-template-columns: 1fr; height: auto; }
+            .chart-with-table.compact { height: auto; }
+            /* When stacked, restore a bounded table height so it doesn't grow
+               unbounded with row count. */
+            .chart-with-table .table-box { max-height: 576px; }
+            .chart-with-table.compact .table-box { max-height: 400px; }
+        }
+        .lang-table td.swatch {
+            width: 4px; padding: 0.4rem 0; border-bottom: none;
+        }
+        .lang-table td.swatch span {
+            display: block; width: 3px; height: 1.1em;
+            border-radius: 2px; background: transparent;
+            transition: opacity 0.15s;
+        }
+        .lang-table tr.interactive { cursor: pointer; }
+        .lang-table tr.interactive:hover td { background: rgba(255,255,255,0.04); }
+        .lang-table tr.series-hidden td:not(.swatch) {
+            text-decoration: line-through; color: #6b7280;
+        }
+        .lang-table tr.series-hidden td.swatch span { opacity: 0.25; }
         .word-cloud {
             display: flex; flex-wrap: wrap; gap: 0.4rem 0.6rem;
             justify-content: center; align-items: center;
@@ -191,7 +221,13 @@
         <div class="section"><h2>Game Activity</h2><div id="gameActivitySection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
         <div class="section"><h2>Cumulative Player Growth</h2><div id="playerGrowthSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
         <div class="section"><h2>Casual vs cEDH (% of bucket)</h2><div id="casualVsCedhSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-        <div class="section"><h2>Server Popularity (Top 20, % of bucket)</h2><div id="serverPopularitySection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
+        <div class="section">
+            <h2>Server Popularity (Top 20, % of bucket)</h2>
+            <div class="chart-with-table">
+                <div id="serverPopularitySection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div>
+                <div id="serverPopularityTable" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div>
+            </div>
+        </div>
         <div class="section"><h2>Service Popularity (% of bucket)</h2><div id="servicePopularitySection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
 
         <div class="summary">
@@ -201,7 +237,13 @@
             <div class="stat"><div id="statBracket4" class="stat-value bracket-4"><div class="section-spinner"></div></div><div class="stat-label">Bracket 4: Optimized</div></div>
             <div class="stat"><div id="statBracket5" class="stat-value bracket-5"><div class="section-spinner"></div></div><div class="stat-label">Bracket 5: Competitive</div></div>
         </div>
-        <div class="section"><h2>Bracket Adoption Rate</h2><div id="bracketAdoptionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
+        <div class="section">
+            <h2>Bracket Adoption Rate</h2>
+            <div class="chart-with-table compact">
+                <div id="bracketAdoptionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div>
+                <div id="bracketLeadersTable" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div>
+            </div>
+        </div>
 
         <div class="row">
             <div class="section"><h2>Popular Hours of Day (Local Time)</h2><div id="hourOfDaySection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
