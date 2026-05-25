@@ -350,6 +350,9 @@ class TestPlaysServiceRecords:
         assert rows is not None
         assert len(rows) == 1
         assert rows[0]["channel"] == channel.xid
+        assert "seats" in rows[0]
+        assert "bracket" in rows[0]
+        assert "locale" in rows[0]
 
     async def test_channel_records_missing_guild(self) -> None:
         assert await plays.channel_records(guild_xid=99998, channel_xid=1) is None
@@ -385,6 +388,9 @@ class TestPlaysServiceRecords:
         assert len(rows) == 1
         assert rows[0]["channel"] == channel.xid
         assert rows[0]["service"]
+        assert "seats" in rows[0]
+        assert "bracket" in rows[0]
+        assert "locale" in rows[0]
 
 
 class TestRulesHelpers:

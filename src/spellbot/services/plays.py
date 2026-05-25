@@ -25,7 +25,10 @@ USER_RECORDS_SQL = r"""
             posts.message_xid,
             games.game_link,
             games.format,
-            games.service
+            games.service,
+            games.seats,
+            games.bracket,
+            games.locale
         FROM games
         JOIN plays ON plays.game_id = games.id
         JOIN posts ON posts.game_id = games.id
@@ -46,6 +49,9 @@ USER_RECORDS_SQL = r"""
         game_plays.game_link,
         game_plays.format,
         game_plays.service,
+        game_plays.seats,
+        game_plays.bracket,
+        game_plays.locale,
         channels.name,
         STRING_AGG(
             CONCAT(
@@ -68,6 +74,9 @@ USER_RECORDS_SQL = r"""
         game_plays.game_link,
         game_plays.format,
         game_plays.service,
+        game_plays.seats,
+        game_plays.bracket,
+        game_plays.locale,
         channels.name
     ORDER BY game_plays.updated_at DESC
     ;
@@ -81,6 +90,9 @@ CHANNEL_RECORDS_SQL = r"""
         games.game_link,
         games.format,
         games.service,
+        games.seats,
+        games.bracket,
+        games.locale,
         STRING_AGG(
             CONCAT(
                 REPLACE(REPLACE(users.name, ':', ''), '@', ''),
@@ -105,7 +117,10 @@ CHANNEL_RECORDS_SQL = r"""
         posts.message_xid,
         games.game_link,
         games.format,
-        games.service
+        games.service,
+        games.seats,
+        games.bracket,
+        games.locale
     ORDER BY games.updated_at DESC
     OFFSET :offset
     LIMIT :page_size
@@ -137,6 +152,9 @@ def decomposed(combined_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "link": data["link"],
                 "format": data["format"],
                 "service": data["service"],
+                "seats": data["seats"],
+                "bracket": data["bracket"],
+                "locale": data["locale"],
                 "guild_name": data["guild_name"],
                 "channel_name": data["channel_name"],
                 "user_name": name,
@@ -229,9 +247,12 @@ async def user_records(
             "link": row[4],
             "format": str(GameFormat(row[5])),
             "service": str(GameService(row[6])),
+            "seats": row[7],
+            "bracket": str(GameBracket(row[8])),
+            "locale": row[9],
             "guild_name": guild.name,
-            "channel_name": row[7],
-            "scores": make_scores(row[8]),
+            "channel_name": row[10],
+            "scores": make_scores(row[11]),
         }
         for row in rows
     ]
@@ -273,9 +294,12 @@ async def channel_records(
             "link": row[3],
             "format": str(GameFormat(row[4])),
             "service": str(GameService(row[5])),
+            "seats": row[6],
+            "bracket": str(GameBracket(row[7])),
+            "locale": row[8],
             "guild_name": guild.name,
             "channel_name": channel.name,
-            "scores": make_scores(row[6]),
+            "scores": make_scores(row[9]),
         }
         for row in rows
     ]
