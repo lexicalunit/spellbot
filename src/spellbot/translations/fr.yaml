@@ -23,7 +23,7 @@ fr:
       rules: "⚠️ Règles supplémentaires :"
       players: "Joueurs"
       players_hidden_one: "**%{count} nom de joueur est masqué**"
-      players_hidden_many: "**%{count} player names are hidden**"
+      players_hidden_many: "**%{count} noms de joueurs sont masqués**"
       format: "Format"
       bracket: "Bracket"
       started_at: "Started at"
