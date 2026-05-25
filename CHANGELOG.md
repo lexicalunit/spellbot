@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed the link name in the channel record page.
+- Fixed a typo in the `/channels` command.
+
 ## [v19.2.0](https://github.com/lexicalunit/spellbot/releases/tag/v19.2.0) - 2026-05-24
 
 ### Added

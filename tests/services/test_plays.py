@@ -384,6 +384,7 @@ class TestPlaysServiceRecords:
         assert rows is not None
         assert len(rows) == 1
         assert rows[0]["channel"] == channel.xid
+        assert rows[0]["service"]
 
 
 class TestRulesHelpers:
