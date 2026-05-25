@@ -98,6 +98,13 @@ JSON_ENDPOINTS: list[tuple[str, set[str]]] = [
     ("/admin/dashboard/avg-wait-time", {"series"}),
     ("/admin/dashboard/games-per-player", {"median", "histogram"}),
     ("/admin/dashboard/rules", {"top_rules", "rule_ngrams"}),
+    ("/admin/dashboard/cohort-retention", {"cohorts", "max_weeks"}),
+    ("/admin/dashboard/activity-heatmap", {"cells"}),
+    ("/admin/dashboard/wait-time-distribution", {"p50", "p95", "p99"}),
+    ("/admin/dashboard/voice-adoption", {"rate"}),
+    ("/admin/dashboard/blind-adoption", {"rate"}),
+    ("/admin/dashboard/mythic-verification", {"rate"}),
+    ("/admin/dashboard/queue-depth", {"total", "by_format"}),
     ("/admin/dashboard/guilds", {"guilds"}),
 ]
 

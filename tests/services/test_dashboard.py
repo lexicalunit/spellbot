@@ -940,3 +940,282 @@ class TestDashboardRules:
         )
         result = await dashboard.dashboard_rules(period_all(), all_guilds())
         assert all(r["rule"] != "" for r in result["top_rules"])
+
+
+@pytest.mark.asyncio
+class TestDashboardCohortRetention:
+    async def test_cohorts_built_from_first_play_week(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_cohort_retention(period_all(), all_guilds())
+        assert result["max_weeks"] >= 0
+        assert len(result["cohorts"]) >= 1
+        first = result["cohorts"][0]
+        assert {"cohort", "size", "weeks"} <= set(first)
+        assert first["size"] >= 1
+        zero = next(w for w in first["weeks"] if w["offset"] == 0)
+        assert zero["pct"] == 100.0
+
+    async def test_returners_across_weeks(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(xid=950101, name="Cohort")
+        channel = factories.channel.create(xid=950102, name="ch", guild=guild)
+        user = factories.user.create(xid=850101, name="ret")
+        early = factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=NOW - timedelta(days=21),
+            created_at=NOW - timedelta(days=21, minutes=5),
+        )
+        late = factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=NOW - timedelta(days=7),
+            created_at=NOW - timedelta(days=7, minutes=5),
+        )
+        factories.play.create(game_id=early.id, user_xid=user.xid, og_guild_xid=guild.xid)
+        factories.play.create(game_id=late.id, user_xid=user.xid, og_guild_xid=guild.xid)
+        result = await dashboard.dashboard_cohort_retention(
+            period_all(),
+            GuildFilter(mode="include", xid=int(guild.xid)),
+        )
+        assert result["max_weeks"] >= 1
+        cohort = result["cohorts"][0]
+        offsets = {w["offset"]: w for w in cohort["weeks"]}
+        assert offsets[0]["pct"] == 100.0
+        assert max(offsets) >= 1
+
+    async def test_bounded_period_applies_filter(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_cohort_retention(period_30d(), all_guilds())
+        assert isinstance(result["cohorts"], list)
+
+    async def test_empty(self) -> None:
+        result = await dashboard.dashboard_cohort_retention(period_30d(), all_guilds())
+        assert result == {"cohorts": [], "max_weeks": 0}
+
+
+@pytest.mark.asyncio
+class TestDashboardActivityHeatmap:
+    async def test_cells_present(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_activity_heatmap(period_all(), all_guilds())
+        assert isinstance(result["cells"], list)
+        assert len(result["cells"]) >= 1
+        cell = result["cells"][0]
+        assert {"dow", "hour", "count"} == set(cell)
+        assert 0 <= cell["dow"] <= 6
+        assert 0 <= cell["hour"] <= 23
+
+    async def test_bounded_period(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_activity_heatmap(period_30d(), all_guilds())
+        assert isinstance(result["cells"], list)
+
+    async def test_empty(self) -> None:
+        result = await dashboard.dashboard_activity_heatmap(period_30d(), all_guilds())
+        assert result == {"cells": []}
+
+
+@pytest.mark.asyncio
+class TestDashboardWaitTimeDistribution:
+    async def test_returns_three_percentile_series(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_wait_time_distribution(period_all(), all_guilds())
+        assert {"p50", "p95", "p99"} == set(result)
+        assert len(result["p50"]) >= 1
+        point = result["p50"][0]
+        assert {"date", "minutes"} == set(point)
+        assert point["minutes"] >= 0
+
+    async def test_bounded_period(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_wait_time_distribution(period_30d(), all_guilds())
+        assert isinstance(result["p95"], list)
+
+    async def test_empty(self) -> None:
+        result = await dashboard.dashboard_wait_time_distribution(period_30d(), all_guilds())
+        assert result == {"p50": [], "p95": [], "p99": []}
+
+
+@pytest.mark.asyncio
+class TestDashboardVoiceAdoption:
+    async def test_rate_reflects_voice_xid_presence(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(xid=952001, name="V")
+        channel = factories.channel.create(xid=952002, name="ch", guild=guild)
+        factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=NOW - timedelta(hours=1),
+            created_at=NOW - timedelta(hours=1, minutes=5),
+            voice_xid=987654,
+        )
+        factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=NOW - timedelta(hours=2),
+            created_at=NOW - timedelta(hours=2, minutes=5),
+            voice_xid=None,
+        )
+        result = await dashboard.dashboard_voice_adoption(
+            period_all(),
+            GuildFilter(mode="include", xid=int(guild.xid)),
+        )
+        assert len(result["rate"]) == 1
+        assert result["rate"][0]["count"] == 50.0
+
+    async def test_bounded_period(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_voice_adoption(period_30d(), all_guilds())
+        assert isinstance(result["rate"], list)
+
+    async def test_empty(self) -> None:
+        result = await dashboard.dashboard_voice_adoption(period_30d(), all_guilds())
+        assert result == {"rate": []}
+
+
+@pytest.mark.asyncio
+class TestDashboardBlindAdoption:
+    async def test_rate_reflects_blind_flag(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(xid=953001, name="B")
+        channel = factories.channel.create(xid=953002, name="ch", guild=guild)
+        for _ in range(3):
+            factories.game.create(
+                guild=guild,
+                channel=channel,
+                started_at=NOW - timedelta(hours=1),
+                created_at=NOW - timedelta(hours=1, minutes=5),
+                blind=True,
+            )
+        factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=NOW - timedelta(hours=1),
+            created_at=NOW - timedelta(hours=1, minutes=5),
+            blind=False,
+        )
+        result = await dashboard.dashboard_blind_adoption(
+            period_all(),
+            GuildFilter(mode="include", xid=int(guild.xid)),
+        )
+        assert len(result["rate"]) == 1
+        assert result["rate"][0]["count"] == 75.0
+
+    async def test_bounded_period(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_blind_adoption(period_30d(), all_guilds())
+        assert isinstance(result["rate"], list)
+
+    async def test_empty(self) -> None:
+        result = await dashboard.dashboard_blind_adoption(period_30d(), all_guilds())
+        assert result == {"rate": []}
+
+
+@pytest.mark.asyncio
+class TestDashboardMythicVerification:
+    async def test_rate_for_enabled_guild(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(xid=954001, name="M", enable_mythic_track=True)
+        channel = factories.channel.create(xid=954002, name="ch", guild=guild)
+        u1 = factories.user.create(xid=854001, name="m1")
+        u2 = factories.user.create(xid=854002, name="m2")
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=NOW - timedelta(hours=1),
+            created_at=NOW - timedelta(hours=1, minutes=5),
+        )
+        factories.play.create(
+            game_id=game.id,
+            user_xid=u1.xid,
+            og_guild_xid=guild.xid,
+            verified_at=NOW,
+        )
+        factories.play.create(
+            game_id=game.id,
+            user_xid=u2.xid,
+            og_guild_xid=guild.xid,
+            verified_at=None,
+        )
+        result = await dashboard.dashboard_mythic_verification(
+            period_all(),
+            GuildFilter(mode="include", xid=int(guild.xid)),
+        )
+        assert len(result["rate"]) == 1
+        assert result["rate"][0]["count"] == 50.0
+
+    async def test_excludes_guilds_without_track(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_mythic_verification(period_all(), all_guilds())
+        assert result == {"rate": []}
+
+    async def test_bounded_period(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_mythic_verification(period_30d(), all_guilds())
+        assert isinstance(result["rate"], list)
+
+
+@pytest.mark.asyncio
+class TestDashboardQueueDepth:
+    async def test_counts_pending_only(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(xid=955001, name="Q")
+        channel = factories.channel.create(xid=955002, name="ch", guild=guild)
+        u1 = factories.user.create(xid=855001, name="q1")
+        u2 = factories.user.create(xid=855002, name="q2")
+        u3 = factories.user.create(xid=855003, name="q3")
+        pending = factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=5),
+            format=GameFormat.COMMANDER.value,
+        )
+        started = factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=NOW - timedelta(minutes=1),
+            created_at=NOW - timedelta(minutes=5),
+        )
+        deleted = factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=5),
+            deleted_at=NOW,
+        )
+        factories.queue.create(user_xid=u1.xid, game_id=pending.id, og_guild_xid=guild.xid)
+        factories.queue.create(user_xid=u2.xid, game_id=pending.id, og_guild_xid=guild.xid)
+        factories.queue.create(user_xid=u3.xid, game_id=started.id, og_guild_xid=guild.xid)
+        factories.queue.create(user_xid=u1.xid, game_id=deleted.id, og_guild_xid=guild.xid)
+        result = await dashboard.dashboard_queue_depth(
+            period_30d(),
+            GuildFilter(mode="include", xid=int(guild.xid)),
+        )
+        assert result["total"] == 2
+        assert result["by_format"] == [{"format": str(GameFormat.COMMANDER), "count": 2}]
+
+    async def test_empty(self) -> None:
+        result = await dashboard.dashboard_queue_depth(period_all(), all_guilds())
+        assert result == {"total": 0, "by_format": []}

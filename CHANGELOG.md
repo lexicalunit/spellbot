@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds cohort retention.
+- Adds activity heatmap.
+- Adds wait time distribution.
+- Adds voice adoption.
+- Adds blind adoption.
+- Adds mythic verification.
+- Adds queue depth.
+- Upgrade the shm_size on docker-compose.
+- Adds a new index to speed up some dashboard queries.
+
 ## [v19.1.14](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.14) - 2026-05-24
 
 ### Added

@@ -229,6 +229,65 @@ async def dashboard_rules_endpoint(request: web.Request) -> web.Response:
     return await dashboard_json_endpoint(request, services.dashboard.dashboard_rules)
 
 
+@routes.get("/admin/dashboard/cohort-retention")
+@tracer.wrap(name="web", resource="dashboard_cohort_retention")
+async def dashboard_cohort_retention_endpoint(request: web.Request) -> web.Response:
+    """Return weekly cohort retention as `cohorts[cohort][week_offset] -> percent`."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_cohort_retention)
+
+
+@routes.get("/admin/dashboard/activity-heatmap")
+@tracer.wrap(name="web", resource="dashboard_activity_heatmap")
+async def dashboard_activity_heatmap_endpoint(request: web.Request) -> web.Response:
+    """Return started-game counts as a day-of-week x hour-of-day matrix."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_activity_heatmap)
+
+
+@routes.get("/admin/dashboard/wait-time-distribution")
+@tracer.wrap(name="web", resource="dashboard_wait_time_distribution")
+async def dashboard_wait_time_distribution_endpoint(request: web.Request) -> web.Response:
+    """Return bucketed wait-time percentiles (p50 / p95 / p99) in minutes."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(
+        request,
+        services.dashboard.dashboard_wait_time_distribution,
+    )
+
+
+@routes.get("/admin/dashboard/voice-adoption")
+@tracer.wrap(name="web", resource="dashboard_voice_adoption")
+async def dashboard_voice_adoption_endpoint(request: web.Request) -> web.Response:
+    """Return bucketed adoption rate (percent) of started games with a voice channel."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_voice_adoption)
+
+
+@routes.get("/admin/dashboard/blind-adoption")
+@tracer.wrap(name="web", resource="dashboard_blind_adoption")
+async def dashboard_blind_adoption_endpoint(request: web.Request) -> web.Response:
+    """Return bucketed adoption rate (percent) of started games created as blind."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_blind_adoption)
+
+
+@routes.get("/admin/dashboard/mythic-verification")
+@tracer.wrap(name="web", resource="dashboard_mythic_verification")
+async def dashboard_mythic_verification_endpoint(request: web.Request) -> web.Response:
+    """Return bucketed Mythic Track verification rate (percent) of plays."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_mythic_verification)
+
+
+@routes.get("/admin/dashboard/queue-depth")
+@tracer.wrap(name="web", resource="dashboard_queue_depth")
+async def dashboard_queue_depth_endpoint(request: web.Request) -> web.Response:
+    """Return the current number of users waiting in pending games, by format."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_queue_depth)
+
+
 @routes.get("/admin/dashboard/guilds")
 @tracer.wrap(name="web", resource="dashboard_guilds")
 async def dashboard_guilds_endpoint(request: web.Request) -> web.Response:

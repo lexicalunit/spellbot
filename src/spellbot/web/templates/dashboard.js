@@ -1254,6 +1254,322 @@
     }
   }
 
+  // Interpolates between `lo` (default deep indigo) and `hi` (default pink)
+  // on a square-root scale so light cells remain visible when the max value
+  // dwarfs the rest of the heatmap.
+  function heatColor(value, maxValue, lo, hi) {
+    const loRGB = lo || [30, 58, 138];
+    const hiRGB = hi || [244, 114, 182];
+    if (!maxValue || !value) {
+      return "rgb(" + loRGB[0] + "," + loRGB[1] + "," + loRGB[2] + ")";
+    }
+    const t = Math.sqrt(value / maxValue);
+    const r = Math.round(loRGB[0] + (hiRGB[0] - loRGB[0]) * t);
+    const g = Math.round(loRGB[1] + (hiRGB[1] - loRGB[1]) * t);
+    const b = Math.round(loRGB[2] + (hiRGB[2] - loRGB[2]) * t);
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
+
+  async function loadActivityHeatmap() {
+    try {
+      const d = await fetchJson("activity-heatmap");
+      const el = document.getElementById("activityHeatmapSection");
+      if (!d.cells.length) {
+        el.innerHTML = '<div class="no-data">No data yet.</div>';
+        return;
+      }
+      // Shift UTC dow/hour to local time. Hour shift may flip the dow.
+      const offsetHours = new Date().getTimezoneOffset() / 60;
+      const grid = [];
+      for (let i = 0; i < 7; i += 1) grid.push(new Array(24).fill(0));
+      d.cells.forEach(function (c) {
+        const totalHour = c.dow * 24 + c.hour - offsetHours;
+        const wrapped = ((totalHour % 168) + 168) % 168;
+        const lh = Math.floor(wrapped) % 24;
+        const ld = Math.floor(wrapped / 24) % 7;
+        grid[ld][lh] += c.count;
+      });
+      let maxValue = 0;
+      grid.forEach(function (row) {
+        row.forEach(function (v) {
+          if (v > maxValue) maxValue = v;
+        });
+      });
+      const cols = [];
+      for (let h = 0; h < 24; h += 1) {
+        cols.push(
+          '<div class="hm-col">' +
+            (h % 3 === 0 ? String(h).padStart(2, "0") : "") +
+            "</div>",
+        );
+      }
+      const rows = grid
+        .map(function (row, d2) {
+          const cells = row
+            .map(function (v, h) {
+              return (
+                '<div class="hm-cell" style="background:' +
+                heatColor(v, maxValue) +
+                '" title="' +
+                DOW_LABELS[d2] +
+                " " +
+                String(h).padStart(2, "0") +
+                ":00 — " +
+                v +
+                ' games"></div>'
+              );
+            })
+            .join("");
+          return '<div class="hm-row">' + DOW_LABELS[d2] + "</div>" + cells;
+        })
+        .join("");
+      el.innerHTML =
+        '<div class="heatmap" style="grid-template-columns:40px repeat(24, minmax(0, 1fr))">' +
+        '<div class="hm-corner"></div>' +
+        cols.join("") +
+        rows +
+        "</div>" +
+        '<div class="heatmap-legend"><span>less</span>' +
+        '<span class="hm-scale"></span>' +
+        "<span>more (max: " +
+        fmt(maxValue) +
+        ")</span></div>";
+    } catch (ex) {
+      showError("activityHeatmapSection", "Failed to load.");
+    }
+  }
+
+  async function loadCohortRetention() {
+    try {
+      const d = await fetchJson("cohort-retention");
+      const el = document.getElementById("cohortRetentionSection");
+      if (!d.cohorts.length) {
+        el.innerHTML = '<div class="no-data">No data yet.</div>';
+        return;
+      }
+      const maxWeeks = d.max_weeks;
+      const header = ['<th class="cohort-label">Cohort (size)</th>'];
+      for (let i = 0; i <= maxWeeks; i += 1) header.push("<th>W" + i + "</th>");
+      const body = d.cohorts
+        .map(function (c) {
+          const byOffset = {};
+          c.weeks.forEach(function (w) {
+            byOffset[w.offset] = w;
+          });
+          const cells = [];
+          for (let i = 0; i <= maxWeeks; i += 1) {
+            const w = byOffset[i];
+            if (!w) {
+              cells.push("<td></td>");
+            } else {
+              cells.push(
+                '<td class="cohort-cell" style="background:' +
+                  heatColor(w.pct, 100) +
+                  '" title="' +
+                  w.count +
+                  " of " +
+                  c.size +
+                  ' players">' +
+                  w.pct.toFixed(0) +
+                  "%</td>",
+              );
+            }
+          }
+          return (
+            '<tr><td class="cohort-label">' +
+            escapeHtml(c.cohort.slice(0, 10)) +
+            " (" +
+            fmt(c.size) +
+            ")</td>" +
+            cells.join("") +
+            "</tr>"
+          );
+        })
+        .join("");
+      el.innerHTML =
+        '<div style="overflow-x:auto"><table class="cohort-table"><thead><tr>' +
+        header.join("") +
+        "</tr></thead><tbody>" +
+        body +
+        "</tbody></table></div>";
+    } catch (ex) {
+      showError("cohortRetentionSection", "Failed to load.");
+    }
+  }
+
+  async function loadWaitTimeDistribution() {
+    try {
+      const d = await fetchJson("wait-time-distribution");
+      const sections = [d.p50, d.p95, d.p99];
+      if (!sections[0].length) {
+        document.getElementById("waitTimeDistributionSection").innerHTML =
+          '<div class="no-data">No data yet.</div>';
+        destroyChart("waitTimeDistribution");
+        return;
+      }
+      const rawDates = sections[0].map(function (p) {
+        return p.date;
+      });
+      const trim = computeTrim(rawDates, currentBucket());
+      const labels = rawDates.slice(trim.startIdx).map(function (s) {
+        return s.slice(0, 10);
+      });
+      const dash = dashSegment(trim.partialFromIdx);
+      function ds(label, series, color) {
+        return applyDash(
+          {
+            label: label,
+            data: series.slice(trim.startIdx).map(function (p) {
+              return p.minutes;
+            }),
+            borderColor: color,
+            backgroundColor: color + "33",
+            borderWidth: 2,
+            tension: 0.3,
+            fill: false,
+            pointRadius: 0,
+          },
+          dash,
+        );
+      }
+      const ctx = addCanvas("waitTimeDistributionSection");
+      destroyChart("waitTimeDistribution");
+      state.charts.waitTimeDistribution = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [
+            ds("p50", d.p50, "#4ade80"),
+            ds("p95", d.p95, "#fbbf24"),
+            ds("p99", d.p99, "#ef4444"),
+          ],
+        },
+        options: lineOpts(false),
+      });
+    } catch (ex) {
+      showError("waitTimeDistributionSection", "Failed to load.");
+    }
+  }
+
+  function loadAdoptionRateChart(sectionId, chartKey, fetchPath, label, color) {
+    return (async function () {
+      try {
+        const d = await fetchJson(fetchPath);
+        const series = d.rate || [];
+        if (!series.length) {
+          document.getElementById(sectionId).innerHTML =
+            '<div class="no-data">No data yet.</div>';
+          destroyChart(chartKey);
+          return;
+        }
+        const rawDates = series.map(function (p) {
+          return p.date;
+        });
+        const trim = computeTrim(rawDates, currentBucket());
+        const labels = rawDates.slice(trim.startIdx).map(function (s) {
+          return s.slice(0, 10);
+        });
+        const points = series.slice(trim.startIdx);
+        const dash = dashSegment(trim.partialFromIdx);
+        const ctx = addCanvas(sectionId);
+        destroyChart(chartKey);
+        const opts = percentLineOpts(label);
+        opts.plugins.legend = { display: false };
+        state.charts[chartKey] = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              applyDash(
+                {
+                  label: label,
+                  data: points.map(function (p) {
+                    return p.count;
+                  }),
+                  borderColor: color,
+                  backgroundColor: color + "33",
+                  borderWidth: 2,
+                  tension: 0.3,
+                  fill: true,
+                  pointRadius: 0,
+                },
+                dash,
+              ),
+            ],
+          },
+          options: opts,
+        });
+      } catch (ex) {
+        showError(sectionId, "Failed to load.");
+      }
+    })();
+  }
+
+  function loadVoiceAdoption() {
+    return loadAdoptionRateChart(
+      "voiceAdoptionSection",
+      "voiceAdoption",
+      "voice-adoption",
+      "Voice channel",
+      "#06b6d4",
+    );
+  }
+
+  function loadBlindAdoption() {
+    return loadAdoptionRateChart(
+      "blindAdoptionSection",
+      "blindAdoption",
+      "blind-adoption",
+      "Blind games",
+      "#a855f7",
+    );
+  }
+
+  function loadMythicVerification() {
+    return loadAdoptionRateChart(
+      "mythicVerificationSection",
+      "mythicVerification",
+      "mythic-verification",
+      "Verified",
+      "#22c55e",
+    );
+  }
+
+  async function loadQueueDepth() {
+    try {
+      const d = await fetchJson("queue-depth");
+      const el = document.getElementById("queueDepthSection");
+      const header =
+        '<div class="queue-depth-total">' +
+        fmt(d.total) +
+        ' <span class="stat-unit">players waiting</span></div>';
+      if (!d.by_format.length) {
+        el.innerHTML =
+          header + '<div class="no-data">No one is queued right now.</div>';
+        return;
+      }
+      const body = d.by_format
+        .map(function (r) {
+          return (
+            "<tr><td>" +
+            escapeHtml(r.format) +
+            '</td><td class="num">' +
+            fmt(r.count) +
+            "</td></tr>"
+          );
+        })
+        .join("");
+      el.innerHTML =
+        header +
+        '<table class="lang-table"><thead><tr><th>Format</th>' +
+        '<th style="text-align:right">Players Queued</th></tr></thead><tbody>' +
+        body +
+        "</tbody></table>";
+    } catch (ex) {
+      showError("queueDepthSection", "Failed to load.");
+    }
+  }
+
   function reloadAll() {
     showAllLoading();
     loadTotals();
@@ -1267,6 +1583,13 @@
     loadBracketAdoption();
     loadHourOfDay();
     loadDayOfWeek();
+    loadActivityHeatmap();
+    loadCohortRetention();
+    loadWaitTimeDistribution();
+    loadVoiceAdoption();
+    loadBlindAdoption();
+    loadMythicVerification();
+    loadQueueDepth();
     loadGamesPerPlayer();
     loadPopularFormats();
     loadPopularSeats();
