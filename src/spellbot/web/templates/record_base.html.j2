@@ -65,8 +65,15 @@
                 <div class="table100">
                     {% block table %}
                     {% endblock %}
-                    <a style="float:right" href="{{next_page}}" class="button">Next page</a>
-                    <a style="float:right" href="{{prev_page}}" class="button">Previous page</a>
+                    {% if next_page %}
+                        <a style="float:right" href="{{next_page}}" class="button">Next page</a>
+                    {% endif %}
+                    {% if prev_page %}
+                        <a style="float:right" href="{{prev_page}}" class="button">Previous page</a>
+                    {% endif %}
+                    {% if export_url %}
+                        <a style="float:right" href="{{export_url}}" class="button">Export all (CSV)</a>
+                    {% endif %}
                 </div>
             </div>
         </div>

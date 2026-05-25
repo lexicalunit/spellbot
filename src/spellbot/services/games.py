@@ -4,6 +4,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
+from dateutil import tz
 from ddtrace.trace import tracer
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert
@@ -13,13 +14,17 @@ from sqlalchemy.sql.functions import count
 
 from spellbot.data import PlayerDataDict, QueueData
 from spellbot.database import DatabaseSession, any_of
+from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import (
     Block,
+    Channel,
     Game,
     GameStatus,
+    Guild,
     Play,
     Post,
     Queue,
+    User,
     UserAward,
     Watch,
 )
@@ -27,6 +32,7 @@ from spellbot.settings import settings
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Any
 
     from spellbot.data import GameData
 
@@ -59,6 +65,134 @@ async def get_by_message_xid(message_xid: int) -> GameData | None:
     result = await DatabaseSession.execute(stmt)
     game: Game | None = result.scalar_one_or_none()
     return await game.to_data() if game else None
+
+
+def to_ms(dt: datetime | None) -> float | None:
+    """Convert a naive UTC datetime to millis since epoch, or `None`."""
+    if dt is None:
+        return None
+    return dt.replace(tzinfo=tz.UTC).timestamp() * 1000
+
+
+@tracer.wrap()
+async def game_detail_view(game_id: int) -> dict[str, Any] | None:
+    """
+    Return a rich dictionary of all information associated with a game.
+
+    Intended for the public game detail web page. Excludes the game `password`
+    and per-play `pin` (both are secrets that gate verification).
+    """
+    game = (
+        await DatabaseSession.execute(select(Game).where(Game.id == game_id))
+    ).scalar_one_or_none()
+    if game is None:
+        return None
+
+    guild = (
+        await DatabaseSession.execute(select(Guild).where(Guild.xid == game.guild_xid))
+    ).scalar_one_or_none()
+    channel = (
+        await DatabaseSession.execute(select(Channel).where(Channel.xid == game.channel_xid))
+    ).scalar_one_or_none()
+
+    posts = (
+        (
+            await DatabaseSession.execute(
+                select(Post).where(Post.game_id == game_id).order_by(Post.message_xid),
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    plays = (
+        (
+            await DatabaseSession.execute(
+                select(Play).where(Play.game_id == game_id).order_by(Play.user_xid),  # type: ignore
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    queues = (
+        (
+            await DatabaseSession.execute(
+                select(Queue).where(Queue.game_id == game_id).order_by(Queue.user_xid),
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    user_xids = {p.user_xid for p in plays} | {q.user_xid for q in queues}
+    user_names: dict[int, str | None] = {}
+    if user_xids:
+        users = (
+            (
+                await DatabaseSession.execute(
+                    select(User).where(User.xid.in_(user_xids)),
+                )
+            )
+            .scalars()
+            .all()
+        )
+        user_names = {u.xid: u.name for u in users}
+
+    return {
+        "id": game.id,
+        "status": GameStatus(game.status).name,
+        "format": str(GameFormat(game.format)),
+        "bracket": str(GameBracket(game.bracket)),
+        "service": str(GameService(game.service)),
+        "seats": game.seats,
+        "locale": game.locale,
+        "blind": game.blind,
+        "rules": game.rules,
+        "game_link": game.game_link,
+        "voice_xid": game.voice_xid,
+        "voice_invite_link": game.voice_invite_link,
+        "created_at": to_ms(game.created_at),
+        "updated_at": to_ms(game.updated_at),
+        "started_at": to_ms(game.started_at),
+        "deleted_at": to_ms(game.deleted_at),
+        "guild": {
+            "xid": guild.xid if guild else game.guild_xid,
+            "name": guild.name if guild else None,
+        },
+        "channel": {
+            "xid": channel.xid if channel else game.channel_xid,
+            "name": channel.name if channel else None,
+        },
+        "posts": [
+            {
+                "guild_xid": post.guild_xid,
+                "channel_xid": post.channel_xid,
+                "message_xid": post.message_xid,
+                "created_at": post.created_at,
+                "updated_at": post.updated_at,
+            }
+            for post in posts
+        ],
+        "plays": [
+            {
+                "user_xid": play.user_xid,
+                "user_name": user_names.get(play.user_xid),
+                "og_guild_xid": play.og_guild_xid,
+                "created_at": to_ms(play.created_at),
+                "updated_at": to_ms(play.updated_at),
+            }
+            for play in plays
+        ],
+        "queued": [
+            {
+                "user_xid": queue.user_xid,
+                "user_name": user_names.get(queue.user_xid),
+                "og_guild_xid": queue.og_guild_xid,
+            }
+            for queue in queues
+        ],
+    }
 
 
 @tracer.wrap()

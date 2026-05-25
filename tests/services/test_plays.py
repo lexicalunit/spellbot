@@ -393,6 +393,124 @@ class TestPlaysServiceRecords:
         assert "locale" in rows[0]
 
 
+@pytest.mark.asyncio
+class TestPlaysServiceStreamingExports:
+    """Tests for the streaming export helpers and target-existence validators."""
+
+    async def test_user_export_target_exists_missing(self) -> None:
+        assert await plays.user_export_target_exists(guild_xid=99000) is False
+
+    async def test_user_export_target_exists_present(self, factories: Factories) -> None:
+        guild = factories.guild.create(xid=8401, name="ux-guild")
+        assert await plays.user_export_target_exists(guild_xid=guild.xid) is True
+
+    async def test_channel_export_target_exists_missing_guild(self) -> None:
+        assert await plays.channel_export_target_exists(guild_xid=99001, channel_xid=1) is False
+
+    async def test_channel_export_target_exists_missing_channel(
+        self,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=8402, name="cx-guild")
+        assert (
+            await plays.channel_export_target_exists(guild_xid=guild.xid, channel_xid=99002)
+            is False
+        )
+
+    async def test_channel_export_target_exists_present(self, factories: Factories) -> None:
+        guild = factories.guild.create(xid=8403, name="cx-guild2")
+        channel = factories.channel.create(xid=8503, name="cx-channel", guild=guild)
+        assert (
+            await plays.channel_export_target_exists(guild_xid=guild.xid, channel_xid=channel.xid)
+            is True
+        )
+
+    async def test_stream_user_records_missing_guild(self) -> None:
+        rows = [r async for r in plays.stream_user_records(guild_xid=99003, user_xid=1)]
+        assert rows == []
+
+    async def test_stream_user_records_no_plays(self, factories: Factories) -> None:
+        guild = factories.guild.create(xid=8404, name="sx-guild")
+        rows = [r async for r in plays.stream_user_records(guild_xid=guild.xid, user_xid=1)]
+        assert rows == []
+
+    async def test_stream_user_records_yields_rows(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(datetime(2020, 6, 15, 12, 0, tzinfo=UTC))
+        now = datetime.now(tz=UTC)
+
+        guild = factories.guild.create(xid=8405, name="sx-guild2")
+        channel = factories.channel.create(xid=8505, name="sx-channel", guild=guild)
+        user = factories.user.create(xid=8605, name="sx-user")
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.COMMANDER.value,
+            started_at=now,
+            created_at=now - timedelta(minutes=5),
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=9105)
+        factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
+
+        rows = [r async for r in plays.stream_user_records(guild_xid=guild.xid, user_xid=user.xid)]
+        assert len(rows) == 1
+        assert rows[0]["channel"] == channel.xid
+        assert rows[0]["guild_name"] == guild.name
+        assert rows[0]["channel_name"] == channel.name
+        assert "seats" in rows[0]
+        assert "bracket" in rows[0]
+        assert "locale" in rows[0]
+
+    async def test_stream_channel_records_missing_guild(self) -> None:
+        rows = [r async for r in plays.stream_channel_records(guild_xid=99004, channel_xid=1)]
+        assert rows == []
+
+    async def test_stream_channel_records_missing_channel(self, factories: Factories) -> None:
+        guild = factories.guild.create(xid=8406, name="sc-guild")
+        rows = [
+            r async for r in plays.stream_channel_records(guild_xid=guild.xid, channel_xid=99005)
+        ]
+        assert rows == []
+
+    async def test_stream_channel_records_yields_rows(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(datetime(2020, 6, 15, 12, 0, tzinfo=UTC))
+        now = datetime.now(tz=UTC)
+
+        guild = factories.guild.create(xid=8407, name="sc-guild2")
+        channel = factories.channel.create(xid=8507, name="sc-channel", guild=guild)
+        user = factories.user.create(xid=8607, name="sc-user")
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.COMMANDER.value,
+            started_at=now,
+            created_at=now - timedelta(minutes=5),
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=9107)
+        factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
+
+        rows = [
+            r
+            async for r in plays.stream_channel_records(
+                guild_xid=guild.xid, channel_xid=channel.xid
+            )
+        ]
+        assert len(rows) == 1
+        assert rows[0]["channel"] == channel.xid
+        assert rows[0]["guild_name"] == guild.name
+        assert rows[0]["channel_name"] == channel.name
+        assert rows[0]["user_xid"] == str(user.xid)
+
+
 class TestRulesHelpers:
     """Tests for normalize_rule and extract_ngrams helper functions."""
 
