@@ -91,7 +91,7 @@ fr:
     done: "Terminé."
     invalid_page: "Page non valide."
     channels_title: "Configuration des canaux de %{guild}"
-    channels_default: "**Tous les canaux de ce serveur utilisent une configuration par défaut.**\n\nVous pouvez utiliser les commandes `/set` spécifiques aux canaux depuis un canal pour en modifier la configuration."
+    channels_default: "**All channels on this server have a default configuration.**\n\nYou may use channel specific `/set` commands within a channel to change that channel's configuration."
     awards_title: "Récompenses de joueur SpellBot pour %{guild}"
     awards_empty: "**Aucunes récompenses n'ont été configurées pour ce serveur.**\n\nPour ajouter des récompenses, utilisez la commande `/award add`."
     setup_title: "Configuration de SpellBot pour %{guild}"
