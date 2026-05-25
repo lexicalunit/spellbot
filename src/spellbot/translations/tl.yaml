@@ -91,7 +91,7 @@ tl:
     done: "Tapos na."
     invalid_page: "Invalid na page."
     channels_title: "Configuration para sa mga channel sa %{guild}"
-    channels_default: "**May default na configuration ang lahat ng channel sa server na ito.**\n\nPuwedeng gumamit ang mga user ng mga partikular na `/set` command sa isang channel para baguhin ang configuration ng channel na iyon."
+    channels_default: "**All channels on this server have a default configuration.**\n\nYou may use channel specific `/set` commands within a channel to change that channel's configuration."
     awards_title: "Mga Award sa Player ng SpellBot para sa %{guild}"
     awards_empty: "**Walang award na na-configure sa server na ito.**\n\nPara magdagdag ng mga award, gamitin ang `/award add` command."
     setup_title: "Setup ng SpellBot para sa %{guild}"
