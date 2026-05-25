@@ -1,153 +1,155 @@
 {% extends "record_base.html.j2" %}
-{% block table %}
-<table>
-    <caption>SpellBot Game SB#{{game.id}}</caption>
-    <thead>
-        <tr class="table100-head"><th>Field</th><th>Value</th></tr>
-    </thead>
-    <tbody>
-        <tr><td>Status</td><td>{{game.status}}</td></tr>
-        <tr><td>Format</td><td>{{game.format}}</td></tr>
-        <tr><td>Bracket</td><td>{{game.bracket}}</td></tr>
-        <tr><td>Service</td><td>{{game.service}}</td></tr>
-        <tr><td>Seats</td><td>{{game.seats}}</td></tr>
-        <tr><td>Locale</td><td>{{game.locale}}</td></tr>
-        <tr><td>Blind</td><td>{{ 'Yes' if game.blind else 'No' }}</td></tr>
-        {% if game.rules %}
-            <tr><td>Rules</td><td>{{game.rules}}</td></tr>
-        {% endif %}
-        <tr>
-            <td>Guild</td>
-            <td>
-                <a href="https://discord.com/channels/{{game.guild.xid}}">
-                    {{game.guild.name | default('Unknown Guild', true)}}
-                </a>
-                <span class="data">{{game.guild.xid}}</span>
-            </td>
-        </tr>
-        <tr>
-            <td>Channel</td>
-            <td>
-                <a href="https://discord.com/channels/{{game.guild.xid}}/{{game.channel.xid}}">
-                    #{{game.channel.name | default('Unknown Channel', true)}}
-                </a>
-                <span class="data">{{game.channel.xid}}</span>
-                &nbsp;
-                <a href="/g/{{game.guild.xid}}/c/{{game.channel.xid}}" class="button">Channel records</a>
-            </td>
-        </tr>
-        {% if game.game_link %}
-            <tr>
-                <td>Game link</td>
-                <td><a href="{{game.game_link}}">{{game.game_link}}</a></td>
-            </tr>
-        {% endif %}
-        {% if game.voice_xid %}
-            <tr>
-                <td>Voice channel</td>
-                <td>
-                    <a href="https://discord.com/channels/{{game.guild.xid}}/{{game.voice_xid}}">Open voice channel</a>
-                    <span class="data">{{game.voice_xid}}</span>
-                    {% if game.voice_invite_link %}
-                        &nbsp;<a href="{{game.voice_invite_link}}">Voice invite</a>
-                    {% endif %}
-                </td>
-            </tr>
-        {% endif %}
-        <tr>
-            <td>Created</td>
-            {% if tz_offset and tz_name %}
-                <td>{{game.created_at | humanize(tz_offset, tz_name)}}</td>
-            {% else %}
-                <td class="timestamp">{{game.created_at}}</td>
-            {% endif %}
-        </tr>
-        <tr>
-            <td>Updated</td>
-            {% if tz_offset and tz_name %}
-                <td>{{game.updated_at | humanize(tz_offset, tz_name)}}</td>
-            {% else %}
-                <td class="timestamp">{{game.updated_at}}</td>
-            {% endif %}
-        </tr>
-        {% if game.started_at %}
-            <tr>
-                <td>Started</td>
-                {% if tz_offset and tz_name %}
-                    <td>{{game.started_at | humanize(tz_offset, tz_name)}}</td>
-                {% else %}
-                    <td class="timestamp">{{game.started_at}}</td>
-                {% endif %}
-            </tr>
-        {% endif %}
-        {% if game.deleted_at %}
-            <tr>
-                <td>Deleted</td>
-                {% if tz_offset and tz_name %}
-                    <td>{{game.deleted_at | humanize(tz_offset, tz_name)}}</td>
-                {% else %}
-                    <td class="timestamp">{{game.deleted_at}}</td>
-                {% endif %}
-            </tr>
-        {% endif %}
-    </tbody>
-</table>
-
-{% if game.posts %}
-    <table>
-        <caption>Discord posts</caption>
-        <thead>
-            <tr class="table100-head"><th>Guild</th><th>Channel</th><th>Message</th><th>Jump</th></tr>
-        </thead>
-        <tbody>
-            {% for post in game.posts %}
+{% block title %}Game SB#{{ game.id }}{% endblock %}
+{% block heading %}Game SB#{{ game.id }}{% endblock %}
+{% block subtitle %}
+<div class="subtitle">
+    {{ game.status }} &middot; {{ game.format }} &middot; {{ game.seats }} seats
+    {% if game.guild.name %}&middot; <a href="https://discord.com/channels/{{ game.guild.xid }}">{{ game.guild.name }}</a>{% endif %}
+    {% if game.channel.name %}&middot; <a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.channel.xid }}">#{{ game.channel.name }}</a>{% endif %}
+</div>
+{% endblock %}
+{% block content %}
+<div class="section">
+    <h2>Details</h2>
+    <div class="card">
+        <table>
+            <tbody>
+                <tr><td>Status</td><td>{{ game.status }}</td></tr>
+                <tr><td>Format</td><td>{{ game.format }}</td></tr>
+                <tr><td>Bracket</td><td>{{ game.bracket }}</td></tr>
+                <tr><td>Service</td><td>{{ game.service }}</td></tr>
+                <tr><td>Seats</td><td>{{ game.seats }}</td></tr>
+                <tr><td>Locale</td><td>{{ game.locale }}</td></tr>
+                <tr><td>Blind</td><td>{{ 'Yes' if game.blind else 'No' }}</td></tr>
+                {% if game.rules %}<tr><td>Rules</td><td>{{ game.rules }}</td></tr>{% endif %}
                 <tr>
-                    <td>{{post.guild_xid}}</td>
-                    <td>{{post.channel_xid}}</td>
-                    <td>{{post.message_xid}}</td>
+                    <td>Guild</td>
                     <td>
-                        <a href="https://discord.com/channels/{{post.guild_xid}}/{{post.channel_xid}}/{{post.message_xid}}" class="button">Jump to game</a>
+                        <a href="https://discord.com/channels/{{ game.guild.xid }}">{{ game.guild.name | default('Unknown Guild', true) }}</a>
+                        <span class="user-id">{{ game.guild.xid }}</span>
                     </td>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                <tr>
+                    <td>Channel</td>
+                    <td>
+                        <a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.channel.xid }}">#{{ game.channel.name | default('Unknown Channel', true) }}</a>
+                        <span class="user-id">{{ game.channel.xid }}</span>
+                        &nbsp;<a href="/g/{{ game.guild.xid }}/c/{{ game.channel.xid }}" class="button">Channel records</a>
+                    </td>
+                </tr>
+                {% if game.game_link %}
+                <tr><td>Game link</td><td><a href="{{ game.game_link }}">{{ game.game_link }}</a></td></tr>
+                {% endif %}
+                {% if game.voice_xid %}
+                <tr>
+                    <td>Voice channel</td>
+                    <td>
+                        <a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.voice_xid }}">Open voice channel</a>
+                        <span class="user-id">{{ game.voice_xid }}</span>
+                        {% if game.voice_invite_link %}&nbsp;<a href="{{ game.voice_invite_link }}">Voice invite</a>{% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td>Created</td>
+                    {% if tz_offset and tz_name %}<td>{{ game.created_at | humanize(tz_offset, tz_name) }}</td>
+                    {% else %}<td class="timestamp">{{ game.created_at }}</td>{% endif %}
+                </tr>
+                <tr>
+                    <td>Updated</td>
+                    {% if tz_offset and tz_name %}<td>{{ game.updated_at | humanize(tz_offset, tz_name) }}</td>
+                    {% else %}<td class="timestamp">{{ game.updated_at }}</td>{% endif %}
+                </tr>
+                {% if game.started_at %}
+                <tr>
+                    <td>Started</td>
+                    {% if tz_offset and tz_name %}<td>{{ game.started_at | humanize(tz_offset, tz_name) }}</td>
+                    {% else %}<td class="timestamp">{{ game.started_at }}</td>{% endif %}
+                </tr>
+                {% endif %}
+                {% if game.deleted_at %}
+                <tr>
+                    <td>Deleted</td>
+                    {% if tz_offset and tz_name %}<td>{{ game.deleted_at | humanize(tz_offset, tz_name) }}</td>
+                    {% else %}<td class="timestamp">{{ game.deleted_at }}</td>{% endif %}
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if game.posts %}
+<div class="section">
+    <h2>Discord posts ({{ game.posts | length }})</h2>
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Guild</th><th>Channel</th><th>Message</th><th>Jump</th></tr>
+            </thead>
+            <tbody>
+                {% for post in game.posts %}
+                <tr>
+                    <td data-label="Guild"><span class="user-id">{{ post.guild_xid }}</span></td>
+                    <td data-label="Channel"><span class="user-id">{{ post.channel_xid }}</span></td>
+                    <td data-label="Message"><span class="user-id">{{ post.message_xid }}</span></td>
+                    <td data-label="Jump"><a href="https://discord.com/channels/{{ post.guild_xid }}/{{ post.channel_xid }}/{{ post.message_xid }}" class="button">Jump to game</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endif %}
 
 {% if game.plays %}
-    <table>
-        <caption>Players ({{game.plays | length}})</caption>
-        <thead>
-            <tr class="table100-head"><th>User Name</th><th>User ID</th><th>Entered Guild</th><th>User Records</th></tr>
-        </thead>
-        <tbody>
-            {% for play in game.plays %}
+<div class="section">
+    <h2>Players ({{ game.plays | length }})</h2>
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>User Name</th><th>User ID</th><th>Entered Guild</th><th>Records</th></tr>
+            </thead>
+            <tbody>
+                {% for play in game.plays %}
                 <tr>
-                    <td>{{play.user_name | default('Unknown User', true)}}</td>
-                    <td class="user_id">{{play.user_xid}}</td>
-                    <td>{{play.og_guild_xid}}</td>
-                    <td><a href="/g/{{game.guild.xid}}/u/{{play.user_xid}}" class="button">User records</a></td>
+                    <td data-label="User Name">{{ play.user_name | default('Unknown User', true) }}</td>
+                    <td data-label="User ID">
+                        <span class="user-id">{{ play.user_xid }}</span>
+                        <button type="button" class="copy" data-copy="{{ play.user_xid }}" title="Copy User ID">⎘</button>
+                    </td>
+                    <td data-label="Entered Guild"><span class="user-id">{{ play.og_guild_xid }}</span></td>
+                    <td data-label="Records"><a href="/u/{{ play.user_xid }}" class="button">User records</a></td>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endif %}
 
 {% if game.queued %}
-    <table>
-        <caption>Queued ({{game.queued | length}})</caption>
-        <thead>
-            <tr class="table100-head"><th>User Name</th><th>User ID</th><th>Entered Guild</th></tr>
-        </thead>
-        <tbody>
-            {% for q in game.queued %}
+<div class="section">
+    <h2>Queued ({{ game.queued | length }})</h2>
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>User Name</th><th>User ID</th><th>Entered Guild</th></tr>
+            </thead>
+            <tbody>
+                {% for q in game.queued %}
                 <tr>
-                    <td>{{q.user_name | default('Unknown User', true)}}</td>
-                    <td class="user_id">{{q.user_xid}}</td>
-                    <td>{{q.og_guild_xid}}</td>
+                    <td data-label="User Name">{{ q.user_name | default('Unknown User', true) }}</td>
+                    <td data-label="User ID">
+                        <span class="user-id">{{ q.user_xid }}</span>
+                        <button type="button" class="copy" data-copy="{{ q.user_xid }}" title="Copy User ID">⎘</button>
+                    </td>
+                    <td data-label="Entered Guild"><span class="user-id">{{ q.og_guild_xid }}</span></td>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endif %}
 {% endblock %}
