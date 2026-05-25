@@ -198,10 +198,10 @@ da:
     list_title: "Liste over overvågede spillere på denne server"
   # Score action messages
   score:
-    record_title: "Registrering af kampe spillet"
+    record_title: "Record of games played"
     games_one: "%{count} kamp"
     games_many: "%{count} kampe"
-    record_description: "%{mention} har spillet %{games}.\nSe flere [detaljer på spellbot.io](%{link})."
+    record_description: "%{mention} has played %{games}.\nView more [details on spellbot.io](%{link})."
     history_title: "Seneste kampe spillet i %{channel}"
     history_description: "Se [kamphistorik på spellbot.io](%{link})."
     top_title: "Topspillere i #%{channel} (%{range})"
