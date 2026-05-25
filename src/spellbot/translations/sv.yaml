@@ -198,10 +198,10 @@ sv:
     list_title: "Lista över spelare som tittar på denna server"
   # Score action messages
   score:
-    record_title: "Record of games played"
+    record_title: "Spela in spelade partier"
     games_one: "%{count} spel"
     games_many: "%{count} spel"
-    record_description: "%{mention} has played %{games}.\nView more [details on spellbot.io](%{link})."
+    record_description: "%{mention} har spelat %{games}.\nVisa mer [detaljer om spellbot.io](%{link})."
     history_title: "Senaste spel som spelas i %{channel}"
     history_description: "Se [spelhistorik på spellbot.io](%{link})."
     top_title: "Toppspelare i #%{channel} (%{range})"
