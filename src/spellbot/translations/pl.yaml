@@ -198,10 +198,10 @@ pl:
     list_title: "Lista graczy obserwowanych na tym serwerze"
   # Score action messages
   score:
-    record_title: "Record of games played"
+    record_title: "Rejestr rozegranych gier"
     games_one: "%{count} mecz"
     games_many: "%{count} mecze(-ów)"
-    record_description: "%{mention} has played %{games}.\nView more [details on spellbot.io](%{link})."
+    record_description: "%{mention} grał w %{games}.\nZobacz więcej [szczegóły spellbot.io](%{link})."
     history_title: "Ostatnie mecze rozegrane w %{channel}"
     history_description: "Zobacz [historię gier na spellbot.io](%{link})."
     top_title: "Najlepsi gracze w #%{channel} (%{range})"
