@@ -112,7 +112,7 @@ fr:
     award_added_view: "Vous pouvez utiliser la commande `/awards` pour consulter toutes les récompenses."
     award_deleted: "Récompense supprimée !"
     voice_create_on: "La création de canaux vocaux est activée sur ce serveur. Il n'est pas nécessaire de proposer des canaux vocaux existants. Les nouveaux canaux seront créés automatiquement."
-    suggest_vc_set: "Préfixe de catégorie de canaux vocaux suggérés réglé sur « %{category} »."
+    suggest_vc_set: 'Préfixe de catégorie de canaux vocaux suggérés réglé sur « %{category} ».'
     suggest_vc_off: "Canaux vocaux suggérés désactivés."
     motd_updated: "Message du jour mis à jour."
     default_seats_set: "Places par défaut réglées sur %{seats} pour ce canal."

@@ -112,7 +112,7 @@ ja:
     award_added_view: "`/awards` コマンドですべてのアワードを確認できます。"
     award_deleted: "アワードを削除しました！"
     voice_create_on: "このサーバーではボイスチャンネルの作成が有効です。既存のボイスチャンネルを推奨する必要はありません。新しいボイスチャンネルが自動で作成されます。"
-    suggest_vc_set: "推奨ボイスチャンネルのカテゴリ接頭辞を「%{category}」に設定しました。"
+    suggest_vc_set: '推奨ボイスチャンネルのカテゴリ接頭辞を「%{category}」に設定しました。'
     suggest_vc_off: "推奨ボイスチャンネルをオフにしました。"
     motd_updated: "MOTD を更新しました。"
     default_seats_set: "このチャンネルのデフォルトの席数を %{seats} に設定しました。"
