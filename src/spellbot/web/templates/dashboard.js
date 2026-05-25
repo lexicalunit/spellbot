@@ -632,34 +632,65 @@
   async function loadBracketAdoption() {
     try {
       const d = await fetchJson("bracket-adoption");
+      const leaders = d.leaders || [];
       if (!d.rate.length) {
         document.getElementById("bracketAdoptionSection").innerHTML =
           '<div class="no-data">No data yet.</div>';
         destroyChart("bracketAdoption");
-        return;
+      } else {
+        const rawDates = unifyDates([d.rate]);
+        const trim = computeTrim(rawDates, currentBucket());
+        const labels = rawDates.slice(trim.startIdx).map(function (s) {
+          return s.slice(0, 10);
+        });
+        const rate = alignSeries(rawDates, d.rate).slice(trim.startIdx);
+        const dash = dashSegment(trim.partialFromIdx);
+        const ctx = addCanvas("bracketAdoptionSection");
+        destroyChart("bracketAdoption");
+        state.charts.bracketAdoption = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              applyDash(lineDataset("Adoption Rate", rate, COLORS[7]), dash),
+            ],
+          },
+          options: percentLineOpts("Adoption Rate"),
+        });
       }
-      const rawDates = unifyDates([d.rate]);
-      const trim = computeTrim(rawDates, currentBucket());
-      const labels = rawDates.slice(trim.startIdx).map(function (s) {
-        return s.slice(0, 10);
-      });
-      const rate = alignSeries(rawDates, d.rate).slice(trim.startIdx);
-      const dash = dashSegment(trim.partialFromIdx);
-      const ctx = addCanvas("bracketAdoptionSection");
-      destroyChart("bracketAdoption");
-      state.charts.bracketAdoption = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: labels,
-          datasets: [
-            applyDash(lineDataset("Adoption Rate", rate, COLORS[7]), dash),
-          ],
-        },
-        options: percentLineOpts("Adoption Rate"),
-      });
+      renderBracketLeadersTable(leaders);
     } catch (ex) {
       showError("bracketAdoptionSection", "Failed to load.");
+      showError("bracketLeadersTable", "Failed to load.");
     }
+  }
+
+  function renderBracketLeadersTable(rows) {
+    const el = document.getElementById("bracketLeadersTable");
+    if (!el) return;
+    if (!rows.length) {
+      el.innerHTML = '<div class="no-data">No data yet.</div>';
+      return;
+    }
+    const body = rows
+      .map(function (r) {
+        const server = r.server ? escapeHtml(r.server) : "—";
+        return (
+          "<tr><td>" +
+          escapeHtml(r.bracket) +
+          "</td><td>" +
+          server +
+          '</td><td class="num">' +
+          fmt(r.count) +
+          "</td></tr>"
+        );
+      })
+      .join("");
+    el.innerHTML =
+      '<table class="lang-table"><thead><tr><th>Bracket</th><th>Top Server</th>' +
+      '<th style="text-align:right">Games</th></tr></thead><tbody>' +
+      body +
+      "</tbody></table>";
   }
 
   async function loadServicePopularity() {

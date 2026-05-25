@@ -6,7 +6,13 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import case, distinct, extract, func, or_, select
 
 from spellbot.database import DatabaseSession, any_of
-from spellbot.enums import GAME_FORMAT_ORDER, GameBracket, GameFormat, GameService
+from spellbot.enums import (
+    GAME_BRACKET_ORDER,
+    GAME_FORMAT_ORDER,
+    GameBracket,
+    GameFormat,
+    GameService,
+)
 from spellbot.models import Block, Game, Guild, Play, User
 from spellbot.services.plays import extract_ngrams, normalize_rule
 
@@ -714,6 +720,10 @@ async def dashboard_bracket_adoption(period: PeriodSpec, opts: GuildFilter) -> d
 
     Adoption is `count(games where bracket is set) / count(games)` restricted
     to games whose `format` is in `BRACKETABLE_FORMATS` and which have started.
+
+    Also returns `leaders`: one row per non-`NONE` bracket with the guild that
+    has the most games of that bracket under the same filters. Brackets with
+    no qualifying games are included with `server=None` and `count=0`.
     """
     filters: list[ColumnElement[bool]] = [
         Game.started_at.isnot(None),
@@ -740,7 +750,43 @@ async def dashboard_bracket_adoption(period: PeriodSpec, opts: GuildFilter) -> d
         total_int = int(total_count or 0)
         rate = (float(adopted_count or 0) / float(total_int)) * 100.0 if total_int > 0 else 0.0
         points.append({"date": iso_str(bucket), "count": round(rate, 2)})
-    return {"rate": points}
+
+    leader_count = func.count(Game.id).label("count")
+    leader_rows = (
+        await DatabaseSession.execute(
+            select(Game.bracket, Guild.name, leader_count)  # type: ignore
+            .select_from(Game)
+            .join(Guild, Guild.xid == Game.guild_xid)
+            .where(
+                *filters,
+                Game.bracket != GameBracket.NONE.value,
+                Guild.name.isnot(None),
+            )
+            .group_by(Game.bracket, Guild.name),
+        )
+    ).all()
+
+    best_per_bracket: dict[int, tuple[str, int]] = {}
+    for bracket_value, name, count in leader_rows:
+        c = int(count)
+        b = int(bracket_value)
+        cur = best_per_bracket.get(b)
+        if cur is None or c > cur[1] or (c == cur[1] and name < cur[0]):
+            best_per_bracket[b] = (name, c)
+
+    leaders: list[dict[str, Any]] = []
+    for b in GAME_BRACKET_ORDER:
+        if b is GameBracket.NONE:
+            continue
+        winner = best_per_bracket.get(b.value)
+        leaders.append(
+            {
+                "bracket": b.title,
+                "server": winner[0] if winner is not None else None,
+                "count": winner[1] if winner is not None else 0,
+            },
+        )
+    return {"rate": points, "leaders": leaders}
 
 
 async def dashboard_avg_wait_time(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
