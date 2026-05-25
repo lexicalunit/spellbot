@@ -8,7 +8,7 @@ from ddtrace.trace import tracer
 from discord import app_commands
 from discord.ext import commands
 
-from spellbot.actions import ScoreAction
+from spellbot.actions import RecordAction
 from spellbot.metrics import add_span_context
 from spellbot.settings import settings
 from spellbot.utils import for_all_callbacks, is_guild
@@ -20,26 +20,26 @@ logger = logging.getLogger(__name__)
 
 
 @for_all_callbacks(app_commands.check(is_guild))
-class ScoreCog(commands.Cog):
+class RecordCog(commands.Cog):
     def __init__(self, bot: SpellBot) -> None:
         self.bot = bot
 
     @app_commands.command(
-        name="score",
-        description="View your or another user's play history on this server.",
+        name="record",
+        description="View your or another user's play history across all servers.",
     )
     @app_commands.describe(user="Mention another user to see their history instead of your own")
-    # @tracer.wrap(name="interaction", resource="score")
+    # @tracer.wrap(name="interaction", resource="record")
     # There's a bug when combining `@tracer.wrap`, `@app_commands.describe` and discord.User.
     # See: https://github.com/Rapptz/discord.py/issues/10317.
-    async def score(
+    async def record(
         self,
         interaction: discord.Interaction,
         user: discord.User | discord.Member | None = None,
     ) -> None:
-        with tracer.trace("interaction", resource="score"):
+        with tracer.trace("interaction", resource="record"):
             add_span_context(interaction)
-            async with ScoreAction.create(self.bot, interaction) as action:
+            async with RecordAction.create(self.bot, interaction) as action:
                 await action.execute(target=user or interaction.user)
 
     @app_commands.command(
@@ -49,7 +49,7 @@ class ScoreCog(commands.Cog):
     @tracer.wrap(name="interaction", resource="history")
     async def history(self, interaction: discord.Interaction) -> None:
         add_span_context(interaction)
-        async with ScoreAction.create(self.bot, interaction) as action:
+        async with RecordAction.create(self.bot, interaction) as action:
             await action.history()
 
     @app_commands.command(name="top", description="View the top players in this channel.")
@@ -63,9 +63,9 @@ class ScoreCog(commands.Cog):
         ago: int = 0,
     ) -> None:
         add_span_context(interaction)
-        async with ScoreAction.create(self.bot, interaction) as action:
+        async with RecordAction.create(self.bot, interaction) as action:
             await action.top(monthly, ago)
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover
-    await bot.add_cog(ScoreCog(bot), guild=settings.GUILD_OBJECT)
+    await bot.add_cog(RecordCog(bot), guild=settings.GUILD_OBJECT)

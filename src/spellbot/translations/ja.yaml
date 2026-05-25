@@ -112,7 +112,7 @@ ja:
     award_added_view: "`/awards` コマンドですべてのアワードを確認できます。"
     award_deleted: "アワードを削除しました！"
     voice_create_on: "このサーバーではボイスチャンネルの作成が有効です。既存のボイスチャンネルを推奨する必要はありません。新しいボイスチャンネルが自動で作成されます。"
-    suggest_vc_set: '推奨ボイスチャンネルのカテゴリ接頭辞を「%{category}」に設定しました。'
+    suggest_vc_set: "推奨ボイスチャンネルのカテゴリ接頭辞を「%{category}」に設定しました。"
     suggest_vc_off: "推奨ボイスチャンネルをオフにしました。"
     motd_updated: "MOTD を更新しました。"
     default_seats_set: "このチャンネルのデフォルトの席数を %{seats} に設定しました。"
@@ -198,10 +198,10 @@ ja:
     list_title: "このサーバーの監視中プレイヤー一覧"
   # Score action messages
   score:
-    record_title: "%{guild} でプレイされたゲームの記録"
+    record_title: "プレイされたゲームの記録"
     games_one: "%{count}ゲーム"
     games_many: "%{count}ゲーム"
-    record_description: "%{mention} はこのサーバーで %{games} をプレイしています。\nさらに詳しくは [spellbot.io で確認](%{link}) できます。"
+    record_description: "%{mention} は %{games} をプレイしています。\nさらに詳しくは [spellbot.io で確認](%{link}) できます。"
     history_title: "%{channel} の最近のゲーム"
     history_description: "[spellbot.io でゲーム履歴を見る](%{link})。"
     top_title: "#%{channel} の上位プレイヤー（%{range}）"

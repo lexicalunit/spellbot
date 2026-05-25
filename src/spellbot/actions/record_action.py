@@ -14,20 +14,17 @@ from .base_action import BaseAction
 logger = logging.getLogger(__name__)
 
 
-class ScoreAction(BaseAction):
+class RecordAction(BaseAction):
     async def execute(self, target: discord.Member | discord.User) -> None:
-        assert self.interaction.guild
-        assert self.interaction.guild_id is not None
         locale = user_locale(self.interaction)
-        guild_name = self.interaction.guild.name
         assert hasattr(target, "id")
         target_xid = target.id
-        count = await services.plays.count(target_xid, self.interaction.guild_id)
+        count = await services.plays.count(target_xid)
 
         embed = discord.Embed()
         embed.set_thumbnail(url=settings.ICO_URL)
-        embed.set_author(name=t("score.record_title", locale=locale, guild=guild_name))
-        link = f"{settings.API_BASE_URL}/g/{self.interaction.guild_id}/u/{target_xid}"
+        embed.set_author(name=t("score.record_title", locale=locale))
+        link = f"{settings.API_BASE_URL}/u/{target_xid}"
         games_key = "score.games_one" if count == 1 else "score.games_many"
         embed.description = t(
             "score.record_description",

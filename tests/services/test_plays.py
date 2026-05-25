@@ -321,8 +321,8 @@ class TestPlaysServiceAnalyticsSummary:
 class TestPlaysServiceRecords:
     """Tests for user_records and channel_records (direct invocation for coverage)."""
 
-    async def test_user_records_missing_guild(self) -> None:
-        assert await plays.user_records(guild_xid=99999, user_xid=1) is None
+    async def test_user_records_missing_user(self) -> None:
+        assert await plays.user_records(user_xid=99999) is None
 
     async def test_user_records_returns_rows(
         self,
@@ -346,7 +346,7 @@ class TestPlaysServiceRecords:
         factories.post.create(guild=guild, channel=channel, game=game, message_xid=9101)
         factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
 
-        rows = await plays.user_records(guild_xid=guild.xid, user_xid=user.xid)
+        rows = await plays.user_records(user_xid=user.xid)
         assert rows is not None
         assert len(rows) == 1
         assert rows[0]["channel"] == channel.xid
@@ -398,11 +398,11 @@ class TestPlaysServiceStreamingExports:
     """Tests for the streaming export helpers and target-existence validators."""
 
     async def test_user_export_target_exists_missing(self) -> None:
-        assert await plays.user_export_target_exists(guild_xid=99000) is False
+        assert await plays.user_export_target_exists(user_xid=99000) is False
 
     async def test_user_export_target_exists_present(self, factories: Factories) -> None:
-        guild = factories.guild.create(xid=8401, name="ux-guild")
-        assert await plays.user_export_target_exists(guild_xid=guild.xid) is True
+        user = factories.user.create(xid=8401, name="ux-user")
+        assert await plays.user_export_target_exists(user_xid=user.xid) is True
 
     async def test_channel_export_target_exists_missing_guild(self) -> None:
         assert await plays.channel_export_target_exists(guild_xid=99001, channel_xid=1) is False
@@ -425,13 +425,8 @@ class TestPlaysServiceStreamingExports:
             is True
         )
 
-    async def test_stream_user_records_missing_guild(self) -> None:
-        rows = [r async for r in plays.stream_user_records(guild_xid=99003, user_xid=1)]
-        assert rows == []
-
-    async def test_stream_user_records_no_plays(self, factories: Factories) -> None:
-        guild = factories.guild.create(xid=8404, name="sx-guild")
-        rows = [r async for r in plays.stream_user_records(guild_xid=guild.xid, user_xid=1)]
+    async def test_stream_user_records_no_plays(self) -> None:
+        rows = [r async for r in plays.stream_user_records(user_xid=99003)]
         assert rows == []
 
     async def test_stream_user_records_yields_rows(
@@ -456,7 +451,7 @@ class TestPlaysServiceStreamingExports:
         factories.post.create(guild=guild, channel=channel, game=game, message_xid=9105)
         factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
 
-        rows = [r async for r in plays.stream_user_records(guild_xid=guild.xid, user_xid=user.xid)]
+        rows = [r async for r in plays.stream_user_records(user_xid=user.xid)]
         assert len(rows) == 1
         assert rows[0]["channel"] == channel.xid
         assert rows[0]["guild_name"] == guild.name

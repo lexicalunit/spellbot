@@ -112,7 +112,7 @@ de:
     award_added_view: "Mit dem Befehl `/awards` können Sie alle Auszeichnungen anzeigen lassen."
     award_deleted: "Auszeichnung gelöscht!"
     voice_create_on: "Das Erstellen von Sprachkanälen ist für diesen Server aktiviert. Es besteht keine Notwendigkeit, bestehende Sprachkanäle vorzuschlagen. Neue Kanäle werden automatisch erstellt."
-    suggest_vc_set: 'Kategorie-Präfix für vorgeschlagene Sprachkanäle auf „%{category}“ gesetzt.'
+    suggest_vc_set: "Kategorie-Präfix für vorgeschlagene Sprachkanäle auf „%{category}“ gesetzt."
     suggest_vc_off: "Empfohlene Sprachkanäle ausgeschaltet."
     motd_updated: "Nachricht des Tages aktualisiert."
     default_seats_set: "Standardsitze für diesen Kanal auf %{seats} gesetzt."
@@ -198,10 +198,10 @@ de:
     list_title: "Liste der beobachteten Spieler auf diesem Server"
   # Score action messages
   score:
-    record_title: "Aufzeichnung der auf %{guild} gespielten Spiele"
+    record_title: "Aufzeichnung der gespielten Spiele"
     games_one: "%{count} Spiel"
     games_many: "%{count} Spiele"
-    record_description: "%{mention} hat %{games} auf diesem Server gespielt.\nSieh dir [mehr Details auf Zauberbot.io](%{link}) an."
+    record_description: "%{mention} hat %{games} gespielt.\nSieh dir [mehr Details auf Zauberbot.io](%{link}) an."
     history_title: "Kürzlich in %{channel} gespielte Spiele"
     history_description: "[Spielverlauf auf spellbot.io anzeigen](%{link})."
     top_title: "Top-Spieler in #%{channel} (%{range})"
