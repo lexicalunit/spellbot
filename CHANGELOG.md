@@ -9,12 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v19.1.14](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.14) - 2026-05-24
 
-## [v19.1.13](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.13) - 2026-05-24
-
 ### Added
 
-- Added a bracket leaders table.
 - Added Danish translations.
+
+## [v19.1.13](https://github.com/lexicalunit/spellbot/releases/tag/v19.1.13) - 2026-05-24
+
+- Added a bracket leaders table.
 
 ### Changed
 
