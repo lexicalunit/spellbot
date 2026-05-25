@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Adds seats, bracket, and locale to the user/channel record pages.
+- Allow full export of user/channel records as CSVs.
+- Adds a Game Details page for each game on the records pages.
 
 ## [v19.3.0](https://github.com/lexicalunit/spellbot/releases/tag/v19.3.0) - 2026-05-25
 

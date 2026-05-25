@@ -14,12 +14,13 @@
             <th>Link</th>
             <th>User Name</th>
             <th>User ID</th>
+            <th>Jump</th>
         </tr>
     </thead>
     <tbody id="rows">
         {% for record in records %}
             <tr>
-                <td><a href="https://discord.com/channels/{{record.guild}}/{{record.channel}}/{{record.message}}">SB#{{record.id}}</a></td>
+                <td><a href="/game/{{record.id}}">SB#{{record.id}}</a></td>
                 {% if tz_offset and tz_name %}
                     <td>{{record.updated_at | humanize(tz_offset, tz_name)}}</td>
                 {% else %}
@@ -38,6 +39,7 @@
                 {% endif %}
                 <td>{{record.user_name | default('Unknown User', true)}}</td>
                 <td class="user_id">{{record.user_xid}}</td>
+                <td><a href="https://discord.com/channels/{{record.guild}}/{{record.channel}}/{{record.message}}" class="button">Jump to game</a></td>
             </tr>
         {% endfor %}
     </tbody>

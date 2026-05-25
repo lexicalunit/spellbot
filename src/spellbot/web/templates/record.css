@@ -339,3 +339,27 @@ tbody tr:hover {
     transform: rotate(360deg);
   }
 }
+
+table caption {
+  background: rgb(13, 17, 23);
+  color: #fff;
+  text-align: left;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 14px 16px;
+  border-radius: 10px 10px 0 0;
+  box-shadow: 10px 10px rgb(113 128 150 / 50%);
+}
+
+caption + thead th:first-child,
+caption + thead th:last-child {
+  border-radius: 0;
+}
+
+table:has(caption) {
+  border-radius: 0 0 10px 10px;
+}
+
+table + table {
+  margin-top: 30px;
+}
