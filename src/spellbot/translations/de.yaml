@@ -112,7 +112,7 @@ de:
     award_added_view: "Mit dem Befehl `/awards` können Sie alle Auszeichnungen anzeigen lassen."
     award_deleted: "Auszeichnung gelöscht!"
     voice_create_on: "Das Erstellen von Sprachkanälen ist für diesen Server aktiviert. Es besteht keine Notwendigkeit, bestehende Sprachkanäle vorzuschlagen. Neue Kanäle werden automatisch erstellt."
-    suggest_vc_set: "Kategorie-Präfix für vorgeschlagene Sprachkanäle auf „%{category}“ gesetzt."
+    suggest_vc_set: 'Kategorie-Präfix für vorgeschlagene Sprachkanäle auf „%{category}“ gesetzt.'
     suggest_vc_off: "Empfohlene Sprachkanäle ausgeschaltet."
     motd_updated: "Nachricht des Tages aktualisiert."
     default_seats_set: "Standardsitze für diesen Kanal auf %{seats} gesetzt."
