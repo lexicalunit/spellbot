@@ -719,6 +719,101 @@ class TestDashboardBracketAdoption:
         result = await dashboard.dashboard_bracket_adoption(period_30d(), all_guilds())
         assert isinstance(result["rate"], list)
 
+    async def test_leaders_shape_and_default_empty(self, seed: Seed) -> None:
+        del seed
+        result = await dashboard.dashboard_bracket_adoption(period_all(), all_guilds())
+        leaders = result["leaders"]
+        # One row per non-NONE bracket, in bracket order.
+        assert [r["bracket"] for r in leaders] == [
+            "Bracket 1: Exhibition",
+            "Bracket 2: Core",
+            "Bracket 3: Upgraded",
+            "Bracket 4: Optimized",
+            "Bracket 5: Competitive",
+        ]
+        # The seed's bracketable bracket-3 game lives on Guild One; bracket 5
+        # is on a CEDH-format game which is not bracketable, so it has no
+        # qualifying leader.
+        by_bracket = {r["bracket"]: r for r in leaders}
+        assert by_bracket["Bracket 3: Upgraded"]["server"] == "Guild One"
+        assert by_bracket["Bracket 3: Upgraded"]["count"] == 1
+        assert by_bracket["Bracket 5: Competitive"]["server"] is None
+        assert by_bracket["Bracket 5: Competitive"]["count"] == 0
+        # Brackets with no games come through as empty placeholders.
+        assert by_bracket["Bracket 1: Exhibition"]["server"] is None
+        assert by_bracket["Bracket 1: Exhibition"]["count"] == 0
+
+    async def test_leaders_picks_top_server_per_bracket(
+        self,
+        factories: Factories,
+        seed: Seed,
+    ) -> None:
+        del seed
+        # Two more guilds both playing bracket-4 commander games; the one
+        # with more games should be reported as the leader.
+        ga = factories.guild.create(xid=900801, name="Alpha Guild")
+        gb = factories.guild.create(xid=900802, name="Beta Guild")
+        cha = factories.channel.create(xid=910801, name="a", guild=ga)
+        chb = factories.channel.create(xid=910802, name="b", guild=gb)
+        for off in (1.0, 2.0, 3.0):
+            factories.game.create(
+                guild=ga,
+                channel=cha,
+                started_at=NOW - timedelta(hours=off),
+                created_at=NOW - timedelta(hours=off + 0.1),
+                format=GameFormat.COMMANDER.value,
+                bracket=GameBracket.BRACKET_4.value,
+            )
+        factories.game.create(
+            guild=gb,
+            channel=chb,
+            started_at=NOW - timedelta(hours=5),
+            created_at=NOW - timedelta(hours=5.1),
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.BRACKET_4.value,
+        )
+        result = await dashboard.dashboard_bracket_adoption(period_all(), all_guilds())
+        by_bracket = {r["bracket"]: r for r in result["leaders"]}
+        assert by_bracket["Bracket 4: Optimized"]["server"] == "Alpha Guild"
+        assert by_bracket["Bracket 4: Optimized"]["count"] == 3
+
+    async def test_leaders_tie_breaks_alphabetically(
+        self,
+        factories: Factories,
+        seed: Seed,
+    ) -> None:
+        del seed
+        # Equal counts on the same bracket; the alphabetically-first guild
+        # name wins. "Alpha Guild" beats "Beta Guild" for bracket 2.
+        ga = factories.guild.create(xid=900811, name="Alpha Guild")
+        gb = factories.guild.create(xid=900812, name="Beta Guild")
+        cha = factories.channel.create(xid=910811, name="a", guild=ga)
+        chb = factories.channel.create(xid=910812, name="b", guild=gb)
+        for guild, channel, off in ((ga, cha, 1.0), (gb, chb, 2.0)):
+            factories.game.create(
+                guild=guild,
+                channel=channel,
+                started_at=NOW - timedelta(hours=off),
+                created_at=NOW - timedelta(hours=off + 0.1),
+                format=GameFormat.COMMANDER.value,
+                bracket=GameBracket.BRACKET_2.value,
+            )
+        result = await dashboard.dashboard_bracket_adoption(period_all(), all_guilds())
+        by_bracket = {r["bracket"]: r for r in result["leaders"]}
+        assert by_bracket["Bracket 2: Core"]["server"] == "Alpha Guild"
+        assert by_bracket["Bracket 2: Core"]["count"] == 1
+
+    async def test_leaders_honors_guild_filter(self, seed: Seed) -> None:
+        g2 = seed["g2"]
+        # g2 has no bracketed games at all; every leader row should be empty.
+        result = await dashboard.dashboard_bracket_adoption(
+            period_all(),
+            GuildFilter(mode="include", xid=int(g2.xid)),
+        )
+        for row in result["leaders"]:
+            assert row["server"] is None
+            assert row["count"] == 0
+
 
 @pytest.mark.asyncio
 class TestDashboardAvgWaitTime:
