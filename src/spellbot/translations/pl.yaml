@@ -69,7 +69,7 @@ pl:
     game_started_id: "Mecz SB%{game_id} został uruchomiony!"
     dm_failures: "Nie można wysłać wiadomości bezpośrednich do niektórych graczy: %{players}"
     award_failure_give: "Nie można nadać roli %{role} użytkownikowi <@%{user_id}>"
-    award_failure_take: "Nie można odebrać roli %{role} użytkownikowi <@%{user_id}>"
+    award_failure_take: "Nie można przyjąć roli %{role} od użytkownika <@%{user_id}>"
     mythic_track: "Śledź swoją grę na %{emoji}[Mythic Track](%{link}) za pomocą kodu PIN: `%{pin}`"
   # Watch notifications
   watch:
@@ -92,7 +92,7 @@ pl:
     done: "Gotowe."
     invalid_page: "Nieprawidłowa strona."
     channels_title: "Konfiguracja kanałów w gildii %{guild}"
-    channels_default: "**All channels on this server have a default configuration.**\n\nYou may use channel specific `/set` commands within a channel to change that channel's configuration."
+    channels_default: "**Wszystkie kanały na tym serwerze mają domyślną konfigurację.**\n\nMożesz użyć specyficznych komend `/set` kanału na kanale, aby zmienić konfigurację tego kanału."
     awards_title: "Nagrody SpellBot dla graczy w gildii %{guild}"
     awards_empty: "**Na tym serwerze nie skonfigurowano żadnych nagród.**\n\nAby dodać nagrody, użyj komendy `/award add`."
     setup_title: "Konfiguracja SpellBota dla gildii %{guild}"
@@ -112,7 +112,7 @@ pl:
     award_added_view: "Możesz wyświetlić wszystkie nagrody za pomocą komendy `/awards`."
     award_deleted: "Nagrodę usunięto!"
     voice_create_on: "Tworzenie kanału głosowego jest włączone dla tego serwera. Nie trzeba proponować istniejących kanałów głosowych. Nowe kanały zostaną utworzone automatycznie."
-    suggest_vc_set: "Prefiks kategorii sugerowanych kanałów głosowych został ustawiony na „%{category}”."
+    suggest_vc_set: 'Prefiks kategorii sugerowanych kanałów głosowych został ustawiony na „%{category}”.'
     suggest_vc_off: "Sugerowane kanały głosowe wyłączone."
     motd_updated: "Zaktualizowano wiadomość dnia."
     default_seats_set: "Domyślna liczba miejsc dla tego kanału została ustawiona na %{seats}."
