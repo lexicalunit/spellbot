@@ -68,7 +68,8 @@ sv:
     started_game: "Jag har startat ditt %{format}-spel åt dig!"
     game_started_id: "Spelet SB%{game_id} har startats!"
     dm_failures: "Det går inte att skicka direktmeddelanden till vissa spelare: %{players}"
-    award_failure: "Det går inte att %{action} rollen %{role} %{direction} för användaren <@%{user_id}>"
+    award_failure_give: "Det går inte att ge rollen %{role} till användaren <@%{user_id}>"
+    award_failure_take: "Det går inte att ta rollen %{role} från användaren <@%{user_id}>"
     mythic_track: "Spåra ditt spel på %{emoji}[Mythic Track](%{link}) med PIN-kod: `%{pin}`"
   # Watch notifications
   watch:
@@ -111,7 +112,7 @@ sv:
     award_added_view: "Du kan visa alla utmärkelser med kommandot `/awards`."
     award_deleted: "Utmärkelse raderad!"
     voice_create_on: "Skapande av röstkanaler är aktiverat för denna server. Du behöver inte föreslå befintliga röstkanaler. Nya kanaler skapas automatiskt."
-    suggest_vc_set: 'Förslag på prefix för röstkanalkategorier är inställt på ”%{category}”.'
+    suggest_vc_set: "Förslag på prefix för röstkanalkategorier är inställt på ”%{category}”."
     suggest_vc_off: "Förslag på röstkanaler är avstängt."
     motd_updated: "Dagens meddelande har uppdaterats."
     default_seats_set: "Standardantalet platser är inställt på %{seats} för denna kanal."

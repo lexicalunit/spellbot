@@ -805,14 +805,11 @@ class LookingForGameAction(BaseAction):
         for player_xid, new_awards in new_roles.items():
             for new_award in new_awards:
                 if player_xid not in fetched_players:
-                    action = "take" if new_award.remove else "give"
-                    direction = "from" if new_award.remove else "to"
+                    key = "lfg.award_failure_take" if new_award.remove else "lfg.award_failure_give"
                     warning = t(
-                        "lfg.award_failure",
+                        key,
                         locale=guild_locale_fallback,
-                        action=action,
                         role=new_award.role,
-                        direction=direction,
                         user_id=player_xid,
                     )
                     await safe_followup_channel(self.interaction, warning)

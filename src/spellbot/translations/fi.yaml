@@ -68,7 +68,8 @@ fi:
     started_game: "I started your %{format} game for you!"
     game_started_id: "The game SB%{game_id} has been started!"
     dm_failures: "Unable to send Direct Messages to some players: %{players}"
-    award_failure: "Unable to %{action} role %{role} %{direction} user <@%{user_id}>"
+    award_failure_give: "Unable to give role %{role} to user <@%{user_id}>"
+    award_failure_take: "Unable to take role %{role} from user <@%{user_id}>"
     mythic_track: "Track your game on %{emoji}[Mythic Track](%{link}) with PIN code: `%{pin}`"
   # Watch notifications
   watch:
