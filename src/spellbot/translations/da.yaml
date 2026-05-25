@@ -68,7 +68,8 @@ da:
     started_game: "Jeg startede din %{format}-kamp for dig!"
     game_started_id: "Kampen SB%{game_id} er startet!"
     dm_failures: "Kan ikke sende direkte beskeder til visse spillere: %{players}"
-    award_failure: "Kan ikke %{action} rolle %{role} %{direction} bruger <@%{user_id}>"
+    award_failure_give: "Kan ikke give rollen %{role} til brugeren <@%{user_id}>"
+    award_failure_take: "Kan ikke tage rollen %{role} fra brugeren <@%{user_id}>"
     mythic_track: "Spor din kamp på %{emoji}[Mythic Track](%{link}) med pinkode: `%{pin}`"
   # Watch notifications
   watch:
