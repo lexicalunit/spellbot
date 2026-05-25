@@ -68,7 +68,8 @@ en:
     started_game: "I started your %{format} game for you!"
     game_started_id: "The game SB%{game_id} has been started!"
     dm_failures: "Unable to send Direct Messages to some players: %{players}"
-    award_failure: "Unable to %{action} role %{role} %{direction} user <@%{user_id}>"
+    award_failure_give: "Unable to give role %{role} to user <@%{user_id}>"
+    award_failure_take: "Unable to take role %{role} from user <@%{user_id}>"
     mythic_track: "Track your game on %{emoji}[Mythic Track](%{link}) with PIN code: `%{pin}`"
   # Watch notifications
   watch:
@@ -91,7 +92,7 @@ en:
     done: "Done."
     invalid_page: "Invalid page."
     channels_title: "Configuration for channels in %{guild}"
-    channels_default: "**All channels on this server have a default configuration.**\n\nUse may use channel specific `/set` commands within a channel to change that channel's configuration."
+    channels_default: "**All channels on this server have a default configuration.**\n\nYou may use channel specific `/set` commands within a channel to change that channel's configuration."
     awards_title: "SpellBot Player Awards for %{guild}"
     awards_empty: "**There are no awards configured on this server.**\n\nTo add awards use the `/award add` command."
     setup_title: "SpellBot Setup for %{guild}"

@@ -629,7 +629,7 @@ class TestCogAdminChannels:
                 "color": settings.INFO_EMBED_COLOR,
                 "description": (
                     "**All channels on this server have a default configuration.**\n\n"
-                    "Use may use channel specific `/set` commands within a channel "
+                    "You may use channel specific `/set` commands within a channel "
                     "to change that channel's configuration."
                 ),
                 "thumbnail": {"url": settings.ICO_URL},
@@ -659,7 +659,7 @@ class TestCogAdminChannels:
                 "color": settings.INFO_EMBED_COLOR,
                 "description": (
                     "**All channels on this server have a default configuration.**\n\n"
-                    "Use may use channel specific `/set` commands within a channel "
+                    "You may use channel specific `/set` commands within a channel "
                     "to change that channel's configuration."
                 ),
                 "thumbnail": {"url": settings.ICO_URL},
@@ -696,7 +696,7 @@ class TestCogAdminChannels:
                 "color": settings.INFO_EMBED_COLOR,
                 "description": (
                     "**All channels on this server have a default configuration.**\n\n"
-                    "Use may use channel specific `/set` commands within a channel"
+                    "You may use channel specific `/set` commands within a channel"
                     " to change that channel's configuration."
                 ),
                 "thumbnail": {"url": settings.ICO_URL},

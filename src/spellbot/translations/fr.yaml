@@ -68,7 +68,8 @@ fr:
     started_game: "J'ai démarré votre partie %{format} pour vous !"
     game_started_id: "La partie SB%{game_id} a été démarrée !"
     dm_failures: "Impossible d'envoyer des messages directs à certains joueurs : %{players}"
-    award_failure: "Impossible de %{action} le rôle %{role} %{direction} l'utilisateur <@%{user_id}>"
+    award_failure_give: "Unable to give role %{role} to user <@%{user_id}>"
+    award_failure_take: "Unable to take role %{role} from user <@%{user_id}>"
     mythic_track: "Suivez votre partie sur %{emoji}[Mythic Track](%{link}) grâce au code PIN : `%{pin}`"
   # Watch notifications
   watch:

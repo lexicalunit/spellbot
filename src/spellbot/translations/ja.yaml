@@ -68,7 +68,8 @@ ja:
     started_game: "%{format} のゲームを開始しました！"
     game_started_id: "ゲーム SB%{game_id} が開始されました！"
     dm_failures: "一部のプレイヤーにダイレクトメッセージを送信できませんでした：%{players}"
-    award_failure: "ロールの変更に失敗しました：%{action} ロール %{role} %{direction} ユーザー <@%{user_id}>"
+    award_failure_give: "ユーザー <@%{user_id}> にロール %{role} を付与できませんでした"
+    award_failure_take: "ユーザー <@%{user_id}> からロール %{role} を剥奪できませんでした"
     mythic_track: "%{emoji}[Mythic Track](%{link}) でゲームを追跡できます。PIN コード：`%{pin}`"
   # Watch notifications
   watch:
@@ -111,7 +112,7 @@ ja:
     award_added_view: "`/awards` コマンドですべてのアワードを確認できます。"
     award_deleted: "アワードを削除しました！"
     voice_create_on: "このサーバーではボイスチャンネルの作成が有効です。既存のボイスチャンネルを推奨する必要はありません。新しいボイスチャンネルが自動で作成されます。"
-    suggest_vc_set: '推奨ボイスチャンネルのカテゴリ接頭辞を「%{category}」に設定しました。'
+    suggest_vc_set: "推奨ボイスチャンネルのカテゴリ接頭辞を「%{category}」に設定しました。"
     suggest_vc_off: "推奨ボイスチャンネルをオフにしました。"
     motd_updated: "MOTD を更新しました。"
     default_seats_set: "このチャンネルのデフォルトの席数を %{seats} に設定しました。"

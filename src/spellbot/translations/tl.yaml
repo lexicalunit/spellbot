@@ -68,7 +68,8 @@ tl:
     started_game: "Sinimulan ko ang %{format} game mo para sa iyo!"
     game_started_id: "Nagsimula na ang game SB%{game_id}!"
     dm_failures: "Hindi makapagpadala ng Direct Messages sa ilang player: %{players}"
-    award_failure: "Hindi %{action} ng role na %{role} %{direction} user na <@%{user_id}>"
+    award_failure_give: "Unable to give role %{role} to user <@%{user_id}>"
+    award_failure_take: "Unable to take role %{role} from user <@%{user_id}>"
     mythic_track: "I-track ang game mo sa %{emoji}[Mythic Track](%{link}) ang PIN code na: `%{pin}`"
   # Watch notifications
   watch:
