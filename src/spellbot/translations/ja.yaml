@@ -198,10 +198,10 @@ ja:
     list_title: "このサーバーの監視中プレイヤー一覧"
   # Score action messages
   score:
-    record_title: "Record of games played"
+    record_title: "プレイしたゲームの記録"
     games_one: "%{count}ゲーム"
     games_many: "%{count}ゲーム"
-    record_description: "%{mention} has played %{games}.\nView more [details on spellbot.io](%{link})."
+    record_description: "%{mention} は %{games} をプレイしています。\nさらに詳しくは [spellbot.io で確認](%{link}) できます。"
     history_title: "%{channel} の最近のゲーム"
     history_description: "[spellbot.io でゲーム履歴を見る](%{link})。"
     top_title: "#%{channel} の上位プレイヤー（%{range}）"
