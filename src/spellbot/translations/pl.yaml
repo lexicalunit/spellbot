@@ -68,7 +68,8 @@ pl:
     started_game: "Uruchomiłem dla Ciebie mecz %{format}!"
     game_started_id: "Mecz SB%{game_id} został uruchomiony!"
     dm_failures: "Nie można wysłać wiadomości bezpośrednich do niektórych graczy: %{players}"
-    award_failure: "Nie można %{action} roli %{role} %{direction} użytkownika <@%{user_id}>"
+    award_failure_give: "Nie można nadać roli %{role} użytkownikowi <@%{user_id}>"
+    award_failure_take: "Nie można odebrać roli %{role} użytkownikowi <@%{user_id}>"
     mythic_track: "Śledź swoją grę na %{emoji}[Mythic Track](%{link}) za pomocą kodu PIN: `%{pin}`"
   # Watch notifications
   watch:
@@ -111,7 +112,7 @@ pl:
     award_added_view: "Możesz wyświetlić wszystkie nagrody za pomocą komendy `/awards`."
     award_deleted: "Nagrodę usunięto!"
     voice_create_on: "Tworzenie kanału głosowego jest włączone dla tego serwera. Nie trzeba proponować istniejących kanałów głosowych. Nowe kanały zostaną utworzone automatycznie."
-    suggest_vc_set: 'Prefiks kategorii sugerowanych kanałów głosowych został ustawiony na „%{category}”.'
+    suggest_vc_set: "Prefiks kategorii sugerowanych kanałów głosowych został ustawiony na „%{category}”."
     suggest_vc_off: "Sugerowane kanały głosowe wyłączone."
     motd_updated: "Zaktualizowano wiadomość dnia."
     default_seats_set: "Domyślna liczba miejsc dla tego kanału została ustawiona na %{seats}."

@@ -68,7 +68,8 @@ pt:
     started_game: "Iniciei o seu jogo %{format} por si!"
     game_started_id: "O jogo SB%{game_id} foi iniciado!"
     dm_failures: "Não foi possível enviar mensagens diretas para alguns jogadores: %{players}"
-    award_failure: "Não foi possível %{action} função %{role} %{direction} utilizador <@%{user_id}>"
+    award_failure_give: "Não foi possível dar a função %{role} ao utilizador <@%{user_id}>"
+    award_failure_take: "Não foi possível remover a função %{role} do utilizador <@%{user_id}>"
     mythic_track: "Acompanhe o seu jogo em %{emoji}[Mythic Track](%{link}) com o código PIN: `%{pin}`"
   # Watch notifications
   watch:

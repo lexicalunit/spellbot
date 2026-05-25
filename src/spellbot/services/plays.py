@@ -136,6 +136,7 @@ def decomposed(combined_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "message": data["message"],
                 "link": data["link"],
                 "format": data["format"],
+                "service": data["service"],
                 "guild_name": data["guild_name"],
                 "channel_name": data["channel_name"],
                 "user_name": name,
