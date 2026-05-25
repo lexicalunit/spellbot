@@ -68,8 +68,8 @@ pt:
     started_game: "Iniciei o seu jogo %{format} por si!"
     game_started_id: "O jogo SB%{game_id} foi iniciado!"
     dm_failures: "Não foi possível enviar mensagens diretas para alguns jogadores: %{players}"
-    award_failure_give: "Não foi possível dar a função %{role} ao utilizador <@%{user_id}>"
-    award_failure_take: "Não foi possível remover a função %{role} do utilizador <@%{user_id}>"
+    award_failure_give: "Não é possível dar o papel %{role} ao usuário <@%{user_id}>"
+    award_failure_take: "Não foi possível assumir o papel %{role} do usuário <@%{user_id}>"
     mythic_track: "Acompanhe o seu jogo em %{emoji}[Mythic Track](%{link}) com o código PIN: `%{pin}`"
   # Watch notifications
   watch:
@@ -92,7 +92,7 @@ pt:
     done: "Concluído."
     invalid_page: "Página inválida."
     channels_title: "Configuração para canais em %{guild}"
-    channels_default: "**All channels on this server have a default configuration.**\n\nYou may use channel specific `/set` commands within a channel to change that channel's configuration."
+    channels_default: "**Todos os canais neste servidor têm uma configuração padrão.**\n\nVocê pode usar comandos específicos do canal `/set` dentro de um canal para mudar a configuração desse canal."
     awards_title: "Prémios de jogadores SpellBot para %{guild}"
     awards_empty: "**Não existem prémios configurados neste servidor.**\n\nPara adicionar prémios, utilize o comando `/award add`."
     setup_title: "Configuração SpellBot para %{guild}"

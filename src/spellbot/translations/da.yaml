@@ -68,8 +68,8 @@ da:
     started_game: "Jeg startede din %{format}-kamp for dig!"
     game_started_id: "Kampen SB%{game_id} er startet!"
     dm_failures: "Kan ikke sende direkte beskeder til visse spillere: %{players}"
-    award_failure_give: "Kan ikke give rollen %{role} til brugeren <@%{user_id}>"
-    award_failure_take: "Kan ikke tage rollen %{role} fra brugeren <@%{user_id}>"
+    award_failure_give: "Kunne ikke give rollen %{role} til brugeren <@%{user_id}>"
+    award_failure_take: "Kan ikke påtage sig rollen %{role} fra bruger <@%{user_id}>"
     mythic_track: "Spor din kamp på %{emoji}[Mythic Track](%{link}) med pinkode: `%{pin}`"
   # Watch notifications
   watch:
@@ -92,7 +92,7 @@ da:
     done: "Færdig."
     invalid_page: "Ugyldig side."
     channels_title: "Konfiguration for kanaler i %{guild}"
-    channels_default: "**All channels on this server have a default configuration.**\n\nYou may use channel specific `/set` commands within a channel to change that channel's configuration."
+    channels_default: "**Alle kanaler på denne server har en standardkonfiguration.**\n\nMan kan bruge kanalspecifikke kommandoer `/set` i en kanal til at ændre den pågældende kanals konfiguration."
     awards_title: "SpellBot-spillerpriser for %{guild}"
     awards_empty: "**Der er ikke konfigureret nogen priser på denne server.**\n\nFor at tilføje priser skal du bruge kommandoen `/award add`."
     setup_title: "SpellBot-opsætning for %{guild}"
