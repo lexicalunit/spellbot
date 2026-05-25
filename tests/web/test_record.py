@@ -72,7 +72,7 @@ class TestWebRecord:
         factories.play.create(game_id=game3.id, user_xid=user1.xid)
         factories.play.create(game_id=game3.id, user_xid=user2.xid)
 
-        resp = await client.get(f"/g/{guild.xid}/u/{user1.xid}")
+        resp = await client.get(f"/u/{user1.xid}")
         assert resp.status == 200
         text = await resp.text()
         assert text == snapshot
@@ -130,7 +130,7 @@ class TestWebRecord:
         factories.play.create(game_id=game3.id, user_xid=user2.xid)
 
         resp = await client.get(
-            f"/g/{guild.xid}/u/{user1.xid}",
+            f"/u/{user1.xid}",
             cookies={
                 "timezone_offset": "480",
                 "timezone_name": "America/Los_Angeles",
@@ -147,9 +147,8 @@ class TestWebRecord:
         factories: Factories,
     ) -> None:
         user = factories.user.create(xid=101, name="user")
-        guild = factories.guild.create(xid=201, name="guild")
 
-        resp = await client.get(f"/g/{guild.xid}/u/{user.xid}")
+        resp = await client.get(f"/u/{user.xid}")
         assert resp.status == 200
         text = await resp.text()
         assert text == snapshot
@@ -352,20 +351,18 @@ class TestWebRecord:
         assert text == snapshot
 
     async def test_user_record_invalid_ids(self, client: ClientSession) -> None:
-        resp = await client.get("/g/abc/u/xyz")
+        resp = await client.get("/u/xyz")
         assert resp.status == 404
 
     async def test_channel_record_invalid_ids(self, client: ClientSession) -> None:
         resp = await client.get("/g/abc/c/xyz")
         assert resp.status == 404
 
-    async def test_user_record_missing_guild(
+    async def test_user_record_missing_user(
         self,
         client: ClientSession,
-        factories: Factories,
     ) -> None:
-        user = factories.user.create(xid=101, name="user")
-        resp = await client.get(f"/g/404/u/{user.xid}")
+        resp = await client.get("/u/404")
         assert resp.status == 404
 
     async def test_channel_record_missing_guild(
@@ -415,7 +412,7 @@ class TestWebRecordExport:
         factories.play.create(game_id=game.id, user_xid=user1.xid)
         factories.play.create(game_id=game.id, user_xid=user2.xid)
 
-        resp = await client.get(f"/g/{guild.xid}/u/{user1.xid}/export.csv")
+        resp = await client.get(f"/u/{user1.xid}/export.csv")
         assert resp.status == 200
         assert resp.headers["Content-Type"].startswith("text/csv")
         assert "attachment" in resp.headers["Content-Disposition"]
@@ -436,24 +433,21 @@ class TestWebRecordExport:
         factories: Factories,
     ) -> None:
         user = factories.user.create(xid=101, name="user")
-        guild = factories.guild.create(xid=201, name="guild")
 
-        resp = await client.get(f"/g/{guild.xid}/u/{user.xid}/export.csv")
+        resp = await client.get(f"/u/{user.xid}/export.csv")
         assert resp.status == 200
         body = (await resp.read()).decode("utf-8")
         assert body.strip() == "Game,Time,Guild,Channel,Format,Seats,Bracket,Locale,Link,Players"
 
-    async def test_user_export_missing_guild(
+    async def test_user_export_missing_user(
         self,
         client: ClientSession,
-        factories: Factories,
     ) -> None:
-        user = factories.user.create(xid=101, name="user")
-        resp = await client.get(f"/g/404/u/{user.xid}/export.csv")
+        resp = await client.get("/u/404/export.csv")
         assert resp.status == 404
 
     async def test_user_export_invalid_ids(self, client: ClientSession) -> None:
-        resp = await client.get("/g/abc/u/xyz/export.csv")
+        resp = await client.get("/u/xyz/export.csv")
         assert resp.status == 404
 
     async def test_channel_export_success(

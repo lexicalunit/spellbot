@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed `/score` to `/record` since we don't track points or elo anymore.
+- Made `/record` return details on all games for a user, rather than just the ones for the server where they ran the command.
+- Restyled the record pages to be more consistent with the rest of the site.
+
 ## [v19.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v19.4.0) - 2026-05-25
 
 ### Added

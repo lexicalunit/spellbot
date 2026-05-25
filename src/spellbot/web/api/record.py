@@ -54,7 +54,7 @@ class RecordKind(Enum):
 
 
 class Opts(NamedTuple):
-    guild_xid: int
+    guild_xid: int | None
     target_xid: int
     page: int
     tz_offset: int | None
@@ -63,11 +63,11 @@ class Opts(NamedTuple):
 
 async def parse_opts(request: web.Request, kind: RecordKind) -> Opts:
     """Parse out the request options from web request object."""
-    guild_xid = int(request.match_info["guild"])
-
     if kind is RecordKind.CHANNEL:
+        guild_xid: int | None = int(request.match_info["guild"])
         target_xid = int(request.match_info["channel"])
     else:
+        guild_xid = None
         target_xid = int(request.match_info["user"])
 
     page = max(int(request.query.get("page", 0)), 0)
@@ -96,6 +96,7 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         return web.Response(status=404)
 
     if kind is RecordKind.CHANNEL:
+        assert opts.guild_xid is not None
         records = await services.plays.channel_records(
             guild_xid=opts.guild_xid,
             channel_xid=opts.target_xid,
@@ -103,7 +104,6 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         )
     else:
         records = await services.plays.user_records(
-            guild_xid=opts.guild_xid,
             user_xid=opts.target_xid,
             page=opts.page,
         )
@@ -111,11 +111,27 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
     if records is None:
         return web.Response(status=404)
 
+    if kind is RecordKind.CHANNEL:
+        assert opts.guild_xid is not None
+        guild = await services.guilds.get(opts.guild_xid)
+        guild_name = guild.name if guild else None
+        channel = await services.channels.select(opts.target_xid)
+        target_name = channel.name if channel else None
+    else:
+        guild_name = None
+        user = await services.users.get(opts.target_xid)
+        target_name = user.name if user else None
+
     path = f"{'channel' if kind is RecordKind.CHANNEL else 'user'}_record.html.j2"
     context = {
         "records": records,
         "tz_offset": opts.tz_offset,
         "tz_name": opts.tz_name,
+        "guild_xid": opts.guild_xid,
+        "guild_name": guild_name,
+        "target_xid": opts.target_xid,
+        "target_name": target_name,
+        "page": opts.page,
         "prev_page": f"{request.path}?page={max(opts.page - 1, 0)}",
         "next_page": f"{request.path}?page={opts.page + 1}",
         "export_url": f"{request.path}/export.csv",
@@ -131,7 +147,7 @@ async def channel_endpoint(request: web.Request) -> web.Response:
         return await impl(request, RecordKind.CHANNEL)
 
 
-@routes.get(r"/g/{guild}/u/{user}")
+@routes.get(r"/u/{user}")
 @tracer.wrap(name="web", resource="user_record")
 async def user_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
@@ -219,8 +235,8 @@ def format_channel_export_row(record: dict[str, Any]) -> list[Any]:
 
 async def export_impl(request: web.Request, kind: RecordKind) -> web.StreamResponse:
     try:
-        guild_xid = int(request.match_info["guild"])
         if kind is RecordKind.CHANNEL:
+            guild_xid = int(request.match_info["guild"])
             target_xid = int(request.match_info["channel"])
         else:
             target_xid = int(request.match_info["user"])
@@ -235,10 +251,10 @@ async def export_impl(request: web.Request, kind: RecordKind) -> web.StreamRespo
         format_row = format_channel_export_row
         filename_part = f"channel-{target_xid}"
     else:
-        if not await services.plays.user_export_target_exists(guild_xid):
+        if not await services.plays.user_export_target_exists(target_xid):
             return web.Response(status=404)
         header = USER_EXPORT_HEADER
-        stream = services.plays.stream_user_records(guild_xid, target_xid)
+        stream = services.plays.stream_user_records(target_xid)
         format_row = format_user_export_row
         filename_part = f"user-{target_xid}"
 
@@ -271,7 +287,7 @@ async def channel_export_endpoint(request: web.Request) -> web.StreamResponse:
         return await export_impl(request, RecordKind.CHANNEL)
 
 
-@routes.get(r"/g/{guild}/u/{user}/export.csv")
+@routes.get(r"/u/{user}/export.csv")
 @tracer.wrap(name="web", resource="user_record_export")
 async def user_export_endpoint(request: web.Request) -> web.StreamResponse:
     add_span_request_id(generate_request_id())
