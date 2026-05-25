@@ -13,7 +13,7 @@ from spellbot.enums import (
     GameFormat,
     GameService,
 )
-from spellbot.models import Block, Game, Guild, Play, User
+from spellbot.models import Block, Game, Guild, Play, Queue, User
 from spellbot.services.plays import extract_ngrams, normalize_rule
 
 if TYPE_CHECKING:
@@ -945,3 +945,283 @@ async def dashboard_rules(period: PeriodSpec, opts: GuildFilter) -> dict[str, An
         {"phrase": phrase, "count": count} for phrase, count in ngram_counter.most_common(75)
     ]
     return {"top_rules": top_rules, "rule_ngrams": rule_ngrams}
+
+
+async def dashboard_cohort_retention(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """
+    Return weekly cohort retention as `cohorts[cohort][week_offset] -> percent`.
+
+    A user's cohort is the week containing their first in-scope
+    `Game.started_at`. For each subsequent week, we report the percent of
+    that cohort who played at least one game that week. Week offsets are
+    integer multiples of 7 days from the cohort start.
+
+    The result includes one cohort row per distinct first-play week within
+    the (optional) period bound, ordered ascending by cohort. `max_weeks`
+    is the largest week offset seen across all cohorts (>= 0), useful for
+    sizing the heatmap on the client.
+    """
+    inner_filters: list[ColumnElement[bool]] = [
+        Game.started_at.isnot(None),
+        *game_guild_filter(opts),
+    ]
+    first_play = (
+        select(
+            Play.user_xid.label("user_xid"),
+            func.min(func.date_trunc("week", Game.started_at)).label("cohort"),
+        )
+        .select_from(Play)
+        .join(Game, Play.game_id == Game.id)  # type: ignore[arg-type]
+        .where(*inner_filters)
+        .group_by(Play.user_xid)
+        .subquery()
+    )
+    play_weeks = (
+        select(
+            Play.user_xid.label("user_xid"),
+            func.date_trunc("week", Game.started_at).label("play_week"),
+        )
+        .select_from(Play)
+        .join(Game, Play.game_id == Game.id)  # type: ignore[arg-type]
+        .where(*inner_filters)
+        .distinct()
+        .subquery()
+    )
+    outer_filters: list[ColumnElement[bool]] = []
+    if period.start_dt is not None:
+        outer_filters.append(first_play.c.cohort >= period.start_dt)
+    rows = (
+        await DatabaseSession.execute(
+            select(
+                first_play.c.cohort,
+                play_weeks.c.play_week,
+                func.count(distinct(play_weeks.c.user_xid)).label("returners"),
+            )
+            .select_from(first_play)
+            .join(play_weeks, first_play.c.user_xid == play_weeks.c.user_xid)
+            .where(*outer_filters)
+            .group_by(first_play.c.cohort, play_weeks.c.play_week)
+            .order_by(first_play.c.cohort, play_weeks.c.play_week),
+        )
+    ).all()
+
+    grouped: dict[Any, dict[int, int]] = {}
+    max_offset = 0
+    for cohort_dt, play_week, returners in rows:
+        offset = max(0, (play_week - cohort_dt).days // 7)
+        grouped.setdefault(cohort_dt, {})[offset] = int(returners)
+        max_offset = max(max_offset, offset)
+
+    cohorts: list[dict[str, Any]] = []
+    for cohort_dt in sorted(grouped.keys()):
+        offsets = grouped[cohort_dt]
+        size = offsets[0]
+        weeks = [
+            {"offset": off, "count": count, "pct": round(100.0 * count / size, 1)}
+            for off, count in sorted(offsets.items())
+        ]
+        cohorts.append({"cohort": iso_str(cohort_dt), "size": size, "weeks": weeks})
+    return {"cohorts": cohorts, "max_weeks": max_offset}
+
+
+async def dashboard_activity_heatmap(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """
+    Return started-game counts as a `day-of-week x hour-of-day` matrix.
+
+    Counts are computed in UTC; the client shifts hours by the browser's
+    timezone offset to produce a local-time heatmap. `dow` follows Postgres'
+    `extract('dow', ...)` convention: 0=Sunday .. 6=Saturday.
+    """
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.isnot(None),
+        *game_guild_filter(opts),
+    ]
+    if period.start_dt is not None:
+        filters.append(Game.started_at >= period.start_dt)
+    dow_col = extract("dow", Game.started_at).label("dow")
+    hour_col = extract("hour", Game.started_at).label("hour")
+    rows = (
+        await DatabaseSession.execute(
+            select(dow_col, hour_col, func.count(Game.id))
+            .where(*filters)
+            .group_by(dow_col, hour_col)
+            .order_by(dow_col, hour_col),
+        )
+    ).all()
+    return {
+        "cells": [{"dow": int(r[0]), "hour": int(r[1]), "count": int(r[2])} for r in rows],
+    }
+
+
+async def dashboard_wait_time_distribution(
+    period: PeriodSpec,
+    opts: GuildFilter,
+) -> dict[str, Any]:
+    """
+    Return bucketed wait-time percentiles (p50 / p95 / p99) in minutes.
+
+    Wait time per game is `started_at - created_at`. Percentiles are
+    computed per bucket using Postgres' `percentile_cont` aggregate.
+    """
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.isnot(None),
+        *game_guild_filter(opts),
+    ]
+    if period.start_dt is not None:
+        filters.append(Game.started_at >= period.start_dt)
+    bucket_col = trunc_date(Game.started_at, period.bucket).label("bucket")
+    wait_seconds = extract("epoch", Game.started_at) - extract("epoch", Game.created_at)
+    p50 = func.percentile_cont(0.5).within_group(wait_seconds).label("p50")
+    p95 = func.percentile_cont(0.95).within_group(wait_seconds).label("p95")
+    p99 = func.percentile_cont(0.99).within_group(wait_seconds).label("p99")
+    rows = (
+        await DatabaseSession.execute(
+            select(bucket_col, p50, p95, p99)
+            .where(*filters)
+            .group_by(bucket_col)
+            .order_by(bucket_col),
+        )
+    ).all()
+
+    def to_minutes(value: Any) -> float:
+        return round(float(value) / 60.0, 1)
+
+    return {
+        "p50": [{"date": iso_str(r[0]), "minutes": to_minutes(r[1])} for r in rows],
+        "p95": [{"date": iso_str(r[0]), "minutes": to_minutes(r[2])} for r in rows],
+        "p99": [{"date": iso_str(r[0]), "minutes": to_minutes(r[3])} for r in rows],
+    }
+
+
+def bucketed_adoption_rate(
+    period: PeriodSpec,
+    filters: list[ColumnElement[bool]],
+    adopted_predicate: ColumnElement[bool],
+) -> Any:
+    """Build a `(bucket, adopted_pct)` query for a started-game adoption rate."""
+    bucket_col = trunc_date(Game.started_at, period.bucket).label("bucket")
+    adopted = func.sum(case((adopted_predicate, 1), else_=0))
+    total = func.count(Game.id)
+    return (
+        select(bucket_col, adopted.label("adopted"), total.label("total"))
+        .where(*filters)
+        .group_by(bucket_col)
+        .order_by(bucket_col)
+    )
+
+
+def adoption_points(rows: Any) -> list[dict[str, Any]]:
+    """Convert `(bucket, adopted, total)` rows into `{date, count}` percent points."""
+    points: list[dict[str, Any]] = []
+    for bucket, adopted, total in rows:
+        rate = (float(adopted) / float(total)) * 100.0
+        points.append({"date": iso_str(bucket), "count": round(rate, 2)})
+    return points
+
+
+async def dashboard_voice_adoption(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """Return bucketed adoption rate (percent) of started games with a voice channel."""
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.isnot(None),
+        *game_guild_filter(opts),
+    ]
+    if period.start_dt is not None:
+        filters.append(Game.started_at >= period.start_dt)
+    rows = (
+        await DatabaseSession.execute(
+            bucketed_adoption_rate(period, filters, Game.voice_xid.isnot(None)),
+        )
+    ).all()
+    return {"rate": adoption_points(rows)}
+
+
+async def dashboard_blind_adoption(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """Return bucketed adoption rate (percent) of started games created as blind."""
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.isnot(None),
+        *game_guild_filter(opts),
+    ]
+    if period.start_dt is not None:
+        filters.append(Game.started_at >= period.start_dt)
+    rows = (
+        await DatabaseSession.execute(
+            bucketed_adoption_rate(period, filters, Game.blind.is_(True)),
+        )
+    ).all()
+    return {"rate": adoption_points(rows)}
+
+
+async def dashboard_mythic_verification(
+    period: PeriodSpec,
+    opts: GuildFilter,
+) -> dict[str, Any]:
+    """
+    Return bucketed Mythic Track verification rate (percent) of plays.
+
+    Restricted to plays on games whose guild has `enable_mythic_track`
+    enabled; a play counts as verified when its `verified_at` is set.
+    Honors the dashboard's guild filter so a single server can be inspected.
+    """
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.isnot(None),
+        Guild.enable_mythic_track.is_(True),
+        *game_guild_filter(opts),
+    ]
+    if period.start_dt is not None:
+        filters.append(Game.started_at >= period.start_dt)
+    bucket_col = trunc_date(Game.started_at, period.bucket).label("bucket")
+    verified = func.sum(case((Play.verified_at.isnot(None), 1), else_=0))
+    total = func.count(Play.game_id)  # type: ignore[arg-type]
+    rows = (
+        await DatabaseSession.execute(
+            select(bucket_col, verified.label("verified"), total.label("total"))
+            .select_from(Play)
+            .join(Game, Play.game_id == Game.id)  # type: ignore[arg-type]
+            .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore[arg-type]
+            .where(*filters)
+            .group_by(bucket_col)
+            .order_by(bucket_col),
+        )
+    ).all()
+    return {"rate": adoption_points(rows)}
+
+
+async def dashboard_queue_depth(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """
+    Return the current number of users waiting in pending games, by format.
+
+    Pending = `Game.started_at IS NULL AND Game.deleted_at IS NULL`. The
+    `period` argument is ignored (this is a real-time gauge); `opts` is
+    honored so a single server can be inspected.
+    """
+    del period
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.is_(None),
+        Game.deleted_at.is_(None),
+        *game_guild_filter(opts),
+    ]
+    total = int(
+        (
+            await DatabaseSession.execute(
+                select(func.count(Queue.user_xid))
+                .select_from(Queue)
+                .join(Game, Queue.game_id == Game.id)
+                .where(*filters),
+            )
+        ).scalar_one(),
+    )
+    count_col = func.count(Queue.user_xid).label("count")
+    rows = (
+        await DatabaseSession.execute(
+            select(FORMAT_LABEL, count_col)
+            .select_from(Queue)
+            .join(Game, Queue.game_id == Game.id)
+            .where(*filters)
+            .group_by(FORMAT_LABEL)
+            .order_by(count_col.desc(), FORMAT_LABEL),
+        )
+    ).all()
+    return {
+        "total": total,
+        "by_format": [{"format": row[0], "count": int(row[1])} for row in rows],
+    }
