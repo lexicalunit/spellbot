@@ -112,7 +112,7 @@ sv:
     award_added_view: "Du kan visa alla utmärkelser med kommandot `/awards`."
     award_deleted: "Utmärkelse raderad!"
     voice_create_on: "Skapande av röstkanaler är aktiverat för denna server. Du behöver inte föreslå befintliga röstkanaler. Nya kanaler skapas automatiskt."
-    suggest_vc_set: "Förslag på prefix för röstkanalkategorier är inställt på ”%{category}”."
+    suggest_vc_set: 'Förslag på prefix för röstkanalkategorier är inställt på ”%{category}”.'
     suggest_vc_off: "Förslag på röstkanaler är avstängt."
     motd_updated: "Dagens meddelande har uppdaterats."
     default_seats_set: "Standardantalet platser är inställt på %{seats} för denna kanal."
@@ -198,10 +198,10 @@ sv:
     list_title: "Lista över spelare som tittar på denna server"
   # Score action messages
   score:
-    record_title: "Statistik över spelade spel"
+    record_title: "Record of games played"
     games_one: "%{count} spel"
     games_many: "%{count} spel"
-    record_description: "%{mention} har spelat %{games}.\nSe mer [information på spellbot.io](%{link})."
+    record_description: "%{mention} has played %{games}.\nView more [details on spellbot.io](%{link})."
     history_title: "Senaste spel som spelas i %{channel}"
     history_description: "Se [spelhistorik på spellbot.io](%{link})."
     top_title: "Toppspelare i #%{channel} (%{range})"
