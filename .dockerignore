@@ -23,6 +23,7 @@ CODE_OF_CONDUCT.md
 codecov.yml
 CONTRIBUTING.md
 coverage
+coverage-js/
 coverage.xml
 db/
 dist/
@@ -33,6 +34,8 @@ env/
 grafana/
 logs/
 node_modules/
+package-lock.json
+package.json
 SECURITY.md
 spellbot-sm.png
 spellbot.png
@@ -40,6 +43,8 @@ sql/
 states/
 terraform.tfvars
 tests/
+tests-js/
 tmp/
+vitest.config.js
 yarn-debug.log*
 yarn-error.log*
