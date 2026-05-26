@@ -3,12 +3,14 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+import httpx
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_, or_
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Guild, GuildAward
+from spellbot.settings import settings
 
 if TYPE_CHECKING:
     import discord
@@ -16,25 +18,35 @@ if TYPE_CHECKING:
     from spellbot.data import GuildAwardData, GuildData
 
 
-guild_cache: dict[int, tuple[str, str | None]] = {}
+guild_cache: dict[int, tuple[str, str | None, str | None]] = {}
 
 
-def is_cached(xid: int, name: str, locale: str | None) -> bool:
-    """Return True if the guild xid is cached under the given name and locale."""
-    return guild_cache.get(xid) == (name, locale)
+def is_cached(xid: int, name: str, locale: str | None, icon: str | None) -> bool:
+    """Return True if the guild xid is cached under the given name, locale, and icon."""
+    return guild_cache.get(xid) == (name, locale, icon)
+
+
+def _guild_icon_url(guild: discord.Guild) -> str | None:
+    """Return the Discord CDN URL for a `discord.Guild`'s icon, or None."""
+    icon = getattr(guild, "icon", None)
+    return str(icon) if icon else None
 
 
 async def upsert(guild: discord.Guild, locale: str | None = None) -> GuildData | None:
     """Upsert the given Discord guild into the database."""
     name_max_len = Guild.name.property.columns[0].type.length
+    icon_max_len = Guild.icon.property.columns[0].type.length
     raw_name = getattr(guild, "name", "")
     name = raw_name[:name_max_len]
-    if not is_cached(guild.id, name, locale):
+    raw_icon = _guild_icon_url(guild)
+    icon = raw_icon[:icon_max_len] if raw_icon else None
+    if not is_cached(guild.id, name, locale, icon):
         values = {
             "xid": guild.id,
             "name": name,
             "updated_at": datetime.now(tz=UTC),
             "active": True,
+            "icon": icon,
         }
         if locale:
             values["locale"] = locale
@@ -43,10 +55,12 @@ async def upsert(guild: discord.Guild, locale: str | None = None) -> GuildData |
             "name": upsert.excluded.name,
             "updated_at": upsert.excluded.updated_at,
             "active": upsert.excluded.active,
+            "icon": upsert.excluded.icon,
         }
         where_clauses = [
             upsert.excluded.name != Guild.name,
             upsert.excluded.active != Guild.active,
+            upsert.excluded.icon.is_distinct_from(Guild.icon),
         ]
         if locale:
             set_updates["locale"] = upsert.excluded.locale
@@ -59,12 +73,41 @@ async def upsert(guild: discord.Guild, locale: str | None = None) -> GuildData |
         )
         await DatabaseSession.execute(upsert, values)
         await DatabaseSession.commit()
-        guild_cache[guild.id] = (name, locale)
+        guild_cache[guild.id] = (name, locale, icon)
 
     result = (
         await DatabaseSession.execute(select(Guild).where(Guild.xid == guild.id))  # type: ignore
     ).scalar_one_or_none()
     return await result.to_data() if guild else None
+
+
+async def set_icon(guild_xid: int, icon: str | None) -> None:
+    """Update the cached Discord icon URL for the given guild."""
+    await DatabaseSession.execute(
+        update(Guild).where(Guild.xid == guild_xid).values(icon=icon),  # type: ignore
+    )
+    await DatabaseSession.commit()
+    guild_cache.pop(guild_xid, None)
+
+
+async def fetch_icon_url(guild_xid: int) -> str | None:
+    """Fetch the current Discord CDN icon URL for `guild_xid` via the REST API."""
+    if not settings.BOT_TOKEN:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(
+                f"https://discord.com/api/v10/guilds/{guild_xid}",
+                headers={"Authorization": f"Bot {settings.BOT_TOKEN}"},
+            )
+            resp.raise_for_status()
+            icon_hash = resp.json().get("icon")
+    except httpx.HTTPError:
+        return None
+    if not icon_hash:
+        return None
+    ext = "gif" if icon_hash.startswith("a_") else "png"
+    return f"https://cdn.discordapp.com/icons/{guild_xid}/{icon_hash}.{ext}"
 
 
 async def set_banned(guild_xid: int, banned: bool) -> None:

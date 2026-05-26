@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from sqlalchemy import select
 
@@ -19,6 +20,7 @@ class TestServiceGuilds:
         discord_guild = MagicMock()
         discord_guild.id = 101
         discord_guild.name = "guild-name"
+        discord_guild.icon = None
         await guilds.upsert(discord_guild)
 
         DatabaseSession.expire_all()
@@ -150,10 +152,30 @@ class TestServiceGuilds:
         discord_guild = MagicMock()
         discord_guild.id = guild.xid
         discord_guild.name = "guild-name"
+        discord_guild.icon = None
         await guilds.upsert(discord_guild)
 
         DatabaseSession.expire_all()
         refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.updated_at == original_updated_at
+
+    async def test_guilds_upsert_skips_write_when_cached(self) -> None:
+        discord_guild = MagicMock()
+        discord_guild.id = 505
+        discord_guild.name = "guild-name"
+        discord_guild.icon = None
+        await guilds.upsert(discord_guild)
+
+        DatabaseSession.expire_all()
+        before = await DatabaseSession.get(Guild, discord_guild.id)
+        assert before
+        original_updated_at = before.updated_at
+
+        await guilds.upsert(discord_guild)
+
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, discord_guild.id)
         assert refreshed
         assert refreshed.updated_at == original_updated_at
 
@@ -163,6 +185,7 @@ class TestServiceGuilds:
         discord_guild = MagicMock()
         discord_guild.id = guild.xid
         discord_guild.name = "reactivated-name"
+        discord_guild.icon = None
         await guilds.upsert(discord_guild)
 
         DatabaseSession.expire_all()
@@ -175,6 +198,7 @@ class TestServiceGuilds:
         discord_guild = MagicMock()
         discord_guild.id = 202
         discord_guild.name = "guild-name"
+        discord_guild.icon = None
         await guilds.upsert(discord_guild, locale="es")
 
         DatabaseSession.expire_all()
@@ -188,6 +212,7 @@ class TestServiceGuilds:
         discord_guild = MagicMock()
         discord_guild.id = guild.xid
         discord_guild.name = guild.name
+        discord_guild.icon = None
         await guilds.upsert(discord_guild, locale="fr")
 
         DatabaseSession.expire_all()
@@ -206,6 +231,7 @@ class TestServiceGuilds:
         discord_guild = MagicMock()
         discord_guild.id = guild.xid
         discord_guild.name = "guild-name"
+        discord_guild.icon = None
         await guilds.upsert(discord_guild, locale="en")
 
         DatabaseSession.expire_all()
@@ -214,10 +240,69 @@ class TestServiceGuilds:
         assert refreshed.updated_at == original_updated_at
         assert refreshed.locale == "en"
 
+    async def test_guilds_upsert_persists_icon(self) -> None:
+        icon_url = "https://cdn.discordapp.com/icons/303/abc.png"
+        discord_guild = MagicMock()
+        discord_guild.id = 303
+        discord_guild.name = "guild-name"
+        discord_guild.icon = icon_url
+        await guilds.upsert(discord_guild)
+
+        DatabaseSession.expire_all()
+        guild = await DatabaseSession.get(Guild, discord_guild.id)
+        assert guild
+        assert guild.icon == icon_url
+
+    async def test_guilds_upsert_updates_icon(self) -> None:
+        guild = GuildFactory.create(icon="https://cdn.discordapp.com/icons/304/old.png")
+
+        new_icon = "https://cdn.discordapp.com/icons/304/new.png"
+        discord_guild = MagicMock()
+        discord_guild.id = guild.xid
+        discord_guild.name = guild.name
+        discord_guild.icon = new_icon
+        await guilds.upsert(discord_guild)
+
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.icon == new_icon
+
+    async def test_guilds_upsert_clears_icon_when_removed(self) -> None:
+        guild = GuildFactory.create(icon="https://cdn.discordapp.com/icons/305/old.png")
+
+        discord_guild = MagicMock()
+        discord_guild.id = guild.xid
+        discord_guild.name = guild.name
+        discord_guild.icon = None
+        await guilds.upsert(discord_guild)
+
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.icon is None
+
+    async def test_guilds_set_icon(self) -> None:
+        guild = GuildFactory.create(icon=None)
+
+        url = "https://cdn.discordapp.com/icons/306/feedface.png"
+        await guilds.set_icon(guild.xid, url)
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.icon == url
+
+        await guilds.set_icon(guild.xid, None)
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, guild.xid)
+        assert refreshed
+        assert refreshed.icon is None
+
     async def test_guilds_award_add(self) -> None:
         discord_guild = MagicMock()
         discord_guild.id = 101
         discord_guild.name = "guild-name"
+        discord_guild.icon = None
         await guilds.upsert(discord_guild)
         await guilds.award_add(
             guild_xid=discord_guild.id,
@@ -302,3 +387,65 @@ class TestServiceGuilds:
         prefixes = await guilds.voice_category_prefixes(guild.xid)
 
         assert set(prefixes) == {"Voice Channels", "Other Category"}
+
+
+@pytest.mark.asyncio
+class TestFetchIconUrl:
+    async def test_returns_none_without_bot_token(self) -> None:
+        with patch.object(guilds.settings, "BOT_TOKEN", None):
+            assert await guilds.fetch_icon_url(401) is None
+
+    async def test_returns_png_url_for_static_icon(self) -> None:
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json = MagicMock(return_value={"icon": "deadbeef"})
+        mock_client = MagicMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_client.get = AsyncMock(return_value=mock_response)
+        with (
+            patch.object(guilds.settings, "BOT_TOKEN", "tok"),
+            patch.object(guilds.httpx, "AsyncClient", return_value=mock_client),
+        ):
+            url = await guilds.fetch_icon_url(402)
+        assert url == "https://cdn.discordapp.com/icons/402/deadbeef.png"
+
+    async def test_returns_gif_url_for_animated_icon(self) -> None:
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json = MagicMock(return_value={"icon": "a_animated"})
+        mock_client = MagicMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_client.get = AsyncMock(return_value=mock_response)
+        with (
+            patch.object(guilds.settings, "BOT_TOKEN", "tok"),
+            patch.object(guilds.httpx, "AsyncClient", return_value=mock_client),
+        ):
+            url = await guilds.fetch_icon_url(403)
+        assert url == "https://cdn.discordapp.com/icons/403/a_animated.gif"
+
+    async def test_returns_none_when_guild_has_no_icon(self) -> None:
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json = MagicMock(return_value={"icon": None})
+        mock_client = MagicMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_client.get = AsyncMock(return_value=mock_response)
+        with (
+            patch.object(guilds.settings, "BOT_TOKEN", "tok"),
+            patch.object(guilds.httpx, "AsyncClient", return_value=mock_client),
+        ):
+            assert await guilds.fetch_icon_url(404) is None
+
+    async def test_returns_none_on_http_error(self) -> None:
+        mock_client = MagicMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_client.get = AsyncMock(side_effect=httpx.HTTPError("boom"))
+        with (
+            patch.object(guilds.settings, "BOT_TOKEN", "tok"),
+            patch.object(guilds.httpx, "AsyncClient", return_value=mock_client),
+        ):
+            assert await guilds.fetch_icon_url(405) is None

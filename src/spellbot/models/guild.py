@@ -109,6 +109,20 @@ class Guild(Base):
         server_default="en",
         doc="The guild's preferred locale from Discord",
     )
+    icon = Column(
+        String(255),
+        nullable=True,
+        default=None,
+        server_default=null(),
+        doc="Cached Discord CDN URL for this guild's icon",
+    )
+    promote = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=true(),
+        doc="If true, this guild may be advertised on public SpellBot pages",
+    )
 
     games = relationship(
         "Game",
@@ -158,4 +172,6 @@ class Guild(Base):
             enable_mythic_track=self.enable_mythic_track,  # type: ignore
             active=self.active,  # type: ignore
             locale=self.locale,  # type: ignore
+            icon=self.icon,  # type: ignore
+            promote=self.promote,  # type: ignore
         )

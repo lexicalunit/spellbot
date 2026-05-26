@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Active Queues — SpellBot</title>
+    <meta name="description" content="Join an active Magic: The Gathering queue powered by SpellBot.">
+    <meta name="theme-color" content="#1a202c">
+    <meta http-equiv="refresh" content="60">
+    <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
+    <style>
+        {% include "queues.css" %}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="page-header">
+            <a href="https://spellbot.io/">
+                <img class="logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+            </a>
+            <h1>Active Queues</h1>
+        </header>
+
+        {% if not rows %}
+        <div class="empty">
+            No active queues right now. Check back in a moment, or run <code>/lfg</code> in your Discord server to start one.
+        </div>
+        {% else %}
+        <form class="filters" aria-label="Filter queues">
+            <label class="filters__field">
+                <span class="filters__label">Format</span>
+                <select id="filter-format" class="filters__select">
+                    <option value="">All formats</option>
+                    {% for f in formats %}
+                    <option value="{{ f }}">{{ f }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="filters__field">
+                <span class="filters__label">Bracket</span>
+                <select id="filter-bracket" class="filters__select">
+                    <option value="">All brackets</option>
+                    {% for b in brackets %}
+                    <option value="{{ b }}">{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <p id="filter-empty" class="filters__empty" hidden>
+                No queues match the selected filters.
+            </p>
+        </form>
+        <section class="gallery">
+            {% for row in rows %}
+            <article class="queue-card" data-format="{{ row.format }}" data-bracket="{{ row.bracket }}">
+                <div class="queue-card__header">
+                    <img
+                        class="queue-card__logo"
+                        src="{{ row.logo }}"
+                        alt="{{ row.guild_name }}"
+                        onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                        loading="lazy"
+                    >
+                    <h2 class="queue-card__server">{{ row.guild_name or "SpellBot Server" }}</h2>
+                </div>
+                <dl class="queue-card__meta">
+                    <div><dt>Format</dt><dd>{{ row.format }}</dd></div>
+                    <div><dt>Bracket</dt><dd>{{ row.bracket }}</dd></div>
+                    <div>
+                        <dt>Players</dt>
+                        <dd><span class="players-badge">{{ row.players }} / {{ row.seats }}</span></dd>
+                    </div>
+                    <div><dt>Wait</dt><dd>{{ row.wait_seconds | wait }}</dd></div>
+                    <div><dt>Language</dt><dd>{{ row.language }}</dd></div>
+                </dl>
+                <a class="queue-card__cta" href="{{ row.jump_url }}" target="_blank" rel="noopener noreferrer">
+                    Jump to Game →
+                </a>
+            </article>
+            {% endfor %}
+        </section>
+        <script>
+            (function () {
+                var formatSelect = document.getElementById("filter-format");
+                var bracketSelect = document.getElementById("filter-bracket");
+                var emptyMsg = document.getElementById("filter-empty");
+                var cards = document.querySelectorAll(".gallery .queue-card");
+                function apply() {
+                    var fmt = formatSelect.value;
+                    var brk = bracketSelect.value;
+                    var visible = 0;
+                    cards.forEach(function (card) {
+                        var match =
+                            (!fmt || card.dataset.format === fmt) &&
+                            (!brk || card.dataset.bracket === brk);
+                        card.hidden = !match;
+                        if (match) visible++;
+                    });
+                    emptyMsg.hidden = visible !== 0;
+                }
+                formatSelect.addEventListener("change", apply);
+                bracketSelect.addEventListener("change", apply);
+            })();
+        </script>
+        {% endif %}
+
+        <footer class="page-footer">
+            <p>Powered by <a href="https://spellbot.io/">SpellBot</a>.</p>
+            <span class="updated">Auto-refreshing every 60 seconds.</span>
+        </footer>
+    </div>
+</body>
+</html>

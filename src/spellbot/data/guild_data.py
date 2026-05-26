@@ -26,5 +26,7 @@ class GuildData:
     enable_mythic_track: bool
     active: bool = True
     locale: str = "en"
+    icon: str | None = None
+    promote: bool = True
     channels: list[ChannelData] = field(default_factory=list)
     awards: list[GuildAwardData] = field(default_factory=list)
