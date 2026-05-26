@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Adjust styles on user records so word wrapping looks better.
+
 ## [v20.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v20.0.0) - 2026-05-25
 
 ### Changed

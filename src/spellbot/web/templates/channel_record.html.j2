@@ -47,10 +47,12 @@
                         <a href="/u/{{ record.user_xid }}">{{ record.user_name | default('Unknown User', true) }}</a>
                     </td>
                     <td data-label="User ID">
-                        <span class="user-id">{{ record.user_xid }}</span>
-                        <button type="button" class="copy" data-copy="{{ record.user_xid }}" title="Copy User ID">⎘</button>
+                        <span class="id-copy">
+                            <span class="user-id">{{ record.user_xid }}</span>
+                            <button type="button" class="copy" data-copy="{{ record.user_xid }}" title="Copy User ID">⎘</button>
+                        </span>
                     </td>
-                    <td data-label="Jump"><a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}/{{ record.message }}" class="button">Jump to game</a></td>
+                    <td data-label="Jump"><a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}/{{ record.message }}" class="button">Jump&nbsp;to&nbsp;game</a></td>
                 </tr>
                 {% endfor %}
             </tbody>

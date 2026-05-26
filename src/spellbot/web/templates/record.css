@@ -102,6 +102,9 @@ table thead th {
 table tbody tr + tr td {
   border-top: 1px solid #2a2a4a;
 }
+table tbody tr:nth-child(even) td {
+  background: #1a1a35;
+}
 table tbody td {
   color: #e0e0e0;
   font-size: 0.9rem;
@@ -111,6 +114,12 @@ table tbody td {
   font-family: monospace;
   color: #9ca3af;
   font-size: 0.85rem;
+}
+
+.id-copy {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .copy {
@@ -159,7 +168,9 @@ table tbody td {
   border: 1px solid #333;
   border-radius: 6px;
   padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
+  min-width: 6.5rem;
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
   transition: background 0.15s;
