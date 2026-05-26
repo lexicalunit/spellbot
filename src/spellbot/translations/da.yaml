@@ -97,7 +97,7 @@ da:
     awards_empty: "**Der er ikke konfigureret nogen priser på denne server.**\n\nFor at tilføje priser skal du bruge kommandoen `/award add`."
     setup_title: "SpellBot-opsætning for %{guild}"
     setup_description: "Her er de aktuelle indstillinger for SpellBot på denne server. Brug knapperne nedenfor samt kommandoerne `/set` til at konfigurere SpellBot, som du har lyst til.\n\nDu kan også få vist præmiekonfigurationen med kommandoen `/awards` og kanalkonfigurationen med kommandoen `/channels`."
-    field_motd: "DB"
+    field_motd: "MOTD"
     field_none: "Ingen"
     field_public_links: "Offentlige links"
     field_voice_create: "Opret stemmekanaler"
