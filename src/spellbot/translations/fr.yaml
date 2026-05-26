@@ -73,7 +73,7 @@ fr:
     mythic_track: "Suivez votre partie sur %{emoji}[Mythic Track](%{link}) grâce au code PIN : `%{pin}`"
   # Watch notifications
   watch:
-    title: "Le ou les utilisateurs que vous regardez ont rejoint une partie"
+    title: "Un ou plusieurs utilisateurs que vous surveillez ont rejoint une partie"
     jump_to_game: "[⇤ Aller sur la publication du jeu](%{link})"
     users_header: "**Utilisateurs :**"
     game_id: "ID de jeu"
@@ -105,7 +105,7 @@ fr:
     "on": "✅ Activé"
     "off": "❌ Désactivé"
     page: "page %{current} sur %{total}"
-    award_add_conflict: "Votre récompense ne peut pas être en même temps vérifiée et non vérifiée."
+    award_add_conflict: "Votre récompense ne peut pas être en même temps pour les vérifiés et les non vérifiés."
     award_message_too_long: "Votre message ne peut contenir plus de %{max_length} caractères."
     award_zero_games: "Vous ne pouvez pas créer de récompense pour zéro partie jouée."
     award_added: "Récompense ajoutée !"
@@ -151,10 +151,10 @@ fr:
     user_info_verified_yes: "✅ Vérifié"
     user_info_verified_no: "❌ Non vérifié"
     user_info_verified: "Vérifié"
-    user_info_watched_with_note: "⚠️ Regardé : %{note}"
-    user_info_watched: "⚠️ Regardé"
-    user_info_not_watched: "Non regardé"
-    user_info_watch_status: "Statut du coup d'œil"
+    user_info_watched_with_note: "⚠️ Surveillé : %{note}"
+    user_info_watched: "⚠️ Surveillé"
+    user_info_not_watched: "Non surveillé"
+    user_info_watch_status: "Statut de surveillance"
     user_info_no_games: "Aucunes parties jouées"
     user_info_play_range: "Plage de jeu"
     user_info_game_history: "Historique des parties"
@@ -193,9 +193,9 @@ fr:
   watch_action:
     provide_target: "Vous devez fournir un utilisateur cible ou son ID."
     invalid_id: "L'ID doit être un entier valide."
-    watching: "Vous regardez <@%{user_id}>."
-    not_watching: "Vous ne regardez plus <@%{user_id}>."
-    list_title: "Liste des joueurs regardés sur ce serveur"
+    watching: "Vous surveillez <@%{user_id}>."
+    not_watching: "Vous ne surveillez plus <@%{user_id}>."
+    list_title: "Liste des joueurs surveillés sur ce serveur"
   # Score action messages
   score:
     record_title: "Historique des parties jouées"
