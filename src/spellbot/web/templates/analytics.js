@@ -168,14 +168,8 @@
     const [y, m, d] = iso.split("-").map(Number);
     return monthYearFmt.format(new Date(y, m - 1, d));
   }
-  function toDayMap(arr) {
-    const m = {};
-    arr.forEach((d) => (m[d.day] = d.count));
-    return m;
-  }
-  function fmt(n) {
-    return n.toLocaleString();
-  }
+  /* `toDayMap` and `fmt` live in analytics_pure.js (concatenated by
+     serve_analytics_js) so they can be unit-tested under Node. */
 
   /* Smart date formatting based on visible range */
   function smartDateTicks(rawDates) {
@@ -262,65 +256,13 @@
   const dataCache = { "30d": {}, all: {} };
   const pendingRequests = { "30d": new Set(), all: new Set() };
 
-  function periodLabel() {
-    return currentPeriod === "all" ? "All Time" : "Last 30 Days";
-  }
-
-  /* Get user's timezone offset in hours (e.g., -7 for PDT, +5.5 for IST) */
-  function getTimezoneOffsetHours() {
-    return -new Date().getTimezoneOffset() / 60;
-  }
-
-  /* Get user's timezone abbreviation or UTC offset string */
-  function getUserTimezone() {
-    try {
-      // Try to get timezone abbreviation (e.g., "PST", "EST")
-      const formatter = new Intl.DateTimeFormat("en-US", {
-        timeZoneName: "short",
-      });
-      const parts = formatter.formatToParts(new Date());
-      const tzPart = parts.find((p) => p.type === "timeZoneName");
-      if (tzPart) return tzPart.value;
-    } catch (e) {
-      // Fallback to UTC offset
-    }
-    const offset = getTimezoneOffsetHours();
-    const sign = offset >= 0 ? "+" : "";
-    return "UTC" + sign + offset;
-  }
-
-  /* Convert UTC hour (0-23) to local hour */
-  function utcHourToLocal(utcHour) {
-    const offset = getTimezoneOffsetHours();
-    let localHour = (utcHour + offset) % 24;
-    if (localHour < 0) localHour += 24;
-    return Math.floor(localHour);
-  }
-
-  /* Get today's date in YYYY-MM-DD format (UTC) */
-  function getTodayUTC() {
-    return new Date().toISOString().split("T")[0];
-  }
-
-  /* Get today's date in YYYY-MM-DD format (local timezone) */
-  function getTodayLocal() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
-
-  /* Filter out the current (incomplete) day from daily data.
-     We filter both UTC and local "today" to handle all timezones. */
-  function excludeToday(days) {
-    const todayUTC = getTodayUTC();
-    const todayLocal = getTodayLocal();
-    return days.filter((d) => d !== todayUTC && d !== todayLocal);
-  }
+  /* `periodLabel`, `getTimezoneOffsetHours`, `getUserTimezone`,
+     `utcHourToLocal`, `getTodayUTC`, `getTodayLocal` and `excludeToday`
+     live in analytics_pure.js. */
 
   function updateTitles() {
-    const label = periodLabel();
+    const now = new Date();
+    const label = periodLabel(currentPeriod);
     const weeksLabel = currentPeriod === "all" ? "All Time" : "Last 12 Weeks";
     document.getElementById("activityTitle").textContent =
       "Game Activity (" + label + ")";
@@ -345,7 +287,7 @@
     document.getElementById("blockedTitle").textContent =
       "Most Blocked Players (" + label + ")";
     document.getElementById("hourOfDayTitle").textContent =
-      "Games by Hour of Day, " + getUserTimezone() + " (" + label + ")";
+      "Games by Hour of Day, " + getUserTimezone(now) + " (" + label + ")";
     document.getElementById("dayOfWeekTitle").textContent =
       "Games by Day of Week (" + label + ")";
     document.getElementById("topRulesTitle").textContent =
@@ -429,6 +371,7 @@
           ...dailyNewUsers.map((d) => d.day),
         ]),
       ].sort(),
+      new Date(),
     );
     if (allDays.length) {
       const gMap = toDayMap(gamesPerDay),
@@ -478,7 +421,7 @@
   function renderWaitTime(data) {
     // Exclude today (incomplete day) from the chart
     const allDays = (data.avg_wait_per_day || []).map((d) => d.day);
-    const days = excludeToday(allDays);
+    const days = excludeToday(allDays, new Date());
     const daySet = new Set(days);
     const filteredData = (data.avg_wait_per_day || []).filter((d) =>
       daySet.has(d.day),
@@ -514,6 +457,7 @@
     // Exclude today (incomplete day) from the chart
     const bracketDays = excludeToday(
       [...new Set(bracketData.map((d) => d.day))].sort(),
+      new Date(),
     );
     if (bracketDays.length) {
       const bracketColorMap = {
@@ -695,8 +639,9 @@
   function renderHourOfDay(data) {
     if (data.games_by_hour && data.games_by_hour.length) {
       // Convert UTC hours to local timezone and reorder
+      const offsetHours = getTimezoneOffsetHours(new Date());
       const hourData = data.games_by_hour.map((d) => ({
-        localHour: utcHourToLocal(d.hour),
+        localHour: utcHourToLocal(d.hour, offsetHours),
         count: d.count,
       }));
       // Sort by local hour (0-23)
@@ -867,37 +812,8 @@
     }
   }
 
-  /* HTML escape to prevent XSS from user-controlled content like Discord names */
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  function renderPlayerRow(p, countLabel) {
-    const leftBadge = p.left_server
-      ? '<span class="left-badge" title="User has left the server and will be removed on next refresh">left</span>'
-      : "";
-    const rowClass = p.left_server ? ' class="left-server"' : "";
-    return (
-      "<tr" +
-      rowClass +
-      "><td>" +
-      escapeHtml(p.name) +
-      leftBadge +
-      '</td><td style="color:#9ca3af;font-size:0.8rem">' +
-      p.user_xid +
-      '</td><td class="count">' +
-      fmt(p.count) +
-      "</td></tr>"
-    );
-  }
-
-  function renderLeftServerNote(players) {
-    const hasLeftServer = players.some((p) => p.left_server);
-    if (!hasLeftServer) return "";
-    return '<div class="left-server-note"><span class="left-badge">left</span> = User has left the server. They will not appear on the next page load.</div>';
-  }
+  /* `escapeHtml`, `renderPlayerRow` and `renderLeftServerNote` live in
+     analytics_pure.js. */
 
   function renderPlayers(data) {
     if (data.top_players?.length) {
@@ -997,14 +913,6 @@
   // Use Intl.DisplayNames to get human-readable language names
   const languageNames = new Intl.DisplayNames(["en"], { type: "language" });
 
-  function getLanguageName(locale) {
-    try {
-      return languageNames.of(locale) || locale;
-    } catch {
-      return locale;
-    }
-  }
-
   function renderLanguages(data) {
     if (data.top_languages?.length) {
       const section = document.getElementById("languagesSection");
@@ -1012,7 +920,7 @@
         '<table><thead><tr><th>Language</th><th style="text-align:right">Games</th></tr></thead><tbody>' +
         data.top_languages
           .map((r) => {
-            const displayName = getLanguageName(r.locale);
+            const displayName = getLanguageName(r.locale, languageNames);
             return `<tr><td>${escapeHtml(displayName)}</td><td style="text-align:right">${r.count}</td></tr>`;
           })
           .join("") +

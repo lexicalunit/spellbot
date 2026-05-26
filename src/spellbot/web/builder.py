@@ -81,10 +81,15 @@ async def auth_middleware(request: web.Request, handler: Handler) -> web.StreamR
     return await handler(request)
 
 
-async def serve_analytics_js(_: web.Request) -> web.FileResponse:
+def concat_js(*names: str) -> str:
+    """Concatenate template-dir JS files in order, separated by newlines."""
+    return "\n".join((TEMPLATES_ROOT / name).read_text(encoding="utf-8") for name in names)
+
+
+async def serve_analytics_js(_: web.Request) -> web.Response:
     """Serve the analytics JavaScript file with caching headers."""
-    return web.FileResponse(
-        TEMPLATES_ROOT / "analytics.js",
+    return web.Response(
+        body=concat_js("analytics_pure.js", "analytics.js"),
         headers={
             "Cache-Control": "public, max-age=3600",  # 1 hour cache
             "Content-Type": "application/javascript; charset=utf-8",
@@ -92,7 +97,7 @@ async def serve_analytics_js(_: web.Request) -> web.FileResponse:
     )
 
 
-async def serve_dashboard_js(_: web.Request) -> web.FileResponse:
+async def serve_dashboard_js(_: web.Request) -> web.Response:
     """
     Serve the admin dashboard JavaScript file.
 
@@ -101,8 +106,8 @@ async def serve_dashboard_js(_: web.Request) -> web.FileResponse:
     `admin_auth_middleware`). No-cache headers ensure admins pick up new
     dashboard code immediately after a deploy without a hard refresh.
     """
-    return web.FileResponse(
-        TEMPLATES_ROOT / "dashboard.js",
+    return web.Response(
+        body=concat_js("dashboard_pure.js", "dashboard.js"),
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate",
             "Content-Type": "application/javascript; charset=utf-8",
