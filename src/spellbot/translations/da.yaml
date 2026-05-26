@@ -156,7 +156,7 @@ da:
     user_info_not_watched: "Ikke overvåget"
     user_info_watch_status: "Overvågningsstatus"
     user_info_no_games: "Ingen spillede kampe"
-    user_info_play_range: "Spilleområde"
+    user_info_play_range: "Spilletid"
     user_info_game_history: "Kamphistorik"
     user_info_view_link: "[Vis på spellbot.io](%{link})"
     user_info_footer: "Bruger-ID: %{user_id}"
@@ -168,7 +168,7 @@ da:
   # Award display
   award:
     line_every: "• **ID %{id}** — _hver %{count} kamp_— %{action} `@%{role}`%{verify_status}— %{message}"
-    line_after: "• **ID %{id}** — _hver %{count} kamp_— %{action} `@%{role}`%{verify_status}— %{message}"
+    line_after: "• **ID %{id}** — _efter %{count} kamp_— %{action} `@%{role}`%{verify_status}— %{message}"
     action_give: "giv"
     action_take: "tag"
     verified_only: "kun bekræftede"
