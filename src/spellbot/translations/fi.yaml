@@ -68,8 +68,8 @@ fi:
     started_game: "Aloitin %{format} -pelin puolestasi!"
     game_started_id: "Peli SB%{game_id} on aloitettu!"
     dm_failures: "Suorien viestien lähetys joillekin pelaajille ei onnistu: %{players}"
-    award_failure_give: "Unable to give role %{role} to user <@%{user_id}>"
-    award_failure_take: "Unable to take role %{role} from user <@%{user_id}>"
+    award_failure_give: "Roolia %{role} ei voitu antaa käyttäjälle <@%{user_id}>"
+    award_failure_take: "Roolia %{role} ei voitu ottaa käyttäjältä <@%{user_id}>"
     mythic_track: "Seuraa peliäsi kohteessa %{emoji}[Mythic Track](%{link}) PIN-koodilla: `%{pin}`"
   # Watch notifications
   watch:
@@ -92,7 +92,7 @@ fi:
     done: "Valmis."
     invalid_page: "Virheellinen sivu."
     channels_title: "%{guild} -kanavien määritys"
-    channels_default: "**All channels on this server have a default configuration.**\n\nYou may use channel specific `/set` commands within a channel to change that channel's configuration."
+    channels_default: "**Kaikilla tämän palvelimen kanavilla on oletusasetukset.**\n\nVoit käyttää kanavakohtaisia `/set`-komentoja kanavan sisällä muuttaaksesi kanavan asetuksia."
     awards_title: "SpellBot-pelaajapalkinnot – %{guild}"
     awards_empty: "**Ei määritettyjä palkintoja tällä palvelimella.**\n\nVoit lisätä palkintoja `/award add` -komennolla."
     setup_title: "SpellBot-asetukset – %{guild}"
@@ -198,10 +198,10 @@ fi:
     list_title: "Luettelo tällä palvelimella seuratuista pelaajista"
   # Score action messages
   score:
-    record_title: "Record of games played"
+    record_title: "Record pelatuista peleistä"
     games_one: "%{count} peli"
     games_many: "%{count} peliä"
-    record_description: "%{mention} has played %{games}.\nView more [details on spellbot.io](%{link})."
+    record_description: "%{mention} on pelannut %{games}.\nKatso lisää [lisätietoja osoitteessa spellbot.io](%{link})."
     history_title: "Viimeaikaiset kanavalla %{channel} pelatut pelit"
     history_description: "Näytä [pelihistoria kohteessa spellbot.io](%{link})."
     top_title: "Parhaat pelaajat kanavalla #%{channel} (%{range})"
@@ -217,14 +217,14 @@ fi:
     description: "_Discord-botti kohteessa Webcam Magic._\n\nOngelmia SpellBotin kanssa? [Ilmoitathan virheistä](%{issues})!\n\n[🔗 Lisää SpellBot Discordiisi!](%{invite})\n\nSpellBotin jatkuvan toiminnan mahdollistavat [PlayEDH](https://www.playedh.com/) ja Patreon-tukijat.\n\n💜 Auta pitämään SpellBot toiminnassa [ryhtymällä tukijaksi!](%{patreon})"
   # Interaction error messages
   errors:
-    no_permission: "You do not have permission to do that."
-    guild_only: "This command only works in a guild."
-    no_dms: "This command is not supported in DMs."
-    banned: "You have been banned from using SpellBot."
-    verified_only: "Only verified users can do that here."
-    unverified_only: "Only unverified users can do that here."
+    no_permission: "Sinulla ei ole lupaa tehdä sitä."
+    guild_only: "Tämä komento toimii vain kiltalla."
+    no_dms: "Tätä komentoa ei tueta DM:ssä."
+    banned: "Sinulle on annettu porttikielto käyttää SpellBotia."
+    verified_only: "Vain todennetut käyttäjät voivat tehdä sen täällä."
+    unverified_only: "Vain vahvistamattomat käyttäjät voivat tehdä sen täällä."
   # Playgroup Live commands
   playgroup:
-    already_linked: "Your Discord account is already linked to Playgroup Live!"
-    linked: "Linked! Welcome, **%{username}**. Your Playgroup Live games will now be attributed to your account."
-    not_found: "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."
+    already_linked: "Discord-tilisi on jo yhdistetty Playgroup Liveen!"
+    linked: "Linkitetty! Tervetuloa, **%{username}**. Playgroup Live -pelit kuuluvat nyt tilillesi."
+    not_found: "Discordillesi ei löytynyt Playgroup -tiliä. Mene <https://playgroup.gg/profiles> ja napsauta **Link Discordia**, suorita `/playgroup link` uudelleen vahvistaaksesi."
