@@ -261,6 +261,7 @@ def mock_discord_guild(guild: Guild) -> discord.Guild:
     discord_guild = MagicMock(spec=discord.Guild)
     discord_guild.id = guild.xid
     discord_guild.name = guild.name
+    discord_guild.icon = guild.icon
     discord_guild.bitrate_limit = 64000.0
     discord_guild.preferred_locale = discord.Locale.american_english
     return discord_guild

@@ -1,0 +1,96 @@
+from __future__ import annotations
+
+import asyncio
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+import aiohttp_jinja2
+from aiohttp import web
+from babel import Locale, UnknownLocaleError
+from ddtrace.trace import tracer
+
+from spellbot import services
+from spellbot.database import db_session_manager
+from spellbot.i18n import normalize_locale
+from spellbot.metrics import add_span_request_id, generate_request_id
+
+SPELLBOT_DEFAULT_LOGO = "https://spellbot.io/assets/img/avatar-icon.png"
+ICON_FETCH_TTL = timedelta(hours=6)
+
+_icon_fetch_attempts: dict[int, datetime] = {}
+
+routes = web.RouteTableDef()
+
+
+def language_name(locale: str | None) -> str:
+    """Return an English display name for `locale` (e.g., `ja` -> `Japanese`)."""
+    code = normalize_locale(locale or "en")
+    try:
+        return Locale.parse(code).get_display_name("en") or code
+    except UnknownLocaleError, ValueError:
+        return code
+
+
+def format_wait(seconds: int) -> str:
+    """Render a wait duration in compact `Xh Ym` / `Xm` / `<1m` form."""
+    if seconds < 60:
+        return "<1m"
+    minutes = seconds // 60
+    if minutes < 60:
+        return f"{minutes}m"
+    hours, minutes = divmod(minutes, 60)
+    if minutes == 0:
+        return f"{hours}h"
+    return f"{hours}h {minutes}m"
+
+
+async def _resolve_icons(rows: list[dict[str, Any]]) -> dict[int, str | None]:
+    """Return a `{guild_xid: icon_url}` map, backfilling missing entries from Discord."""
+    now = datetime.now(UTC)
+    candidates = {row["guild_xid"] for row in rows if not row.get("guild_icon")}
+    missing = [
+        xid
+        for xid in candidates
+        if (last := _icon_fetch_attempts.get(xid)) is None or now - last >= ICON_FETCH_TTL
+    ]
+    if not missing:
+        return {}
+    fetched = await asyncio.gather(
+        *(services.guilds.fetch_icon_url(xid) for xid in missing),
+    )
+    results: dict[int, str | None] = {}
+    for xid, icon in zip(missing, fetched, strict=True):
+        _icon_fetch_attempts[xid] = now
+        if icon is not None:
+            await services.guilds.set_icon(xid, icon)
+        results[xid] = icon
+    return results
+
+
+@routes.get("/queues")
+@tracer.wrap(name="web", resource="queues")
+async def queues_endpoint(request: web.Request) -> web.Response:
+    """Render the public list of pending games that currently have queued players."""
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        raw_rows = await services.queues.public_active_queues()
+        backfilled = await _resolve_icons(raw_rows)
+    rows = [
+        {
+            **row,
+            "logo": row.get("guild_icon")
+            or backfilled.get(row["guild_xid"])
+            or SPELLBOT_DEFAULT_LOGO,
+            "language": language_name(row["guild_locale"]),
+        }
+        for row in raw_rows
+    ]
+    formats = sorted({row["format"] for row in rows})
+    brackets = sorted({row["bracket"] for row in rows})
+    context = {
+        "rows": rows,
+        "default_logo": SPELLBOT_DEFAULT_LOGO,
+        "formats": formats,
+        "brackets": brackets,
+    }
+    return aiohttp_jinja2.render_template("queues.html.j2", request, context)

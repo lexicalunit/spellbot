@@ -46,5 +46,7 @@ class TestModelGuild:
             "voice_create": guild.voice_create,
             "active": guild.active,
             "locale": guild.locale,
+            "icon": guild.icon,
+            "promote": guild.promote,
             "xid": guild.xid,
         }

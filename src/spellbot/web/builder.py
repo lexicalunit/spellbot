@@ -17,7 +17,16 @@ from spellbot.database import db_session_manager
 from spellbot.models import import_models
 from spellbot.redis_client import close_redis
 from spellbot.settings import settings
-from spellbot.web.api import admin_auth, analytics, dashboard, ping, record, rest, status
+from spellbot.web.api import (
+    admin_auth,
+    analytics,
+    dashboard,
+    ping,
+    queues,
+    record,
+    rest,
+    status,
+)
 from spellbot.web.tools import rate_limited
 
 if TYPE_CHECKING:
@@ -35,6 +44,7 @@ ALL_ROUTES = [
     rest.routes,
     admin_auth.routes,
     dashboard.routes,
+    queues.routes,
 ]
 
 
@@ -130,7 +140,7 @@ def build_web_app() -> web.Application:
     aiohttp_jinja2.setup(
         app,
         loader=jinja2.FileSystemLoader(TEMPLATES_ROOT),
-        filters={"humanize": humanize},
+        filters={"humanize": humanize, "wait": queues.format_wait},
     )
     for routes in ALL_ROUTES:
         app.router.add_routes(routes)
