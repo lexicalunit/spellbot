@@ -1281,7 +1281,7 @@ async def dashboard_active_queues(period: PeriodSpec, opts: GuildFilter) -> dict
                 Game.bracket,
                 Game.created_at,
             )
-            .order_by(players_col.desc(), Guild.name, Channel.name),
+            .order_by(Game.created_at.desc(), Guild.name, Channel.name),
         )
     ).all()
     now = datetime.now(UTC)
