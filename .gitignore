@@ -13,6 +13,8 @@
 /states
 /tmp
 demo_analytics.html
+/node_modules
+/coverage-js
 
 ########################################################################
 # https://github.com/github/gitignore/blob/master/Global/Windows.gitignore
