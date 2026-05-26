@@ -1152,16 +1152,14 @@ resource "datadog_dashboard" "spellbot_dashboard" {
 
 # Queries
 resource "datadog_monitor" "Abnormal_change_in_p75_latency_for_postgres" {
-  name                = "Abnormal change in p75 latency for postgres"
+  name                = "Postgres p75 latency anomaly (signal)"
   type                = "query alert"
   query               = <<EOT
-avg(last_12h):anomalies(p75:trace.postgres.query{env:prod,service:postgres,span.kind:client}, 'agile', 2, direction='both', interval=120, alert_window='last_30m', count_default_zero='true', seasonality='hourly') >= 1
+avg(last_1w):anomalies(p75:trace.postgres.query{env:prod,service:postgres,span.kind:client}, 'agile', 4, direction='both', interval=120, alert_window='last_1h', count_default_zero='true', seasonality='daily') >= 1
 EOT
   message             = <<-EOT
     {{#is_alert}}
-    service:postgres has an abnormal change in latency. The 75th percentile latency has deviated significantly.
-
-    @amy@lexicalunit.com
+    Signal: Postgres p75 latency has deviated significantly from its baseline. Notifications are dispatched via the composite monitor `Abnormal change in p75 latency for postgres`.
     {{/is_alert}}
   EOT
   tags                = ["service:postgres", "env:prod"]
@@ -1172,9 +1170,43 @@ EOT
     critical = 1
   }
   monitor_threshold_windows {
-    recovery_window = "last_15m"
-    trigger_window  = "last_30m"
+    recovery_window = "last_30m"
+    trigger_window  = "last_1h"
   }
+}
+
+resource "datadog_monitor" "postgres_p75_latency_absolute_floor" {
+  name                = "Postgres p75 latency above 50ms (signal)"
+  type                = "query alert"
+  query               = <<-EOT
+    avg(last_30m):p75:trace.postgres.query{env:prod,service:postgres,span.kind:client} > 0.05
+  EOT
+  message             = <<-EOT
+    {{#is_alert}}
+    Signal: Postgres p75 latency has exceeded 50ms sustained over the last 30 minutes. Notifications are dispatched via the composite monitor `Abnormal change in p75 latency for postgres`.
+    {{/is_alert}}
+  EOT
+  tags                = ["service:postgres", "env:prod"]
+  include_tags        = false
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    critical = 0.05
+  }
+}
+
+resource "datadog_monitor" "postgres_p75_latency_abnormal" {
+  name    = "Abnormal change in p75 latency for postgres"
+  type    = "composite"
+  query   = "${datadog_monitor.Abnormal_change_in_p75_latency_for_postgres.id} && ${datadog_monitor.postgres_p75_latency_absolute_floor.id}"
+  message = <<-EOT
+    {{#is_alert}}
+    service:postgres has an abnormal change in latency. The 75th percentile latency has deviated significantly from baseline AND exceeded 50ms sustained.
+
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+  tags    = ["service:postgres", "env:prod"]
 }
 
 # SQLAlchemy Connection Pool Alerts
