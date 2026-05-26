@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Change the sort order for queue activity in dashboard.
+
 ## [v20.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v20.1.0) - 2026-05-25
 
 ### Added

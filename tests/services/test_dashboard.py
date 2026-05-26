@@ -1295,14 +1295,14 @@ class TestDashboardActiveQueues:
         result = await dashboard.dashboard_active_queues(period_30d(), all_guilds())
         assert result["rows"] == [
             {
-                "guild_xid": str(int(guild_a.xid)),
-                "guild_name": "Alpha",
-                "channel_xid": str(int(ch_a1.xid)),
-                "channel_name": "lfg-a1",
+                "guild_xid": str(int(guild_b.xid)),
+                "guild_name": "Bravo",
+                "channel_xid": str(int(ch_b1.xid)),
+                "channel_name": "lfg-b1",
                 "format": str(GameFormat.COMMANDER),
-                "bracket": GameBracket.BRACKET_3.title,
-                "wait_seconds": 7 * 60,
-                "players": 2,
+                "bracket": GameBracket.BRACKET_5.title,
+                "wait_seconds": 90,
+                "players": 1,
             },
             {
                 "guild_xid": str(int(guild_a.xid)),
@@ -1315,14 +1315,14 @@ class TestDashboardActiveQueues:
                 "players": 1,
             },
             {
-                "guild_xid": str(int(guild_b.xid)),
-                "guild_name": "Bravo",
-                "channel_xid": str(int(ch_b1.xid)),
-                "channel_name": "lfg-b1",
+                "guild_xid": str(int(guild_a.xid)),
+                "guild_name": "Alpha",
+                "channel_xid": str(int(ch_a1.xid)),
+                "channel_name": "lfg-a1",
                 "format": str(GameFormat.COMMANDER),
-                "bracket": GameBracket.BRACKET_5.title,
-                "wait_seconds": 90,
-                "players": 1,
+                "bracket": GameBracket.BRACKET_3.title,
+                "wait_seconds": 7 * 60,
+                "players": 2,
             },
         ]
 
