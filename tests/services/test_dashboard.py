@@ -1219,3 +1219,166 @@ class TestDashboardQueueDepth:
     async def test_empty(self) -> None:
         result = await dashboard.dashboard_queue_depth(period_all(), all_guilds())
         assert result == {"total": 0, "by_format": []}
+
+
+@pytest.mark.asyncio
+class TestDashboardActiveQueues:
+    async def test_one_row_per_pending_game_with_players(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild_a = factories.guild.create(xid=956001, name="Alpha")
+        guild_b = factories.guild.create(xid=956002, name="Bravo")
+        ch_a1 = factories.channel.create(xid=956101, name="lfg-a1", guild=guild_a)
+        ch_a2 = factories.channel.create(xid=956102, name="lfg-a2", guild=guild_a)
+        ch_b1 = factories.channel.create(xid=956103, name="lfg-b1", guild=guild_b)
+        u1 = factories.user.create(xid=856001, name="u1")
+        u2 = factories.user.create(xid=856002, name="u2")
+        u3 = factories.user.create(xid=856003, name="u3")
+        u4 = factories.user.create(xid=856004, name="u4")
+        # Guild A, channel 1: pending with two players (highest count).
+        pending_a1 = factories.game.create(
+            guild=guild_a,
+            channel=ch_a1,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=7),
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.BRACKET_3.value,
+        )
+        # Guild A, channel 2: pending with one player.
+        pending_a2 = factories.game.create(
+            guild=guild_a,
+            channel=ch_a2,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=5),
+            format=GameFormat.MODERN.value,
+        )
+        # Guild B, channel 1: pending with one player.
+        pending_b1 = factories.game.create(
+            guild=guild_b,
+            channel=ch_b1,
+            started_at=None,
+            created_at=NOW - timedelta(seconds=90),
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.BRACKET_5.value,
+        )
+        # Pending game with zero players in queue: must be omitted.
+        factories.game.create(
+            guild=guild_a,
+            channel=ch_a1,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=5),
+        )
+        # Started game: not pending, must be omitted even with queue rows.
+        started = factories.game.create(
+            guild=guild_a,
+            channel=ch_a1,
+            started_at=NOW - timedelta(minutes=1),
+            created_at=NOW - timedelta(minutes=5),
+        )
+        # Deleted pending game: must be omitted.
+        deleted = factories.game.create(
+            guild=guild_a,
+            channel=ch_a1,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=5),
+            deleted_at=NOW,
+        )
+        factories.queue.create(user_xid=u1.xid, game_id=pending_a1.id, og_guild_xid=guild_a.xid)
+        factories.queue.create(user_xid=u2.xid, game_id=pending_a1.id, og_guild_xid=guild_a.xid)
+        factories.queue.create(user_xid=u3.xid, game_id=pending_a2.id, og_guild_xid=guild_a.xid)
+        factories.queue.create(user_xid=u4.xid, game_id=pending_b1.id, og_guild_xid=guild_b.xid)
+        factories.queue.create(user_xid=u1.xid, game_id=started.id, og_guild_xid=guild_a.xid)
+        factories.queue.create(user_xid=u2.xid, game_id=deleted.id, og_guild_xid=guild_a.xid)
+        result = await dashboard.dashboard_active_queues(period_30d(), all_guilds())
+        assert result["rows"] == [
+            {
+                "guild_xid": str(int(guild_a.xid)),
+                "guild_name": "Alpha",
+                "channel_xid": str(int(ch_a1.xid)),
+                "channel_name": "lfg-a1",
+                "format": str(GameFormat.COMMANDER),
+                "bracket": GameBracket.BRACKET_3.title,
+                "wait_seconds": 7 * 60,
+                "players": 2,
+            },
+            {
+                "guild_xid": str(int(guild_a.xid)),
+                "guild_name": "Alpha",
+                "channel_xid": str(int(ch_a2.xid)),
+                "channel_name": "lfg-a2",
+                "format": str(GameFormat.MODERN),
+                "bracket": GameBracket.NONE.title,
+                "wait_seconds": 5 * 60,
+                "players": 1,
+            },
+            {
+                "guild_xid": str(int(guild_b.xid)),
+                "guild_name": "Bravo",
+                "channel_xid": str(int(ch_b1.xid)),
+                "channel_name": "lfg-b1",
+                "format": str(GameFormat.COMMANDER),
+                "bracket": GameBracket.BRACKET_5.title,
+                "wait_seconds": 90,
+                "players": 1,
+            },
+        ]
+
+    async def test_guild_filter_restricts_results(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild_a = factories.guild.create(xid=957001, name="A")
+        guild_b = factories.guild.create(xid=957002, name="B")
+        ch_a = factories.channel.create(xid=957101, name="ch-a", guild=guild_a)
+        ch_b = factories.channel.create(xid=957102, name="ch-b", guild=guild_b)
+        u1 = factories.user.create(xid=857001, name="u1")
+        u2 = factories.user.create(xid=857002, name="u2")
+        pending_a = factories.game.create(
+            guild=guild_a,
+            channel=ch_a,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=5),
+        )
+        pending_b = factories.game.create(
+            guild=guild_b,
+            channel=ch_b,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=5),
+        )
+        factories.queue.create(user_xid=u1.xid, game_id=pending_a.id, og_guild_xid=guild_a.xid)
+        factories.queue.create(user_xid=u2.xid, game_id=pending_b.id, og_guild_xid=guild_b.xid)
+        result = await dashboard.dashboard_active_queues(
+            period_all(),
+            GuildFilter(mode="include", xid=int(guild_b.xid)),
+        )
+        assert [r["guild_xid"] for r in result["rows"]] == [str(int(guild_b.xid))]
+
+    async def test_missing_names_fall_back_to_empty_string(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(xid=958001, name=None)
+        channel = factories.channel.create(xid=958002, name=None, guild=guild)
+        user = factories.user.create(xid=858001, name="u")
+        pending = factories.game.create(
+            guild=guild,
+            channel=channel,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=5),
+        )
+        factories.queue.create(user_xid=user.xid, game_id=pending.id, og_guild_xid=guild.xid)
+        result = await dashboard.dashboard_active_queues(period_all(), all_guilds())
+        assert len(result["rows"]) == 1
+        assert result["rows"][0]["guild_name"] == ""
+        assert result["rows"][0]["channel_name"] == ""
+
+    async def test_empty(self) -> None:
+        result = await dashboard.dashboard_active_queues(period_all(), all_guilds())
+        assert result == {"rows": []}

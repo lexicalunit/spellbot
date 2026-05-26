@@ -119,6 +119,23 @@ function fmt(n) {
   return n == null ? "—" : Number(n).toLocaleString();
 }
 
+// Formats a non-negative integer number of seconds as a compact duration:
+// "12s", "5m", "1h 23m", or "2d 4h". Negative values clamp to zero.
+function fmtDuration(seconds) {
+  if (seconds == null) return "—";
+  var s = Math.max(0, Math.floor(Number(seconds)));
+  if (s < 60) return s + "s";
+  if (s < 3600) return Math.floor(s / 60) + "m";
+  if (s < 86400) {
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    return m === 0 ? h + "h" : h + "h " + m + "m";
+  }
+  var d = Math.floor(s / 86400);
+  var hd = Math.floor((s % 86400) / 3600);
+  return hd === 0 ? d + "d" : d + "d " + hd + "h";
+}
+
 function avgCount(series) {
   if (!series || !series.length) return 0;
   var total = 0;
@@ -169,6 +186,7 @@ if (typeof module !== "undefined" && module.exports) {
     guildParam: guildParam,
     qs: qs,
     fmt: fmt,
+    fmtDuration: fmtDuration,
     avgCount: avgCount,
     escapeHtml: escapeHtml,
     heatColor: heatColor,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import case, distinct, extract, func, or_, select
@@ -13,7 +14,7 @@ from spellbot.enums import (
     GameFormat,
     GameService,
 )
-from spellbot.models import Block, Game, Guild, Play, Queue, User
+from spellbot.models import Block, Channel, Game, Guild, Play, Queue, User
 from spellbot.services.plays import extract_ngrams, normalize_rule
 
 if TYPE_CHECKING:
@@ -674,6 +675,12 @@ FORMAT_LABEL = case(
 ).label("format")
 
 
+BRACKET_LABEL = case(
+    *((Game.bracket == b.value, b.title) for b in GAME_BRACKET_ORDER),
+    else_="Unknown",
+).label("bracket")
+
+
 async def dashboard_popular_formats(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return counts of started games grouped by format, descending."""
     filters: list[ColumnElement[bool]] = [
@@ -1224,4 +1231,75 @@ async def dashboard_queue_depth(period: PeriodSpec, opts: GuildFilter) -> dict[s
     return {
         "total": total,
         "by_format": [{"format": row[0], "count": int(row[1])} for row in rows],
+    }
+
+
+async def dashboard_active_queues(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """
+    Return one row per pending game that currently has at least one player queued.
+
+    Pending = `Game.started_at IS NULL AND Game.deleted_at IS NULL`. The
+    `period` argument is ignored (this is a real-time gauge); `opts` is
+    honored so a single server can be inspected. Each row carries the
+    Discord IDs of the guild and channel so the dashboard can deep-link to
+    the channel via `https://discord.com/channels/{guild_xid}/{channel_xid}`,
+    and `wait_seconds` measures how long the game has been pending using the
+    server's current UTC clock. `xid` values are returned as strings because
+    Discord snowflake IDs exceed JavaScript's safe-integer range.
+    """
+    del period
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.is_(None),
+        Game.deleted_at.is_(None),
+        *game_guild_filter(opts),
+    ]
+    players_col = func.count(Queue.user_xid).label("players")
+    rows = (
+        await DatabaseSession.execute(
+            select(  # type: ignore
+                Game.guild_xid,
+                Guild.name.label("guild_name"),
+                Game.channel_xid,  # type: ignore
+                Channel.name.label("channel_name"),
+                FORMAT_LABEL,
+                BRACKET_LABEL,
+                Game.created_at,
+                players_col,
+            )
+            .select_from(Game)
+            .join(Queue, Queue.game_id == Game.id)
+            .join(Guild, Guild.xid == Game.guild_xid)
+            .join(Channel, Channel.xid == Game.channel_xid)
+            .where(*filters)
+            .group_by(
+                Game.id,
+                Game.guild_xid,
+                Guild.name,
+                Game.channel_xid,
+                Channel.name,
+                Game.format,
+                Game.bracket,
+                Game.created_at,
+            )
+            .order_by(players_col.desc(), Guild.name, Channel.name),
+        )
+    ).all()
+    now = datetime.now(UTC)
+    return {
+        "rows": [
+            {
+                "guild_xid": str(int(row[0])),
+                "guild_name": row[1] or "",
+                "channel_xid": str(int(row[2])),
+                "channel_name": row[3] or "",
+                "format": row[4],
+                "bracket": row[5],
+                "wait_seconds": max(
+                    0,
+                    int((now - row[6].replace(tzinfo=UTC)).total_seconds()),
+                ),
+                "players": int(row[7]),
+            }
+            for row in rows
+        ],
     }
