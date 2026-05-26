@@ -198,10 +198,10 @@ el:
     list_title: "Λίστα παρακολουθούμενων παικτών σε αυτόν τον διακομιστή"
   # Score action messages
   score:
-    record_title: "Record of games played"
+    record_title: "Εγγραφή παιχνιδιών που παίχτηκαν"
     games_one: "%{count} παιχνίδι"
     games_many: "%{count} παιχνίδια"
-    record_description: "%{mention} has played %{games}.\nView more [details on spellbot.io](%{link})."
+    record_description: "Ο %{mention} έπαιξε %{games}.\nΔείτε περισσότερα [λεπτομέρειες σχετικά με το spellbot.io](%{link})."
     history_title: "Παιχνίδια που παίχτηκαν πρόσφατα στο %{channel}"
     history_description: "Προβολή [ιστορικού παιχνιδιού στο spellbot.io](%{link})."
     top_title: "Κορυφαίοι παίκτες στο #%{channel} (%{range})"
