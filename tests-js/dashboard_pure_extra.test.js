@@ -7,6 +7,7 @@ const {
   guildParam,
   qs,
   fmt,
+  fmtDuration,
   avgCount,
   escapeHtml,
   heatColor,
@@ -81,6 +82,38 @@ describe("fmt", () => {
     expect(fmt(0)).toBe("0");
     expect(fmt(1234)).toBe("1,234");
     expect(fmt("1234")).toBe("1,234");
+  });
+});
+
+describe("fmtDuration", () => {
+  it("returns an em dash for null and undefined", () => {
+    expect(fmtDuration(null)).toBe("—");
+    expect(fmtDuration(undefined)).toBe("—");
+  });
+
+  it("clamps negative values to 0s", () => {
+    expect(fmtDuration(-5)).toBe("0s");
+  });
+
+  it("formats seconds under one minute as Ns", () => {
+    expect(fmtDuration(0)).toBe("0s");
+    expect(fmtDuration(59)).toBe("59s");
+  });
+
+  it("formats minutes under one hour as Nm (floors)", () => {
+    expect(fmtDuration(60)).toBe("1m");
+    expect(fmtDuration(90)).toBe("1m");
+    expect(fmtDuration(3599)).toBe("59m");
+  });
+
+  it("formats hours under one day as Nh or Nh Mm", () => {
+    expect(fmtDuration(3600)).toBe("1h");
+    expect(fmtDuration(3600 + 23 * 60)).toBe("1h 23m");
+  });
+
+  it("formats days as Nd or Nd Hh", () => {
+    expect(fmtDuration(86400)).toBe("1d");
+    expect(fmtDuration(86400 + 4 * 3600)).toBe("1d 4h");
   });
 });
 

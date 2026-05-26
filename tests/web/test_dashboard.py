@@ -105,6 +105,7 @@ JSON_ENDPOINTS: list[tuple[str, set[str]]] = [
     ("/admin/dashboard/blind-adoption", {"rate"}),
     ("/admin/dashboard/mythic-verification", {"rate"}),
     ("/admin/dashboard/queue-depth", {"total", "by_format"}),
+    ("/admin/dashboard/active-queues", {"rows"}),
     ("/admin/dashboard/guilds", {"guilds"}),
 ]
 

@@ -8,6 +8,7 @@ install:
 
 test: install
 	@uv run --frozen pytest -n3
+	@npx vitest run
 
 lint: install
 	@echo "linting..."
@@ -30,6 +31,7 @@ clean:
 	@echo "cleaning runtime artifacts..."
 	@rm -rf .coverage .pytest_cache .ruff_cache dist htmlcov
 	@find . -name "__pycache__" -o -name "*.pyc" | xargs rm -rf
+	@rm -rf node_modules
 
 infra-stage:
 	@echo "Deploying app infrastructure to stage..."

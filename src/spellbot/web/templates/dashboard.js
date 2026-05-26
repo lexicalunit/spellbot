@@ -52,11 +52,6 @@
     charts: {},
   };
 
-  // `currentBucket`, `periodStartMs`, `bucketStartUtc`, `bucketEndUtc`,
-  // `computeTrim`, `unifyDates`, `alignSeries`, `guildParam`, `qs`,
-  // `fmt`, `avgCount`, `escapeHtml` and `heatColor` are pure helpers
-  // defined in dashboard_pure.js (concatenated by serve_dashboard_js).
-
   // Convenience wrapper that binds the current period and clock to the pure
   // `computeTrim` helper. Most callers just need the trim indices for the
   // active filter selection.
@@ -1447,6 +1442,55 @@
     }
   }
 
+  async function loadActiveQueues() {
+    try {
+      const d = await fetchJson("active-queues");
+      const el = document.getElementById("activeQueuesSection");
+      if (!d.rows.length) {
+        el.innerHTML = '<div class="no-data">No active queues right now.</div>';
+        return;
+      }
+      const body = d.rows
+        .map(function (r) {
+          const url =
+            "https://discord.com/channels/" +
+            encodeURIComponent(r.guild_xid) +
+            "/" +
+            encodeURIComponent(r.channel_xid);
+          const guildName = r.guild_name || r.guild_xid;
+          const channelName = r.channel_name || r.channel_xid;
+          return (
+            "<tr><td>" +
+            escapeHtml(guildName) +
+            '</td><td><a href="' +
+            url +
+            '" target="_blank" rel="noopener noreferrer">#' +
+            escapeHtml(channelName) +
+            "</a></td><td>" +
+            escapeHtml(r.format) +
+            "</td><td>" +
+            escapeHtml(r.bracket) +
+            '</td><td class="num">' +
+            fmt(r.players) +
+            '</td><td class="num">' +
+            escapeHtml(fmtDuration(r.wait_seconds)) +
+            "</td></tr>"
+          );
+        })
+        .join("");
+      el.innerHTML =
+        '<table class="lang-table"><thead><tr><th>Server</th>' +
+        "<th>Channel</th><th>Format</th><th>Bracket</th>" +
+        '<th style="text-align:right">Players</th>' +
+        '<th style="text-align:right">Wait</th>' +
+        "</tr></thead><tbody>" +
+        body +
+        "</tbody></table>";
+    } catch (ex) {
+      showError("activeQueuesSection", "Failed to load.");
+    }
+  }
+
   function reloadAll() {
     showAllLoading();
     loadTotals();
@@ -1467,6 +1511,7 @@
     loadBlindAdoption();
     loadMythicVerification();
     loadQueueDepth();
+    loadActiveQueues();
     loadGamesPerPlayer();
     loadPopularFormats();
     loadPopularSeats();

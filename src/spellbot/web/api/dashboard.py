@@ -288,6 +288,14 @@ async def dashboard_queue_depth_endpoint(request: web.Request) -> web.Response:
     return await dashboard_json_endpoint(request, services.dashboard.dashboard_queue_depth)
 
 
+@routes.get("/admin/dashboard/active-queues")
+@tracer.wrap(name="web", resource="dashboard_active_queues")
+async def dashboard_active_queues_endpoint(request: web.Request) -> web.Response:
+    """Return one row per pending game with at least one player queued."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_active_queues)
+
+
 @routes.get("/admin/dashboard/guilds")
 @tracer.wrap(name="web", resource="dashboard_guilds")
 async def dashboard_guilds_endpoint(request: web.Request) -> web.Response:
