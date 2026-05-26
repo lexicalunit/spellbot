@@ -3,8 +3,10 @@
 {% block heading %}User Records: {{ target_name or 'Unknown User' }}{% endblock %}
 {% block subtitle %}
 <div class="subtitle">
-    <span class="user-id">{{ target_xid }}</span>
-    <button type="button" class="copy" data-copy="{{ target_xid }}" title="Copy User ID">⎘</button>
+    <span class="id-copy">
+        <span class="user-id">{{ target_xid }}</span>
+        <button type="button" class="copy" data-copy="{{ target_xid }}" title="Copy User ID">⎘</button>
+    </span>
 </div>
 {% endblock %}
 {% block content %}
@@ -51,13 +53,15 @@
                             {% for name, data in record.scores.items() %}
                             <div class="player">
                                 <span class="name">{{ name | default('Unknown User', true) }}</span>
-                                <span class="user-id">{{ data[0] }}</span>
-                                <button type="button" class="copy" data-copy="{{ data[0] }}" title="Copy User ID">⎘</button>
+                                <span class="id-copy">
+                                    <span class="user-id">{{ data[0] }}</span>
+                                    <button type="button" class="copy" data-copy="{{ data[0] }}" title="Copy User ID">⎘</button>
+                                </span>
                             </div>
                             {% endfor %}
                         </div>
                     </td>
-                    <td data-label="Jump"><a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}/{{ record.message }}" class="button">Jump to game</a></td>
+                    <td data-label="Jump"><a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}/{{ record.message }}" class="button">Jump&nbsp;to&nbsp;game</a></td>
                 </tr>
                 {% endfor %}
             </tbody>

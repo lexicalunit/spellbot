@@ -93,7 +93,7 @@
                     <td data-label="Guild"><span class="user-id">{{ post.guild_xid }}</span></td>
                     <td data-label="Channel"><span class="user-id">{{ post.channel_xid }}</span></td>
                     <td data-label="Message"><span class="user-id">{{ post.message_xid }}</span></td>
-                    <td data-label="Jump"><a href="https://discord.com/channels/{{ post.guild_xid }}/{{ post.channel_xid }}/{{ post.message_xid }}" class="button">Jump to game</a></td>
+                    <td data-label="Jump"><a href="https://discord.com/channels/{{ post.guild_xid }}/{{ post.channel_xid }}/{{ post.message_xid }}" class="button">Jump&nbsp;to&nbsp;game</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -115,8 +115,10 @@
                 <tr>
                     <td data-label="User Name">{{ play.user_name | default('Unknown User', true) }}</td>
                     <td data-label="User ID">
-                        <span class="user-id">{{ play.user_xid }}</span>
-                        <button type="button" class="copy" data-copy="{{ play.user_xid }}" title="Copy User ID">⎘</button>
+                        <span class="id-copy">
+                            <span class="user-id">{{ play.user_xid }}</span>
+                            <button type="button" class="copy" data-copy="{{ play.user_xid }}" title="Copy User ID">⎘</button>
+                        </span>
                     </td>
                     <td data-label="Entered Guild"><span class="user-id">{{ play.og_guild_xid }}</span></td>
                     <td data-label="Records"><a href="/u/{{ play.user_xid }}" class="button">User records</a></td>
@@ -141,8 +143,10 @@
                 <tr>
                     <td data-label="User Name">{{ q.user_name | default('Unknown User', true) }}</td>
                     <td data-label="User ID">
-                        <span class="user-id">{{ q.user_xid }}</span>
-                        <button type="button" class="copy" data-copy="{{ q.user_xid }}" title="Copy User ID">⎘</button>
+                        <span class="id-copy">
+                            <span class="user-id">{{ q.user_xid }}</span>
+                            <button type="button" class="copy" data-copy="{{ q.user_xid }}" title="Copy User ID">⎘</button>
+                        </span>
                     </td>
                     <td data-label="Entered Guild"><span class="user-id">{{ q.og_guild_xid }}</span></td>
                 </tr>
