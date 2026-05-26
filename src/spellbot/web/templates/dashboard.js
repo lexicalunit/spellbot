@@ -52,74 +52,22 @@
     charts: {},
   };
 
-  // Must mirror PERIOD_BUCKET / PERIOD_DAYS in dashboard_filters.py. Used
-  // client-side to compute bucket boundaries in the browser's local timezone
-  // so leading/trailing partial buckets can be trimmed or dashed.
-  const PERIOD_BUCKET = {
-    "7d": "day",
-    "30d": "day",
-    "90d": "day",
-    "180d": "week",
-    "365d": "week",
-    "730d": "month",
-    all: "month",
-  };
-  const PERIOD_DAYS = {
-    "7d": 7,
-    "30d": 30,
-    "90d": 90,
-    "180d": 180,
-    "365d": 365,
-    "730d": 730,
-  };
+  // `currentBucket`, `periodStartMs`, `bucketStartUtc`, `bucketEndUtc`,
+  // `computeTrim`, `unifyDates`, `alignSeries`, `guildParam`, `qs`,
+  // `fmt`, `avgCount`, `escapeHtml` and `heatColor` are pure helpers
+  // defined in dashboard_pure.js (concatenated by serve_dashboard_js).
 
-  function currentBucket() {
-    return PERIOD_BUCKET[state.period] || "day";
-  }
-
-  function periodStartMs() {
-    if (state.period === "all") return null;
-    const days = PERIOD_DAYS[state.period];
-    if (days == null) return null;
-    return Date.now() - days * 24 * 60 * 60 * 1000;
-  }
-
-  // Bucket dates come from Postgres ``date_trunc`` (UTC), so parse and add
-  // bucket sizes in UTC to keep the "is this bucket still in progress?" check
-  // accurate regardless of the browser's timezone.
-  function bucketStartUtc(iso) {
-    return new Date(iso.slice(0, 10) + "T00:00:00Z");
-  }
-
-  function bucketEndUtc(start, bucket) {
-    const d = new Date(start.getTime());
-    if (bucket === "week") d.setUTCDate(d.getUTCDate() + 7);
-    else if (bucket === "month") d.setUTCMonth(d.getUTCMonth() + 1);
-    else d.setUTCDate(d.getUTCDate() + 1);
-    return d;
-  }
-
-  // Given an array of ISO date strings (bucket starts) and the current bucket
-  // size, return the slice index of the first complete bucket and the index
-  // (within that slice) where trailing partial buckets begin.
-  function computeTrim(rawDates, bucket) {
-    const nowMs = Date.now();
-    const startMs = periodStartMs();
-    let startIdx = 0;
-    if (startMs != null) {
-      while (startIdx < rawDates.length) {
-        const bs = bucketStartUtc(rawDates[startIdx]);
-        if (bs.getTime() >= startMs) break;
-        startIdx += 1;
-      }
-    }
-    let partialFromIdx = rawDates.length - startIdx;
-    for (let i = rawDates.length - 1; i >= startIdx; i -= 1) {
-      const be = bucketEndUtc(bucketStartUtc(rawDates[i]), bucket);
-      if (be.getTime() > nowMs) partialFromIdx = i - startIdx;
-      else break;
-    }
-    return { startIdx: startIdx, partialFromIdx: partialFromIdx };
+  // Convenience wrapper that binds the current period and clock to the pure
+  // `computeTrim` helper. Most callers just need the trim indices for the
+  // active filter selection.
+  function trimNow(rawDates) {
+    const now = Date.now();
+    return computeTrim(
+      rawDates,
+      currentBucket(state.period),
+      now,
+      periodStartMs(state.period, now),
+    );
   }
 
   function dashSegment(partialFromIdx) {
@@ -130,51 +78,15 @@
     };
   }
 
-  function unifyDates(seriesArray) {
-    const all = new Set();
-    seriesArray.forEach(function (series) {
-      series.forEach(function (p) {
-        all.add(p.date);
-      });
-    });
-    return Array.from(all).sort();
-  }
-
-  function alignSeries(rawDates, series) {
-    const map = {};
-    series.forEach(function (p) {
-      map[p.date] = p.count;
-    });
-    return rawDates.map(function (d) {
-      return { date: d, count: map[d] || 0 };
-    });
-  }
-
-  function guildParam() {
-    if (state.guildMode === "all" || !state.guildXid) return "all";
-    if (state.guildMode === "exclude") return "not:" + state.guildXid;
-    return state.guildXid;
-  }
-
-  function qs() {
-    return (
-      "?period=" +
-      encodeURIComponent(state.period) +
-      "&guild=" +
-      encodeURIComponent(guildParam())
-    );
-  }
-
   async function fetchJson(path) {
-    const res = await fetch("/admin/dashboard/" + path + qs(), {
-      credentials: "same-origin",
-    });
+    const res = await fetch(
+      "/admin/dashboard/" +
+        path +
+        qs(state.period, state.guildMode, state.guildXid),
+      { credentials: "same-origin" },
+    );
     if (!res.ok) throw new Error("HTTP " + res.status);
     return res.json();
-  }
-
-  function fmt(n) {
-    return n == null ? "—" : Number(n).toLocaleString();
   }
 
   function showError(sectionId, msg) {
@@ -315,13 +227,6 @@
     }
   }
 
-  function avgCount(series) {
-    if (!series || !series.length) return 0;
-    let total = 0;
-    for (let i = 0; i < series.length; i += 1) total += series[i].count;
-    return Math.round(total / series.length);
-  }
-
   function applyDash(dataset, dash) {
     dataset.segment = dash;
     return dataset;
@@ -351,7 +256,7 @@
       games.started,
       games.expired,
     ]);
-    const trim = computeTrim(rawDates, currentBucket());
+    const trim = trimNow(rawDates);
     const labels = rawDates.slice(trim.startIdx).map(function (s) {
       return s.slice(0, 10);
     });
@@ -384,7 +289,7 @@
       const rawDates = series.map(function (p) {
         return p.date;
       });
-      const trim = computeTrim(rawDates, currentBucket());
+      const trim = trimNow(rawDates);
       const labels = rawDates.slice(trim.startIdx).map(function (s) {
         return s.slice(0, 10);
       });
@@ -443,7 +348,7 @@
       });
     });
     const allSorted = Array.from(allLabels).sort();
-    const trim = computeTrim(allSorted, currentBucket());
+    const trim = trimNow(allSorted);
     const labels = allSorted.slice(trim.startIdx);
     const rawByIndex = seriesList.map(function (s) {
       const map = {};
@@ -639,7 +544,7 @@
         destroyChart("bracketAdoption");
       } else {
         const rawDates = unifyDates([d.rate]);
-        const trim = computeTrim(rawDates, currentBucket());
+        const trim = trimNow(rawDates);
         const labels = rawDates.slice(trim.startIdx).map(function (s) {
           return s.slice(0, 10);
         });
@@ -712,18 +617,6 @@
     } catch (ex) {
       showError("servicePopularitySection", "Failed to load.");
     }
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      }[c];
-    });
   }
 
   function renderLanguageTable(sectionId, rows, label) {
@@ -893,7 +786,7 @@
       const rawDates = series.map(function (p) {
         return p.date;
       });
-      const trim = computeTrim(rawDates, currentBucket());
+      const trim = trimNow(rawDates);
       const labels = rawDates.slice(trim.startIdx).map(function (s) {
         return s.slice(0, 10);
       });
@@ -1254,22 +1147,6 @@
     }
   }
 
-  // Interpolates between `lo` (default deep indigo) and `hi` (default pink)
-  // on a square-root scale so light cells remain visible when the max value
-  // dwarfs the rest of the heatmap.
-  function heatColor(value, maxValue, lo, hi) {
-    const loRGB = lo || [30, 58, 138];
-    const hiRGB = hi || [244, 114, 182];
-    if (!maxValue || !value) {
-      return "rgb(" + loRGB[0] + "," + loRGB[1] + "," + loRGB[2] + ")";
-    }
-    const t = Math.sqrt(value / maxValue);
-    const r = Math.round(loRGB[0] + (hiRGB[0] - loRGB[0]) * t);
-    const g = Math.round(loRGB[1] + (hiRGB[1] - loRGB[1]) * t);
-    const b = Math.round(loRGB[2] + (hiRGB[2] - loRGB[2]) * t);
-    return "rgb(" + r + "," + g + "," + b + ")";
-  }
-
   async function loadActivityHeatmap() {
     try {
       const d = await fetchJson("activity-heatmap");
@@ -1410,7 +1287,7 @@
       const rawDates = sections[0].map(function (p) {
         return p.date;
       });
-      const trim = computeTrim(rawDates, currentBucket());
+      const trim = trimNow(rawDates);
       const labels = rawDates.slice(trim.startIdx).map(function (s) {
         return s.slice(0, 10);
       });
@@ -1465,7 +1342,7 @@
         const rawDates = series.map(function (p) {
           return p.date;
         });
-        const trim = computeTrim(rawDates, currentBucket());
+        const trim = trimNow(rawDates);
         const labels = rawDates.slice(trim.startIdx).map(function (s) {
           return s.slice(0, 10);
         });

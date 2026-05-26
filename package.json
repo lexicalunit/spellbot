@@ -1,0 +1,14 @@
+{
+  "name": "spellbot-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Vitest unit tests for the pure JavaScript helpers in src/spellbot/web/templates.",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.7",
+    "vitest": "^4.1.7"
+  }
+}

@@ -59,6 +59,27 @@ uv run pytest --cov --cov-report=html
 open htmlcov/index.html
 ```
 
+### Frontend tests
+
+The admin dashboard and public analytics pages each ship a large IIFE-scoped JavaScript file (`src/spellbot/web/templates/dashboard.js`, `analytics.js`). The pure (side-effect free) helpers from those files — date/bucket math, timezone conversion, HTML escaping, row rendering, etc. — live in companion `*_pure.js` files and are unit-tested with [Vitest](https://vitest.dev/) under Node.
+
+At serve time, `serve_dashboard_js` / `serve_analytics_js` concatenate the `*_pure.js` file in front of the main `*.js` file, so the top-level function declarations in the pure file become globals visible to the IIFE in the browser. A trailing `module.exports` block in each `*_pure.js` is a no-op in the browser and lets Vitest import the same helpers under Node.
+
+To install the JS dev dependencies and run the tests:
+
+```shell
+npm install
+npm test
+```
+
+To get a coverage report restricted to the two `*_pure.js` files:
+
+```shell
+npx vitest run --coverage
+```
+
+When adding new browser logic, prefer putting any time/data transformation into the matching `*_pure.js` file (taking `Date.now()` / `new Date()` as an explicit argument so tests can pin time) and keep DOM, fetch, and Chart.js wiring in the main `*.js` file.
+
 ## Formatting and linting
 
 Codebase consistency is maintained by [ruff][ruff].
