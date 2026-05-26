@@ -18,6 +18,7 @@ jobs:
       app: ${{ steps.filter.outputs.app }}
       docker: ${{ steps.filter.outputs.docker }}
       docs: ${{ steps.filter.outputs.docs }}
+      frontend: ${{ steps.filter.outputs.frontend }}
       infra-app: ${{ steps.filter.outputs.infra-app }}
       infra-db: ${{ steps.filter.outputs.infra-db }}
       infra-o11y: ${{ steps.filter.outputs.infra-o11y }}
@@ -43,6 +44,13 @@ jobs:
               - 'uv.lock'
             docs:
               - 'docs/**'
+            frontend:
+              - 'src/spellbot/web/templates/**/*.js'
+              - 'tests-js/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'vitest.config.js'
+              - '.github/workflows/ci.yaml'
             infra-app:
               - 'infrastructure/app/**'
             infra-db:
@@ -202,6 +210,31 @@ jobs:
         run: bundle exec jekyll build --strict_front_matter
         working-directory: docs
 
+  vitest:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: ${{ github.workflow }}-vitest-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Vitest
+        run: npm test
+
   terraform-app:
     needs: changes
     if: needs.changes.outputs.infra-app == 'true'
@@ -339,6 +372,7 @@ jobs:
         build,
         docker,
         docs,
+        vitest,
         terraform-app,
         terraform-db,
         terraform-o11y,
@@ -363,6 +397,7 @@ jobs:
         build,
         docker,
         docs,
+        vitest,
         terraform-app,
         terraform-db,
         terraform-o11y,
@@ -387,6 +422,10 @@ jobs:
           fi
           if [[ "${{ needs.docs.result }}" == "failure" ]]; then
             echo "docs job failed"
+            exit 1
+          fi
+          if [[ "${{ needs.vitest.result }}" == "failure" ]]; then
+            echo "vitest job failed"
             exit 1
           fi
           if [[ "${{ needs.terraform-app.result }}" == "failure" ]]; then
