@@ -80,11 +80,11 @@ async def queues_endpoint(request: web.Request) -> web.Response:
     member_of = viewer_xid if my_filter_on else None
     async with db_session_manager():
         raw_rows = await services.queues.public_active_queues(only_member_of=member_of)
-        started_recent = await services.queues.public_recent_started_count(
+        raw_games = await services.queues.public_active_games(
             STARTED_GAMES_WINDOW,
             only_member_of=member_of,
         )
-        backfilled = await _resolve_icons(raw_rows)
+        backfilled = await _resolve_icons(raw_rows + raw_games)
     rows = [
         {
             **row,
@@ -95,10 +95,20 @@ async def queues_endpoint(request: web.Request) -> web.Response:
         }
         for row in raw_rows
     ]
-    formats = sorted({row["format"] for row in rows})
-    brackets = sorted({row["bracket"] for row in rows})
-    languages = sorted({row["language"] for row in rows})
-    stats = {"started_recent": started_recent}
+    games = [
+        {
+            **game,
+            "logo": game.get("guild_icon")
+            or backfilled.get(game["guild_xid"])
+            or SPELLBOT_DEFAULT_LOGO,
+            "language": language_name(game["guild_locale"]),
+        }
+        for game in raw_games
+    ]
+    formats = sorted({r["format"] for r in rows} | {g["format"] for g in games})
+    brackets = sorted({r["bracket"] for r in rows} | {g["bracket"] for g in games})
+    languages = sorted({r["language"] for r in rows} | {g["language"] for g in games})
+    stats = {"started_recent": len(raw_games)}
     login_enabled = bool(settings.BOT_APPLICATION_ID and settings.BOT_CLIENT_SECRET)
     viewer = {
         "xid": viewer_xid,
@@ -109,6 +119,7 @@ async def queues_endpoint(request: web.Request) -> web.Response:
     }
     context = {
         "rows": rows,
+        "games": games,
         "default_logo": SPELLBOT_DEFAULT_LOGO,
         "formats": formats,
         "brackets": brackets,
@@ -122,18 +133,18 @@ async def queues_endpoint(request: web.Request) -> web.Response:
 @routes.get("/queues.json")
 @tracer.wrap(name="web", resource="queues_json")
 async def queues_json_endpoint(request: web.Request) -> web.Response:
-    """Return the public list of pending queues as JSON."""
+    """Return the public list of pending queues and recently-started games as JSON."""
     add_span_request_id(generate_request_id())
     only_mythic_track = request.query.get("mythic_track") == "1"
     async with db_session_manager():
         raw_rows = await services.queues.public_active_queues(
             only_mythic_track=only_mythic_track,
         )
-        started_recent = await services.queues.public_recent_started_count(
+        raw_games = await services.queues.public_active_games(
             STARTED_GAMES_WINDOW,
             only_mythic_track=only_mythic_track,
         )
-        backfilled = await _resolve_icons(raw_rows)
+        backfilled = await _resolve_icons(raw_rows + raw_games)
     queues = [
         {
             "guild_xid": row["guild_xid"],
@@ -152,9 +163,27 @@ async def queues_json_endpoint(request: web.Request) -> web.Response:
         }
         for row in raw_rows
     ]
+    games = [
+        {
+            "guild_xid": game["guild_xid"],
+            "guild_name": game["guild_name"],
+            "guild_locale": game["guild_locale"],
+            "logo": game.get("guild_icon")
+            or backfilled.get(game["guild_xid"])
+            or SPELLBOT_DEFAULT_LOGO,
+            "format": game["format"],
+            "bracket": game["bracket"],
+            "service": game["service"],
+            "seats": game["seats"],
+            "started_seconds_ago": game["started_seconds_ago"],
+            "jump_url": game["jump_url"],
+        }
+        for game in raw_games
+    ]
     return web.json_response(
         {
-            "stats": {"active_games": started_recent},
+            "stats": {"active_games": len(raw_games)},
             "queues": queues,
+            "games": games,
         },
     )

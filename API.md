@@ -78,13 +78,13 @@ Returns a HTML page with a list of games played by the given user.
 
 ### GET `/queues.json`
 
-Returns the public list of pending queues currently waiting for players, along with an aggregate stat for games started recently. Queues with no players are omitted. Rows are ordered with the shortest wait first.
+Returns the public list of pending queues currently waiting for players, the list of games that started in the last two hours, and an aggregate `active_games` stat. Queues with no players are omitted. Queue rows are ordered with the shortest wait first; started games are ordered newest first.
 
 #### Query Parameters
 
-| Parameter      | Type     | Description                                                                                                                                                |
-| -------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mythic_track` | `string` | When set to `1`, restricts both the `queues` list and the `stats.active_games` count to guilds that have mythic track enabled. Any other value is ignored. |
+| Parameter      | Type     | Description                                                                                                                                                              |
+| -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mythic_track` | `string` | When set to `1`, restricts the `queues` list, the `games` list, and the `stats.active_games` count to guilds that have mythic track enabled. Any other value is ignored. |
 
 #### Response
 
@@ -107,26 +107,50 @@ Returns the public list of pending queues currently waiting for players, along w
       "wait_seconds": 480,
       "jump_url": "https://discord.com/channels/980001/980101/999999"
     }
+  ],
+  "games": [
+    {
+      "guild_xid": 980001,
+      "guild_name": "Example Server",
+      "guild_locale": "en",
+      "logo": "https://cdn.discordapp.com/icons/980001/abc.png",
+      "format": "Modern",
+      "bracket": "None",
+      "service": "Convoke",
+      "seats": 2,
+      "started_seconds_ago": 1800,
+      "jump_url": "https://discord.com/channels/980001/980101"
+    }
   ]
 }
 ```
 
 #### Fields
 
-| Field                   | Type      | Description                                                                                    |
-| ----------------------- | --------- | ---------------------------------------------------------------------------------------------- |
-| `stats.active_games`    | `integer` | Number of games started across all public guilds within the last two hours.                    |
-| `queues[].guild_xid`    | `integer` | Discord snowflake of the guild hosting the queue.                                              |
-| `queues[].guild_name`   | `string`  | Display name of the guild.                                                                     |
-| `queues[].guild_locale` | `string`  | BCP-47-ish locale code recorded for the guild (e.g., `en`, `ja`).                              |
-| `queues[].logo`         | `string`  | URL of the guild's Discord icon, with a SpellBot default falling in when no icon is available. |
-| `queues[].format`       | `string`  | Human-readable game format (e.g., `Commander`, `Modern`).                                      |
-| `queues[].bracket`      | `string`  | Human-readable commander bracket (e.g., `Bracket 3: Upgraded`, `None`).                        |
-| `queues[].service`      | `string`  | Game service the queue will use (e.g., `Convoke`, `SpellTable`).                               |
-| `queues[].players`      | `integer` | Number of players currently queued.                                                            |
-| `queues[].seats`        | `integer` | Total seats available in the game.                                                             |
-| `queues[].wait_seconds` | `integer` | Seconds elapsed since the queue was created.                                                   |
-| `queues[].jump_url`     | `string`  | Discord deep-link to the originating channel or message.                                       |
+| Field                         | Type      | Description                                                                                      |
+| ----------------------------- | --------- | ------------------------------------------------------------------------------------------------ |
+| `stats.active_games`          | `integer` | Number of games started across all public guilds within the last two hours. Equals `len(games)`. |
+| `queues[].guild_xid`          | `integer` | Discord snowflake of the guild hosting the queue.                                                |
+| `queues[].guild_name`         | `string`  | Display name of the guild.                                                                       |
+| `queues[].guild_locale`       | `string`  | BCP-47-ish locale code recorded for the guild (e.g., `en`, `ja`).                                |
+| `queues[].logo`               | `string`  | URL of the guild's Discord icon, with a SpellBot default falling in when no icon is available.   |
+| `queues[].format`             | `string`  | Human-readable game format (e.g., `Commander`, `Modern`).                                        |
+| `queues[].bracket`            | `string`  | Human-readable commander bracket (e.g., `Bracket 3: Upgraded`, `None`).                          |
+| `queues[].service`            | `string`  | Game service the queue will use (e.g., `Convoke`, `SpellTable`).                                 |
+| `queues[].players`            | `integer` | Number of players currently queued.                                                              |
+| `queues[].seats`              | `integer` | Total seats available in the game.                                                               |
+| `queues[].wait_seconds`       | `integer` | Seconds elapsed since the queue was created.                                                     |
+| `queues[].jump_url`           | `string`  | Discord deep-link to the originating channel or message.                                         |
+| `games[].guild_xid`           | `integer` | Discord snowflake of the guild that hosted the started game.                                     |
+| `games[].guild_name`          | `string`  | Display name of the guild.                                                                       |
+| `games[].guild_locale`        | `string`  | BCP-47-ish locale code recorded for the guild (e.g., `en`, `ja`).                                |
+| `games[].logo`                | `string`  | URL of the guild's Discord icon, with a SpellBot default falling in when no icon is available.   |
+| `games[].format`              | `string`  | Human-readable game format (e.g., `Commander`, `Modern`).                                        |
+| `games[].bracket`             | `string`  | Human-readable commander bracket (e.g., `Bracket 3: Upgraded`, `None`).                          |
+| `games[].service`             | `string`  | Game service the game is using (e.g., `Convoke`, `SpellTable`).                                  |
+| `games[].seats`               | `integer` | Total seats in the game.                                                                         |
+| `games[].started_seconds_ago` | `integer` | Seconds elapsed since the game started.                                                          |
+| `games[].jump_url`            | `string`  | Discord deep-link to the originating channel.                                                    |
 
 ## Authenticated Endpoints
 

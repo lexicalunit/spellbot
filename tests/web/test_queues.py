@@ -241,6 +241,10 @@ class TestQueuesEndpoint:
         # Both languages appear as <option>s in the language filter.
         assert '<option value="English">English</option>' in body
         assert '<option value="Japanese">Japanese</option>' in body
+        # A copy button is rendered for each card carrying the guild_xid as its payload.
+        assert 'class="queue-card__copy"' in body
+        assert 'data-copy="980004"' in body
+        assert 'data-copy="980014"' in body
         # Shortest wait first: the newer (Modern) card precedes the older (Commander) card.
         assert body.index(f'data-format="{GameFormat.MODERN}"') < body.index(
             f'data-format="{GameFormat.COMMANDER}"',
@@ -299,6 +303,82 @@ class TestQueuesEndpoint:
         body = await resp.text()
         assert "Active Games" in body
         assert '<span class="page-header__stat-value">1</span>' in body
+
+    async def test_renders_started_game_cards(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(
+            xid=980501,
+            name="Started Guild",
+            icon="https://cdn.discordapp.com/icons/980501/s.png",
+            locale="en",
+        )
+        ch = factories.channel.create(xid=980511, name="lfg", guild=guild)
+        factories.game.create(
+            guild=guild,
+            channel=ch,
+            started_at=NOW - timedelta(minutes=15),
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.BRACKET_3.value,
+            service=GameService.CONVOKE.value,
+            seats=4,
+        )
+        # A stale started game (outside the 2h window) must not appear.
+        factories.game.create(
+            guild=guild,
+            channel=ch,
+            started_at=NOW - timedelta(hours=3),
+        )
+
+        resp = await client.get("/queues")
+        assert resp.status == 200
+        body = await resp.text()
+        # The empty-state copy must not render when only started games exist.
+        assert "No active queues right now" not in body
+        # Started card markers.
+        assert "queue-card--started" in body
+        assert "Jump to Channel" in body
+        assert "15m ago" in body
+        assert f"https://discord.com/channels/{guild.xid}/{ch.xid}" in body
+        # Started section divider renders above the started gallery.
+        assert "gallery-divider" in body
+        assert "Recently Started" in body
+        # Filter bar should also render since started games exist.
+        assert 'id="filter-format"' in body
+        # Stat counts only the in-window started game.
+        assert '<span class="page-header__stat-value">1</span>' in body
+
+    async def test_started_games_render_after_queues_in_separate_sections(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(
+            xid=980601,
+            name="Mixed Guild",
+            icon="https://cdn.discordapp.com/icons/980601/m.png",
+        )
+        ch = factories.channel.create(xid=980611, name="lfg", guild=guild)
+        u1 = factories.user.create(xid=880601, name="u1")
+        pending = factories.game.create(guild=guild, channel=ch, started_at=None)
+        factories.queue.create(user_xid=u1.xid, game_id=pending.id, og_guild_xid=guild.xid)
+        factories.game.create(guild=guild, channel=ch, started_at=NOW - timedelta(minutes=10))
+
+        resp = await client.get("/queues")
+        assert resp.status == 200
+        body = await resp.text()
+        # Two separate gallery sections render, with the divider between them,
+        # so started cards are guaranteed to appear after queue cards in DOM order.
+        first_gallery = body.find('<section class="gallery">')
+        divider = body.find('class="gallery-divider"')
+        started_gallery = body.find('class="gallery gallery--started"')
+        assert -1 < first_gallery < divider < started_gallery
 
     async def test_renders_login_link_when_login_enabled_and_anonymous(
         self,
@@ -406,7 +486,7 @@ class TestQueuesJsonEndpoint:
         assert resp.status == 200
         assert resp.content_type == "application/json"
         payload = await resp.json()
-        assert payload == {"stats": {"active_games": 0}, "queues": []}
+        assert payload == {"stats": {"active_games": 0}, "queues": [], "games": []}
 
     async def test_returns_queue_rows_with_expected_fields(
         self,
@@ -438,8 +518,17 @@ class TestQueuesJsonEndpoint:
         factories.queue.create(user_xid=u1.xid, game_id=game.id, og_guild_xid=guild.xid)
         factories.queue.create(user_xid=u2.xid, game_id=game.id, og_guild_xid=guild.xid)
         factories.post.create(guild=guild, channel=ch, game=game, message_xid=987654)
-        # One game started within the 2h window powers the active_games stat.
-        factories.game.create(guild=guild, channel=ch, started_at=NOW - timedelta(minutes=30))
+        # One game started within the 2h window powers the active_games stat
+        # and appears in the games list.
+        factories.game.create(
+            guild=guild,
+            channel=ch,
+            started_at=NOW - timedelta(minutes=30),
+            format=GameFormat.MODERN.value,
+            bracket=GameBracket.NONE.value,
+            service=GameService.CONVOKE.value,
+            seats=2,
+        )
 
         resp = await client.get("/queues.json")
         assert resp.status == 200
@@ -458,6 +547,19 @@ class TestQueuesJsonEndpoint:
             "seats": 4,
             "wait_seconds": 8 * 60,
             "jump_url": f"https://discord.com/channels/{guild.xid}/{ch.xid}/987654",
+        }
+        assert len(payload["games"]) == 1
+        assert payload["games"][0] == {
+            "guild_xid": guild.xid,
+            "guild_name": "JSON Guild",
+            "guild_locale": "ja",
+            "logo": icon,
+            "format": str(GameFormat.MODERN),
+            "bracket": str(GameBracket.NONE),
+            "service": GameService.CONVOKE.title,
+            "seats": 2,
+            "started_seconds_ago": 30 * 60,
+            "jump_url": f"https://discord.com/channels/{guild.xid}/{ch.xid}",
         }
 
     async def test_mythic_track_param_filters_queues_and_stats(
@@ -496,17 +598,21 @@ class TestQueuesJsonEndpoint:
         payload = await resp.json()
         assert payload["stats"] == {"active_games": 2}
         assert {q["guild_name"] for q in payload["queues"]} == {"MT On Guild", "MT Off Guild"}
+        assert {g["guild_name"] for g in payload["games"]} == {"MT On Guild", "MT Off Guild"}
 
-        # With ?mythic_track=1 only the enabled guild is included in both the list and stat.
+        # With ?mythic_track=1 only the enabled guild is included in the list, stat,
+        # and games array.
         resp = await client.get("/queues.json?mythic_track=1")
         payload = await resp.json()
         assert payload["stats"] == {"active_games": 1}
         assert [q["guild_name"] for q in payload["queues"]] == ["MT On Guild"]
+        assert [g["guild_name"] for g in payload["games"]] == ["MT On Guild"]
 
         # Any value other than "1" is ignored (both guilds still appear).
         resp = await client.get("/queues.json?mythic_track=true")
         payload = await resp.json()
         assert {q["guild_name"] for q in payload["queues"]} == {"MT On Guild", "MT Off Guild"}
+        assert {g["guild_name"] for g in payload["games"]} == {"MT On Guild", "MT Off Guild"}
 
     async def test_falls_back_to_default_logo_when_icon_unavailable(
         self,
@@ -529,3 +635,25 @@ class TestQueuesJsonEndpoint:
         assert resp.status == 200
         payload = await resp.json()
         assert payload["queues"][0]["logo"] == SPELLBOT_DEFAULT_LOGO
+
+    async def test_started_games_fall_back_to_default_logo(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(xid=980503, name="No Icon Game", icon=None)
+        ch = factories.channel.create(xid=980513, name="lfg", guild=guild)
+        factories.game.create(guild=guild, channel=ch, started_at=NOW - timedelta(minutes=5))
+
+        with patch(
+            "spellbot.services.guilds.fetch_icon_url",
+            new=AsyncMock(return_value=None),
+        ):
+            resp = await client.get("/queues.json")
+        assert resp.status == 200
+        payload = await resp.json()
+        assert payload["queues"] == []
+        assert len(payload["games"]) == 1
+        assert payload["games"][0]["logo"] == SPELLBOT_DEFAULT_LOGO

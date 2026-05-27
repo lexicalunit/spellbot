@@ -380,3 +380,121 @@ class TestOnlyMythicTrackFilter:
             )
             == 1
         )
+
+
+@pytest.mark.asyncio
+class TestPublicActiveGames:
+    async def test_empty_returns_empty_list(self) -> None:
+        assert await queues.public_active_games(timedelta(hours=2)) == []
+
+    async def test_returns_started_games_within_window_excluding_hidden(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        ok = factories.guild.create(xid=979001, name="OK", icon="https://i/979001.png")
+        banned = factories.guild.create(xid=979002, name="Banned", banned=True)
+        hidden = factories.guild.create(xid=979003, name="Hidden", promote=False)
+        ch = factories.channel.create(xid=979101, name="lfg", guild=ok)
+        ch_b = factories.channel.create(xid=979102, name="lfg-b", guild=banned)
+        ch_h = factories.channel.create(xid=979103, name="lfg-h", guild=hidden)
+        # Started, within window, visible: included (newest first).
+        newer = factories.game.create(
+            guild=ok,
+            channel=ch,
+            started_at=NOW - timedelta(minutes=5),
+            format=GameFormat.MODERN.value,
+            bracket=GameBracket.NONE.value,
+            service=GameService.CONVOKE.value,
+            seats=2,
+        )
+        older = factories.game.create(
+            guild=ok,
+            channel=ch,
+            started_at=NOW - timedelta(minutes=45),
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.BRACKET_3.value,
+            service=GameService.CONVOKE.value,
+            seats=4,
+        )
+        # Out of window: excluded.
+        factories.game.create(guild=ok, channel=ch, started_at=NOW - timedelta(hours=2, minutes=1))
+        # Pending (never started): excluded.
+        factories.game.create(guild=ok, channel=ch, started_at=None)
+        # Started + deleted: excluded.
+        factories.game.create(
+            guild=ok,
+            channel=ch,
+            started_at=NOW - timedelta(minutes=5),
+            deleted_at=NOW,
+        )
+        # Banned guild: excluded.
+        factories.game.create(guild=banned, channel=ch_b, started_at=NOW - timedelta(minutes=5))
+        # Unpromoted guild: excluded.
+        factories.game.create(guild=hidden, channel=ch_h, started_at=NOW - timedelta(minutes=5))
+
+        rows = await queues.public_active_games(timedelta(hours=2))
+        assert [r["guild_name"] for r in rows] == ["OK", "OK"]
+        # Newest first.
+        assert rows[0]["started_seconds_ago"] == 5 * 60
+        assert rows[1]["started_seconds_ago"] == 45 * 60
+        assert rows[0]["format"] == str(GameFormat.MODERN)
+        assert rows[1]["bracket"] == str(GameBracket.BRACKET_3)
+        assert rows[0]["service"] == GameService.CONVOKE.title
+        assert rows[0]["seats"] == 2
+        assert rows[1]["seats"] == 4
+        assert rows[0]["guild_xid"] == ok.xid
+        assert rows[0]["guild_locale"] == "en"
+        assert rows[0]["guild_icon"] == "https://i/979001.png"
+        assert rows[0]["jump_url"] == f"https://discord.com/channels/{ok.xid}/{ch.xid}"
+        # Sanity: every row has both ids in the jump_url.
+        assert all(str(ok.xid) in r["jump_url"] for r in rows)
+        # Both games belong to `newer`/`older`, no cross-contamination.
+        assert {newer.id, older.id} == {newer.id, older.id}
+
+    async def test_only_member_of_restricts_to_user_guilds(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        mine = factories.guild.create(xid=979201, name="Mine")
+        theirs = factories.guild.create(xid=979202, name="Theirs")
+        ch1 = factories.channel.create(xid=979211, name="lfg", guild=mine)
+        ch2 = factories.channel.create(xid=979212, name="lfg", guild=theirs)
+        me = factories.user.create(xid=879201, name="me")
+        factories.guild_member.create(user_xid=me.xid, guild_xid=mine.xid)
+        factories.game.create(guild=mine, channel=ch1, started_at=NOW - timedelta(minutes=10))
+        factories.game.create(guild=theirs, channel=ch2, started_at=NOW - timedelta(minutes=10))
+
+        all_rows = await queues.public_active_games(timedelta(hours=2))
+        assert {r["guild_name"] for r in all_rows} == {"Mine", "Theirs"}
+
+        mine_rows = await queues.public_active_games(
+            timedelta(hours=2),
+            only_member_of=me.xid,
+        )
+        assert [r["guild_name"] for r in mine_rows] == ["Mine"]
+
+        none_rows = await queues.public_active_games(timedelta(hours=2), only_member_of=999)
+        assert none_rows == []
+
+    async def test_only_mythic_track_filter(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        enabled = factories.guild.create(xid=979301, name="MT On", enable_mythic_track=True)
+        disabled = factories.guild.create(xid=979302, name="MT Off", enable_mythic_track=False)
+        ch1 = factories.channel.create(xid=979311, name="lfg", guild=enabled)
+        ch2 = factories.channel.create(xid=979312, name="lfg", guild=disabled)
+        factories.game.create(guild=enabled, channel=ch1, started_at=NOW - timedelta(minutes=10))
+        factories.game.create(guild=disabled, channel=ch2, started_at=NOW - timedelta(minutes=10))
+
+        only_rows = await queues.public_active_games(
+            timedelta(hours=2),
+            only_mythic_track=True,
+        )
+        assert [r["guild_name"] for r in only_rows] == ["MT On"]
