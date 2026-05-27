@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Added a copy guild ID button to the active queues list.
+- Show recently filled games in the queues list.
+
 ## [v20.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v20.4.0) - 2026-05-26
 
 ### Added

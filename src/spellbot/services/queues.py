@@ -64,6 +64,80 @@ async def public_recent_started_count(
     return int(result.scalar() or 0)
 
 
+async def public_active_games(
+    within: timedelta,
+    *,
+    only_member_of: int | None = None,
+    only_mythic_track: bool = False,
+) -> list[dict[str, Any]]:
+    """
+    Return rows for games started within `within` of now, ordered newest first.
+
+    The visibility, `only_member_of`, and `only_mythic_track` rules mirror
+    `public_active_queues`.
+    """
+    cutoff = datetime.now(UTC) - within
+    stmt = (
+        select(
+            Game.id,
+            Game.guild_xid,
+            Guild.name.label("guild_name"),
+            Guild.locale.label("guild_locale"),
+            Guild.icon.label("guild_icon"),
+            Game.channel_xid,  # type: ignore
+            FORMAT_LABEL,
+            BRACKET_LABEL,
+            SERVICE_LABEL,
+            Game.seats,  # type: ignore
+            Game.started_at,
+        )
+        .select_from(Game)
+        .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+        .where(
+            Game.started_at.is_not(None),
+            Game.started_at >= cutoff,
+            Game.deleted_at.is_(None),
+            Guild.banned.is_(False),
+            Guild.promote.is_(True),
+        )
+        .order_by(Game.started_at.desc())
+    )
+    if only_member_of is not None:
+        stmt = stmt.join(
+            GuildMember,
+            GuildMember.guild_xid == Guild.xid,
+        ).where(GuildMember.user_xid == only_member_of)
+    if only_mythic_track:
+        stmt = stmt.where(Guild.enable_mythic_track.is_(True))
+    rows = (await DatabaseSession.execute(stmt)).all()
+    if not rows:
+        return []
+
+    now = datetime.now(UTC)
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        guild_xid_int = int(row[1])
+        channel_xid = str(int(row[5]))
+        out.append(
+            {
+                "guild_xid": guild_xid_int,
+                "guild_name": row[2] or "",
+                "guild_locale": row[3] or "en",
+                "guild_icon": row[4],
+                "format": row[6],
+                "bracket": row[7],
+                "service": row[8],
+                "seats": int(row[9]),
+                "started_seconds_ago": max(
+                    0,
+                    int((now - row[10].replace(tzinfo=UTC)).total_seconds()),
+                ),
+                "jump_url": f"https://discord.com/channels/{guild_xid_int}/{channel_xid}",
+            },
+        )
+    return out
+
+
 async def public_active_queues(
     *,
     only_member_of: int | None = None,

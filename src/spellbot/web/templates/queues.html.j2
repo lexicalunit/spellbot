@@ -25,10 +25,10 @@
             </div>
         </header>
 
-        {% set show_filter_bar = rows or viewer.logged_in or viewer.login_enabled %}
+        {% set show_filter_bar = rows or games or viewer.logged_in or viewer.login_enabled %}
         {% if show_filter_bar %}
         <div class="filters" role="group" aria-label="Filter queues">
-            {% if rows %}
+            {% if rows or games %}
             <label class="filters__field">
                 <span class="filters__label">Format</span>
                 <select id="filter-format" class="filters__select">
@@ -79,7 +79,7 @@
                 </a>
                 {% endif %}
             </div>
-            {% if rows %}
+            {% if rows or games %}
             <p id="filter-empty" class="filters__empty" hidden>
                 No queues match the selected filters.
             </p>
@@ -87,7 +87,7 @@
         </div>
         {% endif %}
 
-        {% if not rows %}
+        {% if not rows and not games %}
         <div class="empty">
             {% if viewer.my_filter_on %}
             No active queues right now in servers you've played in. Uncheck the filter to see all servers.
@@ -96,6 +96,7 @@
             {% endif %}
         </div>
         {% else %}
+        {% if rows %}
         <section class="gallery">
             {% for row in rows %}
             <article class="queue-card" data-format="{{ row.format }}" data-bracket="{{ row.bracket }}" data-language="{{ row.language }}">
@@ -108,6 +109,20 @@
                         loading="lazy"
                     >
                     <h2 class="queue-card__server">{{ row.guild_name or "SpellBot Server" }}</h2>
+                    <button
+                        type="button"
+                        class="queue-card__copy"
+                        data-copy="{{ row.guild_xid }}"
+                        aria-label="Copy server ID"
+                        title="Copy server ID"
+                    >
+                        <svg class="queue-card__copy-icon queue-card__copy-icon--copy" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+                            <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 9h10v12H9z M5 15V3h10v4"/>
+                        </svg>
+                        <svg class="queue-card__copy-icon queue-card__copy-icon--check" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+                            <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/>
+                        </svg>
+                    </button>
                 </div>
                 <dl class="queue-card__meta">
                     <div><dt>Format</dt><dd>{{ row.format }}</dd></div>
@@ -126,6 +141,56 @@
             </article>
             {% endfor %}
         </section>
+        {% endif %}
+        {% if games %}
+        <div class="gallery-divider" role="separator" aria-label="Recently started games">
+            <span class="gallery-divider__label">Recently Started</span>
+        </div>
+        <section class="gallery gallery--started">
+            {% for game in games %}
+            <article class="queue-card queue-card--started" data-format="{{ game.format }}" data-bracket="{{ game.bracket }}" data-language="{{ game.language }}">
+                <div class="queue-card__header">
+                    <img
+                        class="queue-card__logo"
+                        src="{{ game.logo }}"
+                        alt="{{ game.guild_name }}"
+                        onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                        loading="lazy"
+                    >
+                    <h2 class="queue-card__server">{{ game.guild_name or "SpellBot Server" }}</h2>
+                    <button
+                        type="button"
+                        class="queue-card__copy"
+                        data-copy="{{ game.guild_xid }}"
+                        aria-label="Copy server ID"
+                        title="Copy server ID"
+                    >
+                        <svg class="queue-card__copy-icon queue-card__copy-icon--copy" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+                            <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 9h10v12H9z M5 15V3h10v4"/>
+                        </svg>
+                        <svg class="queue-card__copy-icon queue-card__copy-icon--check" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+                            <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/>
+                        </svg>
+                    </button>
+                </div>
+                <dl class="queue-card__meta">
+                    <div><dt>Format</dt><dd>{{ game.format }}</dd></div>
+                    <div><dt>Bracket</dt><dd>{{ game.bracket }}</dd></div>
+                    <div><dt>Service</dt><dd>{{ game.service }}</dd></div>
+                    <div><dt>Language</dt><dd>{{ game.language }}</dd></div>
+                    <div><dt>Started</dt><dd>{{ game.started_seconds_ago | wait }} ago</dd></div>
+                    <div>
+                        <dt>Players</dt>
+                        <dd><span class="players-badge">{{ game.seats }} / {{ game.seats }}</span></dd>
+                    </div>
+                </dl>
+                <a class="queue-card__cta" href="{{ game.jump_url }}" target="_blank" rel="noopener noreferrer">
+                    Jump to Channel →
+                </a>
+            </article>
+            {% endfor %}
+        </section>
+        {% endif %}
         <script>
             (function () {
                 var formatSelect = document.getElementById("filter-format");
@@ -151,6 +216,33 @@
                 formatSelect.addEventListener("change", apply);
                 bracketSelect.addEventListener("change", apply);
                 languageSelect.addEventListener("change", apply);
+            })();
+            (function () {
+                var buttons = document.querySelectorAll(".queue-card__copy");
+                buttons.forEach(function (btn) {
+                    btn.addEventListener("click", function () {
+                        var value = btn.dataset.copy || "";
+                        var done = function () {
+                            btn.dataset.copied = "true";
+                            window.setTimeout(function () {
+                                delete btn.dataset.copied;
+                            }, 1200);
+                        };
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(value).then(done, function () {});
+                        } else {
+                            var ta = document.createElement("textarea");
+                            ta.value = value;
+                            ta.setAttribute("readonly", "");
+                            ta.style.position = "absolute";
+                            ta.style.left = "-9999px";
+                            document.body.appendChild(ta);
+                            ta.select();
+                            try { document.execCommand("copy"); done(); } catch (e) {}
+                            document.body.removeChild(ta);
+                        }
+                    });
+                });
             })();
         </script>
         {% endif %}

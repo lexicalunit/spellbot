@@ -8,6 +8,7 @@
   --brand-purple: #5a3efd;
   --brand-purple-dark: #3f2bcc;
   --brand-orange: #f6ad4b;
+  --brand-orange-dark: #c98a2f;
   --link: #ffb342;
   --link-hover: #ffd160;
   --text: #e6e8ee;
@@ -234,6 +235,55 @@ a:hover {
 .queue-card[hidden] {
   display: none;
 }
+.queue-card--started {
+  background: #1c2230;
+  border-color: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--brand-orange);
+}
+.queue-card--started:hover {
+  background: var(--card-bg);
+}
+.queue-card--started .queue-card__logo {
+  filter: grayscale(35%);
+  opacity: 0.85;
+}
+.queue-card--started .queue-card__cta {
+  background: var(--brand-orange);
+  color: #1a202c !important;
+}
+.queue-card--started .queue-card__cta:hover {
+  background: var(--brand-orange-dark);
+  color: #1a202c;
+}
+.gallery + .gallery-divider {
+  margin-top: 2rem;
+}
+.gallery-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0.5rem 0 1rem;
+  color: var(--page-muted);
+}
+.gallery-divider::before,
+.gallery-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(246, 173, 75, 0.35),
+    transparent
+  );
+}
+.gallery-divider__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand-orange);
+}
 
 .queue-card__header {
   display: flex;
@@ -254,6 +304,48 @@ a:hover {
   color: var(--text);
   word-break: break-word;
   line-height: 1.25;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.queue-card__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 0.3rem;
+  padding: 0.15rem;
+  line-height: 0;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.queue-card__copy:hover,
+.queue-card__copy:focus-visible {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.18);
+  outline: none;
+}
+.queue-card__copy[data-copied="true"] {
+  color: var(--brand-orange);
+  border-color: var(--brand-orange);
+}
+.queue-card__copy-icon {
+  display: block;
+}
+.queue-card__copy-icon--check {
+  display: none;
+}
+.queue-card__copy[data-copied="true"] .queue-card__copy-icon--copy {
+  display: none;
+}
+.queue-card__copy[data-copied="true"] .queue-card__copy-icon--check {
+  display: block;
 }
 
 .queue-card__meta {
