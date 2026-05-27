@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from spellbot.enums import GameBracket, GameFormat
+from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.services import queues
 
 if TYPE_CHECKING:
@@ -105,6 +105,7 @@ class TestPublicActiveQueues:
             created_at=NOW - timedelta(minutes=10),
             format=GameFormat.COMMANDER.value,
             bracket=GameBracket.BRACKET_3.value,
+            service=GameService.CONVOKE.value,
             seats=4,
         )
         newer = factories.game.create(
@@ -113,6 +114,7 @@ class TestPublicActiveQueues:
             started_at=None,
             created_at=NOW - timedelta(minutes=2),
             format=GameFormat.MODERN.value,
+            service=GameService.PLAYGROUP_LIVE.value,
             seats=2,
         )
         factories.queue.create(user_xid=u1.xid, game_id=older.id, og_guild_xid=guild.xid)
@@ -125,8 +127,10 @@ class TestPublicActiveQueues:
         assert [r["wait_seconds"] for r in rows] == [2 * 60, 10 * 60]
         assert rows[0]["format"] == str(GameFormat.MODERN)
         assert rows[0]["bracket"] == str(GameBracket.NONE)
+        assert rows[0]["service"] == GameService.PLAYGROUP_LIVE.title
         assert rows[1]["format"] == str(GameFormat.COMMANDER)
         assert rows[1]["bracket"] == str(GameBracket.BRACKET_3)
+        assert rows[1]["service"] == GameService.CONVOKE.title
         assert rows[1]["guild_locale"] == "ja"
         assert rows[1]["guild_xid"] == guild.xid
         assert rows[1]["guild_icon"] is None
