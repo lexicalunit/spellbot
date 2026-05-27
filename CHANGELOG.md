@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v20.5.0](https://github.com/lexicalunit/spellbot/releases/tag/v20.5.0) - 2026-05-26
+
 ### Changed
 
 - Added a copy guild ID button to the active queues list.
