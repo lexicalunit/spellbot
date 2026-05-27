@@ -288,7 +288,7 @@ class TestQueuesEndpoint:
         guild = factories.guild.create(xid=980006, name="Stats Guild", icon=icon)
         ch = factories.channel.create(xid=980106, name="lfg", guild=guild)
         u1 = factories.user.create(xid=880008, name="u1")
-        # One pending game so the filter bar renders.
+        # One pending game with a queued player: should be counted.
         game = factories.game.create(guild=guild, channel=ch, started_at=None)
         factories.queue.create(user_xid=u1.xid, game_id=game.id, og_guild_xid=guild.xid)
         # One game started within the 2h window: should be counted.
@@ -302,7 +302,7 @@ class TestQueuesEndpoint:
         assert resp.status == 200
         body = await resp.text()
         assert "Active Games" in body
-        assert '<span class="page-header__stat-value">1</span>' in body
+        assert '<span class="page-header__stat-value">2</span>' in body
 
     async def test_renders_started_game_cards(
         self,
@@ -433,8 +433,8 @@ class TestQueuesEndpoint:
         body = await resp.text()
         assert "Mine" in body
         assert "Theirs" not in body
-        # Stat counts only the started game in `Mine`.
-        assert '<span class="page-header__stat-value">1</span>' in body
+        # Stat counts both the pending and started games in `Mine`.
+        assert '<span class="page-header__stat-value">2</span>' in body
         assert 'id="filter-mine"' in body
         assert "checked" in body
         assert "Logged in as" in body
@@ -533,7 +533,7 @@ class TestQueuesJsonEndpoint:
         resp = await client.get("/queues.json")
         assert resp.status == 200
         payload = await resp.json()
-        assert payload["stats"] == {"active_games": 1}
+        assert payload["stats"] == {"active_games": 2}
         assert len(payload["queues"]) == 1
         assert payload["queues"][0] == {
             "guild_xid": guild.xid,
@@ -593,18 +593,19 @@ class TestQueuesJsonEndpoint:
         factories.game.create(guild=on_guild, channel=ch1, started_at=NOW - timedelta(minutes=10))
         factories.game.create(guild=off_guild, channel=ch2, started_at=NOW - timedelta(minutes=10))
 
-        # Without the filter, both guilds appear and both started games count.
+        # Without the filter, both guilds appear and all four games (two pending,
+        # two started) count toward the active_games stat.
         resp = await client.get("/queues.json")
         payload = await resp.json()
-        assert payload["stats"] == {"active_games": 2}
+        assert payload["stats"] == {"active_games": 4}
         assert {q["guild_name"] for q in payload["queues"]} == {"MT On Guild", "MT Off Guild"}
         assert {g["guild_name"] for g in payload["games"]} == {"MT On Guild", "MT Off Guild"}
 
         # With ?mythic_track=1 only the enabled guild is included in the list, stat,
-        # and games array.
+        # and games array (one pending plus one started).
         resp = await client.get("/queues.json?mythic_track=1")
         payload = await resp.json()
-        assert payload["stats"] == {"active_games": 1}
+        assert payload["stats"] == {"active_games": 2}
         assert [q["guild_name"] for q in payload["queues"]] == ["MT On Guild"]
         assert [g["guild_name"] for g in payload["games"]] == ["MT On Guild"]
 
