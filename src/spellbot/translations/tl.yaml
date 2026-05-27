@@ -227,4 +227,4 @@ tl:
   playgroup:
     already_linked: "Naka-link na sa Playgroup Live ang iyong Discord account!"
     linked: "Naka-link na! Maligayang pagdating, %{username}. Ang iyong mga laro sa Playgroup Live ay iaa-attribute na sa iyong account."
-    not_found: "“Walang natagpuang Playgroup account para sa iyong Discord. Pumunta sa <https://playgroup.gg/profiles> at i-click ang **Link Discord,** pagkatapos ay patakbuhin muli ang /playgroup link para makumpirma.”"
+    not_found: "Walang natagpuang Playgroup account para sa iyong Discord. Pumunta sa <https://playgroup.gg/profiles> at i-click ang **Link Discord,** pagkatapos ay patakbuhin muli ang `/playgroup link` para makumpirma."
