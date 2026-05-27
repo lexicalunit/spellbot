@@ -10,6 +10,7 @@ SpellBot has a public API that can be used to access game and user data. As well
   - [GET `/status.json`](#get-statusjson)
   - [GET `/g/{guild}/c/{channel}`](#get-gguildcchannel)
   - [GET `/g/{guild}/u/{user}`](#get-gguilduuser)
+  - [GET `/queues.json`](#get-queuesjson)
 - [Authenticated Endpoints](#authenticated-endpoints)
   - [POST `/api/game/{game}/verify`](#post-apigamegameverify)
   - [POST `/api/game/{game}/record`](#post-apigamegamerecord)
@@ -74,6 +75,58 @@ Returns a HTML page with a list of games played in the given channel.
 ### GET `/g/{guild}/u/{user}`
 
 Returns a HTML page with a list of games played by the given user.
+
+### GET `/queues.json`
+
+Returns the public list of pending queues currently waiting for players, along with an aggregate stat for games started recently. Queues with no players are omitted. Rows are ordered with the shortest wait first.
+
+#### Query Parameters
+
+| Parameter      | Type     | Description                                                                                                                                                |
+| -------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mythic_track` | `string` | When set to `1`, restricts both the `queues` list and the `stats.active_games` count to guilds that have mythic track enabled. Any other value is ignored. |
+
+#### Response
+
+```json
+{
+  "stats": {
+    "active_games": 12
+  },
+  "queues": [
+    {
+      "guild_xid": 980001,
+      "guild_name": "Example Server",
+      "guild_locale": "en",
+      "logo": "https://cdn.discordapp.com/icons/980001/abc.png",
+      "format": "Commander",
+      "bracket": "Bracket 3: Upgraded",
+      "service": "Convoke",
+      "players": 2,
+      "seats": 4,
+      "wait_seconds": 480,
+      "jump_url": "https://discord.com/channels/980001/980101/999999"
+    }
+  ]
+}
+```
+
+#### Fields
+
+| Field                   | Type      | Description                                                                                    |
+| ----------------------- | --------- | ---------------------------------------------------------------------------------------------- |
+| `stats.active_games`    | `integer` | Number of games started across all public guilds within the last two hours.                    |
+| `queues[].guild_xid`    | `integer` | Discord snowflake of the guild hosting the queue.                                              |
+| `queues[].guild_name`   | `string`  | Display name of the guild.                                                                     |
+| `queues[].guild_locale` | `string`  | BCP-47-ish locale code recorded for the guild (e.g., `en`, `ja`).                              |
+| `queues[].logo`         | `string`  | URL of the guild's Discord icon, with a SpellBot default falling in when no icon is available. |
+| `queues[].format`       | `string`  | Human-readable game format (e.g., `Commander`, `Modern`).                                      |
+| `queues[].bracket`      | `string`  | Human-readable commander bracket (e.g., `Bracket 3: Upgraded`, `None`).                        |
+| `queues[].service`      | `string`  | Game service the queue will use (e.g., `Convoke`, `SpellTable`).                               |
+| `queues[].players`      | `integer` | Number of players currently queued.                                                            |
+| `queues[].seats`        | `integer` | Total seats available in the game.                                                             |
+| `queues[].wait_seconds` | `integer` | Seconds elapsed since the queue was created.                                                   |
+| `queues[].jump_url`     | `string`  | Discord deep-link to the originating channel or message.                                       |
 
 ## Authenticated Endpoints
 

@@ -29,12 +29,16 @@ async def public_recent_started_count(
     within: timedelta,
     *,
     only_member_of: int | None = None,
+    only_mythic_track: bool = False,
 ) -> int:
     """
     Count games started within `within` of now, excluding banned or unpromoted guilds.
 
     When `only_member_of` is provided, the count is restricted to guilds where the
     given user xid has a `guild_members` row.
+
+    When `only_mythic_track` is `True`, the count is further restricted to guilds that
+    have mythic track enabled.
     """
     cutoff = datetime.now(UTC) - within
     stmt = (
@@ -54,6 +58,8 @@ async def public_recent_started_count(
             GuildMember,
             GuildMember.guild_xid == Guild.xid,
         ).where(GuildMember.user_xid == only_member_of)
+    if only_mythic_track:
+        stmt = stmt.where(Guild.enable_mythic_track.is_(True))
     result = await DatabaseSession.execute(stmt)
     return int(result.scalar() or 0)
 
@@ -61,8 +67,14 @@ async def public_recent_started_count(
 async def public_active_queues(
     *,
     only_member_of: int | None = None,
+    only_mythic_track: bool = False,
 ) -> list[dict[str, Any]]:
-    """Return rows for pending queues, optionally limited to a user's guild memberships."""
+    """
+    Return rows for pending queues, optionally limited to a user's guild memberships.
+
+    When `only_mythic_track` is `True`, results are further restricted to guilds that
+    have mythic track enabled.
+    """
     players_col = func.count(Queue.user_xid).label("players")
     stmt = (
         select(
@@ -94,6 +106,8 @@ async def public_active_queues(
             GuildMember,
             GuildMember.guild_xid == Guild.xid,
         ).where(GuildMember.user_xid == only_member_of)
+    if only_mythic_track:
+        stmt = stmt.where(Guild.enable_mythic_track.is_(True))
     rows = (
         await DatabaseSession.execute(
             stmt.group_by(

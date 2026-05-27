@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from spellbot.database import DatabaseSession
-from spellbot.enums import GameBracket, GameFormat
+from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Guild
 from spellbot.web.api import queues as queues_endpoint_mod
 from spellbot.web.api.queues import SPELLBOT_DEFAULT_LOGO, format_wait, language_name
@@ -397,3 +397,135 @@ class TestQueuesEndpoint:
         body = await resp.text()
         assert "servers you've played in" in body
         assert "Uncheck the filter" in body
+
+
+@pytest.mark.asyncio
+class TestQueuesJsonEndpoint:
+    async def test_empty_returns_zero_stats_and_no_queues(self, client: WebClient) -> None:
+        resp = await client.get("/queues.json")
+        assert resp.status == 200
+        assert resp.content_type == "application/json"
+        payload = await resp.json()
+        assert payload == {"stats": {"active_games": 0}, "queues": []}
+
+    async def test_returns_queue_rows_with_expected_fields(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        icon = "https://cdn.discordapp.com/icons/980501/abc.png"
+        guild = factories.guild.create(
+            xid=980501,
+            name="JSON Guild",
+            icon=icon,
+            locale="ja",
+        )
+        ch = factories.channel.create(xid=980511, name="lfg", guild=guild)
+        u1 = factories.user.create(xid=880501, name="u1")
+        u2 = factories.user.create(xid=880502, name="u2")
+        game = factories.game.create(
+            guild=guild,
+            channel=ch,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=8),
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.BRACKET_3.value,
+            service=GameService.CONVOKE.value,
+            seats=4,
+        )
+        factories.queue.create(user_xid=u1.xid, game_id=game.id, og_guild_xid=guild.xid)
+        factories.queue.create(user_xid=u2.xid, game_id=game.id, og_guild_xid=guild.xid)
+        factories.post.create(guild=guild, channel=ch, game=game, message_xid=987654)
+        # One game started within the 2h window powers the active_games stat.
+        factories.game.create(guild=guild, channel=ch, started_at=NOW - timedelta(minutes=30))
+
+        resp = await client.get("/queues.json")
+        assert resp.status == 200
+        payload = await resp.json()
+        assert payload["stats"] == {"active_games": 1}
+        assert len(payload["queues"]) == 1
+        assert payload["queues"][0] == {
+            "guild_xid": guild.xid,
+            "guild_name": "JSON Guild",
+            "guild_locale": "ja",
+            "logo": icon,
+            "format": str(GameFormat.COMMANDER),
+            "bracket": str(GameBracket.BRACKET_3),
+            "service": GameService.CONVOKE.title,
+            "players": 2,
+            "seats": 4,
+            "wait_seconds": 8 * 60,
+            "jump_url": f"https://discord.com/channels/{guild.xid}/{ch.xid}/987654",
+        }
+
+    async def test_mythic_track_param_filters_queues_and_stats(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        on_guild = factories.guild.create(
+            xid=980601,
+            name="MT On Guild",
+            icon="https://cdn.discordapp.com/icons/980601/a.png",
+            enable_mythic_track=True,
+        )
+        off_guild = factories.guild.create(
+            xid=980602,
+            name="MT Off Guild",
+            icon="https://cdn.discordapp.com/icons/980602/b.png",
+            enable_mythic_track=False,
+        )
+        ch1 = factories.channel.create(xid=980611, name="lfg", guild=on_guild)
+        ch2 = factories.channel.create(xid=980612, name="lfg", guild=off_guild)
+        u1 = factories.user.create(xid=880601, name="u1")
+        u2 = factories.user.create(xid=880602, name="u2")
+        on_game = factories.game.create(guild=on_guild, channel=ch1, started_at=None)
+        off_game = factories.game.create(guild=off_guild, channel=ch2, started_at=None)
+        factories.queue.create(user_xid=u1.xid, game_id=on_game.id, og_guild_xid=on_guild.xid)
+        factories.queue.create(user_xid=u2.xid, game_id=off_game.id, og_guild_xid=off_guild.xid)
+        # Started recently in each guild — only the mythic-track one should be counted.
+        factories.game.create(guild=on_guild, channel=ch1, started_at=NOW - timedelta(minutes=10))
+        factories.game.create(guild=off_guild, channel=ch2, started_at=NOW - timedelta(minutes=10))
+
+        # Without the filter, both guilds appear and both started games count.
+        resp = await client.get("/queues.json")
+        payload = await resp.json()
+        assert payload["stats"] == {"active_games": 2}
+        assert {q["guild_name"] for q in payload["queues"]} == {"MT On Guild", "MT Off Guild"}
+
+        # With ?mythic_track=1 only the enabled guild is included in both the list and stat.
+        resp = await client.get("/queues.json?mythic_track=1")
+        payload = await resp.json()
+        assert payload["stats"] == {"active_games": 1}
+        assert [q["guild_name"] for q in payload["queues"]] == ["MT On Guild"]
+
+        # Any value other than "1" is ignored (both guilds still appear).
+        resp = await client.get("/queues.json?mythic_track=true")
+        payload = await resp.json()
+        assert {q["guild_name"] for q in payload["queues"]} == {"MT On Guild", "MT Off Guild"}
+
+    async def test_falls_back_to_default_logo_when_icon_unavailable(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(xid=980502, name="No Icon JSON", icon=None)
+        ch = factories.channel.create(xid=980512, name="lfg", guild=guild)
+        u1 = factories.user.create(xid=880503, name="u1")
+        game = factories.game.create(guild=guild, channel=ch, started_at=None)
+        factories.queue.create(user_xid=u1.xid, game_id=game.id, og_guild_xid=guild.xid)
+
+        with patch(
+            "spellbot.services.guilds.fetch_icon_url",
+            new=AsyncMock(return_value=None),
+        ):
+            resp = await client.get("/queues.json")
+        assert resp.status == 200
+        payload = await resp.json()
+        assert payload["queues"][0]["logo"] == SPELLBOT_DEFAULT_LOGO

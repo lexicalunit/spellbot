@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added a `/queues.json` endpoint.
+
 ## [v20.3.2](https://github.com/lexicalunit/spellbot/releases/tag/v20.3.2) - 2026-05-26
 
 ### Added
