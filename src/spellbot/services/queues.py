@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy import case, func, select
 
 from spellbot.database import DatabaseSession
-from spellbot.enums import GameBracket, GameFormat
+from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Game, Guild, GuildMember, Post, Queue
 
 FORMAT_LABEL = case(
@@ -18,6 +18,11 @@ BRACKET_LABEL = case(
     *((Game.bracket == b.value, str(b)) for b in GameBracket),
     else_="Unknown",
 ).label("bracket")
+
+SERVICE_LABEL = case(
+    *((Game.service == s.value, s.title) for s in GameService),
+    else_="Unknown",
+).label("service")
 
 
 async def public_recent_started_count(
@@ -69,6 +74,7 @@ async def public_active_queues(
             Game.channel_xid,  # type: ignore
             FORMAT_LABEL,
             BRACKET_LABEL,
+            SERVICE_LABEL,
             Game.seats,  # type: ignore
             Game.created_at,
             players_col,
@@ -99,6 +105,7 @@ async def public_active_queues(
                 Game.channel_xid,  # type: ignore
                 Game.format,  # type: ignore
                 Game.bracket,  # type: ignore
+                Game.service,  # type: ignore
                 Game.seats,  # type: ignore
                 Game.created_at,
             ).order_by(Game.created_at.desc()),
@@ -138,11 +145,12 @@ async def public_active_queues(
                 "guild_icon": row[4],
                 "format": row[6],
                 "bracket": row[7],
-                "players": int(row[10]),
-                "seats": int(row[8]),
+                "service": row[8],
+                "players": int(row[11]),
+                "seats": int(row[9]),
                 "wait_seconds": max(
                     0,
-                    int((now - row[9].replace(tzinfo=UTC)).total_seconds()),
+                    int((now - row[10].replace(tzinfo=UTC)).total_seconds()),
                 ),
                 "jump_url": jump_url,
             }

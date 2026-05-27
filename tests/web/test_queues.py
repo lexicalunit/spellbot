@@ -191,10 +191,14 @@ class TestQueuesEndpoint:
     ) -> None:
         freezer.move_to(NOW)
         icon = "https://cdn.discordapp.com/icons/980004/abc.png"
-        guild = factories.guild.create(xid=980004, name="Filter Guild", icon=icon)
+        guild = factories.guild.create(xid=980004, name="Filter Guild", icon=icon, locale="en")
+        ja_icon = "https://cdn.discordapp.com/icons/980014/abc.png"
+        ja_guild = factories.guild.create(xid=980014, name="JA Guild", icon=ja_icon, locale="ja")
         ch = factories.channel.create(xid=980104, name="lfg", guild=guild)
+        ja_ch = factories.channel.create(xid=980114, name="lfg-ja", guild=ja_guild)
         u1 = factories.user.create(xid=880005, name="u1")
         u2 = factories.user.create(xid=880006, name="u2")
+        u3 = factories.user.create(xid=880016, name="u3")
         old_game = factories.game.create(
             guild=guild,
             channel=ch,
@@ -211,17 +215,32 @@ class TestQueuesEndpoint:
             format=GameFormat.MODERN.value,
             bracket=GameBracket.NONE.value,
         )
+        ja_game = factories.game.create(
+            guild=ja_guild,
+            channel=ja_ch,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=5),
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.NONE.value,
+        )
         factories.queue.create(user_xid=u1.xid, game_id=old_game.id, og_guild_xid=guild.xid)
         factories.queue.create(user_xid=u2.xid, game_id=new_game.id, og_guild_xid=guild.xid)
+        factories.queue.create(user_xid=u3.xid, game_id=ja_game.id, og_guild_xid=ja_guild.xid)
 
         resp = await client.get("/queues")
         assert resp.status == 200
         body = await resp.text()
         assert 'id="filter-format"' in body
         assert 'id="filter-bracket"' in body
+        assert 'id="filter-language"' in body
         assert f'data-format="{GameFormat.COMMANDER}"' in body
         assert f'data-format="{GameFormat.MODERN}"' in body
         assert f'data-bracket="{GameBracket.BRACKET_3}"' in body
+        assert 'data-language="English"' in body
+        assert 'data-language="Japanese"' in body
+        # Both languages appear as <option>s in the language filter.
+        assert '<option value="English">English</option>' in body
+        assert '<option value="Japanese">Japanese</option>' in body
         # Shortest wait first: the newer (Modern) card precedes the older (Commander) card.
         assert body.index(f'data-format="{GameFormat.MODERN}"') < body.index(
             f'data-format="{GameFormat.COMMANDER}"',

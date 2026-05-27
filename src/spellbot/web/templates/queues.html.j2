@@ -47,6 +47,15 @@
                     {% endfor %}
                 </select>
             </label>
+            <label class="filters__field">
+                <span class="filters__label">Language</span>
+                <select id="filter-language" class="filters__select">
+                    <option value="">All languages</option>
+                    {% for l in languages %}
+                    <option value="{{ l }}">{{ l }}</option>
+                    {% endfor %}
+                </select>
+            </label>
             {% endif %}
             <div class="filters__viewer">
                 {% if viewer.logged_in %}
@@ -89,7 +98,7 @@
         {% else %}
         <section class="gallery">
             {% for row in rows %}
-            <article class="queue-card" data-format="{{ row.format }}" data-bracket="{{ row.bracket }}">
+            <article class="queue-card" data-format="{{ row.format }}" data-bracket="{{ row.bracket }}" data-language="{{ row.language }}">
                 <div class="queue-card__header">
                     <img
                         class="queue-card__logo"
@@ -103,12 +112,13 @@
                 <dl class="queue-card__meta">
                     <div><dt>Format</dt><dd>{{ row.format }}</dd></div>
                     <div><dt>Bracket</dt><dd>{{ row.bracket }}</dd></div>
+                    <div><dt>Service</dt><dd>{{ row.service }}</dd></div>
+                    <div><dt>Language</dt><dd>{{ row.language }}</dd></div>
+                    <div><dt>Wait</dt><dd>{{ row.wait_seconds | wait }}</dd></div>
                     <div>
                         <dt>Players</dt>
                         <dd><span class="players-badge">{{ row.players }} / {{ row.seats }}</span></dd>
                     </div>
-                    <div><dt>Wait</dt><dd>{{ row.wait_seconds | wait }}</dd></div>
-                    <div><dt>Language</dt><dd>{{ row.language }}</dd></div>
                 </dl>
                 <a class="queue-card__cta" href="{{ row.jump_url }}" target="_blank" rel="noopener noreferrer">
                     Jump to Game →
@@ -120,16 +130,19 @@
             (function () {
                 var formatSelect = document.getElementById("filter-format");
                 var bracketSelect = document.getElementById("filter-bracket");
+                var languageSelect = document.getElementById("filter-language");
                 var emptyMsg = document.getElementById("filter-empty");
                 var cards = document.querySelectorAll(".gallery .queue-card");
                 function apply() {
                     var fmt = formatSelect.value;
                     var brk = bracketSelect.value;
+                    var lng = languageSelect.value;
                     var visible = 0;
                     cards.forEach(function (card) {
                         var match =
                             (!fmt || card.dataset.format === fmt) &&
-                            (!brk || card.dataset.bracket === brk);
+                            (!brk || card.dataset.bracket === brk) &&
+                            (!lng || card.dataset.language === lng);
                         card.hidden = !match;
                         if (match) visible++;
                     });
@@ -137,6 +150,7 @@
                 }
                 formatSelect.addEventListener("change", apply);
                 bracketSelect.addEventListener("change", apply);
+                languageSelect.addEventListener("change", apply);
             })();
         </script>
         {% endif %}

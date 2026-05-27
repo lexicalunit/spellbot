@@ -97,6 +97,7 @@ async def queues_endpoint(request: web.Request) -> web.Response:
     ]
     formats = sorted({row["format"] for row in rows})
     brackets = sorted({row["bracket"] for row in rows})
+    languages = sorted({row["language"] for row in rows})
     stats = {"started_recent": started_recent}
     login_enabled = bool(settings.BOT_APPLICATION_ID and settings.BOT_CLIENT_SECRET)
     viewer = {
@@ -111,6 +112,7 @@ async def queues_endpoint(request: web.Request) -> web.Response:
         "default_logo": SPELLBOT_DEFAULT_LOGO,
         "formats": formats,
         "brackets": brackets,
+        "languages": languages,
         "stats": stats,
         "viewer": viewer,
     }
