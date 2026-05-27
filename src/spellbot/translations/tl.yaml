@@ -40,7 +40,7 @@ tl:
     xmage: "_Pakigamit ang XMage para sa game na ito._"
     mtg_arena: "_Pakigamit ang MTG Arena para sa game na ito._"
     mtg_online: "_Pakigamit ang MTG Online para sa game na ito._"
-    tts: "_Pakigamit ang TabletopSIM para sa game na ito._"
+    tts: "_Pakigamit ang TabletopSim para sa game na ito._"
     table_stream: "_Gagawa ng %{emoji}[Table Stream](https://table-stream.com/) na link kapag nakasali na ang lahat ng player._"
     convoke: "_Gagawa ng %{emoji}[Convoke](https://www.convoke.games/) na link kapag nakasali na ang lahat ng player._"
     girudo: "_Gagawa ng %{emoji}[Girudo](https://www.girudo.com/) na link kapag nakasali na ang lahat ng player._"
@@ -73,7 +73,7 @@ tl:
     mythic_track: "I-track ang game mo sa %{emoji}[Mythic Track](%{link}) ang PIN code na: `%{pin}`"
   # Watch notifications
   watch:
-    title: "Pinanood ang (mga) user na sumali sa isang game"
+    title: "Sumali sa isang game ang (mga) binabantayang user"
     jump_to_game: "[⇤ Pumunta sa game post](%{link})"
     users_header: "**Mga User:**"
     game_id: "Game ID"
@@ -151,10 +151,10 @@ tl:
     user_info_verified_yes: "✅ Na-verify"
     user_info_verified_no: "❌ Hindi na-verify"
     user_info_verified: "Na-verify"
-    user_info_watched_with_note: "⚠️ Pinanood: %{note}"
-    user_info_watched: "⚠️ Pinanood"
-    user_info_not_watched: "Hindi pinanood"
-    user_info_watch_status: "Status ng Panonood"
+    user_info_watched_with_note: "⚠️ Binabantayan: %{note}"
+    user_info_watched: "⚠️ Binabantayan"
+    user_info_not_watched: "Hindi binabantayan"
+    user_info_watch_status: "Status ng Pagbabantay"
     user_info_no_games: "Walang nilarong game"
     user_info_play_range: "Range ng Paglalaro"
     user_info_game_history: "History ng Game"
@@ -193,9 +193,9 @@ tl:
   watch_action:
     provide_target: "Dapat mong ibigay ang target na User o ang kanyang ID."
     invalid_id: "Dapat kang magbigay ng valid na integer para sa ID."
-    watching: "Pinapanood si <@%{user_id}>."
-    not_watching: "Hindi na pinapanood si <@%{user_id}>."
-    list_title: "Listahan ng mga pinanood na player sa server na ito"
+    watching: "Binabantayan si <@%{user_id}>."
+    not_watching: "Hindi na binabantayan si <@%{user_id}>."
+    list_title: "Listahan ng mga binabantayang player sa server na ito"
   # Score action messages
   score:
     record_title: "Record ng mga game na nilaro sa"
