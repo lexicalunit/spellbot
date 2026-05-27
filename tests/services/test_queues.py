@@ -305,3 +305,78 @@ class TestOnlyMemberOfFilter:
 
         none_rows = await queues.public_active_queues(only_member_of=999)
         assert none_rows == []
+
+
+@pytest.mark.asyncio
+class TestOnlyMythicTrackFilter:
+    async def test_active_queues_filtered_by_mythic_track(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        enabled = factories.guild.create(
+            xid=978001,
+            name="Mythic On",
+            enable_mythic_track=True,
+        )
+        disabled = factories.guild.create(
+            xid=978002,
+            name="Mythic Off",
+            enable_mythic_track=False,
+        )
+        ch1 = factories.channel.create(xid=978101, name="lfg", guild=enabled)
+        ch2 = factories.channel.create(xid=978102, name="lfg", guild=disabled)
+        u1 = factories.user.create(xid=878001, name="u1")
+        u2 = factories.user.create(xid=878002, name="u2")
+        on_game = factories.game.create(
+            guild=enabled,
+            channel=ch1,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=3),
+        )
+        off_game = factories.game.create(
+            guild=disabled,
+            channel=ch2,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=3),
+        )
+        factories.queue.create(user_xid=u1.xid, game_id=on_game.id, og_guild_xid=enabled.xid)
+        factories.queue.create(user_xid=u2.xid, game_id=off_game.id, og_guild_xid=disabled.xid)
+
+        all_rows = await queues.public_active_queues()
+        assert {row["guild_name"] for row in all_rows} == {"Mythic On", "Mythic Off"}
+
+        only_rows = await queues.public_active_queues(only_mythic_track=True)
+        assert [row["guild_name"] for row in only_rows] == ["Mythic On"]
+
+    async def test_recent_count_filtered_by_mythic_track(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        enabled = factories.guild.create(
+            xid=978201,
+            name="MT On",
+            enable_mythic_track=True,
+        )
+        disabled = factories.guild.create(
+            xid=978202,
+            name="MT Off",
+            enable_mythic_track=False,
+        )
+        ch1 = factories.channel.create(xid=978211, name="lfg", guild=enabled)
+        ch2 = factories.channel.create(xid=978212, name="lfg", guild=disabled)
+        factories.game.create(guild=enabled, channel=ch1, started_at=NOW - timedelta(minutes=10))
+        factories.game.create(guild=disabled, channel=ch2, started_at=NOW - timedelta(minutes=10))
+        factories.game.create(guild=disabled, channel=ch2, started_at=NOW - timedelta(minutes=20))
+
+        assert await queues.public_recent_started_count(timedelta(hours=2)) == 3
+        assert (
+            await queues.public_recent_started_count(
+                timedelta(hours=2),
+                only_mythic_track=True,
+            )
+            == 1
+        )

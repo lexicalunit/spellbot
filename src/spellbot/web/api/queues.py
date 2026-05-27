@@ -117,3 +117,44 @@ async def queues_endpoint(request: web.Request) -> web.Response:
         "viewer": viewer,
     }
     return aiohttp_jinja2.render_template("queues.html.j2", request, context)
+
+
+@routes.get("/queues.json")
+@tracer.wrap(name="web", resource="queues_json")
+async def queues_json_endpoint(request: web.Request) -> web.Response:
+    """Return the public list of pending queues as JSON."""
+    add_span_request_id(generate_request_id())
+    only_mythic_track = request.query.get("mythic_track") == "1"
+    async with db_session_manager():
+        raw_rows = await services.queues.public_active_queues(
+            only_mythic_track=only_mythic_track,
+        )
+        started_recent = await services.queues.public_recent_started_count(
+            STARTED_GAMES_WINDOW,
+            only_mythic_track=only_mythic_track,
+        )
+        backfilled = await _resolve_icons(raw_rows)
+    queues = [
+        {
+            "guild_xid": row["guild_xid"],
+            "guild_name": row["guild_name"],
+            "guild_locale": row["guild_locale"],
+            "logo": row.get("guild_icon")
+            or backfilled.get(row["guild_xid"])
+            or SPELLBOT_DEFAULT_LOGO,
+            "format": row["format"],
+            "bracket": row["bracket"],
+            "service": row["service"],
+            "players": row["players"],
+            "seats": row["seats"],
+            "wait_seconds": row["wait_seconds"],
+            "jump_url": row["jump_url"],
+        }
+        for row in raw_rows
+    ]
+    return web.json_response(
+        {
+            "stats": {"active_games": started_recent},
+            "queues": queues,
+        },
+    )
