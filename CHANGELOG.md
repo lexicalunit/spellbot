@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v20.3.1](https://github.com/lexicalunit/spellbot/releases/tag/v20.3.1) - 2026-05-26
+
 ### Added
 
 - Active queues filtering.
