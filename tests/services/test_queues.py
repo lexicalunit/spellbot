@@ -198,3 +198,106 @@ class TestPublicActiveQueues:
         by_players = {r["players"]: r["jump_url"] for r in rows}
         assert by_players[2] == f"https://discord.com/channels/{guild.xid}/{ch.xid}/222222"
         assert by_players[1] == f"https://discord.com/channels/{guild.xid}/{ch.xid}"
+
+
+@pytest.mark.asyncio
+class TestPublicRecentStartedCount:
+    async def test_empty_returns_zero(self) -> None:
+        assert await queues.public_recent_started_count(timedelta(hours=2)) == 0
+
+    async def test_counts_only_started_within_window_and_promotable(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        ok = factories.guild.create(xid=975001, name="OK")
+        banned = factories.guild.create(xid=975002, name="Banned", banned=True)
+        hidden = factories.guild.create(xid=975003, name="Hidden", promote=False)
+        ch = factories.channel.create(xid=975101, name="lfg", guild=ok)
+        ch_b = factories.channel.create(xid=975102, name="lfg-b", guild=banned)
+        ch_h = factories.channel.create(xid=975103, name="lfg-h", guild=hidden)
+        # In-window, started, promotable: counted (x2).
+        factories.game.create(guild=ok, channel=ch, started_at=NOW - timedelta(minutes=10))
+        factories.game.create(guild=ok, channel=ch, started_at=NOW - timedelta(hours=1))
+        # Out of window (older than 2h): not counted.
+        factories.game.create(
+            guild=ok,
+            channel=ch,
+            started_at=NOW - timedelta(hours=2, minutes=1),
+        )
+        # Pending (never started): not counted.
+        factories.game.create(guild=ok, channel=ch, started_at=None)
+        # Started + deleted: not counted.
+        factories.game.create(
+            guild=ok,
+            channel=ch,
+            started_at=NOW - timedelta(minutes=5),
+            deleted_at=NOW,
+        )
+        # Banned guild: not counted.
+        factories.game.create(guild=banned, channel=ch_b, started_at=NOW - timedelta(minutes=5))
+        # Unpromoted guild: not counted.
+        factories.game.create(guild=hidden, channel=ch_h, started_at=NOW - timedelta(minutes=5))
+
+        assert await queues.public_recent_started_count(timedelta(hours=2)) == 2
+
+    async def test_only_member_of_restricts_to_user_guilds(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        mine = factories.guild.create(xid=976001, name="Mine")
+        theirs = factories.guild.create(xid=976002, name="Theirs")
+        ch1 = factories.channel.create(xid=976101, name="lfg", guild=mine)
+        ch2 = factories.channel.create(xid=976102, name="lfg", guild=theirs)
+        me = factories.user.create(xid=876001, name="me")
+        factories.guild_member.create(user_xid=me.xid, guild_xid=mine.xid)
+        factories.game.create(guild=mine, channel=ch1, started_at=NOW - timedelta(minutes=5))
+        factories.game.create(guild=theirs, channel=ch2, started_at=NOW - timedelta(minutes=5))
+
+        assert (
+            await queues.public_recent_started_count(timedelta(hours=2), only_member_of=me.xid) == 1
+        )
+        assert await queues.public_recent_started_count(timedelta(hours=2), only_member_of=999) == 0
+
+
+@pytest.mark.asyncio
+class TestOnlyMemberOfFilter:
+    async def test_active_queues_filtered_by_membership(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        mine = factories.guild.create(xid=977001, name="Mine")
+        theirs = factories.guild.create(xid=977002, name="Theirs")
+        ch1 = factories.channel.create(xid=977101, name="lfg", guild=mine)
+        ch2 = factories.channel.create(xid=977102, name="lfg", guild=theirs)
+        me = factories.user.create(xid=877001, name="me")
+        other = factories.user.create(xid=877002, name="other")
+        factories.guild_member.create(user_xid=me.xid, guild_xid=mine.xid)
+        my_game = factories.game.create(
+            guild=mine,
+            channel=ch1,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=3),
+        )
+        other_game = factories.game.create(
+            guild=theirs,
+            channel=ch2,
+            started_at=None,
+            created_at=NOW - timedelta(minutes=3),
+        )
+        factories.queue.create(user_xid=me.xid, game_id=my_game.id, og_guild_xid=mine.xid)
+        factories.queue.create(user_xid=other.xid, game_id=other_game.id, og_guild_xid=theirs.xid)
+
+        all_rows = await queues.public_active_queues()
+        assert {row["guild_name"] for row in all_rows} == {"Mine", "Theirs"}
+
+        mine_rows = await queues.public_active_queues(only_member_of=me.xid)
+        assert [row["guild_name"] for row in mine_rows] == ["Mine"]
+
+        none_rows = await queues.public_active_queues(only_member_of=999)
+        assert none_rows == []

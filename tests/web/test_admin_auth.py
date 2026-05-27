@@ -203,7 +203,7 @@ class TestAdminOauthCallback:
         await configure_admin(mocker)
         state = await start_login(client)
         mocker.patch(
-            "spellbot.web.api.admin_auth.httpx.AsyncClient",
+            "spellbot.web.api.oauth.httpx.AsyncClient",
             return_value=make_httpx_client(token_status=400),
         )
         resp = await client.get(f"/admin/oauth/callback?code=abc&state={state}")
@@ -213,7 +213,7 @@ class TestAdminOauthCallback:
         await configure_admin(mocker)
         state = await start_login(client)
         mocker.patch(
-            "spellbot.web.api.admin_auth.httpx.AsyncClient",
+            "spellbot.web.api.oauth.httpx.AsyncClient",
             return_value=make_httpx_client(identify_status=500),
         )
         resp = await client.get(f"/admin/oauth/callback?code=abc&state={state}")
@@ -223,7 +223,7 @@ class TestAdminOauthCallback:
         await configure_admin(mocker)
         state = await start_login(client)
         mocker.patch(
-            "spellbot.web.api.admin_auth.httpx.AsyncClient",
+            "spellbot.web.api.oauth.httpx.AsyncClient",
             return_value=make_httpx_client(raise_http=True),
         )
         resp = await client.get(f"/admin/oauth/callback?code=abc&state={state}")
@@ -233,7 +233,7 @@ class TestAdminOauthCallback:
         await configure_admin(mocker)
         state = await start_login(client)
         mocker.patch(
-            "spellbot.web.api.admin_auth.httpx.AsyncClient",
+            "spellbot.web.api.oauth.httpx.AsyncClient",
             return_value=make_httpx_client(identify_json={"no_id": True}),
         )
         resp = await client.get(f"/admin/oauth/callback?code=abc&state={state}")
@@ -243,7 +243,7 @@ class TestAdminOauthCallback:
         await configure_admin(mocker)
         state = await start_login(client)
         mocker.patch(
-            "spellbot.web.api.admin_auth.httpx.AsyncClient",
+            "spellbot.web.api.oauth.httpx.AsyncClient",
             return_value=make_httpx_client(identify_json={"id": "999", "username": "x"}),
         )
         mocker.patch(
@@ -265,7 +265,7 @@ class TestAdminOauthCallback:
         await configure_admin(mocker)
         state = await start_login(client)
         mocker.patch(
-            "spellbot.web.api.admin_auth.httpx.AsyncClient",
+            "spellbot.web.api.oauth.httpx.AsyncClient",
             return_value=make_httpx_client(identify_json={"id": "777", "username": "promoted"}),
         )
         mocker.patch(
@@ -287,7 +287,7 @@ class TestAdminOauthCallback:
         await configure_admin(mocker)
         state = await start_login(client)
         mocker.patch(
-            "spellbot.web.api.admin_auth.httpx.AsyncClient",
+            "spellbot.web.api.oauth.httpx.AsyncClient",
             return_value=make_httpx_client(
                 identify_json={"id": "42", "global_name": "Amy", "username": "u"},
             ),
@@ -307,7 +307,7 @@ class TestAdminOauthCallback:
         await configure_admin(mocker)
         state = await start_login(client)
         mocker.patch(
-            "spellbot.web.api.admin_auth.httpx.AsyncClient",
+            "spellbot.web.api.oauth.httpx.AsyncClient",
             return_value=make_httpx_client(identify_json={"id": "42", "username": "fallback"}),
         )
         resp = await client.get(
@@ -327,7 +327,7 @@ class TestAdminLogout:
         await configure_admin(mocker)
         state = await start_login(client)
         mocker.patch(
-            "spellbot.web.api.admin_auth.httpx.AsyncClient",
+            "spellbot.web.api.oauth.httpx.AsyncClient",
             return_value=make_httpx_client(identify_json={"id": "42", "username": "u"}),
         )
         await client.get(

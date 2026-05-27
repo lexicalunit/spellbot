@@ -72,6 +72,27 @@ a:hover {
   font-weight: 600;
   color: var(--page-text);
 }
+.page-header__stat {
+  margin-left: auto;
+  align-self: flex-end;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  padding: 0 0.5rem;
+  margin-bottom: -0.7rem;
+  background: var(--page-bg);
+}
+.page-header__stat-value {
+  font-weight: 700;
+  color: #818cf8;
+}
+.page-header__stat-label {
+  color: var(--page-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 
 .empty {
   background: var(--card-bg);
@@ -90,11 +111,72 @@ a:hover {
   align-items: flex-end;
   margin-bottom: 1.5rem;
 }
+.filters__viewer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+.filters__mine {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text);
+  cursor: pointer;
+}
+.filters__mine input {
+  accent-color: var(--brand-purple);
+  cursor: pointer;
+}
+.filters__identity {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  color: var(--page-muted);
+  font-size: 0.75rem;
+}
+.filters__identity-name strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.filters__logout-form {
+  display: inline;
+}
+.filters__logout {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--link);
+  cursor: pointer;
+}
+.filters__logout:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+}
+.filters__login {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--link);
+  font-size: 0.85rem;
+}
+.filters__login:hover {
+  background: var(--card-bg-hover);
+  color: var(--link-hover);
+}
 .filters__field {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  min-width: 180px;
+  min-width: 220px;
 }
 .filters__label {
   font-size: 0.7rem;
@@ -112,6 +194,7 @@ a:hover {
   font: inherit;
   font-size: 0.9rem;
   cursor: pointer;
+  width: 220px;
 }
 .filters__select:focus {
   outline: 2px solid var(--brand-purple);
