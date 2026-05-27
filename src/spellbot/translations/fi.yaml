@@ -73,7 +73,7 @@ fi:
     mythic_track: "Seuraa peliäsi kohteessa %{emoji}[Mythic Track](%{link}) PIN-koodilla: `%{pin}`"
   # Watch notifications
   watch:
-    title: "Seurattu käyttäjä tai käyttäjiä liittyi peliin"
+    title: "Tarkkailtu käyttäjä tai käyttäjiä liittyi peliin"
     jump_to_game: "[⇤ Siirry pelijulkaisuun](%{link})"
     users_header: "**Käyttäjät:**"
     game_id: "Pelin tunnus"
@@ -156,7 +156,7 @@ fi:
     user_info_not_watched: "Ei seurattu"
     user_info_watch_status: "Seuraamisen tila"
     user_info_no_games: "Ei pelattuja pelejä"
-    user_info_play_range: "Pelialue"
+    user_info_play_range: "Pelin aikaväli"
     user_info_game_history: "Pelihistoria"
     user_info_view_link: "[Näytä kohteessa spellbot.io](%{link})"
     user_info_footer: "Käyttäjätunnus: %{user_id}"
