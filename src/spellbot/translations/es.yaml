@@ -97,7 +97,7 @@ es:
     awards_empty: "**No hay premios configurados en este servidor.**\n\nPara añadir premios, utilice el comando `/award add`."
     setup_title: "Configuración de SpellBot de %{guild}"
     setup_description: "Estos son los ajustes actuales de SpellBot en este servidor. Use los botones de abajo, así como los comandos `/set`, para configurar SpellBot como desee.\n\nTambién puede ver la configuración de Premios usando el comando `/awards` y la configuración de Canales usando el comando `/channels`."
-    field_motd: "Mensaje del día"
+    field_motd: "MOTD"
     field_none: "Ninguno"
     field_public_links: "Enlaces públicos"
     field_voice_create: "Crear canales de voz"
