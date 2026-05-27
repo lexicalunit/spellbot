@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from aiohttp import web
     from aiohttp.test_utils import TestClient
     from freezegun.api import FrozenDateTimeFactory
+    from pytest_mock import MockerFixture
 
     from tests.fixtures import Factories
 
@@ -71,6 +72,9 @@ class TestQueuesEndpoint:
         body = await resp.text()
         assert "No active queues right now" in body
         assert "Active Queues" in body
+        # The Active Games stat lives in the page header and always renders.
+        assert "Active Games" in body
+        assert '<span class="page-header__stat-value">0</span>' in body
 
     async def test_renders_cards_for_pending_queues(
         self,
@@ -249,3 +253,128 @@ class TestQueuesEndpoint:
             freezer.move_to(NOW + queues_endpoint_mod.ICON_FETCH_TTL)
             assert (await client.get("/queues")).status == 200
             assert mock.await_count == 2
+
+    async def test_renders_inline_active_games_stat(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        icon = "https://cdn.discordapp.com/icons/980006/stats.png"
+        guild = factories.guild.create(xid=980006, name="Stats Guild", icon=icon)
+        ch = factories.channel.create(xid=980106, name="lfg", guild=guild)
+        u1 = factories.user.create(xid=880008, name="u1")
+        # One pending game so the filter bar renders.
+        game = factories.game.create(guild=guild, channel=ch, started_at=None)
+        factories.queue.create(user_xid=u1.xid, game_id=game.id, og_guild_xid=guild.xid)
+        # One game started within the 2h window: should be counted.
+        factories.game.create(
+            guild=guild,
+            channel=ch,
+            started_at=NOW - timedelta(minutes=30),
+        )
+
+        resp = await client.get("/queues")
+        assert resp.status == 200
+        body = await resp.text()
+        assert "Active Games" in body
+        assert '<span class="page-header__stat-value">1</span>' in body
+
+    async def test_renders_login_link_when_login_enabled_and_anonymous(
+        self,
+        client: WebClient,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(queues_endpoint_mod.settings, "BOT_APPLICATION_ID", "appid-1")
+        mocker.patch.object(queues_endpoint_mod.settings, "BOT_CLIENT_SECRET", "secret-1")
+        resp = await client.get("/queues")
+        assert resp.status == 200
+        body = await resp.text()
+        assert 'href="/queues/login"' in body
+        assert "Log in with Discord" in body
+
+    async def test_my_filter_restricts_rows_and_count(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+        mocker: MockerFixture,
+    ) -> None:
+        freezer.move_to(NOW)
+        mine = factories.guild.create(
+            xid=980201,
+            name="Mine",
+            icon="https://cdn.discordapp.com/icons/980201/m.png",
+        )
+        theirs = factories.guild.create(
+            xid=980202,
+            name="Theirs",
+            icon="https://cdn.discordapp.com/icons/980202/t.png",
+        )
+        ch1 = factories.channel.create(xid=980211, name="lfg", guild=mine)
+        ch2 = factories.channel.create(xid=980212, name="lfg", guild=theirs)
+        me = factories.user.create(xid=880201, name="me")
+        other = factories.user.create(xid=880202, name="other")
+        factories.guild_member.create(user_xid=me.xid, guild_xid=mine.xid)
+        my_game = factories.game.create(guild=mine, channel=ch1, started_at=None)
+        their_game = factories.game.create(guild=theirs, channel=ch2, started_at=None)
+        factories.queue.create(user_xid=me.xid, game_id=my_game.id, og_guild_xid=mine.xid)
+        factories.queue.create(user_xid=other.xid, game_id=their_game.id, og_guild_xid=theirs.xid)
+        # A started game in `theirs` should be excluded from the stat when ?my=1.
+        factories.game.create(guild=theirs, channel=ch2, started_at=NOW - timedelta(minutes=20))
+        # A started game in `mine` should still count.
+        factories.game.create(guild=mine, channel=ch1, started_at=NOW - timedelta(minutes=10))
+
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+        resp = await client.get("/queues?my=1")
+        body = await resp.text()
+        assert "Mine" in body
+        assert "Theirs" not in body
+        # Stat counts only the started game in `Mine`.
+        assert '<span class="page-header__stat-value">1</span>' in body
+        assert 'id="filter-mine"' in body
+        assert "checked" in body
+        assert "Logged in as" in body
+
+    async def test_my_param_ignored_when_no_viewer_session(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(
+            xid=980301,
+            name="Anon Guild",
+            icon="https://cdn.discordapp.com/icons/980301/a.png",
+        )
+        ch = factories.channel.create(xid=980311, name="lfg", guild=guild)
+        u1 = factories.user.create(xid=880301, name="u1")
+        game = factories.game.create(guild=guild, channel=ch, started_at=None)
+        factories.queue.create(user_xid=u1.xid, game_id=game.id, og_guild_xid=guild.xid)
+
+        resp = await client.get("/queues?my=1")
+        body = await resp.text()
+        # Anonymous: the filter is ignored, rows still render.
+        assert "Anon Guild" in body
+        assert 'id="filter-mine"' not in body
+
+    async def test_logged_in_with_no_matches_shows_friendly_empty(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        me = factories.user.create(xid=880401, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+        resp = await client.get("/queues?my=1")
+        body = await resp.text()
+        assert "servers you've played in" in body
+        assert "Uncheck the filter" in body

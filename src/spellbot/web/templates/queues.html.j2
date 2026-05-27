@@ -19,14 +19,16 @@
                 <img class="logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
             </a>
             <h1>Active Queues</h1>
+            <div class="page-header__stat" title="Games started in the last 2 hours">
+                <span class="page-header__stat-value">{{ "{:,}".format(stats.started_recent) }}</span>
+                <span class="page-header__stat-label">Active Games</span>
+            </div>
         </header>
 
-        {% if not rows %}
-        <div class="empty">
-            No active queues right now. Check back in a moment, or run <code>/lfg</code> in your Discord server to start one.
-        </div>
-        {% else %}
-        <form class="filters" aria-label="Filter queues">
+        {% set show_filter_bar = rows or viewer.logged_in or viewer.login_enabled %}
+        {% if show_filter_bar %}
+        <div class="filters" role="group" aria-label="Filter queues">
+            {% if rows %}
             <label class="filters__field">
                 <span class="filters__label">Format</span>
                 <select id="filter-format" class="filters__select">
@@ -45,10 +47,46 @@
                     {% endfor %}
                 </select>
             </label>
+            {% endif %}
+            <div class="filters__viewer">
+                {% if viewer.logged_in %}
+                <label class="filters__mine">
+                    <input
+                        type="checkbox"
+                        id="filter-mine"
+                        {% if viewer.my_filter_on %}checked{% endif %}
+                    >
+                    <span>Only servers you've played in</span>
+                </label>
+                <div class="filters__identity">
+                    <span class="filters__identity-name">Logged in as <strong>{{ viewer.name }}</strong></span>
+                    <form method="post" action="/queues/logout" class="filters__logout-form">
+                        <button type="submit" class="filters__logout">Log out</button>
+                    </form>
+                </div>
+                {% elif viewer.login_enabled %}
+                <a class="filters__login" href="/queues/login" rel="nofollow">
+                    Log in with Discord to filter to your servers
+                </a>
+                {% endif %}
+            </div>
+            {% if rows %}
             <p id="filter-empty" class="filters__empty" hidden>
                 No queues match the selected filters.
             </p>
-        </form>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if not rows %}
+        <div class="empty">
+            {% if viewer.my_filter_on %}
+            No active queues right now in servers you've played in. Uncheck the filter to see all servers.
+            {% else %}
+            No active queues right now. Check back in a moment, or run <code>/lfg</code> in your Discord server to start one.
+            {% endif %}
+        </div>
+        {% else %}
         <section class="gallery">
             {% for row in rows %}
             <article class="queue-card" data-format="{{ row.format }}" data-bracket="{{ row.bracket }}">
@@ -99,6 +137,23 @@
                 }
                 formatSelect.addEventListener("change", apply);
                 bracketSelect.addEventListener("change", apply);
+            })();
+        </script>
+        {% endif %}
+        {% if viewer.logged_in %}
+        <script>
+            (function () {
+                var mine = document.getElementById("filter-mine");
+                if (!mine) return;
+                mine.addEventListener("change", function () {
+                    var url = new URL(window.location.href);
+                    if (mine.checked) {
+                        url.searchParams.set("my", "1");
+                    } else {
+                        url.searchParams.delete("my");
+                    }
+                    window.location.assign(url.toString());
+                });
             })();
         </script>
         {% endif %}

@@ -15,6 +15,12 @@ from cryptography.fernet import Fernet
 from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.settings import settings
+from spellbot.web.api.oauth import (
+    DISCORD_AUTHORIZE_URL,
+    display_name,
+    fetch_oauth_identify,
+    parse_user_xid,
+)
 
 if TYPE_CHECKING:
     from aiohttp.typedefs import Handler
@@ -25,10 +31,6 @@ routes = web.RouteTableDef()
 
 SESSION_COOKIE_NAME = "spellbot_admin"
 SESSION_MAX_AGE_S = 60 * 60 * 24  # 24 hours
-
-DISCORD_AUTHORIZE_URL = "https://discord.com/oauth2/authorize"
-DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token"  # noqa: S105
-DISCORD_IDENTIFY_URL = "https://discord.com/api/users/@me"
 
 # Routes inside /admin/* that do not require an authenticated session.
 PUBLIC_ADMIN_PATHS: frozenset[str] = frozenset(
@@ -150,34 +152,16 @@ async def admin_oauth_callback(request: web.Request) -> web.StreamResponse:
         )
         return web.Response(status=400, text="Invalid OAuth state.")
 
-    data = {
-        "client_id": settings.BOT_APPLICATION_ID,
-        "client_secret": settings.BOT_CLIENT_SECRET,
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": oauth_redirect_uri(),
-    }
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            tok = await client.post(DISCORD_TOKEN_URL, data=data)
-            if tok.status_code != 200:
-                logger.warning("OAuth token exchange failed: %s", tok.status_code)
-                return web.Response(status=401, text="OAuth token exchange failed.")
-            access_token = tok.json().get("access_token")
-            me = await client.get(
-                DISCORD_IDENTIFY_URL,
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
-            if me.status_code != 200:
-                return web.Response(status=401, text="Could not identify Discord user.")
-            user = me.json()
+        user = await fetch_oauth_identify(code, oauth_redirect_uri())
     except httpx.HTTPError as ex:
         logger.warning("OAuth flow failed: %s", ex)
         return web.Response(status=502, text="OAuth flow failed.")
+    if user is None:
+        return web.Response(status=401, text="Could not identify Discord user.")
 
-    try:
-        xid = int(user["id"])
-    except KeyError, ValueError, TypeError:
+    xid = parse_user_xid(user)
+    if xid is None:
         return web.Response(status=401, text="Could not identify Discord user.")
 
     if xid != settings.OWNER_XID:
@@ -191,7 +175,7 @@ async def admin_oauth_callback(request: web.Request) -> web.StreamResponse:
     session.invalidate()
     session = await new_session(request)
     session["xid"] = xid
-    session["name"] = user.get("global_name") or user.get("username") or str(xid)
+    session["name"] = display_name(user, xid)
     return web.HTTPFound("/admin/dashboard")
 
 

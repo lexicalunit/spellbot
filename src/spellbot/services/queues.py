@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import case, func, select
 
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat
-from spellbot.models import Game, Guild, Post, Queue
+from spellbot.models import Game, Guild, GuildMember, Post, Queue
 
 FORMAT_LABEL = case(
     *((Game.format == f.value, str(f)) for f in GameFormat),
@@ -20,33 +20,77 @@ BRACKET_LABEL = case(
 ).label("bracket")
 
 
-async def public_active_queues() -> list[dict[str, Any]]:
+async def public_recent_started_count(
+    within: timedelta,
+    *,
+    only_member_of: int | None = None,
+) -> int:
+    """
+    Count games started within `within` of now, excluding banned or unpromoted guilds.
+
+    When `only_member_of` is provided, the count is restricted to guilds where the
+    given user xid has a `guild_members` row.
+    """
+    cutoff = datetime.now(UTC) - within
+    stmt = (
+        select(func.count(Game.id))
+        .select_from(Game)
+        .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+        .where(
+            Game.started_at.is_not(None),
+            Game.started_at >= cutoff,
+            Game.deleted_at.is_(None),
+            Guild.banned.is_(False),
+            Guild.promote.is_(True),
+        )
+    )
+    if only_member_of is not None:
+        stmt = stmt.join(
+            GuildMember,
+            GuildMember.guild_xid == Guild.xid,
+        ).where(GuildMember.user_xid == only_member_of)
+    result = await DatabaseSession.execute(stmt)
+    return int(result.scalar() or 0)
+
+
+async def public_active_queues(
+    *,
+    only_member_of: int | None = None,
+) -> list[dict[str, Any]]:
+    """Return rows for pending queues, optionally limited to a user's guild memberships."""
     players_col = func.count(Queue.user_xid).label("players")
+    stmt = (
+        select(
+            Game.id,
+            Game.guild_xid,
+            Guild.name.label("guild_name"),
+            Guild.locale.label("guild_locale"),
+            Guild.icon.label("guild_icon"),
+            Game.channel_xid,  # type: ignore
+            FORMAT_LABEL,
+            BRACKET_LABEL,
+            Game.seats,  # type: ignore
+            Game.created_at,
+            players_col,
+        )
+        .select_from(Game)
+        .join(Queue, Queue.game_id == Game.id)
+        .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+        .where(
+            Game.started_at.is_(None),
+            Game.deleted_at.is_(None),
+            Guild.banned.is_(False),
+            Guild.promote.is_(True),
+        )
+    )
+    if only_member_of is not None:
+        stmt = stmt.join(
+            GuildMember,
+            GuildMember.guild_xid == Guild.xid,
+        ).where(GuildMember.user_xid == only_member_of)
     rows = (
         await DatabaseSession.execute(
-            select(
-                Game.id,
-                Game.guild_xid,
-                Guild.name.label("guild_name"),
-                Guild.locale.label("guild_locale"),
-                Guild.icon.label("guild_icon"),
-                Game.channel_xid,  # type: ignore
-                FORMAT_LABEL,
-                BRACKET_LABEL,
-                Game.seats,  # type: ignore
-                Game.created_at,
-                players_col,
-            )
-            .select_from(Game)
-            .join(Queue, Queue.game_id == Game.id)
-            .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
-            .where(
-                Game.started_at.is_(None),
-                Game.deleted_at.is_(None),
-                Guild.banned.is_(False),
-                Guild.promote.is_(True),
-            )
-            .group_by(
+            stmt.group_by(
                 Game.id,
                 Game.guild_xid,
                 Guild.name,
@@ -57,8 +101,7 @@ async def public_active_queues() -> list[dict[str, Any]]:
                 Game.bracket,  # type: ignore
                 Game.seats,  # type: ignore
                 Game.created_at,
-            )
-            .order_by(Game.created_at.desc()),
+            ).order_by(Game.created_at.desc()),
         )
     ).all()
     if not rows:

@@ -26,6 +26,7 @@ from spellbot.web.api import (
     record,
     rest,
     status,
+    viewer_auth,
 )
 from spellbot.web.tools import rate_limited
 
@@ -45,6 +46,7 @@ ALL_ROUTES = [
     admin_auth.routes,
     dashboard.routes,
     queues.routes,
+    viewer_auth.routes,
 ]
 
 
