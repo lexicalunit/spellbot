@@ -156,7 +156,7 @@ de:
     user_info_not_watched: "Nicht beobachtet"
     user_info_watch_status: "Beobachtungsstatus"
     user_info_no_games: "Keine Spiele gespielt"
-    user_info_play_range: "Spielbereich"
+    user_info_play_range: "Spielzeitraum"
     user_info_game_history: "Spielverlauf"
     user_info_view_link: "[Auf spellbot.io anzeigen](%{link})"
     user_info_footer: "Benutzer-ID: %{user_id}"
@@ -193,8 +193,8 @@ de:
   watch_action:
     provide_target: "Sie müssen entweder einen Zielbenutzer oder dessen ID angeben."
     invalid_id: "Sie müssen eine gültige Ganzzahl für eine ID angeben."
-    watching: "%{user_id}> wird beobachtet."
-    not_watching: "%{user_id}> wird nicht mehr beobachtet."
+    watching: "Sie beobachten <@%{user_id}>."
+    not_watching: "Sie beobachten <@%{user_id}> nicht mehr."
     list_title: "Liste der beobachteten Spieler auf diesem Server"
   # Score action messages
   score:
