@@ -19,8 +19,8 @@
                 <img class="logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
             </a>
             <h1>Active Queues</h1>
-            <div class="page-header__stat" title="Games started in the last 2 hours">
-                <span class="page-header__stat-value">{{ "{:,}".format(stats.started_recent) }}</span>
+            <div class="page-header__stat" title="Pending queues plus games started in the last 2 hours">
+                <span class="page-header__stat-value">{{ "{:,}".format(stats.active_games) }}</span>
                 <span class="page-header__stat-label">Active Games</span>
             </div>
         </header>

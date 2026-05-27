@@ -108,7 +108,7 @@ async def queues_endpoint(request: web.Request) -> web.Response:
     formats = sorted({r["format"] for r in rows} | {g["format"] for g in games})
     brackets = sorted({r["bracket"] for r in rows} | {g["bracket"] for g in games})
     languages = sorted({r["language"] for r in rows} | {g["language"] for g in games})
-    stats = {"started_recent": len(raw_games)}
+    stats = {"active_games": len(raw_rows) + len(raw_games)}
     login_enabled = bool(settings.BOT_APPLICATION_ID and settings.BOT_CLIENT_SECRET)
     viewer = {
         "xid": viewer_xid,
@@ -182,7 +182,7 @@ async def queues_json_endpoint(request: web.Request) -> web.Response:
     ]
     return web.json_response(
         {
-            "stats": {"active_games": len(raw_games)},
+            "stats": {"active_games": len(raw_rows) + len(raw_games)},
             "queues": queues,
             "games": games,
         },
