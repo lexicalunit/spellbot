@@ -33,12 +33,13 @@ USER_RECORDS_SORT_COLUMNS: dict[str, tuple[str, str]] = {
     "bracket": ("games.bracket", "game_plays.bracket"),
 }
 
-CHANNEL_RECORDS_SORT_COLUMNS: dict[str, str] = {
-    "id": "games.id",
-    "updated_at": "games.updated_at",
-    "format": "games.format",
-    "seats": "games.seats",
-    "bracket": "games.bracket",
+CHANNEL_RECORDS_SORT_COLUMNS: dict[str, tuple[str, str]] = {
+    # key -> (inner-CTE expression, outer-query expression)
+    "id": ("games.id", "page.id"),
+    "updated_at": ("games.updated_at", "page.updated_at"),
+    "format": ("games.format", "page.format"),
+    "seats": ("games.seats", "page.seats"),
+    "bracket": ("games.bracket", "page.bracket"),
 }
 
 
@@ -220,23 +221,45 @@ def build_channel_records_sql(
     ]
     shared, params = shared_filter_sql(opts, include_guild=False)
     clauses.extend(shared)
-    sort_col = CHANNEL_RECORDS_SORT_COLUMNS.get(
+    inner_col, outer_col = CHANNEL_RECORDS_SORT_COLUMNS.get(
         opts.sort_by,
         CHANNEL_RECORDS_SORT_COLUMNS["updated_at"],
     )
     direction = sort_direction(opts)
     paging = "OFFSET :offset LIMIT :page_size" if paginated else ""
+    # Page the lean rows (no plays/users join) first, then STRING_AGG only for
+    # the surviving page. All player-related filters in `shared_filter_sql` are
+    # already EXISTS subqueries so the inner CTE does not need `plays`/`users`.
     sql = f"""
+        WITH page AS (
+            SELECT
+                games.id,
+                games.updated_at,
+                posts.message_xid,
+                games.game_link,
+                games.format,
+                games.service,
+                games.seats,
+                games.bracket,
+                games.locale
+            FROM games
+            JOIN posts ON posts.game_id = games.id
+                AND posts.guild_xid = games.guild_xid
+                AND posts.channel_xid = games.channel_xid
+            WHERE {" AND ".join(clauses)}
+            ORDER BY {inner_col} {direction}, games.id DESC
+            {paging}
+        )
         SELECT
-            games.id,
-            games.updated_at,
-            posts.message_xid,
-            games.game_link,
-            games.format,
-            games.service,
-            games.seats,
-            games.bracket,
-            games.locale,
+            page.id,
+            page.updated_at,
+            page.message_xid,
+            page.game_link,
+            page.format,
+            page.service,
+            page.seats,
+            page.bracket,
+            page.locale,
             STRING_AGG(
                 CONCAT(
                     REPLACE(REPLACE(users.name, ':', ''), '@', ''),
@@ -246,25 +269,20 @@ def build_channel_records_sql(
                 '@'
                 ORDER BY users.xid
             )
-        FROM games
-        JOIN plays ON plays.game_id = games.id
+        FROM page
+        JOIN plays ON plays.game_id = page.id
         JOIN users ON users.xid = plays.user_xid
-        JOIN posts ON posts.game_id = games.id
-            AND posts.guild_xid = games.guild_xid
-            AND posts.channel_xid = games.channel_xid
-        WHERE {" AND ".join(clauses)}
         GROUP BY
-            games.id,
-            games.updated_at,
-            posts.message_xid,
-            games.game_link,
-            games.format,
-            games.service,
-            games.seats,
-            games.bracket,
-            games.locale
-        ORDER BY {sort_col} {direction}, games.id DESC
-        {paging}
+            page.id,
+            page.updated_at,
+            page.message_xid,
+            page.game_link,
+            page.format,
+            page.service,
+            page.seats,
+            page.bracket,
+            page.locale
+        ORDER BY {outer_col} {direction}, page.id DESC
         ;
     """  # noqa: S608
     return sql, params
@@ -279,10 +297,15 @@ def build_channel_records_count_sql(
     ]
     shared, params = shared_filter_sql(opts, include_guild=False)
     clauses.extend(shared)
+    # Match the page query's INNER JOIN on `posts` so the count never includes
+    # games that wouldn't actually be listed. `plays` is not needed here because
+    # all player-related filters are already EXISTS subqueries.
     sql = f"""
-        SELECT COUNT(DISTINCT games.id)
+        SELECT COUNT(*)
         FROM games
-        JOIN plays ON plays.game_id = games.id
+        JOIN posts ON posts.game_id = games.id
+            AND posts.guild_xid = games.guild_xid
+            AND posts.channel_xid = games.channel_xid
         WHERE {" AND ".join(clauses)}
         ;
     """  # noqa: S608
