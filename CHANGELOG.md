@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Vanity domains for status and queues.
 - Updated tf file for RDS to 17.7.
+- Added links to status and queues pages from the main page and README.md.
+- Use jekyll redirect plugin for the old /status URL.
 
 ## [v20.5.1](https://github.com/lexicalunit/spellbot/releases/tag/v20.5.1) - 2026-05-27
 

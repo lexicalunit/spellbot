@@ -22,8 +22,9 @@ author: "Amy Troschinetz"
 navbar-links:
   Convoke: "https://convoke.games/"
   Patreon: "https://www.patreon.com/lexicalunit"
+  Live: "https://queues.spellbot.io"
   Dev: "https://github.com/lexicalunit/spellbot"
-  Status: "https://prod.app.spellbot.io/status"
+  Status: "https://status.spellbot.io"
 
 ################
 # --- Logo --- #
@@ -281,6 +282,7 @@ exclude:
 
 plugins:
   - jekyll-paginate
+  - jekyll-redirect-from
   - jekyll-sitemap
 
 # Beautiful Jekyll / Dean Attali
