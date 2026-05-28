@@ -29,8 +29,8 @@
         {% if prev_page or next_page or export_url %}
         <div class="actions">
             {% if export_url %}<a href="{{ export_url }}" class="button">Export all (CSV)</a>{% endif %}
-            {% if prev_page and page and page > 0 %}<a href="{{ prev_page }}" class="button">Previous page</a>{% endif %}
-            {% if next_page %}<a href="{{ next_page }}" class="button">Next page</a>{% endif %}
+            {% if has_prev %}<a href="{{ prev_page }}" class="button">Previous page</a>{% endif %}
+            {% if has_next %}<a href="{{ next_page }}" class="button">Next page</a>{% endif %}
         </div>
         {% endif %}
 
@@ -101,6 +101,20 @@
 
         Array.from(document.getElementsByClassName('timestamp')).forEach((el) => {
             el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+        });
+
+        // Make `<select multiple>` toggle on plain click instead of requiring
+        // Ctrl/Cmd-click. Intercept `mousedown` on each option, suppress the
+        // native replace-selection behavior, and flip the option's selected
+        // state so single clicks add or remove items from the selection.
+        document.querySelectorAll('select[multiple]').forEach((select) => {
+            select.addEventListener('mousedown', (event) => {
+                if (event.target.tagName !== 'OPTION') return;
+                event.preventDefault();
+                event.target.selected = !event.target.selected;
+                select.focus();
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            });
         });
 
         document.querySelectorAll('.copy').forEach((el) => {

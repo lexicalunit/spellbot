@@ -346,8 +346,10 @@ class TestPlaysServiceRecords:
         factories.post.create(guild=guild, channel=channel, game=game, message_xid=9101)
         factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
 
-        rows = await plays.user_records(user_xid=user.xid)
-        assert rows is not None
+        result = await plays.user_records(user_xid=user.xid)
+        assert result is not None
+        rows, total = result
+        assert total == 1
         assert len(rows) == 1
         assert rows[0]["channel"] == channel.xid
         assert "seats" in rows[0]
@@ -383,8 +385,10 @@ class TestPlaysServiceRecords:
         factories.post.create(guild=guild, channel=channel, game=game, message_xid=9103)
         factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
 
-        rows = await plays.channel_records(guild_xid=guild.xid, channel_xid=channel.xid)
-        assert rows is not None
+        result = await plays.channel_records(guild_xid=guild.xid, channel_xid=channel.xid)
+        assert result is not None
+        rows, total = result
+        assert total == 1
         assert len(rows) == 1
         assert rows[0]["channel"] == channel.xid
         assert rows[0]["service"]

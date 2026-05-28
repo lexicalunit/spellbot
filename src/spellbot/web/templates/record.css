@@ -197,6 +197,67 @@ a.button:hover {
   justify-content: flex-end;
 }
 
+.filters {
+  background: #1e1e3f;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.filters .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+.filters .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1 1 12rem;
+  min-width: 10rem;
+}
+.filters label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+.filters input,
+.filters select {
+  background: #16213e;
+  color: #e0e0e0;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+}
+.filters select[multiple] {
+  min-height: 5.5rem;
+}
+.filters .actions {
+  margin-top: 0.75rem;
+  justify-content: flex-start;
+}
+
+table thead th .sort {
+  color: #9ca3af;
+  text-decoration: none;
+  white-space: nowrap;
+}
+table thead th .sort:hover {
+  color: #c4b5fd;
+}
+table thead th .sort .arrow {
+  margin-left: 0.25rem;
+  color: #c4b5fd;
+}
+
+.count {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
 .footer {
   margin-top: 2rem;
   padding-top: 1rem;

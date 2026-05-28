@@ -211,6 +211,67 @@
     justify-content: flex-end;
   }
   
+  .filters {
+    background: #1e1e3f;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .filters .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+  .filters .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 12rem;
+    min-width: 10rem;
+  }
+  .filters label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .filters input,
+  .filters select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .filters select[multiple] {
+    min-height: 5.5rem;
+  }
+  .filters .actions {
+    margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+  
+  table thead th .sort {
+    color: #9ca3af;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  table thead th .sort:hover {
+    color: #c4b5fd;
+  }
+  table thead th .sort .arrow {
+    margin-left: 0.25rem;
+    color: #c4b5fd;
+  }
+  
+  .count {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
+  
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
@@ -468,6 +529,20 @@
               el.innerHTML = humanize_timestamp(Number(el.innerHTML));
           });
   
+          // Make `<select multiple>` toggle on plain click instead of requiring
+          // Ctrl/Cmd-click. Intercept `mousedown` on each option, suppress the
+          // native replace-selection behavior, and flip the option's selected
+          // state so single clicks add or remove items from the selection.
+          document.querySelectorAll('select[multiple]').forEach((select) => {
+              select.addEventListener('mousedown', (event) => {
+                  if (event.target.tagName !== 'OPTION') return;
+                  event.preventDefault();
+                  event.target.selected = !event.target.selected;
+                  select.focus();
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+              });
+          });
+  
           document.querySelectorAll('.copy').forEach((el) => {
               el.addEventListener('click', async (event) => {
                   event.preventDefault();
@@ -710,6 +785,67 @@
     justify-content: flex-end;
   }
   
+  .filters {
+    background: #1e1e3f;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .filters .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+  .filters .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 12rem;
+    min-width: 10rem;
+  }
+  .filters label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .filters input,
+  .filters select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .filters select[multiple] {
+    min-height: 5.5rem;
+  }
+  .filters .actions {
+    margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+  
+  table thead th .sort {
+    color: #9ca3af;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  table thead th .sort:hover {
+    color: #c4b5fd;
+  }
+  table thead th .sort .arrow {
+    margin-left: 0.25rem;
+    color: #c4b5fd;
+  }
+  
+  .count {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
+  
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
@@ -778,17 +914,114 @@
   
           
   <div class="section">
-      <h2>Games (6)</h2>
+      <h2>Games <span class="count">(3 matching)</span></h2>
+      
+  <form method="get" class="filters">
+      <div class="row">
+          <div class="field">
+              <label for="f-with-player">Player (name or ID)</label>
+              <input type="text" id="f-with-player" name="with_player" value="" placeholder="e.g. amy or 12345">
+          </div>
+          
+          <div class="field">
+              <label for="f-from">From</label>
+              <input type="date" id="f-from" name="from" value="">
+          </div>
+          <div class="field">
+              <label for="f-to">To</label>
+              <input type="date" id="f-to" name="to" value="">
+          </div>
+      </div>
+      <div class="row">
+          <div class="field">
+              <label for="f-formats">Format(s)</label>
+              <select id="f-formats" name="formats" multiple size="6">
+                  
+                  <option value="1" >Commander</option>
+                  
+                  <option value="18" >Commander Precons</option>
+                  
+                  <option value="15" >EDH Low</option>
+                  
+                  <option value="14" >EDH Mid</option>
+                  
+                  <option value="13" >EDH High</option>
+                  
+                  <option value="12" >EDH Max</option>
+                  
+                  <option value="16" >EDH Battlecruiser</option>
+                  
+                  <option value="17" >Planechase</option>
+                  
+                  <option value="9" >Two Headed Giant</option>
+                  
+                  <option value="8" >Brawl (Multiplayer)</option>
+                  
+                  <option value="21" >cEDH</option>
+                  
+                  <option value="23" >Pauper EDH</option>
+                  
+                  <option value="19" >Oathbreaker</option>
+                  
+                  <option value="22" >Archenemy</option>
+                  
+                  <option value="24" >Horde Magic</option>
+                  
+                  <option value="20" >Duel Commander</option>
+                  
+                  <option value="2" >Standard</option>
+                  
+                  <option value="4" >Modern</option>
+                  
+                  <option value="11" >Pioneer</option>
+                  
+                  <option value="10" >Pauper</option>
+                  
+                  <option value="6" >Legacy</option>
+                  
+                  <option value="5" >Vintage</option>
+                  
+                  <option value="3" >Sealed</option>
+                  
+                  <option value="7" >Brawl (Two Players)</option>
+                  
+              </select>
+          </div>
+          <div class="field">
+              <label for="f-brackets">Bracket(s)</label>
+              <select id="f-brackets" name="brackets" multiple size="6">
+                  
+                  <option value="1" >None</option>
+                  
+                  <option value="2" >Bracket 1: Exhibition</option>
+                  
+                  <option value="3" >Bracket 2: Core</option>
+                  
+                  <option value="4" >Bracket 3: Upgraded</option>
+                  
+                  <option value="5" >Bracket 4: Optimized</option>
+                  
+                  <option value="6" >Bracket 5: Competitive</option>
+                  
+              </select>
+          </div>
+      </div>
+      <div class="actions">
+          <button type="submit" class="button">Apply filters</button>
+          <a href="?" class="button">Reset</a>
+      </div>
+  </form>
+  
       <div class="card">
           
           <table>
               <thead>
                   <tr>
-                      <th>Game</th>
-                      <th>Time</th>
-                      <th>Format</th>
-                      <th>Seats</th>
-                      <th>Bracket</th>
+                      <th><a class="sort" href="?sort=id&amp;dir=desc">Game</a></th>
+                      <th><a class="sort" href="?sort=updated_at&amp;dir=asc">Time<span class="arrow">&#9660;</span></a></th>
+                      <th><a class="sort" href="?sort=format&amp;dir=desc">Format</a></th>
+                      <th><a class="sort" href="?sort=seats&amp;dir=desc">Seats</a></th>
+                      <th><a class="sort" href="?sort=bracket&amp;dir=desc">Bracket</a></th>
                       <th>Locale</th>
                       <th>Link</th>
                       <th>User Name</th>
@@ -799,11 +1032,11 @@
               <tbody id="rows">
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
+                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
-                      <td data-label="Format">Modern</td>
+                      <td data-label="Format">Legacy</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -819,15 +1052,15 @@
                               <button type="button" class="copy" data-copy="101" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
+                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
-                      <td data-label="Format">Modern</td>
+                      <td data-label="Format">Legacy</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -843,7 +1076,7 @@
                               <button type="button" class="copy" data-copy="102" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
                   <tr>
@@ -895,11 +1128,11 @@
                   </tr>
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
+                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
-                      <td data-label="Format">Legacy</td>
+                      <td data-label="Format">Modern</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -915,15 +1148,15 @@
                               <button type="button" class="copy" data-copy="101" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
+                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
-                      <td data-label="Format">Legacy</td>
+                      <td data-label="Format">Modern</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -939,7 +1172,7 @@
                               <button type="button" class="copy" data-copy="102" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
               </tbody>
@@ -953,7 +1186,7 @@
           <div class="actions">
               <a href="/g/201/c/301/export.csv" class="button">Export all (CSV)</a>
               
-              <a href="/g/201/c/301?page=1" class="button">Next page</a>
+              
           </div>
           
   
@@ -1024,6 +1257,20 @@
   
           Array.from(document.getElementsByClassName('timestamp')).forEach((el) => {
               el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+  
+          // Make `<select multiple>` toggle on plain click instead of requiring
+          // Ctrl/Cmd-click. Intercept `mousedown` on each option, suppress the
+          // native replace-selection behavior, and flip the option's selected
+          // state so single clicks add or remove items from the selection.
+          document.querySelectorAll('select[multiple]').forEach((select) => {
+              select.addEventListener('mousedown', (event) => {
+                  if (event.target.tagName !== 'OPTION') return;
+                  event.preventDefault();
+                  event.target.selected = !event.target.selected;
+                  select.focus();
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+              });
           });
   
           document.querySelectorAll('.copy').forEach((el) => {
@@ -1268,6 +1515,67 @@
     justify-content: flex-end;
   }
   
+  .filters {
+    background: #1e1e3f;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .filters .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+  .filters .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 12rem;
+    min-width: 10rem;
+  }
+  .filters label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .filters input,
+  .filters select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .filters select[multiple] {
+    min-height: 5.5rem;
+  }
+  .filters .actions {
+    margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+  
+  table thead th .sort {
+    color: #9ca3af;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  table thead th .sort:hover {
+    color: #c4b5fd;
+  }
+  table thead th .sort .arrow {
+    margin-left: 0.25rem;
+    color: #c4b5fd;
+  }
+  
+  .count {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
+  
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
@@ -1336,7 +1644,104 @@
   
           
   <div class="section">
-      <h2>Games (0)</h2>
+      <h2>Games <span class="count">(0 matching)</span></h2>
+      
+  <form method="get" class="filters">
+      <div class="row">
+          <div class="field">
+              <label for="f-with-player">Player (name or ID)</label>
+              <input type="text" id="f-with-player" name="with_player" value="" placeholder="e.g. amy or 12345">
+          </div>
+          
+          <div class="field">
+              <label for="f-from">From</label>
+              <input type="date" id="f-from" name="from" value="">
+          </div>
+          <div class="field">
+              <label for="f-to">To</label>
+              <input type="date" id="f-to" name="to" value="">
+          </div>
+      </div>
+      <div class="row">
+          <div class="field">
+              <label for="f-formats">Format(s)</label>
+              <select id="f-formats" name="formats" multiple size="6">
+                  
+                  <option value="1" >Commander</option>
+                  
+                  <option value="18" >Commander Precons</option>
+                  
+                  <option value="15" >EDH Low</option>
+                  
+                  <option value="14" >EDH Mid</option>
+                  
+                  <option value="13" >EDH High</option>
+                  
+                  <option value="12" >EDH Max</option>
+                  
+                  <option value="16" >EDH Battlecruiser</option>
+                  
+                  <option value="17" >Planechase</option>
+                  
+                  <option value="9" >Two Headed Giant</option>
+                  
+                  <option value="8" >Brawl (Multiplayer)</option>
+                  
+                  <option value="21" >cEDH</option>
+                  
+                  <option value="23" >Pauper EDH</option>
+                  
+                  <option value="19" >Oathbreaker</option>
+                  
+                  <option value="22" >Archenemy</option>
+                  
+                  <option value="24" >Horde Magic</option>
+                  
+                  <option value="20" >Duel Commander</option>
+                  
+                  <option value="2" >Standard</option>
+                  
+                  <option value="4" >Modern</option>
+                  
+                  <option value="11" >Pioneer</option>
+                  
+                  <option value="10" >Pauper</option>
+                  
+                  <option value="6" >Legacy</option>
+                  
+                  <option value="5" >Vintage</option>
+                  
+                  <option value="3" >Sealed</option>
+                  
+                  <option value="7" >Brawl (Two Players)</option>
+                  
+              </select>
+          </div>
+          <div class="field">
+              <label for="f-brackets">Bracket(s)</label>
+              <select id="f-brackets" name="brackets" multiple size="6">
+                  
+                  <option value="1" >None</option>
+                  
+                  <option value="2" >Bracket 1: Exhibition</option>
+                  
+                  <option value="3" >Bracket 2: Core</option>
+                  
+                  <option value="4" >Bracket 3: Upgraded</option>
+                  
+                  <option value="5" >Bracket 4: Optimized</option>
+                  
+                  <option value="6" >Bracket 5: Competitive</option>
+                  
+              </select>
+          </div>
+      </div>
+      <div class="actions">
+          <button type="submit" class="button">Apply filters</button>
+          <a href="?" class="button">Reset</a>
+      </div>
+  </form>
+  
       <div class="card">
           
           <div class="empty">No games found for this channel.</div>
@@ -1349,7 +1754,7 @@
           <div class="actions">
               <a href="/g/201/c/101/export.csv" class="button">Export all (CSV)</a>
               
-              <a href="/g/201/c/101?page=1" class="button">Next page</a>
+              
           </div>
           
   
@@ -1420,6 +1825,20 @@
   
           Array.from(document.getElementsByClassName('timestamp')).forEach((el) => {
               el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+  
+          // Make `<select multiple>` toggle on plain click instead of requiring
+          // Ctrl/Cmd-click. Intercept `mousedown` on each option, suppress the
+          // native replace-selection behavior, and flip the option's selected
+          // state so single clicks add or remove items from the selection.
+          document.querySelectorAll('select[multiple]').forEach((select) => {
+              select.addEventListener('mousedown', (event) => {
+                  if (event.target.tagName !== 'OPTION') return;
+                  event.preventDefault();
+                  event.target.selected = !event.target.selected;
+                  select.focus();
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+              });
           });
   
           document.querySelectorAll('.copy').forEach((el) => {
@@ -1664,6 +2083,67 @@
     justify-content: flex-end;
   }
   
+  .filters {
+    background: #1e1e3f;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .filters .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+  .filters .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 12rem;
+    min-width: 10rem;
+  }
+  .filters label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .filters input,
+  .filters select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .filters select[multiple] {
+    min-height: 5.5rem;
+  }
+  .filters .actions {
+    margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+  
+  table thead th .sort {
+    color: #9ca3af;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  table thead th .sort:hover {
+    color: #c4b5fd;
+  }
+  table thead th .sort .arrow {
+    margin-left: 0.25rem;
+    color: #c4b5fd;
+  }
+  
+  .count {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
+  
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
@@ -1732,17 +2212,114 @@
   
           
   <div class="section">
-      <h2>Games (6)</h2>
+      <h2>Games <span class="count">(3 matching)</span></h2>
+      
+  <form method="get" class="filters">
+      <div class="row">
+          <div class="field">
+              <label for="f-with-player">Player (name or ID)</label>
+              <input type="text" id="f-with-player" name="with_player" value="" placeholder="e.g. amy or 12345">
+          </div>
+          
+          <div class="field">
+              <label for="f-from">From</label>
+              <input type="date" id="f-from" name="from" value="">
+          </div>
+          <div class="field">
+              <label for="f-to">To</label>
+              <input type="date" id="f-to" name="to" value="">
+          </div>
+      </div>
+      <div class="row">
+          <div class="field">
+              <label for="f-formats">Format(s)</label>
+              <select id="f-formats" name="formats" multiple size="6">
+                  
+                  <option value="1" >Commander</option>
+                  
+                  <option value="18" >Commander Precons</option>
+                  
+                  <option value="15" >EDH Low</option>
+                  
+                  <option value="14" >EDH Mid</option>
+                  
+                  <option value="13" >EDH High</option>
+                  
+                  <option value="12" >EDH Max</option>
+                  
+                  <option value="16" >EDH Battlecruiser</option>
+                  
+                  <option value="17" >Planechase</option>
+                  
+                  <option value="9" >Two Headed Giant</option>
+                  
+                  <option value="8" >Brawl (Multiplayer)</option>
+                  
+                  <option value="21" >cEDH</option>
+                  
+                  <option value="23" >Pauper EDH</option>
+                  
+                  <option value="19" >Oathbreaker</option>
+                  
+                  <option value="22" >Archenemy</option>
+                  
+                  <option value="24" >Horde Magic</option>
+                  
+                  <option value="20" >Duel Commander</option>
+                  
+                  <option value="2" >Standard</option>
+                  
+                  <option value="4" >Modern</option>
+                  
+                  <option value="11" >Pioneer</option>
+                  
+                  <option value="10" >Pauper</option>
+                  
+                  <option value="6" >Legacy</option>
+                  
+                  <option value="5" >Vintage</option>
+                  
+                  <option value="3" >Sealed</option>
+                  
+                  <option value="7" >Brawl (Two Players)</option>
+                  
+              </select>
+          </div>
+          <div class="field">
+              <label for="f-brackets">Bracket(s)</label>
+              <select id="f-brackets" name="brackets" multiple size="6">
+                  
+                  <option value="1" >None</option>
+                  
+                  <option value="2" >Bracket 1: Exhibition</option>
+                  
+                  <option value="3" >Bracket 2: Core</option>
+                  
+                  <option value="4" >Bracket 3: Upgraded</option>
+                  
+                  <option value="5" >Bracket 4: Optimized</option>
+                  
+                  <option value="6" >Bracket 5: Competitive</option>
+                  
+              </select>
+          </div>
+      </div>
+      <div class="actions">
+          <button type="submit" class="button">Apply filters</button>
+          <a href="?" class="button">Reset</a>
+      </div>
+  </form>
+  
       <div class="card">
           
           <table>
               <thead>
                   <tr>
-                      <th>Game</th>
-                      <th>Time</th>
-                      <th>Format</th>
-                      <th>Seats</th>
-                      <th>Bracket</th>
+                      <th><a class="sort" href="?sort=id&amp;dir=desc">Game</a></th>
+                      <th><a class="sort" href="?sort=updated_at&amp;dir=asc">Time<span class="arrow">&#9660;</span></a></th>
+                      <th><a class="sort" href="?sort=format&amp;dir=desc">Format</a></th>
+                      <th><a class="sort" href="?sort=seats&amp;dir=desc">Seats</a></th>
+                      <th><a class="sort" href="?sort=bracket&amp;dir=desc">Bracket</a></th>
                       <th>Locale</th>
                       <th>Link</th>
                       <th>User Name</th>
@@ -1753,11 +2330,11 @@
               <tbody id="rows">
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
+                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
                       
                       <td data-label="Time">December 31, 2019, 4:00:00 PM PST</td>
                       
-                      <td data-label="Format">Modern</td>
+                      <td data-label="Format">Legacy</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -1773,15 +2350,15 @@
                               <button type="button" class="copy" data-copy="101" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
+                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
                       
                       <td data-label="Time">December 31, 2019, 4:00:00 PM PST</td>
                       
-                      <td data-label="Format">Modern</td>
+                      <td data-label="Format">Legacy</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -1797,7 +2374,7 @@
                               <button type="button" class="copy" data-copy="102" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
                   <tr>
@@ -1849,11 +2426,11 @@
                   </tr>
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
+                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
                       
                       <td data-label="Time">December 31, 2019, 4:00:00 PM PST</td>
                       
-                      <td data-label="Format">Legacy</td>
+                      <td data-label="Format">Modern</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -1869,15 +2446,15 @@
                               <button type="button" class="copy" data-copy="101" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
+                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
                       
                       <td data-label="Time">December 31, 2019, 4:00:00 PM PST</td>
                       
-                      <td data-label="Format">Legacy</td>
+                      <td data-label="Format">Modern</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -1893,7 +2470,7 @@
                               <button type="button" class="copy" data-copy="102" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
               </tbody>
@@ -1907,7 +2484,7 @@
           <div class="actions">
               <a href="/g/201/c/301/export.csv" class="button">Export all (CSV)</a>
               
-              <a href="/g/201/c/301?page=1" class="button">Next page</a>
+              
           </div>
           
   
@@ -1978,6 +2555,20 @@
   
           Array.from(document.getElementsByClassName('timestamp')).forEach((el) => {
               el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+  
+          // Make `<select multiple>` toggle on plain click instead of requiring
+          // Ctrl/Cmd-click. Intercept `mousedown` on each option, suppress the
+          // native replace-selection behavior, and flip the option's selected
+          // state so single clicks add or remove items from the selection.
+          document.querySelectorAll('select[multiple]').forEach((select) => {
+              select.addEventListener('mousedown', (event) => {
+                  if (event.target.tagName !== 'OPTION') return;
+                  event.preventDefault();
+                  event.target.selected = !event.target.selected;
+                  select.focus();
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+              });
           });
   
           document.querySelectorAll('.copy').forEach((el) => {
@@ -2222,6 +2813,67 @@
     justify-content: flex-end;
   }
   
+  .filters {
+    background: #1e1e3f;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .filters .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+  .filters .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 12rem;
+    min-width: 10rem;
+  }
+  .filters label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .filters input,
+  .filters select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .filters select[multiple] {
+    min-height: 5.5rem;
+  }
+  .filters .actions {
+    margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+  
+  table thead th .sort {
+    color: #9ca3af;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  table thead th .sort:hover {
+    color: #c4b5fd;
+  }
+  table thead th .sort .arrow {
+    margin-left: 0.25rem;
+    color: #c4b5fd;
+  }
+  
+  .count {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
+  
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
@@ -2290,17 +2942,114 @@
   
           
   <div class="section">
-      <h2>Games (6)</h2>
+      <h2>Games <span class="count">(3 matching)</span></h2>
+      
+  <form method="get" class="filters">
+      <div class="row">
+          <div class="field">
+              <label for="f-with-player">Player (name or ID)</label>
+              <input type="text" id="f-with-player" name="with_player" value="" placeholder="e.g. amy or 12345">
+          </div>
+          
+          <div class="field">
+              <label for="f-from">From</label>
+              <input type="date" id="f-from" name="from" value="">
+          </div>
+          <div class="field">
+              <label for="f-to">To</label>
+              <input type="date" id="f-to" name="to" value="">
+          </div>
+      </div>
+      <div class="row">
+          <div class="field">
+              <label for="f-formats">Format(s)</label>
+              <select id="f-formats" name="formats" multiple size="6">
+                  
+                  <option value="1" >Commander</option>
+                  
+                  <option value="18" >Commander Precons</option>
+                  
+                  <option value="15" >EDH Low</option>
+                  
+                  <option value="14" >EDH Mid</option>
+                  
+                  <option value="13" >EDH High</option>
+                  
+                  <option value="12" >EDH Max</option>
+                  
+                  <option value="16" >EDH Battlecruiser</option>
+                  
+                  <option value="17" >Planechase</option>
+                  
+                  <option value="9" >Two Headed Giant</option>
+                  
+                  <option value="8" >Brawl (Multiplayer)</option>
+                  
+                  <option value="21" >cEDH</option>
+                  
+                  <option value="23" >Pauper EDH</option>
+                  
+                  <option value="19" >Oathbreaker</option>
+                  
+                  <option value="22" >Archenemy</option>
+                  
+                  <option value="24" >Horde Magic</option>
+                  
+                  <option value="20" >Duel Commander</option>
+                  
+                  <option value="2" >Standard</option>
+                  
+                  <option value="4" >Modern</option>
+                  
+                  <option value="11" >Pioneer</option>
+                  
+                  <option value="10" >Pauper</option>
+                  
+                  <option value="6" >Legacy</option>
+                  
+                  <option value="5" >Vintage</option>
+                  
+                  <option value="3" >Sealed</option>
+                  
+                  <option value="7" >Brawl (Two Players)</option>
+                  
+              </select>
+          </div>
+          <div class="field">
+              <label for="f-brackets">Bracket(s)</label>
+              <select id="f-brackets" name="brackets" multiple size="6">
+                  
+                  <option value="1" >None</option>
+                  
+                  <option value="2" >Bracket 1: Exhibition</option>
+                  
+                  <option value="3" >Bracket 2: Core</option>
+                  
+                  <option value="4" >Bracket 3: Upgraded</option>
+                  
+                  <option value="5" >Bracket 4: Optimized</option>
+                  
+                  <option value="6" >Bracket 5: Competitive</option>
+                  
+              </select>
+          </div>
+      </div>
+      <div class="actions">
+          <button type="submit" class="button">Apply filters</button>
+          <a href="?" class="button">Reset</a>
+      </div>
+  </form>
+  
       <div class="card">
           
           <table>
               <thead>
                   <tr>
-                      <th>Game</th>
-                      <th>Time</th>
-                      <th>Format</th>
-                      <th>Seats</th>
-                      <th>Bracket</th>
+                      <th><a class="sort" href="?sort=id&amp;dir=desc">Game</a></th>
+                      <th><a class="sort" href="?sort=updated_at&amp;dir=asc">Time<span class="arrow">&#9660;</span></a></th>
+                      <th><a class="sort" href="?sort=format&amp;dir=desc">Format</a></th>
+                      <th><a class="sort" href="?sort=seats&amp;dir=desc">Seats</a></th>
+                      <th><a class="sort" href="?sort=bracket&amp;dir=desc">Bracket</a></th>
                       <th>Locale</th>
                       <th>Link</th>
                       <th>User Name</th>
@@ -2311,11 +3060,11 @@
               <tbody id="rows">
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
+                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
-                      <td data-label="Format">Modern</td>
+                      <td data-label="Format">Legacy</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -2331,15 +3080,15 @@
                               <button type="button" class="copy" data-copy="101" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
+                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
-                      <td data-label="Format">Modern</td>
+                      <td data-label="Format">Legacy</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -2355,7 +3104,7 @@
                               <button type="button" class="copy" data-copy="102" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
                   <tr>
@@ -2407,11 +3156,11 @@
                   </tr>
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
+                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
-                      <td data-label="Format">Legacy</td>
+                      <td data-label="Format">Modern</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -2427,15 +3176,15 @@
                               <button type="button" class="copy" data-copy="101" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
+                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
-                      <td data-label="Format">Legacy</td>
+                      <td data-label="Format">Modern</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -2451,7 +3200,7 @@
                               <button type="button" class="copy" data-copy="102" title="Copy User ID">⎘</button>
                           </span>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
               </tbody>
@@ -2465,7 +3214,7 @@
           <div class="actions">
               <a href="/g/201/c/301/export.csv" class="button">Export all (CSV)</a>
               
-              <a href="/g/201/c/301?page=1" class="button">Next page</a>
+              
           </div>
           
   
@@ -2536,6 +3285,20 @@
   
           Array.from(document.getElementsByClassName('timestamp')).forEach((el) => {
               el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+  
+          // Make `<select multiple>` toggle on plain click instead of requiring
+          // Ctrl/Cmd-click. Intercept `mousedown` on each option, suppress the
+          // native replace-selection behavior, and flip the option's selected
+          // state so single clicks add or remove items from the selection.
+          document.querySelectorAll('select[multiple]').forEach((select) => {
+              select.addEventListener('mousedown', (event) => {
+                  if (event.target.tagName !== 'OPTION') return;
+                  event.preventDefault();
+                  event.target.selected = !event.target.selected;
+                  select.focus();
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+              });
           });
   
           document.querySelectorAll('.copy').forEach((el) => {
@@ -2780,6 +3543,67 @@
     justify-content: flex-end;
   }
   
+  .filters {
+    background: #1e1e3f;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .filters .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+  .filters .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 12rem;
+    min-width: 10rem;
+  }
+  .filters label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .filters input,
+  .filters select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .filters select[multiple] {
+    min-height: 5.5rem;
+  }
+  .filters .actions {
+    margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+  
+  table thead th .sort {
+    color: #9ca3af;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  table thead th .sort:hover {
+    color: #c4b5fd;
+  }
+  table thead th .sort .arrow {
+    margin-left: 0.25rem;
+    color: #c4b5fd;
+  }
+  
+  .count {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
+  
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
@@ -2850,19 +3674,121 @@
   
           
   <div class="section">
-      <h2>Games (3)</h2>
+      <h2>Games <span class="count">(3 matching)</span></h2>
+      
+  <form method="get" class="filters">
+      <div class="row">
+          <div class="field">
+              <label for="f-with-player">Player (name or ID)</label>
+              <input type="text" id="f-with-player" name="with_player" value="" placeholder="e.g. amy or 12345">
+          </div>
+          
+          <div class="field">
+              <label for="f-guild">Guild (name or ID)</label>
+              <input type="text" id="f-guild" name="guild" value="" placeholder="e.g. my-guild or 67890">
+          </div>
+          
+          <div class="field">
+              <label for="f-from">From</label>
+              <input type="date" id="f-from" name="from" value="">
+          </div>
+          <div class="field">
+              <label for="f-to">To</label>
+              <input type="date" id="f-to" name="to" value="">
+          </div>
+      </div>
+      <div class="row">
+          <div class="field">
+              <label for="f-formats">Format(s)</label>
+              <select id="f-formats" name="formats" multiple size="6">
+                  
+                  <option value="1" >Commander</option>
+                  
+                  <option value="18" >Commander Precons</option>
+                  
+                  <option value="15" >EDH Low</option>
+                  
+                  <option value="14" >EDH Mid</option>
+                  
+                  <option value="13" >EDH High</option>
+                  
+                  <option value="12" >EDH Max</option>
+                  
+                  <option value="16" >EDH Battlecruiser</option>
+                  
+                  <option value="17" >Planechase</option>
+                  
+                  <option value="9" >Two Headed Giant</option>
+                  
+                  <option value="8" >Brawl (Multiplayer)</option>
+                  
+                  <option value="21" >cEDH</option>
+                  
+                  <option value="23" >Pauper EDH</option>
+                  
+                  <option value="19" >Oathbreaker</option>
+                  
+                  <option value="22" >Archenemy</option>
+                  
+                  <option value="24" >Horde Magic</option>
+                  
+                  <option value="20" >Duel Commander</option>
+                  
+                  <option value="2" >Standard</option>
+                  
+                  <option value="4" >Modern</option>
+                  
+                  <option value="11" >Pioneer</option>
+                  
+                  <option value="10" >Pauper</option>
+                  
+                  <option value="6" >Legacy</option>
+                  
+                  <option value="5" >Vintage</option>
+                  
+                  <option value="3" >Sealed</option>
+                  
+                  <option value="7" >Brawl (Two Players)</option>
+                  
+              </select>
+          </div>
+          <div class="field">
+              <label for="f-brackets">Bracket(s)</label>
+              <select id="f-brackets" name="brackets" multiple size="6">
+                  
+                  <option value="1" >None</option>
+                  
+                  <option value="2" >Bracket 1: Exhibition</option>
+                  
+                  <option value="3" >Bracket 2: Core</option>
+                  
+                  <option value="4" >Bracket 3: Upgraded</option>
+                  
+                  <option value="5" >Bracket 4: Optimized</option>
+                  
+                  <option value="6" >Bracket 5: Competitive</option>
+                  
+              </select>
+          </div>
+      </div>
+      <div class="actions">
+          <button type="submit" class="button">Apply filters</button>
+          <a href="?" class="button">Reset</a>
+      </div>
+  </form>
+  
       <div class="card">
           
           <table>
               <thead>
                   <tr>
-                      <th>Game</th>
-                      <th>Time</th>
-                      <th>Guild</th>
+                      <th><a class="sort" href="?sort=id&amp;dir=desc">Game</a></th>
+                      <th><a class="sort" href="?sort=updated_at&amp;dir=asc">Time<span class="arrow">&#9660;</span></a></th>
+                      <th><a class="sort" href="?sort=guild_name&amp;dir=desc">Guild</a></th>
                       <th>Channel</th>
-                      <th>Format</th>
-                      <th>Seats</th>
-                      <th>Bracket</th>
+                      <th><a class="sort" href="?sort=format&amp;dir=desc">Format</a></th>
+                      <th><a class="sort" href="?sort=seats&amp;dir=desc">Seats</a></th>
+                      <th><a class="sort" href="?sort=bracket&amp;dir=desc">Bracket</a></th>
                       <th>Locale</th>
                       <th>Link</th>
                       <th>Players</th>
@@ -2872,13 +3798,13 @@
               <tbody id="rows">
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
+                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
                       <td data-label="Guild"><a href="https://discord.com/channels/201">guild</a></td>
                       <td data-label="Channel"><a href="https://discord.com/channels/201/301">#channel</a></td>
-                      <td data-label="Format">Modern</td>
+                      <td data-label="Format">Legacy</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -2906,7 +3832,7 @@
                               
                           </div>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
                   <tr>
@@ -2948,13 +3874,13 @@
                   </tr>
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
+                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
                       <td data-label="Guild"><a href="https://discord.com/channels/201">guild</a></td>
                       <td data-label="Channel"><a href="https://discord.com/channels/201/301">#channel</a></td>
-                      <td data-label="Format">Legacy</td>
+                      <td data-label="Format">Modern</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -2982,7 +3908,7 @@
                               
                           </div>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
               </tbody>
@@ -2996,7 +3922,7 @@
           <div class="actions">
               <a href="/u/101/export.csv" class="button">Export all (CSV)</a>
               
-              <a href="/u/101?page=1" class="button">Next page</a>
+              
           </div>
           
   
@@ -3067,6 +3993,20 @@
   
           Array.from(document.getElementsByClassName('timestamp')).forEach((el) => {
               el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+  
+          // Make `<select multiple>` toggle on plain click instead of requiring
+          // Ctrl/Cmd-click. Intercept `mousedown` on each option, suppress the
+          // native replace-selection behavior, and flip the option's selected
+          // state so single clicks add or remove items from the selection.
+          document.querySelectorAll('select[multiple]').forEach((select) => {
+              select.addEventListener('mousedown', (event) => {
+                  if (event.target.tagName !== 'OPTION') return;
+                  event.preventDefault();
+                  event.target.selected = !event.target.selected;
+                  select.focus();
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+              });
           });
   
           document.querySelectorAll('.copy').forEach((el) => {
@@ -3311,6 +4251,67 @@
     justify-content: flex-end;
   }
   
+  .filters {
+    background: #1e1e3f;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .filters .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+  .filters .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 12rem;
+    min-width: 10rem;
+  }
+  .filters label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .filters input,
+  .filters select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .filters select[multiple] {
+    min-height: 5.5rem;
+  }
+  .filters .actions {
+    margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+  
+  table thead th .sort {
+    color: #9ca3af;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  table thead th .sort:hover {
+    color: #c4b5fd;
+  }
+  table thead th .sort .arrow {
+    margin-left: 0.25rem;
+    color: #c4b5fd;
+  }
+  
+  .count {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
+  
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
@@ -3381,7 +4382,109 @@
   
           
   <div class="section">
-      <h2>Games (0)</h2>
+      <h2>Games <span class="count">(0 matching)</span></h2>
+      
+  <form method="get" class="filters">
+      <div class="row">
+          <div class="field">
+              <label for="f-with-player">Player (name or ID)</label>
+              <input type="text" id="f-with-player" name="with_player" value="" placeholder="e.g. amy or 12345">
+          </div>
+          
+          <div class="field">
+              <label for="f-guild">Guild (name or ID)</label>
+              <input type="text" id="f-guild" name="guild" value="" placeholder="e.g. my-guild or 67890">
+          </div>
+          
+          <div class="field">
+              <label for="f-from">From</label>
+              <input type="date" id="f-from" name="from" value="">
+          </div>
+          <div class="field">
+              <label for="f-to">To</label>
+              <input type="date" id="f-to" name="to" value="">
+          </div>
+      </div>
+      <div class="row">
+          <div class="field">
+              <label for="f-formats">Format(s)</label>
+              <select id="f-formats" name="formats" multiple size="6">
+                  
+                  <option value="1" >Commander</option>
+                  
+                  <option value="18" >Commander Precons</option>
+                  
+                  <option value="15" >EDH Low</option>
+                  
+                  <option value="14" >EDH Mid</option>
+                  
+                  <option value="13" >EDH High</option>
+                  
+                  <option value="12" >EDH Max</option>
+                  
+                  <option value="16" >EDH Battlecruiser</option>
+                  
+                  <option value="17" >Planechase</option>
+                  
+                  <option value="9" >Two Headed Giant</option>
+                  
+                  <option value="8" >Brawl (Multiplayer)</option>
+                  
+                  <option value="21" >cEDH</option>
+                  
+                  <option value="23" >Pauper EDH</option>
+                  
+                  <option value="19" >Oathbreaker</option>
+                  
+                  <option value="22" >Archenemy</option>
+                  
+                  <option value="24" >Horde Magic</option>
+                  
+                  <option value="20" >Duel Commander</option>
+                  
+                  <option value="2" >Standard</option>
+                  
+                  <option value="4" >Modern</option>
+                  
+                  <option value="11" >Pioneer</option>
+                  
+                  <option value="10" >Pauper</option>
+                  
+                  <option value="6" >Legacy</option>
+                  
+                  <option value="5" >Vintage</option>
+                  
+                  <option value="3" >Sealed</option>
+                  
+                  <option value="7" >Brawl (Two Players)</option>
+                  
+              </select>
+          </div>
+          <div class="field">
+              <label for="f-brackets">Bracket(s)</label>
+              <select id="f-brackets" name="brackets" multiple size="6">
+                  
+                  <option value="1" >None</option>
+                  
+                  <option value="2" >Bracket 1: Exhibition</option>
+                  
+                  <option value="3" >Bracket 2: Core</option>
+                  
+                  <option value="4" >Bracket 3: Upgraded</option>
+                  
+                  <option value="5" >Bracket 4: Optimized</option>
+                  
+                  <option value="6" >Bracket 5: Competitive</option>
+                  
+              </select>
+          </div>
+      </div>
+      <div class="actions">
+          <button type="submit" class="button">Apply filters</button>
+          <a href="?" class="button">Reset</a>
+      </div>
+  </form>
+  
       <div class="card">
           
           <div class="empty">No games found for this user.</div>
@@ -3394,7 +4497,7 @@
           <div class="actions">
               <a href="/u/101/export.csv" class="button">Export all (CSV)</a>
               
-              <a href="/u/101?page=1" class="button">Next page</a>
+              
           </div>
           
   
@@ -3465,6 +4568,20 @@
   
           Array.from(document.getElementsByClassName('timestamp')).forEach((el) => {
               el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+  
+          // Make `<select multiple>` toggle on plain click instead of requiring
+          // Ctrl/Cmd-click. Intercept `mousedown` on each option, suppress the
+          // native replace-selection behavior, and flip the option's selected
+          // state so single clicks add or remove items from the selection.
+          document.querySelectorAll('select[multiple]').forEach((select) => {
+              select.addEventListener('mousedown', (event) => {
+                  if (event.target.tagName !== 'OPTION') return;
+                  event.preventDefault();
+                  event.target.selected = !event.target.selected;
+                  select.focus();
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+              });
           });
   
           document.querySelectorAll('.copy').forEach((el) => {
@@ -3709,6 +4826,67 @@
     justify-content: flex-end;
   }
   
+  .filters {
+    background: #1e1e3f;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .filters .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+  .filters .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 12rem;
+    min-width: 10rem;
+  }
+  .filters label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .filters input,
+  .filters select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .filters select[multiple] {
+    min-height: 5.5rem;
+  }
+  .filters .actions {
+    margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+  
+  table thead th .sort {
+    color: #9ca3af;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  table thead th .sort:hover {
+    color: #c4b5fd;
+  }
+  table thead th .sort .arrow {
+    margin-left: 0.25rem;
+    color: #c4b5fd;
+  }
+  
+  .count {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
+  
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
@@ -3779,19 +4957,121 @@
   
           
   <div class="section">
-      <h2>Games (3)</h2>
+      <h2>Games <span class="count">(3 matching)</span></h2>
+      
+  <form method="get" class="filters">
+      <div class="row">
+          <div class="field">
+              <label for="f-with-player">Player (name or ID)</label>
+              <input type="text" id="f-with-player" name="with_player" value="" placeholder="e.g. amy or 12345">
+          </div>
+          
+          <div class="field">
+              <label for="f-guild">Guild (name or ID)</label>
+              <input type="text" id="f-guild" name="guild" value="" placeholder="e.g. my-guild or 67890">
+          </div>
+          
+          <div class="field">
+              <label for="f-from">From</label>
+              <input type="date" id="f-from" name="from" value="">
+          </div>
+          <div class="field">
+              <label for="f-to">To</label>
+              <input type="date" id="f-to" name="to" value="">
+          </div>
+      </div>
+      <div class="row">
+          <div class="field">
+              <label for="f-formats">Format(s)</label>
+              <select id="f-formats" name="formats" multiple size="6">
+                  
+                  <option value="1" >Commander</option>
+                  
+                  <option value="18" >Commander Precons</option>
+                  
+                  <option value="15" >EDH Low</option>
+                  
+                  <option value="14" >EDH Mid</option>
+                  
+                  <option value="13" >EDH High</option>
+                  
+                  <option value="12" >EDH Max</option>
+                  
+                  <option value="16" >EDH Battlecruiser</option>
+                  
+                  <option value="17" >Planechase</option>
+                  
+                  <option value="9" >Two Headed Giant</option>
+                  
+                  <option value="8" >Brawl (Multiplayer)</option>
+                  
+                  <option value="21" >cEDH</option>
+                  
+                  <option value="23" >Pauper EDH</option>
+                  
+                  <option value="19" >Oathbreaker</option>
+                  
+                  <option value="22" >Archenemy</option>
+                  
+                  <option value="24" >Horde Magic</option>
+                  
+                  <option value="20" >Duel Commander</option>
+                  
+                  <option value="2" >Standard</option>
+                  
+                  <option value="4" >Modern</option>
+                  
+                  <option value="11" >Pioneer</option>
+                  
+                  <option value="10" >Pauper</option>
+                  
+                  <option value="6" >Legacy</option>
+                  
+                  <option value="5" >Vintage</option>
+                  
+                  <option value="3" >Sealed</option>
+                  
+                  <option value="7" >Brawl (Two Players)</option>
+                  
+              </select>
+          </div>
+          <div class="field">
+              <label for="f-brackets">Bracket(s)</label>
+              <select id="f-brackets" name="brackets" multiple size="6">
+                  
+                  <option value="1" >None</option>
+                  
+                  <option value="2" >Bracket 1: Exhibition</option>
+                  
+                  <option value="3" >Bracket 2: Core</option>
+                  
+                  <option value="4" >Bracket 3: Upgraded</option>
+                  
+                  <option value="5" >Bracket 4: Optimized</option>
+                  
+                  <option value="6" >Bracket 5: Competitive</option>
+                  
+              </select>
+          </div>
+      </div>
+      <div class="actions">
+          <button type="submit" class="button">Apply filters</button>
+          <a href="?" class="button">Reset</a>
+      </div>
+  </form>
+  
       <div class="card">
           
           <table>
               <thead>
                   <tr>
-                      <th>Game</th>
-                      <th>Time</th>
-                      <th>Guild</th>
+                      <th><a class="sort" href="?sort=id&amp;dir=desc">Game</a></th>
+                      <th><a class="sort" href="?sort=updated_at&amp;dir=asc">Time<span class="arrow">&#9660;</span></a></th>
+                      <th><a class="sort" href="?sort=guild_name&amp;dir=desc">Guild</a></th>
                       <th>Channel</th>
-                      <th>Format</th>
-                      <th>Seats</th>
-                      <th>Bracket</th>
+                      <th><a class="sort" href="?sort=format&amp;dir=desc">Format</a></th>
+                      <th><a class="sort" href="?sort=seats&amp;dir=desc">Seats</a></th>
+                      <th><a class="sort" href="?sort=bracket&amp;dir=desc">Bracket</a></th>
                       <th>Locale</th>
                       <th>Link</th>
                       <th>Players</th>
@@ -3801,13 +5081,13 @@
               <tbody id="rows">
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
+                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
                       
                       <td data-label="Time">December 31, 2019, 4:00:00 PM PST</td>
                       
                       <td data-label="Guild"><a href="https://discord.com/channels/201">guild</a></td>
                       <td data-label="Channel"><a href="https://discord.com/channels/201/301">#channel</a></td>
-                      <td data-label="Format">Modern</td>
+                      <td data-label="Format">Legacy</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -3835,7 +5115,7 @@
                               
                           </div>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
                   <tr>
@@ -3877,13 +5157,13 @@
                   </tr>
                   
                   <tr>
-                      <td data-label="Game"><a href="/game/3">SB#3</a></td>
+                      <td data-label="Game"><a href="/game/1">SB#1</a></td>
                       
                       <td data-label="Time">December 31, 2019, 4:00:00 PM PST</td>
                       
                       <td data-label="Guild"><a href="https://discord.com/channels/201">guild</a></td>
                       <td data-label="Channel"><a href="https://discord.com/channels/201/301">#channel</a></td>
-                      <td data-label="Format">Legacy</td>
+                      <td data-label="Format">Modern</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
@@ -3911,7 +5191,7 @@
                               
                           </div>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
                   </tr>
                   
               </tbody>
@@ -3925,7 +5205,7 @@
           <div class="actions">
               <a href="/u/101/export.csv" class="button">Export all (CSV)</a>
               
-              <a href="/u/101?page=1" class="button">Next page</a>
+              
           </div>
           
   
@@ -3996,6 +5276,20 @@
   
           Array.from(document.getElementsByClassName('timestamp')).forEach((el) => {
               el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+  
+          // Make `<select multiple>` toggle on plain click instead of requiring
+          // Ctrl/Cmd-click. Intercept `mousedown` on each option, suppress the
+          // native replace-selection behavior, and flip the option's selected
+          // state so single clicks add or remove items from the selection.
+          document.querySelectorAll('select[multiple]').forEach((select) => {
+              select.addEventListener('mousedown', (event) => {
+                  if (event.target.tagName !== 'OPTION') return;
+                  event.preventDefault();
+                  event.target.selected = !event.target.selected;
+                  select.focus();
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+              });
           });
   
           document.querySelectorAll('.copy').forEach((el) => {

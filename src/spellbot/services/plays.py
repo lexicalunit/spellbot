@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -19,13 +20,242 @@ if TYPE_CHECKING:
 USER_PAGE_SIZE = 25
 CHANNEL_PAGE_SIZE = 10
 
-USER_RECORDS_SQL = r"""
-    WITH game_plays AS (
+# Whitelisted columns the records pages may sort by. The values are interpolated
+# directly into the SQL so they must never come from user input verbatim; only
+# keys from these maps are accepted.
+USER_RECORDS_SORT_COLUMNS: dict[str, tuple[str, str]] = {
+    # key -> (inner-CTE expression, outer-query expression)
+    "id": ("games.id", "game_plays.game_id"),
+    "updated_at": ("games.updated_at", "game_plays.updated_at"),
+    "guild_name": ("guilds.name", "game_plays.guild_name"),
+    "format": ("games.format", "game_plays.format"),
+    "seats": ("games.seats", "game_plays.seats"),
+    "bracket": ("games.bracket", "game_plays.bracket"),
+}
+
+CHANNEL_RECORDS_SORT_COLUMNS: dict[str, str] = {
+    "id": "games.id",
+    "updated_at": "games.updated_at",
+    "format": "games.format",
+    "seats": "games.seats",
+    "bracket": "games.bracket",
+}
+
+
+@dataclass
+class RecordFilters:
+    """Filter / sort options applied to user and channel record listings."""
+
+    with_player_xid: int | None = None
+    with_player_name: str | None = None
+    guild_xid: int | None = None
+    guild_name: str | None = None
+    formats: list[int] = field(default_factory=list)
+    brackets: list[int] = field(default_factory=list)
+    from_utc: datetime | None = None
+    to_utc: datetime | None = None
+    sort_by: str = "updated_at"
+    sort_dir: str = "desc"
+
+
+def shared_filter_sql(
+    opts: RecordFilters,
+    *,
+    include_guild: bool,
+) -> tuple[list[str], dict[str, Any]]:
+    """Build parameterized WHERE fragments + bind params shared by both pages."""
+    clauses: list[str] = []
+    params: dict[str, Any] = {}
+    if opts.with_player_xid is not None:
+        clauses.append(
+            "EXISTS (SELECT 1 FROM plays AS plays_wp "
+            "WHERE plays_wp.game_id = games.id "
+            "AND plays_wp.user_xid = :with_player_xid)",
+        )
+        params["with_player_xid"] = opts.with_player_xid
+    elif opts.with_player_name:
+        clauses.append(
+            "EXISTS (SELECT 1 FROM plays AS plays_wp "
+            "JOIN users AS users_wp ON users_wp.xid = plays_wp.user_xid "
+            "WHERE plays_wp.game_id = games.id "
+            "AND users_wp.name ILIKE :with_player_name)",
+        )
+        params["with_player_name"] = f"%{opts.with_player_name}%"
+    if include_guild and opts.guild_xid is not None:
+        clauses.append("games.guild_xid = :guild_xid_filter")
+        params["guild_xid_filter"] = opts.guild_xid
+    elif include_guild and opts.guild_name:
+        clauses.append("guilds.name ILIKE :guild_name_filter")
+        params["guild_name_filter"] = f"%{opts.guild_name}%"
+    if opts.formats:
+        clauses.append("games.format = ANY(:formats)")
+        params["formats"] = opts.formats
+    if opts.brackets:
+        clauses.append("games.bracket = ANY(:brackets)")
+        params["brackets"] = opts.brackets
+    if opts.from_utc is not None:
+        clauses.append("games.updated_at >= :from_utc")
+        params["from_utc"] = opts.from_utc
+    if opts.to_utc is not None:
+        clauses.append("games.updated_at < :to_utc")
+        params["to_utc"] = opts.to_utc
+    return clauses, params
+
+
+def sort_direction(opts: RecordFilters) -> str:
+    return "DESC" if opts.sort_dir == "desc" else "ASC"
+
+
+def build_user_records_sql(
+    opts: RecordFilters,
+    *,
+    paginated: bool,
+) -> tuple[str, dict[str, Any]]:
+    inner_clauses = ["plays.user_xid = :user_xid"]
+    shared, params = shared_filter_sql(opts, include_guild=True)
+    inner_clauses.extend(shared)
+    inner_col, outer_col = USER_RECORDS_SORT_COLUMNS.get(
+        opts.sort_by,
+        USER_RECORDS_SORT_COLUMNS["updated_at"],
+    )
+    direction = sort_direction(opts)
+    paging = "OFFSET :offset LIMIT :page_size" if paginated else ""
+    sql = f"""
+        WITH game_plays AS (
+            SELECT
+                games.id AS game_id,
+                games.updated_at,
+                games.guild_xid,
+                games.channel_xid,
+                posts.message_xid,
+                games.game_link,
+                games.format,
+                games.service,
+                games.seats,
+                games.bracket,
+                games.locale,
+                guilds.name AS guild_name
+            FROM games
+            JOIN plays ON plays.game_id = games.id
+            JOIN posts ON posts.game_id = games.id
+                AND posts.guild_xid = games.guild_xid
+                AND posts.channel_xid = games.channel_xid
+            JOIN guilds ON guilds.xid = games.guild_xid
+            WHERE {" AND ".join(inner_clauses)}
+            ORDER BY {inner_col} {direction}, games.id DESC
+            {paging}
+        )
         SELECT
-            games.id AS game_id,
+            game_plays.game_id,
+            game_plays.updated_at,
+            game_plays.guild_xid,
+            game_plays.channel_xid,
+            game_plays.message_xid,
+            game_plays.game_link,
+            game_plays.format,
+            game_plays.service,
+            game_plays.seats,
+            game_plays.bracket,
+            game_plays.locale,
+            game_plays.guild_name,
+            channels.name,
+            STRING_AGG(
+                CONCAT(
+                    REPLACE(REPLACE(users.name, ':', ''), '@', ''),
+                    ':',
+                    users.xid
+                ),
+                '@'
+                ORDER BY users.xid
+            )
+        FROM game_plays
+        JOIN plays ON plays.game_id = game_plays.game_id
+        JOIN users ON users.xid = plays.user_xid
+        JOIN channels ON channels.xid = game_plays.channel_xid
+        GROUP BY
+            game_plays.game_id,
+            game_plays.updated_at,
+            game_plays.guild_xid,
+            game_plays.channel_xid,
+            game_plays.message_xid,
+            game_plays.game_link,
+            game_plays.format,
+            game_plays.service,
+            game_plays.seats,
+            game_plays.bracket,
+            game_plays.locale,
+            game_plays.guild_name,
+            channels.name
+        ORDER BY {outer_col} {direction}, game_plays.game_id DESC
+        ;
+    """  # noqa: S608
+    return sql, params
+
+
+def build_user_records_count_sql(
+    opts: RecordFilters,
+) -> tuple[str, dict[str, Any]]:
+    clauses = ["plays.user_xid = :user_xid"]
+    shared, params = shared_filter_sql(opts, include_guild=True)
+    clauses.extend(shared)
+    sql = f"""
+        SELECT COUNT(DISTINCT games.id)
+        FROM games
+        JOIN plays ON plays.game_id = games.id
+        JOIN guilds ON guilds.xid = games.guild_xid
+        WHERE {" AND ".join(clauses)}
+        ;
+    """  # noqa: S608
+    return sql, params
+
+
+def build_channel_records_sql(
+    opts: RecordFilters,
+    *,
+    paginated: bool,
+) -> tuple[str, dict[str, Any]]:
+    clauses = [
+        "games.guild_xid = :guild_xid",
+        "games.channel_xid = :channel_xid",
+    ]
+    shared, params = shared_filter_sql(opts, include_guild=False)
+    clauses.extend(shared)
+    sort_col = CHANNEL_RECORDS_SORT_COLUMNS.get(
+        opts.sort_by,
+        CHANNEL_RECORDS_SORT_COLUMNS["updated_at"],
+    )
+    direction = sort_direction(opts)
+    paging = "OFFSET :offset LIMIT :page_size" if paginated else ""
+    sql = f"""
+        SELECT
+            games.id,
             games.updated_at,
-            games.guild_xid,
-            games.channel_xid,
+            posts.message_xid,
+            games.game_link,
+            games.format,
+            games.service,
+            games.seats,
+            games.bracket,
+            games.locale,
+            STRING_AGG(
+                CONCAT(
+                    REPLACE(REPLACE(users.name, ':', ''), '@', ''),
+                    ':',
+                    users.xid
+                ),
+                '@'
+                ORDER BY users.xid
+            )
+        FROM games
+        JOIN plays ON plays.game_id = games.id
+        JOIN users ON users.xid = plays.user_xid
+        JOIN posts ON posts.game_id = games.id
+            AND posts.guild_xid = games.guild_xid
+            AND posts.channel_xid = games.channel_xid
+        WHERE {" AND ".join(clauses)}
+        GROUP BY
+            games.id,
+            games.updated_at,
             posts.message_xid,
             games.game_link,
             games.format,
@@ -33,219 +263,34 @@ USER_RECORDS_SQL = r"""
             games.seats,
             games.bracket,
             games.locale
+        ORDER BY {sort_col} {direction}, games.id DESC
+        {paging}
+        ;
+    """  # noqa: S608
+    return sql, params
+
+
+def build_channel_records_count_sql(
+    opts: RecordFilters,
+) -> tuple[str, dict[str, Any]]:
+    clauses = [
+        "games.guild_xid = :guild_xid",
+        "games.channel_xid = :channel_xid",
+    ]
+    shared, params = shared_filter_sql(opts, include_guild=False)
+    clauses.extend(shared)
+    sql = f"""
+        SELECT COUNT(DISTINCT games.id)
         FROM games
         JOIN plays ON plays.game_id = games.id
-        JOIN posts ON posts.game_id = games.id
-            AND posts.guild_xid = games.guild_xid
-            AND posts.channel_xid = games.channel_xid
-        WHERE
-            plays.user_xid = :user_xid
-        ORDER BY games.updated_at DESC
-        OFFSET :offset
-        LIMIT :page_size
-    )
-    SELECT
-        game_plays.game_id,
-        game_plays.updated_at,
-        game_plays.guild_xid,
-        game_plays.channel_xid,
-        game_plays.message_xid,
-        game_plays.game_link,
-        game_plays.format,
-        game_plays.service,
-        game_plays.seats,
-        game_plays.bracket,
-        game_plays.locale,
-        guilds.name,
-        channels.name,
-        STRING_AGG(
-            CONCAT(
-                REPLACE(REPLACE(users.name, ':', ''), '@', ''),
-                ':',
-                users.xid
-            ),
-            '@'
-            ORDER BY users.xid
-        )
-    FROM game_plays
-    JOIN plays ON plays.game_id = game_plays.game_id
-    JOIN users ON users.xid = plays.user_xid
-    JOIN guilds ON guilds.xid = game_plays.guild_xid
-    JOIN channels ON channels.xid = game_plays.channel_xid
-    GROUP BY
-        game_plays.game_id,
-        game_plays.updated_at,
-        game_plays.guild_xid,
-        game_plays.channel_xid,
-        game_plays.message_xid,
-        game_plays.game_link,
-        game_plays.format,
-        game_plays.service,
-        game_plays.seats,
-        game_plays.bracket,
-        game_plays.locale,
-        guilds.name,
-        channels.name
-    ORDER BY game_plays.updated_at DESC
-    ;
-"""
+        WHERE {" AND ".join(clauses)}
+        ;
+    """  # noqa: S608
+    return sql, params
 
-CHANNEL_RECORDS_SQL = r"""
-    SELECT
-        games.id,
-        games.updated_at,
-        posts.message_xid,
-        games.game_link,
-        games.format,
-        games.service,
-        games.seats,
-        games.bracket,
-        games.locale,
-        STRING_AGG(
-            CONCAT(
-                REPLACE(REPLACE(users.name, ':', ''), '@', ''),
-                ':',
-                users.xid
-            ),
-            '@'
-            ORDER BY users.xid
-        )
-    FROM games
-    JOIN plays ON plays.game_id = games.id
-    JOIN users ON users.xid = plays.user_xid
-    JOIN posts ON posts.game_id = games.id
-        AND posts.guild_xid = games.guild_xid
-        AND posts.channel_xid = games.channel_xid
-    WHERE
-        games.guild_xid = :guild_xid AND
-        games.channel_xid = :channel_xid
-    GROUP BY
-        games.id,
-        games.updated_at,
-        posts.message_xid,
-        games.game_link,
-        games.format,
-        games.service,
-        games.seats,
-        games.bracket,
-        games.locale
-    ORDER BY games.updated_at DESC
-    OFFSET :offset
-    LIMIT :page_size
-    ;
-"""
 
-USER_RECORDS_EXPORT_SQL = r"""
-    WITH game_plays AS (
-        SELECT
-            games.id AS game_id,
-            games.updated_at,
-            games.guild_xid,
-            games.channel_xid,
-            posts.message_xid,
-            games.game_link,
-            games.format,
-            games.service,
-            games.seats,
-            games.bracket,
-            games.locale
-        FROM games
-        JOIN plays ON plays.game_id = games.id
-        JOIN posts ON posts.game_id = games.id
-            AND posts.guild_xid = games.guild_xid
-            AND posts.channel_xid = games.channel_xid
-        WHERE
-            plays.user_xid = :user_xid
-        ORDER BY games.updated_at DESC
-    )
-    SELECT
-        game_plays.game_id,
-        game_plays.updated_at,
-        game_plays.guild_xid,
-        game_plays.channel_xid,
-        game_plays.message_xid,
-        game_plays.game_link,
-        game_plays.format,
-        game_plays.service,
-        game_plays.seats,
-        game_plays.bracket,
-        game_plays.locale,
-        guilds.name,
-        channels.name,
-        STRING_AGG(
-            CONCAT(
-                REPLACE(REPLACE(users.name, ':', ''), '@', ''),
-                ':',
-                users.xid
-            ),
-            '@'
-            ORDER BY users.xid
-        )
-    FROM game_plays
-    JOIN plays ON plays.game_id = game_plays.game_id
-    JOIN users ON users.xid = plays.user_xid
-    JOIN guilds ON guilds.xid = game_plays.guild_xid
-    JOIN channels ON channels.xid = game_plays.channel_xid
-    GROUP BY
-        game_plays.game_id,
-        game_plays.updated_at,
-        game_plays.guild_xid,
-        game_plays.channel_xid,
-        game_plays.message_xid,
-        game_plays.game_link,
-        game_plays.format,
-        game_plays.service,
-        game_plays.seats,
-        game_plays.bracket,
-        game_plays.locale,
-        guilds.name,
-        channels.name
-    ORDER BY game_plays.updated_at DESC
-    ;
-"""
-
-CHANNEL_RECORDS_EXPORT_SQL = r"""
-    SELECT
-        games.id,
-        games.updated_at,
-        posts.message_xid,
-        games.game_link,
-        games.format,
-        games.service,
-        games.seats,
-        games.bracket,
-        games.locale,
-        STRING_AGG(
-            CONCAT(
-                REPLACE(REPLACE(users.name, ':', ''), '@', ''),
-                ':',
-                users.xid
-            ),
-            '@'
-            ORDER BY users.xid
-        )
-    FROM games
-    JOIN plays ON plays.game_id = games.id
-    JOIN users ON users.xid = plays.user_xid
-    JOIN posts ON posts.game_id = games.id
-        AND posts.guild_xid = games.guild_xid
-        AND posts.channel_xid = games.channel_xid
-    WHERE
-        games.guild_xid = :guild_xid AND
-        games.channel_xid = :channel_xid
-    GROUP BY
-        games.id,
-        games.updated_at,
-        posts.message_xid,
-        games.game_link,
-        games.format,
-        games.service,
-        games.seats,
-        games.bracket,
-        games.locale
-    ORDER BY games.updated_at DESC
-    ;
-"""
+USER_RECORDS_EXPORT_SQL, _ = build_user_records_sql(RecordFilters(), paginated=False)
+CHANNEL_RECORDS_EXPORT_SQL, _ = build_channel_records_sql(RecordFilters(), paginated=False)
 
 
 def make_scores(data: str) -> dict[str, Any]:
@@ -331,18 +376,35 @@ async def count(user_xid: int) -> int:
 async def user_records(
     user_xid: int,
     page: int = 0,
-) -> list[dict[str, Any]] | None:
-    """Fetch paginated game records for a user across all guilds."""
+    opts: RecordFilters | None = None,
+) -> tuple[list[dict[str, Any]], int] | None:
+    """
+    Fetch paginated game records for a user across all guilds.
+
+    Returns a `(rows, total_count)` tuple where `total_count` is the total number
+    of distinct matching games before pagination, or `None` if the user is unknown.
+    """
     user = (
         await DatabaseSession.execute(select(User).where(User.xid == user_xid))
     ).scalar_one_or_none()
     if not user:
         return None
 
+    opts = opts or RecordFilters()
+    page_sql, page_params = build_user_records_sql(opts, paginated=True)
+    count_sql, count_params = build_user_records_count_sql(opts)
+    base_params: dict[str, Any] = {"user_xid": user_xid}
+
+    total = int(
+        (await DatabaseSession.execute(text(count_sql), {**base_params, **count_params})).scalar()
+        or 0,
+    )
+
     rows = await DatabaseSession.execute(
-        text(USER_RECORDS_SQL),
+        text(page_sql),
         {
-            "user_xid": user_xid,
+            **base_params,
+            **page_params,
             "offset": page * USER_PAGE_SIZE,
             "page_size": USER_PAGE_SIZE,
         },
@@ -365,15 +427,22 @@ async def user_records(
             "scores": make_scores(row[13]),
         }
         for row in rows
-    ]
+    ], total
 
 
 async def channel_records(
     guild_xid: int,
     channel_xid: int,
     page: int = 0,
-) -> list[dict[str, Any]] | None:
-    """Fetch paginated game records for a channel."""
+    opts: RecordFilters | None = None,
+) -> tuple[list[dict[str, Any]], int] | None:
+    """
+    Fetch paginated game records for a channel.
+
+    Returns a `(rows, total_count)` tuple where `total_count` is the total number
+    of distinct matching games (not players) before pagination, or `None` if the
+    guild or channel is unknown.
+    """
     guild = (
         await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
     ).scalar_one_or_none()
@@ -385,11 +454,24 @@ async def channel_records(
     if not channel:
         return None
 
+    opts = opts or RecordFilters()
+    page_sql, page_params = build_channel_records_sql(opts, paginated=True)
+    count_sql, count_params = build_channel_records_count_sql(opts)
+    base_params: dict[str, Any] = {
+        "guild_xid": guild_xid,
+        "channel_xid": channel_xid,
+    }
+
+    total = int(
+        (await DatabaseSession.execute(text(count_sql), {**base_params, **count_params})).scalar()
+        or 0,
+    )
+
     rows = await DatabaseSession.execute(
-        text(CHANNEL_RECORDS_SQL),
+        text(page_sql),
         {
-            "guild_xid": guild_xid,
-            "channel_xid": channel_xid,
+            **base_params,
+            **page_params,
             "offset": page * CHANNEL_PAGE_SIZE,
             "page_size": CHANNEL_PAGE_SIZE,
         },
@@ -413,7 +495,7 @@ async def channel_records(
         }
         for row in rows
     ]
-    return decomposed(combined_data)
+    return decomposed(combined_data), total
 
 
 async def user_export_target_exists(user_xid: int) -> bool:

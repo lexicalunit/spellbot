@@ -4,9 +4,10 @@ import csv
 import io
 import logging
 from contextlib import suppress
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from enum import Enum, auto
 from typing import Any, NamedTuple
+from urllib.parse import urlencode
 
 import aiohttp_jinja2
 from aiohttp import web
@@ -14,11 +15,23 @@ from ddtrace.trace import tracer
 
 from spellbot import services
 from spellbot.database import db_session_manager
+from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER
 from spellbot.metrics import add_span_request_id, generate_request_id
+from spellbot.services.plays import (
+    CHANNEL_PAGE_SIZE,
+    CHANNEL_RECORDS_SORT_COLUMNS,
+    USER_PAGE_SIZE,
+    USER_RECORDS_SORT_COLUMNS,
+    RecordFilters,
+)
 
 logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
+
+VALID_SORT_DIRS = frozenset({"asc", "desc"})
+DEFAULT_SORT_BY = "updated_at"
+DEFAULT_SORT_DIR = "desc"
 
 USER_EXPORT_HEADER = [
     "Game",
@@ -59,6 +72,110 @@ class Opts(NamedTuple):
     page: int
     tz_offset: int | None
     tz_name: str | None
+    filters: RecordFilters
+    raw_filters: dict[str, Any]
+
+
+def parse_int_list(values: list[str]) -> list[int]:
+    """Parse a list of repeated query-string values into a list of ints, skipping junk."""
+    out: list[int] = []
+    for raw in values:
+        for part in raw.split(","):
+            token = part.strip()
+            if not token:
+                continue
+            with suppress(ValueError):
+                out.append(int(token))
+    return out
+
+
+def parse_local_date(value: str | None) -> date | None:
+    """Parse a `YYYY-MM-DD` date string; return None for missing/invalid input."""
+    if not value:
+        return None
+    with suppress(ValueError):
+        return date.fromisoformat(value)
+    return None
+
+
+def local_day_to_utc(d: date, tz_offset: int | None, *, end_of_day: bool) -> datetime:
+    """
+    Convert a viewer's local-calendar date into a UTC datetime boundary.
+
+    `tz_offset` is the JavaScript convention (minutes west of UTC); a positive value
+    such as `480` means the viewer is at UTC-8. When `end_of_day` is True, the
+    boundary is the exclusive end-of-day (start of the next day) so date filters can
+    be expressed as half-open ranges.
+    """
+    base = datetime(d.year, d.month, d.day, tzinfo=UTC)
+    if end_of_day:
+        base += timedelta(days=1)
+    if tz_offset is not None:
+        base += timedelta(minutes=tz_offset)
+    return base
+
+
+def parse_filters(
+    request: web.Request,
+    kind: RecordKind,
+    tz_offset: int | None,
+) -> tuple[RecordFilters, dict[str, Any]]:
+    """Parse filter / sort query parameters into a `RecordFilters` plus raw form values."""
+    q = request.query
+    raw: dict[str, Any] = {
+        "with_player": q.get("with_player", "").strip(),
+        "guild": q.get("guild", "").strip(),
+        "formats": parse_int_list(q.getall("formats", [])),
+        "brackets": parse_int_list(q.getall("brackets", [])),
+        "from": q.get("from", "").strip(),
+        "to": q.get("to", "").strip(),
+    }
+
+    valid_sort = (
+        USER_RECORDS_SORT_COLUMNS if kind is RecordKind.USER else CHANNEL_RECORDS_SORT_COLUMNS
+    )
+    sort_by = q.get("sort", DEFAULT_SORT_BY)
+    if sort_by not in valid_sort:
+        sort_by = DEFAULT_SORT_BY
+    sort_dir = q.get("dir", DEFAULT_SORT_DIR).lower()
+    if sort_dir not in VALID_SORT_DIRS:
+        sort_dir = DEFAULT_SORT_DIR
+    raw["sort"] = sort_by
+    raw["dir"] = sort_dir
+
+    with_player_xid: int | None = None
+    with_player_name: str | None = None
+    if raw["with_player"]:
+        with suppress(ValueError):
+            with_player_xid = int(raw["with_player"])
+        if with_player_xid is None:
+            with_player_name = raw["with_player"]
+
+    guild_xid_filter: int | None = None
+    guild_name_filter: str | None = None
+    if kind is RecordKind.USER and raw["guild"]:
+        with suppress(ValueError):
+            guild_xid_filter = int(raw["guild"])
+        if guild_xid_filter is None:
+            guild_name_filter = raw["guild"]
+
+    from_date = parse_local_date(raw["from"])
+    to_date = parse_local_date(raw["to"])
+    from_utc = local_day_to_utc(from_date, tz_offset, end_of_day=False) if from_date else None
+    to_utc = local_day_to_utc(to_date, tz_offset, end_of_day=True) if to_date else None
+
+    return RecordFilters(
+        with_player_xid=with_player_xid,
+        with_player_name=with_player_name,
+        guild_xid=guild_xid_filter,
+        guild_name=guild_name_filter,
+        formats=raw["formats"],
+        brackets=raw["brackets"],
+        from_utc=from_utc,
+        to_utc=to_utc,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+    ), raw
 
 
 async def parse_opts(request: web.Request, kind: RecordKind) -> Opts:
@@ -79,6 +196,7 @@ async def parse_opts(request: web.Request, kind: RecordKind) -> Opts:
             tz_offset = int(tz_offset_cookie)
 
     tz_name = request.cookies.get("timezone_name")
+    filters, raw_filters = parse_filters(request, kind, tz_offset)
 
     return Opts(
         guild_xid=guild_xid,
@@ -86,7 +204,52 @@ async def parse_opts(request: web.Request, kind: RecordKind) -> Opts:
         page=page,
         tz_offset=tz_offset,
         tz_name=tz_name,
+        filters=filters,
+        raw_filters=raw_filters,
     )
+
+
+def build_query_string(raw_filters: dict[str, Any], *, page: int | None) -> str:
+    """Build a query string preserving filters, optionally setting `page`."""
+    parts: list[tuple[str, str]] = []
+    for key in ("with_player", "guild", "from", "to"):
+        value = raw_filters.get(key)
+        if value:
+            parts.append((key, value))
+    parts.extend(("formats", str(value)) for value in raw_filters.get("formats") or [])
+    parts.extend(("brackets", str(value)) for value in raw_filters.get("brackets") or [])
+    if raw_filters.get("sort") and raw_filters["sort"] != DEFAULT_SORT_BY:
+        parts.append(("sort", raw_filters["sort"]))
+    if raw_filters.get("dir") and raw_filters["dir"] != DEFAULT_SORT_DIR:
+        parts.append(("dir", raw_filters["dir"]))
+    if page is not None and page > 0:
+        parts.append(("page", str(page)))
+    return f"?{urlencode(parts)}" if parts else ""
+
+
+def sort_choices(kind: RecordKind) -> list[dict[str, str]]:
+    """Build the list of sortable column labels for the templates."""
+    if kind is RecordKind.USER:
+        keys = list(USER_RECORDS_SORT_COLUMNS.keys())
+    else:
+        keys = list(CHANNEL_RECORDS_SORT_COLUMNS.keys())
+    labels = {
+        "id": "Game",
+        "updated_at": "Time",
+        "guild_name": "Guild",
+        "format": "Format",
+        "seats": "Seats",
+        "bracket": "Bracket",
+    }
+    return [{"key": k, "label": labels.get(k, k)} for k in keys]
+
+
+def format_choices() -> list[dict[str, Any]]:
+    return [{"value": f.value, "label": str(f)} for f in GAME_FORMAT_ORDER]
+
+
+def bracket_choices() -> list[dict[str, Any]]:
+    return [{"value": b.value, "label": str(b)} for b in GAME_BRACKET_ORDER]
 
 
 async def impl(request: web.Request, kind: RecordKind) -> web.Response:
@@ -97,19 +260,22 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
 
     if kind is RecordKind.CHANNEL:
         assert opts.guild_xid is not None
-        records = await services.plays.channel_records(
+        result = await services.plays.channel_records(
             guild_xid=opts.guild_xid,
             channel_xid=opts.target_xid,
             page=opts.page,
+            opts=opts.filters,
         )
     else:
-        records = await services.plays.user_records(
+        result = await services.plays.user_records(
             user_xid=opts.target_xid,
             page=opts.page,
+            opts=opts.filters,
         )
 
-    if records is None:
+    if result is None:
         return web.Response(status=404)
+    records, total = result
 
     if kind is RecordKind.CHANNEL:
         assert opts.guild_xid is not None
@@ -117,14 +283,22 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         guild_name = guild.name if guild else None
         channel = await services.channels.select(opts.target_xid)
         target_name = channel.name if channel else None
+        page_size = CHANNEL_PAGE_SIZE
     else:
         guild_name = None
         user = await services.users.get(opts.target_xid)
         target_name = user.name if user else None
+        page_size = USER_PAGE_SIZE
+
+    has_next = (opts.page + 1) * page_size < total
+    prev_qs = build_query_string(opts.raw_filters, page=max(opts.page - 1, 0))
+    next_qs = build_query_string(opts.raw_filters, page=opts.page + 1)
+    export_qs = build_query_string(opts.raw_filters, page=None)
 
     path = f"{'channel' if kind is RecordKind.CHANNEL else 'user'}_record.html.j2"
     context = {
         "records": records,
+        "total": total,
         "tz_offset": opts.tz_offset,
         "tz_name": opts.tz_name,
         "guild_xid": opts.guild_xid,
@@ -132,9 +306,18 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         "target_xid": opts.target_xid,
         "target_name": target_name,
         "page": opts.page,
-        "prev_page": f"{request.path}?page={max(opts.page - 1, 0)}",
-        "next_page": f"{request.path}?page={opts.page + 1}",
-        "export_url": f"{request.path}/export.csv",
+        "page_size": page_size,
+        "has_prev": opts.page > 0,
+        "has_next": has_next,
+        "prev_page": f"{request.path}{prev_qs}",
+        "next_page": f"{request.path}{next_qs}",
+        "export_url": f"{request.path}/export.csv{export_qs}",
+        "filters": opts.raw_filters,
+        "sort_by": opts.filters.sort_by,
+        "sort_dir": opts.filters.sort_dir,
+        "sort_choices": sort_choices(kind),
+        "format_choices": format_choices(),
+        "bracket_choices": bracket_choices(),
     }
     return aiohttp_jinja2.render_template(path, request, context)
 
