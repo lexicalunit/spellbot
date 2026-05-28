@@ -1,4 +1,5 @@
 {% extends "record_base.html.j2" %}
+{% from "record_filters.html.j2" import sort_header, filter_form %}
 {% block title %}User Records — {{ target_name or target_xid }}{% endblock %}
 {% block heading %}User Records: {{ target_name or 'Unknown User' }}{% endblock %}
 {% block subtitle %}
@@ -11,19 +12,20 @@
 {% endblock %}
 {% block content %}
 <div class="section">
-    <h2>Games ({{ records | length }})</h2>
+    <h2>Games <span class="count">({{ total }} matching)</span></h2>
+    {{ filter_form(true, format_choices, bracket_choices, filters) }}
     <div class="card">
         {% if records %}
         <table>
             <thead>
                 <tr>
-                    <th>Game</th>
-                    <th>Time</th>
-                    <th>Guild</th>
+                    <th>{{ sort_header('id', 'Game', sort_by, sort_dir, filters) }}</th>
+                    <th>{{ sort_header('updated_at', 'Time', sort_by, sort_dir, filters) }}</th>
+                    <th>{{ sort_header('guild_name', 'Guild', sort_by, sort_dir, filters) }}</th>
                     <th>Channel</th>
-                    <th>Format</th>
-                    <th>Seats</th>
-                    <th>Bracket</th>
+                    <th>{{ sort_header('format', 'Format', sort_by, sort_dir, filters) }}</th>
+                    <th>{{ sort_header('seats', 'Seats', sort_by, sort_dir, filters) }}</th>
+                    <th>{{ sort_header('bracket', 'Bracket', sort_by, sort_dir, filters) }}</th>
                     <th>Locale</th>
                     <th>Link</th>
                     <th>Players</th>
