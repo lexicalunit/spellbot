@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Vanity domains for status and queues.
+- Updated tf file for RDS to 17.7.
+
 ## [v20.5.1](https://github.com/lexicalunit/spellbot/releases/tag/v20.5.1) - 2026-05-27
 
 ### Changed
