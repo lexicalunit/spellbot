@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v20.6.2](https://github.com/lexicalunit/spellbot/releases/tag/v20.6.2) - 2026-05-27
+
 ### Changed
 
 - Less tight padding on record pages on mobile.
