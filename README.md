@@ -49,7 +49,7 @@ SpellBot uses [Discord slash commands][slash]. Each command provides its own hel
 
 ## 🔭 Where to Play?
 
-These communities are using SpellBot to play Magic! Maybe one of them is right for you?
+SpellBot helps Discord servers to build communities around playing Magic online. Please check out the following servers to find games and connect with other players. You can also [see live games now][queues] waiting for you to join!
 
 <div align="center">
 <!-- SERVERS BEGIN -->
@@ -115,6 +115,8 @@ The most common issue people have when using SpellBot is related to receiving Di
 3. You may also need to enable message requests from server members you may not know. Search your Settings for **message requests** and turn that option on as well.
 
 If you have more questions, please don't hesitate to join us on the [SpellBot Discord server][discord-invite] to get answers from our generous community.
+
+Wondering if the bot is online? Check the [status page][status] for current health.
 
 ## 🎤 Feedback
 
@@ -182,11 +184,12 @@ Any usage of SpellBot implies that you accept the following policies.
 [pyright]: https://github.com/microsoft/pyright
 [python-badge]: https://img.shields.io/badge/python-3.14-blue.svg
 [python]: https://www.python.org/
+[queues]: https://queues.spellbot.io
 [ruff-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [ruff]: https://github.com/astral-sh/ruff
 [slash]: https://discord.com/blog/slash-commands-are-here
 [status-badge]: https://img.shields.io/badge/bot-status-green
-[status]: https://spellbot.io/status
+[status]: https://status.spellbot.io
 [tablestream]: https://table-stream.com/
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]: https://uptimerobot.com/dashboard#785764282
