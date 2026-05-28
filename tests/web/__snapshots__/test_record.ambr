@@ -307,7 +307,7 @@
       border-top: none;
     }
     table tbody td {
-      padding: 0.25rem 0;
+      padding: 0.5rem 0.75rem;
     }
     table tbody td::before {
       content: attr(data-label);
@@ -881,7 +881,7 @@
       border-top: none;
     }
     table tbody td {
-      padding: 0.25rem 0;
+      padding: 0.5rem 0.75rem;
     }
     table tbody td::before {
       content: attr(data-label);
@@ -1611,7 +1611,7 @@
       border-top: none;
     }
     table tbody td {
-      padding: 0.25rem 0;
+      padding: 0.5rem 0.75rem;
     }
     table tbody td::before {
       content: attr(data-label);
@@ -2179,7 +2179,7 @@
       border-top: none;
     }
     table tbody td {
-      padding: 0.25rem 0;
+      padding: 0.5rem 0.75rem;
     }
     table tbody td::before {
       content: attr(data-label);
@@ -2909,7 +2909,7 @@
       border-top: none;
     }
     table tbody td {
-      padding: 0.25rem 0;
+      padding: 0.5rem 0.75rem;
     }
     table tbody td::before {
       content: attr(data-label);
@@ -3639,7 +3639,7 @@
       border-top: none;
     }
     table tbody td {
-      padding: 0.25rem 0;
+      padding: 0.5rem 0.75rem;
     }
     table tbody td::before {
       content: attr(data-label);
@@ -4347,7 +4347,7 @@
       border-top: none;
     }
     table tbody td {
-      padding: 0.25rem 0;
+      padding: 0.5rem 0.75rem;
     }
     table tbody td::before {
       content: attr(data-label);
@@ -4922,7 +4922,7 @@
       border-top: none;
     }
     table tbody td {
-      padding: 0.25rem 0;
+      padding: 0.5rem 0.75rem;
     }
     table tbody td::before {
       content: attr(data-label);
