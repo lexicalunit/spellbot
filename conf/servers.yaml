@@ -9,9 +9,12 @@ servers:
   - name: cEDH
     logo: https://spellbot.io/assets/img/servers/cedh.png
     url: https://discord.com/invite/cedh
-  - name: CriticalEDH
-    logo: https://spellbot.io/assets/img/servers/criticaledh.png
-    url: https://linktr.ee/CriticalEDH
+  - name: Champ de Bataille
+    logo: https://spellbot.io/assets/img/servers/champ-de-bataille.png
+    url: https://discord.gg/3jwqduTkGZ
+  # - name: CriticalEDH
+  #   logo: https://spellbot.io/assets/img/servers/criticaledh.png
+  #   url: https://linktr.ee/CriticalEDH
   - name: Convoke
     logo: https://spellbot.io/assets/img/servers/convoke.png
     url: https://www.convoke.games/
@@ -98,9 +101,9 @@ servers:
   # - name: Your Virtual LGS
   #   logo: https://user-images.githubusercontent.com/1903876/156637022-c8847db5-9cf5-4d00-a5b0-ecbaaec27802.jpg
   #   url: https://discord.gg/xcnRz86vkb
-  - name: Duel Commander
-    logo: https://spellbot.io/assets/img/servers/duel-commander.jpg
-    url: https://www.mtgdc.info/
-  - name: Proxy Pirates
-    logo: https://spellbot.io/assets/img/servers/proxy-pirates.png
-    url: https://discord.gg/bA5tf3Xc8M
+  # - name: Duel Commander
+  #   logo: https://spellbot.io/assets/img/servers/duel-commander.jpg
+  #   url: https://www.mtgdc.info/
+  # - name: Proxy Pirates
+  #   logo: https://spellbot.io/assets/img/servers/proxy-pirates.png
+  #   url: https://discord.gg/bA5tf3Xc8M

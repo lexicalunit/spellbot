@@ -60,7 +60,7 @@ SpellBot helps Discord servers to build communities around playing Magic online.
         <td align="center"><a href="https://discord.com/invite/cedh"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/cedh.png" alt="cEDH" /><br />cEDH</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://linktr.ee/CriticalEDH"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/criticaledh.png" alt="CriticalEDH" /><br />CriticalEDH</a></td>
+        <td align="center"><a href="https://discord.gg/3jwqduTkGZ"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/champ-de-bataille.png" alt="Champ de Bataille" /><br />Champ&nbsp;de&nbsp;Bataille</a></td>
         <td align="center"><a href="https://www.convoke.games/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/convoke.png" alt="Convoke" /><br />Convoke</a></td>
         <td align="center"><a href="https://discord.com/invite/9Z7x8dh6Tf"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/edh-fight-club.png" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
     </tr>
@@ -83,10 +83,6 @@ SpellBot helps Discord servers to build communities around playing Magic online.
         <td align="center"><a href="https://twitter.com/TurboDCommander"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/turbo-commander.png" alt="Turbo Commander" /><br />Turbo&nbsp;Commander</a></td>
         <td align="center"><a href="https://www.cedh.uk/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/cedh-uk.png" alt="cEDH UK" /><br />cEDH&nbsp;UK</a></td>
         <td align="center"><a href="https://discord.com/invite/mtg-home-689674672240984067"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/mtg-at-home.png" alt="MTG@Home" /><br />MTG@Home</a></td>
-    </tr>
-    <tr>
-        <td align="center"><a href="https://www.mtgdc.info/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/duel-commander.jpg" alt="Duel Commander" /><br />Duel&nbsp;Commander</a></td>
-        <td align="center"><a href="https://discord.gg/bA5tf3Xc8M"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/proxy-pirates.png" alt="Proxy Pirates" /><br />Proxy&nbsp;Pirates</a></td>
     </tr>
 </table>
 <!-- SERVERS END -->
