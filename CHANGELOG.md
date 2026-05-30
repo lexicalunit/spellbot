@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Changed vanity domains to redirects.
+- Added "Setup notification" button to cards in the queues page.
 
 ## [v20.7.0](https://github.com/lexicalunit/spellbot/releases/tag/v20.7.0) - 2026-05-30
 

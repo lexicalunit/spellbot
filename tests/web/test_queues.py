@@ -697,7 +697,8 @@ class TestPlayedGuildsSection:
         assert 'class="queue-card queue-card--played"' in body
         assert "Played Guild" in body
         assert f'href="/queues/g/{guild.xid}"' in body
-        assert "Setup notifications →" in body
+        assert "Notifications →" in body
+        assert 'class="queue-card__cta-bell"' in body
         assert "Notify me" not in body
         assert "Games played" not in body
         assert "First Played" not in body
