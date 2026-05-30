@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .alert import AlertFactory
 from .award import GuildAwardFactory, UserAwardFactory
 from .block import BlockFactory
 from .channel import ChannelFactory
@@ -15,6 +16,7 @@ from .verify import VerifyFactory
 from .watch import WatchFactory
 
 __all__ = [
+    "AlertFactory",
     "BlockFactory",
     "ChannelFactory",
     "GameFactory",

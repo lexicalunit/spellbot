@@ -107,6 +107,14 @@ class Settings(BaseSettings):
     EXPIRE_GAMES_LOOP_M: int = 10
     EXPIRE_TIME_M: int = 45
     SHARD_STATUS_UPDATE_INTERVAL_S: int = 30
+    NOTIFY_GAMES_LOOP_M: int = 1
+    NOTIFY_GAMES_DELAY_M: int = 5
+
+    # DM rate limiting (self-imposed to stay well within Discord's informal
+    # bot-DM ceiling; counters are kept in Redis via a sliding window).
+    DM_WINDOW_SECONDS: int = 7200
+    DM_WINDOW_LIMIT: int = 100
+    DM_NOTIFICATION_BUDGET: int = 60
 
     # Patreon
     PATREON_TOKEN: str | None = None

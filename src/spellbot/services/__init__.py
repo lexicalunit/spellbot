@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from . import (
+    alerts,
     apps,
     awards,
     channels,
@@ -18,6 +19,7 @@ from .awards import NewAward
 
 __all__ = [
     "NewAward",
+    "alerts",
     "apps",
     "awards",
     "channels",

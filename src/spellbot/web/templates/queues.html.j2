@@ -87,6 +87,29 @@
         </div>
         {% endif %}
 
+        {% if viewer.logged_in and played_guilds %}
+        <div class="gallery-divider" role="separator" aria-label="Servers you've played in">
+            <span class="gallery-divider__label gallery-divider__label--played">Your Servers</span>
+        </div>
+        <section class="gallery gallery--played">
+            {% for pg in played_guilds %}
+            <a class="queue-card queue-card--played" href="/queues/g/{{ pg.guild_xid }}">
+                <div class="queue-card__header">
+                    <img
+                        class="queue-card__logo"
+                        src="{{ pg.logo }}"
+                        alt="{{ pg.guild_name }}"
+                        onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                        loading="lazy"
+                    >
+                    <h2 class="queue-card__server">{{ pg.guild_name or "SpellBot Server" }}</h2>
+                </div>
+                <span class="queue-card__cta">Setup notifications →</span>
+            </a>
+            {% endfor %}
+        </section>
+        {% endif %}
+
         {% if not rows and not games %}
         <div class="empty">
             {% if viewer.my_filter_on %}
@@ -97,6 +120,11 @@
         </div>
         {% else %}
         {% if rows %}
+        {% if viewer.logged_in and played_guilds %}
+        <div class="gallery-divider" role="separator" aria-label="Active queues">
+            <span class="gallery-divider__label">Active Queues</span>
+        </div>
+        {% endif %}
         <section class="gallery">
             {% for row in rows %}
             <article class="queue-card" data-format="{{ row.format }}" data-bracket="{{ row.bracket }}" data-language="{{ row.language }}">

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from spellbot.data.alert_data import AlertData
 from spellbot.data.award_data import GuildAwardData, UserAwardData
 from spellbot.data.block_data import BlockData
 from spellbot.data.channel_data import ChannelData
@@ -21,6 +22,7 @@ from spellbot.data.verify_data import VerifyData
 from spellbot.data.watch_data import WatchData
 
 __all__ = [
+    "AlertData",
     "BlockData",
     "ChannelData",
     "GameBracket",

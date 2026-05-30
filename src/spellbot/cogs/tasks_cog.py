@@ -85,6 +85,7 @@ class TasksCog(commands.Cog):  # pragma: no cover
         if not running_in_pytest() and not bot.disable_tasks:
             self.cleanup_old_voice_channels.start()
             self.expire_inactive_games.start()
+            self.notify_pending_games.start()
 
             # Start tasks that don't require discord.py ready signal
             self._shard_status_task = asyncio.create_task(run_shard_status_loop(bot))
@@ -126,6 +127,22 @@ class TasksCog(commands.Cog):  # pragma: no cover
 
     @expire_inactive_games.before_loop
     async def before_expire_inactive_games(self) -> None:
+        await wait_until_ready(self.bot)
+
+    ###############################################
+    # Notify users about pending games matching alerts
+    ###############################################
+    @tasks.loop(minutes=settings.NOTIFY_GAMES_LOOP_M)
+    async def notify_pending_games(self) -> None:
+        try:
+            with tracer.trace(name="command", resource="notify_pending_games"):
+                async with TasksAction.create(self.bot) as action:
+                    await action.notify_pending_games()
+        except BaseException:  # Catch EVERYTHING so tasks don't die
+            logger.exception("error: exception in task cog")
+
+    @notify_pending_games.before_loop
+    async def before_notify_pending_games(self) -> None:
         await wait_until_ready(self.bot)
 
 

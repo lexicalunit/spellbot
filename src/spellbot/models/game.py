@@ -63,6 +63,12 @@ class Game(Base):
         index=True,
         doc="UTC timestamp when this game was deleted",
     )
+    notified_at = Column(
+        DateTime,
+        nullable=True,
+        index=True,
+        doc="UTC timestamp when alert notifications were processed for this game",
+    )
     guild_xid = Column(
         BigInteger,
         ForeignKey("guilds.xid", ondelete="CASCADE"),
