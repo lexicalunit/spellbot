@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
+import discord
 from dateutil import tz
 from ddtrace.trace import tracer
 
@@ -23,7 +24,9 @@ from spellbot.operations import (
     safe_delete_channel,
     safe_delete_message,
     safe_fetch_text_channel,
+    safe_fetch_user,
     safe_get_partial_message,
+    safe_send_user,
     safe_update_embed,
 )
 from spellbot.settings import settings
@@ -207,3 +210,62 @@ class TasksAction:
     async def patreon_sync(self) -> None:
         logger.info("starting task patreon_sync")
         self.bot.supporters = await services.patreon.supporters()
+
+    async def notify_pending_games(self) -> None:
+        logger.info("starting task notify_pending_games")
+        try:
+            games = await services.games.games_pending_notification()
+            await self.notify_games(games)
+        except BaseException as e:  # Catch EVERYTHING so tasks don't die
+            add_span_error(e)
+            logger.exception("error: exception in background task")
+            await rollback_session()
+
+    async def notify_games(self, game_data_list: list[GameData]) -> None:
+        for game_data in game_data_list:
+            logger.info("notifying for game %s...", game_data.id)
+            await self.notify_game(game_data)
+            await services.alerts.mark_notified(game_data.id)
+            await asyncio.sleep(1)
+
+    async def notify_game(self, game_data: GameData) -> None:
+        user_xids = await services.alerts.find_matching_user_xids(
+            guild_xid=game_data.guild_xid,
+            format=game_data.format,
+            bracket=game_data.bracket,
+            channel_xid=game_data.channel_xid,
+        )
+        if not user_xids:
+            return
+        embed = self.build_notification_embed(game_data)
+        for user_xid in user_xids:
+            user = await safe_fetch_user(self.bot, user_xid)
+            if not user:
+                continue
+            await safe_send_user(user, embed=embed, kind="notification")
+
+    def build_notification_embed(self, game_data: GameData) -> discord.Embed:
+        guild_name = game_data.guild.name or "this server"
+        channel_name = game_data.channel.name or "a channel"
+        remaining = max(game_data.seats - len(game_data.players), 0)
+        title = f"A {game_data.format_name} game is looking for players"
+        description_lines = [
+            f"A pending game in **{guild_name}** matches your notification preferences.",
+            f"Channel: <#{game_data.channel_xid}>",
+            f"Open seats: **{remaining}** of {game_data.seats}",
+        ]
+        if game_data.bracket != 0:
+            description_lines.append(f"Bracket: {game_data.bracket_title}")
+        jump_link = game_data.jump_links.get(game_data.guild_xid)
+        if jump_link:
+            description_lines.append(f"[Jump to the game post]({jump_link})")
+        prefs_link = f"{settings.API_BASE_URL}/queues/g/{game_data.guild_xid}"
+        description_lines.append(
+            f"You're receiving this because you set notification preferences for "
+            f"#{channel_name}. [Adjust your preferences]({prefs_link}).",
+        )
+        return discord.Embed(
+            title=title,
+            description="\n".join(description_lines),
+            color=discord.Color(settings.INFO_EMBED_COLOR),
+        )

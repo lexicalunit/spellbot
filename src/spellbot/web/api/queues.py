@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import aiohttp_jinja2
 from aiohttp import web
@@ -11,14 +11,19 @@ from ddtrace.trace import tracer
 
 from spellbot import services
 from spellbot.database import db_session_manager
+from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER
 from spellbot.i18n import normalize_locale
 from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.settings import settings
 from spellbot.web.api.viewer_auth import get_viewer
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 SPELLBOT_DEFAULT_LOGO = "https://spellbot.io/assets/img/avatar-icon.png"
 ICON_FETCH_TTL = timedelta(hours=6)
 STARTED_GAMES_WINDOW = timedelta(hours=2)
+PLAYED_GUILDS_WINDOW = timedelta(days=365)
 
 _icon_fetch_attempts: dict[int, datetime] = {}
 
@@ -84,7 +89,15 @@ async def queues_endpoint(request: web.Request) -> web.Response:
             STARTED_GAMES_WINDOW,
             only_member_of=member_of,
         )
-        backfilled = await _resolve_icons(raw_rows + raw_games)
+        raw_played_guilds = (
+            await services.queues.viewer_played_guilds(
+                viewer_xid,
+                played_within=PLAYED_GUILDS_WINDOW,
+            )
+            if viewer_xid is not None
+            else []
+        )
+        backfilled = await _resolve_icons(raw_rows + raw_games + raw_played_guilds)
     rows = [
         {
             **row,
@@ -105,6 +118,15 @@ async def queues_endpoint(request: web.Request) -> web.Response:
         }
         for game in raw_games
     ]
+    played_guilds = [
+        {
+            **pg,
+            "logo": pg.get("guild_icon")
+            or backfilled.get(pg["guild_xid"])
+            or SPELLBOT_DEFAULT_LOGO,
+        }
+        for pg in raw_played_guilds
+    ]
     formats = sorted({r["format"] for r in rows} | {g["format"] for g in games})
     brackets = sorted({r["bracket"] for r in rows} | {g["bracket"] for g in games})
     languages = sorted({r["language"] for r in rows} | {g["language"] for g in games})
@@ -120,6 +142,7 @@ async def queues_endpoint(request: web.Request) -> web.Response:
     context = {
         "rows": rows,
         "games": games,
+        "played_guilds": played_guilds,
         "default_logo": SPELLBOT_DEFAULT_LOGO,
         "formats": formats,
         "brackets": brackets,
@@ -187,3 +210,134 @@ async def queues_json_endpoint(request: web.Request) -> web.Response:
             "games": games,
         },
     )
+
+
+def notify_format_choices() -> list[dict[str, Any]]:
+    return [{"value": f.value, "label": str(f)} for f in GAME_FORMAT_ORDER]
+
+
+def notify_bracket_choices() -> list[dict[str, Any]]:
+    return [{"value": b.value, "label": str(b)} for b in GAME_BRACKET_ORDER]
+
+
+VALID_FORMAT_VALUES = {f.value for f in GAME_FORMAT_ORDER}
+VALID_BRACKET_VALUES = {b.value for b in GAME_BRACKET_ORDER}
+
+
+def wants_json(request: web.Request) -> bool:
+    """Return True if the request's `Accept` header prefers JSON."""
+    accept = request.headers.get("Accept", "")
+    return "application/json" in accept
+
+
+@routes.get(r"/queues/g/{guild}")
+@tracer.wrap(name="web", resource="queue_guild_notify")
+async def guild_notify_endpoint(request: web.Request) -> web.Response:
+    """Render the per-guild notification preferences page for the current viewer."""
+    add_span_request_id(generate_request_id())
+    try:
+        guild_xid = int(request.match_info["guild"])
+    except KeyError, ValueError:
+        return web.Response(status=404)
+    viewer_xid, viewer_name = await get_viewer(request)
+    if viewer_xid is None:
+        return web.HTTPFound(f"/queues/login?next=/queues/g/{guild_xid}")
+    async with db_session_manager():
+        guild = await services.queues.guild_summary(guild_xid)
+        if guild is None:
+            return web.Response(status=404)
+        backfilled = await _resolve_icons([guild])
+        existing = await services.alerts.get_for_user_guild(guild_xid, viewer_xid)
+        played_channels = await services.queues.viewer_played_channels(
+            viewer_xid,
+            guild_xid,
+            played_within=PLAYED_GUILDS_WINDOW,
+        )
+    guild_view = {
+        **guild,
+        "logo": guild.get("guild_icon")
+        or backfilled.get(guild["guild_xid"])
+        or SPELLBOT_DEFAULT_LOGO,
+        "language": language_name(guild["guild_locale"]),
+    }
+    channel_choices = [
+        {"value": c["channel_xid"], "label": c["channel_name"] or str(c["channel_xid"])}
+        for c in played_channels
+    ]
+    valid_channel_values = {c["value"] for c in channel_choices}
+    selected_formats = set(existing.formats) if existing else set()
+    selected_brackets = set(existing.brackets) if existing else set()
+    selected_channels = (
+        {c for c in existing.channels if c in valid_channel_values} if existing else set()
+    )
+    context = {
+        "guild": guild_view,
+        "default_logo": SPELLBOT_DEFAULT_LOGO,
+        "format_choices": notify_format_choices(),
+        "bracket_choices": notify_bracket_choices(),
+        "channel_choices": channel_choices,
+        "selected_formats": selected_formats,
+        "selected_brackets": selected_brackets,
+        "selected_channels": selected_channels,
+        "viewer": {"xid": viewer_xid, "name": viewer_name, "logged_in": True},
+    }
+    return aiohttp_jinja2.render_template("guild_notify.html.j2", request, context)
+
+
+def parse_notify_values(raw: Iterable[Any], valid: set[int]) -> list[int] | None:
+    """Parse and validate posted enum-int values; return None if any value is invalid."""
+    parsed: list[int] = []
+    for value in raw:
+        try:
+            parsed.append(int(value))
+        except TypeError, ValueError:
+            return None
+    if any(v not in valid for v in parsed):
+        return None
+    return parsed
+
+
+@routes.post(r"/queues/g/{guild}/notify")
+@tracer.wrap(name="web", resource="queue_guild_notify_save")
+async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse:
+    """Save the viewer's notification preferences for a guild."""
+    add_span_request_id(generate_request_id())
+    try:
+        guild_xid = int(request.match_info["guild"])
+    except KeyError, ValueError:
+        return web.Response(status=404)
+    viewer_xid, _ = await get_viewer(request)
+    if viewer_xid is None:
+        return web.HTTPFound(f"/queues/login?next=/queues/g/{guild_xid}")
+    form = await request.post()
+    formats = parse_notify_values(form.getall("formats", []), VALID_FORMAT_VALUES)
+    brackets = parse_notify_values(form.getall("brackets", []), VALID_BRACKET_VALUES)
+    async with db_session_manager():
+        played_channels = await services.queues.viewer_played_channels(
+            viewer_xid,
+            guild_xid,
+            played_within=PLAYED_GUILDS_WINDOW,
+        )
+        valid_channel_values = {int(c["channel_xid"]) for c in played_channels}
+        channels = parse_notify_values(form.getall("channels", []), valid_channel_values)
+        if formats is None or brackets is None or channels is None:
+            if wants_json(request):
+                return web.json_response({"ok": False, "error": "invalid_input"}, status=400)
+            return web.Response(status=400)
+        saved = await services.alerts.upsert(
+            guild_xid,
+            viewer_xid,
+            formats=formats,
+            brackets=brackets,
+            channels=channels,
+        )
+    if wants_json(request):
+        return web.json_response(
+            {
+                "ok": True,
+                "formats": saved.formats,
+                "brackets": saved.brackets,
+                "channels": saved.channels,
+            },
+        )
+    return web.HTTPFound(f"/queues/g/{guild_xid}")

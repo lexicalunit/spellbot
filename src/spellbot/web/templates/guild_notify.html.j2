@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Notification Preferences — {{ guild.guild_name or "SpellBot Server" }}</title>
+    <meta name="description" content="Choose which SpellBot game posts you want to be notified about.">
+    <meta name="theme-color" content="#1a202c">
+    <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
+    <style>
+        {% include "queues.css" %}
+        {% include "guild_notify.css" %}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="page-header">
+            <a href="/queues">
+                <img class="logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+            </a>
+            <h1>Notification Preferences</h1>
+        </header>
+
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <a href="/queues">← Back to Active Queues</a>
+        </nav>
+
+        <section class="notify">
+            <div class="notify__guild">
+                <img
+                    class="notify__guild-logo"
+                    src="{{ guild.logo }}"
+                    alt="{{ guild.guild_name }}"
+                    onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                    loading="lazy"
+                >
+                <div class="notify__guild-titles">
+                    <h2 class="notify__guild-name">{{ guild.guild_name or "SpellBot Server" }}</h2>
+                    <p class="notify__guild-sub">
+                        Choose what kinds of new games you want to be pinged about in this server.
+                    </p>
+                </div>
+            </div>
+
+            <form method="post" action="/queues/g/{{ guild.guild_xid }}/notify" class="notify__form">
+                <fieldset class="notify__fieldset">
+                    <legend class="notify__legend">Formats</legend>
+                    <p class="notify__hint">Select the formats you want to be notified about. Leave empty to receive all formats.</p>
+                    <div class="notify__options">
+                        {% for c in format_choices %}
+                        <label class="notify__option">
+                            <input
+                                type="checkbox"
+                                name="formats"
+                                value="{{ c.value }}"
+                                {% if c.value in selected_formats %}checked{% endif %}
+                            >
+                            <span>{{ c.label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <fieldset class="notify__fieldset">
+                    <legend class="notify__legend">Brackets</legend>
+                    <p class="notify__hint">Select the brackets you want to be notified about. Leave empty to receive all brackets.</p>
+                    <div class="notify__options">
+                        {% for c in bracket_choices %}
+                        <label class="notify__option">
+                            <input
+                                type="checkbox"
+                                name="brackets"
+                                value="{{ c.value }}"
+                                {% if c.value in selected_brackets %}checked{% endif %}
+                            >
+                            <span>{{ c.label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                {% if channel_choices|length > 1 %}
+                <fieldset class="notify__fieldset">
+                    <legend class="notify__legend">Channels</legend>
+                    <p class="notify__hint">Select the channels you want to be notified about. Leave empty to receive all channels.</p>
+                    <div class="notify__options">
+                        {% for c in channel_choices %}
+                        <label class="notify__option">
+                            <input
+                                type="checkbox"
+                                name="channels"
+                                value="{{ c.value }}"
+                                {% if c.value in selected_channels %}checked{% endif %}
+                            >
+                            <span>#{{ c.label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+                {% endif %}
+
+                <div class="notify__actions">
+                    <button type="submit" class="notify__save">Save preferences</button>
+                    <a class="notify__cancel" href="/queues">Cancel</a>
+                </div>
+            </form>
+        </section>
+
+        <footer class="page-footer">
+            <p>Powered by <a href="https://spellbot.io/">SpellBot</a>.</p>
+        </footer>
+    </div>
+    <div
+        id="notify-toast"
+        class="notify__toast"
+        role="status"
+        aria-live="polite"
+        hidden
+    ></div>
+    <script>
+        (function () {
+            var form = document.querySelector(".notify__form");
+            var toast = document.getElementById("notify-toast");
+            if (!form || !toast) return;
+            var successMessage = "Your notification preferences have been saved.";
+            var errorMessage = "Could not save your preferences. Please try again.";
+            var hideTimer = null;
+            function showToast(message, isError) {
+                if (hideTimer) clearTimeout(hideTimer);
+                toast.textContent = message;
+                toast.classList.toggle("notify__toast--error", !!isError);
+                toast.hidden = false;
+                // Force a reflow so the transition runs on re-show.
+                void toast.offsetWidth;
+                toast.classList.add("notify__toast--visible");
+                hideTimer = setTimeout(function () {
+                    toast.classList.remove("notify__toast--visible");
+                    setTimeout(function () { toast.hidden = true; }, 250);
+                }, 3000);
+            }
+            form.addEventListener("submit", function (event) {
+                event.preventDefault();
+                var data = new FormData(form);
+                fetch(form.action, {
+                    method: "POST",
+                    body: data,
+                    credentials: "same-origin",
+                    headers: { "Accept": "application/json" },
+                }).then(function (resp) {
+                    if (resp.ok) {
+                        showToast(successMessage, false);
+                    } else {
+                        showToast(errorMessage, true);
+                    }
+                }).catch(function () {
+                    showToast(errorMessage, true);
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

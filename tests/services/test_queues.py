@@ -498,3 +498,259 @@ class TestPublicActiveGames:
             only_mythic_track=True,
         )
         assert [r["guild_name"] for r in only_rows] == ["MT On"]
+
+
+@pytest.mark.asyncio
+class TestViewerPlayedGuilds:
+    async def test_empty_when_user_has_no_plays(self) -> None:
+        assert await queues.viewer_played_guilds(user_xid=999_001) == []
+
+    async def test_returns_played_guilds_ordered_by_last_played(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        recent = factories.guild.create(xid=971_001, name="Recent", locale="ja", icon="r.png")
+        older = factories.guild.create(xid=971_002, name="Older", locale="en", icon=None)
+        ch1 = factories.channel.create(xid=971_011, name="lfg", guild=recent)
+        ch2 = factories.channel.create(xid=971_012, name="lfg", guild=older)
+        me = factories.user.create(xid=871_001, name="me")
+        recent_game1 = factories.game.create(guild=recent, channel=ch1)
+        recent_game2 = factories.game.create(guild=recent, channel=ch1)
+        older_game = factories.game.create(guild=older, channel=ch2)
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=recent_game1.id,
+            og_guild_xid=recent.xid,
+            created_at=NOW - timedelta(days=10),
+        )
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=recent_game2.id,
+            og_guild_xid=recent.xid,
+            created_at=NOW - timedelta(hours=1),
+        )
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=older_game.id,
+            og_guild_xid=older.xid,
+            created_at=NOW - timedelta(days=20),
+        )
+
+        rows = await queues.viewer_played_guilds(user_xid=me.xid)
+        assert [r["guild_name"] for r in rows] == ["Recent", "Older"]
+        assert rows[0] == {
+            "guild_xid": recent.xid,
+            "guild_name": "Recent",
+            "guild_locale": "ja",
+            "guild_icon": "r.png",
+            "games_played": 2,
+            "first_played_at": NOW - timedelta(days=10),
+            "last_played_at": NOW - timedelta(hours=1),
+        }
+        assert rows[1]["games_played"] == 1
+        assert rows[1]["guild_icon"] is None
+
+    async def test_excludes_banned_and_unpromoted_guilds(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        ok = factories.guild.create(xid=971_101, name="OK")
+        banned = factories.guild.create(xid=971_102, name="Banned", banned=True)
+        hidden = factories.guild.create(xid=971_103, name="Hidden", promote=False)
+        ch1 = factories.channel.create(xid=971_111, name="lfg", guild=ok)
+        ch2 = factories.channel.create(xid=971_112, name="lfg", guild=banned)
+        ch3 = factories.channel.create(xid=971_113, name="lfg", guild=hidden)
+        me = factories.user.create(xid=871_101, name="me")
+        for guild, ch in ((ok, ch1), (banned, ch2), (hidden, ch3)):
+            game = factories.game.create(guild=guild, channel=ch)
+            factories.play.create(
+                user_xid=me.xid,
+                game_id=game.id,
+                og_guild_xid=guild.xid,
+                created_at=NOW,
+            )
+
+        rows = await queues.viewer_played_guilds(user_xid=me.xid)
+        assert [r["guild_name"] for r in rows] == ["OK"]
+
+    async def test_played_within_excludes_guilds_with_stale_last_play(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        fresh = factories.guild.create(xid=971_201, name="Fresh")
+        stale = factories.guild.create(xid=971_202, name="Stale")
+        ch1 = factories.channel.create(xid=971_211, name="lfg", guild=fresh)
+        ch2 = factories.channel.create(xid=971_212, name="lfg", guild=stale)
+        me = factories.user.create(xid=871_201, name="me")
+        fresh_game = factories.game.create(guild=fresh, channel=ch1)
+        stale_game = factories.game.create(guild=stale, channel=ch2)
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=fresh_game.id,
+            og_guild_xid=fresh.xid,
+            created_at=NOW - timedelta(days=30),
+        )
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=stale_game.id,
+            og_guild_xid=stale.xid,
+            created_at=NOW - timedelta(days=400),
+        )
+
+        unfiltered = await queues.viewer_played_guilds(user_xid=me.xid)
+        assert {r["guild_name"] for r in unfiltered} == {"Fresh", "Stale"}
+
+        filtered = await queues.viewer_played_guilds(
+            user_xid=me.xid,
+            played_within=timedelta(days=365),
+        )
+        assert [r["guild_name"] for r in filtered] == ["Fresh"]
+
+    async def test_played_within_preserves_total_games_played(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(xid=971_301, name="Mixed")
+        ch = factories.channel.create(xid=971_311, name="lfg", guild=guild)
+        me = factories.user.create(xid=871_301, name="me")
+        old_game = factories.game.create(guild=guild, channel=ch)
+        recent_game = factories.game.create(guild=guild, channel=ch)
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=old_game.id,
+            og_guild_xid=guild.xid,
+            created_at=NOW - timedelta(days=800),
+        )
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=recent_game.id,
+            og_guild_xid=guild.xid,
+            created_at=NOW - timedelta(days=10),
+        )
+
+        rows = await queues.viewer_played_guilds(
+            user_xid=me.xid,
+            played_within=timedelta(days=365),
+        )
+        assert len(rows) == 1
+        assert rows[0]["games_played"] == 2
+        assert rows[0]["first_played_at"] == NOW - timedelta(days=800)
+        assert rows[0]["last_played_at"] == NOW - timedelta(days=10)
+
+
+@pytest.mark.asyncio
+class TestGuildSummary:
+    async def test_returns_none_for_unknown_guild(self) -> None:
+        assert await queues.guild_summary(guild_xid=999_999) is None
+
+    async def test_returns_basic_fields_for_promoted_guild(
+        self,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(
+            xid=972_001,
+            name="Public Guild",
+            locale="es",
+            icon="cdn.png",
+        )
+        result = await queues.guild_summary(guild_xid=guild.xid)
+        assert result == {
+            "guild_xid": guild.xid,
+            "guild_name": "Public Guild",
+            "guild_locale": "es",
+            "guild_icon": "cdn.png",
+        }
+
+    async def test_returns_none_for_banned_or_unpromoted(
+        self,
+        factories: Factories,
+    ) -> None:
+        banned = factories.guild.create(xid=972_101, name="Banned", banned=True)
+        hidden = factories.guild.create(xid=972_102, name="Hidden", promote=False)
+        assert await queues.guild_summary(guild_xid=banned.xid) is None
+        assert await queues.guild_summary(guild_xid=hidden.xid) is None
+
+
+@pytest.mark.asyncio
+class TestViewerPlayedChannels:
+    async def test_empty_when_user_has_no_plays(self) -> None:
+        assert await queues.viewer_played_channels(user_xid=999_002, guild_xid=999_003) == []
+
+    async def test_returns_distinct_played_channels_sorted_by_name(
+        self,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=973_001, name="G")
+        other_guild = factories.guild.create(xid=973_002, name="Other")
+        ch_b = factories.channel.create(xid=973_101, name="bravo", guild=guild)
+        ch_a = factories.channel.create(xid=973_102, name="alpha", guild=guild)
+        ch_other = factories.channel.create(xid=973_103, name="zzz", guild=other_guild)
+        me = factories.user.create(xid=873_001, name="me")
+        them = factories.user.create(xid=873_002, name="them")
+        game_b1 = factories.game.create(guild=guild, channel=ch_b)
+        game_b2 = factories.game.create(guild=guild, channel=ch_b)
+        game_a = factories.game.create(guild=guild, channel=ch_a)
+        game_other = factories.game.create(guild=other_guild, channel=ch_other)
+        game_them = factories.game.create(guild=guild, channel=ch_b)
+        factories.play.create(user_xid=me.xid, game_id=game_b1.id, og_guild_xid=guild.xid)
+        factories.play.create(user_xid=me.xid, game_id=game_b2.id, og_guild_xid=guild.xid)
+        factories.play.create(user_xid=me.xid, game_id=game_a.id, og_guild_xid=guild.xid)
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=game_other.id,
+            og_guild_xid=other_guild.xid,
+        )
+        factories.play.create(user_xid=them.xid, game_id=game_them.id, og_guild_xid=guild.xid)
+
+        rows = await queues.viewer_played_channels(user_xid=me.xid, guild_xid=guild.xid)
+
+        assert rows == [
+            {"channel_xid": ch_a.xid, "channel_name": "alpha"},
+            {"channel_xid": ch_b.xid, "channel_name": "bravo"},
+        ]
+
+    async def test_played_within_excludes_channels_with_stale_last_play(
+        self,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(xid=973_201, name="G")
+        ch_fresh = factories.channel.create(xid=973_211, name="fresh", guild=guild)
+        ch_stale = factories.channel.create(xid=973_212, name="stale", guild=guild)
+        me = factories.user.create(xid=873_201, name="me")
+        game_fresh = factories.game.create(guild=guild, channel=ch_fresh)
+        game_stale = factories.game.create(guild=guild, channel=ch_stale)
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=game_fresh.id,
+            og_guild_xid=guild.xid,
+            created_at=NOW - timedelta(days=10),
+        )
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=game_stale.id,
+            og_guild_xid=guild.xid,
+            created_at=NOW - timedelta(days=400),
+        )
+
+        unfiltered = await queues.viewer_played_channels(
+            user_xid=me.xid,
+            guild_xid=guild.xid,
+        )
+        assert {r["channel_name"] for r in unfiltered} == {"fresh", "stale"}
+
+        filtered = await queues.viewer_played_channels(
+            user_xid=me.xid,
+            guild_xid=guild.xid,
+            played_within=timedelta(days=365),
+        )
+        assert [r["channel_name"] for r in filtered] == ["fresh"]

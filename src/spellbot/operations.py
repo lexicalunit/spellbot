@@ -12,6 +12,7 @@ from ddtrace.trace import tracer
 from discord.errors import DiscordException, NotFound
 from discord.utils import MISSING
 
+from .dm_limiter import DMKind, try_consume_dm_slot
 from .metrics import add_span_error
 from .utils import (
     ALREADY_ACKNOWLEDGED_CODE,
@@ -672,14 +673,23 @@ def is_expected_dm_failure(ex: BaseException) -> bool:
 async def safe_send_user(
     user: discord.User | discord.Member,
     *args: Any,
+    kind: DMKind = "start",
     **kwargs: Any,
 ) -> None:
     user_xid = getattr(user, "id", None)
     if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"user_xid": str(user_xid)})
+        span.set_tags({"user_xid": str(user_xid), "dm_kind": kind})
 
     if not hasattr(user, "send"):
         return log_warning("no send method on user %(user)s %(xid)s", user=user, xid=user_xid)
+
+    if not await try_consume_dm_slot(kind):
+        return log_info(
+            "dm rate limit reached, skipping %(kind)s dm to %(user)s %(xid)s",
+            kind=kind,
+            user=user,
+            xid=user_xid,
+        )
 
     # Note: safe_send_user has special handling for DiscordServerError and DM failures
     # that differs from the standard safe_call pattern, so we handle it explicitly here.

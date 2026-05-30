@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, patch
@@ -9,6 +10,7 @@ import pytest
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Guild
+from spellbot.services import alerts
 from spellbot.web.api import queues as queues_endpoint_mod
 from spellbot.web.api.queues import SPELLBOT_DEFAULT_LOGO, format_wait, language_name
 
@@ -658,3 +660,580 @@ class TestQueuesJsonEndpoint:
         assert payload["queues"] == []
         assert len(payload["games"]) == 1
         assert payload["games"][0]["logo"] == SPELLBOT_DEFAULT_LOGO
+
+
+@pytest.mark.asyncio
+class TestPlayedGuildsSection:
+    async def test_section_renders_for_logged_in_viewer(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+        mocker: MockerFixture,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(
+            xid=981_001,
+            name="Played Guild",
+            icon="https://cdn.discordapp.com/icons/981001/p.png",
+        )
+        ch = factories.channel.create(xid=981_101, name="lfg", guild=guild)
+        me = factories.user.create(xid=881_001, name="me")
+        game = factories.game.create(guild=guild, channel=ch)
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=game.id,
+            og_guild_xid=guild.xid,
+            created_at=NOW - timedelta(days=3),
+        )
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get("/queues")
+        body = await resp.text()
+        assert "Your Servers" in body
+        assert 'class="queue-card queue-card--played"' in body
+        assert "Played Guild" in body
+        assert f'href="/queues/g/{guild.xid}"' in body
+        assert "Setup notifications →" in body
+        assert "Notify me" not in body
+        assert "Games played" not in body
+        assert "First Played" not in body
+        assert 'class="players-badge"' not in body
+
+    async def test_section_hidden_for_anonymous_viewer(
+        self,
+        client: WebClient,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=981_002, name="Played Anon", icon="i.png")
+        ch = factories.channel.create(xid=981_102, name="lfg", guild=guild)
+        me = factories.user.create(xid=881_002, name="me")
+        game = factories.game.create(guild=guild, channel=ch)
+        factories.play.create(user_xid=me.xid, game_id=game.id, og_guild_xid=guild.xid)
+
+        resp = await client.get("/queues")
+        body = await resp.text()
+        assert "Your Servers" not in body
+        assert 'class="queue-card queue-card--played"' not in body
+
+    async def test_section_hidden_when_no_history(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        me = factories.user.create(xid=881_003, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+        resp = await client.get("/queues")
+        body = await resp.text()
+        assert "Your Servers" not in body
+
+    async def test_section_hides_guilds_last_played_over_a_year_ago(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+        mocker: MockerFixture,
+    ) -> None:
+        freezer.move_to(NOW)
+        stale = factories.guild.create(xid=981_004, name="Stale Guild", icon="s.png")
+        ch = factories.channel.create(xid=981_104, name="lfg", guild=stale)
+        me = factories.user.create(xid=881_004, name="me")
+        game = factories.game.create(guild=stale, channel=ch)
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=game.id,
+            og_guild_xid=stale.xid,
+            created_at=NOW - timedelta(days=400),
+        )
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+        resp = await client.get("/queues")
+        body = await resp.text()
+        assert "Your Servers" not in body
+        assert "Stale Guild" not in body
+
+    async def test_active_queues_divider_rendered_between_played_and_rows(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+        mocker: MockerFixture,
+    ) -> None:
+        freezer.move_to(NOW)
+        played_guild = factories.guild.create(xid=981_005, name="Played", icon="p.png")
+        played_ch = factories.channel.create(xid=981_105, name="lfg", guild=played_guild)
+        active_guild = factories.guild.create(xid=981_006, name="Active", icon="a.png")
+        active_ch = factories.channel.create(xid=981_106, name="lfg", guild=active_guild)
+        me = factories.user.create(xid=881_006, name="me")
+        other = factories.user.create(xid=881_007, name="other")
+        played_game = factories.game.create(guild=played_guild, channel=played_ch)
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=played_game.id,
+            og_guild_xid=played_guild.xid,
+            created_at=NOW - timedelta(days=3),
+        )
+        active_game = factories.game.create(
+            guild=active_guild,
+            channel=active_ch,
+            seats=4,
+            started_at=None,
+        )
+        factories.post.create(
+            guild=active_guild,
+            channel=active_ch,
+            game=active_game,
+            message_xid=981_206,
+        )
+        factories.queue.create(
+            user_xid=other.xid,
+            game_id=active_game.id,
+            og_guild_xid=active_guild.xid,
+        )
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get("/queues")
+        body = await resp.text()
+        played_idx = body.index("Your Servers")
+        divider_idx = body.index('aria-label="Active queues"')
+        active_idx = body.index("Jump to Game")
+        assert played_idx < divider_idx < active_idx
+
+
+@pytest.mark.asyncio
+class TestGuildNotifyEndpoint:
+    async def test_renders_preferences_form_for_logged_in_viewer(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(
+            xid=982_001,
+            name="Notify Guild",
+            icon="https://cdn.discordapp.com/icons/982001/n.png",
+            locale="en",
+        )
+        me = factories.user.create(xid=882_001, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get(f"/queues/g/{guild.xid}")
+        assert resp.status == 200
+        body = await resp.text()
+        assert "Notify Guild" in body
+        assert "Notification Preferences" in body
+        assert "Formats" in body
+        assert "Brackets" in body
+        assert f'action="/queues/g/{guild.xid}/notify"' in body
+        assert "Save preferences" in body
+        # The toast container is rendered but hidden until the form is submitted.
+        assert 'id="notify-toast"' in body
+        assert "Your notification preferences have been saved." in body
+        assert 'class="notify__flash"' not in body
+
+    async def test_redirects_to_login_when_anonymous(
+        self,
+        client: WebClient,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=982_003, name="Anon", icon="a.png")
+        resp = await client.get(f"/queues/g/{guild.xid}", allow_redirects=False)
+        assert resp.status == 302
+        location = resp.headers["Location"]
+        assert location.startswith("/queues/login")
+        assert f"/queues/g/{guild.xid}" in location
+
+    async def test_returns_404_for_unknown_guild(
+        self,
+        client: WebClient,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(882_004, "Me")),
+        )
+        resp = await client.get("/queues/g/77777777", allow_redirects=False)
+        assert resp.status == 404
+
+    async def test_returns_404_for_non_integer_guild(
+        self,
+        client: WebClient,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(882_005, "Me")),
+        )
+        resp = await client.get("/queues/g/not-a-number", allow_redirects=False)
+        assert resp.status == 404
+
+    async def test_returns_404_for_banned_guild(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=982_006, name="Banned", banned=True)
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(882_006, "Me")),
+        )
+        resp = await client.get(f"/queues/g/{guild.xid}", allow_redirects=False)
+        assert resp.status == 404
+
+    async def test_prepopulates_form_with_existing_preferences(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=982_007, name="Prepop", icon="p.png")
+        me = factories.user.create(xid=882_007, name="me")
+        factories.alert.create(
+            guild_xid=guild.xid,
+            user_xid=me.xid,
+            preferences={"formats": [1], "brackets": [2]},
+        )
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get(f"/queues/g/{guild.xid}")
+        assert resp.status == 200
+        body = await resp.text()
+        assert re.search(r'name="formats"\s+value="1"\s+checked', body)
+        assert re.search(r'name="brackets"\s+value="2"\s+checked', body)
+        assert not re.search(r'name="formats"\s+value="2"\s+checked', body)
+        assert not re.search(r'name="brackets"\s+value="1"\s+checked', body)
+
+
+@pytest.mark.asyncio
+class TestGuildNotifySaveEndpoint:
+    async def test_redirects_back_to_preferences_page_and_persists(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=983_001, name="Save Guild", icon="s.png")
+        me = factories.user.create(xid=883_001, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={"formats": ["1"], "brackets": ["2"]},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/queues/g/{guild.xid}"
+
+        saved = await alerts.get_for_user_guild(guild.xid, me.xid)
+        assert saved is not None
+        assert saved.formats == [1]
+        assert saved.brackets == [2]
+
+    async def test_returns_json_for_ajax_request(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=983_010, name="Ajax Guild", icon="a.png")
+        me = factories.user.create(xid=883_010, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={"formats": ["1", "1", "4"], "brackets": ["2"]},
+            headers={"Accept": "application/json"},
+            allow_redirects=False,
+        )
+        assert resp.status == 200
+        payload = await resp.json()
+        assert payload == {
+            "ok": True,
+            "formats": [1, 4],
+            "brackets": [2],
+            "channels": [],
+        }
+
+    async def test_returns_400_for_invalid_format_value(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=983_011, name="Bad Guild", icon="b.png")
+        me = factories.user.create(xid=883_011, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={"formats": ["not-a-number"], "brackets": []},
+            headers={"Accept": "application/json"},
+            allow_redirects=False,
+        )
+        assert resp.status == 400
+        payload = await resp.json()
+        assert payload == {"ok": False, "error": "invalid_input"}
+
+    async def test_returns_400_for_unknown_format_value(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=983_012, name="Unk Guild", icon="u.png")
+        me = factories.user.create(xid=883_012, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={"formats": ["9999"], "brackets": []},
+            allow_redirects=False,
+        )
+        assert resp.status == 400
+
+    async def test_redirects_to_login_when_anonymous(
+        self,
+        client: WebClient,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=983_002, name="Anon Save", icon="a.png")
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"].startswith("/queues/login")
+
+    async def test_returns_404_for_non_integer_guild(
+        self,
+        client: WebClient,
+    ) -> None:
+        resp = await client.post(
+            "/queues/g/not-a-number/notify",
+            data={},
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+
+
+@pytest.mark.asyncio
+class TestGuildNotifyChannelsFieldset:
+    async def test_channels_fieldset_hidden_when_no_played_channels(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=984_001, name="NoChans", icon="n.png")
+        me = factories.user.create(xid=884_001, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get(f"/queues/g/{guild.xid}")
+        assert resp.status == 200
+        body = await resp.text()
+        assert ">Channels<" not in body
+        assert 'name="channels"' not in body
+
+    async def test_channels_fieldset_hidden_with_single_played_channel(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=984_002, name="OneChan", icon="o.png")
+        ch = factories.channel.create(xid=984_201, name="lfg", guild=guild)
+        me = factories.user.create(xid=884_002, name="me")
+        game = factories.game.create(guild=guild, channel=ch)
+        factories.play.create(user_xid=me.xid, game_id=game.id, og_guild_xid=guild.xid)
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get(f"/queues/g/{guild.xid}")
+        assert resp.status == 200
+        body = await resp.text()
+        assert ">Channels<" not in body
+        assert 'name="channels"' not in body
+
+    async def test_channels_fieldset_shown_with_multiple_played_channels(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=984_003, name="MultiChan", icon="m.png")
+        ch_a = factories.channel.create(xid=984_301, name="alpha", guild=guild)
+        ch_b = factories.channel.create(xid=984_302, name="bravo", guild=guild)
+        me = factories.user.create(xid=884_003, name="me")
+        game_a = factories.game.create(guild=guild, channel=ch_a)
+        game_b = factories.game.create(guild=guild, channel=ch_b)
+        factories.play.create(user_xid=me.xid, game_id=game_a.id, og_guild_xid=guild.xid)
+        factories.play.create(user_xid=me.xid, game_id=game_b.id, og_guild_xid=guild.xid)
+        factories.alert.create(
+            guild_xid=guild.xid,
+            user_xid=me.xid,
+            preferences={"formats": [], "brackets": [], "channels": [ch_a.xid]},
+        )
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get(f"/queues/g/{guild.xid}")
+        assert resp.status == 200
+        body = await resp.text()
+        assert ">Channels<" in body
+        assert "#alpha" in body
+        assert "#bravo" in body
+        assert re.search(
+            rf'name="channels"\s+value="{ch_a.xid}"\s+checked',
+            body,
+        )
+        assert not re.search(
+            rf'name="channels"\s+value="{ch_b.xid}"\s+checked',
+            body,
+        )
+
+    async def test_save_persists_channels_when_played(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=984_004, name="SaveChan", icon="c.png")
+        ch_a = factories.channel.create(xid=984_401, name="alpha", guild=guild)
+        ch_b = factories.channel.create(xid=984_402, name="bravo", guild=guild)
+        me = factories.user.create(xid=884_004, name="me")
+        game_a = factories.game.create(guild=guild, channel=ch_a)
+        game_b = factories.game.create(guild=guild, channel=ch_b)
+        factories.play.create(user_xid=me.xid, game_id=game_a.id, og_guild_xid=guild.xid)
+        factories.play.create(user_xid=me.xid, game_id=game_b.id, og_guild_xid=guild.xid)
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data=[
+                ("formats", "1"),
+                ("brackets", "2"),
+                ("channels", str(ch_a.xid)),
+                ("channels", str(ch_b.xid)),
+            ],
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+
+        saved = await alerts.get_for_user_guild(guild.xid, me.xid)
+        assert saved is not None
+        assert saved.channels == sorted([ch_a.xid, ch_b.xid])
+
+    async def test_save_returns_400_for_unplayed_channel(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=984_005, name="BadChan", icon="x.png")
+        ch_a = factories.channel.create(xid=984_501, name="alpha", guild=guild)
+        me = factories.user.create(xid=884_005, name="me")
+        game_a = factories.game.create(guild=guild, channel=ch_a)
+        factories.play.create(user_xid=me.xid, game_id=game_a.id, og_guild_xid=guild.xid)
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data=[("channels", "9999999")],
+            headers={"Accept": "application/json"},
+            allow_redirects=False,
+        )
+        assert resp.status == 400
+        payload = await resp.json()
+        assert payload == {"ok": False, "error": "invalid_input"}
+
+    async def test_channel_stale_for_over_a_year_is_excluded(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+        mocker: MockerFixture,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(xid=984_006, name="StaleGuild", icon="s.png")
+        ch_fresh = factories.channel.create(xid=984_601, name="fresh", guild=guild)
+        ch_stale = factories.channel.create(xid=984_602, name="stale", guild=guild)
+        me = factories.user.create(xid=884_006, name="me")
+        game_fresh = factories.game.create(guild=guild, channel=ch_fresh)
+        game_stale = factories.game.create(guild=guild, channel=ch_stale)
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=game_fresh.id,
+            og_guild_xid=guild.xid,
+            created_at=NOW - timedelta(days=10),
+        )
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=game_stale.id,
+            og_guild_xid=guild.xid,
+            created_at=NOW - timedelta(days=400),
+        )
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get(f"/queues/g/{guild.xid}")
+        assert resp.status == 200
+        body = await resp.text()
+        # Only one fresh channel remains, so the fieldset is hidden entirely.
+        assert ">Channels<" not in body
+        assert "#stale" not in body
+
+        # Posting a stale channel xid is rejected as invalid.
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data=[("channels", str(ch_stale.xid))],
+            headers={"Accept": "application/json"},
+            allow_redirects=False,
+        )
+        assert resp.status == 400

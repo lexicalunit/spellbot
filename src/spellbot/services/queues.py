@@ -7,7 +7,7 @@ from sqlalchemy import case, func, select
 
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
-from spellbot.models import Game, Guild, GuildMember, Post, Queue
+from spellbot.models import Channel, Game, Guild, GuildMember, Play, Post, Queue
 
 FORMAT_LABEL = case(
     *((Game.format == f.value, str(f)) for f in GameFormat),
@@ -244,3 +244,132 @@ async def public_active_queues(
             }
         )
     return out
+
+
+async def viewer_played_guilds(
+    user_xid: int,
+    *,
+    played_within: timedelta | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Return the guilds the given user has played at least one game in.
+
+    Each row carries the guild name, locale, cached icon, a count of plays in
+    that guild, and the earliest and latest play timestamps. Banned and
+    unpromoted guilds are excluded. When `played_within` is provided, guilds
+    whose most recent play is older than the window are excluded (the
+    aggregated counts and timestamps still cover the full history). Results
+    are ordered by most-recent play first.
+    """
+    games_played = func.count(Play.game_id).label("games_played")  # type: ignore
+    first_played_at = func.min(Play.created_at).label("first_played_at")
+    last_played_at = func.max(Play.created_at).label("last_played_at")
+    stmt = (
+        select(
+            Game.guild_xid,
+            Guild.name.label("guild_name"),
+            Guild.locale.label("guild_locale"),
+            Guild.icon.label("guild_icon"),
+            games_played,
+            first_played_at,
+            last_played_at,
+        )
+        .select_from(Play)
+        .join(Game, Game.id == Play.game_id)
+        .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+        .where(
+            Play.user_xid == user_xid,
+            Guild.banned.is_(False),
+            Guild.promote.is_(True),
+        )
+        .group_by(
+            Game.guild_xid,
+            Guild.name,
+            Guild.locale,
+            Guild.icon,
+        )
+        .order_by(last_played_at.desc())
+    )
+    if played_within is not None:
+        cutoff = datetime.now(tz=UTC) - played_within
+        stmt = stmt.having(last_played_at >= cutoff)
+    rows = (await DatabaseSession.execute(stmt)).all()
+    return [
+        {
+            "guild_xid": int(row[0]),
+            "guild_name": row[1] or "",
+            "guild_locale": row[2] or "en",
+            "guild_icon": row[3],
+            "games_played": int(row[4]),
+            "first_played_at": row[5].replace(tzinfo=UTC) if row[5] is not None else None,
+            "last_played_at": row[6].replace(tzinfo=UTC) if row[6] is not None else None,
+        }
+        for row in rows
+    ]
+
+
+async def viewer_played_channels(
+    user_xid: int,
+    guild_xid: int,
+    *,
+    played_within: timedelta | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Return distinct channels the given user has played at least one game in for `guild_xid`.
+
+    Rows are sorted by channel name (then xid) and carry the channel's external
+    Discord ID and most-recently cached name. When `played_within` is provided,
+    channels whose most recent play by the user is older than the window are
+    excluded.
+    """
+    last_played_at = func.max(Play.created_at).label("last_played_at")
+    stmt = (
+        select(
+            Channel.xid,  # type: ignore
+            Channel.name,
+            last_played_at,
+        )
+        .select_from(Play)
+        .join(Game, Game.id == Play.game_id)
+        .join(Channel, Channel.xid == Game.channel_xid)
+        .where(
+            Play.user_xid == user_xid,
+            Game.guild_xid == guild_xid,
+        )
+        .group_by(Channel.xid, Channel.name)
+        .order_by(Channel.name.asc(), Channel.xid.asc())  # type: ignore
+    )
+    if played_within is not None:
+        cutoff = datetime.now(tz=UTC) - played_within
+        stmt = stmt.having(last_played_at >= cutoff)
+    rows = (await DatabaseSession.execute(stmt)).all()
+    return [
+        {
+            "channel_xid": int(row[0]),
+            "channel_name": row[1] or "",
+        }
+        for row in rows
+    ]
+
+
+async def guild_summary(guild_xid: int) -> dict[str, Any] | None:
+    """Return basic public guild fields for the notification preferences page."""
+    stmt = select(
+        Guild.xid,  # type: ignore
+        Guild.name,
+        Guild.locale,
+        Guild.icon,
+    ).where(
+        Guild.xid == guild_xid,
+        Guild.banned.is_(False),
+        Guild.promote.is_(True),
+    )
+    row = (await DatabaseSession.execute(stmt)).first()
+    if row is None:
+        return None
+    return {
+        "guild_xid": int(row[0]),
+        "guild_name": row[1] or "",
+        "guild_locale": row[2] or "en",
+        "guild_icon": row[3],
+    }

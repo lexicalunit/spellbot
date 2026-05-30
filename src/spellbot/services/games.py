@@ -609,6 +609,37 @@ async def blocked(game_data: GameData, user_xid: int) -> bool:
 
 
 @tracer.wrap()
+async def games_pending_notification() -> list[GameData]:
+    """
+    Return pending games eligible for alert notification.
+
+    Games are eligible when they are not started, not deleted, have not yet
+    been notified, are at least NOTIFY_GAMES_DELAY_M minutes old, and still
+    have at least one open seat.
+    """
+    cutoff = datetime.now(tz=UTC) - timedelta(minutes=settings.NOTIFY_GAMES_DELAY_M)
+    records: Sequence[Game] = (
+        (
+            await DatabaseSession.execute(
+                select(Game)
+                .join(Queue, isouter=True)
+                .where(
+                    Game.status == GameStatus.PENDING.value,  # type: ignore[arg-type]
+                    Game.deleted_at.is_(None),
+                    Game.started_at.is_(None),
+                    Game.notified_at.is_(None),
+                    Game.created_at <= cutoff,
+                )
+                .group_by(Game)
+                .having(func.count(Queue.game_id) < Game.seats),
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [await record.to_data() for record in records]
+
+
 async def inactive_games(guild_xid: int | None = None) -> list[GameData]:
     """Return any games that should be considered abandoned for inactivity."""
     limit = datetime.now(tz=UTC) - timedelta(minutes=settings.EXPIRE_TIME_M)
