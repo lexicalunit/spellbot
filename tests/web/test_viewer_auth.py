@@ -31,9 +31,58 @@ class TestViewerOauthRedirectUri:
 
 
 class TestCanonicalHostRedirect:
+    @staticmethod
+    def make_request(host: str, rel_url: str) -> MagicMock:
+        request = MagicMock()
+        request.url.host = host
+        request.rel_url = rel_url
+        return request
+
     def test_returns_none_when_api_base_url_unset(self, mocker: MockerFixture) -> None:
         mocker.patch.object(oauth.settings, "API_BASE_URL", None)
         assert canonical_host_redirect(MagicMock()) is None
+
+    def test_returns_none_when_base_has_no_host(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(oauth.settings, "API_BASE_URL", "/no-host")
+        assert canonical_host_redirect(self.make_request("alias.example.com", "/foo")) is None
+
+    def test_returns_none_when_host_already_matches(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
+        request = self.make_request("bot.spellbot.io", "/queues?my=1")
+        assert canonical_host_redirect(request) is None
+
+    def test_redirects_to_canonical_host_with_path_and_query(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
+        request = self.make_request("queues.spellbot.io", "/queues?my=1")
+        resp = canonical_host_redirect(request)
+        assert resp is not None
+        assert resp.location == "https://bot.spellbot.io/queues?my=1"
+
+    def test_rejects_target_with_scheme(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
+        request = self.make_request("queues.spellbot.io", "https://evil.example.com/x")
+        resp = canonical_host_redirect(request)
+        assert resp is not None
+        assert resp.location == "https://bot.spellbot.io/"
+
+    def test_rejects_protocol_relative_target(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
+        request = self.make_request("queues.spellbot.io", "//evil.example.com/x")
+        resp = canonical_host_redirect(request)
+        assert resp is not None
+        assert resp.location == "https://bot.spellbot.io/"
+
+    def test_rejects_backslash_protocol_relative_target(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
+        # Some browsers treat backslashes as forward slashes, so `/\evil.com`
+        # would otherwise resolve to `//evil.com` (a host swap).
+        request = self.make_request("queues.spellbot.io", "/\\evil.example.com/x")
+        resp = canonical_host_redirect(request)
+        assert resp is not None
+        assert resp.location == "https://bot.spellbot.io/"
 
 
 @pytest.mark.asyncio
