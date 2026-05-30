@@ -19,12 +19,16 @@
 #      -> add `status.spellbot.io` and `queues.spellbot.io` CNAMEs pointing
 #         at the ALB hostname.
 #
-# After step 4 the bare URLs 301 to /status and /queues respectively and
-# all other paths on those hosts forward to the prod target group.
+# After step 4 the bare `status.spellbot.io` URL 301s to /status and other
+# paths on that host forward to the prod target group. All traffic on
+# `queues.spellbot.io` 301s to the canonical prod host so the session cookie
+# stays on a single origin (browsers do not share cookies between sibling
+# subdomains, so serving /queues on the vanity host would appear logged out).
 
 locals {
-  vanity_status_host = "status.spellbot.io"
-  vanity_queues_host = "queues.spellbot.io"
+  vanity_status_host  = "status.spellbot.io"
+  vanity_queues_host  = "queues.spellbot.io"
+  canonical_prod_host = "prod.${var.root_domain}"
 }
 
 resource "aws_acm_certificate" "vanity" {
@@ -113,6 +117,9 @@ resource "aws_lb_listener_rule" "vanity_status_forward" {
   }
 }
 
+# Redirect the bare URL to the canonical /queues page on the prod host. Using
+# the canonical host (not `#{host}`) anchors the session cookie to a single
+# origin so a user landing here while logged in stays logged in.
 resource "aws_lb_listener_rule" "vanity_queues_root_redirect" {
   listener_arn = aws_lb_listener.https.arn
   priority     = 52
@@ -122,7 +129,7 @@ resource "aws_lb_listener_rule" "vanity_queues_root_redirect" {
     redirect {
       protocol    = "HTTPS"
       port        = "443"
-      host        = "#{host}"
+      host        = local.canonical_prod_host
       path        = "/queues"
       query       = "#{query}"
       status_code = "HTTP_301"
@@ -145,13 +152,22 @@ resource "aws_lb_listener_rule" "vanity_queues_root_redirect" {
   }
 }
 
-resource "aws_lb_listener_rule" "vanity_queues_forward" {
+# Redirect every other path on the vanity host to the same path on the
+# canonical prod host so the app never serves content on `queues.spellbot.io`.
+resource "aws_lb_listener_rule" "vanity_queues_redirect" {
   listener_arn = aws_lb_listener.https.arn
   priority     = 53
 
   action {
-    type             = "forward"
-    target_group_arn = module.prod.target_group_arn
+    type = "redirect"
+    redirect {
+      protocol    = "HTTPS"
+      port        = "443"
+      host        = local.canonical_prod_host
+      path        = "/#{path}"
+      query       = "#{query}"
+      status_code = "HTTP_301"
+    }
   }
 
   condition {
@@ -161,6 +177,6 @@ resource "aws_lb_listener_rule" "vanity_queues_forward" {
   }
 
   tags = {
-    Name = "spellbot-vanity-queues-forward"
+    Name = "spellbot-vanity-queues-redirect"
   }
 }

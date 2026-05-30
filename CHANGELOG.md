@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Adds the Champ de Bataille server.
 - New game notifications for players.
 
+### Changed
+
+- Changed vanity domains to redirects.
+
 ## [v20.6.2](https://github.com/lexicalunit/spellbot/releases/tag/v20.6.2) - 2026-05-27
 
 ### Changed
