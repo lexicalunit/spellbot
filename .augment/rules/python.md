@@ -7,3 +7,5 @@
 - Do not run `ruff` or `pyright` manually, they will run as part of the full test suite.
 - Do not add docstrings to modules.
 - Do not add docstrings to test functions.
+- Always run the full test suite as the final step before finishing your tasks to verify that there's no failures and that there is 100% test coverage. Fix any missing coverage.
+
