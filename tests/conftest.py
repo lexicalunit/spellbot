@@ -30,6 +30,10 @@ def pytest_collection_modifyitems(
 
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "use_db: mark tests that use the database")
+    config.addinivalue_line(
+        "markers",
+        "no_dm_limiter_patch: do not patch the dm rate limiter for this test",
+    )
 
 
 pytest_plugins = [

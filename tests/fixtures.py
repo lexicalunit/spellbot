@@ -34,6 +34,7 @@ from spellbot.settings import Settings
 from spellbot.settings import settings as runtime_settings
 from spellbot.web import build_web_app
 from tests.factories import (
+    AlertFactory,
     BlockFactory,
     ChannelFactory,
     GameFactory,
@@ -159,6 +160,7 @@ async def run_command[CogT: commands.Cog, **CogCallbackP](
 
 
 class Factories:
+    alert = AlertFactory
     block = BlockFactory
     channel = ChannelFactory
     game = GameFactory
@@ -207,6 +209,7 @@ async def session_context(
 
         _truncate_all()
 
+        AlertFactory._meta.sqlalchemy_session = sync_session  # type: ignore
         BlockFactory._meta.sqlalchemy_session = sync_session  # type: ignore
         ChannelFactory._meta.sqlalchemy_session = sync_session  # type: ignore
         GameFactory._meta.sqlalchemy_session = sync_session  # type: ignore
@@ -508,3 +511,12 @@ async def use_consistent_date(freezer: FreezeTimeFactory) -> None:
 @pytest.fixture(autouse=True)
 def clear_guild_cache() -> None:
     guild_cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def allow_all_dms(request: pytest.FixtureRequest) -> Generator[None]:
+    if "no_dm_limiter_patch" in request.keywords:
+        yield
+        return
+    with patch("spellbot.operations.try_consume_dm_slot", new=AsyncMock(return_value=True)):
+        yield
