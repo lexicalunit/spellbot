@@ -6,8 +6,8 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-from spellbot.web.api import viewer_auth
-from spellbot.web.api.oauth import DISCORD_AUTHORIZE_URL
+from spellbot.web.api import oauth, viewer_auth
+from spellbot.web.api.oauth import DISCORD_AUTHORIZE_URL, canonical_host_redirect
 from spellbot.web.api.viewer_auth import (
     VIEWER_NAME_KEY,
     VIEWER_XID_KEY,
@@ -28,6 +28,12 @@ class TestViewerOauthRedirectUri:
     def test_strips_trailing_slash(self, mocker: MockerFixture) -> None:
         mocker.patch.object(viewer_auth.settings, "API_BASE_URL", "https://example.com/")
         assert viewer_oauth_redirect_uri() == "https://example.com/queues/oauth/callback"
+
+
+class TestCanonicalHostRedirect:
+    def test_returns_none_when_api_base_url_unset(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(oauth.settings, "API_BASE_URL", None)
+        assert canonical_host_redirect(MagicMock()) is None
 
 
 @pytest.mark.asyncio
