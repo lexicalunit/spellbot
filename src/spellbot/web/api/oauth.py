@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 import httpx
 from aiohttp import web
+from yarl import URL
 
 from spellbot.settings import settings
 
@@ -25,10 +26,19 @@ def canonical_host_redirect(request: web.Request) -> web.HTTPFound | None:
     base = settings.API_BASE_URL
     if not base:
         return None
-    expected = urlparse(base).hostname
+    base_url = URL(base)
+    expected = base_url.host
     if not expected or request.url.host == expected:
         return None
-    return web.HTTPFound(f"{base.rstrip('/')}{request.rel_url}")
+    # Validate the incoming path is a same-origin relative reference before
+    # carrying it over to the canonical host, per CWE-601 guidance. Browsers
+    # treat backslashes as forward slashes in URLs, so normalize them first,
+    # and reject anything that resolves to an explicit scheme or host.
+    raw_target = str(request.rel_url).replace("\\", "/")
+    parsed = urlparse(raw_target)
+    if parsed.scheme or parsed.netloc or raw_target.startswith("//"):
+        return web.HTTPFound(str(base_url.with_path("/")))
+    return web.HTTPFound(str(base_url.with_path(parsed.path).with_query(parsed.query)))
 
 
 async def fetch_oauth_identify(code: str, redirect_uri: str) -> dict[str, Any] | None:
