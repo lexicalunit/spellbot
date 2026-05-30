@@ -61,7 +61,9 @@ class TestGetViewer:
 def configure_viewer(mocker: MockerFixture) -> None:
     mocker.patch.object(viewer_auth.settings, "BOT_APPLICATION_ID", "appid-1")
     mocker.patch.object(viewer_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
-    mocker.patch.object(viewer_auth.settings, "API_BASE_URL", "https://example.com")
+    # Must match the test client's host (127.0.0.1) so `canonical_host_redirect`
+    # in `viewer_login` doesn't bounce the request away before issuing state.
+    mocker.patch.object(viewer_auth.settings, "API_BASE_URL", "http://127.0.0.1")
 
 
 async def start_viewer_login(client: WebClient) -> str:
@@ -87,7 +89,26 @@ class TestViewerLogin:
         params = parse_qs(urlparse(loc).query)
         assert params["client_id"] == ["appid-1"]
         assert params["scope"] == ["identify"]
-        assert params["redirect_uri"] == ["https://example.com/queues/oauth/callback"]
+        assert params["redirect_uri"] == ["http://127.0.0.1/queues/oauth/callback"]
+
+    async def test_redirects_to_canonical_host_when_on_vanity_alias(
+        self,
+        client: WebClient,
+        mocker: MockerFixture,
+    ) -> None:
+        # Simulate the user arriving via a vanity hostname (e.g.
+        # `queues.spellbot.io`). The session cookie set here would not be
+        # visible on the canonical callback host, so the handler must bounce
+        # the request to the canonical host before issuing OAuth state.
+        configure_viewer(mocker)
+        mocker.patch.object(
+            viewer_auth.settings,
+            "API_BASE_URL",
+            "https://prod.app.spellbot.io",
+        )
+        resp = await client.get("/queues/login?foo=bar", allow_redirects=False)
+        assert resp.status == 302
+        assert resp.headers["Location"] == "https://prod.app.spellbot.io/queues/login?foo=bar"
 
 
 @pytest.mark.asyncio

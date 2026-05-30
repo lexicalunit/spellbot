@@ -40,7 +40,8 @@ def make_httpx_client(*, identify_json: dict[str, Any] | None = None) -> MagicMo
 async def configure_admin(mocker: MockerFixture) -> None:
     mocker.patch.object(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
     mocker.patch.object(admin_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
-    mocker.patch.object(admin_auth.settings, "API_BASE_URL", "https://example.com")
+    # Must match the test client's host so `canonical_host_redirect` is a no-op.
+    mocker.patch.object(admin_auth.settings, "API_BASE_URL", "http://127.0.0.1")
     mocker.patch.object(admin_auth.settings, "OWNER_XID", 42)
 
 

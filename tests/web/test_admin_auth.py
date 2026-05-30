@@ -129,7 +129,8 @@ class TestAdminLogin:
     async def test_redirects_to_discord(self, client: WebClient, mocker: MockerFixture) -> None:
         mocker.patch.object(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
         mocker.patch.object(admin_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
-        mocker.patch.object(admin_auth.settings, "API_BASE_URL", "https://example.com")
+        # Match the test client's host so `canonical_host_redirect` is a no-op.
+        mocker.patch.object(admin_auth.settings, "API_BASE_URL", "http://127.0.0.1")
         resp = await client.get("/admin/login", allow_redirects=False)
         assert resp.status == 302
         loc = resp.headers["Location"]
@@ -138,13 +139,32 @@ class TestAdminLogin:
         assert params["client_id"] == ["appid-1"]
         assert params["response_type"] == ["code"]
         assert params["scope"] == ["identify"]
-        assert params["redirect_uri"] == ["https://example.com/admin/oauth/callback"]
+        assert params["redirect_uri"] == ["http://127.0.0.1/admin/oauth/callback"]
+
+    async def test_redirects_to_canonical_host_when_on_vanity_alias(
+        self,
+        client: WebClient,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
+        mocker.patch.object(admin_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
+        mocker.patch.object(
+            admin_auth.settings,
+            "API_BASE_URL",
+            "https://prod.app.spellbot.io",
+        )
+        resp = await client.get("/admin/login?next=/admin/dashboard", allow_redirects=False)
+        assert resp.status == 302
+        assert (
+            resp.headers["Location"]
+            == "https://prod.app.spellbot.io/admin/login?next=/admin/dashboard"
+        )
 
 
 async def configure_admin(mocker: MockerFixture) -> None:
     mocker.patch.object(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
     mocker.patch.object(admin_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
-    mocker.patch.object(admin_auth.settings, "API_BASE_URL", "https://example.com")
+    mocker.patch.object(admin_auth.settings, "API_BASE_URL", "http://127.0.0.1")
     mocker.patch.object(admin_auth.settings, "OWNER_XID", 42)
 
 
