@@ -17,6 +17,7 @@ from spellbot.database import db_session_manager
 from spellbot.settings import settings
 from spellbot.web.api.oauth import (
     DISCORD_AUTHORIZE_URL,
+    canonical_host_redirect,
     display_name,
     fetch_oauth_identify,
     parse_user_xid,
@@ -117,6 +118,8 @@ async def admin_login(request: web.Request) -> web.StreamResponse:
     """Redirect the user to Discord's OAuth2 authorize page."""
     if not settings.BOT_APPLICATION_ID or not settings.BOT_CLIENT_SECRET:
         return web.Response(status=503, text="Admin dashboard is not configured.")
+    if (canonical := canonical_host_redirect(request)) is not None:
+        return canonical
     state = secrets.token_urlsafe(32)
     session = await new_session(request)
     session["oauth_state"] = state

@@ -11,6 +11,7 @@ from aiohttp_session import get_session
 from spellbot.settings import settings
 from spellbot.web.api.oauth import (
     DISCORD_AUTHORIZE_URL,
+    canonical_host_redirect,
     display_name,
     fetch_oauth_identify,
     parse_user_xid,
@@ -49,6 +50,8 @@ async def viewer_login(request: web.Request) -> web.StreamResponse:
     """Redirect the user to Discord's OAuth2 authorize page (public viewer flow)."""
     if not settings.BOT_APPLICATION_ID or not settings.BOT_CLIENT_SECRET:
         return web.Response(status=503, text="Viewer login is not configured.")
+    if (canonical := canonical_host_redirect(request)) is not None:
+        return canonical
     state = secrets.token_urlsafe(32)
     session = await get_session(request)
     session[VIEWER_STATE_KEY] = state
