@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v20.7.0](https://github.com/lexicalunit/spellbot/releases/tag/v20.7.0) - 2026-05-30
+
 ### Fixed
 
 - Fixes a OAuth login bug for the queues page when using queues.spellbot.io.
