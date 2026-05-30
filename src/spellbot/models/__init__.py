@@ -17,6 +17,7 @@ def import_models() -> None:  # pragma: no cover
 
 from .base import Base, create_all, literalquery, now, reverse_all  # noqa: I001,E402
 
+from .alert import Alert  # noqa: E402
 from .award import GuildAward, UserAward  # noqa: E402
 from .block import Block  # noqa: E402
 from .channel import Channel  # noqa: E402
@@ -33,6 +34,7 @@ from .watch import Watch  # noqa: E402
 
 __all__ = [
     "MAX_RULES_LENGTH",
+    "Alert",
     "Base",
     "Block",
     "Channel",

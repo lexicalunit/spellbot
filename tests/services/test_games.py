@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -10,6 +10,7 @@ from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Channel, Game, GameStatus, Guild, Play, Post, Queue, User
 from spellbot.services import games
+from spellbot.settings import settings
 from tests.factories import (
     BlockFactory,
     ChannelFactory,
@@ -535,3 +536,92 @@ class TestServiceGamesUpsert:
         assert new
         assert [p.xid for p in await game.players()] == [user1.xid]
         assert [p.xid for p in await other_game.players()] == [user2.xid]
+
+
+@pytest.mark.asyncio
+class TestGamesPendingNotification:
+    async def test_returns_old_pending_unnotified_game_with_open_seats(
+        self,
+        guild: Guild,
+        channel: Channel,
+    ) -> None:
+        old = datetime.now(tz=UTC) - timedelta(minutes=settings.NOTIFY_GAMES_DELAY_M + 1)
+        game = GameFactory.create(guild=guild, channel=channel, created_at=old)
+
+        result = await games.games_pending_notification()
+
+        assert [g.id for g in result] == [game.id]
+
+    async def test_excludes_recently_created_games(
+        self,
+        guild: Guild,
+        channel: Channel,
+    ) -> None:
+        recent = datetime.now(tz=UTC) - timedelta(minutes=settings.NOTIFY_GAMES_DELAY_M - 1)
+        GameFactory.create(guild=guild, channel=channel, created_at=recent)
+
+        result = await games.games_pending_notification()
+
+        assert result == []
+
+    async def test_excludes_already_notified_games(
+        self,
+        guild: Guild,
+        channel: Channel,
+    ) -> None:
+        old = datetime.now(tz=UTC) - timedelta(minutes=settings.NOTIFY_GAMES_DELAY_M + 1)
+        GameFactory.create(
+            guild=guild,
+            channel=channel,
+            created_at=old,
+            notified_at=datetime.now(tz=UTC),
+        )
+
+        result = await games.games_pending_notification()
+
+        assert result == []
+
+    async def test_excludes_started_and_deleted_games(
+        self,
+        guild: Guild,
+        channel: Channel,
+    ) -> None:
+        old = datetime.now(tz=UTC) - timedelta(minutes=settings.NOTIFY_GAMES_DELAY_M + 1)
+        GameFactory.create(
+            guild=guild,
+            channel=channel,
+            created_at=old,
+            started_at=datetime.now(tz=UTC),
+            status=GameStatus.STARTED.value,
+        )
+        GameFactory.create(
+            guild=guild,
+            channel=channel,
+            created_at=old,
+            deleted_at=datetime.now(tz=UTC),
+        )
+
+        result = await games.games_pending_notification()
+
+        assert result == []
+
+    async def test_excludes_full_games(
+        self,
+        guild: Guild,
+        channel: Channel,
+    ) -> None:
+        old = datetime.now(tz=UTC) - timedelta(minutes=settings.NOTIFY_GAMES_DELAY_M + 1)
+        game = GameFactory.create(guild=guild, channel=channel, created_at=old, seats=2)
+        u1 = UserFactory.create()
+        u2 = UserFactory.create()
+        DatabaseSession.add_all(
+            [
+                Queue(user_xid=u1.xid, game_id=game.id, og_guild_xid=guild.xid),
+                Queue(user_xid=u2.xid, game_id=game.id, og_guild_xid=guild.xid),
+            ],
+        )
+        await DatabaseSession.commit()
+
+        result = await games.games_pending_notification()
+
+        assert result == []

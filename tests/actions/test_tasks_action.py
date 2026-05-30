@@ -638,6 +638,159 @@ class TestTaskCleanupOldVoiceChannels:
 
 
 @pytest.mark.asyncio
+class TestNotifyPendingGames:
+    async def test_no_games_does_nothing(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch("spellbot.actions.tasks_action.services", mock_services)
+        mock_services.games.games_pending_notification = AsyncMock(return_value=[])
+        mock_services.alerts.find_matching_user_xids = AsyncMock(return_value=[])
+        mock_services.alerts.mark_notified = AsyncMock()
+        mock_safe_send = AsyncMock()
+        mocker.patch("spellbot.actions.tasks_action.safe_send_user", mock_safe_send)
+
+        await action.notify_pending_games()
+
+        mock_services.alerts.find_matching_user_xids.assert_not_called()
+        mock_safe_send.assert_not_called()
+
+    async def test_notifies_matching_users_and_marks_game(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild: Guild = factories.guild.create()
+        channel: Channel = factories.channel.create(guild=guild)
+        game: Game = factories.game.create(guild=guild, channel=channel)
+        game_data = await game.to_data()
+        mocker.patch("spellbot.actions.tasks_action.services", mock_services)
+        mock_services.games.games_pending_notification = AsyncMock(return_value=[game_data])
+        mock_services.alerts.find_matching_user_xids = AsyncMock(return_value=[101, 202])
+        mock_services.alerts.mark_notified = AsyncMock()
+        fake_user = MagicMock()
+        mock_fetch_user = AsyncMock(return_value=fake_user)
+        mocker.patch("spellbot.actions.tasks_action.safe_fetch_user", mock_fetch_user)
+        mock_safe_send = AsyncMock()
+        mocker.patch("spellbot.actions.tasks_action.safe_send_user", mock_safe_send)
+
+        await action.notify_pending_games()
+
+        assert mock_safe_send.await_count == 2
+        for call in mock_safe_send.await_args_list:
+            assert call.kwargs["kind"] == "notification"
+        mock_services.alerts.mark_notified.assert_awaited_once_with(game.id)
+
+    async def test_skips_users_that_cannot_be_fetched(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild: Guild = factories.guild.create()
+        channel: Channel = factories.channel.create(guild=guild)
+        game: Game = factories.game.create(guild=guild, channel=channel)
+        game_data = await game.to_data()
+        mocker.patch("spellbot.actions.tasks_action.services", mock_services)
+        mock_services.games.games_pending_notification = AsyncMock(return_value=[game_data])
+        mock_services.alerts.find_matching_user_xids = AsyncMock(return_value=[101])
+        mock_services.alerts.mark_notified = AsyncMock()
+        mock_fetch_user = AsyncMock(return_value=None)
+        mocker.patch("spellbot.actions.tasks_action.safe_fetch_user", mock_fetch_user)
+        mock_safe_send = AsyncMock()
+        mocker.patch("spellbot.actions.tasks_action.safe_send_user", mock_safe_send)
+
+        await action.notify_pending_games()
+
+        mock_safe_send.assert_not_awaited()
+        mock_services.alerts.mark_notified.assert_awaited_once_with(game.id)
+
+    async def test_marks_notified_even_when_no_matches(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild: Guild = factories.guild.create()
+        channel: Channel = factories.channel.create(guild=guild)
+        game: Game = factories.game.create(guild=guild, channel=channel)
+        game_data = await game.to_data()
+        mocker.patch("spellbot.actions.tasks_action.services", mock_services)
+        mock_services.games.games_pending_notification = AsyncMock(return_value=[game_data])
+        mock_services.alerts.find_matching_user_xids = AsyncMock(return_value=[])
+        mock_services.alerts.mark_notified = AsyncMock()
+        mock_safe_send = AsyncMock()
+        mocker.patch("spellbot.actions.tasks_action.safe_send_user", mock_safe_send)
+
+        await action.notify_pending_games()
+
+        mock_safe_send.assert_not_awaited()
+        mock_services.alerts.mark_notified.assert_awaited_once_with(game.id)
+
+    async def test_swallows_exceptions(
+        self,
+        action: TasksAction,
+        mock_services: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch("spellbot.actions.tasks_action.services", mock_services)
+        mock_services.games.games_pending_notification = AsyncMock(
+            side_effect=RuntimeError("boom"),
+        )
+
+        await action.notify_pending_games()
+
+        assert "error: exception in background task" in caplog.text
+
+    async def test_embed_includes_bracket_and_jump_link(
+        self,
+        action: TasksAction,
+        factories: Factories,
+    ) -> None:
+        from spellbot.enums import GameBracket  # allow_inline
+
+        guild: Guild = factories.guild.create()
+        channel: Channel = factories.channel.create(guild=guild)
+        game: Game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            bracket=GameBracket.BRACKET_3.value,
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=99999)
+        game_data = await game.to_data()
+
+        embed = action.build_notification_embed(game_data)
+
+        assert embed.description is not None
+        assert "Bracket:" in embed.description
+        assert "Jump to the game post" in embed.description
+
+    async def test_embed_omits_bracket_and_jump_link_when_absent(
+        self,
+        action: TasksAction,
+        factories: Factories,
+    ) -> None:
+        guild: Guild = factories.guild.create()
+        channel: Channel = factories.channel.create(guild=guild)
+        game: Game = factories.game.create(guild=guild, channel=channel)
+        game_data = await game.to_data()
+        game_data.bracket = 0
+
+        embed = action.build_notification_embed(game_data)
+
+        assert embed.description is not None
+        assert "Bracket:" not in embed.description
+        assert "Jump to the game post" not in embed.description
+
+
+@pytest.mark.asyncio
 class TestPatreonSync:
     async def test_patreon_sync(
         self,

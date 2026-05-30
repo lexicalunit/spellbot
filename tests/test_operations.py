@@ -694,6 +694,27 @@ class TestOperationsSendUser:
         await safe_send_user(user, "content")
         assert "client error sending to user user#1234 1234" in caplog.text
 
+    @pytest.mark.no_dm_limiter_patch
+    async def test_rate_limit_denies_send(
+        self,
+        caplog: pytest.LogCaptureFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        caplog.set_level(logging.INFO)
+        mocker.patch(
+            "spellbot.operations.try_consume_dm_slot",
+            new=AsyncMock(return_value=False),
+        )
+        user = MagicMock(spec=discord.User | discord.Member)
+        user.__str__ = lambda self: "user#1234"  # type: ignore
+        user.id = 1234
+        user.send = AsyncMock()
+
+        await safe_send_user(user, "content", kind="notification")
+
+        user.send.assert_not_called()
+        assert "dm rate limit reached" in caplog.text
+
 
 @pytest.mark.asyncio
 class TestOperationsAddRole:
