@@ -104,7 +104,12 @@
                     >
                     <h2 class="queue-card__server">{{ pg.guild_name or "SpellBot Server" }}</h2>
                 </div>
-                <span class="queue-card__cta">Setup notifications →</span>
+                <span class="queue-card__cta">
+                    <svg class="queue-card__cta-bell" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+                        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0"/>
+                    </svg>
+                    Notifications →
+                </span>
             </a>
             {% endfor %}
         </section>
@@ -137,17 +142,27 @@
                         loading="lazy"
                     >
                     <h2 class="queue-card__server">{{ row.guild_name or "SpellBot Server" }}</h2>
+                    <a
+                        class="queue-card__notify"
+                        href="/queues/g/{{ row.guild_xid }}"
+                        aria-label="Setup notifications for this server"
+                        data-tooltip="Setup notifications"
+                    >
+                        <svg class="queue-card__notify-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                            <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0"/>
+                        </svg>
+                    </a>
                     <button
                         type="button"
                         class="queue-card__copy"
                         data-copy="{{ row.guild_xid }}"
                         aria-label="Copy server ID"
-                        title="Copy server ID"
+                        data-tooltip="Copy server ID"
                     >
-                        <svg class="queue-card__copy-icon queue-card__copy-icon--copy" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+                        <svg class="queue-card__copy-icon queue-card__copy-icon--copy" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
                             <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 9h10v12H9z M5 15V3h10v4"/>
                         </svg>
-                        <svg class="queue-card__copy-icon queue-card__copy-icon--check" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+                        <svg class="queue-card__copy-icon queue-card__copy-icon--check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
                             <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/>
                         </svg>
                     </button>
@@ -186,17 +201,27 @@
                         loading="lazy"
                     >
                     <h2 class="queue-card__server">{{ game.guild_name or "SpellBot Server" }}</h2>
+                    <a
+                        class="queue-card__notify"
+                        href="/queues/g/{{ game.guild_xid }}"
+                        aria-label="Setup notifications for this server"
+                        data-tooltip="Setup notifications"
+                    >
+                        <svg class="queue-card__notify-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                            <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0"/>
+                        </svg>
+                    </a>
                     <button
                         type="button"
                         class="queue-card__copy"
                         data-copy="{{ game.guild_xid }}"
                         aria-label="Copy server ID"
-                        title="Copy server ID"
+                        data-tooltip="Copy server ID"
                     >
-                        <svg class="queue-card__copy-icon queue-card__copy-icon--copy" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+                        <svg class="queue-card__copy-icon queue-card__copy-icon--copy" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
                             <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 9h10v12H9z M5 15V3h10v4"/>
                         </svg>
-                        <svg class="queue-card__copy-icon queue-card__copy-icon--check" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+                        <svg class="queue-card__copy-icon queue-card__copy-icon--check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
                             <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/>
                         </svg>
                     </button>
