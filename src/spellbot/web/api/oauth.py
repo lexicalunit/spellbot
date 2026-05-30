@@ -17,13 +17,11 @@ DISCORD_IDENTIFY_URL = "https://discord.com/api/users/@me"
 
 
 def canonical_host_redirect(request: web.Request) -> web.HTTPFound | None:
-    """
-    If `request` arrived on a non-canonical host (e.g. via a vanity domain alias
-    like `queues.spellbot.io`), return a redirect to the same path+query on
-    `settings.API_BASE_URL`. This keeps the session cookie on a single origin so
-    the OAuth callback can read the `state` written by the login handler.
-    Returns `None` when the host already matches or `API_BASE_URL` is unset.
-    """
+    # If `request` arrived on a non-canonical host (e.g. via a vanity domain alias
+    # like `queues.spellbot.io`), return a redirect to the same path+query on
+    # `settings.API_BASE_URL`. This keeps the session cookie on a single origin so
+    # the OAuth callback can read the `state` written by the login handler.
+    # Returns `None` when the host already matches or `API_BASE_URL` is unset.
     base = settings.API_BASE_URL
     if not base:
         return None
