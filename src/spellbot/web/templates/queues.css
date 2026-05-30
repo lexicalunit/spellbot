@@ -259,7 +259,9 @@ a:hover {
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 0.4rem;
 }
-.queue-card--played {
+.queue-card--played,
+.queue-card--played:link,
+.queue-card--played:visited {
   background: #20253a;
   border-color: rgba(255, 255, 255, 0.04);
   border-left: 2px solid #818cf8;
@@ -408,7 +410,9 @@ a:hover {
 .queue-card__copy[data-copied="true"] .queue-card__copy-icon--check {
   display: block;
 }
-.queue-card__notify {
+.queue-card__notify,
+.queue-card__notify:link,
+.queue-card__notify:visited {
   display: inline-flex;
   align-items: center;
   justify-content: center;
