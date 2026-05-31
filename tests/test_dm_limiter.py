@@ -5,7 +5,12 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from spellbot import dm_limiter
-from spellbot.dm_limiter import current_dm_count, threshold_for, try_consume_dm_slot
+from spellbot.dm_limiter import (
+    current_dm_count,
+    threshold_for,
+    try_consume_dm_slot,
+    window_key_for,
+)
 from spellbot.settings import settings
 
 
@@ -86,19 +91,50 @@ class TestTryConsumeDmSlot:
 
         assert captured == [settings.DM_WINDOW_LIMIT, settings.DM_NOTIFICATION_BUDGET]
 
+    async def test_uses_per_kind_redis_key(self) -> None:
+        captured: list[str] = []
+
+        async def fake_eval(*args: object, **_: object) -> int:
+            captured.append(str(args[2]))
+            return 1
+
+        fake_redis = AsyncMock()
+        fake_redis.eval = fake_eval
+        with (
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
+            patch.object(dm_limiter, "get_redis", AsyncMock(return_value=fake_redis)),
+        ):
+            await try_consume_dm_slot("start")
+            await try_consume_dm_slot("notification")
+
+        assert captured == [window_key_for("start"), window_key_for("notification")]
+        assert captured[0] != captured[1]
+
+
+@pytest.mark.asyncio
+class TestWindowKeyFor:
+    async def test_start_and_notification_keys_differ(self) -> None:
+        assert window_key_for("start") != window_key_for("notification")
+
+    async def test_keys_use_expected_prefix(self) -> None:
+        assert window_key_for("start") == "dm:window:start"
+        assert window_key_for("notification") == "dm:window:notification"
+
 
 @pytest.mark.asyncio
 class TestCurrentDmCount:
     async def test_no_redis_returns_zero(self) -> None:
         with patch.object(settings, "REDIS_URL", None):
-            assert await current_dm_count() == 0
+            assert await current_dm_count("start") == 0
+            assert await current_dm_count("notification") == 0
 
     async def test_redis_error_returns_zero(self) -> None:
         with (
             patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch.object(dm_limiter, "get_redis", AsyncMock(side_effect=RuntimeError("down"))),
         ):
-            assert await current_dm_count() == 0
+            assert await current_dm_count("start") == 0
+            assert await current_dm_count("notification") == 0
 
     async def test_returns_zcard_value(self) -> None:
         fake_redis = AsyncMock()
@@ -108,4 +144,26 @@ class TestCurrentDmCount:
             patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch.object(dm_limiter, "get_redis", AsyncMock(return_value=fake_redis)),
         ):
-            assert await current_dm_count() == 42
+            assert await current_dm_count("notification") == 42
+
+    async def test_reads_per_kind_key(self) -> None:
+        seen_keys: list[str] = []
+
+        async def fake_zremrangebyscore(key: str, *_: object, **__: object) -> int:
+            seen_keys.append(key)
+            return 0
+
+        async def fake_zcard(key: str) -> int:
+            seen_keys.append(key)
+            return 0
+
+        fake_redis = AsyncMock()
+        fake_redis.zremrangebyscore = fake_zremrangebyscore
+        fake_redis.zcard = fake_zcard
+        with (
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
+            patch.object(dm_limiter, "get_redis", AsyncMock(return_value=fake_redis)),
+        ):
+            await current_dm_count("notification")
+
+        assert seen_keys == [window_key_for("notification"), window_key_for("notification")]
