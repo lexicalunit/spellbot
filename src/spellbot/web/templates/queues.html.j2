@@ -91,28 +91,33 @@
         <div class="gallery-divider" role="separator" aria-label="Servers you've played in">
             <span class="gallery-divider__label gallery-divider__label--played">Your Servers</span>
         </div>
-        <section class="gallery gallery--played">
+        <ul class="played-list">
             {% for pg in played_guilds %}
-            <a class="queue-card queue-card--played" href="/queues/g/{{ pg.guild_xid }}">
-                <div class="queue-card__header">
+            <li>
+                <a
+                    class="played-list__row"
+                    href="/queues/g/{{ pg.guild_xid }}"
+                    aria-label="Setup notifications for {{ pg.guild_name or 'this server' }}"
+                    data-tooltip="Setup notifications"
+                >
                     <img
-                        class="queue-card__logo"
+                        class="played-list__logo"
                         src="{{ pg.logo }}"
-                        alt="{{ pg.guild_name }}"
+                        alt=""
                         onerror="this.onerror=null;this.src='{{ default_logo }}';"
                         loading="lazy"
                     >
-                    <h2 class="queue-card__server">{{ pg.guild_name or "SpellBot Server" }}</h2>
-                </div>
-                <span class="queue-card__cta">
-                    <svg class="queue-card__cta-bell" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
-                        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0"/>
-                    </svg>
-                    Notifications →
-                </span>
-            </a>
+                    <span class="played-list__name">{{ pg.guild_name or "SpellBot Server" }}</span>
+                    <span class="played-list__action" aria-hidden="true">
+                        <svg class="played-list__action-icon" viewBox="0 0 24 24" width="14" height="14" focusable="false">
+                            <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0"/>
+                        </svg>
+                        <span class="played-list__action-label">Notifications</span>
+                    </span>
+                </a>
+            </li>
             {% endfor %}
-        </section>
+        </ul>
         {% endif %}
 
         {% if not rows and not games %}
