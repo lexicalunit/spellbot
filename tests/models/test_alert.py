@@ -34,6 +34,7 @@ class TestModelAlert:
             "formats": [1, 4],
             "brackets": [2],
             "channels": [100, 200],
+            "active_hours": None,
         }
 
     def test_alert_to_data_empty_preferences(self, factories: Factories) -> None:
@@ -45,3 +46,25 @@ class TestModelAlert:
         assert alert_data.formats == []
         assert alert_data.brackets == []
         assert alert_data.channels == []
+        assert alert_data.active_hours is None
+
+    def test_alert_to_data_with_active_hours(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        user = factories.user.create()
+        alert = factories.alert.create(
+            guild_xid=guild.xid,
+            user_xid=user.xid,
+            preferences={
+                "formats": [],
+                "brackets": [],
+                "channels": [],
+                "active_hours": {"start": 17, "end": 22, "tz": "America/Los_Angeles"},
+            },
+        )
+
+        alert_data = alert.to_data()
+        assert alert_data.active_hours == {
+            "start": 17,
+            "end": 22,
+            "tz": "America/Los_Angeles",
+        }

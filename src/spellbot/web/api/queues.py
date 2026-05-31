@@ -276,6 +276,7 @@ async def guild_notify_endpoint(request: web.Request) -> web.Response:
     selected_channels = (
         {c for c in existing.channels if c in valid_channel_values} if existing else set()
     )
+    active_hours = existing.active_hours if existing else None
     context = {
         "guild": guild_view,
         "default_logo": SPELLBOT_DEFAULT_LOGO,
@@ -286,6 +287,8 @@ async def guild_notify_endpoint(request: web.Request) -> web.Response:
         "selected_brackets": selected_brackets,
         "selected_channels": selected_channels,
         "notifications_off": existing is None,
+        "active_hours": active_hours,
+        "active_hours_max_length": services.alerts.ACTIVE_HOURS_MAX_LENGTH,
         "viewer": {"xid": viewer_xid, "name": viewer_name, "logged_in": True},
     }
     return aiohttp_jinja2.render_template("guild_notify.html.j2", request, context)
@@ -302,6 +305,17 @@ def parse_notify_values(raw: Iterable[Any], valid: set[int]) -> list[int] | None
     if any(v not in valid for v in parsed):
         return None
     return parsed
+
+
+def parse_active_hours_form(form: Any) -> dict[str, Any] | None:
+    """Extract a raw active_hours payload from posted form data, or None when off."""
+    if not form.get("active_hours_enabled"):
+        return None
+    return {
+        "start": form.get("active_hours_start"),
+        "end": form.get("active_hours_end"),
+        "tz": form.get("active_hours_tz"),
+    }
 
 
 @routes.post(r"/queues/g/{guild}/notify")
@@ -325,6 +339,16 @@ async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse
         return web.HTTPFound(f"/queues/g/{guild_xid}")
     formats = parse_notify_values(form.getall("formats", []), VALID_FORMAT_VALUES)
     brackets = parse_notify_values(form.getall("brackets", []), VALID_BRACKET_VALUES)
+    active_hours_raw = parse_active_hours_form(form)
+    try:
+        active_hours = services.alerts.parse_active_hours(active_hours_raw)
+    except ValueError as ex:
+        if wants_json(request):
+            return web.json_response(
+                {"ok": False, "error": "invalid_active_hours", "detail": str(ex)},
+                status=400,
+            )
+        return web.Response(status=400)
     async with db_session_manager():
         played_channels = await services.queues.viewer_played_channels(
             viewer_xid,
@@ -343,6 +367,7 @@ async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse
             formats=formats,
             brackets=brackets,
             channels=channels,
+            active_hours=active_hours,
         )
     if wants_json(request):
         return web.json_response(
@@ -351,6 +376,7 @@ async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse
                 "formats": saved.formats,
                 "brackets": saved.brackets,
                 "channels": saved.channels,
+                "active_hours": saved.active_hours,
             },
         )
     return web.HTTPFound(f"/queues/g/{guild_xid}")

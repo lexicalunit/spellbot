@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -17,3 +17,4 @@ class AlertData:
     formats: list[int] = field(default_factory=list)
     brackets: list[int] = field(default_factory=list)
     channels: list[int] = field(default_factory=list)
+    active_hours: dict[str, Any] | None = None

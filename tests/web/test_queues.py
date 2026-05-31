@@ -1021,6 +1021,7 @@ class TestGuildNotifySaveEndpoint:
             "formats": [1, 4],
             "brackets": [2],
             "channels": [],
+            "active_hours": None,
         }
 
     async def test_returns_400_for_invalid_format_value(
@@ -1345,6 +1346,206 @@ class TestGuildNotifyChannelsFieldset:
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
             data=[("channels", str(ch_stale.xid))],
+            headers={"Accept": "application/json"},
+            allow_redirects=False,
+        )
+        assert resp.status == 400
+
+
+@pytest.mark.asyncio
+class TestGuildNotifyActiveHours:
+    async def test_get_renders_active_hours_controls(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=985_001, name="Hours Guild", icon="h.png")
+        me = factories.user.create(xid=885_001, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get(f"/queues/g/{guild.xid}")
+        assert resp.status == 200
+        body = await resp.text()
+        assert ">Active Hours<" in body
+        assert 'name="active_hours_enabled"' in body
+        assert 'name="active_hours_start"' in body
+        assert 'name="active_hours_end"' in body
+        assert 'name="active_hours_tz"' in body
+
+    async def test_get_prefills_existing_active_hours(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=985_002, name="Pref Guild", icon="p.png")
+        me = factories.user.create(xid=885_002, name="me")
+        factories.alert.create(
+            guild_xid=guild.xid,
+            user_xid=me.xid,
+            preferences={
+                "formats": [],
+                "brackets": [],
+                "channels": [],
+                "active_hours": {"start": 19, "end": 23, "tz": "America/New_York"},
+            },
+        )
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get(f"/queues/g/{guild.xid}")
+        assert resp.status == 200
+        body = await resp.text()
+        assert re.search(r'id="active-hours-enabled"[^>]*\bchecked\b', body)
+        assert re.search(r'id="active-hours-start"[^>]*value="19"', body)
+        assert re.search(r'id="active-hours-end"[^>]*value="23"', body)
+        assert 'value="America/New_York"' in body
+
+    async def test_post_saves_active_hours(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=985_010, name="Save Hours", icon="s.png")
+        me = factories.user.create(xid=885_010, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={
+                "active_hours_enabled": "1",
+                "active_hours_start": "17",
+                "active_hours_end": "22",
+                "active_hours_tz": "America/Los_Angeles",
+            },
+            headers={"Accept": "application/json"},
+            allow_redirects=False,
+        )
+        assert resp.status == 200
+        payload = await resp.json()
+        assert payload["active_hours"] == {
+            "start": 17,
+            "end": 22,
+            "tz": "America/Los_Angeles",
+        }
+
+        saved = await alerts.get_for_user_guild(guild.xid, me.xid)
+        assert saved is not None
+        assert saved.active_hours == {
+            "start": 17,
+            "end": 22,
+            "tz": "America/Los_Angeles",
+        }
+
+    async def test_post_without_enabled_flag_omits_active_hours(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=985_011, name="No Hours", icon="n.png")
+        me = factories.user.create(xid=885_011, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={"formats": ["1"]},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+
+        saved = await alerts.get_for_user_guild(guild.xid, me.xid)
+        assert saved is not None
+        assert saved.active_hours is None
+
+    async def test_post_rejects_range_over_max(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=985_020, name="Wide Hours", icon="w.png")
+        me = factories.user.create(xid=885_020, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={
+                "active_hours_enabled": "1",
+                "active_hours_start": "0",
+                "active_hours_end": "12",
+                "active_hours_tz": "UTC",
+            },
+            headers={"Accept": "application/json"},
+            allow_redirects=False,
+        )
+        assert resp.status == 400
+        payload = await resp.json()
+        assert payload["ok"] is False
+        assert payload["error"] == "invalid_active_hours"
+
+    async def test_post_rejects_invalid_timezone(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=985_021, name="Bad TZ", icon="b.png")
+        me = factories.user.create(xid=885_021, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={
+                "active_hours_enabled": "1",
+                "active_hours_start": "17",
+                "active_hours_end": "22",
+                "active_hours_tz": "Mars/Olympus",
+            },
+            allow_redirects=False,
+        )
+        assert resp.status == 400
+
+    async def test_post_rejects_equal_start_end(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=985_022, name="Equal Hours", icon="e.png")
+        me = factories.user.create(xid=885_022, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={
+                "active_hours_enabled": "1",
+                "active_hours_start": "10",
+                "active_hours_end": "10",
+                "active_hours_tz": "UTC",
+            },
             headers={"Accept": "application/json"},
             allow_redirects=False,
         )

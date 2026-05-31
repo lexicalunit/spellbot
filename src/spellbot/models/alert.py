@@ -78,6 +78,7 @@ class Alert(Base):
         from spellbot.data import AlertData  # allow_inline
 
         prefs = self.preferences or {}
+        active_hours = prefs.get("active_hours")
         return AlertData(
             id=self.id,  # type: ignore
             created_at=self.created_at,  # type: ignore
@@ -87,4 +88,5 @@ class Alert(Base):
             formats=list(prefs.get("formats") or []),
             brackets=list(prefs.get("brackets") or []),
             channels=list(prefs.get("channels") or []),
+            active_hours=dict(active_hours) if active_hours else None,
         )

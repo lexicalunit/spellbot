@@ -12,6 +12,8 @@ from spellbot.models import Game as GameModel
 from spellbot.services import alerts
 
 if TYPE_CHECKING:
+    from freezegun.api import FrozenDateTimeFactory
+
     from spellbot.models import Game, Guild
     from tests.fixtures import Factories
 
@@ -151,6 +153,53 @@ class TestServiceAlerts:
         remaining = await alerts.get_for_user_guild(guild.xid, bystander.xid)
         assert remaining is not None
         assert remaining.formats == [2]
+
+    async def test_upsert_persists_active_hours(
+        self,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+
+        result = await alerts.upsert(
+            guild.xid,
+            user.xid,
+            active_hours={"start": 17, "end": 22, "tz": "America/Los_Angeles"},
+        )
+
+        assert result.active_hours == {
+            "start": 17,
+            "end": 22,
+            "tz": "America/Los_Angeles",
+        }
+        fetched = await alerts.get_for_user_guild(guild.xid, user.xid)
+        assert fetched is not None
+        assert fetched.active_hours == result.active_hours
+
+    async def test_upsert_omits_active_hours_when_not_provided(
+        self,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+
+        result = await alerts.upsert(guild.xid, user.xid, formats=[1])
+
+        assert result.active_hours is None
+
+    async def test_upsert_raises_on_invalid_active_hours(
+        self,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+
+        with pytest.raises(ValueError, match="hours or less"):
+            await alerts.upsert(
+                guild.xid,
+                user.xid,
+                active_hours={"start": 1, "end": 10, "tz": "UTC"},
+            )
 
 
 @pytest.mark.asyncio
@@ -332,6 +381,63 @@ class TestFindMatchingUserXids:
 
         assert {in_started.xid, in_deleted.xid}.issubset(set(result))
 
+    async def test_filters_users_outside_active_hours(
+        self,
+        guild: Guild,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(datetime(2024, 6, 1, 10, 0, tzinfo=UTC))
+        channel = factories.channel.create(guild=guild)
+        within = factories.user.create()
+        outside = factories.user.create()
+        wrap_within = factories.user.create()
+        no_hours = factories.user.create()
+        factories.alert.create(
+            guild_xid=guild.xid,
+            user_xid=within.xid,
+            preferences={
+                "formats": [],
+                "brackets": [],
+                "channels": [],
+                "active_hours": {"start": 8, "end": 16, "tz": "UTC"},
+            },
+        )
+        factories.alert.create(
+            guild_xid=guild.xid,
+            user_xid=outside.xid,
+            preferences={
+                "formats": [],
+                "brackets": [],
+                "channels": [],
+                "active_hours": {"start": 17, "end": 22, "tz": "UTC"},
+            },
+        )
+        factories.alert.create(
+            guild_xid=guild.xid,
+            user_xid=wrap_within.xid,
+            preferences={
+                "formats": [],
+                "brackets": [],
+                "channels": [],
+                "active_hours": {"start": 22, "end": 12, "tz": "UTC"},
+            },
+        )
+        factories.alert.create(
+            guild_xid=guild.xid,
+            user_xid=no_hours.xid,
+            preferences={"formats": [], "brackets": [], "channels": []},
+        )
+
+        result = await alerts.find_matching_user_xids(
+            guild_xid=guild.xid,
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.NONE.value,
+            channel_xid=channel.xid,
+        )
+
+        assert set(result) == {within.xid, wrap_within.xid, no_hours.xid}
+
 
 @pytest.mark.asyncio
 class TestMarkNotified:
@@ -344,3 +450,148 @@ class TestMarkNotified:
         refreshed = await DatabaseSession.get(GameModel, game_id)
         assert refreshed is not None
         assert refreshed.notified_at is not None
+
+
+class TestParseActiveHours:
+    def test_returns_none_for_falsy(self) -> None:
+        assert alerts.parse_active_hours(None) is None
+        assert alerts.parse_active_hours({}) is None
+        assert alerts.parse_active_hours("") is None
+
+    def test_canonicalizes_valid_payload(self) -> None:
+        result = alerts.parse_active_hours(
+            {"start": "17", "end": "22", "tz": "America/Los_Angeles"},
+        )
+        assert result == {"start": 17, "end": 22, "tz": "America/Los_Angeles"}
+
+    def test_allows_wrap_around_within_limit(self) -> None:
+        result = alerts.parse_active_hours(
+            {"start": 22, "end": 5, "tz": "UTC"},
+        )
+        assert result == {"start": 22, "end": 5, "tz": "UTC"}
+
+    def test_rejects_non_object(self) -> None:
+        with pytest.raises(ValueError, match="must be an object"):
+            alerts.parse_active_hours("nope")
+
+    def test_rejects_missing_fields(self) -> None:
+        with pytest.raises(ValueError, match="requires integer"):
+            alerts.parse_active_hours({"start": 1, "end": 2})
+
+    def test_rejects_non_integer_hours(self) -> None:
+        with pytest.raises(ValueError, match="requires integer"):
+            alerts.parse_active_hours({"start": "x", "end": "y", "tz": "UTC"})
+
+    def test_rejects_out_of_range_hours(self) -> None:
+        with pytest.raises(ValueError, match="between 0 and 23"):
+            alerts.parse_active_hours({"start": -1, "end": 5, "tz": "UTC"})
+        with pytest.raises(ValueError, match="between 0 and 23"):
+            alerts.parse_active_hours({"start": 0, "end": 24, "tz": "UTC"})
+
+    def test_rejects_equal_start_and_end(self) -> None:
+        with pytest.raises(ValueError, match="must differ"):
+            alerts.parse_active_hours({"start": 9, "end": 9, "tz": "UTC"})
+
+    def test_rejects_range_exceeding_max(self) -> None:
+        with pytest.raises(ValueError, match="hours or less"):
+            alerts.parse_active_hours({"start": 0, "end": 12, "tz": "UTC"})
+
+    def test_rejects_invalid_timezone(self) -> None:
+        with pytest.raises(ValueError, match="invalid timezone"):
+            alerts.parse_active_hours({"start": 1, "end": 5, "tz": "Mars/Olympus"})
+
+
+class TestIsWithinActiveHours:
+    def test_returns_true_when_no_active_hours(self) -> None:
+        now = datetime(2024, 6, 1, 12, 0, tzinfo=UTC)
+        assert alerts.is_within_active_hours(None, now) is True
+        assert alerts.is_within_active_hours({}, now) is True
+
+    def test_returns_true_for_malformed_payload(self) -> None:
+        now = datetime(2024, 6, 1, 12, 0, tzinfo=UTC)
+        assert alerts.is_within_active_hours("not-a-dict", now) is True
+        assert alerts.is_within_active_hours({"start": "x"}, now) is True
+        assert (
+            alerts.is_within_active_hours(
+                {"start": 1, "end": 5, "tz": "Mars/Nope"},
+                now,
+            )
+            is True
+        )
+
+    def test_returns_true_when_start_equals_end(self) -> None:
+        now = datetime(2024, 6, 1, 12, 0, tzinfo=UTC)
+        assert (
+            alerts.is_within_active_hours(
+                {"start": 5, "end": 5, "tz": "UTC"},
+                now,
+            )
+            is True
+        )
+
+    def test_inside_normal_window(self) -> None:
+        now = datetime(2024, 6, 1, 18, 0, tzinfo=UTC)
+        assert (
+            alerts.is_within_active_hours(
+                {"start": 17, "end": 22, "tz": "UTC"},
+                now,
+            )
+            is True
+        )
+
+    def test_outside_normal_window(self) -> None:
+        now = datetime(2024, 6, 1, 10, 0, tzinfo=UTC)
+        assert (
+            alerts.is_within_active_hours(
+                {"start": 17, "end": 22, "tz": "UTC"},
+                now,
+            )
+            is False
+        )
+
+    def test_inside_wrap_around_late_evening(self) -> None:
+        now = datetime(2024, 6, 1, 23, 0, tzinfo=UTC)
+        assert (
+            alerts.is_within_active_hours(
+                {"start": 22, "end": 3, "tz": "UTC"},
+                now,
+            )
+            is True
+        )
+
+    def test_inside_wrap_around_early_morning(self) -> None:
+        now = datetime(2024, 6, 1, 2, 0, tzinfo=UTC)
+        assert (
+            alerts.is_within_active_hours(
+                {"start": 22, "end": 3, "tz": "UTC"},
+                now,
+            )
+            is True
+        )
+
+    def test_outside_wrap_around(self) -> None:
+        now = datetime(2024, 6, 1, 10, 0, tzinfo=UTC)
+        assert (
+            alerts.is_within_active_hours(
+                {"start": 22, "end": 3, "tz": "UTC"},
+                now,
+            )
+            is False
+        )
+
+    def test_uses_target_timezone(self) -> None:
+        now = datetime(2024, 6, 1, 4, 0, tzinfo=UTC)
+        assert (
+            alerts.is_within_active_hours(
+                {"start": 17, "end": 22, "tz": "America/Los_Angeles"},
+                now,
+            )
+            is True
+        )
+        assert (
+            alerts.is_within_active_hours(
+                {"start": 17, "end": 22, "tz": "UTC"},
+                now,
+            )
+            is False
+        )
