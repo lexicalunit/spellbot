@@ -15,7 +15,12 @@ logger = logging.getLogger(__name__)
 
 DMKind = Literal["start", "notification"]
 
-DM_WINDOW_KEY = "dm:window"
+DM_WINDOW_KEY_PREFIX = "dm:window:"
+
+
+def window_key_for(kind: DMKind) -> str:
+    return f"{DM_WINDOW_KEY_PREFIX}{kind}"
+
 
 # Atomic sliding-window check-and-record. Trims entries older than ARGV[1]
 # seconds, compares the remaining count against the kind-specific threshold
@@ -66,7 +71,7 @@ async def try_consume_dm_slot(kind: DMKind) -> bool:
             redis.eval(
                 DM_LIMIT_SCRIPT,
                 1,
-                DM_WINDOW_KEY,
+                window_key_for(kind),
                 str(settings.DM_WINDOW_SECONDS),
                 str(int(time.time())),
                 str(threshold),
@@ -79,17 +84,18 @@ async def try_consume_dm_slot(kind: DMKind) -> bool:
     return int(result) == 1
 
 
-async def current_dm_count() -> int:
+async def current_dm_count(kind: DMKind) -> int:
     if not settings.REDIS_URL:
         return 0
     try:
         redis = await get_redis()
         cutoff = int(time.time()) - settings.DM_WINDOW_SECONDS
+        key = window_key_for(kind)
         await cast(
             "Awaitable[int]",
-            redis.zremrangebyscore(DM_WINDOW_KEY, "-inf", cutoff),
+            redis.zremrangebyscore(key, "-inf", cutoff),
         )
-        return int(await cast("Awaitable[int]", redis.zcard(DM_WINDOW_KEY)))
+        return int(await cast("Awaitable[int]", redis.zcard(key)))
     except Exception:
         logger.warning("redis error reading dm window count", exc_info=True)
         return 0
