@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v20.8.1](https://github.com/lexicalunit/spellbot/releases/tag/v20.8.1) - 2026-05-30
+
 ### Fixed
 
 - Notification DMs are no longer starved by game-start DM traffic. The DM rate
