@@ -699,10 +699,48 @@ class TestPlayedGuildsSection:
         assert f'href="/queues/g/{guild.xid}"' in body
         assert 'class="played-list__action"' in body
         assert ">Notifications<" in body
+        assert 'class="played-list__action played-list__action--on"' not in body
+        assert "Setup notifications" in body
+        assert "Manage notifications" not in body
         assert "Notify me" not in body
         assert "Games played" not in body
         assert "First Played" not in body
         assert 'class="players-badge"' not in body
+
+    async def test_section_shows_on_indicator_when_notifications_active(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+        mocker: MockerFixture,
+    ) -> None:
+        freezer.move_to(NOW)
+        guild = factories.guild.create(
+            xid=981_010,
+            name="On Guild",
+            icon="https://cdn.discordapp.com/icons/981010/p.png",
+        )
+        ch = factories.channel.create(xid=981_110, name="lfg", guild=guild)
+        me = factories.user.create(xid=881_010, name="me")
+        game = factories.game.create(guild=guild, channel=ch)
+        factories.play.create(
+            user_xid=me.xid,
+            game_id=game.id,
+            og_guild_xid=guild.xid,
+            created_at=NOW - timedelta(days=2),
+        )
+        await alerts.upsert(guild.xid, me.xid, formats=[1])
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get("/queues")
+        body = await resp.text()
+        assert "On Guild" in body
+        assert "played-list__action played-list__action--on" in body
+        assert ">On<" in body
+        assert "Manage notifications" in body
 
     async def test_section_hidden_for_anonymous_viewer(
         self,
@@ -842,6 +880,9 @@ class TestGuildNotifyEndpoint:
         assert "Brackets" in body
         assert f'action="/queues/g/{guild.xid}/notify"' in body
         assert "Save preferences" in body
+        assert "Do not notify me about games on this server" in body
+        # No alert exists yet, so the off toggle should be pre-checked.
+        assert re.search(r'id="notify-off"[^>]*\bchecked\b', body)
         # The toast container is rendered but hidden until the form is submitted.
         assert 'id="notify-toast"' in body
         assert "Your notification preferences have been saved." in body
@@ -922,6 +963,8 @@ class TestGuildNotifyEndpoint:
         assert re.search(r'name="brackets"\s+value="2"\s+checked', body)
         assert not re.search(r'name="formats"\s+value="2"\s+checked', body)
         assert not re.search(r'name="brackets"\s+value="1"\s+checked', body)
+        # An alert row exists, so the off toggle should not be pre-checked.
+        assert not re.search(r'id="notify-off"[^>]*\bchecked\b', body)
 
 
 @pytest.mark.asyncio
@@ -1047,6 +1090,74 @@ class TestGuildNotifySaveEndpoint:
             allow_redirects=False,
         )
         assert resp.status == 404
+
+    async def test_off_flag_deletes_existing_alert_and_redirects(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=983_020, name="Off Guild", icon="d.png")
+        me = factories.user.create(xid=883_020, name="me")
+        await alerts.upsert(guild.xid, me.xid, formats=[1], brackets=[2])
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={"off": "1", "formats": ["1"], "brackets": ["2"]},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/queues/g/{guild.xid}"
+        assert await alerts.get_for_user_guild(guild.xid, me.xid) is None
+
+    async def test_off_flag_returns_json_for_ajax_request(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=983_021, name="Off Ajax", icon="d.png")
+        me = factories.user.create(xid=883_021, name="me")
+        await alerts.upsert(guild.xid, me.xid, formats=[1])
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={"off": "1"},
+            headers={"Accept": "application/json"},
+            allow_redirects=False,
+        )
+        assert resp.status == 200
+        assert await resp.json() == {"ok": True, "off": True}
+        assert await alerts.get_for_user_guild(guild.xid, me.xid) is None
+
+    async def test_off_flag_is_idempotent_when_no_alert_exists(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=983_022, name="Off Noop", icon="d.png")
+        me = factories.user.create(xid=883_022, name="me")
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={"off": "1"},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert await alerts.get_for_user_guild(guild.xid, me.xid) is None
 
 
 @pytest.mark.asyncio

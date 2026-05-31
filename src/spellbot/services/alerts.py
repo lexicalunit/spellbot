@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
+from sqlalchemy import delete as sa_delete
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import JSONB, insert
 from sqlalchemy.sql.expression import and_, not_, or_
@@ -62,6 +63,29 @@ async def get_for_user_guild(guild_xid: int, user_xid: int) -> AlertData | None:
     if record is None:
         return None
     return record.to_data()
+
+
+async def get_guild_xids_for_user(user_xid: int) -> set[int]:
+    """Return the set of guild xids the user has notification preferences for."""
+    result = await DatabaseSession.execute(
+        select(Alert.guild_xid).where(Alert.user_xid == user_xid),
+    )
+    return {int(row[0]) for row in result}
+
+
+async def delete(guild_xid: int, user_xid: int) -> bool:
+    """
+    Remove the notification preferences for a user in a guild.
+
+    Returns True if a row was removed, False if no preferences existed.
+    """
+    result = await DatabaseSession.execute(
+        sa_delete(Alert).where(
+            and_(Alert.guild_xid == guild_xid, Alert.user_xid == user_xid),
+        ),
+    )
+    await DatabaseSession.commit()
+    return bool(result.rowcount)
 
 
 def matches_or_empty(key: str, value: int) -> Any:

@@ -111,6 +111,75 @@ class TestServiceAlerts:
         assert result.brackets == [2]
         assert result.channels == [42]
 
+    async def test_delete_removes_existing_row(
+        self,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+        await alerts.upsert(guild.xid, user.xid, formats=[1])
+
+        removed = await alerts.delete(guild.xid, user.xid)
+
+        assert removed is True
+        assert await alerts.get_for_user_guild(guild.xid, user.xid) is None
+
+    async def test_delete_is_idempotent_when_absent(
+        self,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+
+        removed = await alerts.delete(guild.xid, user.xid)
+
+        assert removed is False
+
+    async def test_delete_only_removes_target_user(
+        self,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        target = factories.user.create()
+        bystander = factories.user.create()
+        await alerts.upsert(guild.xid, target.xid, formats=[1])
+        await alerts.upsert(guild.xid, bystander.xid, formats=[2])
+
+        await alerts.delete(guild.xid, target.xid)
+
+        assert await alerts.get_for_user_guild(guild.xid, target.xid) is None
+        remaining = await alerts.get_for_user_guild(guild.xid, bystander.xid)
+        assert remaining is not None
+        assert remaining.formats == [2]
+
+
+@pytest.mark.asyncio
+class TestGetGuildXidsForUser:
+    async def test_returns_empty_set_when_user_has_no_alerts(
+        self,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+
+        assert await alerts.get_guild_xids_for_user(user.xid) == set()
+
+    async def test_returns_only_guilds_with_alerts_for_user(
+        self,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+        other = factories.user.create()
+        g1 = factories.guild.create()
+        g2 = factories.guild.create()
+        g3 = factories.guild.create()
+        await alerts.upsert(g1.xid, user.xid, formats=[1])
+        await alerts.upsert(g2.xid, user.xid, brackets=[2])
+        await alerts.upsert(g3.xid, other.xid, formats=[1])
+
+        result = await alerts.get_guild_xids_for_user(user.xid)
+
+        assert result == {g1.xid, g2.xid}
+
 
 @pytest.mark.asyncio
 class TestFindMatchingUserXids:

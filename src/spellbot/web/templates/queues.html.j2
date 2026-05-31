@@ -97,8 +97,8 @@
                 <a
                     class="played-list__row"
                     href="/queues/g/{{ pg.guild_xid }}"
-                    aria-label="Setup notifications for {{ pg.guild_name or 'this server' }}"
-                    data-tooltip="Setup notifications"
+                    aria-label="{% if pg.notifications_on %}Manage{% else %}Setup{% endif %} notifications for {{ pg.guild_name or 'this server' }}"
+                    data-tooltip="{% if pg.notifications_on %}Manage{% else %}Setup{% endif %} notifications"
                 >
                     <img
                         class="played-list__logo"
@@ -108,11 +108,11 @@
                         loading="lazy"
                     >
                     <span class="played-list__name">{{ pg.guild_name or "SpellBot Server" }}</span>
-                    <span class="played-list__action" aria-hidden="true">
+                    <span class="played-list__action{% if pg.notifications_on %} played-list__action--on{% endif %}" aria-hidden="true">
                         <svg class="played-list__action-icon" viewBox="0 0 24 24" width="14" height="14" focusable="false">
                             <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0"/>
                         </svg>
-                        <span class="played-list__action-label">Notifications</span>
+                        <span class="played-list__action-label">{% if pg.notifications_on %}On{% else %}Notifications{% endif %}</span>
                     </span>
                 </a>
             </li>
