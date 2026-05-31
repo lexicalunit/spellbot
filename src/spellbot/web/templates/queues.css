@@ -210,7 +210,7 @@ a:hover {
 
 .gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(284px, 300px));
+  grid-template-columns: repeat(auto-fill, minmax(284px, 1fr));
   gap: 1.25rem;
 }
 
@@ -255,67 +255,71 @@ a:hover {
   background: var(--brand-orange-dark);
   color: #1a202c;
 }
-.gallery--played {
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 0.4rem;
-}
-.queue-card--played,
-.queue-card--played:link,
-.queue-card--played:visited {
-  background: #20253a;
-  border-color: rgba(255, 255, 255, 0.04);
-  border-left: 2px solid #818cf8;
-  padding: 0.5rem;
-  gap: 0.35rem;
-  border-radius: 0.4rem;
-  align-items: center;
-  text-align: center;
-  text-decoration: none;
-  color: inherit;
-}
-.queue-card--played:hover {
-  background: var(--card-bg-hover);
-  border-color: rgba(129, 140, 248, 0.5);
-  border-left-color: #a5b0ff;
-}
-.queue-card--played:hover .queue-card__cta {
-  color: #a5b0ff !important;
-}
-.queue-card--played .queue-card__header {
-  gap: 0.5rem;
-  justify-content: flex-start;
-  width: 100%;
-}
-.queue-card--played .queue-card__logo {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-}
-.queue-card--played .queue-card__server {
-  font-size: 0.85rem;
-  line-height: 1.2;
-  text-align: left;
-}
-.queue-card--played .queue-card__cta {
-  background: transparent;
-  color: #818cf8 !important;
+.played-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
   padding: 0;
-  font-size: 0.7rem;
-  font-weight: 600;
+  width: 50%;
+}
+@media (max-width: 720px) {
+  .played-list {
+    width: 100%;
+  }
+}
+.played-list__row,
+.played-list__row:link,
+.played-list__row:visited {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border-left: 2px solid transparent;
+  background: transparent;
+  color: var(--page-text);
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.played-list__row:hover {
+  background: var(--card-bg-hover);
+  border-left-color: #818cf8;
+}
+.played-list__logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+.played-list__name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  transition: color 0.15s ease;
+}
+.played-list__action {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  color: var(--page-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: color 0.15s ease;
 }
-.queue-card__cta-bell {
-  display: inline-block;
-  vertical-align: middle;
+.played-list__row:hover .played-list__action {
+  color: #a5b0ff;
 }
-.gallery + .gallery-divider {
-  margin-top: 2rem;
-}
-.gallery--played + .gallery-divider {
+.gallery + .gallery-divider,
+.played-list + .gallery-divider {
   margin-top: 2rem;
 }
 .gallery-divider {
