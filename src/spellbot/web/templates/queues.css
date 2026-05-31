@@ -210,7 +210,7 @@ a:hover {
 
 .gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(284px, 300px));
   gap: 1.25rem;
 }
 
@@ -354,21 +354,30 @@ a:hover {
   gap: 0.75rem;
 }
 .queue-card__logo {
-  width: 56px;
-  height: 56px;
+  width: 50px;
+  height: 50px;
   border-radius: 12px;
   object-fit: cover;
   background: rgba(255, 255, 255, 0.04);
   flex-shrink: 0;
 }
+.queue-card__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .queue-card__server {
-  font-size: 1.05rem;
+  font-size: 0.945rem;
   font-weight: 700;
   color: var(--text);
   word-break: break-word;
   line-height: 1.25;
-  flex: 1 1 auto;
-  min-width: 0;
+}
+.queue-card__actions {
+  display: flex;
+  gap: 0.4rem;
 }
 .queue-card__copy {
   display: inline-flex;
