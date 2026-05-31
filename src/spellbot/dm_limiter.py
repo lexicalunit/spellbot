@@ -52,12 +52,16 @@ async def try_consume_dm_slot(kind: DMKind) -> bool:
     """
     Reserve a DM slot in the sliding window for the given priority.
 
-    Returns True if the DM may proceed. For "start", missing or broken Redis
-    is fail-open since start DMs are user-critical. For "notification" it is
-    fail-closed so a Redis outage cannot trigger a flood.
+    Returns True if the DM may proceed. "start" DMs are always allowed and
+    bypass the rate limiter entirely since they are user-critical. For
+    "notification" the limiter is fail-closed so a Redis outage cannot
+    trigger a flood.
     """
+    if kind == "start":
+        return True
+
     if not settings.REDIS_URL:
-        return kind == "start"
+        return False
 
     threshold = threshold_for(kind)
     if threshold <= 0:
@@ -80,7 +84,7 @@ async def try_consume_dm_slot(kind: DMKind) -> bool:
         )
     except Exception:
         logger.warning("redis error in dm rate limiter", exc_info=True)
-        return kind == "start"
+        return False
     return int(result) == 1
 
 
