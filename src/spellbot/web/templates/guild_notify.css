@@ -180,3 +180,127 @@
   color: #f0f4ff;
   text-decoration: underline;
 }
+.notify__hours-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f0f4ff;
+  margin-bottom: 1rem;
+}
+.notify__hours-toggle input {
+  accent-color: #818cf8;
+  width: 1rem;
+  height: 1rem;
+}
+.notify__hours-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.notify__hours-panel--off {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.notify__hours-readout {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #e6ebff;
+}
+.notify__hours-track {
+  position: relative;
+  height: 34px;
+  margin: 0.5rem 0 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+.notify__hours-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(129, 140, 248, 0.35);
+  border-radius: 8px;
+  pointer-events: none;
+}
+.notify__hours-track input[type="range"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.notify__hours-track input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 34px;
+  border-radius: 6px;
+  background: #818cf8;
+  border: 1px solid #1a202c;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.notify__hours-track input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 34px;
+  border-radius: 6px;
+  background: #818cf8;
+  border: 1px solid #1a202c;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.notify__hours-track input[type="range"]::-webkit-slider-runnable-track {
+  background: transparent;
+  border: none;
+}
+.notify__hours-track input[type="range"]::-moz-range-track {
+  background: transparent;
+  border: none;
+}
+.notify__hours-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.notify__hours-tick {
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: 10px;
+  background: rgba(240, 244, 255, 0.3);
+  transform: translate(-0.5px, -50%);
+}
+.notify__hours-axis {
+  position: relative;
+  height: 1em;
+  font-size: 0.75rem;
+  color: rgba(240, 244, 255, 0.5);
+  margin-top: 0.25rem;
+}
+.notify__hours-axis span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+.notify__hours-tz {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: rgba(240, 244, 255, 0.55);
+}
+.notify__hours-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #f87171;
+  font-weight: 600;
+}
+.notify__save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

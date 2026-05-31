@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Active hours filter for guild notifications. Users can pick a daily start/end
+  hour (up to 8 hours) in their local browser timezone, and notification DMs
+  will only be sent during that window.
+
 ## [v20.8.1](https://github.com/lexicalunit/spellbot/releases/tag/v20.8.1) - 2026-05-30
 
 ### Fixed

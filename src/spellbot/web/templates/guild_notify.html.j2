@@ -112,6 +112,64 @@
                 </fieldset>
                 {% endif %}
 
+                <fieldset class="notify__fieldset notify__hours">
+                    <legend class="notify__legend">Active Hours</legend>
+                    <p class="notify__hint">
+                        Only notify me during a specific window of the day, in my local time.
+                        Maximum window is {{ active_hours_max_length }} hours.
+                        Defaults to 5pm&ndash;10pm if you don't pick a range.
+                    </p>
+                    <label class="notify__hours-toggle">
+                        <input
+                            type="checkbox"
+                            id="active-hours-enabled"
+                            name="active_hours_enabled"
+                            value="1"
+                            {% if active_hours %}checked{% endif %}
+                        >
+                        <span>Limit notifications to a daily window</span>
+                    </label>
+                    <div class="notify__hours-panel" data-default-start="17" data-default-end="22">
+                        <div class="notify__hours-readout" id="active-hours-readout"></div>
+                        <div class="notify__hours-track" id="active-hours-track">
+                            <div class="notify__hours-band" id="active-hours-band-a"></div>
+                            <div class="notify__hours-band" id="active-hours-band-b"></div>
+                            <div class="notify__hours-ticks" aria-hidden="true">
+                                {% for h in range(24) %}<span class="notify__hours-tick" style="left: calc((100% - 18px) * {{ h }} / 23 + 9px);"></span>{% endfor %}
+                            </div>
+                            <input
+                                type="range"
+                                id="active-hours-start"
+                                name="active_hours_start"
+                                min="0"
+                                max="23"
+                                step="1"
+                                value="{{ active_hours.start if active_hours else 17 }}"
+                            >
+                            <input
+                                type="range"
+                                id="active-hours-end"
+                                name="active_hours_end"
+                                min="0"
+                                max="23"
+                                step="1"
+                                value="{{ active_hours.end if active_hours else 22 }}"
+                            >
+                        </div>
+                        <div class="notify__hours-axis" aria-hidden="true">
+                            {% for h in [0, 6, 12, 18, 23] %}<span style="left: calc((100% - 18px) * {{ h }} / 23 + 9px);">{{ h }}</span>{% endfor %}
+                        </div>
+                        <p class="notify__hours-tz" id="active-hours-tz-label"></p>
+                        <p class="notify__hours-error" id="active-hours-error" hidden></p>
+                        <input
+                            type="hidden"
+                            id="active-hours-tz"
+                            name="active_hours_tz"
+                            value="{{ active_hours.tz if active_hours else '' }}"
+                        >
+                    </div>
+                </fieldset>
+
                 <div class="notify__actions">
                     <button type="submit" class="notify__save">Save preferences</button>
                     <a class="notify__cancel" href="/queues">Cancel</a>
@@ -141,16 +199,123 @@
             var hideTimer = null;
             var offCb = document.getElementById("notify-off");
             var fieldsets = form.querySelectorAll(".notify__fieldset");
+            var saveBtn = form.querySelector(".notify__save");
+            var ACTIVE_HOURS_MAX = {{ active_hours_max_length }};
+            var hoursEnabledCb = document.getElementById("active-hours-enabled");
+            var startSlider = document.getElementById("active-hours-start");
+            var endSlider = document.getElementById("active-hours-end");
+            var tzInput = document.getElementById("active-hours-tz");
+            var tzLabel = document.getElementById("active-hours-tz-label");
+            var readout = document.getElementById("active-hours-readout");
+            var bandA = document.getElementById("active-hours-band-a");
+            var bandB = document.getElementById("active-hours-band-b");
+            var hoursError = document.getElementById("active-hours-error");
+            var hoursPanel = document.querySelector(".notify__hours-panel");
+            var hoursInvalid = false;
             function applyOffState() {
                 if (!offCb) return;
                 var isOff = offCb.checked;
                 fieldsets.forEach(function (fs) { fs.disabled = isOff; });
                 form.classList.toggle("notify__form--off", isOff);
+                if (!isOff) updateHoursState();
             }
             if (offCb) {
                 offCb.addEventListener("change", applyOffState);
-                applyOffState();
             }
+            function formatHour(h) {
+                h = ((h % 24) + 24) % 24;
+                if (h === 0) return "12 AM";
+                if (h === 12) return "12 PM";
+                if (h < 12) return h + " AM";
+                return (h - 12) + " PM";
+            }
+            function rangeLength(start, end) {
+                var diff = (end - start + 24) % 24;
+                return diff === 0 ? 24 : diff;
+            }
+            var THUMB_W = 18;
+            function thumbPos(h) {
+                // Thumb-center position along the track for value h in [0, 23].
+                // Browsers constrain the thumb so its center moves between
+                // THUMB_W/2 and (trackWidth - THUMB_W/2).
+                var pct = (h / 23) * 100;
+                var px = 9 - (h / 23) * THUMB_W;
+                var sign = px >= 0 ? " + " : " - ";
+                return "calc(" + pct + "% " + sign + Math.abs(px) + "px)";
+            }
+            function spanWidth(diff) {
+                // Width between two thumb-centers that are `diff` hours apart.
+                var pct = (diff / 23) * 100;
+                var px = (diff / 23) * THUMB_W;
+                return "calc(" + pct + "% - " + px + "px)";
+            }
+            function updateHoursState() {
+                if (!hoursEnabledCb || !startSlider || !endSlider) return;
+                var enabled = hoursEnabledCb.checked;
+                if (hoursPanel) hoursPanel.classList.toggle("notify__hours-panel--off", !enabled);
+                startSlider.disabled = !enabled;
+                endSlider.disabled = !enabled;
+                var start = parseInt(startSlider.value, 10);
+                var end = parseInt(endSlider.value, 10);
+                var len = rangeLength(start, end);
+                if (readout) {
+                    if (start === end) {
+                        readout.textContent = "Pick different start and end hours";
+                    } else {
+                        readout.textContent =
+                            formatHour(start) + " – " + formatHour(end) +
+                            " (" + len + " hour" + (len === 1 ? "" : "s") + ")";
+                    }
+                }
+                if (bandA && bandB) {
+                    if (start < end) {
+                        bandA.style.left = thumbPos(start);
+                        bandA.style.width = spanWidth(end - start);
+                        bandB.style.left = "0";
+                        bandB.style.width = "0";
+                    } else if (start > end) {
+                        bandA.style.left = thumbPos(start);
+                        bandA.style.width = spanWidth(23 - start);
+                        bandB.style.left = "9px";
+                        bandB.style.width = spanWidth(end);
+                    } else {
+                        bandA.style.left = "0";
+                        bandA.style.width = "0";
+                        bandB.style.left = "0";
+                        bandB.style.width = "0";
+                    }
+                }
+                var invalid = enabled && (start === end || len > ACTIVE_HOURS_MAX);
+                hoursInvalid = invalid;
+                if (hoursError) {
+                    if (invalid && start === end) {
+                        hoursError.textContent = "Start and end must differ.";
+                        hoursError.hidden = false;
+                    } else if (invalid) {
+                        hoursError.textContent =
+                            "Range must be " + ACTIVE_HOURS_MAX + " hours or less.";
+                        hoursError.hidden = false;
+                    } else {
+                        hoursError.hidden = true;
+                    }
+                }
+                if (saveBtn) saveBtn.disabled = invalid;
+            }
+            if (tzInput && tzLabel) {
+                var tz = "";
+                try {
+                    tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+                } catch (e) { tz = ""; }
+                if (tz) tzInput.value = tz;
+                tzLabel.textContent = tzInput.value
+                    ? "Times shown in " + tzInput.value
+                    : "Times shown in your local timezone";
+            }
+            if (hoursEnabledCb) hoursEnabledCb.addEventListener("change", updateHoursState);
+            if (startSlider) startSlider.addEventListener("input", updateHoursState);
+            if (endSlider) endSlider.addEventListener("input", updateHoursState);
+            updateHoursState();
+            applyOffState();
             function showToast(message, isError) {
                 if (hideTimer) clearTimeout(hideTimer);
                 toast.textContent = message;
@@ -166,6 +331,10 @@
             }
             form.addEventListener("submit", function (event) {
                 event.preventDefault();
+                if (hoursInvalid && !(offCb && offCb.checked)) {
+                    showToast(errorMessage, true);
+                    return;
+                }
                 var data = new FormData(form);
                 fetch(form.action, {
                     method: "POST",

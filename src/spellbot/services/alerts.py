@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import delete as sa_delete
 from sqlalchemy import func, select, update
@@ -17,6 +18,64 @@ if TYPE_CHECKING:
 
     from spellbot.data import AlertData
 
+ACTIVE_HOURS_MAX_LENGTH = 8
+
+
+def parse_active_hours(raw: Any) -> dict[str, Any] | None:
+    """
+    Validate and canonicalize an active_hours payload.
+
+    Returns None when `raw` is falsy. Raises ValueError for any structural or
+    semantic problem (out-of-range hours, equal start/end, range exceeding
+    `ACTIVE_HOURS_MAX_LENGTH`, unknown timezone).
+    """
+    if not raw:
+        return None
+    if not isinstance(raw, dict):
+        msg = "active_hours must be an object"
+        raise ValueError(msg)  # noqa: TRY004
+    try:
+        start = int(raw["start"])
+        end = int(raw["end"])
+        tz_name = str(raw["tz"])
+    except (KeyError, TypeError, ValueError) as ex:
+        msg = "active_hours requires integer start/end and tz"
+        raise ValueError(msg) from ex
+    if not (0 <= start <= 23) or not (0 <= end <= 23):
+        msg = "active_hours start/end must be between 0 and 23"
+        raise ValueError(msg)
+    if start == end:
+        msg = "active_hours start and end must differ"
+        raise ValueError(msg)
+    length = (end - start) % 24
+    if length > ACTIVE_HOURS_MAX_LENGTH:
+        msg = f"active_hours range must be {ACTIVE_HOURS_MAX_LENGTH} hours or less"
+        raise ValueError(msg)
+    try:
+        ZoneInfo(tz_name)
+    except (ZoneInfoNotFoundError, ValueError) as ex:
+        msg = f"invalid timezone: {tz_name}"
+        raise ValueError(msg) from ex
+    return {"start": start, "end": end, "tz": tz_name}
+
+
+def is_within_active_hours(active_hours: Any, now_utc: datetime) -> bool:
+    """Return whether `now_utc` falls within the user's active window."""
+    if not active_hours or not isinstance(active_hours, dict):
+        return True
+    try:
+        tz = ZoneInfo(str(active_hours["tz"]))
+        start = int(active_hours["start"])
+        end = int(active_hours["end"])
+    except KeyError, TypeError, ValueError, ZoneInfoNotFoundError:
+        return True
+    if start == end:
+        return True
+    local_hour = now_utc.astimezone(tz).hour
+    if start < end:
+        return start <= local_hour < end
+    return local_hour >= start or local_hour < end
+
 
 async def upsert(
     guild_xid: int,
@@ -25,13 +84,16 @@ async def upsert(
     formats: Iterable[int] = (),
     brackets: Iterable[int] = (),
     channels: Iterable[int] = (),
+    active_hours: dict[str, Any] | None = None,
 ) -> AlertData:
     """Create or update the notification preferences for a user in a guild."""
-    preferences = {
+    preferences: dict[str, Any] = {
         "formats": sorted({int(v) for v in formats}),
         "brackets": sorted({int(v) for v in brackets}),
         "channels": sorted({int(v) for v in channels}),
     }
+    if active_hours is not None:
+        preferences["active_hours"] = parse_active_hours(active_hours)
     stmt = insert(Alert).values(
         guild_xid=guild_xid,
         user_xid=user_xid,
@@ -115,7 +177,7 @@ async def find_matching_user_xids(
         )
     )
     stmt = (
-        select(Alert.user_xid)
+        select(Alert)
         .join(User, User.xid == Alert.user_xid)
         .where(
             and_(
@@ -129,7 +191,12 @@ async def find_matching_user_xids(
         )
     )
     result = await DatabaseSession.execute(stmt)
-    return [int(row[0]) for row in result]
+    now_utc = datetime.now(tz=UTC)
+    return [
+        int(alert.user_xid)
+        for alert in result.scalars()
+        if is_within_active_hours((alert.preferences or {}).get("active_hours"), now_utc)
+    ]
 
 
 async def mark_notified(game_id: int) -> None:
