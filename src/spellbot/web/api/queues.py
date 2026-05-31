@@ -97,6 +97,11 @@ async def queues_endpoint(request: web.Request) -> web.Response:
             if viewer_xid is not None
             else []
         )
+        alert_guild_xids = (
+            await services.alerts.get_guild_xids_for_user(viewer_xid)
+            if viewer_xid is not None
+            else set()
+        )
         backfilled = await _resolve_icons(raw_rows + raw_games + raw_played_guilds)
     rows = [
         {
@@ -124,6 +129,7 @@ async def queues_endpoint(request: web.Request) -> web.Response:
             "logo": pg.get("guild_icon")
             or backfilled.get(pg["guild_xid"])
             or SPELLBOT_DEFAULT_LOGO,
+            "notifications_on": pg["guild_xid"] in alert_guild_xids,
         }
         for pg in raw_played_guilds
     ]
@@ -279,6 +285,7 @@ async def guild_notify_endpoint(request: web.Request) -> web.Response:
         "selected_formats": selected_formats,
         "selected_brackets": selected_brackets,
         "selected_channels": selected_channels,
+        "notifications_off": existing is None,
         "viewer": {"xid": viewer_xid, "name": viewer_name, "logged_in": True},
     }
     return aiohttp_jinja2.render_template("guild_notify.html.j2", request, context)
@@ -310,6 +317,12 @@ async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse
     if viewer_xid is None:
         return web.HTTPFound(f"/queues/login?next=/queues/g/{guild_xid}")
     form = await request.post()
+    if form.get("off"):
+        async with db_session_manager():
+            await services.alerts.delete(guild_xid, viewer_xid)
+        if wants_json(request):
+            return web.json_response({"ok": True, "off": True})
+        return web.HTTPFound(f"/queues/g/{guild_xid}")
     formats = parse_notify_values(form.getall("formats", []), VALID_FORMAT_VALUES)
     brackets = parse_notify_values(form.getall("brackets", []), VALID_BRACKET_VALUES)
     async with db_session_manager():

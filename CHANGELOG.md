@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Allow users to turn off notifications for a server.
+- Show if a server has notifications turned on or off in the queues page.
+
 ## [v20.7.5](https://github.com/lexicalunit/spellbot/releases/tag/v20.7.5) - 2026-05-30
 
 ### Changed

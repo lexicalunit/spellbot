@@ -318,6 +318,9 @@ a:hover {
 .played-list__row:hover .played-list__action {
   color: #a5b0ff;
 }
+.played-list__action--on {
+  color: #a5b0ff;
+}
 .gallery + .gallery-divider,
 .played-list + .gallery-divider {
   margin-top: 2rem;

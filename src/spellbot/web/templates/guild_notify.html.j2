@@ -43,6 +43,19 @@
             </div>
 
             <form method="post" action="/queues/g/{{ guild.guild_xid }}/notify" class="notify__form">
+                <div class="notify__off">
+                    <label class="notify__off-option">
+                        <input
+                            type="checkbox"
+                            id="notify-off"
+                            name="off"
+                            value="1"
+                            {% if notifications_off %}checked{% endif %}
+                        >
+                        <span>Do not notify me about games on this server</span>
+                    </label>
+                </div>
+
                 <fieldset class="notify__fieldset">
                     <legend class="notify__legend">Formats</legend>
                     <p class="notify__hint">Select the formats you want to be notified about. Leave empty to receive all formats.</p>
@@ -123,8 +136,21 @@
             var toast = document.getElementById("notify-toast");
             if (!form || !toast) return;
             var successMessage = "Your notification preferences have been saved.";
+            var offMessage = "Notifications turned off for this server.";
             var errorMessage = "Could not save your preferences. Please try again.";
             var hideTimer = null;
+            var offCb = document.getElementById("notify-off");
+            var fieldsets = form.querySelectorAll(".notify__fieldset");
+            function applyOffState() {
+                if (!offCb) return;
+                var isOff = offCb.checked;
+                fieldsets.forEach(function (fs) { fs.disabled = isOff; });
+                form.classList.toggle("notify__form--off", isOff);
+            }
+            if (offCb) {
+                offCb.addEventListener("change", applyOffState);
+                applyOffState();
+            }
             function showToast(message, isError) {
                 if (hideTimer) clearTimeout(hideTimer);
                 toast.textContent = message;
@@ -148,7 +174,8 @@
                     headers: { "Accept": "application/json" },
                 }).then(function (resp) {
                     if (resp.ok) {
-                        showToast(successMessage, false);
+                        var msg = (offCb && offCb.checked) ? offMessage : successMessage;
+                        showToast(msg, false);
                     } else {
                         showToast(errorMessage, true);
                     }
