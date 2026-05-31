@@ -25,7 +25,7 @@ class TestThresholdFor:
 
 @pytest.mark.asyncio
 class TestTryConsumeDmSlot:
-    async def test_no_redis_url_allows_start(self) -> None:
+    async def test_start_always_allowed_without_redis(self) -> None:
         with patch.object(settings, "REDIS_URL", None):
             assert await try_consume_dm_slot("start") is True
 
@@ -33,12 +33,15 @@ class TestTryConsumeDmSlot:
         with patch.object(settings, "REDIS_URL", None):
             assert await try_consume_dm_slot("notification") is False
 
-    async def test_redis_error_fails_open_for_start(self) -> None:
+    async def test_start_bypasses_redis(self) -> None:
+        fake_redis = AsyncMock()
+        fake_redis.eval = AsyncMock(return_value=0)
         with (
             patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch.object(dm_limiter, "get_redis", AsyncMock(side_effect=RuntimeError("down"))),
+            patch.object(dm_limiter, "get_redis", AsyncMock(return_value=fake_redis)),
         ):
             assert await try_consume_dm_slot("start") is True
+        fake_redis.eval.assert_not_called()
 
     async def test_redis_error_fails_closed_for_notification(self) -> None:
         with (
@@ -54,7 +57,7 @@ class TestTryConsumeDmSlot:
             patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch.object(dm_limiter, "get_redis", AsyncMock(return_value=fake_redis)),
         ):
-            assert await try_consume_dm_slot("start") is True
+            assert await try_consume_dm_slot("notification") is True
         fake_redis.eval.assert_awaited_once()
 
     async def test_returns_false_when_script_denies(self) -> None:
@@ -73,7 +76,7 @@ class TestTryConsumeDmSlot:
         ):
             assert await try_consume_dm_slot("notification") is False
 
-    async def test_uses_correct_threshold_per_kind(self) -> None:
+    async def test_uses_notification_threshold(self) -> None:
         captured: list[int] = []
 
         async def fake_eval(*args: object, **_: object) -> int:
@@ -86,12 +89,11 @@ class TestTryConsumeDmSlot:
             patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch.object(dm_limiter, "get_redis", AsyncMock(return_value=fake_redis)),
         ):
-            await try_consume_dm_slot("start")
             await try_consume_dm_slot("notification")
 
-        assert captured == [settings.DM_WINDOW_LIMIT, settings.DM_NOTIFICATION_BUDGET]
+        assert captured == [settings.DM_NOTIFICATION_BUDGET]
 
-    async def test_uses_per_kind_redis_key(self) -> None:
+    async def test_uses_notification_redis_key(self) -> None:
         captured: list[str] = []
 
         async def fake_eval(*args: object, **_: object) -> int:
@@ -104,11 +106,9 @@ class TestTryConsumeDmSlot:
             patch.object(settings, "REDIS_URL", "redis://localhost"),
             patch.object(dm_limiter, "get_redis", AsyncMock(return_value=fake_redis)),
         ):
-            await try_consume_dm_slot("start")
             await try_consume_dm_slot("notification")
 
-        assert captured == [window_key_for("start"), window_key_for("notification")]
-        assert captured[0] != captured[1]
+        assert captured == [window_key_for("notification")]
 
 
 @pytest.mark.asyncio
