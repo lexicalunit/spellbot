@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v20.9.2](https://github.com/lexicalunit/spellbot/releases/tag/v20.9.2) - 2026-06-03
+
 ### Changed
 
 - Allow alert notifications to restore to previous values upon undelete.
