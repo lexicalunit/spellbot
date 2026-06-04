@@ -966,6 +966,31 @@ class TestGuildNotifyEndpoint:
         # An alert row exists, so the off toggle should not be pre-checked.
         assert not re.search(r'id="notify-off"[^>]*\bchecked\b', body)
 
+    async def test_prepopulates_form_from_soft_deleted_alert(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=982_008, name="Restore", icon="r.png")
+        me = factories.user.create(xid=882_008, name="me")
+        await alerts.upsert(guild.xid, me.xid, formats=[1], brackets=[2])
+        await alerts.delete(guild.xid, me.xid)
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.get(f"/queues/g/{guild.xid}")
+        assert resp.status == 200
+        body = await resp.text()
+        # Prior preferences are still surfaced so the user can restore them by
+        # simply unchecking the off toggle and saving.
+        assert re.search(r'name="formats"\s+value="1"\s+checked', body)
+        assert re.search(r'name="brackets"\s+value="2"\s+checked', body)
+        # The off toggle is pre-checked because the alert is currently disabled.
+        assert re.search(r'id="notify-off"[^>]*\bchecked\b', body)
+
 
 @pytest.mark.asyncio
 class TestGuildNotifySaveEndpoint:
@@ -1159,6 +1184,36 @@ class TestGuildNotifySaveEndpoint:
         )
         assert resp.status == 302
         assert await alerts.get_for_user_guild(guild.xid, me.xid) is None
+
+    async def test_save_without_off_restores_soft_deleted_alert(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=983_023, name="Restore Save", icon="r.png")
+        me = factories.user.create(xid=883_023, name="me")
+        original = await alerts.upsert(guild.xid, me.xid, formats=[1], brackets=[2])
+        await alerts.delete(guild.xid, me.xid)
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={"formats": ["1"], "brackets": ["2"]},
+            allow_redirects=False,
+        )
+
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/queues/g/{guild.xid}"
+        restored = await alerts.get_for_user_guild(guild.xid, me.xid)
+        assert restored is not None
+        assert restored.id == original.id
+        assert restored.deleted_at is None
+        assert restored.formats == [1]
+        assert restored.brackets == [2]
 
 
 @pytest.mark.asyncio

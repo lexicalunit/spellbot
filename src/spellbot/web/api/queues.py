@@ -253,7 +253,14 @@ async def guild_notify_endpoint(request: web.Request) -> web.Response:
         if guild is None:
             return web.Response(status=404)
         backfilled = await _resolve_icons([guild])
-        existing = await services.alerts.get_for_user_guild(guild_xid, viewer_xid)
+        # Fetch soft-deleted alerts too so the viewer's prior preferences can be
+        # re-displayed (and restored on save) after they previously turned
+        # notifications off for this guild.
+        existing = await services.alerts.get_for_user_guild(
+            guild_xid,
+            viewer_xid,
+            include_deleted=True,
+        )
         played_channels = await services.queues.viewer_played_channels(
             viewer_xid,
             guild_xid,
@@ -277,6 +284,7 @@ async def guild_notify_endpoint(request: web.Request) -> web.Response:
         {c for c in existing.channels if c in valid_channel_values} if existing else set()
     )
     active_hours = existing.active_hours if existing else None
+    notifications_off = existing is None or existing.deleted_at is not None
     context = {
         "guild": guild_view,
         "default_logo": SPELLBOT_DEFAULT_LOGO,
@@ -286,7 +294,7 @@ async def guild_notify_endpoint(request: web.Request) -> web.Response:
         "selected_formats": selected_formats,
         "selected_brackets": selected_brackets,
         "selected_channels": selected_channels,
-        "notifications_off": existing is None,
+        "notifications_off": notifications_off,
         "active_hours": active_hours,
         "active_hours_max_length": services.alerts.ACTIVE_HOURS_MAX_LENGTH,
         "viewer": {"xid": viewer_xid, "name": viewer_name, "logged_in": True},
