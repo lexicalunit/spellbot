@@ -4,7 +4,6 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import delete as sa_delete
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import JSONB, insert
 from sqlalchemy.sql.expression import and_, not_, or_
@@ -98,29 +97,43 @@ async def upsert(
         guild_xid=guild_xid,
         user_xid=user_xid,
         preferences=preferences,
+        deleted_at=None,
     )
     stmt = stmt.on_conflict_do_update(
         constraint="uq_alerts_guild_user",
-        set_={"preferences": stmt.excluded.preferences},
+        set_={"preferences": stmt.excluded.preferences, "deleted_at": None},
     )
     await DatabaseSession.execute(stmt)
     await DatabaseSession.commit()
     result = await DatabaseSession.execute(
         select(Alert).where(
-            and_(Alert.guild_xid == guild_xid, Alert.user_xid == user_xid),
+            and_(
+                Alert.guild_xid == guild_xid,
+                Alert.user_xid == user_xid,
+                Alert.deleted_at.is_(None),
+            ),
         ),
     )
     record = result.scalar_one()
     return record.to_data()
 
 
-async def get_for_user_guild(guild_xid: int, user_xid: int) -> AlertData | None:
-    """Return the alert preferences for a user in a guild, if any."""
-    result = await DatabaseSession.execute(
-        select(Alert).where(
-            and_(Alert.guild_xid == guild_xid, Alert.user_xid == user_xid),
-        ),
-    )
+async def get_for_user_guild(
+    guild_xid: int,
+    user_xid: int,
+    *,
+    include_deleted: bool = False,
+) -> AlertData | None:
+    """
+    Return the alert preferences for a user in a guild, if any.
+
+    By default soft-deleted alerts are excluded. Pass `include_deleted=True` to
+    retrieve a previously turned-off alert so its preferences can be restored.
+    """
+    clauses = [Alert.guild_xid == guild_xid, Alert.user_xid == user_xid]
+    if not include_deleted:
+        clauses.append(Alert.deleted_at.is_(None))
+    result = await DatabaseSession.execute(select(Alert).where(and_(*clauses)))
     record = result.scalar_one_or_none()
     if record is None:
         return None
@@ -130,24 +143,34 @@ async def get_for_user_guild(guild_xid: int, user_xid: int) -> AlertData | None:
 async def get_guild_xids_for_user(user_xid: int) -> set[int]:
     """Return the set of guild xids the user has notification preferences for."""
     result = await DatabaseSession.execute(
-        select(Alert.guild_xid).where(Alert.user_xid == user_xid),
+        select(Alert.guild_xid).where(Alert.user_xid == user_xid, Alert.deleted_at.is_(None)),
     )
     return {int(row[0]) for row in result}
 
 
 async def delete(guild_xid: int, user_xid: int) -> bool:
     """
-    Remove the notification preferences for a user in a guild.
+    Soft delete the notification preferences for a user in a guild.
 
-    Returns True if a row was removed, False if no preferences existed.
+    Only active (non-deleted) rows are touched, so the preference payload is
+    preserved and can be restored later by calling `upsert` again. Returns
+    True if an active row was soft deleted, False if no active preferences
+    existed (either never created or already turned off).
     """
-    result = await DatabaseSession.execute(
-        sa_delete(Alert).where(
-            and_(Alert.guild_xid == guild_xid, Alert.user_xid == user_xid),
-        ),
+    query = (
+        update(Alert)
+        .where(
+            and_(
+                Alert.guild_xid == guild_xid,
+                Alert.user_xid == user_xid,
+                Alert.deleted_at.is_(None),
+            ),
+        )
+        .values(deleted_at=datetime.now(tz=UTC))
     )
+    result = await DatabaseSession.execute(query)
     await DatabaseSession.commit()
-    return bool(result.rowcount)
+    return bool(result.rowcount != 0)
 
 
 def matches_or_empty(key: str, value: int) -> Any:
@@ -181,6 +204,7 @@ async def find_matching_user_xids(
         .join(User, User.xid == Alert.user_xid)
         .where(
             and_(
+                Alert.deleted_at.is_(None),
                 Alert.guild_xid == guild_xid,
                 User.banned.is_(False),
                 matches_or_empty("formats", format),

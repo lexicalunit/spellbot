@@ -18,3 +18,4 @@ class AlertData:
     brackets: list[int] = field(default_factory=list)
     channels: list[int] = field(default_factory=list)
     active_hours: dict[str, Any] | None = None
+    deleted_at: datetime | None = None

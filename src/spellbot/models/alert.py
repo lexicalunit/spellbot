@@ -49,6 +49,12 @@ class Alert(Base):
         onupdate=partial(datetime.now, UTC),
         doc="UTC timestamp when this alert was last updated",
     )
+    deleted_at = Column(
+        DateTime,
+        nullable=True,
+        index=True,
+        doc="UTC timestamp when this alert was deleted",
+    )
     guild_xid = Column(
         BigInteger,
         ForeignKey("guilds.xid", ondelete="CASCADE"),
@@ -89,4 +95,5 @@ class Alert(Base):
             brackets=list(prefs.get("brackets") or []),
             channels=list(prefs.get("channels") or []),
             active_hours=dict(active_hours) if active_hours else None,
+            deleted_at=self.deleted_at,  # type: ignore
         )

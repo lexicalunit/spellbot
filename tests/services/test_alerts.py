@@ -154,6 +154,111 @@ class TestServiceAlerts:
         assert remaining is not None
         assert remaining.formats == [2]
 
+    async def test_delete_is_idempotent_for_already_deleted_row(
+        self,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+        await alerts.upsert(guild.xid, user.xid, formats=[1])
+        assert await alerts.delete(guild.xid, user.xid) is True
+
+        again = await alerts.delete(guild.xid, user.xid)
+
+        assert again is False
+
+    async def test_get_for_user_guild_excludes_soft_deleted_by_default(
+        self,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+        await alerts.upsert(guild.xid, user.xid, formats=[1])
+        await alerts.delete(guild.xid, user.xid)
+
+        assert await alerts.get_for_user_guild(guild.xid, user.xid) is None
+
+    async def test_get_for_user_guild_returns_soft_deleted_when_included(
+        self,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+        await alerts.upsert(
+            guild.xid,
+            user.xid,
+            formats=[1, 4],
+            brackets=[2],
+            channels=[42],
+            active_hours={"start": 17, "end": 22, "tz": "UTC"},
+        )
+        await alerts.delete(guild.xid, user.xid)
+
+        result = await alerts.get_for_user_guild(guild.xid, user.xid, include_deleted=True)
+
+        assert result is not None
+        assert result.deleted_at is not None
+        assert result.formats == [1, 4]
+        assert result.brackets == [2]
+        assert result.channels == [42]
+        assert result.active_hours == {"start": 17, "end": 22, "tz": "UTC"}
+
+    async def test_get_for_user_guild_include_deleted_returns_active_row(
+        self,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+        await alerts.upsert(guild.xid, user.xid, formats=[1])
+
+        result = await alerts.get_for_user_guild(guild.xid, user.xid, include_deleted=True)
+
+        assert result is not None
+        assert result.deleted_at is None
+        assert result.formats == [1]
+
+    async def test_upsert_restores_soft_deleted_record(
+        self,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create()
+        original = await alerts.upsert(
+            guild.xid,
+            user.xid,
+            formats=[1, 4],
+            brackets=[2],
+            channels=[42],
+            active_hours={"start": 17, "end": 22, "tz": "UTC"},
+        )
+        await alerts.delete(guild.xid, user.xid)
+        deleted = await alerts.get_for_user_guild(
+            guild.xid,
+            user.xid,
+            include_deleted=True,
+        )
+        assert deleted is not None
+        assert deleted.deleted_at is not None
+
+        restored = await alerts.upsert(
+            guild.xid,
+            user.xid,
+            formats=deleted.formats,
+            brackets=deleted.brackets,
+            channels=deleted.channels,
+            active_hours=deleted.active_hours,
+        )
+
+        assert restored.id == original.id
+        assert restored.deleted_at is None
+        assert restored.formats == [1, 4]
+        assert restored.brackets == [2]
+        assert restored.channels == [42]
+        assert restored.active_hours == {"start": 17, "end": 22, "tz": "UTC"}
+        active = await alerts.get_for_user_guild(guild.xid, user.xid)
+        assert active is not None
+        assert active.id == original.id
+
     async def test_upsert_persists_active_hours(
         self,
         guild: Guild,
