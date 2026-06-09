@@ -35,6 +35,13 @@ CONVOKE_PENDING_MSG = (
 )
 
 
+SUPPORT_CTA = (
+    "\n\n-# **Support SpellBot** — "
+    "Become [a patron](https://www.patreon.com/lexicalunit) "
+    "or give a [one-off tip](https://ko-fi.com/lexicalunit)."
+)
+
+
 @pytest_asyncio.fixture
 async def cog(bot: SpellBot) -> AdminCog:
     return AdminCog(bot)
@@ -359,11 +366,12 @@ class TestCogAdminInfo:
         await run_command(cog.info, interaction, game_id=f"SB#{game.id}")
         assert get_last_send_message(interaction, "embed") == {
             "color": settings.EMPTY_EMBED_COLOR,
-            "description": (f"{CONVOKE_PENDING_MSG}\n\n{game.guild.motd}\n\n{game.channel.motd}"),
+            "description": (f"{CONVOKE_PENDING_MSG}\n\n{game.guild.motd}\n\n{game.channel.motd}")
+            + SUPPORT_CTA,
             "fields": [
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
-                {"inline": False, "name": "Support SpellBot", "value": ANY},
+                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},

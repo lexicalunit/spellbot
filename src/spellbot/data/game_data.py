@@ -159,7 +159,17 @@ class GameData:
         )
         parts.extend(self.embed_description_extras(dm, suggested_vc, locale))
         parts.extend(self.embed_motd())
+        parts.append(self.embed_support(locale))
         return "\n\n".join(parts)
+
+    def embed_support(self, locale: str | None = None) -> str:
+        locale = locale or self.locale
+        return f"-# **{t('game.field.support', locale=locale)}** — " + t(
+            "game.field.support_text",
+            locale=locale,
+            subscribe=settings.SUBSCRIBE_LINK,
+            donate=settings.DONATE_LINK,
+        )
 
     @tracer.wrap()
     def to_embed(
@@ -235,12 +245,11 @@ class GameData:
                 inline=False,
             )
         embed.add_field(
-            name=t("game.field.support", locale=locale),
+            name=t("game.field.notify", locale=locale),
             value=t(
-                "game.field.support_text",
+                "game.field.notify_text",
                 locale=locale,
-                subscribe=settings.SUBSCRIBE_LINK,
-                donate=settings.DONATE_LINK,
+                queues=f"{settings.API_BASE_URL}/queues",
             ),
             inline=False,
         )
