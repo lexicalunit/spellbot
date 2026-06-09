@@ -30,9 +30,9 @@ ja:
       updated_at: "更新日時"
       voice_channel: "🔊 推奨ボイスチャンネル"
       support: "SpellBot を支援"
-      support_text: "Become [a patron](%{subscribe}) or give a [one-off tip](%{donate})."
-      notify: "🔔 Notifications"
-      notify_text: "[Get notified](%{queues}) when games open up!"
+      support_text: "[額で支援する](%{subscribe})か、[単発で支援する](%{donate})ことができます。"
+      notify: "🔔 お知らせ"
+      notify_text: "ゲームを開くと、[通知を受け取る](%{queues})！"
     footer: "SpellBot ゲームID：#SB%{game_id} — サービス：%{service}"
   # Game services pending messages
   service:
