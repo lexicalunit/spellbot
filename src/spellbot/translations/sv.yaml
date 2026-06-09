@@ -30,9 +30,9 @@ sv:
       updated_at: "Uppdaterad kl."
       voice_channel: "🔊 Föreslagen röstkanal"
       support: "Stötta SpellBot"
-      support_text: "Become [a patron](%{subscribe}) or give a [one-off tip](%{donate})."
-      notify: "🔔 Notifications"
-      notify_text: "[Get notified](%{queues}) when games open up!"
+      support_text: "Bli [donator](%{subscribe}) eller ge ett [engångsbidrag](%{donate})."
+      notify: "🔔 Aviseringar"
+      notify_text: "[Bli meddelad](%{queues}) när spel öppnas upp!"
     footer: "SpellBot-spel-ID: #SB%{game_id} — Tjänst: %{service}"
   # Game services pending messages
   service:
