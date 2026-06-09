@@ -451,7 +451,7 @@ wheels = [
 
 [[package]]
 name = "ddtrace"
-version = "4.8.6"
+version = "4.8.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bytecode" },
@@ -459,17 +459,17 @@ dependencies = [
     { name = "opentelemetry-api" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a4/21/ebf664bea056e97705af817bb57f09111d653663ef6b9e666eba6f37b9f8/ddtrace-4.8.6.tar.gz", hash = "sha256:614a863af0effe97670d63bcf166f044b4cbc88ec9185216863aa7330b929e2d", size = 2286510, upload-time = "2026-05-19T16:32:53.095Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/28/e2/305ba174b8658bf27f891e1764d7f0526b7ecaacce1e74e62a31845a27f3/ddtrace-4.8.7.tar.gz", hash = "sha256:543f4b496380d273cdc501f93ba680ed80962f1693d90e73d1fa12f45072f0a8", size = 2287068, upload-time = "2026-05-22T20:38:54.742Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a2/bf/30efae32458292e8fbaa93eea1a2e93bbf00efcc989016cd3274b7bae622/ddtrace-4.8.6-cp314-cp314-macosx_14_0_arm64.whl", hash = "sha256:da4464f033e6033848f44fc40527adbd3a9e3ce9b1b0ca2b45a0e40a0b78984b", size = 7458490, upload-time = "2026-05-19T16:31:55.333Z" },
-    { url = "https://files.pythonhosted.org/packages/50/05/b4b5939766ca89a6cf06ab045f10b39ca02039c024e2e0b1f4c7019bd6d0/ddtrace-4.8.6-cp314-cp314-macosx_14_0_x86_64.whl", hash = "sha256:e03d5d737b991038606578f46032e834095a1db9e795d295a5620153755a0056", size = 7874914, upload-time = "2026-05-19T16:31:58.806Z" },
-    { url = "https://files.pythonhosted.org/packages/8c/3f/8a6eee4b6a258b2dbf0a601e03be009faace07a1c77384e2ede19d345b1e/ddtrace-4.8.6-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:f62dbe9d5953f292df2ae38916353553978b4c8ebf9e9ffc9f36668f68b9cd14", size = 8937161, upload-time = "2026-05-19T16:32:01.589Z" },
-    { url = "https://files.pythonhosted.org/packages/fa/77/0491f55863271d026f422aed62575a87777b926bec9d2f64086c0eaa1088/ddtrace-4.8.6-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:283fea2c3de0b7f8468dbcc61317b95f9980c74d1e4abe274d6f268e745b41ac", size = 9226818, upload-time = "2026-05-19T16:32:05.172Z" },
-    { url = "https://files.pythonhosted.org/packages/df/ae/0d723cd125645c74b78bdd2959945b34d8b5cf1da0366f7f6f51e97dc78d/ddtrace-4.8.6-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:10bc168c0eaf55414e4208cd124332df3207867c3a090987633c990571b6746c", size = 9955177, upload-time = "2026-05-19T16:32:08.616Z" },
-    { url = "https://files.pythonhosted.org/packages/75/5b/ce588d6be4062b69f31c83121350b1f62f1daa158a0ba4e380bfe49b830f/ddtrace-4.8.6-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:1975356e9be02c62ba958c2afb0704ee32215e6c6aab64417c311c33bae006d2", size = 10304396, upload-time = "2026-05-19T16:32:11.91Z" },
-    { url = "https://files.pythonhosted.org/packages/1f/69/623d37cbf27bc63d79855530748d21184e8ae569b22b367641ac65d208b9/ddtrace-4.8.6-cp314-cp314-win32.whl", hash = "sha256:eb2b69961278ddb97debe5700a630506bbb02ed1472e89793e8197840e9913d2", size = 5669961, upload-time = "2026-05-19T16:32:16.15Z" },
-    { url = "https://files.pythonhosted.org/packages/81/a9/64a248a9af2b41d033cc69a38b2fd7dd6f4c8a92fe94f5d4695d7121b606/ddtrace-4.8.6-cp314-cp314-win_amd64.whl", hash = "sha256:85807c7f9f659d695eb44a99f5a47bf17fe786726f595dee258bf732bb8faa7f", size = 6286143, upload-time = "2026-05-19T16:32:19.213Z" },
-    { url = "https://files.pythonhosted.org/packages/89/e0/f14ebb0864d13459e1182da63cef8f047ac61a35bc80d7804e2822770947/ddtrace-4.8.6-cp314-cp314-win_arm64.whl", hash = "sha256:f7215a687d3f8a195185e5e77bf5f381edbdce629aff51b460ec44f2f6832533", size = 5980281, upload-time = "2026-05-19T16:32:22.416Z" },
+    { url = "https://files.pythonhosted.org/packages/67/a0/f0d066a63051bf76464ee46d4e38ff80fa015d5b97af6cf7f8e95c9d049f/ddtrace-4.8.7-cp314-cp314-macosx_14_0_arm64.whl", hash = "sha256:6e65fe1578e6796dff6c01105209521b5f40a92a4c4aa736a28cfa2c5b5f4117", size = 7458731, upload-time = "2026-05-22T20:37:59.234Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/af/ca133a24f9f0f4a1fcc864ff53bab18f521361b8f30ddf85c2cc2cdd89c5/ddtrace-4.8.7-cp314-cp314-macosx_14_0_x86_64.whl", hash = "sha256:4ced2d9f31865d6ba7c216fc49386b7fb2993d21df68ef10f3bdc96c5601c918", size = 7875193, upload-time = "2026-05-22T20:38:01.951Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/79/6a834cf62e64aace78536e67f0b22d9a270176d60da619e487c877f56d64/ddtrace-4.8.7-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:3db21da268e931826e6cac793d725dade4b94fbe0a611bcb7e0b72d567e53976", size = 8937417, upload-time = "2026-05-22T20:38:04.879Z" },
+    { url = "https://files.pythonhosted.org/packages/b9/9d/50605611a90c33ee4f222dd1b6efa39c826f42430a59a0bebe3c48180481/ddtrace-4.8.7-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:f417103e11b74bd3f4738831e9a9be0cbf7458547286986c70da0fb591a08296", size = 9227075, upload-time = "2026-05-22T20:38:07.983Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/21/317187a16f589c8baa6f148f6990c3597f533f0f42dc50876a2c0861cc5f/ddtrace-4.8.7-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:346cb43072004614f1ac1cac9a90a4bea139ee36a77b45470b89984a8e2928ca", size = 9955437, upload-time = "2026-05-22T20:38:11.363Z" },
+    { url = "https://files.pythonhosted.org/packages/63/61/fc4c1fc71937c2343ca5be803ddce18bcbbb2e137fb6122851d9288ba3a6/ddtrace-4.8.7-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:805a6e2e619068be89add007f46009dfc555ed04af59cd57c0466bd0ca400316", size = 10304661, upload-time = "2026-05-22T20:38:14.623Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/f7/aef4143741ecfe20d0a239ea8764e04344fdd2079bb79178c5b16d0f8f3f/ddtrace-4.8.7-cp314-cp314-win32.whl", hash = "sha256:4a0400d43c7b0c7e00d0262fa0d3c0dcea3ff474adc4631bc061b6a877188ef3", size = 5670230, upload-time = "2026-05-22T20:38:18.19Z" },
+    { url = "https://files.pythonhosted.org/packages/90/2b/ec601c39c3b7fb6a793f3836bdcc2026f11617699bd9dcc7d06dcec596a4/ddtrace-4.8.7-cp314-cp314-win_amd64.whl", hash = "sha256:50b3909de7f8213bfeefb1d37a811711af9d706700a940ff5d4a449a98b29fe0", size = 6286417, upload-time = "2026-05-22T20:38:21.033Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/b1/e6d03793f5d1196c6167302cd5aecb2f09939283714e4eba5d82e625a25a/ddtrace-4.8.7-cp314-cp314-win_arm64.whl", hash = "sha256:246a3230bc23e60f65edac0e000d7df2fe2a95bff2f20f2166fc0ef2250652bd", size = 5980557, upload-time = "2026-05-22T20:38:24.496Z" },
 ]
 
 [[package]]
