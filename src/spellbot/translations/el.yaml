@@ -30,7 +30,9 @@ el:
       updated_at: "Ενημερώθηκε στις"
       voice_channel: "🔊 Προτεινόμενο φωνητικό κανάλι"
       support: "Υποστήριξη SpellBot"
-      support_text: "Γίνετε [μηνιαίος χορηγός](%{subscribe}) ή δώστε ένα [εφάπαξ φιλοδώρημα](%{donate})."
+      support_text: "Become [a patron](%{subscribe}) or give a [one-off tip](%{donate})."
+      notify: "🔔 Notifications"
+      notify_text: "[Get notified](%{queues}) when games open up!"
     footer: "ID παιχνιδιού SpellBot: #SB%{game_id} — Υπηρεσία: %{service}"
   # Game services pending messages
   service:
