@@ -195,6 +195,57 @@ async def game_detail_view(game_id: int) -> dict[str, Any] | None:
     }
 
 
+async def guild_detail_view(guild_xid: int) -> dict[str, Any] | None:
+    """
+    Return public guild info plus the channels that have game records.
+
+    Intended for the public guild (server history) web page. Channels are
+    ordered by most-recent activity and carry a count of games. This matches the
+    channel records page's notion of a "record": a game with a post in that
+    channel. Returns `None` when the guild is unknown.
+    """
+    guild = (
+        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
+    ).scalar_one_or_none()
+    if guild is None:
+        return None
+
+    games_count = func.count(func.distinct(Game.id)).label("games")
+    last_updated_at = func.max(Game.updated_at).label("last_updated_at")
+    rows = (
+        await DatabaseSession.execute(
+            select(
+                Channel.xid,  # type: ignore
+                Channel.name,
+                games_count,
+                last_updated_at,
+            )
+            .select_from(Game)
+            .join(Post, Post.game_id == Game.id)
+            .join(Channel, Channel.xid == Game.channel_xid)
+            .where(Game.guild_xid == guild_xid)
+            .group_by(Channel.xid, Channel.name)
+            .order_by(last_updated_at.desc()),
+        )
+    ).all()
+
+    return {
+        "guild": {
+            "xid": guild.xid,
+            "name": guild.name,
+        },
+        "channels": [
+            {
+                "xid": int(row[0]),
+                "name": row[1],
+                "games": int(row[2]),
+                "last_updated_at": to_ms(row[3]),
+            }
+            for row in rows
+        ],
+    }
+
+
 @tracer.wrap()
 async def add_player(game_data: GameData, player_xid: int) -> GameData:
     """Add the player with the given id to the given game."""

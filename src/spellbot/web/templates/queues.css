@@ -156,7 +156,6 @@ a:hover {
 }
 .filters__logout:hover {
   color: var(--link-hover);
-  text-decoration: underline;
 }
 .filters__login {
   display: inline-flex;
@@ -381,6 +380,14 @@ a:hover {
   color: var(--text);
   word-break: break-word;
   line-height: 1.25;
+}
+.queue-card__server-link {
+  color: inherit;
+  text-decoration: none;
+}
+.queue-card__server-link:hover,
+.queue-card__server-link:focus-visible {
+  color: var(--link-hover);
 }
 .queue-card__actions {
   display: flex;

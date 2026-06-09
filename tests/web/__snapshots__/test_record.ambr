@@ -573,6 +573,512 @@
   </html>
   '''
 # ---
+# name: TestWebGuildDetail.test_guild_detail
+  '''
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+      <title>guild</title>
+      <meta name="author" content="Amy Troschinetz">
+      <meta name="description" content="SpellBot game records">
+      <meta name="theme-color" content="#5A3EFD">
+      <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
+      <style>
+          * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  
+  a,
+  a:visited,
+  a:active {
+    color: rgba(246, 173, 75);
+    text-decoration: none;
+  }
+  a:hover {
+    filter: brightness(150%);
+  }
+  
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #333;
+  }
+  .header img {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+  }
+  .header .titles {
+    flex: 1;
+    min-width: 0;
+  }
+  .header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    word-break: break-word;
+  }
+  .header .subtitle {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+  }
+  
+  .section {
+    margin-bottom: 1.5rem;
+  }
+  .section h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #c4b5fd;
+    margin-bottom: 0.5rem;
+  }
+  
+  .card {
+    background: #252545;
+    border-radius: 12px;
+    padding: 1.25rem;
+    overflow-x: auto;
+  }
+  
+  .empty {
+    color: #9ca3af;
+    font-style: italic;
+    padding: 0.5rem 0;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  table th,
+  table td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    vertical-align: top;
+  }
+  table thead th {
+    color: #9ca3af;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #333;
+    white-space: nowrap;
+  }
+  table tbody tr + tr td {
+    border-top: 1px solid #2a2a4a;
+  }
+  table tbody tr:nth-child(even) td {
+    background: #1a1a35;
+  }
+  table tbody td {
+    color: #e0e0e0;
+    font-size: 0.9rem;
+  }
+  
+  .user-id {
+    font-family: monospace;
+    color: #9ca3af;
+    font-size: 0.85rem;
+  }
+  
+  .id-copy {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+  
+  .copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-left: 0.35rem;
+    border-radius: 4px;
+    background: #1e1e3f;
+    border: 1px solid #333;
+    color: #c4b5fd;
+    font-size: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+    vertical-align: middle;
+  }
+  .copy:hover {
+    background: #2a2a55;
+  }
+  .copy.copied {
+    color: #4ade80;
+  }
+  
+  .players {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .player {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+  .player .name {
+    color: #e0e0e0;
+  }
+  
+  .button {
+    display: inline-block;
+    background: #1e1e3f;
+    color: #c4b5fd;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.7rem;
+    min-width: 6.5rem;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .button:hover {
+    background: #2a2a55;
+    filter: none;
+  }
+  a.button,
+  a.button:visited,
+  a.button:active {
+    color: #c4b5fd;
+  }
+  a.button:hover {
+    color: #c4b5fd;
+    text-decoration: none;
+  }
+  
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+  }
+  
+  .filters {
+    background: #1e1e3f;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .filters .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+  .filters .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 12rem;
+    min-width: 10rem;
+  }
+  .filters label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .filters input,
+  .filters select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .filters select[multiple] {
+    min-height: 5.5rem;
+  }
+  .filters .actions {
+    margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+  
+  table thead th .sort {
+    color: #9ca3af;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  table thead th .sort:hover {
+    color: #c4b5fd;
+  }
+  table thead th .sort .arrow {
+    margin-left: 0.25rem;
+    color: #c4b5fd;
+  }
+  
+  .count {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
+  
+  .footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #333;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+  
+  @media (max-width: 720px) {
+    body {
+      padding: 1rem;
+    }
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    table thead {
+      display: none;
+    }
+    table,
+    table tbody,
+    table tr,
+    table td {
+      display: block;
+      width: 100%;
+    }
+    table tbody tr {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #2a2a4a;
+    }
+    table tbody tr + tr td {
+      border-top: none;
+    }
+    table tbody td {
+      padding: 0.5rem 0.75rem;
+    }
+    table tbody td::before {
+      content: attr(data-label);
+      display: block;
+      color: #9ca3af;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+  }
+      </style>
+  </head>
+  <body>
+      <div class="container">
+          <div class="header">
+              <a href="https://spellbot.io/">
+                  <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+              </a>
+              <div class="titles">
+                  <h1>guild</h1>
+                  
+  <div class="subtitle">
+      <a href="https://discord.com/channels/201">Open in Discord</a>
+      &middot; <a href="/queues/g/201">Notification preferences</a>
+      <span class="user-id">201</span>
+      &middot; 2 channels with games
+  </div>
+  
+              </div>
+          </div>
+  
+          
+  <div class="section">
+      <h2>Channels</h2>
+      
+      <div class="card">
+          <table>
+              <thead>
+                  <tr><th>Channel</th><th>Channel ID</th><th>Games</th><th>Last Activity</th></tr>
+              </thead>
+              <tbody>
+                  
+                  <tr>
+                      <td data-label="Channel">
+                          <a href="/g/201/c/301">#channel-one</a>
+                      </td>
+                      <td data-label="Channel ID">
+                          <span class="id-copy">
+                              <span class="user-id">301</span>
+                              <button type="button" class="copy" data-copy="301" title="Copy Channel ID">⎘</button>
+                          </span>
+                      </td>
+                      <td data-label="Games">1</td>
+                      <td data-label="Last Activity">
+                          <span class="timestamp">1577836800000.0</span>
+                      </td>
+                  </tr>
+                  
+                  <tr>
+                      <td data-label="Channel">
+                          <a href="/g/201/c/302">#channel-two</a>
+                      </td>
+                      <td data-label="Channel ID">
+                          <span class="id-copy">
+                              <span class="user-id">302</span>
+                              <button type="button" class="copy" data-copy="302" title="Copy Channel ID">⎘</button>
+                          </span>
+                      </td>
+                      <td data-label="Games">1</td>
+                      <td data-label="Last Activity">
+                          <span class="timestamp">1577836800000.0</span>
+                      </td>
+                  </tr>
+                  
+              </tbody>
+          </table>
+      </div>
+      
+  </div>
+  
+  
+          
+  
+          <div class="footer">
+              <p>Generated by <a href="https://spellbot.io/">SpellBot</a></p>
+          </div>
+      </div>
+  
+      <script
+          src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"
+          integrity="sha256-0H3Nuz3aug3afVbUlsu12Puxva3CP4EhJtPExqs54Vg="
+          crossorigin="anonymous"></script>
+  
+      <script
+          src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+          integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"></script>
+  
+      <script
+          src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.34/moment-timezone-with-data.js"
+          integrity="sha512-oqSECbLRRAy3Sq2tJ0RmzbqXHprFS+n7WapvpI1t0V7CtV4vghscIQ8MYoQo6tp4MrJmih4SlOaYuCkPRi3j6A=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"></script>
+  
+      <script>
+          const timezoneOffsetCookie = 'timezone_offset';
+          const timezoneNameCookie = 'timezone_name';
+          const testCookie = 'test';
+          const lang = navigator.languages != undefined ?
+                          navigator.languages[0] :
+                          undefined;
+          const today = new Date();
+          const zone = moment.tz.guess();
+          const offset = today.getTimezoneOffset();
+  
+          if (!Cookies.get(timezoneOffsetCookie) || !Cookies.get(timezoneNameCookie)) {
+              Cookies.set(testCookie, true);
+              if (Cookies.get(testCookie)) {
+                  Cookies.set(testCookie, null);
+                  Cookies.set(timezoneOffsetCookie, offset);
+                  Cookies.set(timezoneNameCookie, zone);
+                  location.reload();
+              }
+          } else {
+              const storedOffset = parseInt(Cookies.get(timezoneOffsetCookie));
+              const storedZone = Cookies.get(timezoneNameCookie);
+              if (storedOffset !== offset || storedZone !== zone) {
+                  Cookies.set(timezoneOffsetCookie, offset);
+                  Cookies.set(timezoneNameCookie, zone);
+                  location.reload();
+              }
+          }
+  
+          function humanize_timestamp(ts) {
+              const options = {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour12: true,
+                  hour: 'numeric',
+                  minute: 'numeric',
+                  timeZoneName: 'short',
+              };
+              return (new Date(ts)).toLocaleDateString(lang, options);
+          }
+  
+          Array.from(document.getElementsByClassName('timestamp')).forEach((el) => {
+              el.innerHTML = humanize_timestamp(Number(el.innerHTML));
+          });
+  
+          // Make `<select multiple>` toggle on plain click instead of requiring
+          // Ctrl/Cmd-click. Intercept `mousedown` on each option, suppress the
+          // native replace-selection behavior, and flip the option's selected
+          // state so single clicks add or remove items from the selection.
+          document.querySelectorAll('select[multiple]').forEach((select) => {
+              select.addEventListener('mousedown', (event) => {
+                  if (event.target.tagName !== 'OPTION') return;
+                  event.preventDefault();
+                  event.target.selected = !event.target.selected;
+                  select.focus();
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+              });
+          });
+  
+          document.querySelectorAll('.copy').forEach((el) => {
+              el.addEventListener('click', async (event) => {
+                  event.preventDefault();
+                  const value = el.dataset.copy;
+                  let ok = false;
+                  try {
+                      await navigator.clipboard.writeText(value);
+                      ok = true;
+                  } catch (e) {
+                      const temp = document.createElement('input');
+                      temp.value = value;
+                      document.body.appendChild(temp);
+                      temp.select();
+                      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+                      temp.remove();
+                  }
+                  const orig = el.textContent;
+                  el.textContent = ok ? '\u2713' : '\u2717';
+                  el.classList.add('copied');
+                  setTimeout(() => {
+                      el.textContent = orig;
+                      el.classList.remove('copied');
+                  }, 1200);
+              });
+          });
+      </script>
+  </body>
+  </html>
+  '''
+# ---
 # name: TestWebRecord.test_channel_record
   '''
   <!DOCTYPE html>

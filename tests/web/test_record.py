@@ -872,3 +872,99 @@ class TestWebGameDetail:
     async def test_game_detail_invalid_id(self, client: ClientSession) -> None:
         resp = await client.get("/game/abc")
         assert resp.status == 404
+
+
+@pytest.mark.asyncio
+class TestWebGuildDetail:
+    async def test_guild_detail(
+        self,
+        client: ClientSession,
+        snapshot: SnapshotAssertion,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
+        guild = factories.guild.create(xid=201, name="guild")
+        channel1 = factories.channel.create(xid=301, name="channel-one", guild=guild)
+        channel2 = factories.channel.create(xid=302, name="channel-two", guild=guild)
+        game1 = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel1,
+            created_at=datetime.now(tz=UTC),
+            updated_at=datetime.now(tz=UTC),
+        )
+        factories.post.create(guild=guild, channel=channel1, game=game1, message_xid=901)
+        game2 = factories.game.create(
+            id=2,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.STANDARD.value,
+            guild=guild,
+            channel=channel2,
+            created_at=datetime.now(tz=UTC),
+            updated_at=datetime.now(tz=UTC),
+        )
+        factories.post.create(guild=guild, channel=channel2, game=game2, message_xid=902)
+
+        resp = await client.get(f"/g/{guild.xid}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert text == snapshot
+
+    async def test_guild_detail_only_lists_channels_with_posts(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild")
+        posted = factories.channel.create(xid=301, name="posted", guild=guild)
+        bare = factories.channel.create(xid=302, name="bare", guild=guild)
+        game = factories.game.create(id=1, guild=guild, channel=posted)
+        factories.post.create(guild=guild, channel=posted, game=game, message_xid=901)
+        # A game without a post should not surface its channel.
+        factories.game.create(id=2, guild=guild, channel=bare)
+
+        resp = await client.get(f"/g/{guild.xid}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "posted" in text
+        assert "bare" not in text
+        assert f"/g/{guild.xid}/c/{posted.xid}" in text
+
+    async def test_guild_detail_with_cookies(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(id=1, guild=guild, channel=channel)
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
+        resp = await client.get(
+            f"/g/{guild.xid}",
+            cookies={"timezone_offset": "480", "timezone_name": "America/Los_Angeles"},
+        )
+        assert resp.status == 200
+
+    async def test_guild_detail_no_channels(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild")
+        resp = await client.get(f"/g/{guild.xid}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "No channels with games yet." in text
+
+    async def test_guild_detail_missing(self, client: ClientSession) -> None:
+        resp = await client.get("/g/99999")
+        assert resp.status == 404
+
+    async def test_guild_detail_invalid_id(self, client: ClientSession) -> None:
+        resp = await client.get("/g/abc")
+        assert resp.status == 404

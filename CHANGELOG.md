@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added a server page with details that links to the notifications page and channel histories.
+
 ## [v20.10.0](https://github.com/lexicalunit/spellbot/releases/tag/v20.10.0) - 2026-06-09
 
 ### Added

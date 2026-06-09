@@ -147,7 +147,7 @@
                         loading="lazy"
                     >
                     <div class="queue-card__heading">
-                        <h2 class="queue-card__server">{{ row.guild_name or "SpellBot Server" }}</h2>
+                        <h2 class="queue-card__server"><a class="queue-card__server-link" href="/g/{{ row.guild_xid }}">{{ row.guild_name or "SpellBot Server" }}</a></h2>
                         <div class="queue-card__actions">
                             <a
                                 class="queue-card__notify"
@@ -210,7 +210,7 @@
                         loading="lazy"
                     >
                     <div class="queue-card__heading">
-                        <h2 class="queue-card__server">{{ game.guild_name or "SpellBot Server" }}</h2>
+                        <h2 class="queue-card__server"><a class="queue-card__server-link" href="/g/{{ game.guild_xid }}">{{ game.guild_name or "SpellBot Server" }}</a></h2>
                         <div class="queue-card__actions">
                             <a
                                 class="queue-card__notify"

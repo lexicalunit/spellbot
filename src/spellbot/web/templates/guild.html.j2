@@ -1,0 +1,49 @@
+{% extends "record_base.html.j2" %}
+{% block title %}{{ guild.name | default('SpellBot Server', true) }}{% endblock %}
+{% block heading %}{{ guild.name | default('SpellBot Server', true) }}{% endblock %}
+{% block subtitle %}
+<div class="subtitle">
+    <a href="https://discord.com/channels/{{ guild.xid }}">Open in Discord</a>
+    &middot; <a href="/queues/g/{{ guild.xid }}">Notification preferences</a>
+    <span class="user-id">{{ guild.xid }}</span>
+    &middot; {{ channels | length }} channel{{ '' if channels | length == 1 else 's' }} with games
+</div>
+{% endblock %}
+{% block content %}
+<div class="section">
+    <h2>Channels</h2>
+    {% if channels %}
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Channel</th><th>Channel ID</th><th>Games</th><th>Last Activity</th></tr>
+            </thead>
+            <tbody>
+                {% for channel in channels %}
+                <tr>
+                    <td data-label="Channel">
+                        <a href="/g/{{ guild.xid }}/c/{{ channel.xid }}">#{{ channel.name | default('Unknown Channel', true) }}</a>
+                    </td>
+                    <td data-label="Channel ID">
+                        <span class="id-copy">
+                            <span class="user-id">{{ channel.xid }}</span>
+                            <button type="button" class="copy" data-copy="{{ channel.xid }}" title="Copy Channel ID">⎘</button>
+                        </span>
+                    </td>
+                    <td data-label="Games">{{ "{:,}".format(channel.games) }}</td>
+                    <td data-label="Last Activity">
+                        {% if tz_offset and tz_name %}{{ channel.last_updated_at | humanize(tz_offset, tz_name) }}
+                        {% else %}<span class="timestamp">{{ channel.last_updated_at }}</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card">
+        <p class="empty">No channels with games yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
