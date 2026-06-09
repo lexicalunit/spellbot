@@ -52,6 +52,14 @@ uv run spellbot --dev
 
 This will start SpellBot and reload it whenever the source code changes.
 
+You may also want to use `--mock-games` and `--disable-tasks` for development purposes. Additionally you may want to start a seperate process for the API with `uv run spellbot --dev --api` so that you can test API changes locally as well.
+
+To start everything in development mode just use:
+
+```shell
+make dev
+```
+
 ## Running tests
 
 ```shell

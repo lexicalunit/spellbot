@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added a `make dev` command for easier local development.
+- A CTA for notification support so people can discover this feature more easily.
+
 ## [v20.9.2](https://github.com/lexicalunit/spellbot/releases/tag/v20.9.2) - 2026-06-03
 
 ### Changed

@@ -1,4 +1,4 @@
-.PHONY: all install test lint format typecheck check clean session-key
+.PHONY: all install test lint format typecheck check dev clean session-key
 .PHONY: infra-stage infra-prod infra-o11y
 
 all: check
@@ -23,6 +23,13 @@ typecheck: install
 	@uv run --frozen pyright
 
 check: lint typecheck test
+
+dev: install
+	@echo "starting bot (-dmt) and api (-da)..."
+	@trap 'kill 0' EXIT INT TERM; \
+		uv run --frozen spellbot -dmt < /dev/null & \
+		uv run --frozen spellbot -da < /dev/null & \
+		wait
 
 session-key: install
 	@uv run --frozen python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
