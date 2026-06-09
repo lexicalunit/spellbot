@@ -30,9 +30,9 @@ pl:
       updated_at: "Zaktualizowano o"
       voice_channel: "🔊 Sugerowany kanał głosowy"
       support: "Wesprzyj SpellBota"
-      support_text: "Become [a patron](%{subscribe}) or give a [one-off tip](%{donate})."
-      notify: "🔔 Notifications"
-      notify_text: "[Get notified](%{queues}) when games open up!"
+      support_text: "Zostań [patronem](%{subscribe}) lub daj [jednorazowy napiwek](%{donate})."
+      notify: "🔔 Powiadomienia"
+      notify_text: "[Otrzymuj powiadomienie](%{queues}) gdy gry są otwarte!"
     footer: "Identyfikator meczu SpellBota: #SB%{game_id} — usługa: %{service}"
   # Game services pending messages
   service:
