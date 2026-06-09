@@ -30,9 +30,9 @@ fr:
       updated_at: "Mis à jour à"
       voice_channel: "🔊 Canal vocal suggéré"
       support: "SpellBot pris en charge"
-      support_text: "Become [a patron](%{subscribe}) or give a [one-off tip](%{donate})."
+      support_text: "Devenez [un client](%{subscribe}) ou donnez une [astuce unique](%{donate})."
       notify: "🔔 Notifications"
-      notify_text: "[Get notified](%{queues}) when games open up!"
+      notify_text: "[Recevez une notification](%{queues}) lorsque des jeux s'ouvrent !"
     footer: "ID Jeu SpellBot : #SB%{game_id} — Service : %{service}"
   # Game services pending messages
   service:
