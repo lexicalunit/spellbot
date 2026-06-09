@@ -370,6 +370,39 @@ async def game_endpoint(request: web.Request) -> web.Response:
         return await game_impl(request)
 
 
+async def guild_impl(request: web.Request) -> web.Response:
+    try:
+        guild_xid = int(request.match_info["guild"])
+    except ValueError:
+        return web.Response(status=404)
+    guild = await services.games.guild_detail_view(guild_xid)
+    if guild is None:
+        return web.Response(status=404)
+
+    tz_offset_cookie = request.cookies.get("timezone_offset")
+    tz_offset: int | None = None
+    if tz_offset_cookie:
+        with suppress(ValueError):
+            tz_offset = int(tz_offset_cookie)
+    tz_name = request.cookies.get("timezone_name")
+
+    context = {
+        "guild": guild["guild"],
+        "channels": guild["channels"],
+        "tz_offset": tz_offset,
+        "tz_name": tz_name,
+    }
+    return aiohttp_jinja2.render_template("guild.html.j2", request, context)
+
+
+@routes.get(r"/g/{guild}")
+@tracer.wrap(name="web", resource="guild_detail")
+async def guild_endpoint(request: web.Request) -> web.Response:
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        return await guild_impl(request)
+
+
 def csv_line(values: list[Any]) -> bytes:
     """Serialize a single CSV row to UTF-8 bytes."""
     buf = io.StringIO()
