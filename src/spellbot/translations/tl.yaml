@@ -30,9 +30,9 @@ tl:
       updated_at: "Na-update noong"
       voice_channel: "🔊 Iminumungkahing Voice Channel"
       support: "Suportahan ang SpellBot"
-      support_text: "Become [a patron](%{subscribe}) or give a [one-off tip](%{donate})."
-      notify: "🔔 Notifications"
-      notify_text: "[Get notified](%{queues}) when games open up!"
+      support_text: "Maging [patron](%{subscribe}) o magbigay ng [minsanang tip](%{donate})."
+      notify: "🔔 Mga abiso"
+      notify_text: "[Maabisuhan](%{queues}) kapag nagbukas ang mga laro!"
     footer: "SpellBot Game ID: #SB%{game_id} — Serbisyo: %{service}"
   # Game services pending messages
   service:
