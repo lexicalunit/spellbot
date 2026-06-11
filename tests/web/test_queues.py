@@ -1664,3 +1664,16 @@ class TestQueuesAdminLink:
         body = await resp.text()
         assert 'class="page-header__admin" href="/admin/dashboard"' in body
         assert "Admin Dashboard" in body
+
+    async def test_admin_session_is_logged_in_as_viewer(
+        self,
+        admin_session_client: WebClient,
+    ) -> None:
+        # An admin session is honored as a viewer identity on /queues, but the
+        # viewer logout (a no-op against the admin session) is hidden.
+        resp = await admin_session_client.get("/queues")
+        assert resp.status == 200
+        body = await resp.text()
+        assert "Logged in as" in body
+        assert 'action="/queues/logout"' not in body
+        assert 'class="filters__login"' not in body

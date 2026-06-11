@@ -356,4 +356,20 @@ class TestAdminLogout:
         )
         resp = await client.post("/admin/logout", allow_redirects=False)
         assert resp.status == 302
-        assert resp.headers["Location"] == "/admin/login"
+        # Redirect carries `logged_out=1` so `/admin/login` shows the signed-out
+        # landing instead of auto-bouncing back through Discord's still-valid grant.
+        assert resp.headers["Location"] == "/admin/login?logged_out=1"
+
+    async def test_logged_out_landing_does_not_start_oauth(
+        self,
+        client: WebClient,
+        mocker: MockerFixture,
+    ) -> None:
+        await configure_admin(mocker)
+        resp = await client.get("/admin/login?logged_out=1", allow_redirects=False)
+        assert resp.status == 200
+        body = await resp.text()
+        assert "You've been signed out" in body
+        # The manual sign-in link is present, but no automatic OAuth redirect.
+        assert 'href="/admin/login"' in body
+        assert admin_auth.DISCORD_AUTHORIZE_URL not in body

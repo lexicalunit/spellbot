@@ -72,9 +72,11 @@
                 </label>
                 <div class="filters__identity">
                     <span class="filters__identity-name">Logged in as <strong>{{ viewer.name }}</strong></span>
+                    {% if not viewer.via_admin %}
                     <form method="post" action="/queues/logout" class="filters__logout-form">
                         <button type="submit" class="filters__logout">Log out</button>
                     </form>
+                    {% endif %}
                 </div>
                 {% elif viewer.login_enabled %}
                 <a class="filters__login" href="/queues/login" rel="nofollow">

@@ -5,6 +5,7 @@ import secrets
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
+import aiohttp_jinja2
 import httpx
 from aiohttp import web
 from aiohttp_session import Session, get_session, new_session
@@ -32,6 +33,12 @@ routes = web.RouteTableDef()
 
 SESSION_COOKIE_NAME = "spellbot_admin"
 SESSION_MAX_AGE_S = 60 * 60 * 24  # 24 hours
+
+# Session keys for the authenticated admin's Discord identity. The viewer flow
+# reads these (but never writes them) so that an admin session is also honored
+# as a viewer on `/queues`; see `viewer_auth.get_viewer`.
+ADMIN_XID_KEY = "xid"
+ADMIN_NAME_KEY = "name"
 
 # Routes inside /admin/* that do not require an authenticated session.
 PUBLIC_ADMIN_PATHS: frozenset[str] = frozenset(
@@ -91,7 +98,7 @@ async def get_admin_user_xid(request: web.Request) -> int | None:
     at the user's next login (bounded by `SESSION_MAX_AGE_S`).
     """
     session = await get_session(request)
-    xid = session.get("xid")
+    xid = session.get(ADMIN_XID_KEY)
     if not isinstance(xid, int):
         return None
     return xid
@@ -99,7 +106,7 @@ async def get_admin_user_xid(request: web.Request) -> int | None:
 
 def is_owner_session(session: Session) -> bool:
     """Return True when the admin session belongs to the configured bot owner."""
-    xid = session.get("xid")
+    xid = session.get(ADMIN_XID_KEY)
     return settings.OWNER_XID is not None and xid == settings.OWNER_XID
 
 
@@ -131,6 +138,11 @@ async def admin_login(request: web.Request) -> web.StreamResponse:
         return web.Response(status=503, text="Admin dashboard is not configured.")
     if (canonical := canonical_host_redirect(request)) is not None:
         return canonical
+    # Arriving here straight from logout must NOT auto-start OAuth: Discord still
+    # holds the user's authorization grant and would silently bounce them right
+    # back in. Show a landing page with an explicit "Sign in" affordance instead.
+    if request.query.get("logged_out"):
+        return aiohttp_jinja2.render_template("admin_logged_out.html.j2", request, {})
     state = secrets.token_urlsafe(32)
     session = await new_session(request)
     session["oauth_state"] = state
@@ -188,8 +200,8 @@ async def admin_oauth_callback(request: web.Request) -> web.StreamResponse:
 
     session.invalidate()
     session = await new_session(request)
-    session["xid"] = xid
-    session["name"] = display_name(user, xid)
+    session[ADMIN_XID_KEY] = xid
+    session[ADMIN_NAME_KEY] = display_name(user, xid)
     return web.HTTPFound("/admin/dashboard")
 
 
@@ -198,4 +210,4 @@ async def admin_logout(request: web.Request) -> web.StreamResponse:
     """Clear the admin session."""
     session = await get_session(request)
     session.invalidate()
-    return web.HTTPFound("/admin/login")
+    return web.HTTPFound("/admin/login?logged_out=1")

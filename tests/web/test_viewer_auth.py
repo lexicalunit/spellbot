@@ -7,11 +7,13 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 
 from spellbot.web.api import oauth, viewer_auth
+from spellbot.web.api.admin_auth import ADMIN_NAME_KEY, ADMIN_XID_KEY
 from spellbot.web.api.oauth import DISCORD_AUTHORIZE_URL, canonical_host_redirect
 from spellbot.web.api.viewer_auth import (
     VIEWER_NAME_KEY,
     VIEWER_XID_KEY,
     get_viewer,
+    has_viewer_session,
     viewer_oauth_redirect_uri,
 )
 from tests.web.test_admin_auth import make_httpx_client
@@ -111,6 +113,69 @@ class TestGetViewer:
             AsyncMock(return_value={VIEWER_XID_KEY: 7, VIEWER_NAME_KEY: 123}),
         )
         assert await get_viewer(MagicMock()) == (7, None)
+
+    async def test_falls_back_to_admin_session(self, mocker: MockerFixture) -> None:
+        # An admin session (no viewer keys) is honored as a viewer identity.
+        mocker.patch(
+            "spellbot.web.api.viewer_auth.get_session",
+            AsyncMock(return_value={ADMIN_XID_KEY: 9, ADMIN_NAME_KEY: "Boss"}),
+        )
+        assert await get_viewer(MagicMock()) == (9, "Boss")
+
+    async def test_admin_fallback_non_str_name(self, mocker: MockerFixture) -> None:
+        mocker.patch(
+            "spellbot.web.api.viewer_auth.get_session",
+            AsyncMock(return_value={ADMIN_XID_KEY: 9, ADMIN_NAME_KEY: 123}),
+        )
+        assert await get_viewer(MagicMock()) == (9, None)
+
+    async def test_viewer_session_takes_precedence_over_admin(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.web.api.viewer_auth.get_session",
+            AsyncMock(
+                return_value={
+                    VIEWER_XID_KEY: 7,
+                    VIEWER_NAME_KEY: "Amy",
+                    ADMIN_XID_KEY: 9,
+                    ADMIN_NAME_KEY: "Boss",
+                },
+            ),
+        )
+        assert await get_viewer(MagicMock()) == (7, "Amy")
+
+    async def test_admin_fallback_non_int_xid(self, mocker: MockerFixture) -> None:
+        mocker.patch(
+            "spellbot.web.api.viewer_auth.get_session",
+            AsyncMock(return_value={ADMIN_XID_KEY: "nope"}),
+        )
+        assert await get_viewer(MagicMock()) == (None, None)
+
+
+@pytest.mark.asyncio
+class TestHasViewerSession:
+    async def test_true_with_viewer_key(self, mocker: MockerFixture) -> None:
+        mocker.patch(
+            "spellbot.web.api.viewer_auth.get_session",
+            AsyncMock(return_value={VIEWER_XID_KEY: 7}),
+        )
+        assert await has_viewer_session(MagicMock()) is True
+
+    async def test_false_with_admin_key_only(self, mocker: MockerFixture) -> None:
+        mocker.patch(
+            "spellbot.web.api.viewer_auth.get_session",
+            AsyncMock(return_value={ADMIN_XID_KEY: 9}),
+        )
+        assert await has_viewer_session(MagicMock()) is False
+
+    async def test_false_when_empty(self, mocker: MockerFixture) -> None:
+        mocker.patch(
+            "spellbot.web.api.viewer_auth.get_session",
+            AsyncMock(return_value={}),
+        )
+        assert await has_viewer_session(MagicMock()) is False
 
 
 def configure_viewer(mocker: MockerFixture) -> None:

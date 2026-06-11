@@ -9,6 +9,7 @@ from aiohttp import web
 from aiohttp_session import get_session
 
 from spellbot.settings import settings
+from spellbot.web.api.admin_auth import ADMIN_NAME_KEY, ADMIN_XID_KEY
 from spellbot.web.api.oauth import (
     DISCORD_AUTHORIZE_URL,
     canonical_host_redirect,
@@ -36,13 +37,39 @@ def viewer_oauth_redirect_uri() -> str:
 
 
 async def get_viewer(request: web.Request) -> tuple[int | None, str | None]:
-    """Return `(viewer_xid, viewer_name)` from the session, or `(None, None)`."""
+    """
+    Return the current viewer's `(xid, name)` from the session, or `(None, None)`.
+
+    A dedicated viewer session (set by the `/queues` OAuth flow) takes precedence.
+    Absent that, we fall back to an authenticated *admin* session: the admin's
+    Discord identity was already verified at `/admin/login`, and an admin is a
+    strictly higher-privilege identity than a viewer, so honoring it here unifies
+    login across the admin and `/queues` pages without expanding access. The
+    reverse direction is NOT symmetric — a viewer session never writes the admin
+    keys, so it can never unlock `/admin/*` (see the admin auth middleware).
+    """
     session = await get_session(request)
     xid = session.get(VIEWER_XID_KEY)
-    if not isinstance(xid, int):
-        return None, None
-    name = session.get(VIEWER_NAME_KEY)
-    return xid, name if isinstance(name, str) else None
+    if isinstance(xid, int):
+        name = session.get(VIEWER_NAME_KEY)
+        return xid, name if isinstance(name, str) else None
+    admin_xid = session.get(ADMIN_XID_KEY)
+    if isinstance(admin_xid, int):
+        admin_name = session.get(ADMIN_NAME_KEY)
+        return admin_xid, admin_name if isinstance(admin_name, str) else None
+    return None, None
+
+
+async def has_viewer_session(request: web.Request) -> bool:
+    """
+    Return True only when a dedicated viewer session exists.
+
+    Distinguishes a real viewer login from an admin session recognized via the
+    fallback in `get_viewer`. The `/queues` logout button (which clears only the
+    viewer keys) is meaningful exactly when this is True.
+    """
+    session = await get_session(request)
+    return isinstance(session.get(VIEWER_XID_KEY), int)
 
 
 @routes.get("/queues/login")
