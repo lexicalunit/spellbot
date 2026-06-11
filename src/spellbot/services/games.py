@@ -233,6 +233,7 @@ async def guild_detail_view(guild_xid: int) -> dict[str, Any] | None:
         "guild": {
             "xid": guild.xid,
             "name": guild.name,
+            "promote": guild.promote,
         },
         "channels": [
             {

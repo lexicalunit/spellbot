@@ -80,6 +80,13 @@ a:hover {
   padding: 0.5rem 0;
 }
 
+.owner-promote-status {
+  margin-bottom: 0.75rem;
+}
+.owner-promote-status strong {
+  color: #c4b5fd;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

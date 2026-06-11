@@ -3,14 +3,17 @@ from __future__ import annotations
 import re
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+from urllib.parse import parse_qs, urlparse
 
 import pytest
+import pytest_asyncio
 
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Guild
 from spellbot.services import alerts
+from spellbot.web.api import admin_auth
 from spellbot.web.api import queues as queues_endpoint_mod
 from spellbot.web.api.queues import SPELLBOT_DEFAULT_LOGO, format_wait, language_name
 
@@ -1605,3 +1608,59 @@ class TestGuildNotifyActiveHours:
             allow_redirects=False,
         )
         assert resp.status == 400
+
+
+def make_admin_httpx_client() -> MagicMock:
+    """Mock `httpx.AsyncClient` for an OAuth flow identifying the owner (xid=42)."""
+    inner = MagicMock()
+    token_resp = MagicMock(status_code=200)
+    token_resp.json = MagicMock(return_value={"access_token": "tok"})
+    inner.post = AsyncMock(return_value=token_resp)
+    identify_resp = MagicMock(status_code=200)
+    identify_resp.json = MagicMock(return_value={"id": "42", "username": "admin"})
+    inner.get = AsyncMock(return_value=identify_resp)
+    cm = MagicMock()
+    cm.__aenter__ = AsyncMock(return_value=inner)
+    cm.__aexit__ = AsyncMock(return_value=None)
+    return cm
+
+
+@pytest_asyncio.fixture
+async def admin_session_client(client: WebClient, mocker: MockerFixture) -> WebClient:
+    """Return a client whose cookie jar holds an authenticated admin session."""
+    mocker.patch.object(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
+    mocker.patch.object(admin_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
+    mocker.patch.object(admin_auth.settings, "API_BASE_URL", "http://127.0.0.1")
+    mocker.patch.object(admin_auth.settings, "OWNER_XID", 42)
+    login_resp = await client.get("/admin/login", allow_redirects=False)
+    state = parse_qs(urlparse(login_resp.headers["Location"]).query)["state"][0]
+    mocker.patch(
+        "spellbot.web.api.admin_auth.httpx.AsyncClient",
+        return_value=make_admin_httpx_client(),
+    )
+    cb = await client.get(
+        f"/admin/oauth/callback?code=abc&state={state}",
+        allow_redirects=False,
+    )
+    assert cb.status == 302
+    return client
+
+
+@pytest.mark.asyncio
+class TestQueuesAdminLink:
+    async def test_anonymous_visitor_has_no_admin_link(self, client: WebClient) -> None:
+        resp = await client.get("/queues")
+        body = await resp.text()
+        # The class name appears in the inlined CSS; assert the link itself is absent.
+        assert 'href="/admin/dashboard"' not in body
+        assert ">Admin Dashboard</a>" not in body
+
+    async def test_admin_session_shows_admin_link(
+        self,
+        admin_session_client: WebClient,
+    ) -> None:
+        resp = await admin_session_client.get("/queues")
+        assert resp.status == 200
+        body = await resp.text()
+        assert 'class="page-header__admin" href="/admin/dashboard"' in body
+        assert "Admin Dashboard" in body

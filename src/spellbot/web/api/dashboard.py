@@ -11,6 +11,7 @@ from ddtrace.trace import tracer
 from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_request_id, generate_request_id
+from spellbot.web.api.admin_auth import is_owner_session
 from spellbot.web.dashboard_filters import GuildFilter, PeriodSpec, parse_guild, parse_period
 
 if TYPE_CHECKING:
@@ -26,8 +27,34 @@ async def dashboard_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
     session = await get_session(request)
     admin_name = session.get("name") or "admin"
-    context = {"admin_name": admin_name}
+    context = {"admin_name": admin_name, "is_owner": is_owner_session(session)}
     return aiohttp_jinja2.render_template("dashboard.html.j2", request, context)
+
+
+@routes.post("/admin/dashboard/sql")
+@tracer.wrap(name="web", resource="dashboard_sql")
+async def dashboard_sql_endpoint(request: web.Request) -> web.Response:
+    """Run an owner-only, read-only ad-hoc SQL query and return the rows as JSON."""
+    add_span_request_id(generate_request_id())
+    session = await get_session(request)
+    if not is_owner_session(session):
+        return web.json_response({"error": "Forbidden"}, status=403)
+    try:
+        payload = await request.json()
+    except ValueError:  # includes json.JSONDecodeError
+        return web.json_response({"error": "Invalid JSON body."}, status=400)
+    query = payload.get("query") if isinstance(payload, dict) else None
+    if not isinstance(query, str):
+        return web.json_response({"error": "Missing 'query' string."}, status=400)
+    # `dashboard_run_sql` opens its own dedicated read-only connection, so no
+    # surrounding `db_session_manager()` is needed here.
+    data = await services.dashboard.dashboard_run_sql(query)
+    status = 400 if "error" in data else 200
+    return web.Response(
+        status=status,
+        content_type="application/json",
+        text=json.dumps(data),
+    )
 
 
 def dashboard_query(request: web.Request) -> tuple[PeriodSpec, GuildFilter]:

@@ -1564,8 +1564,98 @@
       });
   }
 
+  // Owner-only SQL console. The textarea/button only exist in the DOM when the
+  // template rendered for the bot owner, and the /admin/dashboard/sql endpoint
+  // re-checks ownership server-side, so this is purely the client wiring.
+  function bindSqlConsole() {
+    if (!window.SQL_CONSOLE_ENABLED) return;
+    const runBtn = document.getElementById("sqlRunBtn");
+    const textarea = document.getElementById("sqlQuery");
+    const statusEl = document.getElementById("sqlStatus");
+    const resultEl = document.getElementById("sqlResult");
+    if (!runBtn || !textarea) return;
+
+    function renderResult(data) {
+      if (!data.columns || !data.columns.length) {
+        resultEl.innerHTML =
+          '<div class="sql-status">Query ran (no result set returned).</div>';
+        return;
+      }
+      const head = data.columns
+        .map(function (c) {
+          return "<th>" + escapeHtml(c) + "</th>";
+        })
+        .join("");
+      const body = data.rows
+        .map(function (row) {
+          const cells = row
+            .map(function (cell) {
+              if (cell === null)
+                return '<td class="sql-null">NULL</td>';
+              return "<td>" + escapeHtml(String(cell)) + "</td>";
+            })
+            .join("");
+          return "<tr>" + cells + "</tr>";
+        })
+        .join("");
+      resultEl.innerHTML =
+        '<table class="lang-table"><thead><tr>' +
+        head +
+        "</tr></thead><tbody>" +
+        body +
+        "</tbody></table>";
+    }
+
+    async function runQuery() {
+      const query = textarea.value.trim();
+      if (!query) return;
+      runBtn.disabled = true;
+      statusEl.textContent = "Running...";
+      resultEl.innerHTML = "";
+      const started = Date.now();
+      try {
+        const res = await fetch("/admin/dashboard/sql", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: query }),
+        });
+        const data = await res.json();
+        const elapsed = ((Date.now() - started) / 1000).toFixed(2);
+        if (data.error) {
+          statusEl.textContent = "Error (" + elapsed + "s)";
+          resultEl.innerHTML =
+            '<div class="sql-error">' + escapeHtml(data.error) + "</div>";
+          return;
+        }
+        renderResult(data);
+        statusEl.textContent =
+          data.row_count +
+          (data.row_count === 1 ? " row" : " rows") +
+          (data.truncated ? " (truncated)" : "") +
+          " in " +
+          elapsed +
+          "s";
+      } catch (ex) {
+        statusEl.textContent = "Request failed.";
+        resultEl.innerHTML =
+          '<div class="sql-error">' + escapeHtml(String(ex)) + "</div>";
+      } finally {
+        runBtn.disabled = false;
+      }
+    }
+
+    runBtn.addEventListener("click", runQuery);
+    textarea.addEventListener("keydown", function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        runQuery();
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     bindControls();
+    bindSqlConsole();
     loadGuilds();
     reloadAll();
   });

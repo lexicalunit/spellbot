@@ -73,6 +73,23 @@ a:hover {
   font-weight: 600;
   color: var(--page-text);
 }
+.page-header__admin,
+.page-header__admin:link,
+.page-header__admin:visited {
+  align-self: center;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--page-text);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.page-header__admin:hover {
+  border-color: #818cf8;
+  color: #818cf8;
+  filter: none;
+}
 .page-header__stat {
   margin-left: auto;
   align-self: flex-end;
@@ -381,7 +398,9 @@ a:hover {
   word-break: break-word;
   line-height: 1.25;
 }
-.queue-card__server-link {
+.queue-card__server-link,
+.queue-card__server-link:link,
+.queue-card__server-link:visited {
   color: inherit;
   text-decoration: none;
 }

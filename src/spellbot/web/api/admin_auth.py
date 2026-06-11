@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 
 import httpx
 from aiohttp import web
-from aiohttp_session import get_session, new_session
+from aiohttp_session import Session, get_session, new_session
 from aiohttp_session import setup as session_setup
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography.fernet import Fernet
@@ -95,6 +95,17 @@ async def get_admin_user_xid(request: web.Request) -> int | None:
     if not isinstance(xid, int):
         return None
     return xid
+
+
+def is_owner_session(session: Session) -> bool:
+    """Return True when the admin session belongs to the configured bot owner."""
+    xid = session.get("xid")
+    return settings.OWNER_XID is not None and xid == settings.OWNER_XID
+
+
+async def is_owner_request(request: web.Request) -> bool:
+    """Return True when the request carries an authenticated owner session."""
+    return is_owner_session(await get_session(request))
 
 
 @web.middleware

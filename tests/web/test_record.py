@@ -2,15 +2,20 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock, MagicMock
+from urllib.parse import parse_qs, urlparse
 
 import pytest
+import pytest_asyncio
 
 from spellbot.enums import GameBracket, GameFormat
 from spellbot.models import GameStatus
+from spellbot.web.api import admin_auth
 
 if TYPE_CHECKING:
     from aiohttp.client import ClientSession
     from freezegun.api import FrozenDateTimeFactory
+    from pytest_mock import MockerFixture
     from syrupy.assertion import SnapshotAssertion
 
     from tests.fixtures import Factories
@@ -967,4 +972,137 @@ class TestWebGuildDetail:
 
     async def test_guild_detail_invalid_id(self, client: ClientSession) -> None:
         resp = await client.get("/g/abc")
+        assert resp.status == 404
+
+    async def test_guild_detail_hides_owner_controls_for_anonymous(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild")
+        resp = await client.get(f"/g/{guild.xid}")
+        text = await resp.text()
+        assert "Owner Controls" not in text
+
+
+def make_owner_httpx_client() -> MagicMock:
+    """Mock `httpx.AsyncClient` for an OAuth flow identifying the owner (xid=42)."""
+    inner = MagicMock()
+    token_resp = MagicMock(status_code=200)
+    token_resp.json = MagicMock(return_value={"access_token": "tok"})
+    inner.post = AsyncMock(return_value=token_resp)
+    identify_resp = MagicMock(status_code=200)
+    identify_resp.json = MagicMock(return_value={"id": "42", "username": "owner"})
+    inner.get = AsyncMock(return_value=identify_resp)
+    cm = MagicMock()
+    cm.__aenter__ = AsyncMock(return_value=inner)
+    cm.__aexit__ = AsyncMock(return_value=None)
+    return cm
+
+
+@pytest_asyncio.fixture
+async def owner_client(client: ClientSession, mocker: MockerFixture) -> ClientSession:
+    """Return a client whose cookie jar holds an authenticated owner session."""
+    mocker.patch.object(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
+    mocker.patch.object(admin_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
+    mocker.patch.object(admin_auth.settings, "API_BASE_URL", "http://127.0.0.1")
+    mocker.patch.object(admin_auth.settings, "OWNER_XID", 42)
+    login_resp = await client.get("/admin/login", allow_redirects=False)
+    state = parse_qs(urlparse(login_resp.headers["Location"]).query)["state"][0]
+    mocker.patch(
+        "spellbot.web.api.admin_auth.httpx.AsyncClient",
+        return_value=make_owner_httpx_client(),
+    )
+    cb = await client.get(
+        f"/admin/oauth/callback?code=abc&state={state}",
+        allow_redirects=False,
+    )
+    assert cb.status == 302
+    return client
+
+
+@pytest.mark.asyncio
+class TestWebGuildPromote:
+    async def test_owner_sees_controls_when_promote_enabled(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild", promote=True)
+        resp = await owner_client.get(f"/g/{guild.xid}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "Owner Controls" in text
+        assert "<strong>enabled</strong>" in text
+        assert "Disable promotion" in text
+        assert 'name="promote" value="false"' in text
+
+    async def test_owner_sees_controls_when_promote_disabled(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=202, name="guild", promote=False)
+        resp = await owner_client.get(f"/g/{guild.xid}")
+        text = await resp.text()
+        assert "Enable promotion" in text
+        assert 'name="promote" value="true"' in text
+
+    async def test_owner_can_disable_promotion(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=203, name="guild", promote=True)
+        resp = await owner_client.post(
+            f"/g/{guild.xid}/promote",
+            data={"promote": "false"},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/g/{guild.xid}"
+        # The change is persisted: re-rendering shows the disabled state.
+        follow = await owner_client.get(f"/g/{guild.xid}")
+        assert "<strong>disabled</strong>" in await follow.text()
+
+    async def test_owner_can_enable_promotion(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=204, name="guild", promote=False)
+        resp = await owner_client.post(
+            f"/g/{guild.xid}/promote",
+            data={"promote": "true"},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        follow = await owner_client.get(f"/g/{guild.xid}")
+        assert "<strong>enabled</strong>" in await follow.text()
+
+    async def test_non_owner_cannot_post(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=205, name="guild", promote=True)
+        resp = await client.post(
+            f"/g/{guild.xid}/promote",
+            data={"promote": "false"},
+            allow_redirects=False,
+        )
+        assert resp.status == 403
+        # The flag is untouched.
+        follow = await client.get(f"/g/{guild.xid}")
+        assert "Owner Controls" not in await follow.text()
+
+    async def test_invalid_guild_id_is_404(
+        self,
+        owner_client: ClientSession,
+    ) -> None:
+        resp = await owner_client.post(
+            "/g/abc/promote",
+            data={"promote": "false"},
+            allow_redirects=False,
+        )
         assert resp.status == 404

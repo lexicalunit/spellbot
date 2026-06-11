@@ -131,6 +131,14 @@ async def set_banned(guild_xid: int, banned: bool) -> None:
     await DatabaseSession.commit()
 
 
+async def set_promote(guild_xid: int, promote: bool) -> None:
+    """Set whether the given guild may be advertised on public SpellBot pages."""
+    await DatabaseSession.execute(
+        update(Guild).where(Guild.xid == guild_xid).values(promote=promote),  # type: ignore
+    )
+    await DatabaseSession.commit()
+
+
 async def get(guild_xid: int) -> GuildData | None:
     """Fetch the guild data for the given guild xid."""
     guild = (

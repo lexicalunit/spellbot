@@ -94,6 +94,13 @@
     padding: 0.5rem 0;
   }
   
+  .owner-promote-status {
+    margin-bottom: 0.75rem;
+  }
+  .owner-promote-status strong {
+    color: #c4b5fd;
+  }
+  
   table {
     width: 100%;
     border-collapse: collapse;
@@ -668,6 +675,13 @@
     padding: 0.5rem 0;
   }
   
+  .owner-promote-status {
+    margin-bottom: 0.75rem;
+  }
+  .owner-promote-status strong {
+    color: #c4b5fd;
+  }
+  
   table {
     width: 100%;
     border-collapse: collapse;
@@ -1172,6 +1186,13 @@
     color: #9ca3af;
     font-style: italic;
     padding: 0.5rem 0;
+  }
+  
+  .owner-promote-status {
+    margin-bottom: 0.75rem;
+  }
+  .owner-promote-status strong {
+    color: #c4b5fd;
   }
   
   table {
@@ -1904,6 +1925,13 @@
     padding: 0.5rem 0;
   }
   
+  .owner-promote-status {
+    margin-bottom: 0.75rem;
+  }
+  .owner-promote-status strong {
+    color: #c4b5fd;
+  }
+  
   table {
     width: 100%;
     border-collapse: collapse;
@@ -2470,6 +2498,13 @@
     color: #9ca3af;
     font-style: italic;
     padding: 0.5rem 0;
+  }
+  
+  .owner-promote-status {
+    margin-bottom: 0.75rem;
+  }
+  .owner-promote-status strong {
+    color: #c4b5fd;
   }
   
   table {
@@ -3202,6 +3237,13 @@
     padding: 0.5rem 0;
   }
   
+  .owner-promote-status {
+    margin-bottom: 0.75rem;
+  }
+  .owner-promote-status strong {
+    color: #c4b5fd;
+  }
+  
   table {
     width: 100%;
     border-collapse: collapse;
@@ -3932,6 +3974,13 @@
     padding: 0.5rem 0;
   }
   
+  .owner-promote-status {
+    margin-bottom: 0.75rem;
+  }
+  .owner-promote-status strong {
+    color: #c4b5fd;
+  }
+  
   table {
     width: 100%;
     border-collapse: collapse;
@@ -4640,6 +4689,13 @@
     padding: 0.5rem 0;
   }
   
+  .owner-promote-status {
+    margin-bottom: 0.75rem;
+  }
+  .owner-promote-status strong {
+    color: #c4b5fd;
+  }
+  
   table {
     width: 100%;
     border-collapse: collapse;
@@ -5213,6 +5269,13 @@
     color: #9ca3af;
     font-style: italic;
     padding: 0.5rem 0;
+  }
+  
+  .owner-promote-status {
+    margin-bottom: 0.75rem;
+  }
+  .owner-promote-status strong {
+    color: #c4b5fd;
   }
   
   table {

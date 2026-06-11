@@ -4,9 +4,10 @@ from collections import Counter
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import case, distinct, extract, func, or_, select
+from sqlalchemy import case, distinct, extract, func, or_, select, text
+from sqlalchemy.exc import SQLAlchemyError
 
-from spellbot.database import DatabaseSession, any_of
+from spellbot.database import DatabaseSession, any_of, engine
 from spellbot.enums import (
     GAME_BRACKET_ORDER,
     GAME_FORMAT_ORDER,
@@ -1303,3 +1304,77 @@ async def dashboard_active_queues(period: PeriodSpec, opts: GuildFilter) -> dict
             for row in rows
         ],
     }
+
+
+# Maximum number of result rows returned by the SQL console. One extra row is
+# fetched to detect (and flag) truncation without serializing the whole result.
+SQL_CONSOLE_MAX_ROWS = 1000
+
+# Statement timeout (ms) applied to the SQL console transaction so a runaway
+# query cannot tie up a database connection indefinitely.
+SQL_CONSOLE_TIMEOUT_MS = 15000
+
+# Integers outside JavaScript's safe range lose precision once parsed by the
+# browser, so they are serialized as strings instead (e.g. Discord snowflakes).
+JS_SAFE_INT = 2**53
+
+
+def json_cell(value: Any) -> Any:
+    """Coerce a single result cell into a JSON-serializable value."""
+    if value is None or isinstance(value, (bool, str, float)):
+        return value
+    if isinstance(value, int):
+        return value if -JS_SAFE_INT < value < JS_SAFE_INT else str(value)
+    return str(value)
+
+
+async def dashboard_run_sql(query: str) -> dict[str, Any]:
+    """
+    Run an ad-hoc read-only SQL query for the admin SQL console.
+
+    The query runs on a dedicated connection inside a `READ ONLY` transaction
+    with a statement timeout, and that transaction is always rolled back, so it
+    cannot modify data even if a write statement slips through. A dedicated
+    connection (rather than the request's `DatabaseSession`) is required because
+    the shared engine runs in `AUTOCOMMIT` mode, where a per-statement
+    `SET TRANSACTION READ ONLY` would not hold. Results are capped at
+    `SQL_CONSOLE_MAX_ROWS` rows.
+
+    Returns `{"columns", "rows", "row_count", "truncated"}` on success, or
+    `{"error": <message>}` if the statement is empty or the database rejects it.
+    """
+    query = query.strip().rstrip(";").strip()
+    if not query:
+        return {"error": "Empty query."}
+    try:
+        async with engine.connect() as raw_conn:
+            # Override the engine's AUTOCOMMIT default so we get a real
+            # transaction that `SET TRANSACTION READ ONLY` can pin down.
+            conn = await raw_conn.execution_options(isolation_level="READ COMMITTED")
+            trans = await conn.begin()
+            try:
+                await conn.execute(text("SET TRANSACTION READ ONLY"))
+                await conn.execute(
+                    text(f"SET LOCAL statement_timeout = {int(SQL_CONSOLE_TIMEOUT_MS)}"),
+                )
+                result = await conn.execute(text(query))
+                if not result.returns_rows:
+                    return {"columns": [], "rows": [], "row_count": 0, "truncated": False}
+                columns = list(result.keys())
+                fetched = result.fetchmany(SQL_CONSOLE_MAX_ROWS + 1)
+                truncated = len(fetched) > SQL_CONSOLE_MAX_ROWS
+                rows = [[json_cell(cell) for cell in row] for row in fetched[:SQL_CONSOLE_MAX_ROWS]]
+                return {
+                    "columns": columns,
+                    "rows": rows,
+                    "row_count": len(rows),
+                    "truncated": truncated,
+                }
+            finally:
+                # Discard the transaction (and any work it attempted).
+                await trans.rollback()
+    except SQLAlchemyError as ex:
+        # Surface the database error text (e.g. syntax errors, read-only
+        # violations) back to the console rather than 500-ing the request.
+        message = str(getattr(ex, "orig", ex)) or ex.__class__.__name__
+        return {"error": message.strip()}

@@ -24,6 +24,7 @@ from spellbot.services.plays import (
     USER_RECORDS_SORT_COLUMNS,
     RecordFilters,
 )
+from spellbot.web.api.admin_auth import is_owner_request
 
 logger = logging.getLogger(__name__)
 
@@ -391,6 +392,7 @@ async def guild_impl(request: web.Request) -> web.Response:
         "channels": guild["channels"],
         "tz_offset": tz_offset,
         "tz_name": tz_name,
+        "is_owner": await is_owner_request(request),
     }
     return aiohttp_jinja2.render_template("guild.html.j2", request, context)
 
@@ -401,6 +403,28 @@ async def guild_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
     async with db_session_manager():
         return await guild_impl(request)
+
+
+async def guild_promote_impl(request: web.Request) -> web.Response:
+    """Owner-only: set a guild's `promote` flag, then redirect back to its page."""
+    if not await is_owner_request(request):
+        return web.Response(status=403, text="Forbidden")
+    try:
+        guild_xid = int(request.match_info["guild"])
+    except ValueError:
+        return web.Response(status=404)
+    form = await request.post()
+    promote = form.get("promote") == "true"
+    await services.guilds.set_promote(guild_xid, promote)
+    return web.HTTPFound(f"/g/{guild_xid}")
+
+
+@routes.post(r"/g/{guild}/promote")
+@tracer.wrap(name="web", resource="guild_promote")
+async def guild_promote_endpoint(request: web.Request) -> web.StreamResponse:
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        return await guild_promote_impl(request)
 
 
 def csv_line(values: list[Any]) -> bytes:

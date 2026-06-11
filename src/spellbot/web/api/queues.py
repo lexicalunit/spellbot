@@ -15,6 +15,7 @@ from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER
 from spellbot.i18n import normalize_locale
 from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.settings import settings
+from spellbot.web.api.admin_auth import get_admin_user_xid
 from spellbot.web.api.viewer_auth import get_viewer
 
 if TYPE_CHECKING:
@@ -155,6 +156,9 @@ async def queues_endpoint(request: web.Request) -> web.Response:
         "languages": languages,
         "stats": stats,
         "viewer": viewer,
+        # An admin session (set only after the OAuth callback verified the user
+        # is an admin/owner) gates the link to the admin dashboard.
+        "is_admin": await get_admin_user_xid(request) is not None,
     }
     return aiohttp_jinja2.render_template("queues.html.j2", request, context)
 

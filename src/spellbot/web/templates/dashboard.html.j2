@@ -30,6 +30,11 @@
             font-size: 0.8rem;
         }
         .header button.logout:hover { background: #2a2a50; }
+        .header a.nav-link {
+            background: #1e1e3f; color: #c4b5fd; border: 1px solid #333;
+            padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem;
+        }
+        .header a.nav-link:hover { background: #2a2a50; color: #c4b5fd; filter: none; }
         .sticky-controls {
             position: sticky; top: 0; background: #1a1a2e; z-index: 100;
             display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
@@ -202,6 +207,34 @@
         .queue-depth-total .stat-unit { font-size: 0.9rem; color: #9ca3af; margin-left: 0.4rem; font-weight: 500; }
         .lang-table td a { color: #a5b4fc; text-decoration: none; }
         .lang-table td a:hover { text-decoration: underline; }
+        .sql-console { background: #252545; border-radius: 12px; padding: 1.25rem; }
+        .sql-console > summary {
+            cursor: pointer; font-size: 1.1rem; font-weight: 600; color: #c4b5fd;
+            list-style: none; user-select: none;
+        }
+        .sql-console > summary::-webkit-details-marker { display: none; }
+        .sql-console > summary::before { content: "\25B6"; font-size: 0.7rem; margin-right: 0.5rem; }
+        .sql-console[open] > summary::before { content: "\25BC"; }
+        .sql-console .sql-hint { font-size: 0.75rem; color: #6b7280; margin: 0.5rem 0 0.75rem; }
+        .sql-console textarea {
+            width: 100%; min-height: 120px; resize: vertical; font-family: ui-monospace,
+            SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.85rem;
+            background: #1a1a2e; color: #e0e0e0; border: 1px solid #333;
+            border-radius: 8px; padding: 0.75rem; tab-size: 2;
+        }
+        .sql-console textarea:focus { outline: none; border-color: #818cf8; }
+        .sql-toolbar { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
+        .sql-toolbar button {
+            background: #818cf8; color: #fff; border: none; cursor: pointer;
+            padding: 0.45rem 1.1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;
+        }
+        .sql-toolbar button:hover { filter: brightness(1.1); }
+        .sql-toolbar button:disabled { opacity: 0.5; cursor: default; filter: none; }
+        .sql-toolbar .sql-status { font-size: 0.8rem; color: #9ca3af; }
+        .sql-result { margin-top: 1rem; overflow-x: auto; }
+        .sql-result table.lang-table td, .sql-result table.lang-table th { white-space: nowrap; }
+        .sql-result td.sql-null { color: #6b7280; font-style: italic; }
+        .sql-error { color: #fca5a5; white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -211,6 +244,7 @@
                 <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
             </a>
             <h1>SpellBot Admin Dashboard</h1>
+            <a class="nav-link" href="/queues">Active Queues</a>
             <span class="user">Signed in as <strong>{{ admin_name }}</strong></span>
             <form action="/admin/logout" method="post">
                 <button class="logout" type="submit">Sign out</button>
@@ -239,6 +273,19 @@
             </div>
             <div class="bucket-indicator">Bucket: <span id="bucketLabel">—</span></div>
         </div>
+
+        {% if is_owner %}
+        <details class="sql-console section" id="sqlConsole">
+            <summary>SQL Console</summary>
+            <p class="sql-hint">Read-only queries against the production database. Statements run in a rolled-back, read-only transaction (15s timeout). Press Ctrl/Cmd+Enter to run.</p>
+            <textarea id="sqlQuery" spellcheck="false" placeholder="SELECT * FROM games ORDER BY created_at DESC LIMIT 20;"></textarea>
+            <div class="sql-toolbar">
+                <button id="sqlRunBtn" type="button">Run</button>
+                <span id="sqlStatus" class="sql-status"></span>
+            </div>
+            <div id="sqlResult" class="sql-result"></div>
+        </details>
+        {% endif %}
 
         <div class="summary">
             <div class="stat"><div id="statTotalGames" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Total Games</div></div>
@@ -338,6 +385,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
     <script>window.CHART_AVAILABLE = typeof Chart !== "undefined";</script>
+    <script>window.SQL_CONSOLE_ENABLED = {{ 'true' if is_owner else 'false' }};</script>
     <script src="/dashboard.js"></script>
 </body>
 </html>
