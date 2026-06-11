@@ -8,7 +8,7 @@ from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Guild
 from spellbot.services import channels
 from spellbot.services.channels import channel_cache
-from tests.factories import ChannelFactory
+from tests.factories import ChannelFactory, GuildFactory
 
 pytestmark = pytest.mark.use_db
 
@@ -156,3 +156,34 @@ class TestServiceChannels:
 
         # Verify it's also removed from the cache
         assert discord_channel.id not in channel_cache
+
+
+@pytest.mark.asyncio
+class TestServiceChannelsUpdateSettings:
+    async def test_updates_allow_listed_fields(self) -> None:
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild, xid=9101, default_seats=4, auto_verify=False)
+        await channels.update_settings(channel.xid, default_seats=2, auto_verify=True)
+        DatabaseSession.expire_all()
+        updated = await DatabaseSession.get(Channel, channel.xid)
+        assert updated is not None
+        assert updated.default_seats == 2
+        assert updated.auto_verify is True
+
+    async def test_ignores_unlisted_fields(self) -> None:
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild, xid=9102, name="keep", default_seats=4)
+        await channels.update_settings(channel.xid, name="hacked", guild_xid=999)
+        DatabaseSession.expire_all()
+        updated = await DatabaseSession.get(Channel, channel.xid)
+        assert updated is not None
+        assert updated.name == "keep"
+
+    async def test_no_safe_fields_is_a_noop(self) -> None:
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild, xid=9103, name="keep")
+        await channels.update_settings(channel.xid, name="hacked")
+        DatabaseSession.expire_all()
+        updated = await DatabaseSession.get(Channel, channel.xid)
+        assert updated is not None
+        assert updated.name == "keep"

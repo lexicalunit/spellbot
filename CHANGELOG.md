@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Links from channel and game records to guild records.
+- Allow moderators/admins to modify channel and guild data via the website.
+
 ## [v20.12.1](https://github.com/lexicalunit/spellbot/releases/tag/v20.12.1) - 2026-06-11
 
 ### Changed

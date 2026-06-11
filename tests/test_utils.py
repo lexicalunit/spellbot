@@ -20,6 +20,7 @@ from spellbot.utils import (
     is_admin,
     is_guild,
     is_mod,
+    is_moderator,
     log_warning,
     safe_permissions_for,
     user_can_moderate,
@@ -495,6 +496,56 @@ class TestUtilsIsGuild:
             is_guild(interaction)
 
 
+class TestUtilsIsModerator:
+    def test_guild_owner(self) -> None:
+        assert is_moderator(
+            is_guild_owner=True,
+            has_admin=False,
+            has_ban_members=False,
+            role_names=[],
+        )
+
+    def test_administrator(self) -> None:
+        assert is_moderator(
+            is_guild_owner=False,
+            has_admin=True,
+            has_ban_members=False,
+            role_names=[],
+        )
+
+    def test_ban_members(self) -> None:
+        assert is_moderator(
+            is_guild_owner=False,
+            has_admin=False,
+            has_ban_members=True,
+            role_names=[],
+        )
+
+    def test_mod_prefix_role(self, settings: Settings) -> None:
+        assert is_moderator(
+            is_guild_owner=False,
+            has_admin=False,
+            has_ban_members=False,
+            role_names=[f"{settings.MOD_PREFIX} Team"],
+        )
+
+    def test_admin_role(self, settings: Settings) -> None:
+        assert is_moderator(
+            is_guild_owner=False,
+            has_admin=False,
+            has_ban_members=False,
+            role_names=[settings.ADMIN_ROLE],
+        )
+
+    def test_plain_member(self) -> None:
+        assert not is_moderator(
+            is_guild_owner=False,
+            has_admin=False,
+            has_ban_members=False,
+            role_names=["Members", "Verified"],
+        )
+
+
 class TestUtilsUserCanModerate:
     def test_owner_happy_path(self, settings: Settings) -> None:
         role = MagicMock()
@@ -506,6 +557,16 @@ class TestUtilsUserCanModerate:
         channel.permissions_for = MagicMock(return_value=admin_perms)
         user = MagicMock()
         user.id = 1
+        assert user_can_moderate(user, guild, channel)
+
+    def test_bot_owner_bypasses_all_checks(self, mocker: MockerFixture) -> None:
+        mock_settings = mocker.patch("spellbot.utils.settings")
+        mock_settings.OWNER_XID = 99
+        guild = MagicMock(spec=discord.Guild)
+        guild.owner_id = 2
+        channel = MagicMock(spec=discord.TextChannel)
+        user = MagicMock()
+        user.id = 99
         assert user_can_moderate(user, guild, channel)
 
     def test_admin_happy_path(self, settings: Settings) -> None:
@@ -520,6 +581,17 @@ class TestUtilsUserCanModerate:
         channel.permissions_for = MagicMock(return_value=admin_perms)
         user = MagicMock()
         user.id = 1
+        assert user_can_moderate(user, guild, channel)
+
+    def test_ban_members_happy_path(self, settings: Settings) -> None:
+        guild = MagicMock(spec=discord.Guild)
+        guild.owner_id = 2
+        ban_perms = discord.Permissions(discord.Permissions.ban_members.flag)
+        channel = MagicMock(spec=discord.TextChannel)
+        channel.permissions_for = MagicMock(return_value=ban_perms)
+        user = MagicMock()
+        user.id = 1
+        user.roles = []
         assert user_can_moderate(user, guild, channel)
 
     def test_user_without_id(self, settings: Settings) -> None:

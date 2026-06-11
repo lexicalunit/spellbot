@@ -449,3 +449,32 @@ class TestFetchIconUrl:
             patch.object(guilds.httpx, "AsyncClient", return_value=mock_client),
         ):
             assert await guilds.fetch_icon_url(405) is None
+
+
+@pytest.mark.asyncio
+class TestServiceGuildsUpdateSettings:
+    async def test_updates_allow_listed_fields(self) -> None:
+        guild = GuildFactory.create(xid=9001, motd="old", show_links=False)
+        await guilds.update_settings(guild.xid, motd="new", show_links=True)
+        DatabaseSession.expire_all()
+        updated = await DatabaseSession.get(Guild, guild.xid)
+        assert updated is not None
+        assert updated.motd == "new"
+        assert updated.show_links is True
+
+    async def test_ignores_unlisted_fields(self) -> None:
+        guild = GuildFactory.create(xid=9002, banned=False, promote=True)
+        await guilds.update_settings(guild.xid, banned=True, promote=False)
+        DatabaseSession.expire_all()
+        updated = await DatabaseSession.get(Guild, guild.xid)
+        assert updated is not None
+        assert updated.banned is False
+        assert updated.promote is True
+
+    async def test_no_safe_fields_is_a_noop(self) -> None:
+        guild = GuildFactory.create(xid=9003, motd="keep")
+        await guilds.update_settings(guild.xid, banned=True)
+        DatabaseSession.expire_all()
+        updated = await DatabaseSession.get(Guild, guild.xid)
+        assert updated is not None
+        assert updated.motd == "keep"

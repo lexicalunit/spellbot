@@ -260,6 +260,66 @@
     justify-content: flex-start;
   }
   
+  /* One setting per row, stacked: the name, its help text directly beneath the name,
+     then the control. */
+  .settings-form .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .settings-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .settings-form label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .settings-form input[type="text"],
+  .settings-form input[type="number"],
+  .settings-form select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .settings-form .toggle-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .settings-form .toggle-row label {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+  }
+  .settings-form .toggle-row input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #7c5cff;
+    cursor: pointer;
+  }
+  .settings-form .hint {
+    color: #9ca3af;
+    font-size: 0.75rem;
+  }
+  
+  .login-prompt {
+    margin: 0;
+  }
+  .login-prompt .button {
+    margin-left: 0.5rem;
+  }
+  .settings-form .actions {
+    justify-content: flex-start;
+  }
+  
   table thead th .sort {
     color: #9ca3af;
     text-decoration: none;
@@ -365,6 +425,7 @@
                       <td>
                           <a href="https://discord.com/channels/201">guild</a>
                           <span class="user-id">201</span>
+                          &nbsp;<a href="/g/201" class="button">Guild records</a>
                       </td>
                   </tr>
                   <tr>
@@ -841,6 +902,66 @@
     justify-content: flex-start;
   }
   
+  /* One setting per row, stacked: the name, its help text directly beneath the name,
+     then the control. */
+  .settings-form .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .settings-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .settings-form label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .settings-form input[type="text"],
+  .settings-form input[type="number"],
+  .settings-form select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .settings-form .toggle-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .settings-form .toggle-row label {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+  }
+  .settings-form .toggle-row input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #7c5cff;
+    cursor: pointer;
+  }
+  .settings-form .hint {
+    color: #9ca3af;
+    font-size: 0.75rem;
+  }
+  
+  .login-prompt {
+    margin: 0;
+  }
+  .login-prompt .button {
+    margin-left: 0.5rem;
+  }
+  .settings-form .actions {
+    justify-content: flex-start;
+  }
+  
   table thead th .sort {
     color: #9ca3af;
     text-decoration: none;
@@ -919,7 +1040,7 @@
                   <h1>guild</h1>
                   
   <div class="subtitle">
-      <a href="https://discord.com/channels/201">Open in Discord</a>
+      <a href="https://discord.com/channels/201">Open server</a>
       &middot; <a href="/queues/g/201">Notification preferences</a>
       <span class="user-id">201</span>
       &middot; 2 channels with games
@@ -929,6 +1050,14 @@
           </div>
   
           
+  <div class="section">
+      <div class="card">
+          <p class="login-prompt">
+              Moderators can manage this server's settings here.
+              <a href="/queues/login?next=%2Fg%2F201" class="button">Log in with Discord</a>
+          </p>
+      </div>
+  </div>
   <div class="section">
       <h2>Channels</h2>
       
@@ -1354,6 +1483,66 @@
     justify-content: flex-start;
   }
   
+  /* One setting per row, stacked: the name, its help text directly beneath the name,
+     then the control. */
+  .settings-form .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .settings-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .settings-form label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .settings-form input[type="text"],
+  .settings-form input[type="number"],
+  .settings-form select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .settings-form .toggle-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .settings-form .toggle-row label {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+  }
+  .settings-form .toggle-row input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #7c5cff;
+    cursor: pointer;
+  }
+  .settings-form .hint {
+    color: #9ca3af;
+    font-size: 0.75rem;
+  }
+  
+  .login-prompt {
+    margin: 0;
+  }
+  .login-prompt .button {
+    margin-left: 0.5rem;
+  }
+  .settings-form .actions {
+    justify-content: flex-start;
+  }
+  
   table thead th .sort {
     color: #9ca3af;
     text-decoration: none;
@@ -1432,7 +1621,7 @@
                   <h1>Channel Records: #channel</h1>
                   
   <div class="subtitle">
-      <a href="https://discord.com/channels/201">guild</a> &middot;
+      <a href="/g/201">guild</a> &middot;
       <a href="https://discord.com/channels/201/301">Open channel</a>
   </div>
   
@@ -1440,6 +1629,14 @@
           </div>
   
           
+  <div class="section">
+      <div class="card">
+          <p class="login-prompt">
+              Moderators can manage this channel's settings here.
+              <a href="/queues/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
+          </p>
+      </div>
+  </div>
   <div class="section">
       <h2>Games <span class="count">(3 matching)</span></h2>
       
@@ -2091,6 +2288,66 @@
     justify-content: flex-start;
   }
   
+  /* One setting per row, stacked: the name, its help text directly beneath the name,
+     then the control. */
+  .settings-form .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .settings-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .settings-form label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .settings-form input[type="text"],
+  .settings-form input[type="number"],
+  .settings-form select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .settings-form .toggle-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .settings-form .toggle-row label {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+  }
+  .settings-form .toggle-row input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #7c5cff;
+    cursor: pointer;
+  }
+  .settings-form .hint {
+    color: #9ca3af;
+    font-size: 0.75rem;
+  }
+  
+  .login-prompt {
+    margin: 0;
+  }
+  .login-prompt .button {
+    margin-left: 0.5rem;
+  }
+  .settings-form .actions {
+    justify-content: flex-start;
+  }
+  
   table thead th .sort {
     color: #9ca3af;
     text-decoration: none;
@@ -2169,7 +2426,7 @@
                   <h1>Channel Records: #channel</h1>
                   
   <div class="subtitle">
-      <a href="https://discord.com/channels/201">guild</a> &middot;
+      <a href="/g/201">guild</a> &middot;
       <a href="https://discord.com/channels/201/101">Open channel</a>
   </div>
   
@@ -2177,6 +2434,14 @@
           </div>
   
           
+  <div class="section">
+      <div class="card">
+          <p class="login-prompt">
+              Moderators can manage this channel's settings here.
+              <a href="/queues/login?next=%2Fg%2F201%2Fc%2F101" class="button">Log in with Discord</a>
+          </p>
+      </div>
+  </div>
   <div class="section">
       <h2>Games <span class="count">(0 matching)</span></h2>
       
@@ -2666,6 +2931,66 @@
     justify-content: flex-start;
   }
   
+  /* One setting per row, stacked: the name, its help text directly beneath the name,
+     then the control. */
+  .settings-form .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .settings-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .settings-form label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .settings-form input[type="text"],
+  .settings-form input[type="number"],
+  .settings-form select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .settings-form .toggle-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .settings-form .toggle-row label {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+  }
+  .settings-form .toggle-row input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #7c5cff;
+    cursor: pointer;
+  }
+  .settings-form .hint {
+    color: #9ca3af;
+    font-size: 0.75rem;
+  }
+  
+  .login-prompt {
+    margin: 0;
+  }
+  .login-prompt .button {
+    margin-left: 0.5rem;
+  }
+  .settings-form .actions {
+    justify-content: flex-start;
+  }
+  
   table thead th .sort {
     color: #9ca3af;
     text-decoration: none;
@@ -2744,7 +3069,7 @@
                   <h1>Channel Records: #channel</h1>
                   
   <div class="subtitle">
-      <a href="https://discord.com/channels/201">guild</a> &middot;
+      <a href="/g/201">guild</a> &middot;
       <a href="https://discord.com/channels/201/301">Open channel</a>
   </div>
   
@@ -2752,6 +3077,14 @@
           </div>
   
           
+  <div class="section">
+      <div class="card">
+          <p class="login-prompt">
+              Moderators can manage this channel's settings here.
+              <a href="/queues/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
+          </p>
+      </div>
+  </div>
   <div class="section">
       <h2>Games <span class="count">(3 matching)</span></h2>
       
@@ -3403,6 +3736,66 @@
     justify-content: flex-start;
   }
   
+  /* One setting per row, stacked: the name, its help text directly beneath the name,
+     then the control. */
+  .settings-form .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .settings-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .settings-form label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .settings-form input[type="text"],
+  .settings-form input[type="number"],
+  .settings-form select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .settings-form .toggle-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .settings-form .toggle-row label {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+  }
+  .settings-form .toggle-row input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #7c5cff;
+    cursor: pointer;
+  }
+  .settings-form .hint {
+    color: #9ca3af;
+    font-size: 0.75rem;
+  }
+  
+  .login-prompt {
+    margin: 0;
+  }
+  .login-prompt .button {
+    margin-left: 0.5rem;
+  }
+  .settings-form .actions {
+    justify-content: flex-start;
+  }
+  
   table thead th .sort {
     color: #9ca3af;
     text-decoration: none;
@@ -3481,7 +3874,7 @@
                   <h1>Channel Records: #channel</h1>
                   
   <div class="subtitle">
-      <a href="https://discord.com/channels/201">guild</a> &middot;
+      <a href="/g/201">guild</a> &middot;
       <a href="https://discord.com/channels/201/301">Open channel</a>
   </div>
   
@@ -3489,6 +3882,14 @@
           </div>
   
           
+  <div class="section">
+      <div class="card">
+          <p class="login-prompt">
+              Moderators can manage this channel's settings here.
+              <a href="/queues/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
+          </p>
+      </div>
+  </div>
   <div class="section">
       <h2>Games <span class="count">(3 matching)</span></h2>
       
@@ -4137,6 +4538,66 @@
   }
   .filters .actions {
     margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+  
+  /* One setting per row, stacked: the name, its help text directly beneath the name,
+     then the control. */
+  .settings-form .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .settings-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .settings-form label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .settings-form input[type="text"],
+  .settings-form input[type="number"],
+  .settings-form select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .settings-form .toggle-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .settings-form .toggle-row label {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+  }
+  .settings-form .toggle-row input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #7c5cff;
+    cursor: pointer;
+  }
+  .settings-form .hint {
+    color: #9ca3af;
+    font-size: 0.75rem;
+  }
+  
+  .login-prompt {
+    margin: 0;
+  }
+  .login-prompt .button {
+    margin-left: 0.5rem;
+  }
+  .settings-form .actions {
     justify-content: flex-start;
   }
   
@@ -4855,6 +5316,66 @@
     justify-content: flex-start;
   }
   
+  /* One setting per row, stacked: the name, its help text directly beneath the name,
+     then the control. */
+  .settings-form .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .settings-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .settings-form label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .settings-form input[type="text"],
+  .settings-form input[type="number"],
+  .settings-form select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .settings-form .toggle-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .settings-form .toggle-row label {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+  }
+  .settings-form .toggle-row input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #7c5cff;
+    cursor: pointer;
+  }
+  .settings-form .hint {
+    color: #9ca3af;
+    font-size: 0.75rem;
+  }
+  
+  .login-prompt {
+    margin: 0;
+  }
+  .login-prompt .button {
+    margin-left: 0.5rem;
+  }
+  .settings-form .actions {
+    justify-content: flex-start;
+  }
+  
   table thead th .sort {
     color: #9ca3af;
     text-decoration: none;
@@ -5434,6 +5955,66 @@
   }
   .filters .actions {
     margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+  
+  /* One setting per row, stacked: the name, its help text directly beneath the name,
+     then the control. */
+  .settings-form .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .settings-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .settings-form label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+  .settings-form input[type="text"],
+  .settings-form input[type="number"],
+  .settings-form select {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  .settings-form .toggle-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .settings-form .toggle-row label {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+  }
+  .settings-form .toggle-row input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #7c5cff;
+    cursor: pointer;
+  }
+  .settings-form .hint {
+    color: #9ca3af;
+    font-size: 0.75rem;
+  }
+  
+  .login-prompt {
+    margin: 0;
+  }
+  .login-prompt .button {
+    margin-left: 0.5rem;
+  }
+  .settings-form .actions {
     justify-content: flex-start;
   }
   

@@ -27,6 +27,14 @@ logger = logging.getLogger(__name__)
 now = text("(now() at time zone 'utc')")
 Base: DeclarativeMeta = declarative_base(cls=AsyncAttrs)
 
+# Marker placed in a column's `doc` to flag it as editable from the web admin panel.
+WEB_EDITABLE = "[web-editable]"
+
+
+def web_editable(doc: str) -> str:
+    """Return `doc` tagged with the web-editable marker, for use in model column docs."""
+    return f"{doc} {WEB_EDITABLE}"
+
 
 def ensure_database_exists(url: URL) -> None:  # pragma: no cover
     """Postgres-only: create the target database if it does not yet exist."""

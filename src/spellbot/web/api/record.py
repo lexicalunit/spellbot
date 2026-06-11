@@ -7,7 +7,7 @@ from contextlib import suppress
 from datetime import UTC, date, datetime, timedelta
 from enum import Enum, auto
 from typing import Any, NamedTuple
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 import aiohttp_jinja2
 from aiohttp import web
@@ -15,8 +15,18 @@ from ddtrace.trace import tracer
 
 from spellbot import services
 from spellbot.database import db_session_manager
-from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER
+from spellbot.enums import (
+    GAME_BRACKET_ORDER,
+    GAME_FORMAT_ORDER,
+    GAME_SERVICE_ORDER,
+    MAX_SEATS,
+    MIN_SEATS,
+    VALID_BRACKETS,
+    VALID_FORMATS,
+    VALID_SERVICES,
+)
 from spellbot.metrics import add_span_request_id, generate_request_id
+from spellbot.models import Channel, Guild, web_editable_docs
 from spellbot.services.plays import (
     CHANNEL_PAGE_SIZE,
     CHANNEL_RECORDS_SORT_COLUMNS,
@@ -25,6 +35,8 @@ from spellbot.services.plays import (
     RecordFilters,
 )
 from spellbot.web.api.admin_auth import is_owner_request
+from spellbot.web.api.moderation import viewer_is_moderator
+from spellbot.web.api.viewer_auth import get_viewer
 
 logger = logging.getLogger(__name__)
 
@@ -253,6 +265,101 @@ def bracket_choices() -> list[dict[str, Any]]:
     return [{"value": b.value, "label": str(b)} for b in GAME_BRACKET_ORDER]
 
 
+def service_choices() -> list[dict[str, Any]]:
+    return [{"value": s.value, "label": str(s)} for s in GAME_SERVICE_ORDER]
+
+
+# The seat counts offered in the channel settings form and accepted on submit.
+SEAT_CHOICES = list(range(MIN_SEATS, MAX_SEATS + 1))
+VALID_SEATS = frozenset(SEAT_CHOICES)
+
+
+def form_bool(form: Any, name: str) -> bool:
+    """Interpret a checkbox field: present (checked) is True, absent is False."""
+    return form.get(name) is not None
+
+
+def form_str(form: Any, name: str, max_len: int | None) -> str:
+    """Read a trimmed string field, truncated to `max_len` when provided."""
+    value = (form.get(name) or "").strip()
+    return value[:max_len] if max_len else value
+
+
+def form_choice(form: Any, name: str, valid: frozenset[int]) -> int | None:
+    """Read an integer enum field, returning None when missing or out of range."""
+    raw = form.get(name)
+    if raw is None:
+        return None
+    try:
+        value = int(raw)
+    except TypeError, ValueError:
+        return None
+    return value if value in valid else None
+
+
+def parse_channel_settings(form: Any) -> dict[str, Any]:
+    """Coerce + validate a channel settings form into a column->value mapping."""
+    values: dict[str, Any] = {
+        "auto_verify": form_bool(form, "auto_verify"),
+        "unverified_only": form_bool(form, "unverified_only"),
+        "verified_only": form_bool(form, "verified_only"),
+        "voice_invite": form_bool(form, "voice_invite"),
+        "delete_expired": form_bool(form, "delete_expired"),
+        "blind_games": form_bool(form, "blind_games"),
+        "motd": form_str(form, "motd", Channel.motd.property.columns[0].type.length),
+        "extra": form_str(form, "extra", Channel.extra.property.columns[0].type.length),
+        "voice_category": form_str(
+            form,
+            "voice_category",
+            Channel.voice_category.property.columns[0].type.length,
+        ),
+    }
+    if (seats := form_choice(form, "default_seats", VALID_SEATS)) is not None:
+        values["default_seats"] = seats
+    if (fmt := form_choice(form, "default_format", VALID_FORMATS)) is not None:
+        values["default_format"] = fmt
+    if (bracket := form_choice(form, "default_bracket", VALID_BRACKETS)) is not None:
+        values["default_bracket"] = bracket
+    if (service := form_choice(form, "default_service", VALID_SERVICES)) is not None:
+        values["default_service"] = service
+    return values
+
+
+def parse_guild_settings(form: Any) -> dict[str, Any]:
+    """Coerce + validate a guild settings form into a column->value mapping."""
+    return {
+        "show_links": form_bool(form, "show_links"),
+        "voice_create": form_bool(form, "voice_create"),
+        "use_max_bitrate": form_bool(form, "use_max_bitrate"),
+        "enable_mythic_track": form_bool(form, "enable_mythic_track"),
+        "motd": form_str(form, "motd", Guild.motd.property.columns[0].type.length),
+        "suggest_voice_category": form_str(
+            form,
+            "suggest_voice_category",
+            Guild.suggest_voice_category.property.columns[0].type.length,
+        ),
+    }
+
+
+async def request_is_moderator(request: web.Request, guild_xid: int) -> bool:
+    """Return True when the request's logged-in viewer moderates `guild_xid`."""
+    _, is_moderator = await viewer_access(request, guild_xid)
+    return is_moderator
+
+
+async def viewer_access(request: web.Request, guild_xid: int) -> tuple[bool, bool]:
+    """Return `(is_logged_in, is_moderator)` for the request's viewer w.r.t. `guild_xid`."""
+    viewer_xid, _ = await get_viewer(request)
+    if viewer_xid is None:
+        return False, False
+    return True, await viewer_is_moderator(viewer_xid, guild_xid)
+
+
+def login_url(request: web.Request) -> str:
+    """Build a viewer login URL that returns to the current page after authenticating."""
+    return f"/queues/login?next={quote(request.path_qs, safe='')}"
+
+
 async def impl(request: web.Request, kind: RecordKind) -> web.Response:
     try:
         opts = await parse_opts(request, kind)
@@ -278,6 +385,9 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         return web.Response(status=404)
     records, total = result
 
+    channel = None
+    is_logged_in = False
+    is_moderator = False
     if kind is RecordKind.CHANNEL:
         assert opts.guild_xid is not None
         guild = await services.guilds.get(opts.guild_xid)
@@ -285,6 +395,7 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         channel = await services.channels.select(opts.target_xid)
         target_name = channel.name if channel else None
         page_size = CHANNEL_PAGE_SIZE
+        is_logged_in, is_moderator = await viewer_access(request, opts.guild_xid)
     else:
         guild_name = None
         user = await services.users.get(opts.target_xid)
@@ -319,6 +430,13 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         "sort_choices": sort_choices(kind),
         "format_choices": format_choices(),
         "bracket_choices": bracket_choices(),
+        "service_choices": service_choices(),
+        "seat_choices": SEAT_CHOICES,
+        "channel": channel,
+        "channel_help": web_editable_docs(Channel),
+        "is_logged_in": is_logged_in,
+        "is_moderator": is_moderator,
+        "login_url": login_url(request),
     }
     return aiohttp_jinja2.render_template(path, request, context)
 
@@ -387,12 +505,20 @@ async def guild_impl(request: web.Request) -> web.Response:
             tz_offset = int(tz_offset_cookie)
     tz_name = request.cookies.get("timezone_name")
 
+    is_logged_in, is_moderator = await viewer_access(request, guild_xid)
+    guild_settings = await services.guilds.get(guild_xid) if is_moderator else None
+
     context = {
         "guild": guild["guild"],
         "channels": guild["channels"],
         "tz_offset": tz_offset,
         "tz_name": tz_name,
         "is_owner": await is_owner_request(request),
+        "is_logged_in": is_logged_in,
+        "is_moderator": is_moderator,
+        "login_url": login_url(request),
+        "guild_settings": guild_settings,
+        "guild_help": web_editable_docs(Guild),
     }
     return aiohttp_jinja2.render_template("guild.html.j2", request, context)
 
@@ -425,6 +551,49 @@ async def guild_promote_endpoint(request: web.Request) -> web.StreamResponse:
     add_span_request_id(generate_request_id())
     async with db_session_manager():
         return await guild_promote_impl(request)
+
+
+async def guild_settings_impl(request: web.Request) -> web.Response:
+    """Moderator-only: update a guild's settings, then redirect back to its page."""
+    try:
+        guild_xid = int(request.match_info["guild"])
+    except ValueError:
+        return web.Response(status=404)
+    if not await request_is_moderator(request, guild_xid):
+        return web.Response(status=403, text="Forbidden")
+    form = await request.post()
+    await services.guilds.update_settings(guild_xid, **parse_guild_settings(form))
+    return web.HTTPFound(f"/g/{guild_xid}")
+
+
+@routes.post(r"/g/{guild}/settings")
+@tracer.wrap(name="web", resource="guild_settings")
+async def guild_settings_endpoint(request: web.Request) -> web.StreamResponse:
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        return await guild_settings_impl(request)
+
+
+async def channel_settings_impl(request: web.Request) -> web.Response:
+    """Moderator-only: update a channel's settings, then redirect back to its page."""
+    try:
+        guild_xid = int(request.match_info["guild"])
+        channel_xid = int(request.match_info["channel"])
+    except ValueError:
+        return web.Response(status=404)
+    if not await request_is_moderator(request, guild_xid):
+        return web.Response(status=403, text="Forbidden")
+    form = await request.post()
+    await services.channels.update_settings(channel_xid, **parse_channel_settings(form))
+    return web.HTTPFound(f"/g/{guild_xid}/c/{channel_xid}")
+
+
+@routes.post(r"/g/{guild}/c/{channel}/settings")
+@tracer.wrap(name="web", resource="channel_settings")
+async def channel_settings_endpoint(request: web.Request) -> web.StreamResponse:
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        return await channel_settings_impl(request)
 
 
 def csv_line(values: list[Any]) -> bytes:

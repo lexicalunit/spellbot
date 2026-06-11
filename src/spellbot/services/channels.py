@@ -10,7 +10,7 @@ from sqlalchemy.sql.expression import update
 
 from spellbot.database import DatabaseSession
 from spellbot.environment import running_in_pytest
-from spellbot.models import Channel
+from spellbot.models import Channel, web_editable_columns
 
 if TYPE_CHECKING:
     from discord.abc import MessageableChannel
@@ -169,3 +169,18 @@ async def set_voice_invite(xid: int, value: bool) -> bool:
     """Set whether voice channel invites should be created for games."""
     await _set_column(xid, voice_invite=value)
     return value
+
+
+# Channel columns that guild moderators may edit from the web admin panel, derived from
+# the `[web-editable]` marker on each column's `doc`. This is an allow-list so that
+# protected/internal columns (xid, name, guild_xid, ...) can never be written by
+# smuggling them through the form payload.
+SETTINGS_FIELDS = web_editable_columns(Channel)
+
+
+async def update_settings(xid: int, **fields: object) -> None:
+    """Update an allow-listed subset of this channel's configurable settings."""
+    safe = {key: value for key, value in fields.items() if key in SETTINGS_FIELDS}
+    if not safe:
+        return
+    await _set_column(xid, **safe)

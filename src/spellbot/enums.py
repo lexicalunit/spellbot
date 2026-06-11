@@ -192,3 +192,10 @@ GAME_BRACKET_ORDER = [
     GameBracket.BRACKET_4,
     GameBracket.BRACKET_5,
 ]
+
+MIN_SEATS = min(service.max_seats for service in GameService)
+MAX_SEATS = max(service.max_seats for service in GameService)
+
+VALID_FORMATS = frozenset(game_format.value for game_format in GameFormat)
+VALID_BRACKETS = frozenset(game_bracket.value for game_bracket in GameBracket)
+VALID_SERVICES = frozenset(game_service.value for game_service in GameService)

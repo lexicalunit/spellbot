@@ -12,7 +12,7 @@ from sqlalchemy.sql.sqltypes import Boolean, Integer
 
 from spellbot.enums import GameBracket, GameFormat, GameService
 
-from . import Base, now
+from . import Base, now, web_editable
 
 if TYPE_CHECKING:
     from spellbot.data import ChannelData
@@ -65,7 +65,9 @@ class Channel(Base):
         nullable=False,
         default=4,
         server_default=text("4"),
-        doc="The default number of players that should be seated at newly created games.",
+        doc=web_editable(
+            "The default number of players that should be seated at newly created games.",
+        ),
     )
     default_format = Column(
         Integer(),
@@ -73,7 +75,7 @@ class Channel(Base):
         server_default=text(str(GameFormat.COMMANDER.value)),
         index=True,
         nullable=False,
-        doc="The default Magic: The Gathering format for this channel",
+        doc=web_editable("The default Magic: The Gathering format for this channel."),
     )
     default_bracket = Column(
         Integer(),
@@ -81,7 +83,7 @@ class Channel(Base):
         server_default=text(str(GameBracket.NONE.value)),
         index=True,
         nullable=False,
-        doc="The default commander bracket for this channel",
+        doc=web_editable("The default commander bracket for this channel"),
     )
     default_service = Column(
         Integer(),
@@ -89,40 +91,49 @@ class Channel(Base):
         server_default=text(str(GameService.CONVOKE.value)),
         index=True,
         nullable=False,
-        doc="The default service for games in this channel",
+        doc=web_editable("The default service for games in this channel."),
     )
     auto_verify = Column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc="Channels that will trigger automatic verification of users who post there.",
+        doc=web_editable(
+            "If enabled, this channel will trigger automatic verification of users who post there.",
+        ),
     )
     unverified_only = Column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc="Verified user posts will be deleted from this channel automatically.",
+        doc=web_editable("Verified user posts will be deleted from this channel automatically."),
     )
     verified_only = Column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc="Unverified user posts will be deleted from this channel automatically.",
+        doc=web_editable(
+            "Unverified user posts will be deleted from this channel automatically.",
+        ),
     )
     motd = Column(
         String(255),
-        doc="Channel message of the day",
+        doc=web_editable("This channel's message of the day."),
     )
     extra = Column(
         String(255),
-        doc="Extra message content (which can contain alerts)",
+        doc=web_editable(
+            "Extra message content (which can contain role pings) added to game posts.",
+        ),
     )
     voice_category = Column(
         String(50),
-        doc="Category name for voice channels for games in this channel.",
+        doc=web_editable(
+            "The channel category name for voice channels created by this bot "
+            "for games in this channel.",
+        ),
         nullable=True,
         default="SpellBot Voice Channels",
         server_default=text("'SpellBot Voice Channels'"),
@@ -132,21 +143,24 @@ class Channel(Base):
         nullable=False,
         default=False,
         server_default=false(),
-        doc="If true delete any expired games rather than updating them to show their expiration.",
+        doc=web_editable(
+            "If true, delete any expired games rather than updating them to show that they "
+            "expired.",
+        ),
     )
     voice_invite = Column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc="Configuration for creating voice invites for games in this channel.",
+        doc=web_editable("Create voice channel invites for games in this channel."),
     )
     blind_games = Column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc="Configuration for creating blind games in this channel.",
+        doc=web_editable("Hide the player list for games created in this channel."),
     )
 
     guild = relationship(

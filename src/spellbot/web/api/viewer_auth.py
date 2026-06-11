@@ -16,6 +16,7 @@ from spellbot.web.api.oauth import (
     display_name,
     fetch_oauth_identify,
     parse_user_xid,
+    safe_relative_path,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ routes = web.RouteTableDef()
 VIEWER_XID_KEY = "viewer_xid"
 VIEWER_NAME_KEY = "viewer_name"
 VIEWER_STATE_KEY = "viewer_oauth_state"
+VIEWER_NEXT_KEY = "viewer_oauth_next"
 
 VIEWER_REDIRECT_AFTER_LOGIN = "/queues?my=1"
 VIEWER_REDIRECT_AFTER_LOGOUT = "/queues"
@@ -82,6 +84,12 @@ async def viewer_login(request: web.Request) -> web.StreamResponse:
     state = secrets.token_urlsafe(32)
     session = await get_session(request)
     session[VIEWER_STATE_KEY] = state
+    # Remember where to send the viewer back to after login, when a safe path is given.
+    next_path = safe_relative_path(request.query.get("next"))
+    if next_path:
+        session[VIEWER_NEXT_KEY] = next_path
+    else:
+        session.pop(VIEWER_NEXT_KEY, None)
     params = {
         "client_id": settings.BOT_APPLICATION_ID,
         "response_type": "code",
@@ -131,7 +139,9 @@ async def viewer_oauth_callback(request: web.Request) -> web.StreamResponse:
     session.pop(VIEWER_STATE_KEY, None)
     session[VIEWER_XID_KEY] = xid
     session[VIEWER_NAME_KEY] = display_name(user, xid)
-    return web.HTTPFound(VIEWER_REDIRECT_AFTER_LOGIN)
+    # Return to the page the viewer started from, when one was safely recorded.
+    next_path = safe_relative_path(session.pop(VIEWER_NEXT_KEY, None))
+    return web.HTTPFound(next_path or VIEWER_REDIRECT_AFTER_LOGIN)
 
 
 @routes.post("/queues/logout")

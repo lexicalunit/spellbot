@@ -17,6 +17,25 @@ DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token"  # noqa: S105
 DISCORD_IDENTIFY_URL = "https://discord.com/api/users/@me"
 
 
+def safe_relative_path(raw: str | None) -> str | None:
+    """
+    Return `raw` only if it is a safe same-origin relative path, else None.
+
+    Guards an OAuth `next` redirect against open-redirect abuse (CWE-601): browsers
+    treat backslashes as forward slashes, so normalize them first, then reject any
+    value carrying a scheme or host or resolving to a protocol-relative `//host` URL.
+    """
+    if not raw:
+        return None
+    normalized = raw.replace("\\", "/")
+    if not normalized.startswith("/") or normalized.startswith("//"):
+        return None
+    parsed = urlparse(normalized)
+    if parsed.scheme or parsed.netloc:
+        return None
+    return normalized
+
+
 def canonical_host_redirect(request: web.Request) -> web.HTTPFound | None:
     # If `request` arrived on a non-canonical host (e.g. via a vanity domain alias
     # like `queues.spellbot.io`), return a redirect to the same path+query on
