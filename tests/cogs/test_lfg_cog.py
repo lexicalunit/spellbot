@@ -549,6 +549,43 @@ class TestCogLookingForGameJoinButton:
             (await DatabaseSession.execute(select(func.count()).select_from(Game))).scalar() or 0
         ) == 1
 
+    async def test_join_when_blocked_with_to_mode(
+        self,
+        game: Game,
+        user: User,
+        message: discord.Message,
+        interaction: discord.Interaction,
+        bot: SpellBot,
+        factories: Factories,
+    ) -> None:
+        # Tournament organizer mode ignores blocks, so the blocked user joins the game.
+        other_user = factories.user.create(xid=user.xid + 1, game=game)
+        factories.block.create(user_xid=other_user.xid, blocked_user_xid=user.xid)
+        await DatabaseSession.execute(
+            update(Channel).where(Channel.xid == game.channel.xid).values(to_mode=True),
+        )
+        await DatabaseSession.commit()
+
+        with mock_operations(
+            lfg_action,
+            users=[
+                mock_discord_object(user),
+                mock_discord_object(other_user),
+            ],
+        ):
+            interaction.message = message
+            view = GameView(bot=bot)
+
+            await view.join(interaction)
+
+            lfg_action.safe_send_user.assert_not_called()
+
+        assert (
+            (await DatabaseSession.execute(select(func.count()).select_from(Game))).scalar() or 0
+        ) == 1
+        DatabaseSession.expire_all()
+        assert sorted(p.xid for p in await game.players()) == sorted([user.xid, other_user.xid])
+
     async def test_join_when_started(
         self,
         game: Game,

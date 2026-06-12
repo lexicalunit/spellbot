@@ -225,6 +225,7 @@ def create_mock_game(
         voice_invite=False,
         delete_expired=False,
         blind_games=False,
+        to_mode=False,
     )
     return GameData(
         id=game_id,
@@ -323,4 +324,5 @@ def create_mock_channel(
         voice_invite=kwargs.get("voice_invite", False),
         delete_expired=kwargs.get("delete_expired", False),
         blind_games=kwargs.get("blind_games", False),
+        to_mode=kwargs.get("to_mode", False),
     )

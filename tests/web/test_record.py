@@ -1332,6 +1332,39 @@ class TestWebChannelSettings:
         assert updated.motd == "channel motd"
         assert updated.auto_verify is True
 
+    async def test_settings_update_to_mode(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=716, name="guild")
+        channel = factories.channel.create(xid=816, name="channel", guild=guild, to_mode=False)
+
+        # Enabling tournament organizer mode round-trips through the settings form.
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/c/{channel.xid}/settings",
+            data={"to_mode": "true"},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        updated = (
+            await DatabaseSession.execute(select(Channel).where(Channel.xid == channel.xid))
+        ).scalar_one()
+        assert updated.to_mode is True
+
+        # Omitting the checkbox disables it again.
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/c/{channel.xid}/settings",
+            data={"motd": "x"},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        DatabaseSession.expire_all()
+        updated = (
+            await DatabaseSession.execute(select(Channel).where(Channel.xid == channel.xid))
+        ).scalar_one()
+        assert updated.to_mode is False
+
     async def test_settings_rejects_invalid_enum(
         self,
         mod_client: ClientSession,

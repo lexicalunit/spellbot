@@ -304,6 +304,7 @@ async def upsert(
     locale: str,
     create_new: bool = False,
     blind: bool = False,
+    to_mode: bool = False,
 ) -> tuple[bool, GameData]:
     """Create or update a new game matching the given criteria."""
     existing_game: Game | None = None
@@ -318,6 +319,7 @@ async def upsert(
             format=format,
             bracket=bracket,
             service=service,
+            to_mode=to_mode,
         )
 
     new: bool
@@ -374,6 +376,7 @@ async def _find_existing(
     format: int,
     bracket: int,
     service: int,
+    to_mode: bool = False,
 ) -> Game | None:
     """Find a suitable existing game with the given criteria if one exists."""
     required_seats = 1 + len(friends)
@@ -414,6 +417,14 @@ async def _find_existing(
         ),
     )
 
+    game: Game
+    found_games = (await DatabaseSession.execute(found_game_stmt)).scalars().all()
+
+    if to_mode:
+        # Tournament organizer mode: user blocks are not enforced in this channel, so
+        # the first matching game is always acceptable.
+        return found_games[0] if found_games else None
+
     joiners = [author_xid, *friends]
     xids_blocked_by_joiners = [
         row.blocked_user_xid
@@ -427,8 +438,6 @@ async def _find_existing(
     ]
 
     # Return the first game that doesn't match up players who have blocked each other
-    game: Game
-    found_games = (await DatabaseSession.execute(found_game_stmt)).scalars().all()
     for game in found_games:
         players = [player.xid for player in await game.players()]
         if any(xid in players for xid in xids_blocked_by_joiners):

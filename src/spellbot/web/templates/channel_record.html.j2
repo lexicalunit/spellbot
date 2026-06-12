@@ -127,6 +127,14 @@
                     </div>
                     <p class="hint">{{ channel_help['blind_games'] }}</p>
                 </div>
+                <div class="field">
+                    <div class="toggle-row">
+                        <input type="checkbox" id="ch-to-mode" name="to_mode" value="true"
+                               {{ 'checked' if channel.to_mode else '' }}>
+                        <label for="ch-to-mode">Tournament organizer mode</label>
+                    </div>
+                    <p class="hint">{{ channel_help['to_mode'] }}</p>
+                </div>
             </div>
             <div class="actions">
                 <button type="submit" class="button">Save channel settings</button>

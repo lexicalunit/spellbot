@@ -537,6 +537,55 @@ class TestServiceGamesUpsert:
         assert [p.xid for p in await game.players()] == [user1.xid]
         assert [p.xid for p in await other_game.players()] == [user2.xid]
 
+    async def test_lfg_when_existing_game_and_blocked_with_to_mode(self, game: Game) -> None:
+        # In tournament organizer mode blocks are ignored, so the blocked user joins
+        # the existing game rather than being split into a new one.
+        user1 = UserFactory.create(xid=101, game=game)
+        user2 = UserFactory.create(xid=102)
+        BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
+
+        new, _ = await games.upsert(
+            guild_xid=game.guild.xid,
+            channel_xid=game.channel.xid,
+            author_xid=user2.xid,
+            friends=[],
+            seats=game.seats,
+            rules=None,
+            format=game.format,
+            bracket=game.bracket,
+            service=GameService.CONVOKE.value,
+            locale="en",
+            to_mode=True,
+        )
+
+        DatabaseSession.expire_all()
+        all_games = (await DatabaseSession.execute(select(Game))).scalars().all()
+        assert not new
+        assert len(all_games) == 1
+        assert sorted(p.xid for p in await game.players()) == [user1.xid, user2.xid]
+
+    async def test_lfg_to_mode_with_no_matching_game(self, game: Game) -> None:
+        # to_mode still creates a fresh game when no existing game matches the criteria
+        # (exercises the empty-result path of the matchmaker's to_mode short-circuit).
+        user = UserFactory.create(xid=201)
+        unmatched_seats = game.seats + 2
+
+        new, _ = await games.upsert(
+            guild_xid=game.guild.xid,
+            channel_xid=game.channel.xid,
+            author_xid=user.xid,
+            friends=[],
+            seats=unmatched_seats,
+            rules=None,
+            format=game.format,
+            bracket=game.bracket,
+            service=GameService.CONVOKE.value,
+            locale="en",
+            to_mode=True,
+        )
+
+        assert new
+
 
 @pytest.mark.asyncio
 class TestGamesPendingNotification:

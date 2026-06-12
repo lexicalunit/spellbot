@@ -29,3 +29,4 @@ class ChannelData:
     voice_invite: bool
     delete_expired: bool
     blind_games: bool
+    to_mode: bool

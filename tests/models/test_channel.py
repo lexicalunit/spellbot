@@ -40,4 +40,5 @@ class TestModelChannel:
             "voice_invite": channel.voice_invite,
             "delete_expired": channel.delete_expired,
             "blind_games": channel.blind_games,
+            "to_mode": channel.to_mode,
         }

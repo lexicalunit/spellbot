@@ -162,6 +162,16 @@ class Channel(Base):
         server_default=false(),
         doc=web_editable("Hide the player list for games created in this channel."),
     )
+    to_mode = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc=web_editable(
+            "Tournament organizer mode: when enabled, user blocks are not enforced "
+            "for games in this channel.",
+        ),
+    )
 
     guild = relationship(
         "Guild",
@@ -197,4 +207,5 @@ class Channel(Base):
             voice_invite=self.voice_invite,  # type: ignore
             delete_expired=self.delete_expired,  # type: ignore
             blind_games=self.blind_games,  # type: ignore
+            to_mode=self.to_mode,  # type: ignore
         )

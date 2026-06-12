@@ -153,6 +153,7 @@ class LookingForGameAction(BaseAction):
                 bracket=bracket,
                 service=service,
                 blind=bool(self.channel_data.blind_games),
+                to_mode=bool(self.channel_data.to_mode),
                 locale=guild_locale(self.guild),
             )
             return new, game
@@ -160,7 +161,11 @@ class LookingForGameAction(BaseAction):
         assert message_xid
         found = await services.games.get_by_message_xid(message_xid)
         locale = found.locale if found else "en"
-        if not found or await services.games.blocked(found, self.interaction.user.id):
+        # Tournament organizer mode disables block enforcement for this channel.
+        enforce_blocks = not self.channel_data.to_mode
+        if not found or (
+            enforce_blocks and await services.games.blocked(found, self.interaction.user.id)
+        ):
             await safe_send_user(self.interaction.user, t("lfg.cannot_join", locale=locale))
             return None, None
 
