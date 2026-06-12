@@ -445,7 +445,9 @@ class TestWebAnalyticsSignatureBypass:
         try:
             # Create a new client with settings already disabled
             app = build_web_app()
-            test_client = await aiohttp_client(app)
+            # See the `client` fixture: disable the test server's access logger to
+            # dodge aiohttp's Python 3.14 access-log time-formatter crash.
+            test_client = await aiohttp_client(app, server_kwargs={"access_log": None})
 
             # Request the summary JSON endpoint without any signature parameters
             path = f"/g/{guild.xid}/analytics/summary"

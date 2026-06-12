@@ -291,7 +291,11 @@ def client(
     with patch.object(runtime_settings, "API_BASE_URL", "http://127.0.0.1"):
         app = build_web_app()
     event_loop = asyncio.get_event_loop()
-    return event_loop.run_until_complete(aiohttp_client(app))
+    # Disable the test server's access logger: on Python 3.14 aiohttp's access-log
+    # time formatter raises (`tm_gmtoff` is None), spamming errors during tests.
+    return event_loop.run_until_complete(
+        aiohttp_client(app, server_kwargs={"access_log": None}),
+    )
 
 
 @pytest.fixture

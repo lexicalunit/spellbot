@@ -27,6 +27,8 @@ from .metrics import add_span_error
 from .settings import settings
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from discord.abc import MessageableChannel
     from discord.ui import Item
 
@@ -239,6 +241,29 @@ def is_mod(interaction: discord.Interaction) -> bool:
     return True
 
 
+def is_moderator(
+    *,
+    is_guild_owner: bool,
+    has_admin: bool,
+    has_ban_members: bool,
+    role_names: Iterable[str],
+) -> bool:
+    """
+    Decide moderator/admin status from already-resolved permission primitives.
+
+    Shared by the bot (`user_can_moderate`) and the web tier so both apply identical
+    rules. A member is a moderator when they own the guild, have the administrator or
+    ban-members permission, or hold a role named after `ADMIN_ROLE` / `MOD_PREFIX`.
+    """
+    if is_guild_owner:
+        return True
+    if has_admin or has_ban_members:
+        return True
+    return any(
+        name == settings.ADMIN_ROLE or name.startswith(settings.MOD_PREFIX) for name in role_names
+    )
+
+
 def user_can_moderate(
     author: discord.User | discord.Member | None,
     guild: discord.Guild | None,
@@ -248,19 +273,27 @@ def user_can_moderate(
         return False
     if not hasattr(author, "id"):
         return False
-    author_id = author.id
-    if author_id == guild.owner_id:
+    if author.id == settings.OWNER_XID:
         return True
-    if not hasattr(author, "roles"):
-        return False
-    member: discord.Member = cast("discord.Member", author)
-    if (perms := safe_permissions_for(channel, member)) and perms.administrator:
-        return True
-    author_roles = author.roles  # type: ignore
-    return any(
-        role.name == settings.ADMIN_ROLE or role.name.startswith(settings.MOD_PREFIX)
-        for role in cast("list[discord.Role]", author_roles)
-        if role is not None
+    is_guild_owner = author.id == guild.owner_id
+    has_admin = False
+    has_ban_members = False
+    role_names: list[str] = []
+    if hasattr(author, "roles"):
+        member: discord.Member = cast("discord.Member", author)
+        if perms := safe_permissions_for(channel, member):
+            has_admin = perms.administrator
+            has_ban_members = perms.ban_members
+        role_names = [
+            role.name
+            for role in cast("list[discord.Role]", author.roles)  # type: ignore
+            if role is not None
+        ]
+    return is_moderator(
+        is_guild_owner=is_guild_owner,
+        has_admin=has_admin,
+        has_ban_members=has_ban_members,
+        role_names=role_names,
     )
 
 

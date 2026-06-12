@@ -3,13 +3,23 @@
 {% block heading %}{{ guild.name | default('SpellBot Server', true) }}{% endblock %}
 {% block subtitle %}
 <div class="subtitle">
-    <a href="https://discord.com/channels/{{ guild.xid }}">Open in Discord</a>
+    <a href="https://discord.com/channels/{{ guild.xid }}">Open server</a>
     &middot; <a href="/queues/g/{{ guild.xid }}">Notification preferences</a>
     <span class="user-id">{{ guild.xid }}</span>
     &middot; {{ channels | length }} channel{{ '' if channels | length == 1 else 's' }} with games
 </div>
 {% endblock %}
 {% block content %}
+{%- if not is_logged_in %}
+<div class="section">
+    <div class="card">
+        <p class="login-prompt">
+            Moderators can manage this server's settings here.
+            <a href="{{ login_url }}" class="button">Log in with Discord</a>
+        </p>
+    </div>
+</div>
+{%- endif %}
 {%- if is_owner %}
 <div class="section">
     <h2>Owner Controls</h2>
@@ -24,6 +34,64 @@
             <button type="submit" class="button">
                 {{ 'Disable promotion' if guild.promote else 'Enable promotion' }}
             </button>
+        </form>
+    </div>
+</div>
+{%- endif %}
+{%- if is_moderator and guild_settings %}
+<div class="section">
+    <h2>Server Settings</h2>
+    <div class="card">
+        <form method="post" action="/g/{{ guild.xid }}/settings" class="settings-form">
+            <div class="grid">
+                <div class="field">
+                    <label for="guild-motd">Message of the day</label>
+                    <p class="hint">{{ guild_help['motd'] }}</p>
+                    <input type="text" id="guild-motd" name="motd" maxlength="255"
+                           value="{{ guild_settings.motd | default('', true) }}">
+                </div>
+                <div class="field">
+                    <label for="guild-vc-category">Suggested voice category</label>
+                    <p class="hint">{{ guild_help['suggest_voice_category'] }}</p>
+                    <input type="text" id="guild-vc-category" name="suggest_voice_category" maxlength="100"
+                           value="{{ guild_settings.suggest_voice_category | default('', true) }}">
+                </div>
+                <div class="field">
+                    <div class="toggle-row">
+                        <input type="checkbox" id="guild-show-links" name="show_links" value="true"
+                               {{ 'checked' if guild_settings.show_links else '' }}>
+                        <label for="guild-show-links">Show game links publicly</label>
+                    </div>
+                    <p class="hint">{{ guild_help['show_links'] }}</p>
+                </div>
+                <div class="field">
+                    <div class="toggle-row">
+                        <input type="checkbox" id="guild-voice-create" name="voice_create" value="true"
+                               {{ 'checked' if guild_settings.voice_create else '' }}>
+                        <label for="guild-voice-create">Auto-create voice channels</label>
+                    </div>
+                    <p class="hint">{{ guild_help['voice_create'] }}</p>
+                </div>
+                <div class="field">
+                    <div class="toggle-row">
+                        <input type="checkbox" id="guild-max-bitrate" name="use_max_bitrate" value="true"
+                               {{ 'checked' if guild_settings.use_max_bitrate else '' }}>
+                        <label for="guild-max-bitrate">Use maximum bitrate</label>
+                    </div>
+                    <p class="hint">{{ guild_help['use_max_bitrate'] }}</p>
+                </div>
+                <div class="field">
+                    <div class="toggle-row">
+                        <input type="checkbox" id="guild-mythic-track" name="enable_mythic_track" value="true"
+                               {{ 'checked' if guild_settings.enable_mythic_track else '' }}>
+                        <label for="guild-mythic-track">Enable mythic track</label>
+                    </div>
+                    <p class="hint">{{ guild_help['enable_mythic_track'] }}</p>
+                </div>
+            </div>
+            <div class="actions">
+                <button type="submit" class="button">Save server settings</button>
+            </div>
         </form>
     </div>
 </div>

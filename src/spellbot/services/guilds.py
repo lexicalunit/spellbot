@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_, or_
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Channel, Guild, GuildAward
+from spellbot.models import Channel, Guild, GuildAward, web_editable_columns
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
@@ -137,6 +137,24 @@ async def set_promote(guild_xid: int, promote: bool) -> None:
         update(Guild).where(Guild.xid == guild_xid).values(promote=promote),  # type: ignore
     )
     await DatabaseSession.commit()
+
+
+# Guild columns that guild moderators may edit from the web admin panel, derived from
+# the `[web-editable]` marker on each column's `doc`. This is an allow-list so that
+# owner-only / internal columns can never be written through the settings form payload.
+SETTINGS_FIELDS = web_editable_columns(Guild)
+
+
+async def update_settings(guild_xid: int, **fields: object) -> None:
+    """Update an allow-listed subset of this guild's configurable settings."""
+    safe = {key: value for key, value in fields.items() if key in SETTINGS_FIELDS}
+    if not safe:
+        return
+    await DatabaseSession.execute(
+        update(Guild).where(Guild.xid == guild_xid).values(**safe),  # type: ignore
+    )
+    await DatabaseSession.commit()
+    guild_cache.pop(guild_xid, None)
 
 
 async def get(guild_xid: int) -> GuildData | None:

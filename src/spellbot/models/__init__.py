@@ -4,6 +4,10 @@ from importlib import import_module
 from inspect import getmembers, isclass
 from pathlib import Path
 from pkgutil import iter_modules
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    from sqlalchemy import Table
 
 
 def import_models() -> None:  # pragma: no cover
@@ -15,7 +19,15 @@ def import_models() -> None:  # pragma: no cover
                 globals()[name] = _object
 
 
-from .base import Base, create_all, literalquery, now, reverse_all  # noqa: I001,E402
+from .base import (  # noqa: I001,E402
+    WEB_EDITABLE,
+    Base,
+    create_all,
+    literalquery,
+    now,
+    reverse_all,
+    web_editable,
+)
 
 from .alert import Alert  # noqa: E402
 from .award import GuildAward, UserAward  # noqa: E402
@@ -32,8 +44,32 @@ from .user import User  # noqa: E402
 from .verify import Verify  # noqa: E402
 from .watch import Watch  # noqa: E402
 
+
+class HasTable(Protocol):
+    __table__: Table
+
+
+def web_editable_columns(model: HasTable) -> frozenset[str]:
+    """Return the names of columns a guild moderator may edit, per their `doc` marker."""
+    return frozenset(
+        column.name
+        for column in model.__table__.columns
+        if column.doc and WEB_EDITABLE in column.doc
+    )
+
+
+def web_editable_docs(model: HasTable) -> dict[str, str]:
+    """Map each web-editable column name to its help text (its `doc` minus the marker)."""
+    return {
+        column.name: column.doc.replace(WEB_EDITABLE, "").strip()
+        for column in model.__table__.columns
+        if column.doc and WEB_EDITABLE in column.doc
+    }
+
+
 __all__ = [
     "MAX_RULES_LENGTH",
+    "WEB_EDITABLE",
     "Alert",
     "Base",
     "Block",
@@ -57,4 +93,7 @@ __all__ = [
     "literalquery",
     "now",
     "reverse_all",
+    "web_editable",
+    "web_editable_columns",
+    "web_editable_docs",
 ]

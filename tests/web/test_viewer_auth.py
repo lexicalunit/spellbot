@@ -87,6 +87,35 @@ class TestCanonicalHostRedirect:
         assert resp.location == "https://bot.spellbot.io/"
 
 
+class TestSafeRelativePath:
+    def test_accepts_simple_path(self) -> None:
+        assert oauth.safe_relative_path("/g/123") == "/g/123"
+
+    def test_accepts_path_with_query(self) -> None:
+        assert oauth.safe_relative_path("/g/1/c/2?page=3") == "/g/1/c/2?page=3"
+
+    def test_rejects_none_and_empty(self) -> None:
+        assert oauth.safe_relative_path(None) is None
+        assert oauth.safe_relative_path("") is None
+
+    def test_rejects_absolute_url(self) -> None:
+        assert oauth.safe_relative_path("https://evil.example/x") is None
+
+    def test_rejects_protocol_relative(self) -> None:
+        assert oauth.safe_relative_path("//evil.example/x") is None
+
+    def test_rejects_backslash_protocol_relative(self) -> None:
+        assert oauth.safe_relative_path("/\\evil.example/x") is None
+
+    def test_rejects_non_rooted_path(self) -> None:
+        assert oauth.safe_relative_path("g/123") is None
+
+    def test_rejects_embedded_newline_protocol_relative(self) -> None:
+        # The leading-slash gate sees `/<newline>...`, but urlparse strips the
+        # control character, collapsing it to `//evil.example` with a netloc.
+        assert oauth.safe_relative_path("/\n/evil.example/x") is None
+
+
 @pytest.mark.asyncio
 class TestGetViewer:
     async def test_empty_session(self, mocker: MockerFixture) -> None:
@@ -290,6 +319,47 @@ class TestViewerOauthCallback:
         mocker.patch(
             "spellbot.web.api.oauth.httpx.AsyncClient",
             return_value=make_httpx_client(identify_json={"id": "42", "global_name": "Amy"}),
+        )
+        resp = await client.get(
+            f"/queues/oauth/callback?code=abc&state={state}",
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == "/queues?my=1"
+
+    async def test_success_redirects_to_safe_next(
+        self,
+        client: WebClient,
+        mocker: MockerFixture,
+    ) -> None:
+        configure_viewer(mocker)
+        login = await client.get("/queues/login?next=/g/123", allow_redirects=False)
+        state = parse_qs(urlparse(login.headers["Location"]).query)["state"][0]
+        mocker.patch(
+            "spellbot.web.api.oauth.httpx.AsyncClient",
+            return_value=make_httpx_client(identify_json={"id": "42", "username": "u"}),
+        )
+        resp = await client.get(
+            f"/queues/oauth/callback?code=abc&state={state}",
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == "/g/123"
+
+    async def test_unsafe_next_falls_back_to_default(
+        self,
+        client: WebClient,
+        mocker: MockerFixture,
+    ) -> None:
+        configure_viewer(mocker)
+        login = await client.get(
+            "/queues/login?next=https://evil.example/x",
+            allow_redirects=False,
+        )
+        state = parse_qs(urlparse(login.headers["Location"]).query)["state"][0]
+        mocker.patch(
+            "spellbot.web.api.oauth.httpx.AsyncClient",
+            return_value=make_httpx_client(identify_json={"id": "42", "username": "u"}),
         )
         resp = await client.get(
             f"/queues/oauth/callback?code=abc&state={state}",

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, cast
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false, null, true
 from sqlalchemy.orm import relationship
 
-from . import Base, now
+from . import Base, now, web_editable
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -44,28 +44,32 @@ class Guild(Base):
     )
     motd = Column(
         String(255),
-        doc="Guild message of the day",
+        doc=web_editable("The message of the day, shown in all game posts on the server."),
     )
     show_links = Column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc="Configuration for showing game related links publicly",
+        doc=web_editable("When enabled the game links will be visible in the channel post."),
     )
     voice_create = Column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc="Configuration for automatically created voice channels for games",
+        doc=web_editable(
+            "When enabled the bot will automatically create voice channels for games.",
+        ),
     )
     use_max_bitrate = Column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc="Configuration for using maximum bitrate for created voice channels",
+        doc=web_editable(
+            "When enabled the bot will create voice channels using the maximum bitrate possible.",
+        ),
     )
     banned = Column(
         Boolean,
@@ -83,7 +87,7 @@ class Guild(Base):
     )
     suggest_voice_category = Column(
         String(100),
-        doc="Category to use when suggesting voice channels for games",
+        doc=web_editable("Category to use when suggesting voice channels for games"),
         nullable=True,
         default=None,
         server_default=null(),
@@ -93,7 +97,7 @@ class Guild(Base):
         nullable=False,
         default=False,
         server_default=false(),
-        doc="If true, enable mythic track for this guild",
+        doc=web_editable("If true, enable Mythic Track for this guild."),
     )
     active = Column(
         Boolean,
