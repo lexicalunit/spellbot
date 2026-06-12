@@ -50,6 +50,14 @@ class TestViewerIsModerator:
         mocker.patch.object(moderation.settings, "BOT_TOKEN", None)
         assert await moderation.viewer_is_moderator(1, 100) is False
 
+    async def test_bot_owner_moderates_every_guild(self, mocker: MockerFixture) -> None:
+        # The owner is not a member of the guild, yet OWNER_XID overrides everything
+        # without any Discord API round-trip.
+        mocker.patch.object(moderation.settings, "OWNER_XID", 42)
+        client = mocker.patch.object(moderation.httpx, "AsyncClient")
+        assert await moderation.viewer_is_moderator(42, 100) is True
+        client.assert_not_called()
+
     async def test_guild_owner_is_moderator(self, mocker: MockerFixture) -> None:
         mocker.patch.object(
             moderation.httpx,

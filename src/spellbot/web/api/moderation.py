@@ -51,6 +51,8 @@ async def viewer_is_moderator(viewer_xid: int, guild_xid: int) -> bool:
     the bot token, then applies the same rules as the bot's `user_can_moderate`. The
     decision is cached (see `MOD_CACHE_TTL_S`) to avoid an API round-trip per request.
     """
+    if settings.OWNER_XID is not None and viewer_xid == settings.OWNER_XID:
+        return True
     key = (viewer_xid, guild_xid)
     cached = cache_get(key)
     if cached is not None:
