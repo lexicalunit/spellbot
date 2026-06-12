@@ -17,6 +17,9 @@ from discord.ext import commands
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import sessionmaker
 
+# Importing registers the audit.activity / audit.transaction tables on Base.metadata so they are
+# created and truncated alongside the other tables in the test database.
+from spellbot import audit  # noqa: F401
 from spellbot.client import build_bot
 from spellbot.database import (
     DatabaseSession,
@@ -203,7 +206,12 @@ async def session_context(
         sync_session = sync_session_factory()
 
         def _truncate_all() -> None:
-            tables = ",".join(f'"{t.name}"' for t in reversed(Base.metadata.sorted_tables))
+            # Schema-qualify so the audit-schema tables (audit.activity / audit.transaction) are
+            # reset between tests too, not just public tables.
+            tables = ",".join(
+                f'"{t.schema}"."{t.name}"' if t.schema else f'"{t.name}"'
+                for t in reversed(Base.metadata.sorted_tables)
+            )
             with sync_engine.connect() as conn:
                 conn.execute(text(f"TRUNCATE TABLE {tables} RESTART IDENTITY CASCADE"))
 

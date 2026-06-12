@@ -26,6 +26,7 @@ dependencies = [
   "humanize>=4.9.0",
   "hupper>=1.12.1",
   "packaging>=24.0",
+  "postgresql-audit>=0.18.0",
   "psycopg[binary]>=3.2.9",
   "pydantic-settings>=2.14.1",
   "python-dateutil>=2.8.2",
@@ -201,7 +202,6 @@ max-line-length = 100
 
 [tool.pylic]
 safe_licenses = [
-  "3-Clause BSD License",
   "Apache 2.0",
   "Apache License 2.0",
   "Apache Software License",
@@ -210,16 +210,13 @@ safe_licenses = [
   "BSD License",
   "BSD-2-Clause",
   "BSD-3-Clause",
-  "BSD-derived (http://www.repoze.org/LICENSE.txt)",
   "ISC License (ISCL)",
   "LICENSE.BSD3",
-  "MIT AND Python-2.0",
   "MIT License",
   "MIT",
   "Mozilla Public License 2.0 (MPL 2.0)",
   "PSF-2.0",
   "Python Software Foundation License",
-  "Unlicense",
 ]
 # Psycopg uses LGPLv3, which is ok to link against, but otherwise not compatible with the more
 # permissive license of this project. We can explicitly ignore the pylic errors this causes.

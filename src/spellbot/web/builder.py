@@ -20,6 +20,7 @@ from spellbot.settings import settings
 from spellbot.web.api import (
     admin_auth,
     analytics,
+    audit,
     dashboard,
     ping,
     queues,
@@ -42,6 +43,7 @@ ALL_ROUTES = [
     status.routes,
     analytics.routes,
     record.routes,
+    audit.routes,
     rest.routes,
     admin_auth.routes,
     dashboard.routes,

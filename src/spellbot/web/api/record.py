@@ -13,7 +13,7 @@ import aiohttp_jinja2
 from aiohttp import web
 from ddtrace.trace import tracer
 
-from spellbot import services
+from spellbot import audit, services
 from spellbot.database import db_session_manager
 from spellbot.enums import (
     GAME_BRACKET_ORDER,
@@ -36,6 +36,7 @@ from spellbot.services.plays import (
 )
 from spellbot.web.api.admin_auth import is_owner_request
 from spellbot.web.api.moderation import viewer_is_moderator
+from spellbot.web.api.oauth import safe_relative_path
 from spellbot.web.api.viewer_auth import get_viewer
 
 logger = logging.getLogger(__name__)
@@ -358,7 +359,10 @@ async def viewer_access(request: web.Request, guild_xid: int) -> tuple[bool, boo
 
 def login_url(request: web.Request) -> str:
     """Build a viewer login URL that returns to the current page after authenticating."""
-    return f"/queues/login?next={quote(request.path_qs, safe='')}"
+    # `next` is validated again where it is consumed (see `viewer_auth`), but sanitize the
+    # current path here too so a hostile request target can never seed an open redirect.
+    next_path = safe_relative_path(request.path_qs) or "/"
+    return f"/queues/login?next={quote(next_path, safe='')}"
 
 
 async def impl(request: web.Request, kind: RecordKind) -> web.Response:
@@ -563,7 +567,9 @@ async def guild_settings_impl(request: web.Request) -> web.Response:
     if not await request_is_moderator(request, guild_xid):
         return web.Response(status=403, text="Forbidden")
     form = await request.post()
-    await services.guilds.update_settings(guild_xid, **parse_guild_settings(form))
+    viewer_xid, viewer_name = await get_viewer(request)
+    with audit.actor(viewer_xid, viewer_name, audit.SOURCE_WEB):
+        await services.guilds.update_settings(guild_xid, **parse_guild_settings(form))
     return web.HTTPFound(f"/g/{guild_xid}")
 
 
@@ -585,7 +591,9 @@ async def channel_settings_impl(request: web.Request) -> web.Response:
     if not await request_is_moderator(request, guild_xid):
         return web.Response(status=403, text="Forbidden")
     form = await request.post()
-    await services.channels.update_settings(channel_xid, **parse_channel_settings(form))
+    viewer_xid, viewer_name = await get_viewer(request)
+    with audit.actor(viewer_xid, viewer_name, audit.SOURCE_WEB):
+        await services.channels.update_settings(channel_xid, **parse_channel_settings(form))
     return web.HTTPFound(f"/g/{guild_xid}/c/{channel_xid}")
 
 
