@@ -3,16 +3,14 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
-from urllib.parse import parse_qs, urlparse
 
 import pytest
-import pytest_asyncio
 from sqlalchemy import select
 
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat
 from spellbot.models import Channel, GameStatus, Guild
-from spellbot.web.api import admin_auth, record
+from spellbot.web.api import record
 
 if TYPE_CHECKING:
     from aiohttp.client import ClientSession
@@ -987,42 +985,6 @@ class TestWebGuildDetail:
         assert "Owner Controls" not in text
 
 
-def make_owner_httpx_client() -> MagicMock:
-    """Mock `httpx.AsyncClient` for an OAuth flow identifying the owner (xid=42)."""
-    inner = MagicMock()
-    token_resp = MagicMock(status_code=200)
-    token_resp.json = MagicMock(return_value={"access_token": "tok"})
-    inner.post = AsyncMock(return_value=token_resp)
-    identify_resp = MagicMock(status_code=200)
-    identify_resp.json = MagicMock(return_value={"id": "42", "username": "owner"})
-    inner.get = AsyncMock(return_value=identify_resp)
-    cm = MagicMock()
-    cm.__aenter__ = AsyncMock(return_value=inner)
-    cm.__aexit__ = AsyncMock(return_value=None)
-    return cm
-
-
-@pytest_asyncio.fixture
-async def owner_client(client: ClientSession, mocker: MockerFixture) -> ClientSession:
-    """Return a client whose cookie jar holds an authenticated owner session."""
-    mocker.patch.object(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
-    mocker.patch.object(admin_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
-    mocker.patch.object(admin_auth.settings, "API_BASE_URL", "http://127.0.0.1")
-    mocker.patch.object(admin_auth.settings, "OWNER_XID", 42)
-    login_resp = await client.get("/admin/login", allow_redirects=False)
-    state = parse_qs(urlparse(login_resp.headers["Location"]).query)["state"][0]
-    mocker.patch(
-        "spellbot.web.api.admin_auth.httpx.AsyncClient",
-        return_value=make_owner_httpx_client(),
-    )
-    cb = await client.get(
-        f"/admin/oauth/callback?code=abc&state={state}",
-        allow_redirects=False,
-    )
-    assert cb.status == 302
-    return client
-
-
 @pytest.mark.asyncio
 class TestWebGuildPromote:
     async def test_owner_sees_controls_when_promote_enabled(
@@ -1108,16 +1070,6 @@ class TestWebGuildPromote:
             allow_redirects=False,
         )
         assert resp.status == 404
-
-
-@pytest_asyncio.fixture
-async def mod_client(owner_client: ClientSession, mocker: MockerFixture) -> ClientSession:
-    """Return a logged-in client whose viewer moderates every guild."""
-    mocker.patch(
-        "spellbot.web.api.record.viewer_is_moderator",
-        AsyncMock(return_value=True),
-    )
-    return owner_client
 
 
 @pytest.mark.asyncio
@@ -1453,3 +1405,16 @@ class TestParseChannelSettings:
     def test_invalid_default_service_is_omitted(self) -> None:
         values = record.parse_channel_settings({"default_service": "99999"})
         assert "default_service" not in values
+
+
+class TestLoginUrl:
+    def test_returns_to_safe_relative_path(self) -> None:
+        request = MagicMock()
+        request.path_qs = "/g/1/audit?page=2"
+        assert record.login_url(request) == "/queues/login?next=%2Fg%2F1%2Faudit%3Fpage%3D2"
+
+    def test_hostile_path_falls_back_to_root(self) -> None:
+        # A protocol-relative request target must not be reflected into `next`.
+        request = MagicMock()
+        request.path_qs = "//evil.example/x"
+        assert record.login_url(request) == "/queues/login?next=%2F"

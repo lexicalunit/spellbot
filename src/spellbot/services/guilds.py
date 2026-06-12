@@ -8,6 +8,7 @@ from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_, or_
 
+from spellbot import audit
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Guild, GuildAward, web_editable_columns
 from spellbot.settings import settings
@@ -150,10 +151,10 @@ async def update_settings(guild_xid: int, **fields: object) -> None:
     safe = {key: value for key, value in fields.items() if key in SETTINGS_FIELDS}
     if not safe:
         return
-    await DatabaseSession.execute(
-        update(Guild).where(Guild.xid == guild_xid).values(**safe),  # type: ignore
-    )
-    await DatabaseSession.commit()
+    async with audit.transaction():
+        await DatabaseSession.execute(
+            update(Guild).where(Guild.xid == guild_xid).values(**safe),  # type: ignore
+        )
     guild_cache.pop(guild_xid, None)
 
 
@@ -176,8 +177,8 @@ async def set_suggest_vc_category(
         .values(suggest_voice_category=category)
         .returning(Guild)
     )
-    updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    await DatabaseSession.commit()
+    async with audit.transaction():
+        updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     return await updated_guild.to_data()
 
 
@@ -185,8 +186,8 @@ async def set_motd(guild_data: GuildData, message: str | None = None) -> GuildDa
     """Set the message of the day for the guild."""
     motd = message[: Guild.motd.property.columns[0].type.length] if message else ""
     stmt = update(Guild).where(Guild.xid == guild_data.xid).values(motd=motd).returning(Guild)  # type: ignore
-    updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    await DatabaseSession.commit()
+    async with audit.transaction():
+        updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     return await updated_guild.to_data()
 
 
@@ -199,8 +200,8 @@ async def toggle_show_links(guild_data: GuildData) -> GuildData:
         .values(show_links=new_value)
         .returning(Guild)
     )
-    updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    await DatabaseSession.commit()
+    async with audit.transaction():
+        updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     return await updated_guild.to_data()
 
 
@@ -211,8 +212,8 @@ async def toggle_voice_create(guild_data: GuildData) -> GuildData:
     if new_value:
         values["suggest_voice_category"] = None
     stmt = update(Guild).where(Guild.xid == guild_data.xid).values(**values).returning(Guild)  # type: ignore
-    updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    await DatabaseSession.commit()
+    async with audit.transaction():
+        updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     return await updated_guild.to_data()
 
 
@@ -225,8 +226,8 @@ async def toggle_use_max_bitrate(guild_data: GuildData) -> GuildData:
         .values(use_max_bitrate=new_value)
         .returning(Guild)
     )
-    updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    await DatabaseSession.commit()
+    async with audit.transaction():
+        updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     return await updated_guild.to_data()
 
 
@@ -327,6 +328,6 @@ async def setup_mythic_track(guild_data: GuildData) -> GuildData:
         .values(enable_mythic_track=new_value)
         .returning(Guild)
     )
-    updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    await DatabaseSession.commit()
+    async with audit.transaction():
+        updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
     return await updated_guild.to_data()

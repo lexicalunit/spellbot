@@ -8,6 +8,7 @@ from sqlalchemy import select as sa_select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import update
 
+from spellbot import audit
 from spellbot.database import DatabaseSession
 from spellbot.environment import running_in_pytest
 from spellbot.models import Channel, web_editable_columns
@@ -84,8 +85,9 @@ async def _set_column(xid: int, **values: object) -> None:
         .values(**values)
         .execution_options(synchronize_session=False)
     )
-    await DatabaseSession.execute(query)
-    await DatabaseSession.commit()
+    # Record the change in one actor-attributed transaction so the audit triggers capture it.
+    async with audit.transaction():
+        await DatabaseSession.execute(query)
 
 
 async def set_default_seats(xid: int, seats: int) -> None:

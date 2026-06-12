@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, NoReturn, Self, cast
 
 from ddtrace.trace import tracer
 
-from spellbot import services
+from spellbot import audit, services
 from spellbot.database import DatabaseSession, db_session_manager
 from spellbot.errors import (
     GuildBannedError,
@@ -122,6 +122,14 @@ class BaseAction:
             async with db_session_manager():
                 try:
                     await action.upsert_request_objects()
-                    yield action
+                    # Attribute any settings changes this action makes to the acting user. The
+                    # auto-upserts above are intentionally left outside this scope so they stay
+                    # unattributed. See spellbot.audit.
+                    with audit.actor(  # pragma: no branch
+                        interaction.user.id,
+                        getattr(interaction.user, "display_name", None),
+                        audit.SOURCE_DISCORD,
+                    ):
+                        yield action
                 except Exception as ex:  # pragma: no cover
                     await handle_exception(ex)
