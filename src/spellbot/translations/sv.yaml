@@ -98,7 +98,7 @@ sv:
     awards_title: "SpellBot Player Awards för %{guild}"
     awards_empty: "**Det finns inga utmärkelser konfigurerade på denna server.**\n\nFör att lägga till utmärkelser, använd kommandot `/award add`."
     setup_title: "SpellBot-inställningar för %{guild}"
-    setup_description: "Detta är de aktuella inställningarna för SpellBot på denna server. Använd knapparna nedan samt `/set`-kommandona för att ställa in SpellBot efter dina önskemål.\n\nDu kan också visa inställningarna för utmärkelser med kommandot `/awards` och inställningarna för kanaler med kommandot `/channels`."
+    setup_description: "SpellBot hjälper din gemenskap att hitta och spela Magic: The Gathering-spel tillsammans. Besök SpellBots kontrollpanel för att konfigurera din server, kanaler och spelarutmärkelser.\n\n[Konfigurera SpellBot →](%{link})"
     field_motd: "MOTD"
     field_none: "Ingen"
     field_public_links: "Offentliga länkar"
@@ -160,7 +160,10 @@ sv:
     user_info_no_games: "Inga spelade spel"
     user_info_play_range: "Spelintervall"
     user_info_game_history: "Spelhistorik"
-    user_info_view_link: "[Visa på spellbot.io](%{link})"
+    view_link: "[Visa på spellbot.io](%{link})"
+    game_info_title: "Spelinfo för #SB%{game_id}"
+    game_info_pending: "Inte startat än"
+    game_info_details: "Detaljer"
     user_info_footer: "Användar-ID: %{user_id}"
     analytics_title: "Serveranalys för %{guild}"
     analytics_description: "Visa din servers analyspanel:\n📊 [Öppna analys](%{url})\n\n_Den här länken går ut om %{minutes} minuter._"
@@ -183,6 +186,7 @@ sv:
     list_title: "Blockerade användare"
     list_empty: "Du har inga blockerade användare."
     list_page: "Sida %{current} av %{total}"
+    manage_message: "Du kan se och hantera dina blockerade användare på din profilsida.\n\n[Öppna din profil på spellbot.io](%{link})"
   # Leave action messages
   leave:
     removed_channel: "Du har tagits bort från eventuella pågående spel i denna kanal."

@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-
-import discord
+from typing import TYPE_CHECKING
 
 from spellbot import services
 from spellbot.i18n import t, user_locale
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
-from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT
 
 from .base_action import BaseAction
+
+if TYPE_CHECKING:
+    import discord
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,12 @@ class BlockAction(BaseAction):
         else:
             await services.users.unblock(self.interaction.user.id, target_xid)
             msg = t("block.unblocked", locale=locale, user_id=target_xid)
-        await safe_send_channel(self.interaction, msg, ephemeral=True)
+        cta = t("block.manage_message", locale=locale, link=self.blocklist_link())
+        await safe_send_channel(self.interaction, f"{msg}\n\n{cta}", ephemeral=True)
+
+    def blocklist_link(self) -> str:
+        """Link to the acting user's profile page, where their block list is managed."""
+        return f"{settings.API_BASE_URL}/u/{self.interaction.user.id}"
 
     async def block(self, target: discord.User | discord.Member) -> None:
         await self.execute(target, ActionType.BLOCK)
@@ -55,28 +61,10 @@ class BlockAction(BaseAction):
     async def unblock(self, target: discord.User | discord.Member) -> None:
         await self.execute(target, ActionType.UNBLOCK)
 
-    async def blocked(self, page: int) -> None:
+    async def blocked(self) -> None:
         locale = user_locale(self.interaction)
-        blocklist = await services.users.blocklist(self.interaction.user.id)
-        embed = discord.Embed(title=t("block.list_title", locale=locale))
-        embed.set_thumbnail(url=settings.ICO_URL)
-        pages = []
-        cur_page = ""
-        for user in blocklist:
-            next_user = f"<@{user.xid}> ({user.name})\n"
-            if len(cur_page) + len(next_user) > EMBED_DESCRIPTION_SIZE_LIMIT:
-                pages.append(cur_page)
-                cur_page = ""
-            cur_page += next_user
-        if cur_page:
-            pages.append(cur_page)
-        embed.color = discord.Color(settings.INFO_EMBED_COLOR)
-        if pages:
-            index = min(page - 1, len(pages) - 1)
-            embed.description = pages[index]
-            embed.set_footer(
-                text=t("block.list_page", locale=locale, current=page, total=len(pages)),
-            )
-        else:
-            embed.description = t("block.list_empty", locale=locale)
-        await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
+        await safe_send_channel(
+            self.interaction,
+            t("block.manage_message", locale=locale, link=self.blocklist_link()),
+            ephemeral=True,
+        )

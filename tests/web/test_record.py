@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat
-from spellbot.models import Channel, GameStatus, Guild
+from spellbot.models import Block, Channel, GameStatus, Guild, GuildAward, User
 from spellbot.web.api import record
 
 if TYPE_CHECKING:
@@ -1120,6 +1120,10 @@ class TestWebGuildSettings:
         # The column's doc (minus the marker) is shown as help text.
         assert "shown in all game posts on the server." in text
         assert "[web-editable]" not in text
+        # Supported MOTD placeholders are documented next to the field.
+        assert "Available placeholders" in text
+        assert "${game_id}" in text
+        assert "${player_name_1}" in text
 
     async def test_settings_update_persists(
         self,
@@ -1215,6 +1219,368 @@ class TestWebGuildSettings:
 
 
 @pytest.mark.asyncio
+class TestWebGuildAwards:
+    async def test_panel_hidden_for_anonymous(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=731, name="guild")
+        factories.guild_award.create(guild=guild, count=5, role="Veteran", message="gg")
+        resp = await client.get(f"/g/{guild.xid}")
+        text = await resp.text()
+        assert "Player Awards" not in text
+        assert "Veteran" not in text
+
+    async def test_panel_visible_for_moderator(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=732, name="guild")
+        factories.guild_award.create(guild=guild, count=5, role="Veteran", message="gg")
+        resp = await mod_client.get(f"/g/{guild.xid}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "Player Awards" in text
+        assert "Add an award" in text
+        assert "Veteran" in text
+        assert f"/g/{guild.xid}/awards/add" in text
+
+    async def test_add_award_persists(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=733, name="guild")
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/awards/add",
+            data={
+                "count": "10",
+                "role": "@Veteran",
+                "message": "Congrats!",
+                "repeating": "true",
+                "verified_only": "true",
+            },
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/g/{guild.xid}"
+        award = (
+            await DatabaseSession.execute(
+                select(GuildAward).where(GuildAward.guild_xid == guild.xid),
+            )
+        ).scalar_one()
+        assert award.count == 10
+        # A leading "@" on the role is stripped.
+        assert award.role == "Veteran"
+        assert award.message == "Congrats!"
+        assert award.repeating is True
+        assert award.verified_only is True
+        assert award.unverified_only is False
+
+    async def test_add_award_rejects_zero_count(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=734, name="guild")
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/awards/add",
+            data={"count": "0", "role": "Veteran", "message": "x"},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"].startswith(f"/g/{guild.xid}?award_error=")
+        count = (
+            await DatabaseSession.execute(
+                select(func.count())
+                .select_from(GuildAward)
+                .where(GuildAward.guild_xid == guild.xid),
+            )
+        ).scalar()
+        assert (count or 0) == 0
+
+    async def test_add_award_rejects_non_numeric_count(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=749, name="guild")
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/awards/add",
+            data={"count": "not-a-number", "role": "Veteran", "message": "x"},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/g/{guild.xid}?award_error=bad_count"
+        count = (
+            await DatabaseSession.execute(select(func.count()).select_from(GuildAward))
+        ).scalar()
+        assert (count or 0) == 0
+
+    async def test_add_award_rejects_verified_and_unverified(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=735, name="guild")
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/awards/add",
+            data={
+                "count": "5",
+                "role": "Veteran",
+                "message": "x",
+                "verified_only": "true",
+                "unverified_only": "true",
+            },
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert "award_error" in resp.headers["Location"]
+        count = (
+            await DatabaseSession.execute(
+                select(func.count())
+                .select_from(GuildAward)
+                .where(GuildAward.guild_xid == guild.xid),
+            )
+        ).scalar()
+        assert (count or 0) == 0
+
+    async def test_add_award_requires_role(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=736, name="guild")
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/awards/add",
+            data={"count": "5", "role": "  ", "message": "x"},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert "award_error" in resp.headers["Location"]
+
+    async def test_award_error_is_shown(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=737, name="guild")
+        # A known code maps to a server-controlled message.
+        resp = await mod_client.get(f"/g/{guild.xid}?award_error=no_role")
+        assert "An award needs a role to give or take." in await resp.text()
+        # A crafted/unknown code is ignored — never reflected back into the page.
+        resp = await mod_client.get(f"/g/{guild.xid}?award_error=INJECTED_MARKER_XYZ")
+        assert "INJECTED_MARKER_XYZ" not in await resp.text()
+
+    async def test_update_award_persists(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=738, name="guild")
+        award = factories.guild_award.create(
+            guild=guild,
+            count=5,
+            role="old",
+            message="old",
+            repeating=False,
+        )
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/awards/{award.id}/update",
+            data={"count": "15", "role": "new", "message": "new", "remove": "true"},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/g/{guild.xid}"
+        DatabaseSession.expire_all()
+        updated = (
+            await DatabaseSession.execute(select(GuildAward).where(GuildAward.id == award.id))
+        ).scalar_one()
+        assert updated.count == 15
+        assert updated.role == "new"
+        assert updated.message == "new"
+        assert updated.remove is True
+
+    async def test_update_award_cross_guild_is_404(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=739, name="guild")
+        other = factories.guild.create(xid=740, name="other")
+        award = factories.guild_award.create(guild=other, count=5, role="r", message="m")
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/awards/{award.id}/update",
+            data={"count": "1", "role": "x", "message": "y"},
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+
+    async def test_delete_award(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=741, name="guild")
+        award = factories.guild_award.create(guild=guild, count=5, role="r", message="m")
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/awards/{award.id}/delete",
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/g/{guild.xid}"
+        DatabaseSession.expire_all()
+        assert await DatabaseSession.get(GuildAward, award.id) is None
+
+    async def test_delete_award_cross_guild_is_404(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=742, name="guild")
+        other = factories.guild.create(xid=743, name="other")
+        award = factories.guild_award.create(guild=other, count=5, role="r", message="m")
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/awards/{award.id}/delete",
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+        assert await DatabaseSession.get(GuildAward, award.id) is not None
+
+    async def test_anonymous_cannot_add(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=744, name="guild")
+        resp = await client.post(
+            f"/g/{guild.xid}/awards/add",
+            data={"count": "5", "role": "r", "message": "m"},
+            allow_redirects=False,
+        )
+        assert resp.status == 403
+        count = (
+            await DatabaseSession.execute(select(func.count()).select_from(GuildAward))
+        ).scalar()
+        assert (count or 0) == 0
+
+    async def test_non_moderator_cannot_delete(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.web.api.record.viewer_is_moderator",
+            AsyncMock(return_value=False),
+        )
+        guild = factories.guild.create(xid=745, name="guild")
+        award = factories.guild_award.create(guild=guild, count=5, role="r", message="m")
+        resp = await owner_client.post(
+            f"/g/{guild.xid}/awards/{award.id}/delete",
+            allow_redirects=False,
+        )
+        assert resp.status == 403
+        assert await DatabaseSession.get(GuildAward, award.id) is not None
+
+    async def test_add_award_rejects_long_message(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=746, name="guild")
+        long_message = "x" * (record.AWARD_MESSAGE_MAX + 1)
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/awards/add",
+            data={"count": "5", "role": "r", "message": long_message},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/g/{guild.xid}?award_error=message_too_long"
+        count = (
+            await DatabaseSession.execute(select(func.count()).select_from(GuildAward))
+        ).scalar()
+        assert (count or 0) == 0
+
+    async def test_non_moderator_cannot_update(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.web.api.record.viewer_is_moderator",
+            AsyncMock(return_value=False),
+        )
+        guild = factories.guild.create(xid=747, name="guild")
+        award = factories.guild_award.create(guild=guild, count=5, role="keep", message="m")
+        resp = await owner_client.post(
+            f"/g/{guild.xid}/awards/{award.id}/update",
+            data={"count": "9", "role": "new", "message": "new"},
+            allow_redirects=False,
+        )
+        assert resp.status == 403
+        DatabaseSession.expire_all()
+        unchanged = await DatabaseSession.get(GuildAward, award.id)
+        assert unchanged is not None
+        assert unchanged.role == "keep"
+
+    async def test_update_award_rejects_invalid(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=748, name="guild")
+        award = factories.guild_award.create(guild=guild, count=5, role="keep", message="keep")
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/awards/{award.id}/update",
+            data={"count": "5", "role": "  ", "message": "x"},  # blank role is invalid
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/g/{guild.xid}?award_error=no_role"
+        DatabaseSession.expire_all()
+        unchanged = await DatabaseSession.get(GuildAward, award.id)
+        assert unchanged is not None
+        assert unchanged.role == "keep"
+
+    async def test_invalid_ids_is_404(
+        self,
+        mod_client: ClientSession,
+    ) -> None:
+        resp = await mod_client.post(
+            "/g/abc/awards/add",
+            data={"count": "5", "role": "r", "message": "m"},
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+        resp = await mod_client.post(
+            "/g/abc/awards/1/update",
+            data={"count": "5", "role": "r", "message": "m"},
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+        resp = await mod_client.post(
+            "/g/1/awards/xyz/delete",
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+
+
+class TestAwardErrorRedirect:
+    def test_known_code_is_passed_through(self) -> None:
+        resp = record.award_error_redirect(123, "no_role")
+        assert resp.location == "/g/123?award_error=no_role"
+
+    def test_unknown_code_is_dropped(self) -> None:
+        # An unrecognized code must never be reflected into the redirect URL.
+        resp = record.award_error_redirect(123, "totally-bogus")
+        assert resp.location == "/g/123"
+
+
+@pytest.mark.asyncio
 class TestWebChannelSettings:
     async def test_panel_hidden_for_anonymous(
         self,
@@ -1247,6 +1613,10 @@ class TestWebChannelSettings:
         # The column's doc (minus the marker) is shown as help text.
         assert "The default commander bracket for this channel" in text
         assert "[web-editable]" not in text
+        # Supported MOTD placeholders are documented next to the field.
+        assert "Available placeholders" in text
+        assert "${game_id}" in text
+        assert "${player_name_1}" in text
 
     async def test_settings_update_persists(
         self,
@@ -1373,6 +1743,335 @@ class TestWebChannelSettings:
         resp = await mod_client.post(
             "/g/abc/c/xyz/settings",
             data={"motd": "x"},
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+
+
+@pytest.mark.asyncio
+class TestWebChannelForget:
+    async def test_forget_button_visible_for_moderator(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=721, name="guild")
+        channel = factories.channel.create(xid=821, name="channel", guild=guild)
+        resp = await mod_client.get(f"/g/{guild.xid}/c/{channel.xid}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert f"/g/{guild.xid}/c/{channel.xid}/forget" in text
+        assert "Forget this channel" in text
+
+    async def test_forget_deletes_channel(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=722, name="guild")
+        channel = factories.channel.create(xid=822, name="channel", guild=guild, auto_verify=True)
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/c/{channel.xid}/forget",
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/g/{guild.xid}"
+        DatabaseSession.expire_all()
+        forgotten = (
+            await DatabaseSession.execute(select(Channel).where(Channel.xid == channel.xid))
+        ).scalar_one_or_none()
+        assert forgotten is None
+
+    async def test_anonymous_cannot_forget(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=723, name="guild")
+        channel = factories.channel.create(xid=823, name="channel", guild=guild)
+        resp = await client.post(
+            f"/g/{guild.xid}/c/{channel.xid}/forget",
+            allow_redirects=False,
+        )
+        assert resp.status == 403
+        still_there = (
+            await DatabaseSession.execute(select(Channel).where(Channel.xid == channel.xid))
+        ).scalar_one_or_none()
+        assert still_there is not None
+
+    async def test_non_moderator_cannot_forget(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.web.api.record.viewer_is_moderator",
+            AsyncMock(return_value=False),
+        )
+        guild = factories.guild.create(xid=724, name="guild")
+        channel = factories.channel.create(xid=824, name="channel", guild=guild)
+        resp = await owner_client.post(
+            f"/g/{guild.xid}/c/{channel.xid}/forget",
+            allow_redirects=False,
+        )
+        assert resp.status == 403
+        still_there = (
+            await DatabaseSession.execute(select(Channel).where(Channel.xid == channel.xid))
+        ).scalar_one_or_none()
+        assert still_there is not None
+
+    async def test_invalid_ids_is_404(
+        self,
+        mod_client: ClientSession,
+    ) -> None:
+        resp = await mod_client.post(
+            "/g/abc/c/xyz/forget",
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+
+
+@pytest.mark.asyncio
+class TestWebUserBlocks:
+    # `owner_client` is logged in as xid=42 (see web conftest), which `get_viewer`
+    # surfaces as the viewer, so `/u/42` is that viewer's own profile.
+    OWNER_XID = 42
+
+    async def test_block_section_hidden_for_anonymous(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        resp = await client.get(f"/u/{self.OWNER_XID}")
+        text = await resp.text()
+        assert "Blocked Users" not in text
+        # Anonymous visitors get a prompt to log in to manage their own list.
+        assert "Log in with Discord" in text
+
+    async def test_block_section_hidden_on_other_profile(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=999, name="someone-else")
+        resp = await owner_client.get("/u/999")
+        text = await resp.text()
+        assert "Blocked Users" not in text
+        # An authenticated viewer is not shown the login prompt.
+        assert "Log in with Discord" not in text
+
+    async def test_block_section_visible_on_own_profile(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        blocked = factories.user.create(xid=8100, name="blocked-player")
+        factories.block.create(user_xid=self.OWNER_XID, blocked_user_xid=blocked.xid)
+        resp = await owner_client.get(f"/u/{self.OWNER_XID}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "Blocked Users" in text
+        assert "Block a user" in text
+        assert "blocked-player" in text
+        assert f"/u/{self.OWNER_XID}/blocks/{blocked.xid}/remove" in text
+
+    async def test_add_block_persists(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        target = factories.user.create(xid=8101, name="target")
+        resp = await owner_client.post(
+            f"/u/{self.OWNER_XID}/blocks/add",
+            data={"target": str(target.xid)},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/u/{self.OWNER_XID}"
+        block = (
+            await DatabaseSession.execute(
+                select(Block).where(
+                    Block.user_xid == self.OWNER_XID,
+                    Block.blocked_user_xid == target.xid,
+                ),
+            )
+        ).scalar_one_or_none()
+        assert block is not None
+
+    async def test_add_block_creates_placeholder_user(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        # A target that SpellBot has never seen before is created on demand.
+        resp = await owner_client.post(
+            f"/u/{self.OWNER_XID}/blocks/add",
+            data={"target": "8102"},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        created = await DatabaseSession.get(User, 8102)
+        assert created is not None
+        block = await DatabaseSession.get(Block, (self.OWNER_XID, 8102))
+        assert block is not None
+
+    async def test_add_block_by_name(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        target = factories.user.create(xid=8103, name="ByNamePlayer")
+        resp = await owner_client.post(
+            f"/u/{self.OWNER_XID}/blocks/add",
+            data={"target": "bynameplayer"},  # case-insensitive name lookup
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        block = await DatabaseSession.get(Block, (self.OWNER_XID, target.xid))
+        assert block is not None
+
+    async def test_add_block_unknown_name_errors(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        resp = await owner_client.post(
+            f"/u/{self.OWNER_XID}/blocks/add",
+            data={"target": "nobody-by-this-name"},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        # The redirect carries only a fixed error code, never the user's typed input.
+        assert resp.headers["Location"] == f"/u/{self.OWNER_XID}?block_error=not_found"
+        assert "nobody-by-this-name" not in resp.headers["Location"]
+        count = (await DatabaseSession.execute(select(func.count()).select_from(Block))).scalar()
+        assert (count or 0) == 0
+
+    async def test_block_error_ignores_unknown_codes(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        # A known code maps to a server-controlled message (apostrophe is HTML-escaped).
+        resp = await owner_client.get(f"/u/{self.OWNER_XID}?block_error=self")
+        assert "block yourself" in await resp.text()
+        # A crafted/unknown code is ignored — never reflected back into the page.
+        resp = await owner_client.get(f"/u/{self.OWNER_XID}?block_error=INJECTED_MARKER_XYZ")
+        assert "INJECTED_MARKER_XYZ" not in await resp.text()
+
+    async def test_add_block_self_rejected(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        resp = await owner_client.post(
+            f"/u/{self.OWNER_XID}/blocks/add",
+            data={"target": str(self.OWNER_XID)},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert "block_error" in resp.headers["Location"]
+        count = (await DatabaseSession.execute(select(func.count()).select_from(Block))).scalar()
+        assert (count or 0) == 0
+
+    async def test_add_block_empty_rejected(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        resp = await owner_client.post(
+            f"/u/{self.OWNER_XID}/blocks/add",
+            data={"target": "   "},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert "block_error" in resp.headers["Location"]
+
+    async def test_remove_block(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        target = factories.user.create(xid=8104, name="target")
+        factories.block.create(user_xid=self.OWNER_XID, blocked_user_xid=target.xid)
+        resp = await owner_client.post(
+            f"/u/{self.OWNER_XID}/blocks/{target.xid}/remove",
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/u/{self.OWNER_XID}"
+        block = await DatabaseSession.get(Block, (self.OWNER_XID, target.xid))
+        assert block is None
+
+    async def test_anonymous_cannot_add(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        target = factories.user.create(xid=8105, name="target")
+        resp = await client.post(
+            f"/u/{self.OWNER_XID}/blocks/add",
+            data={"target": str(target.xid)},
+            allow_redirects=False,
+        )
+        assert resp.status == 403
+        count = (await DatabaseSession.execute(select(func.count()).select_from(Block))).scalar()
+        assert (count or 0) == 0
+
+    async def test_cannot_add_to_other_profile(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        # The viewer (42) cannot modify another user's (999) block list.
+        factories.user.create(xid=999, name="someone-else")
+        target = factories.user.create(xid=8106, name="target")
+        resp = await owner_client.post(
+            "/u/999/blocks/add",
+            data={"target": str(target.xid)},
+            allow_redirects=False,
+        )
+        assert resp.status == 403
+
+    async def test_cannot_remove_from_other_profile(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        other = factories.user.create(xid=999, name="someone-else")
+        target = factories.user.create(xid=8107, name="target")
+        factories.block.create(user_xid=other.xid, blocked_user_xid=target.xid)
+        resp = await owner_client.post(
+            f"/u/999/blocks/{target.xid}/remove",
+            allow_redirects=False,
+        )
+        assert resp.status == 403
+        assert await DatabaseSession.get(Block, (other.xid, target.xid)) is not None
+
+    async def test_invalid_ids_is_404(
+        self,
+        owner_client: ClientSession,
+    ) -> None:
+        resp = await owner_client.post(
+            "/u/abc/blocks/add",
+            data={"target": "1"},
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+        resp = await owner_client.post(
+            f"/u/{self.OWNER_XID}/blocks/xyz/remove",
             allow_redirects=False,
         )
         assert resp.status == 404

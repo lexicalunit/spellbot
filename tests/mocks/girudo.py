@@ -96,8 +96,6 @@ class GirudoTestData:
 
     # Game UUIDs
     GAME_UUID = "game-123-uuid"
-    LOBBY_UUID_AVAILABLE = "lobby-available-uuid"
-    LOBBY_UUID_FULL = "lobby-full-uuid"
 
     @classmethod
     def auth_response(cls, token: str | None = None) -> dict[str, Any]:
@@ -138,22 +136,6 @@ class GirudoTestData:
     def create_game_response(cls, game_uuid: str | None = None) -> dict[str, Any]:
         """Generate create game success response."""
         return {"data": {"game_uuid": game_uuid or cls.GAME_UUID}}
-
-    @classmethod
-    def lobbies_response(cls) -> dict[str, Any]:
-        """Generate lobbies list response."""
-        return {
-            "data": {
-                cls.LOBBY_UUID_AVAILABLE: {
-                    "current_player_count": 2,
-                    "max_players": 4,
-                },
-                cls.LOBBY_UUID_FULL: {
-                    "current_player_count": 4,
-                    "max_players": 4,
-                },
-            },
-        }
 
     @classmethod
     def formats_cache(cls) -> dict[str, GirudoGameFormat]:

@@ -98,7 +98,7 @@ en:
     awards_title: "SpellBot Player Awards for %{guild}"
     awards_empty: "**There are no awards configured on this server.**\n\nTo add awards use the `/award add` command."
     setup_title: "SpellBot Setup for %{guild}"
-    setup_description: "These are the current settings for SpellBot on this server. Please use the buttons below, as well as the `/set` commands, to setup SpellBot as you wish.\n\nYou may also view Awards configuration using the `/awards` command and Channels configuration using the `/channels` command."
+    setup_description: "SpellBot helps your community find and play Magic: The Gathering games together. To configure your server, channels, and player awards, visit the SpellBot dashboard.\n\n[Configure SpellBot →](%{link})"
     field_motd: "MOTD"
     field_none: "None"
     field_public_links: "Public Links"
@@ -160,7 +160,10 @@ en:
     user_info_no_games: "No games played"
     user_info_play_range: "Play Range"
     user_info_game_history: "Game History"
-    user_info_view_link: "[View on spellbot.io](%{link})"
+    view_link: "[View on spellbot.io](%{link})"
+    game_info_title: "Game info for #SB%{game_id}"
+    game_info_pending: "Not started yet"
+    game_info_details: "Details"
     user_info_footer: "User ID: %{user_id}"
     analytics_title: "Server Analytics for %{guild}"
     analytics_description: "View your server's analytics dashboard:\n📊 [Open Analytics](%{url})\n\n_This link expires in %{minutes} minutes._"
@@ -183,6 +186,7 @@ en:
     list_title: "Blocked Users"
     list_empty: "You have no blocked users."
     list_page: "Page %{current} of %{total}"
+    manage_message: "You can view and manage your blocked users from your profile page.\n\n[Open your profile on spellbot.io](%{link})"
   # Leave action messages
   leave:
     removed_channel: "You were removed from any pending games in this channel."

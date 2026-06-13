@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 import alembic
 import alembic.command
 import alembic.config
-from sqlalchemy import String, create_engine, text
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import declarative_base
 
@@ -79,23 +79,6 @@ def reverse_all(database_url: str) -> None:
             alembic.command.downgrade(config, "base")
     finally:
         engine.dispose()
-
-
-class StringLiteral(String):  # pragma: no cover
-    def literal_processor(self, dialect: Any) -> Any:
-        super_processor = super().literal_processor(dialect)
-
-        def process(value: Any) -> Any:
-            if isinstance(value, int):
-                return text(value)  # type: ignore
-            if not isinstance(value, str):
-                value = text(value)
-            result = super_processor(value)
-            if isinstance(result, bytes):
-                result = result.decode(dialect.encoding)
-            return result
-
-        return process
 
 
 def literalquery(statement: Any) -> str:  # pragma: no cover

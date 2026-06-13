@@ -166,71 +166,6 @@ async def get(guild_xid: int) -> GuildData | None:
     return await guild.to_data() if guild else None
 
 
-async def set_suggest_vc_category(
-    guild_data: GuildData,
-    category: str | None,
-) -> GuildData:
-    """Set the suggested voice channel category prefix for the guild."""
-    stmt = (
-        update(Guild)
-        .where(Guild.xid == guild_data.xid)  # type: ignore
-        .values(suggest_voice_category=category)
-        .returning(Guild)
-    )
-    async with audit.transaction():
-        updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    return await updated_guild.to_data()
-
-
-async def set_motd(guild_data: GuildData, message: str | None = None) -> GuildData:
-    """Set the message of the day for the guild."""
-    motd = message[: Guild.motd.property.columns[0].type.length] if message else ""
-    stmt = update(Guild).where(Guild.xid == guild_data.xid).values(motd=motd).returning(Guild)  # type: ignore
-    async with audit.transaction():
-        updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    return await updated_guild.to_data()
-
-
-async def toggle_show_links(guild_data: GuildData) -> GuildData:
-    """Toggle whether to show SpellTable links in game posts."""
-    new_value = not guild_data.show_links
-    stmt = (
-        update(Guild)
-        .where(Guild.xid == guild_data.xid)  # type: ignore
-        .values(show_links=new_value)
-        .returning(Guild)
-    )
-    async with audit.transaction():
-        updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    return await updated_guild.to_data()
-
-
-async def toggle_voice_create(guild_data: GuildData) -> GuildData:
-    """Toggle whether to automatically create voice channels for games."""
-    new_value = not guild_data.voice_create
-    values: dict[str, bool | None] = {"voice_create": new_value}
-    if new_value:
-        values["suggest_voice_category"] = None
-    stmt = update(Guild).where(Guild.xid == guild_data.xid).values(**values).returning(Guild)  # type: ignore
-    async with audit.transaction():
-        updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    return await updated_guild.to_data()
-
-
-async def toggle_use_max_bitrate(guild_data: GuildData) -> GuildData:
-    """Toggle whether to use maximum bitrate for created voice channels."""
-    new_value = not guild_data.use_max_bitrate
-    stmt = (
-        update(Guild)
-        .where(Guild.xid == guild_data.xid)  # type: ignore
-        .values(use_max_bitrate=new_value)
-        .returning(Guild)
-    )
-    async with audit.transaction():
-        updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    return await updated_guild.to_data()
-
-
 async def voice_category_prefixes(guild_xid: int) -> list[str]:
     """Return distinct voice category prefixes configured across all channels."""
     return [
@@ -268,20 +203,20 @@ async def set_active(guild_xid: int, active: bool) -> None:
     await DatabaseSession.commit()
 
 
-async def has_award_with_count(guild_xid: int, count: int) -> bool:
-    """Check if the guild has an award configured for the given play count."""
-    return bool(
+async def award_list(guild_xid: int) -> list[GuildAwardData]:
+    """Return all award configurations for the guild, ordered by required game count."""
+    awards = (
         (
             await DatabaseSession.execute(
-                select(GuildAward).where(
-                    and_(
-                        GuildAward.guild_xid == guild_xid,
-                        GuildAward.count == count,
-                    ),
-                ),
+                select(GuildAward)
+                .where(GuildAward.guild_xid == guild_xid)
+                .order_by(GuildAward.count, GuildAward.id),
             )
-        ).scalar_one_or_none(),
+        )
+        .scalars()
+        .all()
     )
+    return [award.to_data() for award in awards]
 
 
 async def award_add(
@@ -311,12 +246,37 @@ async def award_add(
     return award.to_data()
 
 
-async def award_delete(guild_award_id: int) -> None:
-    """Delete the award with the given id."""
+async def award_update(
+    guild_xid: int,
+    guild_award_id: int,
+    count: int,
+    role: str,
+    message: str,
+    **options: bool | None,
+) -> GuildAwardData | None:
+    """Update an existing award, scoped to its guild. Returns None if it doesn't belong here."""
     award = await DatabaseSession.get(GuildAward, guild_award_id)
-    if award:
-        await DatabaseSession.delete(award)
+    if award is None or award.guild_xid != guild_xid:
+        return None
+    award.count = count
+    award.role = role
+    award.message = message
+    award.repeating = bool(options.get("repeating", False))
+    award.remove = bool(options.get("remove", False))
+    award.verified_only = bool(options.get("verified_only", False))
+    award.unverified_only = bool(options.get("unverified_only", False))
     await DatabaseSession.commit()
+    return award.to_data()
+
+
+async def award_delete(guild_xid: int, guild_award_id: int) -> bool:
+    """Delete an award, scoped to its guild. Returns True when an award was deleted."""
+    award = await DatabaseSession.get(GuildAward, guild_award_id)
+    if award is None or award.guild_xid != guild_xid:
+        return False
+    await DatabaseSession.delete(award)
+    await DatabaseSession.commit()
+    return True
 
 
 async def setup_mythic_track(guild_data: GuildData) -> GuildData:

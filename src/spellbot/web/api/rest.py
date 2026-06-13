@@ -198,42 +198,6 @@ async def send_message(channel_xid: int, message: dict[str, Any]) -> dict[str, A
     return None
 
 
-@tracer.wrap(name="rest", resource="update_message")
-async def update_message(
-    channel_xid: int,
-    message_xid: int,
-    message: dict[str, Any],
-) -> dict[str, Any] | None:
-    logger.info("Sending message to channel %s...", channel_xid)
-    try:
-        return await post_with_retry(
-            get_http_session(),
-            f"/channels/{channel_xid}/messages/{message_xid}",
-            message,
-            method="patch",
-        )
-    except Exception as ex:
-        logger.warning("Send message failure: %s", ex, exc_info=True)
-    return None
-
-
-@tracer.wrap(name="rest", resource="delete_message")
-async def delete_message(
-    channel_xid: int,
-    message_xid: int,
-) -> dict[str, Any] | None:
-    logger.info("Deleting message in channel %s...", channel_xid)
-    try:
-        return await post_with_retry(
-            get_http_session(),
-            f"/channels/{channel_xid}/messages/{message_xid}",
-            method="delete",
-        )
-    except Exception as ex:
-        logger.warning("Delete message failure: %s", ex, exc_info=True)
-    return None
-
-
 @tracer.wrap(name="rest", resource="send_dm")
 async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
     logger.info("Beginning DM send to user %s...", user_xid)

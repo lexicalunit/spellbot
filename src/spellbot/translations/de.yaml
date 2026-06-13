@@ -98,7 +98,7 @@ de:
     awards_title: "SpellBot-Spieler-Auszeichnungen für %{guild}"
     awards_empty: "**Auf diesem Server sind keine Auszeichnungen konfiguriert.**\n\nUm Auszeichnungen hinzuzufügen, verwenden Sie den Befehl `/award add`."
     setup_title: "SpellBot-Einrichtung für %{guild}"
-    setup_description: "Dies sind die aktuellen Einstellungen von SpellBot auf diesem Server. Verwenden Sie die folgenden Schaltflächen und den Befehl `/set`, um SpellBot nach Ihren Wünschen zu konfigurieren.\n\nSie können außerdem die Konfiguration der Belohnungen mit dem Befehl `/awards` und die Konfiguration der Kanäle mit dem Befehl `/channels` anzeigen."
+    setup_description: "SpellBot hilft deiner Community, Magic: The Gathering-Spiele zu finden und gemeinsam zu spielen. Besuche das SpellBot-Dashboard, um Server, Kanäle und Spielerauszeichnungen zu konfigurieren.\n\n[SpellBot konfigurieren →](%{link})"
     field_motd: "MOTD"
     field_none: "Keine"
     field_public_links: "Öffentliche Links"
@@ -160,7 +160,10 @@ de:
     user_info_no_games: "Keine Spiele gespielt"
     user_info_play_range: "Spielzeitraum"
     user_info_game_history: "Spielverlauf"
-    user_info_view_link: "[Auf spellbot.io anzeigen](%{link})"
+    view_link: "[Auf spellbot.io anzeigen](%{link})"
+    game_info_title: "Spielinfo für #SB%{game_id}"
+    game_info_pending: "Noch nicht gestartet"
+    game_info_details: "Details"
     user_info_footer: "Benutzer-ID: %{user_id}"
     analytics_title: "Server-Analyse für %{guild}"
     analytics_description: "Sehen Sie sich das Analytise-Dashboard Ihres Servers an:\n📊 [Analytics](%{url})\n\n_Dieser Link läuft in %{minutes} Minuten ab._"
@@ -183,6 +186,7 @@ de:
     list_title: "Blockierte Benutzer"
     list_empty: "Sie haben keine blockierten Benutzer."
     list_page: "Seite %{current} von %{total}"
+    manage_message: "Du kannst deine blockierten Benutzer auf deiner Profilseite ansehen und verwalten.\n\n[Öffne dein Profil auf spellbot.io](%{link})"
   # Leave action messages
   leave:
     removed_channel: "Sie wurden von allen anstehenden Spielen in diesem Kanal entfernt."

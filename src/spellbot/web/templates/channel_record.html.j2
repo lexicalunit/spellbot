@@ -1,5 +1,6 @@
 {% extends "record_base.html.j2" %}
 {% from "record_filters.html.j2" import sort_header, filter_form %}
+{% from "motd_help.html.j2" import motd_placeholders %}
 {% block title %}Channel Records — #{{ target_name or target_xid }}{% endblock %}
 {% block heading %}Channel Records: #{{ target_name or 'Unknown Channel' }}{% endblock %}
 {% block subtitle %}
@@ -66,6 +67,7 @@
                     <p class="hint">{{ channel_help['motd'] }}</p>
                     <input type="text" id="ch-motd" name="motd" maxlength="255"
                            value="{{ channel.motd | default('', true) }}">
+                    {{ motd_placeholders() }}
                 </div>
                 <div class="field">
                     <label for="ch-extra">Extra message</label>
@@ -139,6 +141,18 @@
             <div class="actions">
                 <button type="submit" class="button">Save channel settings</button>
                 <a href="/g/{{ guild_xid }}/c/{{ target_xid }}/audit" class="button">View change history</a>
+            </div>
+        </form>
+    </div>
+    <div class="card">
+        <p class="hint">
+            Forgetting this channel resets it to default settings by removing its configuration.
+            SpellBot will reconfigure it from defaults the next time it is used.
+        </p>
+        <form method="post" action="/g/{{ guild_xid }}/c/{{ target_xid }}/forget" class="settings-form"
+              onsubmit="return confirm('Forget this channel and reset it to default settings?');">
+            <div class="actions">
+                <button type="submit" class="button button-danger">Forget this channel</button>
             </div>
         </form>
     </div>

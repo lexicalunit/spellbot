@@ -2,62 +2,30 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import discord
 from discord.embeds import Embed
 
 from spellbot import services
-from spellbot.enums import GameBracket, GameFormat, GameService
+from spellbot.enums import GameBracket
 from spellbot.i18n import guild_locale, t, user_locale
-from spellbot.models import Channel, GuildAward
 from spellbot.operations import (
     safe_delete_message,
     safe_fetch_text_channel,
     safe_get_partial_message,
     safe_send_channel,
     safe_update_embed,
-    safe_update_embed_origin,
 )
 from spellbot.settings import settings
-from spellbot.utils import EMBED_DESCRIPTION_SIZE_LIMIT, generate_signed_url
-from spellbot.views import SetupView
+from spellbot.utils import generate_signed_url
 
 from .base_action import BaseAction
 
 if TYPE_CHECKING:
     from spellbot import SpellBot
-    from spellbot.data import ChannelData, GuildAwardData
 
 logger = logging.getLogger(__name__)
-
-
-def humanize_bool(setting: bool, locale: str = "en") -> str:
-    return t("admin.on", locale=locale) if setting else t("admin.off", locale=locale)
-
-
-def award_line(award: GuildAwardData, locale: str = "en") -> str:
-    give_or_take = (
-        t("award.action_take", locale=locale)
-        if award.remove
-        else t("award.action_give", locale=locale)
-    )
-    verified_only = t("award.verified_only", locale=locale) if award.verified_only else ""
-    unverified_only = t("award.unverified_only", locale=locale) if award.unverified_only else ""
-    verify_status = (
-        f" ({verified_only}{unverified_only}) " if verified_only or unverified_only else " "
-    )
-    key = "award.line_every" if award.repeating else "award.line_after"
-    return t(
-        key,
-        locale=locale,
-        id=award.id,
-        count=award.count,
-        action=give_or_take,
-        role=award.role,
-        verify_status=verify_status,
-        message=award.message,
-    )
 
 
 class AdminAction(BaseAction):
@@ -72,156 +40,7 @@ class AdminAction(BaseAction):
             ephemeral=True,
         )
 
-    async def build_channels_embeds(self) -> list[Embed]:  # noqa: C901
-        assert self.guild_data is not None
-        locale = guild_locale(self.guild)
-        guild = self.guild_data
-        embeds: list[Embed] = []
-
-        def new_embed() -> Embed:
-            embed = Embed(title=t("admin.channels_title", locale=locale, guild=guild.name))
-            embed.set_thumbnail(url=settings.ICO_URL)
-            embed.color = discord.Color(settings.INFO_EMBED_COLOR)
-            return embed
-
-        def update_channel_settings(
-            channel: ChannelData,
-            channel_settings: dict[str, Any],
-            col: str,
-        ) -> None:
-            is_enum = col in ("default_format", "default_service")
-            value = getattr(channel, col).value if is_enum else getattr(channel, col)
-            if value != getattr(Channel, col).default.arg:
-                channel_settings[col] = str(getattr(channel, col)) if is_enum else value
-
-        all_default = True
-        embed = new_embed()
-        description = ""
-        for channel in sorted(guild.channels, key=lambda c: c.xid):
-            discord_channel = await safe_fetch_text_channel(self.bot, guild.xid, channel.xid)
-            if not discord_channel:
-                await services.channels.forget(channel.xid)
-                continue
-
-            channel_settings: dict[str, Any] = {}
-            update_channel_settings(channel, channel_settings, "default_seats")
-            update_channel_settings(channel, channel_settings, "default_format")
-            update_channel_settings(channel, channel_settings, "default_service")
-            update_channel_settings(channel, channel_settings, "auto_verify")
-            update_channel_settings(channel, channel_settings, "unverified_only")
-            update_channel_settings(channel, channel_settings, "verified_only")
-            update_channel_settings(channel, channel_settings, "voice_category")
-            update_channel_settings(channel, channel_settings, "voice_invite")
-            if channel_settings:
-                all_default = False
-                details = ", ".join(
-                    (f"`{k}`" if isinstance(v, bool) and v else f"`{k}={v}`")
-                    for k, v in channel_settings.items()
-                )
-                next_line = f"• <#{channel.xid}> ({channel.xid}) — {details}\n"
-                if len(description) + len(next_line) >= EMBED_DESCRIPTION_SIZE_LIMIT:
-                    embed.description = description
-                    embeds.append(embed)
-                    embed = new_embed()
-                    description = ""
-                description += next_line
-
-        if all_default:
-            description = t("admin.channels_default", locale=locale)
-
-        embed.description = description
-        embeds.append(embed)
-
-        n = len(embeds)
-        if n > 1:
-            for i, embed in enumerate(embeds, start=1):
-                embed.set_footer(text=t("admin.page", locale=locale, current=i, total=n))
-
-        return embeds
-
-    async def build_awards_embeds(self) -> list[Embed]:
-        assert self.guild_data is not None
-        locale = guild_locale(self.guild)
-        guild = self.guild_data
-        embeds: list[Embed] = []
-
-        def new_embed() -> Embed:
-            embed = Embed(title=t("admin.awards_title", locale=locale, guild=guild.name))
-            embed.set_thumbnail(url=settings.ICO_URL)
-            embed.color = discord.Color(settings.INFO_EMBED_COLOR)
-            return embed
-
-        has_at_least_one_award = False
-        embed = new_embed()
-        description = ""
-        for award in guild.awards:
-            has_at_least_one_award = True
-            next_line = f"{award_line(award, locale)}\n"
-            if len(description) + len(next_line) >= EMBED_DESCRIPTION_SIZE_LIMIT:
-                embed.description = description
-                embeds.append(embed)
-                embed = new_embed()
-                description = ""
-            description += next_line
-
-        if not has_at_least_one_award:
-            description = t("admin.awards_empty", locale=locale)
-
-        embed.description = description
-        embeds.append(embed)
-
-        n = len(embeds)
-        if n > 1:
-            for i, embed in enumerate(embeds, start=1):
-                embed.set_footer(text=t("admin.page", locale=locale, current=i, total=n))
-
-        return embeds
-
-    async def build_setup_embed(self) -> Embed:
-        assert self.guild_data is not None
-        locale = guild_locale(self.guild)
-        guild = self.guild_data
-        embed = Embed(title=t("admin.setup_title", locale=locale, guild=guild.name))
-        embed.set_thumbnail(url=settings.ICO_URL)
-        description = t("admin.setup_description", locale=locale)
-
-        embed.description = description[:EMBED_DESCRIPTION_SIZE_LIMIT]
-        embed.add_field(
-            name=t("admin.field_motd", locale=locale),
-            value=guild.motd or t("admin.field_none", locale=locale),
-            inline=False,
-        )
-        embed.add_field(
-            name=t("admin.field_public_links", locale=locale),
-            value=humanize_bool(guild.show_links, locale),
-        )
-        embed.add_field(
-            name=t("admin.field_voice_create", locale=locale),
-            value=humanize_bool(guild.voice_create, locale),
-        )
-        embed.add_field(
-            name=t("admin.field_max_bitrate", locale=locale),
-            value=humanize_bool(guild.use_max_bitrate, locale),
-        )
-        embed.color = discord.Color(settings.INFO_EMBED_COLOR)
-        return embed
-
-    async def forget_channel(self, channel_str: str) -> None:
-        locale = user_locale(self.interaction)
-        try:
-            channel_xid = int(channel_str)
-        except ValueError:
-            await safe_send_channel(
-                self.interaction,
-                t("admin.invalid_id", locale=locale),
-                ephemeral=True,
-            )
-            return
-
-        await services.channels.forget(channel_xid)
-        await safe_send_channel(self.interaction, t("admin.done", locale=locale), ephemeral=True)
-
-    async def info(self, game_id: str) -> None:
+    async def game_info(self, game_id: str) -> None:
         numeric_filter = filter(str.isdigit, game_id)
         numeric_string = "".join(numeric_filter)
         if not numeric_string:
@@ -232,20 +51,58 @@ class AdminAction(BaseAction):
         if not found:
             return await self.report_failure()
 
-        embed = found.to_embed(
-            guild=self.guild,
-            dm=True,
-            emojis=self.bot.emojis_cache,
-            supporters=self.bot.supporters,
+        locale = user_locale(self.interaction)
+        link = f"{settings.API_BASE_URL}/game/{found.id}"
+
+        embed = Embed()
+        embed.set_thumbnail(url=settings.ICO_URL)
+        embed.set_author(name=t("admin.game_info_title", locale=locale, game_id=found.id))
+        embed.color = settings.INFO_EMBED_COLOR
+
+        embed.add_field(
+            name=t("game.field.format", locale=locale),
+            value=found.format_name,
+            inline=True,
         )
+        if found.bracket != GameBracket.NONE.value:
+            embed.add_field(
+                name=t("game.field.bracket", locale=locale),
+                value=found.bracket_name,
+                inline=True,
+            )
+        embed.add_field(
+            name=t("game.field.players", locale=locale),
+            value=f"{len(found.players)}/{found.seats}",
+            inline=True,
+        )
+        if found.started_at is not None:
+            started_value = f"<t:{found.started_at_timestamp}>"
+        else:
+            started_value = t("admin.game_info_pending", locale=locale)
+        embed.add_field(
+            name=t("game.field.started_at", locale=locale),
+            value=started_value,
+            inline=True,
+        )
+        embed.add_field(
+            name=t("admin.game_info_details", locale=locale),
+            value=t("admin.view_link", locale=locale, link=link),
+            inline=False,
+        )
+
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
         return None
 
     async def setup(self) -> None:
+        assert self.guild_data is not None
         locale = guild_locale(self.guild)
-        embed = await self.build_setup_embed()
-        view = SetupView(self.bot, locale=locale)
-        await safe_send_channel(self.interaction, embed=embed, view=view)
+        guild = self.guild_data
+        link = f"{settings.API_BASE_URL}/g/{guild.xid}"
+        embed = Embed(title=t("admin.setup_title", locale=locale, guild=guild.name))
+        embed.set_thumbnail(url=settings.ICO_URL)
+        embed.description = t("admin.setup_description", locale=locale, link=link)
+        embed.color = discord.Color(settings.INFO_EMBED_COLOR)
+        await safe_send_channel(self.interaction, embed=embed)
 
     async def setup_mythic_track(self) -> None:
         assert self.guild is not None
@@ -261,297 +118,6 @@ class AdminAction(BaseAction):
         else:
             embed.description = t("admin.mythic_track_off", locale=locale)
         await safe_send_channel(self.interaction, embed=embed)
-
-    async def channels(self, page: int) -> None:
-        locale = user_locale(self.interaction)
-        embeds = await self.build_channels_embeds()
-        try:
-            await safe_send_channel(self.interaction, embed=embeds[page - 1])
-        except IndexError:
-            await safe_send_channel(
-                self.interaction,
-                t("admin.invalid_page", locale=locale),
-                ephemeral=True,
-            )
-
-    async def awards(self, page: int) -> None:
-        locale = user_locale(self.interaction)
-        embeds = await self.build_awards_embeds()
-        try:
-            await safe_send_channel(self.interaction, embed=embeds[page - 1])
-        except IndexError:
-            await safe_send_channel(
-                self.interaction,
-                t("admin.invalid_page", locale=locale),
-                ephemeral=True,
-            )
-
-    async def award_add(
-        self,
-        count: int,
-        role: str,
-        message: str,
-        **options: bool | None,
-    ) -> None:
-        locale = user_locale(self.interaction)
-        repeating = bool(options.get("repeating", False))
-        remove = bool(options.get("remove", False))
-        verified_only = bool(options.get("verified_only", False))
-        unverified_only = bool(options.get("unverified_only", False))
-
-        if verified_only and unverified_only:
-            await safe_send_channel(
-                self.interaction,
-                t("admin.award_add_conflict", locale=locale),
-                ephemeral=True,
-            )
-            return
-
-        max_message_len = GuildAward.message.property.columns[0].type.length
-        if len(message) > max_message_len:
-            await safe_send_channel(
-                self.interaction,
-                t("admin.award_message_too_long", locale=locale, max_length=max_message_len),
-                ephemeral=True,
-            )
-            return
-
-        if count < 1:
-            await safe_send_channel(
-                self.interaction,
-                t("admin.award_zero_games", locale=locale),
-                ephemeral=True,
-            )
-            return
-
-        assert self.guild_data is not None
-        award = await services.guilds.award_add(
-            self.guild_data.xid,
-            count,
-            role,
-            message,
-            repeating=repeating,
-            remove=remove,
-            verified_only=verified_only,
-            unverified_only=unverified_only,
-        )
-
-        embed = Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
-        embed.set_author(name=t("admin.award_added", locale=locale))
-        line = award_line(award, locale)
-        description = f"{line}\n\n{t('admin.award_added_view', locale=locale)}"
-        embed.description = description
-        embed.color = settings.INFO_EMBED_COLOR
-        await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
-
-    async def award_delete(self, guild_award_id: int) -> None:
-        locale = user_locale(self.interaction)
-        await services.guilds.award_delete(guild_award_id)
-        embed = Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
-        embed.set_author(name=t("admin.award_deleted", locale=locale))
-        description = t("admin.award_added_view", locale=locale)
-        embed.description = description
-        embed.color = settings.INFO_EMBED_COLOR
-        await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
-
-    async def set_suggest_vc_category(self, category: str | None) -> None:
-        assert self.guild_data is not None
-        locale = user_locale(self.interaction)
-        if self.guild_data.voice_create:
-            await safe_send_channel(
-                self.interaction,
-                t("admin.voice_create_on", locale=locale),
-                ephemeral=True,
-            )
-            return
-
-        self.guild_data = await services.guilds.set_suggest_vc_category(
-            self.guild_data,
-            category,
-        )
-        if category:
-            msg = t("admin.suggest_vc_set", locale=locale, category=category)
-        else:
-            msg = t("admin.suggest_vc_off", locale=locale)
-        await safe_send_channel(self.interaction, msg, ephemeral=True)
-
-    async def set_motd(self, message: str | None = None) -> None:
-        assert self.guild_data
-        locale = user_locale(self.interaction)
-        await services.guilds.set_motd(self.guild_data, message)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.motd_updated", locale=locale),
-            ephemeral=True,
-        )
-
-    async def refresh_setup(self) -> None:
-        locale = guild_locale(self.guild)
-        embed = await self.build_setup_embed()
-        view = SetupView(self.bot, locale=locale)
-        await safe_update_embed_origin(self.interaction, embed=embed, view=view)
-
-    async def toggle_show_links(self) -> None:
-        assert self.guild_data is not None
-        locale = guild_locale(self.guild)
-        self.guild_data = await services.guilds.toggle_show_links(self.guild_data)
-        embed = await self.build_setup_embed()
-        view = SetupView(self.bot, locale=locale)
-        await safe_update_embed_origin(self.interaction, embed=embed, view=view)
-
-    async def toggle_voice_create(self) -> None:
-        assert self.guild_data is not None
-        locale = guild_locale(self.guild)
-        self.guild_data = await services.guilds.toggle_voice_create(self.guild_data)
-        embed = await self.build_setup_embed()
-        view = SetupView(self.bot, locale=locale)
-        await safe_update_embed_origin(self.interaction, embed=embed, view=view)
-
-    async def toggle_use_max_bitrate(self) -> None:
-        assert self.guild_data is not None
-        locale = guild_locale(self.guild)
-        self.guild_data = await services.guilds.toggle_use_max_bitrate(self.guild_data)
-        embed = await self.build_setup_embed()
-        view = SetupView(self.bot, locale=locale)
-        await safe_update_embed_origin(self.interaction, embed=embed, view=view)
-
-    async def set_default_seats(self, seats: int) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        await services.channels.set_default_seats(self.interaction.channel_id, seats)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.default_seats_set", locale=locale, seats=seats),
-            ephemeral=True,
-        )
-
-    async def set_default_format(self, format: int) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        await services.channels.set_default_format(self.interaction.channel_id, format)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.default_format_set", locale=locale, format=str(GameFormat(format))),
-            ephemeral=True,
-        )
-
-    async def set_default_bracket(self, bracket: int) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        await services.channels.set_default_bracket(self.interaction.channel_id, bracket)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.default_bracket_set", locale=locale, bracket=str(GameBracket(bracket))),
-            ephemeral=True,
-        )
-
-    async def set_default_service(self, service: int) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        await services.channels.set_default_service(self.interaction.channel_id, service)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.default_service_set", locale=locale, service=str(GameService(service))),
-            ephemeral=True,
-        )
-
-    async def set_auto_verify(self, setting: bool) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        await services.channels.set_auto_verify(self.interaction.channel_id, setting)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.auto_verify_set", locale=locale, setting=setting),
-            ephemeral=True,
-        )
-
-    async def set_verified_only(self, setting: bool) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        await services.channels.set_verified_only(self.interaction.channel_id, setting)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.verified_only_set", locale=locale, setting=setting),
-            ephemeral=True,
-        )
-
-    async def set_unverified_only(self, setting: bool) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        await services.channels.set_unverified_only(self.interaction.channel_id, setting)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.unverified_only_set", locale=locale, setting=setting),
-            ephemeral=True,
-        )
-
-    async def set_channel_motd(self, message: str | None = None) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        setting = await services.channels.set_motd(self.interaction.channel_id, message)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.channel_motd_set", locale=locale, setting=setting),
-            ephemeral=True,
-        )
-
-    async def set_channel_extra(self, message: str | None = None) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        setting = await services.channels.set_extra(self.interaction.channel_id, message)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.channel_extra_set", locale=locale, setting=setting),
-            ephemeral=True,
-        )
-
-    async def set_voice_category(self, value: str) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        setting = await services.channels.set_voice_category(
-            self.interaction.channel_id,
-            value,
-        )
-        await safe_send_channel(
-            self.interaction,
-            t("admin.voice_category_set", locale=locale, setting=setting),
-            ephemeral=True,
-        )
-
-    async def set_delete_expired(self, value: bool) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        setting = await services.channels.set_delete_expired(
-            self.interaction.channel_id,
-            value,
-        )
-        await safe_send_channel(
-            self.interaction,
-            t("admin.delete_expired_set", locale=locale, setting=setting),
-            ephemeral=True,
-        )
-
-    async def set_blind_games(self, value: bool) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        setting = await services.channels.set_blind_games(self.interaction.channel_id, value)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.blind_games_set", locale=locale, setting=setting),
-            ephemeral=True,
-        )
-
-    async def set_voice_invite(self, value: bool) -> None:
-        assert self.interaction.channel_id is not None
-        locale = user_locale(self.interaction)
-        setting = await services.channels.set_voice_invite(self.interaction.channel_id, value)
-        await safe_send_channel(
-            self.interaction,
-            t("admin.voice_invite_set", locale=locale, setting=setting),
-            ephemeral=True,
-        )
 
     async def move_user(
         self,
@@ -733,7 +299,7 @@ class AdminAction(BaseAction):
 
         embed.add_field(
             name=t("admin.user_info_game_history", locale=locale),
-            value=t("admin.user_info_view_link", locale=locale, link=link),
+            value=t("admin.view_link", locale=locale, link=link),
             inline=False,
         )
 

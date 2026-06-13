@@ -26,7 +26,6 @@ from .utils import (
     bot_can_manage_channels,
     bot_can_read,
     bot_can_read_messages,
-    bot_can_reply_to,
     bot_can_role,
     bot_can_send_messages,
     log_info,
@@ -42,11 +41,7 @@ DISCORD_OP_EXCEPTIONS = (DiscordException, ClientOSError, NotFound)
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from discord.abc import MessageableChannel, PrivateChannel
-    from discord.guild import GuildChannel
-    from discord.threads import Thread
-
-    GetChannelReturnType = GuildChannel | Thread | PrivateChannel | None
+    from discord.abc import MessageableChannel
 
 logger = logging.getLogger(__name__)
 
@@ -645,21 +640,6 @@ async def safe_create_channel_invite(
         guild_xid=guild_xid,
         channel_xid=channel_xid,
     )
-
-
-@tracer.wrap()
-async def safe_message_reply(message: discord.Message, *args: Any, **kwargs: Any) -> None:
-    if span := tracer.current_span():  # pragma: no cover
-        span.set_tags({"message_xid": str(message.id)})
-
-    if not bot_can_reply_to(message):
-        return
-
-    try:
-        await retry(lambda: message.reply(*args, **kwargs))
-    except Exception as ex:
-        add_span_error(ex)
-        logger.debug("debug: %s", ex, exc_info=True)
 
 
 def is_expected_dm_failure(ex: BaseException) -> bool:

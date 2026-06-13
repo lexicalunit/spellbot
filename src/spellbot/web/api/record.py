@@ -26,7 +26,7 @@ from spellbot.enums import (
     VALID_SERVICES,
 )
 from spellbot.metrics import add_span_request_id, generate_request_id
-from spellbot.models import Channel, Guild, web_editable_docs
+from spellbot.models import Channel, Guild, GuildAward, web_editable_docs
 from spellbot.services.plays import (
     CHANNEL_PAGE_SIZE,
     CHANNEL_RECORDS_SORT_COLUMNS,
@@ -343,6 +343,58 @@ def parse_guild_settings(form: Any) -> dict[str, Any]:
     }
 
 
+AWARD_ROLE_MAX = GuildAward.role.property.columns[0].type.length
+AWARD_MESSAGE_MAX = GuildAward.message.property.columns[0].type.length
+
+
+def award_help() -> dict[str, str]:
+    """Per-field help text for the award form, taken from the model column docs."""
+    return {column.name: column.doc for column in GuildAward.__table__.columns if column.doc}
+
+
+# Award validation errors are surfaced via an `award_error` query parameter on a redirect back to
+# the guild page. As with block errors, the redirect only ever carries one of these fixed *codes*;
+# the page maps the code to a server-controlled message and ignores anything not in this allow-list,
+# so no user-supplied text is ever reflected into the URL or the page.
+AWARD_ERRORS = {
+    "no_role": "An award needs a role to give or take.",
+    "message_too_long": f"An award message can't be longer than {AWARD_MESSAGE_MAX} characters.",
+    "bad_count": "An award needs a whole number of games.",
+    "zero_count": "An award can't be given for fewer than 1 game.",
+    "verify_conflict": "An award can't be both verified and unverified only.",
+}
+
+
+def parse_award_form(form: Any) -> tuple[dict[str, Any] | None, str | None]:
+    """Coerce + validate an award form. Returns `(values, None)` or `(None, error_code)`."""
+    role = form_str(form, "role", AWARD_ROLE_MAX).lstrip("@")
+    if not role:
+        return None, "no_role"
+    message = form_str(form, "message", None)
+    if len(message) > AWARD_MESSAGE_MAX:
+        return None, "message_too_long"
+    raw_count = (form.get("count") or "").strip()
+    try:
+        count = int(raw_count)
+    except TypeError, ValueError:
+        return None, "bad_count"
+    if count < 1:
+        return None, "zero_count"
+    verified_only = form_bool(form, "verified_only")
+    unverified_only = form_bool(form, "unverified_only")
+    if verified_only and unverified_only:
+        return None, "verify_conflict"
+    return {
+        "count": count,
+        "role": role,
+        "message": message,
+        "repeating": form_bool(form, "repeating"),
+        "remove": form_bool(form, "remove"),
+        "verified_only": verified_only,
+        "unverified_only": unverified_only,
+    }, None
+
+
 async def request_is_moderator(request: web.Request, guild_xid: int) -> bool:
     """Return True when the request's logged-in viewer moderates `guild_xid`."""
     _, is_moderator = await viewer_access(request, guild_xid)
@@ -393,6 +445,8 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
     channel = None
     is_logged_in = False
     is_moderator = False
+    is_own_profile = False
+    blocked_users: list[Any] = []
     if kind is RecordKind.CHANNEL:
         assert opts.guild_xid is not None
         guild = await services.guilds.get(opts.guild_xid)
@@ -406,6 +460,11 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         user = await services.users.get(opts.target_xid)
         target_name = user.name if user else None
         page_size = USER_PAGE_SIZE
+        viewer_xid, _ = await get_viewer(request)
+        is_logged_in = viewer_xid is not None
+        is_own_profile = viewer_xid == opts.target_xid
+        if is_own_profile:
+            blocked_users = await services.users.blocklist(opts.target_xid)
 
     has_next = (opts.page + 1) * page_size < total
     prev_qs = build_query_string(opts.raw_filters, page=max(opts.page - 1, 0))
@@ -441,6 +500,9 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         "channel_help": web_editable_docs(Channel),
         "is_logged_in": is_logged_in,
         "is_moderator": is_moderator,
+        "is_own_profile": is_own_profile,
+        "blocked_users": blocked_users,
+        "block_error": BLOCK_ERRORS.get(request.query.get("block_error", "")),
         "login_url": login_url(request),
     }
     return aiohttp_jinja2.render_template(path, request, context)
@@ -460,6 +522,98 @@ async def user_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
     async with db_session_manager():
         return await impl(request, RecordKind.USER)
+
+
+async def viewer_owns_profile(request: web.Request, user_xid: int) -> bool:
+    """Return True when the request's logged-in viewer is the owner of `user_xid`'s profile."""
+    viewer_xid, _ = await get_viewer(request)
+    return viewer_xid is not None and viewer_xid == user_xid
+
+
+# Block-list validation errors are surfaced to the user via a `block_error` query parameter on a
+# redirect back to their profile. To avoid reflecting attacker-controlled text into the URL (and
+# the page), the redirect only ever carries one of these fixed *codes*; the page maps the code to
+# a server-controlled message and ignores anything not in this allow-list.
+BLOCK_ERRORS = {
+    "invalid": "Enter a Discord user ID or name to block.",
+    "not_found": "No SpellBot user with that name was found.",
+    "self": "You can't block yourself.",
+}
+
+
+async def resolve_block_target(raw: str) -> tuple[int | None, str | None]:
+    """Resolve a block-target form value (a Discord id or name) to `(xid, None)`/`(None, code)`."""
+    token = (raw or "").strip().lstrip("@")
+    if not token:
+        return None, "invalid"
+    if token.isdigit():
+        return int(token), None
+    xid = await services.users.get_xid_by_name(token)
+    if xid is None:
+        return None, "not_found"
+    return xid, None
+
+
+def block_error_redirect(user_xid: int, code: str) -> web.HTTPFound:
+    """
+    Redirect back to the profile page flagging a block validation error by code.
+
+    The destination is always this user's own internal page: `user_xid` is coerced to an int so the
+    path is fixed and can never point off-site, and only a known `BLOCK_ERRORS` code is placed in
+    the URL, never user-supplied text.
+    """
+    safe_code = code if code in BLOCK_ERRORS else "invalid"
+    return web.HTTPFound(f"/u/{int(user_xid)}?{urlencode({'block_error': safe_code})}")
+
+
+async def user_block_add_impl(request: web.Request) -> web.Response:
+    """Owner-only: add a user to the profile owner's block list, then redirect back."""
+    try:
+        user_xid = int(request.match_info["user"])
+    except ValueError:
+        return web.Response(status=404)
+    if not await viewer_owns_profile(request, user_xid):
+        return web.Response(status=403, text="Forbidden")
+    form = await request.post()
+    target_xid, error = await resolve_block_target(str(form.get("target") or ""))
+    if target_xid is None:
+        assert error is not None
+        return block_error_redirect(user_xid, error)
+    if target_xid == user_xid:
+        return block_error_redirect(user_xid, "self")
+    await services.users.ensure_exists(user_xid)
+    await services.users.ensure_exists(target_xid)
+    await services.users.block(user_xid, target_xid)
+    return web.HTTPFound(f"/u/{user_xid}")
+
+
+@routes.post(r"/u/{user}/blocks/add")
+@tracer.wrap(name="web", resource="user_block_add")
+async def user_block_add_endpoint(request: web.Request) -> web.StreamResponse:
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        return await user_block_add_impl(request)
+
+
+async def user_block_remove_impl(request: web.Request) -> web.Response:
+    """Owner-only: remove a user from the profile owner's block list, then redirect back."""
+    try:
+        user_xid = int(request.match_info["user"])
+        target_xid = int(request.match_info["target"])
+    except ValueError:
+        return web.Response(status=404)
+    if not await viewer_owns_profile(request, user_xid):
+        return web.Response(status=403, text="Forbidden")
+    await services.users.unblock(user_xid, target_xid)
+    return web.HTTPFound(f"/u/{user_xid}")
+
+
+@routes.post(r"/u/{user}/blocks/{target}/remove")
+@tracer.wrap(name="web", resource="user_block_remove")
+async def user_block_remove_endpoint(request: web.Request) -> web.StreamResponse:
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        return await user_block_remove_impl(request)
 
 
 async def game_impl(request: web.Request) -> web.Response:
@@ -512,6 +666,7 @@ async def guild_impl(request: web.Request) -> web.Response:
 
     is_logged_in, is_moderator = await viewer_access(request, guild_xid)
     guild_settings = await services.guilds.get(guild_xid) if is_moderator else None
+    awards = await services.guilds.award_list(guild_xid) if is_moderator else []
 
     context = {
         "guild": guild["guild"],
@@ -524,6 +679,11 @@ async def guild_impl(request: web.Request) -> web.Response:
         "login_url": login_url(request),
         "guild_settings": guild_settings,
         "guild_help": web_editable_docs(Guild),
+        "awards": awards,
+        "award_help": award_help(),
+        "award_role_max": AWARD_ROLE_MAX,
+        "award_message_max": AWARD_MESSAGE_MAX,
+        "award_error": AWARD_ERRORS.get(request.query.get("award_error", "")),
     }
     return aiohttp_jinja2.render_template("guild.html.j2", request, context)
 
@@ -581,6 +741,114 @@ async def guild_settings_endpoint(request: web.Request) -> web.StreamResponse:
         return await guild_settings_impl(request)
 
 
+def award_error_redirect(guild_xid: int, code: str) -> web.HTTPFound:
+    """
+    Redirect back to the guild page flagging an award validation error by code.
+
+    The destination is always this guild's own internal page: `guild_xid` is coerced to an int so
+    the path is fixed and can never point off-site, and `code` must be a key of `AWARD_ERRORS`, so
+    no user-supplied text is ever reflected. An unrecognized code is dropped rather than reflected.
+    """
+    location = f"/g/{int(guild_xid)}"
+    if code in AWARD_ERRORS:
+        location = f"{location}?{urlencode({'award_error': code})}"
+    return web.HTTPFound(location)
+
+
+async def award_add_impl(request: web.Request) -> web.Response:
+    """Moderator-only: create a new award on the guild, then redirect back to its page."""
+    try:
+        guild_xid = int(request.match_info["guild"])
+    except ValueError:
+        return web.Response(status=404)
+    if not await request_is_moderator(request, guild_xid):
+        return web.Response(status=403, text="Forbidden")
+    form = await request.post()
+    values, error = parse_award_form(form)
+    if values is None:
+        assert error is not None
+        return award_error_redirect(guild_xid, error)
+    await services.guilds.award_add(
+        guild_xid,
+        values["count"],
+        values["role"],
+        values["message"],
+        repeating=values["repeating"],
+        remove=values["remove"],
+        verified_only=values["verified_only"],
+        unverified_only=values["unverified_only"],
+    )
+    return web.HTTPFound(f"/g/{guild_xid}")
+
+
+@routes.post(r"/g/{guild}/awards/add")
+@tracer.wrap(name="web", resource="award_add")
+async def award_add_endpoint(request: web.Request) -> web.StreamResponse:
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        return await award_add_impl(request)
+
+
+async def award_update_impl(request: web.Request) -> web.Response:
+    """Moderator-only: update one of the guild's awards, then redirect back to its page."""
+    try:
+        guild_xid = int(request.match_info["guild"])
+        award_id = int(request.match_info["award"])
+    except ValueError:
+        return web.Response(status=404)
+    if not await request_is_moderator(request, guild_xid):
+        return web.Response(status=403, text="Forbidden")
+    form = await request.post()
+    values, error = parse_award_form(form)
+    if values is None:
+        assert error is not None
+        return award_error_redirect(guild_xid, error)
+    updated = await services.guilds.award_update(
+        guild_xid,
+        award_id,
+        values["count"],
+        values["role"],
+        values["message"],
+        repeating=values["repeating"],
+        remove=values["remove"],
+        verified_only=values["verified_only"],
+        unverified_only=values["unverified_only"],
+    )
+    if updated is None:
+        return web.Response(status=404)
+    return web.HTTPFound(f"/g/{guild_xid}")
+
+
+@routes.post(r"/g/{guild}/awards/{award}/update")
+@tracer.wrap(name="web", resource="award_update")
+async def award_update_endpoint(request: web.Request) -> web.StreamResponse:
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        return await award_update_impl(request)
+
+
+async def award_delete_impl(request: web.Request) -> web.Response:
+    """Moderator-only: delete one of the guild's awards, then redirect back to its page."""
+    try:
+        guild_xid = int(request.match_info["guild"])
+        award_id = int(request.match_info["award"])
+    except ValueError:
+        return web.Response(status=404)
+    if not await request_is_moderator(request, guild_xid):
+        return web.Response(status=403, text="Forbidden")
+    if not await services.guilds.award_delete(guild_xid, award_id):
+        return web.Response(status=404)
+    return web.HTTPFound(f"/g/{guild_xid}")
+
+
+@routes.post(r"/g/{guild}/awards/{award}/delete")
+@tracer.wrap(name="web", resource="award_delete")
+async def award_delete_endpoint(request: web.Request) -> web.StreamResponse:
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        return await award_delete_impl(request)
+
+
 async def channel_settings_impl(request: web.Request) -> web.Response:
     """Moderator-only: update a channel's settings, then redirect back to its page."""
     try:
@@ -603,6 +871,29 @@ async def channel_settings_endpoint(request: web.Request) -> web.StreamResponse:
     add_span_request_id(generate_request_id())
     async with db_session_manager():
         return await channel_settings_impl(request)
+
+
+async def channel_forget_impl(request: web.Request) -> web.Response:
+    """Moderator-only: forget (delete) a channel's settings, then redirect to its guild page."""
+    try:
+        guild_xid = int(request.match_info["guild"])
+        channel_xid = int(request.match_info["channel"])
+    except ValueError:
+        return web.Response(status=404)
+    if not await request_is_moderator(request, guild_xid):
+        return web.Response(status=403, text="Forbidden")
+    viewer_xid, viewer_name = await get_viewer(request)
+    with audit.actor(viewer_xid, viewer_name, audit.SOURCE_WEB):
+        await services.channels.forget(channel_xid)
+    return web.HTTPFound(f"/g/{guild_xid}")
+
+
+@routes.post(r"/g/{guild}/c/{channel}/forget")
+@tracer.wrap(name="web", resource="channel_forget")
+async def channel_forget_endpoint(request: web.Request) -> web.StreamResponse:
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        return await channel_forget_impl(request)
 
 
 def csv_line(values: list[Any]) -> bytes:

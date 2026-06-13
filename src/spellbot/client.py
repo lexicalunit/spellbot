@@ -121,10 +121,9 @@ class SpellBot(AutoShardedBot):
             await initialize_connection("spellbot-bot")
 
         # register persistent views
-        from .views import GameView, SetupView  # allow_inline
+        from .views import GameView  # allow_inline
 
         self.add_view(GameView(self))
-        self.add_view(SetupView(self))
 
         # load all cog extensions and application commands
         from .utils import load_extensions  # allow_inline

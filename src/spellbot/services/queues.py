@@ -25,45 +25,6 @@ SERVICE_LABEL = case(
 ).label("service")
 
 
-async def public_recent_started_count(
-    within: timedelta,
-    *,
-    only_member_of: int | None = None,
-    only_mythic_track: bool = False,
-) -> int:
-    """
-    Count games started within `within` of now, excluding banned or unpromoted guilds.
-
-    When `only_member_of` is provided, the count is restricted to guilds where the
-    given user xid has a `guild_members` row.
-
-    When `only_mythic_track` is `True`, the count is further restricted to guilds that
-    have mythic track enabled.
-    """
-    cutoff = datetime.now(UTC) - within
-    stmt = (
-        select(func.count(Game.id))
-        .select_from(Game)
-        .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
-        .where(
-            Game.started_at.is_not(None),
-            Game.started_at >= cutoff,
-            Game.deleted_at.is_(None),
-            Guild.banned.is_(False),
-            Guild.promote.is_(True),
-        )
-    )
-    if only_member_of is not None:
-        stmt = stmt.join(
-            GuildMember,
-            GuildMember.guild_xid == Guild.xid,
-        ).where(GuildMember.user_xid == only_member_of)
-    if only_mythic_track:
-        stmt = stmt.where(Guild.enable_mythic_track.is_(True))
-    result = await DatabaseSession.execute(stmt)
-    return int(result.scalar() or 0)
-
-
 async def public_active_games(
     within: timedelta,
     *,
